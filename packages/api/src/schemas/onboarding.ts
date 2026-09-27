@@ -45,6 +45,11 @@ export function nextOnboardingStep(step: OnboardingStep, shippedPhase: number = 
   return steps[steps.indexOf(step) + 1] ?? 'done';
 }
 
+/** The steps the Stepper counts: "Step N of M" (US-ONB-03). Welcome and done aren't counted. */
+export function stepperOnboardingSteps(shippedPhase: number = SHIPPED_PHASE): OnboardingStep[] {
+  return enabledOnboardingSteps(shippedPhase).filter((step) => step !== 'welcome' && step !== 'done');
+}
+
 /** Steps `onboarding.setStep` may move past without doing anything. Skippable steps join as their stories ship. */
 export const SKIPPABLE_ONBOARDING_STEPS: readonly OnboardingStep[] = ['welcome'];
 

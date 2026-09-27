@@ -197,4 +197,9 @@ describe('TrayMenu and Stepper', () => {
     expect(current).toHaveAttribute('aria-current', 'step');
     expect(screen.getByText('Welcome (done)')).toBeInTheDocument();
   });
+
+  it('can show only "Step N of M"', () => {
+    render(<Stepper steps={['System check', 'Account']} current={0} showName={false} />);
+    expect(screen.getByText('Step 1 of 2')).toBeInTheDocument();
+  });
 });

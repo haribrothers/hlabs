@@ -5,7 +5,7 @@ import { hlabsError, HLABS_ERRORS } from './errors';
 import { EVENT_TYPES } from './events';
 import { listProcedures } from './procedures';
 import { appRouter } from './router';
-import { enabledOnboardingSteps, nextOnboardingStep } from './schemas/onboarding';
+import { enabledOnboardingSteps, nextOnboardingStep, stepperOnboardingSteps } from './schemas/onboarding';
 import { createCallerFactory, type Access, type ApiContext } from './trpc';
 
 type Row = [path: string, type: 'q' | 'm' | 's', access: Access | 'authed|tray'];
@@ -239,6 +239,11 @@ describe('onboarding step registry (D-041)', () => {
       'apps',
       'done',
     ]);
+  });
+
+  it('counts only the real steps in the Stepper', () => {
+    expect(stepperOnboardingSteps(1)).toEqual(['system', 'account', 'twoFactor', 'storage']);
+    expect(stepperOnboardingSteps(3)).toHaveLength(6);
   });
 
   it('moves to the next enabled step', () => {
