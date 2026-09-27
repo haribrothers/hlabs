@@ -12,7 +12,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ONB-01 · Open onboarding automatically on first run
 - [x] US-ONB-02 · See the welcome screen and start setup
 - [ ] US-ONB-03 · Resume onboarding where I left off, and only until it's done (built except the "admin exists → log in, then return to the step" criterion, which needs US-ONB-08 and sign-in)
-- [ ] US-ONB-04 · Run the system check
+- [x] US-ONB-04 · Run the system check
 - [ ] US-ONB-05 · Install Colima automatically when no engine is found (macOS)
 - [ ] US-ONB-06 · Recover from a failed system check
 - [ ] US-ONB-07 · Get Docker Engine instructions on Linux, and choose start at login
