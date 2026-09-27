@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+@import '@hlabs/ui/styles.css';
+
+@layer base {
+  body {
+    margin: 0;
+    background: transparent;
+    font-family: var(--font-sans);
+  }
+}
