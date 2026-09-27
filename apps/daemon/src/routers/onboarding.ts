@@ -2,6 +2,7 @@ import { hlabsError, type AppHandlers } from '@hlabs/api';
 import { sessionCookie } from '../auth/sessions';
 import type { DaemonContext } from '../context';
 import { createAdmin } from '../onboarding/create-admin';
+import { setLocalStorage } from '../onboarding/storage';
 
 /** Setup procedures after the admin exists run on their session (checked in DaemonContext.authorize). */
 function signedInUser(ctx: DaemonContext): string {
@@ -31,6 +32,19 @@ export const onboarding: AppHandlers<DaemonContext>['onboarding'] = {
   confirmTotp: async ({ code }, ctx) => ({
     recoveryCodes: await ctx.services.totp.confirm(signedInUser(ctx), code, { ip: ctx.request.ip }),
   }),
+  /** "This computer" (US-ONB-14); an external drive and a NAS arrive with US-ONB-15 and US-ONB-16. */
+  setStorage: async (input, ctx) => {
+    if (input.kind !== 'local') throw hlabsError('NOT_IMPLEMENTED', `${input.kind} storage is not built yet`);
+    await setLocalStorage(ctx.services.db, {
+      userId: signedInUser(ctx),
+      path: ctx.services.config.paths.storageRootDefault,
+    });
+    return { ok: true };
+  },
+  complete: async (_input, ctx) => {
+    await ctx.services.onboarding.complete({ userId: signedInUser(ctx), ip: ctx.request.ip });
+    return { redirectTo: '/' };
+  },
   setStep: ({ step }, ctx) => {
     const { onboarding, totp } = ctx.services;
     const leavingTwoFactor = onboarding.status().step === 'twoFactor' && step !== 'twoFactor';

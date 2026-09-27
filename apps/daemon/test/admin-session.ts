@@ -1,4 +1,5 @@
 // A daemon at the given onboarding step with the admin created and signed in (for stories after US-ONB-08).
+import type { DaemonConfig } from '../src/config';
 import { startDaemon } from './helpers';
 
 export type Reply = {
@@ -6,9 +7,12 @@ export type Reply = {
   error?: { data: { hlabsCode: string; detail?: unknown } };
 };
 
-export async function daemonWithAdmin(closers: Array<() => Promise<void>>) {
+export async function daemonWithAdmin(closers: Array<() => Promise<void>>, config: Partial<DaemonConfig> = {}) {
   const printed: string[] = [];
-  const d = await startDaemon({ config: { devAnonymousAdmin: false }, boot: { print: (l) => printed.push(l) } });
+  const d = await startDaemon({
+    config: { devAnonymousAdmin: false, ...config },
+    boot: { print: (l) => printed.push(l) },
+  });
   closers.push(d.close);
   const token = new URL(printed.join('').match(/open (\S+)/)![1]!).searchParams.get('token')!;
   await fetch(`${d.url}/dev/reset-onboarding`, {

@@ -4,10 +4,11 @@ import {
   enabledOnboardingSteps,
   nextOnboardingStep,
   SKIPPABLE_ONBOARDING_STEPS,
+  ulid,
   type OnboardingStep,
 } from '@hlabs/shared';
-import { getSetting, setSetting, users, type HlabsDb } from '@hlabs/db';
-import { count } from 'drizzle-orm';
+import { auditLog, getSetting, setSetting, storageLocations, users, type HlabsDb } from '@hlabs/db';
+import { count, eq } from 'drizzle-orm';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { SecretStore } from '../platform/secrets';
 import { readInstallLog } from '../engine/install-job';
@@ -165,7 +166,30 @@ export class OnboardingService {
     return timingSafeEqual(sha256(candidate), this.tokenHash);
   }
 
-  /** Marks onboarding done and deletes the token and its secret-store item (used by onboarding.complete). */
+  /**
+   * onboarding.complete (US-ONB-14, US-ONB-22): needs an admin and a root storage location, then marks onboarding
+   * done, retires the setup token and records it in the audit log.
+   */
+  async complete(opts: { userId: string; ip: string | null; now?: number }): Promise<void> {
+    const hasRoot = this.db.select().from(storageLocations).where(eq(storageLocations.isRoot, true)).get();
+    if (!this.status().hasUsers || !hasRoot) throw hlabsError('ONBOARDING_INCOMPLETE');
+    const now = opts.now ?? Date.now();
+    await this.markComplete(now);
+    this.db
+      .insert(auditLog)
+      .values({
+        id: ulid(),
+        at: now,
+        userId: opts.userId,
+        action: 'onboarding.complete',
+        target: null,
+        detailJson: null,
+        ip: opts.ip,
+      })
+      .run();
+  }
+
+  /** Marks onboarding done and deletes the token and its secret-store item. */
   async markComplete(now = Date.now()): Promise<void> {
     const current = getSetting(this.db, 'onboarding');
     if (current.setupTokenRef) await this.secrets.delete(current.setupTokenRef);
