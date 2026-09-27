@@ -3,6 +3,7 @@ import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import { defaultPaths, type PlatformPaths } from './platform/paths';
+import { defaultSecretStoreKind, type SecretStoreKind } from './platform/secrets';
 import { VERSION } from './version';
 
 const flag = z
@@ -17,6 +18,8 @@ const envSchema = z.object({
   HLABS_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
   HLABS_HEADLESS: flag,
   HLABS_DEV_ANONYMOUS_ADMIN: flag,
+  HLABS_SECRET_STORE: z.enum(['keychain', 'file']).optional(),
+  HLABS_DASHBOARD_URL: z.url().optional(),
 });
 
 export interface DaemonConfig {
@@ -27,6 +30,10 @@ export interface DaemonConfig {
   host: '127.0.0.1';
   port: number;
   paths: PlatformPaths;
+  /** Where the dashboard is opened from this computer; the setup URL is built from it (D-041). */
+  dashboardUrl: string;
+  /** Keychain on a production desktop, encrypted file otherwise (07 §7.7). */
+  secretStore: SecretStoreKind;
   logLevel: string;
   /** Phase 0 only: treat every request as a signed-in admin (see 05-api "From phase 0"). */
   devAnonymousAdmin: boolean;
@@ -54,6 +61,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
     host: '127.0.0.1',
     port: e.HLABS_PORT,
     paths,
+    dashboardUrl: (e.HLABS_DASHBOARD_URL ?? `http://127.0.0.1:${e.HLABS_PORT}`).replace(/\/+$/, ''),
+    secretStore: e.HLABS_SECRET_STORE ?? defaultSecretStoreKind({ env: e.NODE_ENV, headless: e.HLABS_HEADLESS }),
     logLevel: e.HLABS_LOG_LEVEL ?? (dev ? 'debug' : 'info'),
     devAnonymousAdmin: e.HLABS_DEV_ANONYMOUS_ADMIN,
   };

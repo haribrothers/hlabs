@@ -10,7 +10,7 @@ import { EventBus } from './events/bus';
 import { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
-import { MemorySecretStore, type SecretStore } from './platform/secrets';
+import { createSecretStore, type SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 import type { ServiceHolder, Services } from './services';
 
@@ -98,7 +98,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     bus,
     jobs,
     engine,
-    secrets: deps.secrets ?? new MemorySecretStore(),
+    secrets: deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir),
     proxy,
     mdns,
   };

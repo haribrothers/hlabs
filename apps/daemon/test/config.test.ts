@@ -14,6 +14,18 @@ describe('config', () => {
     expect(() => loadConfig({ NODE_ENV: 'production', HLABS_DEV_ANONYMOUS_ADMIN: '1' })).toThrow(/development only/);
     expect(loadConfig({ NODE_ENV: 'development', HLABS_DEV_ANONYMOUS_ADMIN: '1' }).devAnonymousAdmin).toBe(true);
   });
+
+  it('builds the dashboard URL from the port unless it is set', () => {
+    expect(loadConfig({ HLABS_PORT: '7480' }).dashboardUrl).toBe('http://127.0.0.1:7480');
+    expect(loadConfig({ HLABS_DASHBOARD_URL: 'http://127.0.0.1:5173/' }).dashboardUrl).toBe('http://127.0.0.1:5173');
+  });
+
+  it('keeps secrets in the keychain on a production desktop and in the encrypted file otherwise', () => {
+    expect(loadConfig({ NODE_ENV: 'production' }).secretStore).toBe('keychain');
+    expect(loadConfig({ NODE_ENV: 'production', HLABS_HEADLESS: '1' }).secretStore).toBe('file');
+    expect(loadConfig({ NODE_ENV: 'development' }).secretStore).toBe('file');
+    expect(loadConfig({ NODE_ENV: 'production', HLABS_SECRET_STORE: 'file' }).secretStore).toBe('file');
+  });
 });
 
 describe('platform paths (02 §2.3)', () => {

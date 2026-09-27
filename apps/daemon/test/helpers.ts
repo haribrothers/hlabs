@@ -23,6 +23,8 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
     host: '127.0.0.1',
     port: 0,
     paths: { dataDir, appDataDir: join(dataDir, 'app-data'), storageRootDefault: join(dataDir, 'storage') },
+    dashboardUrl: 'http://127.0.0.1:5173',
+    secretStore: 'file',
     logLevel: 'silent',
     devAnonymousAdmin: true,
     ...overrides,
