@@ -177,7 +177,7 @@ export function Dock({
           </DockItem>
         );
       })}
-      <span className="hl-dock-sep" aria-hidden="true" />
+      {apps.length > 0 || onAdd ? <span className="hl-dock-sep" aria-hidden="true" /> : null}
       {apps.map((app) => (
         <DockItem
           key={`app-${app.id}`}

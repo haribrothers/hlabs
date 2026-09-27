@@ -116,7 +116,7 @@ describe('TabBar (phone)', () => {
     );
     expect(screen.getByRole('navigation', { name: 'Tab bar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByLabelText('2 new')).toBeInTheDocument();
+    expect(screen.getByLabelText('2 updates')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /Files/ }));
     expect(onSelect).toHaveBeenCalledWith('files');
     expect(screen.queryByRole('button', { name: 'Search' })).toBeNull();

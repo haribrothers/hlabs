@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+@import '@hlabs/ui/styles.css';
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--wall-base);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}

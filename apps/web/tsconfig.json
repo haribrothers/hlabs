@@ -1,0 +1,7 @@
+{
+  "extends": "@hlabs/config/tsconfig/react.json",
+  "compilerOptions": {
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom/vitest"]
+  },
+  "include": ["src", "e2e", "vite.config.ts", "playwright.config.ts"]
+}

@@ -55,7 +55,10 @@ export function TabBar({ items, active, defaultActive, onSelect, search = false,
                   <span>{item.label}</span>
                 </span>
                 {item.badge ? (
-                  <span className="hl-count" aria-label={t.badgeNew(item.badge)}>
+                  <span
+                    className="hl-count"
+                    aria-label={item.id === 'store' ? t.badgeUpdates(item.badge) : t.badgeNew(item.badge)}
+                  >
                     {item.badge}
                   </span>
                 ) : null}
