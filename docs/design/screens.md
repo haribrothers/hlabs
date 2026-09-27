@@ -19,7 +19,7 @@ Shows: Mac installer window · [Installer window: drag hlabs into the Applicatio
 
 ### LinuxInstall — Linux server install script
 
-**Priority:** P3 · **Phase:** 6 · **Stories:** US-INST-23, US-INST-24, US-INST-25
+**Priority:** P3 · **Phase:** 6 · **Stories:** US-INST-23, US-INST-24, US-INST-25, US-SITE-05
 
 ![LinuxInstall](screens/LinuxInstall.webp)
 
@@ -445,7 +445,7 @@ Shows: Install app — progress · [Installing Immich] · App Store · Immich ·
 
 ### InstallFailed — Install failed
 
-**Priority:** P1 · **Phase:** 2 · **Stories:** US-STORE-13, US-STORE-14
+**Priority:** P1 · **Phase:** 2 · **Stories:** US-STORE-13, US-STORE-14, US-SITE-10
 
 ![InstallFailed](screens/InstallFailed.webp)
 
@@ -925,7 +925,7 @@ Shows: Settings — Network · rename · [Settings] · [Settings sections] · Se
 
 ### CertGuide — Certificate guide
 
-**Priority:** Nice to have · **Phase:** 9 · **Stories:** US-SYS-09, US-SYS-10
+**Priority:** Nice to have · **Phase:** 9 · **Stories:** US-SYS-09, US-SYS-10, US-SITE-10
 
 ![CertGuide](screens/CertGuide.webp)
 
@@ -975,7 +975,7 @@ Shows: Settings — Engine · switch · [Settings] · [Settings sections] · Set
 
 ### SettingsUpdates — Updates
 
-**Priority:** P1 · **Phase:** 4 · **Stories:** US-SYS-23, US-SYS-24, US-SYS-25, US-SYS-26
+**Priority:** P1 · **Phase:** 4 · **Stories:** US-SYS-23, US-SYS-24, US-SYS-25, US-SYS-26, US-SITE-13
 
 ![SettingsUpdates](screens/SettingsUpdates.webp)
 
@@ -1047,7 +1047,7 @@ Shows: Can't reach hlabs · Can't reach hlabs · Trying again in 5 seconds… ·
 
 ### SysEngineStopped — Engine stopped
 
-**Priority:** P1 · **Phase:** 2 · **Stories:** US-STATE-08, US-STATE-09, US-STATE-10
+**Priority:** P1 · **Phase:** 2 · **Stories:** US-STATE-08, US-STATE-09, US-STATE-10, US-SITE-10
 
 ![SysEngineStopped](screens/SysEngineStopped.webp)
 
@@ -1077,7 +1077,7 @@ Shows: Page not found · 404 · This page doesn't exist · If you followed a lin
 
 ### NoAccess — You don't have access
 
-**Priority:** P1 · **Phase:** 1 · **Stories:** US-STATE-20
+**Priority:** P1 · **Phase:** 1 · **Stories:** US-STATE-20, US-SITE-10
 
 ![NoAccess](screens/NoAccess.webp)
 

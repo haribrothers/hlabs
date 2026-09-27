@@ -25,6 +25,7 @@
 | **Snapshot / restore point** | One restic backup that can be restored. |
 | **Glass level 1/2/3** | The three surface levels of the design system (widgets, windows, dialogs). |
 | **Solid theme** | Reduce-transparency theme (`data-theme="solid"`). |
+| **Help site** | The public website and user documentation in `apps/site` (D-055), not the `docs/` spec. |
 | **Dock** | Desktop and web navigation at the bottom of the screen: the six areas, the person's pinned apps and Search (D-054). |
 | **Lens** | The glass highlight behind the selected tab in the phone tab bar. |
 | **Tailnet** | The user's Tailscale network; hlabs is reachable at `https://hlabs.<tailnet>.ts.net`. |

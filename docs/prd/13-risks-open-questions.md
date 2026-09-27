@@ -10,7 +10,7 @@
 | R-05 | **Local CA trust** on every device is a hurdle; untrusted certs scare people. | Browser warnings on LAN. | CertGuide per OS; recommend Tailscale (real certificates) for phones. |
 | R-06 | **App store maintenance**: images change, apps break, digests need bumping. | Broken installs. | Nightly store matrix, Renovate for image digests, start with a small curated set (10 apps). |
 | R-07 | **Backups that don't restore.** | Data loss. | Restore is tested in e2e; monthly optional `restic check`; failures are loud (critical notification after 3 failures). |
-| R-08 | **Scope.** 322 stories is a lot for one person. | Never ships. | Phases 0–6 are the MVP; 7 is 1.0; 8–9 only when wanted. |
+| R-08 | **Scope.** 336 stories is a lot for one person. | Never ships. | Phases 0–6 are the MVP; 7 is 1.0; 8–9 only when wanted. |
 | R-09 | **Tailscale dependency** (account, app installed separately). | Remote access needs a third-party account. | Clearly optional; LAN works without it. |
 | R-10 | **SMB on macOS** needs port 445, which conflicts with macOS File Sharing (P3 FilesShare). | Feature may not work alongside built-in sharing. | Use macOS File Sharing itself on Mac (D-051). |
 
@@ -26,7 +26,12 @@ All answered on 27 Sep 2026:
 | Q-05 | Licence and visibility | AGPL-3.0, public repository (D-047) |
 | Q-06 | Pages without a design | Designed: `NoAccess`, `ResetLink`, `RestoreChooseDest`, `BackupIncluded`, `PhoneUpdates` (D-052) |
 
-New questions found during the build go here with the next free id (Q-07 onward).
+| ID | Question | Status |
+| --- | --- | --- |
+| Q-07 | Website domain (used for `SITE_URL`, the install command and help links). The bundle id `dev.hlabs.app` suggests `hlabs.dev`. | Open: needed before phase 6 |
+| Q-08 | Page designs for the website (home, download, app catalogue, help theme). | Open: design before phase 6; until then follow the design system and Starlight defaults |
+
+New questions found during the build go here with the next free id (Q-09 onward).
 
 ## Design follow-ups (copy changes already decided)
 - `ForgotPassword`: remove "Have a recovery code?"; admin line reads "your admin can make a reset link for you from Settings › Users" (D-009).

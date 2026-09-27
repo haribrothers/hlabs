@@ -366,7 +366,7 @@ This module gets hlabs onto a computer and keeps it running: the macOS `.dmg` an
 **As** an admin with a headless Linux box, **I want** a single install command, **so that** I get a working hlabs without configuring Docker or systemd myself.
 
 **Acceptance criteria**
-- **Given** I run `curl -fsSL [INSTALL SCRIPT URL] | sh`, **when** it is not root, **then** it re-runs itself with `sudo` (or exits with "Run this as root or with sudo" if sudo is missing).
+- **Given** I run `curl -fsSL https://<site>/install.sh | sh` (served by the website, US-SITE-05), **when** it is not root, **then** it re-runs itself with `sudo` (or exits with "Run this as root or with sudo" if sudo is missing).
 - **Given** it starts, **when** it checks the system, **then** it prints one line like "✓ Ubuntu 24.04 · x86_64 · 16 GB memory · 412 GB free" and exits non-zero with a clear message if the OS lacks systemd or the architecture is not x86_64 or arm64.
 - **Given** no Docker Engine, **when** it continues, **then** it prints "Docker Engine not found, installing from the official repository" and installs it from Docker's repository; an existing Docker Engine is reused.
 - **Given** the install, **when** it continues, **then** it creates the `hlabs` system user, `/var/lib/hlabs` (data dir, 0750) with `storage/`, generates the tray token as the plain file `/var/lib/hlabs/tray.token` (0640, group `hlabs`, D-035) and `secret.key` (0600, for other secrets), installs the bundled binaries under `/opt/hlabs`, installs and enables the system unit `hlabsd.service` with `CAP_NET_BIND_SERVICE`, starts it and waits up to 60 s for `/healthz`.

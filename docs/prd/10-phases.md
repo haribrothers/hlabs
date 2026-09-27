@@ -14,10 +14,10 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 | 3 | Remote access and family | 28 |  |
 | 4 | Menu-bar app, monitoring and updates | 38 |  |
 | 5 | Backups and Files | 30 |  |
-| 6 | Distribution | 9 | MVP / 1.0 beta |
-| 7 | v1.0 completeness | 53 | 1.0 |
+| 6 | Distribution | 21 | MVP / 1.0 beta |
+| 7 | v1.0 completeness | 54 | 1.0 |
 | 8 | Power features (P3) | 23 |  |
-| 9 | Nice to have and polish | 34 |  |
+| 9 | Nice to have and polish | 35 |  |
 
 ## Phase 0 · Foundations
 
@@ -401,10 +401,12 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - Linux headless `install.sh` with systemd service and the `hlabs` CLI; `.deb`/`.rpm`/AppImage for desktop with the Linux tray.
 - Uninstall from the tray and `install.sh --uninstall`.
 - Release pipeline (07 §7.9, 11-testing-release).
+- Website and help at `apps/site` (D-055): home, download, app catalogue, install guides, help for every P1/P2 feature, troubleshooting and error pages, release notes; `install.sh` served from the site; `helpUrl` links from the product checked in CI.
 
 **Done when**
 - [ ] Clean macOS VM: download → first app running in ≤ 10 minutes.
 - [ ] Clean Ubuntu server: one command → onboarding URL printed → first app running.
+- [ ] The site is live: the download page offers the release, the one-line install uses the site's `install.sh`, and `site:check` passes (every help link from the product resolves).
 - [ ] **This is the MVP / 1.0 beta.**
 
 **Stories**
@@ -420,6 +422,21 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-INST-25 · Manage a headless install from the command line (P3)
 - US-INST-26 · Native tray menu on Linux desktops (Polish)
 - US-INST-27 · First run on a Linux desktop (Polish)
+
+*[Website and help](../features/13-site.md)*
+
+- US-SITE-01 · Understand hlabs from the home page (P2)
+- US-SITE-02 · Download the right build for my computer (P2)
+- US-SITE-03 · Browse the app catalogue (P2)
+- US-SITE-04 · Read an app's page (P2)
+- US-SITE-05 · Install on Linux with the command from the site (P2)
+- US-SITE-06 · Follow a step-by-step install guide (P2)
+- US-SITE-07 · Find help for every part of hlabs (P2)
+- US-SITE-08 · Search the help (P2)
+- US-SITE-09 · Fix a problem from an error message (P2)
+- US-SITE-10 · Open the right help page from the dashboard (P2)
+- US-SITE-12 · Visit a private, accessible site (P2)
+- US-SITE-13 · Read release notes (P2)
 
 ## Phase 7 · v1.0 completeness
 
@@ -508,6 +525,10 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-PHONE-12 · Install an app from the phone (P2)
 - US-PHONE-23 · Add hlabs to the home screen (P2)
 - US-PHONE-24 · Run as a standalone web app (P2)
+
+*[Website and help](../features/13-site.md)*
+
+- US-SITE-11 · Keep screenshots in the docs current (P2)
 
 ## Phase 8 · Power features (P3)
 
@@ -631,3 +652,7 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-PHONE-20 · Settings pages on phone (Polish)
 - US-PHONE-21 · Backup status and back up now on phone (Polish)
 - US-PHONE-22 · Schedule, restore and recent runs on phone (Polish)
+
+*[Website and help](../features/13-site.md)*
+
+- US-SITE-14 · Suggest a change to the docs (Polish)

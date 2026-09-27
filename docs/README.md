@@ -13,7 +13,7 @@ hlabs is a home cloud OS for macOS and Linux: an App Store for self-hosted apps,
 8. [prd/11-testing-release](prd/11-testing-release.md) · [prd/12-decisions](prd/12-decisions.md) · [prd/13-risks-open-questions](prd/13-risks-open-questions.md) · [prd/14-glossary](prd/14-glossary.md)
 
 ## Features and user stories
-120 features and 322 user stories across 12 modules. Each story has an id, priority, phase, the screens it covers, acceptance criteria and implementation notes.
+125 features and 336 user stories across 13 modules. Each story has an id, priority, phase, the screens it covers, acceptance criteria and implementation notes.
 
 | File | Module | Stories |
 | --- | --- | --- |
@@ -29,12 +29,16 @@ hlabs is a home cloud OS for macOS and Linux: an App Store for self-hosted apps,
 | [10-system-settings](features/10-system-settings.md) | Settings · system | 40 |
 | [11-system-states](features/11-system-states.md) | System states | 22 |
 | [12-phone](features/12-phone.md) | Phone | 24 |
+| [13-site](features/13-site.md) | Website and help | 14 |
 
 ## Design
 [design/](design/): brand book, motion, tokens, 25 component specs with a reference implementation, logos, and all 115 screens with images ([design/screens.md](design/screens.md)).
 
 ## Already built
 `packages/icons` (`@hlabs/icons`) is included and tested: Lucide re-exports, the filled tab-bar glyphs, `LogoMark`/`LogoLockup`, `AppLogo` with fallback, `FileIcon` (Papirus file and folder icons, `@hlabs/icons/files`), the manifest icon schema, and app-icon and tray PNGs. Wire it into the workspace in phase 0.
+
+## Website and help
+The public website and user help live in `apps/site` (D-055, [features/13-site](features/13-site.md)). This `docs/` folder is the build spec, not user help.
 
 ## Progress
 [progress.md](progress.md): one checkbox per story, grouped by phase.

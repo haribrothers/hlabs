@@ -236,6 +236,18 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [ ] US-INST-25 · Manage a headless install from the command line
 - [ ] US-INST-26 · Native tray menu on Linux desktops
 - [ ] US-INST-27 · First run on a Linux desktop
+- [ ] US-SITE-01 · Understand hlabs from the home page
+- [ ] US-SITE-02 · Download the right build for my computer
+- [ ] US-SITE-03 · Browse the app catalogue
+- [ ] US-SITE-04 · Read an app's page
+- [ ] US-SITE-05 · Install on Linux with the command from the site
+- [ ] US-SITE-06 · Follow a step-by-step install guide
+- [ ] US-SITE-07 · Find help for every part of hlabs
+- [ ] US-SITE-08 · Search the help
+- [ ] US-SITE-09 · Fix a problem from an error message
+- [ ] US-SITE-10 · Open the right help page from the dashboard
+- [ ] US-SITE-12 · Visit a private, accessible site
+- [ ] US-SITE-13 · Read release notes
 
 ## Phase 7 · v1.0 completeness
 
@@ -292,6 +304,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [ ] US-PHONE-12 · Install an app from the phone
 - [ ] US-PHONE-23 · Add hlabs to the home screen
 - [ ] US-PHONE-24 · Run as a standalone web app
+- [ ] US-SITE-11 · Keep screenshots in the docs current
 
 ## Phase 8 · Power features (P3)
 
@@ -355,3 +368,4 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [ ] US-PHONE-20 · Settings pages on phone
 - [ ] US-PHONE-21 · Backup status and back up now on phone
 - [ ] US-PHONE-22 · Schedule, restore and recent runs on phone
+- [ ] US-SITE-14 · Suggest a change to the docs

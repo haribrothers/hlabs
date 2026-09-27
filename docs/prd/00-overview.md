@@ -56,6 +56,7 @@ hlabs is open source under **AGPL-3.0**, developed in a public GitHub repository
 
 ## Where things are
 - Architecture and contracts: [02-architecture](02-architecture.md), [04-data-model](04-data-model.md), [05-api](05-api.md), [06-app-manifest](06-app-manifest.md), [07-security](07-security.md).
-- What to build: [features/](../features/) (12 modules, 120 features, 322 user stories).
+- What to build: [features/](../features/) (13 modules, 125 features, 336 user stories).
 - In what order: [10-phases](10-phases.md).
 - How it looks: [09-design-system](09-design-system.md) and [../design/](../design/).
+- Website and user help: [features/13-site](../features/13-site.md) (`apps/site`, D-055).

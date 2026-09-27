@@ -44,6 +44,17 @@ Use the latest stable release of each item at scaffold time, within the major ve
 | i18n | English only in v1; all copy in `apps/web/src/copy/*.ts` so it can be translated later |
 | PWA | `vite-plugin-pwa` (manifest + icons; no offline caching of data) |
 
+## Website and help (`apps/site`, D-055)
+| Concern | Choice |
+| --- | --- |
+| Framework | Astro 5, static output |
+| Docs | Starlight (sidebar, `<Steps>`, `<Tabs>`, dark/light, "Edit this page") |
+| Search | Pagefind (built into Starlight, runs in the browser) |
+| Styling | Tailwind CSS 4 with the `packages/ui` preset and tokens; Plus Jakarta Sans self-hosted |
+| Content | Markdown/MDX content collections; app catalogue loaded from `store/` through `@hlabs/app-manifest` |
+| Hosting | Cloudflare Pages (preview deploys per PR), deployed by `site.yml` |
+| Analytics | None |
+
 ## Tray (`apps/tray`)
 Tauri 2 with the core `tray-icon` feature and the plugins `updater`, `shell` (sidecars), `notification`, `opener` and `single-instance`. The daemon's start-at-login is its own LaunchAgent/systemd unit, not the autostart plugin; the tray itself uses `autostart` so the icon appears at login. UI in React + `packages/ui`. macOS `LocalAuthentication` via a small Rust crate; Linux polkit via `zbus`.
 

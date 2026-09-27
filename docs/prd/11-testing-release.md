@@ -23,7 +23,8 @@ Rules:
 | `ci.yml` | PR, push to main | install (pnpm cache) → lint → typecheck → unit/integration → build → e2e (Linux, Docker) → axe; `store:lint`; boundaries check |
 | `tray.yml` | PR touching `apps/tray` | `cargo clippy`, `cargo test`, `tauri build` (macOS arm64 and Linux x64, unsigned) |
 | `store.yml` | nightly, PR touching `store/` | store matrix; sign `index.json` on main |
-| `release.yml` | tag `v*` | build all targets → sign → notarize → upload to GitHub Releases → publish Tauri update manifest (`stable` or `beta` by tag) |
+| `site.yml` | PR or push touching `apps/site`, `store/`, `packages/ui` or `packages/icons`; after `release.yml`; after a shots PR merges | `site:build` → `site:check` (help slugs, error pages, feature coverage, links) → axe on page templates → deploy (preview on PRs, production on `main`) |
+| `release.yml` | tag `v*` | build all targets → sign → notarize → upload to GitHub Releases → publish Tauri update manifest (`stable` or `beta` by tag) → write release notes to `apps/site/src/content/releases/` → trigger `site.yml` |
 
 ## Release artifacts
 | Target | Artifact | Notes |
