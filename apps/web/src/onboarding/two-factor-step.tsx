@@ -1,5 +1,5 @@
 // OnbTwoFactor (US-ONB-11): scan the QR code (or enter the key), then confirm a 6-digit code.
-import { Badge, Button, CodeInput } from '@hlabs/ui';
+import { Badge, Button, CodeInput, ModalDialog } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { TRPCClientError } from '@trpc/client';
@@ -40,6 +40,7 @@ export function TwoFactorStep() {
   const [code, setCode] = useState('');
   const [focusKey, setFocusKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [skipOpen, setSkipOpen] = useState(false);
 
   // A new secret each time the step opens (a reload replaces it, US-ONB-11), unless two-factor is already on.
   const started = useRef(false);
@@ -160,8 +161,10 @@ export function TwoFactorStep() {
           </p>
         ) : null}
       </div>
-      <div className="mt-8 flex items-center justify-end gap-4">
-        {/* "Skip for now" arrives with US-ONB-13. */}
+      <div className="mt-8 flex items-center justify-between gap-4">
+        <Button variant="link" onClick={() => setSkipOpen(true)}>
+          {copy.skipForNow}
+        </Button>
         <Button
           size="lg"
           onClick={() => submit(code)}
@@ -171,6 +174,25 @@ export function TwoFactorStep() {
           {copy.turnOn}
         </Button>
       </div>
+      {/* Skip for now (US-ONB-13): the pending secret is discarded when the step moves on. */}
+      <ModalDialog
+        open={skipOpen}
+        onOpenChange={setSkipOpen}
+        title={copy.skipTitle}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setSkipOpen(false)}>
+              {copy.setUpNow}
+            </Button>
+            <Button onClick={goOn} disabled={next.isPending} aria-busy={next.isPending}>
+              {copy.skip}
+            </Button>
+          </>
+        }
+      >
+        {copy.skipWarning}
+        {continueError}
+      </ModalDialog>
     </StepFrame>
   );
 }

@@ -61,6 +61,8 @@ Two-factor login asks for a 6-digit code from your phone as well as your passwor
 
 If a code doesn't work, check that the time on your phone is set automatically, then try the next code. After 5 codes that don't work, wait 15 minutes. If you reload this page you get a new QR code, and the one you scanned before stops working.
 
+You can also choose **Skip for now**. hlabs warns you first: without two-factor, anyone who learns your password can manage hlabs. You can turn it on later in Account settings.
+
 ### Save your recovery codes
 
 When two-factor is on, hlabs shows 10 recovery codes. Each one works once, in place of a code from your phone, if you lose it. **Download** saves them as `hlabs-recovery-codes.txt`; **Copy** puts them on the clipboard. Keep them somewhere safe, away from your phone: hlabs only stores a scrambled form and can't show them again. If you lose them, you can make new ones later in Account settings.

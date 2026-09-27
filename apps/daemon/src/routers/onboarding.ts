@@ -32,7 +32,11 @@ export const onboarding: AppHandlers<DaemonContext>['onboarding'] = {
     recoveryCodes: await ctx.services.totp.confirm(signedInUser(ctx), code, { ip: ctx.request.ip }),
   }),
   setStep: ({ step }, ctx) => {
-    ctx.services.onboarding.setStep(step);
+    const { onboarding, totp } = ctx.services;
+    const leavingTwoFactor = onboarding.status().step === 'twoFactor' && step !== 'twoFactor';
+    onboarding.setStep(step);
+    // Skip for now: a secret shown but never confirmed is thrown away (US-ONB-13).
+    if (leavingTwoFactor && ctx.identity.kind === 'user') totp.discard(ctx.identity.userId);
     return { ok: true };
   },
 };
