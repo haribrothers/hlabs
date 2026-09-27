@@ -1,3 +1,4 @@
+import { isFeatureEnabled, SHIPPED_PHASE, type Feature } from '@hlabs/shared';
 import { z } from 'zod';
 import { io } from '../trpc';
 import {
@@ -24,6 +25,28 @@ export const onboardingStepSchema = z.enum([
   'apps',
   'done',
 ]);
+
+export type OnboardingStep = z.infer<typeof onboardingStepSchema>;
+
+/** Steps that wait for a later phase (D-036, D-041). */
+const STEP_FEATURE: Partial<Record<OnboardingStep, Feature>> = { remote: 'remoteAccess', apps: 'starterApps' };
+
+/** The steps in order, without those whose phase hasn't shipped. */
+export function enabledOnboardingSteps(shippedPhase: number = SHIPPED_PHASE): OnboardingStep[] {
+  return onboardingStepSchema.options.filter((step) => {
+    const feature = STEP_FEATURE[step];
+    return !feature || isFeatureEnabled(feature, shippedPhase);
+  });
+}
+
+/** The next enabled step ('done' after the last one). */
+export function nextOnboardingStep(step: OnboardingStep, shippedPhase: number = SHIPPED_PHASE): OnboardingStep {
+  const steps = enabledOnboardingSteps(shippedPhase);
+  return steps[steps.indexOf(step) + 1] ?? 'done';
+}
+
+/** Steps `onboarding.setStep` may move past without doing anything. Skippable steps join as their stories ship. */
+export const SKIPPABLE_ONBOARDING_STEPS: readonly OnboardingStep[] = ['welcome'];
 
 export const onboarding = {
   /** Public: never returns user data (US-ONB-01, US-ONB-03). */

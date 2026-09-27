@@ -5,6 +5,7 @@ import { hlabsError, HLABS_ERRORS } from './errors';
 import { EVENT_TYPES } from './events';
 import { listProcedures } from './procedures';
 import { appRouter } from './router';
+import { enabledOnboardingSteps, nextOnboardingStep } from './schemas/onboarding';
 import { createCallerFactory, type Access, type ApiContext } from './trpc';
 
 type Row = [path: string, type: 'q' | 'm' | 's', access: Access | 'authed|tray'];
@@ -222,5 +223,28 @@ describe('catalogue', () => {
         'session.revoked',
       ]),
     );
+  });
+});
+
+describe('onboarding step registry (D-041)', () => {
+  it('leaves out steps whose phase has not shipped', () => {
+    expect(enabledOnboardingSteps(1)).toEqual(['welcome', 'system', 'account', 'twoFactor', 'storage', 'done']);
+    expect(enabledOnboardingSteps(3)).toEqual([
+      'welcome',
+      'system',
+      'account',
+      'twoFactor',
+      'storage',
+      'remote',
+      'apps',
+      'done',
+    ]);
+  });
+
+  it('moves to the next enabled step', () => {
+    expect(nextOnboardingStep('welcome', 1)).toBe('system');
+    expect(nextOnboardingStep('storage', 1)).toBe('done');
+    expect(nextOnboardingStep('storage', 3)).toBe('remote');
+    expect(nextOnboardingStep('done', 1)).toBe('done');
   });
 });
