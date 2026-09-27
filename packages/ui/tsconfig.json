@@ -1,0 +1,7 @@
+{
+  "extends": "@hlabs/config/tsconfig/react.json",
+  "compilerOptions": {
+    "types": ["vitest/globals", "@testing-library/jest-dom/vitest", "node"]
+  },
+  "include": ["src", "test", "scripts", "vitest.config.ts"]
+}

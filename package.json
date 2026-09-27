@@ -20,7 +20,8 @@
     "db:generate": "pnpm --filter @hlabs/db db:generate",
     "db:migrate": "pnpm --filter @hlabs/db db:migrate",
     "store:lint": "pnpm --filter @hlabs/app-manifest store:lint",
-    "store:build": "pnpm --filter @hlabs/app-manifest store:build"
+    "store:build": "pnpm --filter @hlabs/app-manifest store:build",
+    "ui:tokens": "pnpm --filter @hlabs/ui tokens"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",
