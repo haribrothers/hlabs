@@ -5,6 +5,7 @@ import {
   appIdSchema,
   displayNameSchema,
   empty,
+  engineKindSchema,
   jobIdsSchema,
   jobRefSchema,
   ok,
@@ -17,10 +18,37 @@ import {
 /** Steps from the shared registry (D-041; 04 `settings.onboarding.step`). */
 export const onboardingStepSchema = z.enum(ONBOARDING_STEPS);
 
+/** A system-check row: ok, a warning that doesn't block Continue, or an error that does (US-ONB-04). */
+export const checkLevelSchema = z.enum(['ok', 'warning', 'error']);
+
+const portCheckSchema = z.object({
+  /** The standard port (80 or 443). */
+  port: z.number().int(),
+  inUse: z.boolean(),
+  /** The port Caddy will use: the standard one, or 8080 / 8443 when it's taken. */
+  use: z.number().int(),
+});
+
+export const systemCheckSchema = z.object({
+  cpu: z.object({ model: z.string(), arch: z.string() }),
+  os: z.object({ platform: z.enum(['darwin', 'linux']), name: z.string(), version: z.string(), headless: z.boolean() }),
+  engine: z.object({
+    kind: engineKindSchema.nullable(),
+    version: z.string().nullable(),
+    state: z.enum(['running', 'stopped', 'missing']),
+    level: checkLevelSchema,
+  }),
+  /** Free space at the default storage root: error below 10 GB, warning below 30 GB. */
+  disk: z.object({ freeBytes: z.number().nonnegative(), path: z.string(), level: checkLevelSchema }),
+  ports: z.object({ http: portCheckSchema, https: portCheckSchema, level: checkLevelSchema }),
+  /** Every blocking check passes. */
+  canContinue: z.boolean(),
+});
+
 export const onboarding = {
   /** Public: never returns user data (US-ONB-01, US-ONB-03). */
   status: io(empty, z.object({ completed: z.boolean(), step: onboardingStepSchema, hasUsers: z.boolean() })),
-  checkSystem: io(z.object({ includeLog: z.boolean().optional() }).optional(), pending),
+  checkSystem: io(z.object({ includeLog: z.boolean().optional() }).optional(), systemCheckSchema),
   confirmSystem: io(z.object({ startAtLogin: z.boolean() }), ok),
   installEngine: io(empty, jobRefSchema),
   setStep: io(z.object({ step: onboardingStepSchema }), ok),
