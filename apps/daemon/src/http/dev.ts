@@ -1,3 +1,5 @@
+import { onboardingStepSchema } from '@hlabs/api';
+import { getSetting, setSetting } from '@hlabs/db';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { ServiceHolder } from '../services';
@@ -22,6 +24,17 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
     return { url: await services.onboarding.setupUrl() };
+  });
+
+  // Puts onboarding back at a step (e2e specs start from a known state). The setup token is kept, or made
+  // again if onboarding had been completed.
+  const resetBody = z.object({ step: onboardingStepSchema.default('welcome') }).default({ step: 'welcome' });
+  app.post('/dev/reset-onboarding', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { step } = resetBody.parse(req.body ?? undefined);
+    setSetting(services.db, 'onboarding', { ...getSetting(services.db, 'onboarding'), completedAt: null, step });
+    return { url: await services.onboarding.prepareSetupToken() };
   });
 
   app.post('/dev/complete-onboarding', async (_req, reply) => {
