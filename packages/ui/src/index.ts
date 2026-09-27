@@ -9,6 +9,7 @@ export * from './components/app-icon';
 export * from './components/areas';
 export * from './components/badge';
 export * from './components/button';
+export * from './components/code-input';
 export * from './components/dialog';
 export * from './components/dock';
 export * from './components/glass-card';

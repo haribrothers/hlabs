@@ -231,6 +231,23 @@
     color: var(--danger);
   }
 
+  /* Code input: one box per digit (two-factor codes) */
+  .hl-code {
+    display: flex;
+    gap: var(--space-2);
+  }
+  .hl-code-digit {
+    width: var(--size-control);
+    height: var(--size-control);
+    padding: 0;
+    text-align: center;
+    font: 600 var(--text-title-2) / 1 var(--hl-font-sans);
+    font-variant-numeric: tabular-nums;
+  }
+  .hl-code-digit.hl-code-invalid {
+    border: 1.5px solid var(--danger);
+  }
+
   /* Segmented control */
   .hl-seg {
     display: inline-flex;
