@@ -15,7 +15,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ONB-04 · Run the system check
 - [x] US-ONB-05 · Install Colima automatically when no engine is found (macOS)
 - [x] US-ONB-06 · Recover from a failed system check
-- [ ] US-ONB-07 · Get Docker Engine instructions on Linux, and choose start at login
+- [x] US-ONB-07 · Get Docker Engine instructions on Linux, and choose start at login
 - [ ] US-ONB-08 · Create the admin account
 - [ ] US-ONB-09 · See what to fix when the account details are invalid
 - [ ] US-ONB-10 · Only allow one admin to be created through onboarding

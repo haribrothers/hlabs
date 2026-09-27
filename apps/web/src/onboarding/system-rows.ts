@@ -20,6 +20,8 @@ export interface SystemRow {
   note?: string;
   /** A failed install: its last log line and what to do (US-ONB-06). */
   failure?: { line: string | null; hint: string };
+  /** What to do before Retry, with a command to copy (US-ONB-07). */
+  action?: { hint: string; command?: string };
 }
 
 const copy = onboardingCopy.system;
@@ -54,7 +56,7 @@ function installHint(code: string | null): string {
 export const shouldInstallEngine = (check: SystemCheck | undefined) =>
   check?.os.platform === 'darwin' && check.engine.state === 'missing' && check.engine.install === null;
 
-function runtimeRow(engine: SystemCheck['engine']): SystemRow {
+function runtimeRow(engine: SystemCheck['engine'], platform: SystemCheck['os']['platform']): SystemRow {
   if (engine.state !== 'running' && engine.install?.state === 'failed') {
     return {
       id: 'runtime',
@@ -76,13 +78,28 @@ function runtimeRow(engine: SystemCheck['engine']): SystemRow {
     };
   }
   const name = engine.kind ? copy.engines[engine.kind] : '';
-  const value =
-    engine.state === 'running'
-      ? [name, engine.version].filter(Boolean).join(' ')
-      : engine.state === 'stopped'
-        ? copy.runtimeStopped(name)
-        : copy.runtimeMissing;
-  return { id: 'runtime', title: copy.runtime, value, status: levelStatus[engine.level] };
+  const row = { id: 'runtime', title: copy.runtime, status: levelStatus[engine.level] } as const;
+  switch (engine.state) {
+    case 'running':
+      return { ...row, value: [name, engine.version].filter(Boolean).join(' ') };
+    case 'stopped':
+      return { ...row, value: copy.runtimeStopped(name), action: { hint: copy.stoppedHint(name) } };
+    case 'noAccess':
+      return {
+        ...row,
+        value: copy.runtimeNoAccess,
+        action: { hint: copy.noAccessHint, command: copy.dockerGroupCommand },
+      };
+    case 'missing':
+      // On a Mac hlabs installs Colima itself (US-ONB-05); on Linux the person runs the install (US-ONB-07).
+      return platform === 'linux'
+        ? {
+            ...row,
+            value: copy.runtimeMissing,
+            action: { hint: copy.linuxMissingHint, command: copy.linuxInstallCommand },
+          }
+        : { ...row, value: copy.runtimeMissing };
+  }
 }
 
 function portsRow(ports: SystemCheck['ports']): SystemRow {
@@ -110,7 +127,7 @@ export function systemRows(check: SystemCheck | undefined): SystemRow[] {
   return [
     { id: 'cpu', title: copy.processor, value: cpuLabel(check.cpu, check.os.platform), status: 'running' },
     { id: 'os', title: copy.os, value: `${check.os.name} ${check.os.version}`.trim(), status: 'running' },
-    runtimeRow(check.engine),
+    runtimeRow(check.engine, check.os.platform),
     {
       id: 'disk',
       title: copy.disk,

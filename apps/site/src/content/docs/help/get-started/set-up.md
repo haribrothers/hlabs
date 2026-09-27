@@ -28,6 +28,10 @@ The first step checks the processor, the operating system, the container runtime
 - **Container runtime:** it must be running to continue. Start it, then press **Check again**.
 - **No container runtime on a Mac:** hlabs sets up Colima for you. It downloads Colima (about 150 MB) and starts it with up to 4 processor cores, 8 GB of memory and a 100 GB disk that only uses the space it needs. It takes a few minutes; you can go Back while it runs. If you install OrbStack or Docker Desktop later, hlabs uses that instead.
 
+- **OrbStack or Docker Desktop installed but not open:** you'll see "OrbStack is not running" (or Docker Desktop). Open it, then press **Retry**. hlabs won't set up Colima next to it.
+- **Linux with no container runtime:** hlabs shows the command that installs Docker Engine (`curl -fsSL https://get.docker.com | sh`). Run it in a terminal, then press **Retry**. hlabs never runs it for you.
+- **Linux, "No access":** your account isn't in the `docker` group yet. Run `sudo usermod -aG docker $USER`, log out and back in, then press **Retry**.
+
 ### If setting up the container runtime fails
 
 You'll see **Something needs attention**. hlabs removes anything it had set up, so nothing on your computer has changed. The message under **Container runtime** says what went wrong and what to do; for example, a download that timed out usually means checking your internet connection.

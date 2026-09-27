@@ -1,5 +1,6 @@
 // OnbSystem (US-ONB-04): check this computer, then Continue to the account step or go Back to welcome.
-import { Button, List, ListRow, Progress, StatusDot } from '@hlabs/ui';
+import { isFeatureEnabled, SHIPPED_PHASE } from '@hlabs/shared';
+import { Button, List, ListRow, Progress, StatusDot, Switch } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { TRPCClientError } from '@trpc/client';
@@ -17,7 +18,20 @@ function continueError(err: unknown): string {
   return code === 'ENGINE_UNAVAILABLE' || code === 'DISK_FULL' ? copy.continueFailed[code] : copy.continueFailed.other;
 }
 
-export function SystemStep() {
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Button
+      size="sm"
+      variant="secondary"
+      onClick={() => void navigator.clipboard.writeText(text).then(() => setCopied(true))}
+    >
+      {copied ? copy.copied : copy.copyCommand}
+    </Button>
+  );
+}
+
+export function SystemStep({ shippedPhase = SHIPPED_PHASE }: { shippedPhase?: number }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -46,6 +60,11 @@ export function SystemStep() {
   const canContinue = check.data?.canContinue === true && !check.isFetching;
   const failed = installFailed(check.data);
   const [logOpen, setLogOpen] = useState(false);
+  const [startAtLogin, setStartAtLogin] = useState(true);
+  // The tray applies start at login, so the switch waits for it (D-042, D-036); never on headless Linux.
+  const showStartAtLogin =
+    check.data !== undefined && !check.data.os.headless && isFeatureEnabled('startAtLogin', shippedPhase);
+  const engineNeedsRetry = rows.some((row) => row.failure || row.action);
 
   // Retry: look for an engine again first (OrbStack or Docker Desktop installed meanwhile), then reinstall.
   const retry = async () => {
@@ -68,6 +87,24 @@ export function SystemStep() {
             <Button size="sm" variant="secondary" onClick={() => setLogOpen(true)}>
               {copy.viewLog}
             </Button>
+          </div>
+        </>
+      );
+    }
+    if (row.action) {
+      return (
+        <>
+          <span>{row.action.hint}</span>
+          {row.action.command ? (
+            <code className="block rounded-sm bg-surface-input p-3 font-mono text-mono text-ink">
+              {row.action.command}
+            </code>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => void retry()} disabled={check.isFetching}>
+              {copy.retry}
+            </Button>
+            {row.action.command ? <CopyButton text={row.action.command} /> : null}
           </div>
         </>
       );
@@ -100,6 +137,17 @@ export function SystemStep() {
         </List>
       </div>
       {failed ? <p className="m-0 mt-4 text-body-sm text-ink-muted">{copy.otherRuntimeTip}</p> : null}
+      {showStartAtLogin ? (
+        <div className="mt-4">
+          <List>
+            <ListRow
+              title={copy.startAtLogin}
+              subtitle={copy.startAtLoginHint}
+              trailing={<Switch checked={startAtLogin} onChange={setStartAtLogin} aria-label={copy.startAtLogin} />}
+            />
+          </List>
+        </div>
+      ) : null}
       {check.isError ? (
         <p role="alert" className="m-0 mt-4 text-body-sm">
           {copy.checkFailed}
@@ -115,15 +163,14 @@ export function SystemStep() {
           {onboardingCopy.back}
         </Button>
         <div className="flex items-center gap-3">
-          {check.data && !check.data.canContinue && !failed ? (
+          {check.data && !check.data.canContinue && !engineNeedsRetry ? (
             <Button variant="secondary" onClick={() => void check.refetch()} disabled={check.isFetching}>
               {copy.checkAgain}
             </Button>
           ) : null}
-          {/* Start at login (Switch) is chosen here from US-ONB-07; until then the default (on) is kept. */}
           <Button
             size="lg"
-            onClick={() => confirm.mutate({ startAtLogin: true })}
+            onClick={() => confirm.mutate({ startAtLogin: showStartAtLogin ? startAtLogin : true })}
             disabled={!canContinue || confirm.isPending}
             aria-busy={confirm.isPending}
           >

@@ -34,7 +34,18 @@ export const onboardingCopy = {
     close: 'Close',
     otherRuntimeTip:
       'Already use Docker? Install OrbStack or Docker Desktop and press Retry, and hlabs will use it instead.',
-    runtimeStopped: (name: string) => `${name} isn't running`,
+    runtimeStopped: (name: string) => `${name} is not running`,
+    stoppedHint: (name: string) => `Start ${name}, then press Retry.`,
+    runtimeNoAccess: 'No access',
+    noAccessHint:
+      "Your account isn't allowed to use Docker yet. Add it to the docker group with this command, log out and back in, then press Retry.",
+    dockerGroupCommand: 'sudo usermod -aG docker $USER',
+    linuxMissingHint:
+      "Install Docker Engine with this command in a terminal, then press Retry. hlabs doesn't run it for you.",
+    linuxInstallCommand: 'curl -fsSL https://get.docker.com | sh',
+    copyCommand: 'Copy command',
+    startAtLogin: 'Start hlabs when I log in',
+    startAtLoginHint: 'Keeps your apps running in the background from the menu bar',
     disk: 'Free disk space',
     diskError: 'hlabs needs at least 10 GB free. Free up some space, then check again.',
     diskWarning: 'Less than 30 GB free. Apps and files can fill this quickly.',

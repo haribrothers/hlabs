@@ -82,7 +82,7 @@ describe('US-ONB-04', () => {
         check({ engine: { kind: 'docker-desktop', version: null, state: 'stopped', level: 'error', install: null } }),
       ),
     ).runtime!;
-    expect(stopped).toMatchObject({ value: "Docker Desktop isn't running", status: 'failed' });
+    expect(stopped).toMatchObject({ value: 'Docker Desktop is not running', status: 'failed' });
   });
 
   it('names Linux distros and CPUs plainly', () => {
