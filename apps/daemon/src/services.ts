@@ -8,6 +8,7 @@ import type { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import type { MdnsPublisher } from './mdns/index';
 import type { SessionService } from './auth/sessions';
+import type { TotpService } from './auth/totp';
 import type { OnboardingService } from './onboarding/service';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
@@ -25,6 +26,7 @@ export interface Services {
   mdns: MdnsPublisher;
   onboarding: OnboardingService;
   sessions: SessionService;
+  totp: TotpService;
 }
 
 /** Holds services once boot has created them; requests before then get DAEMON_STARTING. */

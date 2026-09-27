@@ -15,6 +15,7 @@ import { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
 import { SessionService } from './auth/sessions';
+import { TotpService } from './auth/totp';
 import { OnboardingService } from './onboarding/service';
 import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
@@ -159,6 +160,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     mdns,
     onboarding,
     sessions: new SessionService(db),
+    totp: new TotpService(db, secrets),
   };
   holder.set(services);
 

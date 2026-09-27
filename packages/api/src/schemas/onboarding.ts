@@ -73,7 +73,8 @@ export const onboarding = {
     z.object({ username: z.string().trim().min(1).max(64), displayName: displayNameSchema, password: passwordSchema }),
     z.object({ userId: z.string() }),
   ),
-  setupTotp: io(empty, z.object({ otpauthUrl: z.string(), qrSvg: z.string(), secret: z.string() })),
+  /** The QR code is drawn by the dashboard from `otpauthUrl` (US-ONB-11). */
+  setupTotp: io(empty, z.object({ otpauthUrl: z.string(), secret: z.string() })),
   confirmTotp: io(z.object({ code: totpCodeSchema }), z.object({ recoveryCodes: z.array(z.string()) })),
   setStorage: io(
     z.discriminatedUnion('kind', [
