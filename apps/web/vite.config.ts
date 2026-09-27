@@ -16,6 +16,8 @@ export default defineConfig({
       '/trpc': { target: DAEMON, changeOrigin: false },
       '/healthz': DAEMON,
       '/dev/emit-test-event': DAEMON,
+      '/dev/setup-url': DAEMON,
+      '/dev/complete-onboarding': DAEMON,
     },
   },
   build: { target: 'es2022', sourcemap: true },

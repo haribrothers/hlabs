@@ -10,6 +10,8 @@ export type Identity =
 export interface RequestInfo {
   ip: string;
   userAgent: string | null;
+  /** The `x-hlabs-setup` header (D-013). */
+  setupToken: string | null;
 }
 
 type Handler = (input: unknown, ctx: DaemonContext, signal: AbortSignal | undefined) => Promise<unknown>;
@@ -50,6 +52,13 @@ export class DaemonContext implements ApiContext {
 
   authorize(access: readonly Access[], _path: string): void {
     if (access.includes('public')) return;
+    // Setup procedures depend only on the setup token, never on who is signed in (D-013).
+    if (access.includes('setup')) {
+      const { onboarding } = this.services;
+      if (onboarding.completed) throw hlabsError('ONBOARDING_COMPLETE');
+      if (onboarding.verifySetupToken(this.request.setupToken)) return;
+      throw hlabsError('ONBOARDING_SETUP_TOKEN_REQUIRED');
+    }
     const id = this.identity;
     if (id.kind === 'tray') {
       if (access.includes('tray')) return;
@@ -58,10 +67,8 @@ export class DaemonContext implements ApiContext {
     if (id.kind === 'user') {
       if (access.includes('authed')) return;
       if (access.includes('admin') && id.role === 'admin') return;
-      // Setup-token checks arrive with onboarding (phase 1, D-013).
       throw hlabsError('ACCESS_DENIED');
     }
-    if (access.includes('setup')) throw hlabsError('ONBOARDING_SETUP_TOKEN_REQUIRED');
     throw hlabsError('AUTH_REQUIRED');
   }
 

@@ -7,6 +7,7 @@ import type { EventBus } from './events/bus';
 import type { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import type { MdnsPublisher } from './mdns/index';
+import type { OnboardingService } from './onboarding/service';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 
@@ -21,6 +22,7 @@ export interface Services {
   secrets: SecretStore;
   proxy: ProxyManager;
   mdns: MdnsPublisher;
+  onboarding: OnboardingService;
 }
 
 /** Holds services once boot has created them; requests before then get DAEMON_STARTING. */

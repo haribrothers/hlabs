@@ -24,6 +24,8 @@ function identify(config: DaemonConfig, _req: FastifyRequest): Identity {
   return { kind: 'anonymous' };
 }
 
+const headerValue = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? null;
+
 export async function buildServer({ config, logger, readiness, holder }: ServerDeps): Promise<FastifyInstance> {
   const app = Fastify({
     loggerInstance: logger as FastifyBaseLogger,
@@ -44,6 +46,7 @@ export async function buildServer({ config, logger, readiness, holder }: ServerD
         new DaemonContext(holder, dispatcher, identify(config, req), {
           ip: req.ip,
           userAgent: req.headers['user-agent'] ?? null,
+          setupToken: headerValue(req.headers['x-hlabs-setup']),
         }),
       onError: ({ path, error }) => {
         if (error.code === 'INTERNAL_SERVER_ERROR') logger.error({ err: error, path }, 'procedure failed');

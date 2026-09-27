@@ -10,6 +10,7 @@ import { EventBus } from './events/bus';
 import { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
+import { OnboardingService } from './onboarding/service';
 import { createSecretStore, type SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 import type { ServiceHolder, Services } from './services';
@@ -30,6 +31,8 @@ export interface BootDeps {
   proxy?: ProxyManager;
   mdns?: MdnsPublisher;
   secrets?: SecretStore;
+  /** Where the setup URL is printed (stdout). */
+  print?: (line: string) => void;
 }
 
 export async function boot(deps: BootDeps): Promise<Services | null> {
@@ -90,6 +93,16 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   // 5. Scheduler: backups, update checks, health probes, usage sampling (added by their phases).
   readiness.step(4);
 
+  // First run: keep the setup token ready and print the setup URL (US-ONB-01, D-041).
+  const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);
+  const onboarding = new OnboardingService(db, secrets, config.dashboardUrl);
+  const setupUrl = await onboarding.prepareSetupToken();
+  if (setupUrl) {
+    logger.info({ setupUrl }, 'hlabs is not set up yet: open the setup URL to start');
+    const print = deps.print ?? ((line: string) => void process.stdout.write(`${line}\n`));
+    print(`\n  Set up hlabs: open ${setupUrl}\n`);
+  }
+
   const services: Services = {
     config,
     logger,
@@ -98,9 +111,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     bus,
     jobs,
     engine,
-    secrets: deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir),
+    secrets,
     proxy,
     mdns,
+    onboarding,
   };
   holder.set(services);
 
