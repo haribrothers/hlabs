@@ -69,6 +69,15 @@ When two-factor is on, hlabs shows 10 recovery codes. Each one works once, in pl
 
 Recovery codes never reset your password.
 
+## Choose where your data lives
+
+Home folders, shared files and media go in one place, the storage location. You can move them later in Settings.
+
+- **This computer** (the default, and the fastest) keeps them in `~/hlabs` in your home folder (`/var/lib/hlabs/storage` on a Linux server). hlabs creates the folders it needs there and never deletes anything already in that folder.
+- **External drive** and **Network storage (NAS)** put your files on a connected drive or a network share instead.
+
+App databases always stay on this computer for speed, wherever your files go. Once you continue, setup is finished.
+
 ## "Finish setup on the computer running hlabs."
 
 You'll see this if you open hlabs from another device, such as your phone, before setup is finished. It keeps anyone else on your network from creating the first admin account. Open the setup address on the computer running hlabs instead.

@@ -17,7 +17,8 @@ test.describe('US-ONB-04', () => {
 
     const list = page.getByRole('group');
     for (const title of ROWS) await expect(list.getByText(title).first()).toBeVisible();
-    await expect(list.getByText('Checking…')).toHaveCount(0);
+    // The check can take a few seconds (the engine ping alone waits up to 5 s).
+    await expect(list.getByText('Checking…')).toHaveCount(0, { timeout: 20_000 });
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
     const cont = page.getByRole('button', { name: 'Continue' });

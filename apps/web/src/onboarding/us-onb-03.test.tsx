@@ -46,10 +46,12 @@ describe('US-ONB-03', () => {
     it('finished onboarding sends every setup route home', () => {
       const status = { completed: true, step: 'done' as const };
       for (const pathname of ['/setup', '/setup/system', '/setup/done']) {
-        expect(firstRunView({ pathname, status, failed: false, dev: false, hasSetupToken: true })).toEqual({
-          kind: 'redirect',
-          to: '/',
-        });
+        expect(firstRunView({ pathname, status, failed: false, dev: false, hasSetupToken: true, entry: true })).toEqual(
+          {
+            kind: 'redirect',
+            to: '/',
+          },
+        );
       }
     });
   });

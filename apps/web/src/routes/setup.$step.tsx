@@ -4,6 +4,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { onboardingCopy } from '../copy/onboarding';
 import { AccountStep } from '../onboarding/account-step';
 import { StepFrame } from '../onboarding/step-frame';
+import { StorageStep } from '../onboarding/storage-step';
 import { SystemStep } from '../onboarding/system-step';
 import { TwoFactorStep } from '../onboarding/two-factor-step';
 
@@ -17,6 +18,7 @@ const SCREENS: Partial<Record<OnboardingStep, ComponentType>> = {
   system: SystemStep,
   account: AccountStep,
   twoFactor: TwoFactorStep,
+  storage: StorageStep,
 };
 
 function Step() {

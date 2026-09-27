@@ -25,3 +25,10 @@ export async function turnOnTwoFactor(page: Page): Promise<string[]> {
   await expect(list.getByRole('listitem')).toHaveCount(10);
   return list.getByRole('listitem').allInnerTexts();
 }
+
+/** On the two-factor step: Skip for now, confirmed; ends on the storage step. */
+export async function skipTwoFactor(page: Page) {
+  await page.getByRole('button', { name: 'Skip for now' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Skip' }).click();
+  await expect(page).toHaveURL(/\/setup\/storage$/);
+}

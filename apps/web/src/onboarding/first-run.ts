@@ -36,7 +36,11 @@ export function firstRunView(opts: {
   const { pathname, status } = opts;
   if (opts.dev && pathname.startsWith('/dev/')) return { kind: 'app' };
   if (!status) return opts.failed ? { kind: 'app' } : { kind: 'loading' };
-  if (status.completed) return isSetupPath(pathname) ? { kind: 'redirect', to: '/' } : { kind: 'app' };
+  if (status.completed) {
+    // The finish screen stays up when setup completes in this tab; loading it afterwards goes home (US-ONB-22).
+    if (pathname === `${SETUP_PATH}/done` && !opts.entry) return { kind: 'setup' };
+    return isSetupPath(pathname) ? { kind: 'redirect', to: '/' } : { kind: 'app' };
+  }
   if (!opts.hasSetupToken) return { kind: 'elsewhere' };
   const to = resumePath({ pathname, saved: status.step, entry: opts.entry ?? false, shippedPhase: opts.shippedPhase });
   return to && to !== pathname ? { kind: 'redirect', to } : { kind: 'setup' };
