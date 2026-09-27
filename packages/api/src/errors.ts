@@ -9,6 +9,8 @@ export const HLABS_ERRORS = {
   NOT_FOUND: 'NOT_FOUND',
   AUTH_REQUIRED: 'UNAUTHORIZED',
   ACCESS_DENIED: 'FORBIDDEN',
+  /** A session mutation without the right x-hlabs-csrf header, or from another origin (07 §7.3). */
+  CSRF_REJECTED: 'FORBIDDEN',
   INTERNAL: 'INTERNAL_SERVER_ERROR',
   JOB_EXCLUSIVE_RUNNING: 'CONFLICT',
   JOB_NOT_CANCELLABLE: 'PRECONDITION_FAILED',

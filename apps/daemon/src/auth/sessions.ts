@@ -1,0 +1,99 @@
+// Sessions (07 §7.3): a random 32-byte id lives only in the `hlabs_session` cookie; the database keeps its
+// SHA-256. Idle timeout 12 h, or 30 days sliding with "Remember me". CSRF tokens are derived from the raw id.
+import { sessions, users, type HlabsDb } from '@hlabs/db';
+import { and, eq, isNull } from 'drizzle-orm';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+
+export const SESSION_COOKIE = 'hlabs_session';
+export const IDLE_MS = 12 * 60 * 60 * 1000;
+export const REMEMBER_MS = 30 * 24 * 60 * 60 * 1000;
+/** lastSeenAt is written at most this often. */
+const TOUCH_MS = 60 * 1000;
+
+const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
+
+export interface ResolvedSession {
+  sessionId: string;
+  userId: string;
+  role: 'admin' | 'member';
+  remember: boolean;
+  expiresAt: number;
+}
+
+/** The double-submit CSRF token for a session: only someone who can read the cookie's id can compute it. */
+export function csrfTokenFor(rawSessionId: string): string {
+  return createHash('sha256').update(`csrf:${rawSessionId}`).digest('base64url');
+}
+
+export function csrfMatches(rawSessionId: string, header: string | null): boolean {
+  if (!header) return false;
+  const expected = Buffer.from(csrfTokenFor(rawSessionId));
+  const actual = Buffer.from(header);
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+export class SessionService {
+  constructor(private readonly db: HlabsDb) {}
+
+  create(opts: { userId: string; remember?: boolean; ip?: string | null; userAgent?: string | null; now?: number }) {
+    const now = opts.now ?? Date.now();
+    const raw = randomBytes(32).toString('base64url');
+    const remember = opts.remember ?? false;
+    const expiresAt = now + (remember ? REMEMBER_MS : IDLE_MS);
+    this.db
+      .insert(sessions)
+      .values({
+        id: sha256(raw),
+        userId: opts.userId,
+        createdAt: now,
+        lastSeenAt: now,
+        expiresAt,
+        remember,
+        userAgent: opts.userAgent ?? null,
+        ip: opts.ip ?? null,
+      })
+      .run();
+    return { raw, expiresAt, remember };
+  }
+
+  /** The signed-in user for a cookie, sliding the expiry; null when unknown, revoked, expired or disabled. */
+  resolve(raw: string | null | undefined, now = Date.now()): ResolvedSession | null {
+    if (!raw) return null;
+    const row = this.db
+      .select({ session: sessions, role: users.role, disabledAt: users.disabledAt })
+      .from(sessions)
+      .innerJoin(users, eq(users.id, sessions.userId))
+      .where(and(eq(sessions.id, sha256(raw)), isNull(sessions.revokedAt)))
+      .get();
+    if (!row || row.disabledAt !== null || row.session.expiresAt <= now) return null;
+    let expiresAt = row.session.expiresAt;
+    if (now - row.session.lastSeenAt >= TOUCH_MS) {
+      expiresAt = now + (row.session.remember ? REMEMBER_MS : IDLE_MS);
+      this.db.update(sessions).set({ lastSeenAt: now, expiresAt }).where(eq(sessions.id, row.session.id)).run();
+    }
+    return {
+      sessionId: row.session.id,
+      userId: row.session.userId,
+      role: row.role,
+      remember: row.session.remember,
+      expiresAt,
+    };
+  }
+}
+
+/** `hlabs_session` cookie: HttpOnly, Secure, SameSite=Lax, Path=/; persistent only with "Remember me". */
+export function sessionCookie(raw: string, opts: { remember: boolean; expiresAt: number; now?: number }): string {
+  const parts = [`${SESSION_COOKIE}=${raw}`, 'Path=/', 'HttpOnly', 'Secure', 'SameSite=Lax'];
+  if (opts.remember) parts.push(`Max-Age=${Math.floor((opts.expiresAt - (opts.now ?? Date.now())) / 1000)}`);
+  return parts.join('; ');
+}
+
+/** Reads one cookie from a Cookie header. */
+export function readCookie(header: string | undefined, name: string): string | null {
+  if (!header) return null;
+  for (const part of header.split(';')) {
+    const [key, ...rest] = part.trim().split('=');
+    if (key === name) return decodeURIComponent(rest.join('='));
+  }
+  return null;
+}

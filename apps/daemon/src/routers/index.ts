@@ -2,12 +2,13 @@
 // is checked by DaemonContext.authorize, and the work happens in services. Missing paths → NOT_IMPLEMENTED.
 import { listProcedures, type AppHandlers } from '@hlabs/api';
 import type { DaemonContext, Dispatcher } from '../context';
+import { auth } from './auth';
 import { events } from './events';
 import { jobs } from './jobs';
 import { onboarding } from './onboarding';
 import { system } from './system';
 
-export const handlers: AppHandlers<DaemonContext> = { system, jobs, events, onboarding };
+export const handlers: AppHandlers<DaemonContext> = { system, jobs, events, onboarding, auth };
 
 type Fn = (input: unknown, ctx: DaemonContext, signal: AbortSignal | undefined) => unknown;
 

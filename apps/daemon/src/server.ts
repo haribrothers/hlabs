@@ -3,6 +3,7 @@ import { appRouter } from '@hlabs/api';
 import { fastifyTRPCPlugin, type FastifyTRPCPluginOptions } from '@trpc/server/adapters/fastify';
 import Fastify, { type FastifyBaseLogger, type FastifyInstance, type FastifyRequest } from 'fastify';
 import type { DaemonConfig } from './config';
+import { readCookie, SESSION_COOKIE } from './auth/sessions';
 import { DaemonContext, type Identity } from './context';
 import { registerDevRoutes } from './http/dev';
 import { registerHealthz } from './http/healthz';
@@ -18,8 +19,14 @@ export interface ServerDeps {
   holder: ServiceHolder;
 }
 
-/** Phase 0: no sessions yet, so every caller is anonymous unless the dev flag is on. */
-function identify(config: DaemonConfig, _req: FastifyRequest): Identity {
+/** The session cookie decides who is calling; without one, the development-only anonymous admin or nobody. */
+function identify(config: DaemonConfig, holder: ServiceHolder, req: FastifyRequest): Identity {
+  const raw = readCookie(req.headers.cookie, SESSION_COOKIE);
+  const services = holder.current;
+  if (raw && services?.readiness.isReady) {
+    const session = services.sessions.resolve(raw);
+    if (session) return { kind: 'user', userId: session.userId, role: session.role, session: { raw } };
+  }
   if (config.devAnonymousAdmin) return { kind: 'user', userId: 'dev', role: 'admin' };
   return { kind: 'anonymous' };
 }
@@ -42,11 +49,15 @@ export async function buildServer({ config, logger, readiness, holder }: ServerD
     logLevel: config.dev ? 'info' : 'warn',
     trpcOptions: {
       router: appRouter,
-      createContext: ({ req }) =>
-        new DaemonContext(holder, dispatcher, identify(config, req), {
+      createContext: ({ req, res }) =>
+        new DaemonContext(holder, dispatcher, identify(config, holder, req), {
           ip: req.ip,
           userAgent: req.headers['user-agent'] ?? null,
           setupToken: headerValue(req.headers['x-hlabs-setup']),
+          csrfToken: headerValue(req.headers['x-hlabs-csrf']),
+          origin: headerValue(req.headers.origin),
+          allowedOrigins: [new URL(config.dashboardUrl).origin],
+          setCookie: (cookie) => void res.header('set-cookie', cookie),
         }),
       onError: ({ path, error }) => {
         if (error.code === 'INTERNAL_SERVER_ERROR') logger.error({ err: error, path }, 'procedure failed');

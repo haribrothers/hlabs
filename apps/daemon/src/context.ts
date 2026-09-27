@@ -1,18 +1,38 @@
 // The tRPC request context: who is calling, and how procedures reach their handlers.
-import { hlabsError, type Access, type ApiContext } from '@hlabs/api';
+import { hlabsError, listProcedures, type Access, type ApiContext } from '@hlabs/api';
+import { csrfMatches } from './auth/sessions';
 import type { Listener } from './events/bus';
 import type { Services } from './services';
 
-/** Who made the request. Sessions and the tray token are resolved here from phase 1 and 4. */
+/**
+ * Who made the request. A signed-in user comes from the session cookie (`session` holds its raw id, for CSRF);
+ * without `session` it is the development-only anonymous admin. The tray token arrives in phase 4.
+ */
 export type Identity =
-  { kind: 'anonymous' } | { kind: 'user'; userId: string; role: 'admin' | 'member' } | { kind: 'tray' };
+  | { kind: 'anonymous' }
+  | { kind: 'user'; userId: string; role: 'admin' | 'member'; session?: { raw: string } }
+  | { kind: 'tray' };
 
 export interface RequestInfo {
   ip: string;
   userAgent: string | null;
   /** The `x-hlabs-setup` header (D-013). */
   setupToken: string | null;
+  /** The `x-hlabs-csrf` header (07 §7.3). */
+  csrfToken: string | null;
+  /** The `Origin` header; mutations from a session must come from the dashboard. */
+  origin: string | null;
+  /** Origins the dashboard is served from. */
+  allowedOrigins: readonly string[];
+  /** Adds a Set-Cookie header to the response. */
+  setCookie(cookie: string): void;
 }
+
+const MUTATIONS = new Set(
+  listProcedures()
+    .filter((p) => p.type === 'mutation')
+    .map((p) => p.path),
+);
 
 type Handler = (input: unknown, ctx: DaemonContext, signal: AbortSignal | undefined) => Promise<unknown>;
 type SubscriptionHandler = (
@@ -50,26 +70,43 @@ export class DaemonContext implements ApiContext {
     throw hlabsError('AUTH_REQUIRED');
   }
 
-  authorize(access: readonly Access[], _path: string): void {
+  authorize(access: readonly Access[], path: string): void {
     if (access.includes('public')) return;
-    // Setup procedures depend only on the setup token, never on who is signed in (D-013).
+    const id = this.identity;
     if (access.includes('setup')) {
       const { onboarding } = this.services;
       if (onboarding.completed) throw hlabsError('ONBOARDING_COMPLETE');
-      if (onboarding.verifySetupToken(this.request.setupToken)) return;
-      throw hlabsError('ONBOARDING_SETUP_TOKEN_REQUIRED');
+      // Until an admin exists only the setup token counts (D-013); after that, only the admin's session
+      // (US-ONB-03) — never the development-only anonymous admin.
+      if (!onboarding.status().hasUsers) {
+        if (onboarding.verifySetupToken(this.request.setupToken)) return;
+        throw hlabsError('ONBOARDING_SETUP_TOKEN_REQUIRED');
+      }
+      if (id.kind !== 'user' || !id.session) throw hlabsError('AUTH_REQUIRED');
+      if (id.role !== 'admin') throw hlabsError('ACCESS_DENIED');
+      this.checkCsrf(path);
+      return;
     }
-    const id = this.identity;
     if (id.kind === 'tray') {
       if (access.includes('tray')) return;
       throw hlabsError('ACCESS_DENIED');
     }
     if (id.kind === 'user') {
-      if (access.includes('authed')) return;
-      if (access.includes('admin') && id.role === 'admin') return;
-      throw hlabsError('ACCESS_DENIED');
+      const allowed = access.includes('authed') || (access.includes('admin') && id.role === 'admin');
+      if (!allowed) throw hlabsError('ACCESS_DENIED');
+      this.checkCsrf(path);
+      return;
     }
     throw hlabsError('AUTH_REQUIRED');
+  }
+
+  /** Mutations made with a session need the CSRF header and must come from the dashboard (07 §7.3). */
+  private checkCsrf(path: string): void {
+    const id = this.identity;
+    if (!MUTATIONS.has(path) || id.kind !== 'user' || !id.session) return;
+    const { origin, allowedOrigins, csrfToken } = this.request;
+    if (origin !== null && !allowedOrigins.includes(origin)) throw hlabsError('CSRF_REJECTED');
+    if (!csrfMatches(id.session.raw, csrfToken)) throw hlabsError('CSRF_REJECTED');
   }
 
   async handle(path: string, input: unknown, signal: AbortSignal | undefined): Promise<unknown> {
