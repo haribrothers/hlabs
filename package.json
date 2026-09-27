@@ -1,0 +1,31 @@
+{
+  "name": "hlabs",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22 <25"
+  },
+  "scripts": {
+    "dev": "turbo run dev --filter=@hlabs/daemon --filter=@hlabs/web",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "eslint . && pnpm boundaries",
+    "boundaries": "depcruise $(ls -d apps packages 2>/dev/null) --config .dependency-cruiser.cjs",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "changeset": "changeset"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.3",
+    "@hlabs/config": "workspace:*",
+    "dependency-cruiser": "^18.4.0",
+    "eslint": "^10.11.0",
+    "lefthook": "^2.1.14",
+    "prettier": "^3.9.9",
+    "turbo": "^2.11.4",
+    "typescript": "~5.9.3"
+  }
+}
