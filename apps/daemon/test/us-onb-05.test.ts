@@ -77,6 +77,10 @@ describe('US-ONB-05', () => {
     expect(io.runs[0]!.args.join(' ')).toBe(
       'start --profile hlabs --cpu 4 --memory 8 --disk 100 --vm-type vz --mount-type virtiofs --runtime docker',
     );
+    // hlabs's own tools first, and a separate docker config so the user's docker context isn't switched.
+    const engine = join(config.paths.dataDir, 'engine');
+    expect(io.runs[0]!.env.PATH?.startsWith(`${join(engine, 'bin')}:`)).toBe(true);
+    expect(io.runs[0]!.env.DOCKER_CONFIG).toBe(join(engine, 'docker-config'));
 
     expect((await check()).result?.data).toMatchObject({
       engine: {

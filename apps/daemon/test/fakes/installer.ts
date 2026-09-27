@@ -4,7 +4,7 @@ import { ENGINE_DOWNLOADS } from '../../src/engine/downloads';
 /** Downloads, tar and colima without touching the network or the machine. */
 export class FakeInstallerHost implements InstallerHost {
   downloads: string[] = [];
-  runs: Array<{ command: string; args: string[] }> = [];
+  runs: Array<{ command: string; args: string[]; env: NodeJS.ProcessEnv }> = [];
   /** Checksums returned per URL; defaults to the pinned ones. */
   checksums = new Map(
     Object.values(ENGINE_DOWNLOADS)
@@ -31,8 +31,8 @@ export class FakeInstallerHost implements InstallerHost {
   }
   async extract() {}
   async installBinary() {}
-  async run(command: string, args: string[], opts: { onLine: (line: string) => void }) {
-    this.runs.push({ command, args });
+  async run(command: string, args: string[], opts: { env: NodeJS.ProcessEnv; onLine: (line: string) => void }) {
+    this.runs.push({ command, args, env: opts.env });
     opts.onLine('INFO[0000] starting colima');
     await this.hold;
     opts.onLine('INFO[0042] done');

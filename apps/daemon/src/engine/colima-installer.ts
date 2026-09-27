@@ -59,6 +59,19 @@ export function colimaResources(host: { cpus: number; memoryBytes: number }) {
 
 export const colimaSocket = (home: string) => join(home, '.colima', HLABS_COLIMA_PROFILE, 'docker.sock');
 
+/**
+ * The environment for running hlabs's colima: its own bin first (colima needs limactl and docker), and its own
+ * DOCKER_CONFIG so colima's docker context is kept inside <dataDir>/engine and the user's `docker` CLI context
+ * (~/.docker) is never switched.
+ */
+export function colimaEnv(engineDir: string, base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  return {
+    ...base,
+    PATH: `${join(engineDir, 'bin')}:/usr/bin:/bin:/usr/sbin:/sbin`,
+    DOCKER_CONFIG: join(engineDir, 'docker-config'),
+  };
+}
+
 // Progress: downloads 0–45, unpacking 45–50, `colima start` 50–95 (a step per output line), ping 95–100.
 export async function installColima(ctx: ColimaInstall): Promise<void> {
   const { io, signal, engineDir } = ctx;
@@ -124,7 +137,7 @@ export async function installColima(ctx: ColimaInstall): Promise<void> {
   let logged = Promise.resolve();
   try {
     await io.run(join(bin, 'colima'), args, {
-      env: { ...process.env, PATH: `${bin}:/usr/bin:/bin:/usr/sbin:/sbin` },
+      env: colimaEnv(engineDir),
       signal,
       onLine: (line) => {
         progress = Math.min(95, progress + 2);
