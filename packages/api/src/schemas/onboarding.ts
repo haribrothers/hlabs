@@ -6,6 +6,7 @@ import {
   displayNameSchema,
   empty,
   engineKindSchema,
+  jobStateSchema,
   jobIdsSchema,
   jobRefSchema,
   ok,
@@ -37,6 +38,18 @@ export const systemCheckSchema = z.object({
     version: z.string().nullable(),
     state: z.enum(['running', 'stopped', 'missing']),
     level: checkLevelSchema,
+    /** The latest hlabs-managed Colima install (US-ONB-05), if any. */
+    install: z
+      .object({
+        jobId: z.string(),
+        state: jobStateSchema,
+        progress: z.number().int().min(0).max(100),
+        lastLogLine: z.string().nullable(),
+        hlabsCode: z.string().nullable(),
+        /** The whole install log, with `includeLog` (US-ONB-06). */
+        log: z.string().optional(),
+      })
+      .nullable(),
   }),
   /** Free space at the default storage root: error below 10 GB, warning below 30 GB. */
   disk: z.object({ freeBytes: z.number().nonnegative(), path: z.string(), level: checkLevelSchema }),

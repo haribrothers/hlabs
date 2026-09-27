@@ -37,6 +37,7 @@ export async function runSystemCheck({ engine, probe, storageRoot, headless }: S
     version: status.state === 'running' ? status.info.version : null,
     state: status.state,
     level: status.state === 'running' ? 'ok' : 'error',
+    install: null,
   } as const;
   const ports = {
     http: { port: 80, inUse: httpInUse, use: httpInUse ? FALLBACK_PORTS.http : 80 },

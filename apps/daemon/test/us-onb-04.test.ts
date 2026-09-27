@@ -40,7 +40,7 @@ describe('US-ONB-04', () => {
     expect((await check()).result?.data).toEqual({
       cpu: { model: 'Apple M2', arch: 'arm64' },
       os: { platform: 'darwin', name: 'macOS', version: '15', headless: false },
-      engine: { kind: 'orbstack', version: '27.0.0-fake', state: 'running', level: 'ok' },
+      engine: { kind: 'orbstack', version: '27.0.0-fake', state: 'running', level: 'ok', install: null },
       disk: { freeBytes: 142e9, path: expect.any(String), level: 'ok' },
       ports: {
         http: { port: 80, inUse: false, use: 80 },

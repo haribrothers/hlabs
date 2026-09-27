@@ -4,7 +4,7 @@ import { cpuLabel, systemRows, type SystemCheck } from './system-rows';
 const check = (over: Partial<SystemCheck> = {}): SystemCheck => ({
   cpu: { model: 'Apple M2', arch: 'arm64' },
   os: { platform: 'darwin', name: 'macOS', version: '15', headless: false },
-  engine: { kind: 'orbstack', version: '27.0.1', state: 'running', level: 'ok' },
+  engine: { kind: 'orbstack', version: '27.0.1', state: 'running', level: 'ok', install: null },
   disk: { freeBytes: 142e9, path: '/Users/h/hlabs', level: 'ok' },
   ports: {
     http: { port: 80, inUse: false, use: 80 },
@@ -74,11 +74,13 @@ describe('US-ONB-04', () => {
 
   it('marks a missing or stopped runtime as an error', () => {
     const missing = byId(
-      systemRows(check({ engine: { kind: null, version: null, state: 'missing', level: 'error' } })),
+      systemRows(check({ engine: { kind: null, version: null, state: 'missing', level: 'error', install: null } })),
     ).runtime!;
     expect(missing).toMatchObject({ value: 'Not found', status: 'failed' });
     const stopped = byId(
-      systemRows(check({ engine: { kind: 'docker-desktop', version: null, state: 'stopped', level: 'error' } })),
+      systemRows(
+        check({ engine: { kind: 'docker-desktop', version: null, state: 'stopped', level: 'error', install: null } }),
+      ),
     ).runtime!;
     expect(stopped).toMatchObject({ value: "Docker Desktop isn't running", status: 'failed' });
   });
