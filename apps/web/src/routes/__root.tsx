@@ -1,14 +1,14 @@
 import { UiStringsProvider } from '@hlabs/ui';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { uiStrings } from '../copy/shell';
-import { Shell } from '../shell/shell';
+import { FirstRunGate } from '../onboarding/first-run-gate';
 
 export const Route = createRootRoute({
   component: () => (
     <UiStringsProvider strings={uiStrings}>
-      <Shell>
+      <FirstRunGate>
         <Outlet />
-      </Shell>
+      </FirstRunGate>
     </UiStringsProvider>
   ),
 });

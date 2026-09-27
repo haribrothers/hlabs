@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BackupsRouteImport } from './routes/backups'
 import { Route as FilesRouteImport } from './routes/files'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as StoreRouteImport } from './routes/store'
 import { Route as UsageRouteImport } from './routes/usage'
 import { Route as DevUiRouteImport } from './routes/dev/ui'
@@ -37,6 +38,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StoreRoute = StoreRouteImport.update({
   id: '/store',
   path: '/store',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
   '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
   '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
   '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
@@ -84,16 +93,31 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/backups' | '/files' | '/settings' | '/store' | '/usage' | '/dev/ui'
+    | '/'
+    | '/backups'
+    | '/files'
+    | '/settings'
+    | '/setup'
+    | '/store'
+    | '/usage'
+    | '/dev/ui'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/backups' | '/files' | '/settings' | '/store' | '/usage' | '/dev/ui'
+    | '/'
+    | '/backups'
+    | '/files'
+    | '/settings'
+    | '/setup'
+    | '/store'
+    | '/usage'
+    | '/dev/ui'
   id:
     | '__root__'
     | '/'
     | '/backups'
     | '/files'
     | '/settings'
+    | '/setup'
     | '/store'
     | '/usage'
     | '/dev/ui'
@@ -104,6 +128,7 @@ export interface RootRouteChildren {
   BackupsRoute: typeof BackupsRoute
   FilesRoute: typeof FilesRoute
   SettingsRoute: typeof SettingsRoute
+  SetupRoute: typeof SetupRoute
   StoreRoute: typeof StoreRoute
   UsageRoute: typeof UsageRoute
   DevUiRoute: typeof DevUiRoute
@@ -139,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/store': {
       id: '/store'
       path: '/store'
@@ -168,6 +200,7 @@ const rootRouteChildren: RootRouteChildren = {
   BackupsRoute: BackupsRoute,
   FilesRoute: FilesRoute,
   SettingsRoute: SettingsRoute,
+  SetupRoute: SetupRoute,
   StoreRoute: StoreRoute,
   UsageRoute: UsageRoute,
   DevUiRoute: DevUiRoute,
