@@ -1,0 +1,32 @@
+schema: 1
+id: vaultwarden
+name: Vaultwarden
+version: '1.37.3'
+revision: 0
+tagline: Keep every password safe in one place
+description: |
+  A light server for the Bitwarden apps and browser extensions. Store passwords, passkeys and
+  secure notes, share them with your family and sync them to every device.
+category: security
+developer: { name: Vaultwarden, url: https://github.com/dani-garcia/vaultwarden }
+source: https://github.com/dani-garcia/vaultwarden
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#3b82f6', '#1e3a8a']
+  fallback: key-round
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: vaultwarden, port: 80 }
+health: { service: vaultwarden, http: /alive, timeout: 60 }
+env:
+  - key: SIGNUPS_ALLOWED
+    label: Let people create accounts
+    description: Turn this off once everyone has an account
+    type: boolean
+    default: true
+ownLogin: true
+backup:
+  pause: [vaultwarden]
+  beforeUpdate: true
+permissions: { network: internet }
