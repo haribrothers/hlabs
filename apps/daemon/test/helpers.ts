@@ -30,6 +30,7 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
     logLevel: 'silent',
     devAnonymousAdmin: true,
     devIgnoreEngines: false,
+    devNoEngineInstall: false,
     ...overrides,
   };
 }

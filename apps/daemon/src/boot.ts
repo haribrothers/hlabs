@@ -129,6 +129,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     dashboardUrl: config.dashboardUrl,
     jobs,
     dataDir: config.paths.dataDir,
+    engineInstallAllowed: !config.devNoEngineInstall,
     systemCheck: {
       engine,
       probe,

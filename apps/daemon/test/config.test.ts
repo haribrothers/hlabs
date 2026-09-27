@@ -15,6 +15,12 @@ describe('config', () => {
     expect(loadConfig({ NODE_ENV: 'development', HLABS_DEV_ANONYMOUS_ADMIN: '1' }).devAnonymousAdmin).toBe(true);
   });
 
+  it('refuses the dev engine flags in production', () => {
+    expect(() => loadConfig({ NODE_ENV: 'production', HLABS_DEV_NO_ENGINE_INSTALL: '1' })).toThrow(/development only/);
+    expect(() => loadConfig({ NODE_ENV: 'production', HLABS_DEV_IGNORE_ENGINES: '1' })).toThrow(/development only/);
+    expect(loadConfig({ NODE_ENV: 'development', HLABS_DEV_NO_ENGINE_INSTALL: '1' }).devNoEngineInstall).toBe(true);
+  });
+
   it('builds the dashboard URL from the port unless it is set', () => {
     expect(loadConfig({ HLABS_PORT: '7480' }).dashboardUrl).toBe('http://127.0.0.1:7480');
     expect(loadConfig({ HLABS_DASHBOARD_URL: 'http://127.0.0.1:5173/' }).dashboardUrl).toBe('http://127.0.0.1:5173');

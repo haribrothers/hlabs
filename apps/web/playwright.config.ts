@@ -11,8 +11,11 @@ const DATA_DIR = process.env.HLABS_E2E_DATA_DIR ?? '../../.e2e-data';
 const FIRST_RUN_DATA_DIR = '../../.e2e-data-first-run';
 const FIRST_RUN_SPECS = /us-onb-\d+\.spec\.ts/;
 
+// HLABS_DEV_NO_ENGINE_INSTALL: a run on a machine with no engine must never download Colima (11: tests don't
+// reach the internet).
 const daemonEnv = {
   NODE_ENV: 'development',
+  HLABS_DEV_NO_ENGINE_INSTALL: '1',
   HLABS_DEV_ANONYMOUS_ADMIN: '1',
   HLABS_LOG_LEVEL: 'warn',
 };

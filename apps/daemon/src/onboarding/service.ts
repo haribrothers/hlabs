@@ -34,6 +34,8 @@ export class OnboardingService {
       dashboardUrl: string;
       jobs: JobRunner;
       dataDir: string;
+      /** False in e2e (HLABS_DEV_NO_ENGINE_INSTALL). */
+      engineInstallAllowed?: boolean;
       systemCheck: SystemCheckDeps;
     },
   ) {
@@ -88,7 +90,9 @@ export class OnboardingService {
    */
   async installEngine(): Promise<string> {
     const { probe, engine } = this.deps.systemCheck;
-    if ((await probe.os()).platform !== 'darwin') throw hlabsError('ENGINE_INSTALL_UNSUPPORTED');
+    if ((await probe.os()).platform !== 'darwin' || this.deps.engineInstallAllowed === false) {
+      throw hlabsError('ENGINE_INSTALL_UNSUPPORTED');
+    }
     const current = this.deps.jobs.latest('engine_install');
     if (current && (current.state === 'queued' || current.state === 'running')) return current.id;
     if ((await engine.check()).state !== 'missing') {

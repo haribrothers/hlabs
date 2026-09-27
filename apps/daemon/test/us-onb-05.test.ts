@@ -169,6 +169,35 @@ describe('US-ONB-05', () => {
     expect((await install()).error?.data.hlabsCode).toBe('ENGINE_INSTALL_UNSUPPORTED');
   });
 
+  it('never installs in e2e (HLABS_DEV_NO_ENGINE_INSTALL)', async () => {
+    const io = new FakeInstallerHost();
+    const home = tempDir('hlabs-home-');
+    const printed: string[] = [];
+    const daemon = await startDaemon({
+      config: { devNoEngineInstall: true },
+      boot: {
+        print: (l) => printed.push(l),
+        installer: io,
+        home,
+        engine: { candidates: async () => [], retryMs: 60_000 },
+      },
+    });
+    closers.push(daemon.close);
+    const token = new URL(printed.join('').match(/open (\S+)/)![1]!).searchParams.get('token')!;
+    const res = (
+      (await (
+        await fetch(`${daemon.url}/trpc/onboarding.installEngine?batch=1`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-hlabs-setup': token },
+          body: '{}',
+        })
+      ).json()) as Reply[]
+    )[0]!;
+    expect(res.error?.data.hlabsCode).toBe('ENGINE_INSTALL_UNSUPPORTED');
+    expect(io.downloads).toEqual([]);
+    expect(daemon.services!.jobs.latest('engine_install')).toBeNull();
+  });
+
   it('does not install when an engine is already present', async () => {
     const { install } = await start({ engineAlready: true });
     expect((await install()).error?.data.hlabsCode).toBe('VALIDATION_FAILED');
