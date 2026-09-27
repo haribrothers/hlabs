@@ -91,6 +91,12 @@ export class JobRunner {
     return row ? toJob(row) : null;
   }
 
+  /** The most recent job of a kind, in any state. */
+  latest(kind: JobKind): Job | null {
+    const row = this.db.select().from(jobs).where(eq(jobs.kind, kind)).orderBy(desc(jobs.createdAt)).get();
+    return row ? toJob(row) : null;
+  }
+
   listActive(): Job[] {
     return this.db
       .select()

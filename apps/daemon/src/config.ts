@@ -18,6 +18,7 @@ const envSchema = z.object({
   HLABS_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
   HLABS_HEADLESS: flag,
   HLABS_DEV_ANONYMOUS_ADMIN: flag,
+  HLABS_DEV_IGNORE_ENGINES: flag,
   HLABS_SECRET_STORE: z.enum(['keychain', 'file']).optional(),
   HLABS_DASHBOARD_URL: z.url().optional(),
 });
@@ -39,12 +40,17 @@ export interface DaemonConfig {
   logLevel: string;
   /** Phase 0 only: treat every request as a signed-in admin (see 05-api "From phase 0"). */
   devAnonymousAdmin: boolean;
+  /** Development only: detect nothing but hlabs's own Colima, to try the install next to OrbStack (US-ONB-05). */
+  devIgnoreEngines: boolean;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
   const e = envSchema.parse(env);
   if (e.HLABS_DEV_ANONYMOUS_ADMIN && e.NODE_ENV === 'production') {
     throw new Error('HLABS_DEV_ANONYMOUS_ADMIN is for development only and is refused in production.');
+  }
+  if (e.HLABS_DEV_IGNORE_ENGINES && e.NODE_ENV === 'production') {
+    throw new Error('HLABS_DEV_IGNORE_ENGINES is for development only and is refused in production.');
   }
   const platformPaths = defaultPaths({ platform: process.platform, home: homedir(), headless: e.HLABS_HEADLESS });
   const paths = e.HLABS_DATA_DIR
@@ -68,5 +74,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
     secretStore: e.HLABS_SECRET_STORE ?? defaultSecretStoreKind({ env: e.NODE_ENV, headless: e.HLABS_HEADLESS }),
     logLevel: e.HLABS_LOG_LEVEL ?? (dev ? 'debug' : 'info'),
     devAnonymousAdmin: e.HLABS_DEV_ANONYMOUS_ADMIN,
+    devIgnoreEngines: e.HLABS_DEV_IGNORE_ENGINES,
   };
 }

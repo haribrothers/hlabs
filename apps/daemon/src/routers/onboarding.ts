@@ -3,7 +3,8 @@ import type { DaemonContext } from '../context';
 
 export const onboarding: AppHandlers<DaemonContext>['onboarding'] = {
   status: (_input, ctx) => ctx.services.onboarding.status(),
-  checkSystem: (_input, ctx) => ctx.services.onboarding.checkSystem(),
+  checkSystem: (input, ctx) => ctx.services.onboarding.checkSystem({ includeLog: input?.includeLog }),
+  installEngine: async (_input, ctx) => ({ jobId: await ctx.services.onboarding.installEngine() }),
   confirmSystem: async ({ startAtLogin }, ctx) => {
     await ctx.services.onboarding.confirmSystem(startAtLogin);
     return { ok: true };

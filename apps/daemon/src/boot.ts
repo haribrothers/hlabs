@@ -1,11 +1,15 @@
 // The daemon boot sequence (docs/prd/02-architecture.md §2.3). The HTTP server is already listening,
 // so /healthz reports each step and, if the database can't be opened, why.
-import { MigrationFailedError, openDb, SchemaTooNewError, getSetting } from '@hlabs/db';
+import { MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
 import { mkdirSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { NoopProxyManager, type ProxyManager } from './caddy/index';
 import type { DaemonConfig } from './config';
-import { EngineService, type EngineServiceDeps } from './engine/service';
+import type { InstallerHost } from './engine/colima-installer';
+import { registerEngineInstall } from './engine/install-job';
+import { nodeInstallerHost } from './engine/installer-host';
+import { defaultCandidates, EngineService, type EngineServiceDeps } from './engine/service';
 import { EventBus } from './events/bus';
 import { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
@@ -33,6 +37,10 @@ export interface BootDeps {
   mdns?: MdnsPublisher;
   secrets?: SecretStore;
   system?: SystemProbe;
+  /** Downloads, tar and colima for the engine install (US-ONB-05). */
+  installer?: InstallerHost;
+  /** The user's home (where ~/.colima lives). */
+  home?: string;
   /** Where the setup URL is printed (stdout). */
   print?: (line: string) => void;
 }
@@ -77,6 +85,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     bus,
     logger,
     preferred: () => getSetting(db, 'engine').preferred,
+    // Development only: behave like a Mac with no engine except hlabs's own Colima.
+    ...(config.devIgnoreEngines
+      ? { candidates: async () => (await defaultCandidates('auto')).filter((c) => c.managedByHlabs) }
+      : {}),
     ...deps.engine,
   });
   const engineStatus = await engine.start();
@@ -96,14 +108,30 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   readiness.step(4);
 
   // First run: keep the setup token ready and print the setup URL (US-ONB-01, D-041).
+  const probe = deps.system ?? new NodeSystemProbe();
+  registerEngineInstall({
+    jobs,
+    engine,
+    probe,
+    io: deps.installer ?? nodeInstallerHost(),
+    dataDir: config.paths.dataDir,
+    home: deps.home ?? homedir(),
+    onDownload: () =>
+      setSetting(db, 'connections', {
+        ...getSetting(db, 'connections'),
+        engineDownload: { lastContactAt: Date.now() },
+      }),
+  });
   const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);
   const onboarding = new OnboardingService({
     db,
     secrets,
     dashboardUrl: config.dashboardUrl,
+    jobs,
+    dataDir: config.paths.dataDir,
     systemCheck: {
       engine,
-      probe: deps.system ?? new NodeSystemProbe(),
+      probe,
       storageRoot: config.paths.storageRootDefault,
       headless: config.headless,
     },

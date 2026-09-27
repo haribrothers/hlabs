@@ -10,6 +10,9 @@ export class FakeSystemProbe implements SystemProbe {
   cpu() {
     return { model: 'Apple M2', arch: 'arm64' };
   }
+  resources() {
+    return { cpus: 8, memoryBytes: 16 * 2 ** 30 };
+  }
   async os() {
     return this.osInfo;
   }

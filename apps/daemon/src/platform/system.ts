@@ -1,7 +1,7 @@
 // Facts about this computer for the onboarding system check (US-ONB-04). Behind an interface so tests use a fake.
 import { readFile, statfs } from 'node:fs/promises';
 import { createServer } from 'node:net';
-import { arch, cpus, release } from 'node:os';
+import { arch, cpus, release, totalmem } from 'node:os';
 import { dirname } from 'node:path';
 
 export interface OsInfo {
@@ -14,6 +14,8 @@ export interface OsInfo {
 
 export interface SystemProbe {
   cpu(): { model: string; arch: string };
+  /** CPU cores and memory, for sizing hlabs's Colima VM. */
+  resources(): { cpus: number; memoryBytes: number };
   os(): Promise<OsInfo>;
   /** Free bytes on the volume holding `path` (or its nearest existing parent). */
   freeBytes(path: string): Promise<number>;
@@ -41,6 +43,10 @@ export function parseOsRelease(text: string): { name: string; version: string } 
 export class NodeSystemProbe implements SystemProbe {
   cpu() {
     return { model: cpus()[0]?.model.trim() ?? 'unknown', arch: arch() };
+  }
+
+  resources() {
+    return { cpus: cpus().length, memoryBytes: totalmem() };
   }
 
   async os(): Promise<OsInfo> {

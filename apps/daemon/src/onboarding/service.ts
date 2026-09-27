@@ -10,6 +10,8 @@ import { getSetting, setSetting, users, type HlabsDb } from '@hlabs/db';
 import { count } from 'drizzle-orm';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { SecretStore } from '../platform/secrets';
+import { readInstallLog } from '../engine/install-job';
+import type { JobRunner } from '../jobs/runner';
 import { runSystemCheck, type SystemCheck, type SystemCheckDeps } from './system-check';
 
 /** Secret-store ref of the setup token (04 `settings.onboarding.setupTokenRef`). */
@@ -26,7 +28,14 @@ export class OnboardingService {
   private readonly dashboardUrl: string;
 
   constructor(
-    private readonly deps: { db: HlabsDb; secrets: SecretStore; dashboardUrl: string; systemCheck: SystemCheckDeps },
+    private readonly deps: {
+      db: HlabsDb;
+      secrets: SecretStore;
+      dashboardUrl: string;
+      jobs: JobRunner;
+      dataDir: string;
+      systemCheck: SystemCheckDeps;
+    },
   ) {
     this.db = deps.db;
     this.secrets = deps.secrets;
@@ -58,8 +67,34 @@ export class OnboardingService {
   }
 
   /** The system check (US-ONB-04). Read-only; the engine is detected again each time. */
-  checkSystem(): Promise<SystemCheck> {
-    return runSystemCheck(this.deps.systemCheck);
+  async checkSystem(opts: { includeLog?: boolean } = {}): Promise<SystemCheck> {
+    const check = await runSystemCheck(this.deps.systemCheck);
+    const job = this.deps.jobs.latest('engine_install');
+    if (!job) return check;
+    const install = {
+      jobId: job.id,
+      state: job.state,
+      progress: job.progress,
+      lastLogLine: job.message,
+      hlabsCode: job.hlabsCode,
+      ...(opts.includeLog ? { log: await readInstallLog(this.deps.dataDir) } : {}),
+    };
+    return { ...check, engine: { ...check.engine, install } };
+  }
+
+  /**
+   * Installs hlabs's own Colima (US-ONB-05): macOS only, only when no engine is found. A running install is
+   * returned instead of starting another (reloads, several tabs).
+   */
+  async installEngine(): Promise<string> {
+    const { probe, engine } = this.deps.systemCheck;
+    if ((await probe.os()).platform !== 'darwin') throw hlabsError('ENGINE_INSTALL_UNSUPPORTED');
+    const current = this.deps.jobs.latest('engine_install');
+    if (current && (current.state === 'queued' || current.state === 'running')) return current.id;
+    if ((await engine.check()).state !== 'missing') {
+      throw hlabsError('VALIDATION_FAILED', 'A container engine is already present');
+    }
+    return this.deps.jobs.start('engine_install');
   }
 
   /**

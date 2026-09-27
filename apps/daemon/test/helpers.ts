@@ -29,6 +29,7 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
     secretStore: 'file',
     logLevel: 'silent',
     devAnonymousAdmin: true,
+    devIgnoreEngines: false,
     ...overrides,
   };
 }
