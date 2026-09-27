@@ -1,28 +1,32 @@
 // Sends the browser to onboarding, or explains where to finish it, until onboarding is complete.
 import { useQuery } from '@tanstack/react-query';
 import { Navigate, useRouterState } from '@tanstack/react-router';
-import { useRef, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { readSetupToken } from '../lib/setup-token';
 import { useTRPC } from '../lib/trpc';
 import { Shell } from '../shell/shell';
 import { FinishSetupElsewhere } from './finish-setup-elsewhere';
 import { firstRunView } from './first-run';
 
+/** Opening setup (a page load) resumes at the saved step; moving around inside the tab doesn't (US-ONB-03). */
+let entryDecided = false;
+
 export function FirstRunGate({ children }: { children: ReactNode }) {
   const trpc = useTRPC();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const status = useQuery(trpc.onboarding.status.queryOptions());
-  // Only the first decision of a page load counts as opening setup (US-ONB-03).
-  const entry = useRef(true);
   const view = firstRunView({
-    entry: entry.current,
+    entry: !entryDecided,
     pathname,
     status: status.data,
     failed: status.isError,
     hasSetupToken: readSetupToken() !== null,
     dev: import.meta.env.DEV,
   });
-  if (view.kind !== 'loading') entry.current = false;
+  const decided = view.kind !== 'loading';
+  useEffect(() => {
+    if (decided) entryDecided = true;
+  }, [decided]);
 
   switch (view.kind) {
     case 'loading':
