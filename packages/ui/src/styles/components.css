@@ -197,6 +197,22 @@
     font: 400 14px/1 var(--hl-font-sans);
     outline: none;
   }
+  /* An input with a control inside its right edge (show/hide password). */
+  .hl-input-wrap {
+    position: relative;
+    display: flex;
+  }
+  .hl-input-wrap .hl-input {
+    flex: 1;
+    padding-right: var(--size-control);
+  }
+  .hl-input-trailing {
+    position: absolute;
+    inset: 0 0 0 auto;
+    display: flex;
+    align-items: center;
+    padding-right: var(--space-2);
+  }
   .hl-input::placeholder {
     color: var(--ink-faint);
   }

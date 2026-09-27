@@ -3,6 +3,7 @@ import type { AppRouter } from '@hlabs/api';
 import { QueryClient } from '@tanstack/react-query';
 import { createTRPCClient, httpBatchLink, httpSubscriptionLink, splitLink } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
+import { csrfHeaders } from './csrf';
 import { setupHeaders } from './setup-token';
 
 export const queryClient = new QueryClient({
@@ -14,7 +15,10 @@ export const trpcClient = createTRPCClient<AppRouter>({
     splitLink({
       condition: (op) => op.type === 'subscription',
       true: httpSubscriptionLink({ url: '/trpc' }),
-      false: httpBatchLink({ url: '/trpc', headers: ({ opList }) => setupHeaders(opList.map((op) => op.path)) }),
+      false: httpBatchLink({
+        url: '/trpc',
+        headers: ({ opList }) => ({ ...setupHeaders(opList.map((op) => op.path)), ...csrfHeaders() }),
+      }),
     }),
   ],
 });

@@ -68,6 +68,12 @@ describe('TextField', () => {
     expect(input).toHaveAccessibleDescription('Use at least 12 characters');
     expect(screen.queryByText('12 characters')).toBeNull();
   });
+
+  it('puts a control inside the input, keeping the label on the input', () => {
+    render(<TextField label="Password" type="password" trailing={<button type="button">Show password</button>} />);
+    expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'password');
+    expect(screen.getByRole('button', { name: 'Show password' }).parentElement).toHaveClass('hl-input-trailing');
+  });
 });
 
 describe('Segmented', () => {

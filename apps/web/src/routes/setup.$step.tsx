@@ -2,6 +2,7 @@ import { isOnboardingStep, type OnboardingStep } from '@hlabs/shared';
 import type { ComponentType } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { onboardingCopy } from '../copy/onboarding';
+import { AccountStep } from '../onboarding/account-step';
 import { StepFrame } from '../onboarding/step-frame';
 import { SystemStep } from '../onboarding/system-step';
 
@@ -11,7 +12,7 @@ import { SystemStep } from '../onboarding/system-step';
 export const Route = createFileRoute('/setup/$step')({ component: Step });
 
 /** Steps whose screen is built; each renders its own StepFrame. The rest show their title until their story. */
-const SCREENS: Partial<Record<OnboardingStep, ComponentType>> = { system: SystemStep };
+const SCREENS: Partial<Record<OnboardingStep, ComponentType>> = { system: SystemStep, account: AccountStep };
 
 function Step() {
   const { step } = Route.useParams();

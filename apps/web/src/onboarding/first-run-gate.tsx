@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Navigate, useRouterState } from '@tanstack/react-router';
 import { useEffect, type ReactNode } from 'react';
+import { setCsrfToken } from '../lib/csrf';
 import { readSetupToken } from '../lib/setup-token';
 import { useTRPC } from '../lib/trpc';
 import { Shell } from '../shell/shell';
@@ -15,6 +16,9 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
   const trpc = useTRPC();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const status = useQuery(trpc.onboarding.status.queryOptions());
+  // Once someone exists there may be a session: fetch its CSRF token for mutations (07 §7.3).
+  const me = useQuery({ ...trpc.auth.me.queryOptions(), enabled: status.data?.hasUsers === true, retry: false });
+  useEffect(() => setCsrfToken(me.data?.csrfToken ?? null), [me.data?.csrfToken]);
   const view = firstRunView({
     entry: !entryDecided,
     pathname,

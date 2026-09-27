@@ -39,6 +39,15 @@ You'll see **Something needs attention**. hlabs removes anything it had set up, 
 - **Retry** looks for a container runtime again first. If you've installed OrbStack or Docker Desktop in the meantime, hlabs uses it; otherwise it sets up Colima again.
 - **View full log** shows everything the setup did, with a **Copy** button for sharing it when you ask for help.
 
+## Create your admin account
+
+The admin manages apps, people and settings; you can add family members later.
+
+- **Username:** 3–32 lowercase letters, numbers and dashes, starting with a letter. hlabs suggests one from your name.
+- **Password:** at least 12 characters, and not one of the most common passwords. The hint under the field says when it's strong enough.
+
+Once the account is created you're signed in on this browser, and the setup address stops working: from here on, setup continues as you.
+
 ## "Finish setup on the computer running hlabs."
 
 You'll see this if you open hlabs from another device, such as your phone, before setup is finished. It keeps anyone else on your network from creating the first admin account. Open the setup address on the computer running hlabs instead.
