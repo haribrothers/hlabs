@@ -1,4 +1,4 @@
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react';
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 import { cn } from '../lib/cn';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'link';
@@ -12,8 +12,8 @@ interface Common {
   children: ReactNode;
 }
 export type ButtonProps =
-  | (Common & ButtonHTMLAttributes<HTMLButtonElement> & { href?: undefined })
-  | (Common & AnchorHTMLAttributes<HTMLAnchorElement> & { href: string });
+  | (Common & ButtonHTMLAttributes<HTMLButtonElement> & { href?: undefined; ref?: Ref<HTMLButtonElement> })
+  | (Common & AnchorHTMLAttributes<HTMLAnchorElement> & { href: string; ref?: Ref<HTMLAnchorElement> });
 
 /** A pill button. Label with a verb in sentence case ("Install", "Save changes"). */
 export function Button({ variant = 'primary', size = 'md', className, children, ...rest }: ButtonProps) {

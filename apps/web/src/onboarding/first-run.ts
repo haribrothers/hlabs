@@ -15,6 +15,9 @@ export type FirstRunView =
   | { kind: 'elsewhere' }
   | { kind: 'redirect'; to: string };
 
+/** `/setup` and every step under it (`/setup/<step>`). */
+export const isSetupPath = (pathname: string) => pathname === SETUP_PATH || pathname.startsWith(`${SETUP_PATH}/`);
+
 export function firstRunView(opts: {
   pathname: string;
   status: OnboardingStatus | undefined;
@@ -27,7 +30,7 @@ export function firstRunView(opts: {
   const { pathname, status } = opts;
   if (opts.dev && pathname.startsWith('/dev/')) return { kind: 'app' };
   if (!status) return opts.failed ? { kind: 'app' } : { kind: 'loading' };
-  if (status.completed) return pathname === SETUP_PATH ? { kind: 'redirect', to: '/' } : { kind: 'app' };
+  if (status.completed) return isSetupPath(pathname) ? { kind: 'redirect', to: '/' } : { kind: 'app' };
   if (!opts.hasSetupToken) return { kind: 'elsewhere' };
-  return pathname === SETUP_PATH ? { kind: 'setup' } : { kind: 'redirect', to: SETUP_PATH };
+  return isSetupPath(pathname) ? { kind: 'setup' } : { kind: 'redirect', to: SETUP_PATH };
 }

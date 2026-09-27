@@ -17,6 +17,8 @@ import { Route as SetupRouteImport } from './routes/setup'
 import { Route as StoreRouteImport } from './routes/store'
 import { Route as UsageRouteImport } from './routes/usage'
 import { Route as DevUiRouteImport } from './routes/dev/ui'
+import { Route as SetupIndexRouteImport } from './routes/setup.index'
+import { Route as SetupSystemRouteImport } from './routes/setup.system'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,26 +60,39 @@ const DevUiRoute = DevUiRouteImport.update({
   path: '/dev/ui',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SetupIndexRoute = SetupIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SetupRoute,
+} as any)
+const SetupSystemRoute = SetupSystemRouteImport.update({
+  id: '/system',
+  path: '/system',
+  getParentRoute: () => SetupRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
   '/settings': typeof SettingsRoute
-  '/setup': typeof SetupRoute
+  '/setup': typeof SetupRouteWithChildren
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
+  '/setup/system': typeof SetupSystemRoute
+  '/setup/': typeof SetupIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
   '/settings': typeof SettingsRoute
-  '/setup': typeof SetupRoute
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
+  '/setup/system': typeof SetupSystemRoute
+  '/setup': typeof SetupIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -85,10 +100,12 @@ export interface FileRoutesById {
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
   '/settings': typeof SettingsRoute
-  '/setup': typeof SetupRoute
+  '/setup': typeof SetupRouteWithChildren
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
+  '/setup/system': typeof SetupSystemRoute
+  '/setup/': typeof SetupIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,16 +118,19 @@ export interface FileRouteTypes {
     | '/store'
     | '/usage'
     | '/dev/ui'
+    | '/setup/system'
+    | '/setup/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/backups'
     | '/files'
     | '/settings'
-    | '/setup'
     | '/store'
     | '/usage'
     | '/dev/ui'
+    | '/setup/system'
+    | '/setup'
   id:
     | '__root__'
     | '/'
@@ -121,6 +141,8 @@ export interface FileRouteTypes {
     | '/store'
     | '/usage'
     | '/dev/ui'
+    | '/setup/system'
+    | '/setup/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -128,7 +150,7 @@ export interface RootRouteChildren {
   BackupsRoute: typeof BackupsRoute
   FilesRoute: typeof FilesRoute
   SettingsRoute: typeof SettingsRoute
-  SetupRoute: typeof SetupRoute
+  SetupRoute: typeof SetupRouteWithChildren
   StoreRoute: typeof StoreRoute
   UsageRoute: typeof UsageRoute
   DevUiRoute: typeof DevUiRoute
@@ -192,15 +214,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevUiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/setup/': {
+      id: '/setup/'
+      path: '/'
+      fullPath: '/setup/'
+      preLoaderRoute: typeof SetupIndexRouteImport
+      parentRoute: typeof SetupRoute
+    }
+    '/setup/system': {
+      id: '/setup/system'
+      path: '/system'
+      fullPath: '/setup/system'
+      preLoaderRoute: typeof SetupSystemRouteImport
+      parentRoute: typeof SetupRoute
+    }
   }
 }
+
+interface SetupRouteChildren {
+  SetupSystemRoute: typeof SetupSystemRoute
+  SetupIndexRoute: typeof SetupIndexRoute
+}
+
+const SetupRouteChildren: SetupRouteChildren = {
+  SetupSystemRoute: SetupSystemRoute,
+  SetupIndexRoute: SetupIndexRoute,
+}
+
+const SetupRouteWithChildren = SetupRoute._addFileChildren(SetupRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BackupsRoute: BackupsRoute,
   FilesRoute: FilesRoute,
   SettingsRoute: SettingsRoute,
-  SetupRoute: SetupRoute,
+  SetupRoute: SetupRouteWithChildren,
   StoreRoute: StoreRoute,
   UsageRoute: UsageRoute,
   DevUiRoute: DevUiRoute,
