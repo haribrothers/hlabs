@@ -4,11 +4,11 @@ Every icon in hlabs comes from this package: the web UI and the Tauri tray app i
 
 ```tsx
 import { Download, HardDrive, iconDefaults } from '@hlabs/icons'; // Lucide, tree-shaken
-import { tabGlyphs, TabHome } from '@hlabs/icons';                 // filled tab-bar glyphs
-import { LogoMark, LogoLockup } from '@hlabs/icons';               // the hlabs logo
-import { AppLogo } from '@hlabs/icons';                            // an app's logo with fallback
+import { tabGlyphs, TabHome } from '@hlabs/icons'; // filled tab-bar glyphs
+import { LogoMark, LogoLockup } from '@hlabs/icons'; // the hlabs logo
+import { AppLogo } from '@hlabs/icons'; // an app's logo with fallback
 import { AppIconManifest, resolveAppIcon } from '@hlabs/icons/manifest'; // zod schema (daemon)
-import { FileIcon, fileKindOf, folderKindOf } from '@hlabs/icons/files';   // Files app icons (Papirus)
+import { FileIcon, fileKindOf, folderKindOf } from '@hlabs/icons/files'; // Files app icons (Papirus)
 ```
 
 ## UI icons (Lucide)
@@ -23,7 +23,7 @@ Icon-only buttons need an `aria-label` on the button; the icon itself stays deco
 
 ```tsx
 const Glyph = tabGlyphs[tab.id];
-<Glyph />
+<Glyph />;
 ```
 
 ## Logo
@@ -39,12 +39,12 @@ Tones: `color`, `on-light`, `white`, `ink`, `current`. `size` is the height; wid
 
 Static files for packaging are in `assets/`:
 
-| File | Use |
-| --- | --- |
-| `hlabs-app-icon.svg`, `hlabs-app-icon-1024.png` | App icon source. Run `pnpm tauri icon node_modules/@hlabs/icons/assets/hlabs-app-icon-1024.png` to generate the macOS `.icns`, Windows `.ico` and Linux PNGs. Also the PWA icon and favicon. |
-| `tray/hlabsTemplate.png`, `tray/hlabsTemplate@2x.png` | macOS menu-bar icon (18 / 36 px), the simplified mark. Black + alpha; set `iconAsTemplate(true)` in Tauri so macOS tints it for light and dark menu bars. |
-| `tray/hlabs-tray-{22,24,32,48}.png` | Linux tray (white on transparent; GNOME and KDE panels are dark by default). 22 and 24 use the simplified mark. |
-| `hlabs-mark*.svg`, `hlabs-lockup*.svg` | The logo for docs, the website and the installer DMG background. `hlabs-mark-small-*.svg` is the simplified mark for 20px and below. |
+| File                                                  | Use                                                                                                                                                                                          |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hlabs-app-icon.svg`, `hlabs-app-icon-1024.png`       | App icon source. Run `pnpm tauri icon node_modules/@hlabs/icons/assets/hlabs-app-icon-1024.png` to generate the macOS `.icns`, Windows `.ico` and Linux PNGs. Also the PWA icon and favicon. |
+| `tray/hlabsTemplate.png`, `tray/hlabsTemplate@2x.png` | macOS menu-bar icon (18 / 36 px), the simplified mark. Black + alpha; set `iconAsTemplate(true)` in Tauri so macOS tints it for light and dark menu bars.                                    |
+| `tray/hlabs-tray-{22,24,32,48}.png`                   | Linux tray (white on transparent; GNOME and KDE panels are dark by default). 22 and 24 use the simplified mark.                                                                              |
+| `hlabs-mark*.svg`, `hlabs-lockup*.svg`                | The logo for docs, the website and the installer DMG background. `hlabs-mark-small-*.svg` is the simplified mark for 20px and below.                                                         |
 
 ## App logos
 
@@ -60,9 +60,9 @@ In an app's `hlabs-app.yml`:
 
 ```yaml
 icon:
-  logo: logo.svg                  # square PNG or SVG, at least 256px; path in the app folder, or https URL
-  gradient: ["#8b5cf6", "#4c1d95"] # optional fallback tile colours
-  fallback: film                  # optional Lucide icon name (kebab-case)
+  logo: logo.svg # square PNG or SVG, at least 256px; path in the app folder, or https URL
+  gradient: ['#8b5cf6', '#4c1d95'] # optional fallback tile colours
+  fallback: film # optional Lucide icon name (kebab-case)
 ```
 
 The daemon validates it with `AppIconManifest` and sends the UI a `ResolvedAppIcon` from `resolveAppIcon(icon, '/api/apps/<id>/assets/')`.
@@ -71,7 +71,11 @@ To turn `fallback` into a component in the UI, use Lucide's dynamic import so un
 
 ```tsx
 import { DynamicIcon } from 'lucide-react/dynamic';
-<AppLogo name={app.name} src={app.icon.logoUrl} fallbackIcon={app.icon.fallback ? <DynamicIcon name={app.icon.fallback} size={34} /> : undefined} />
+<AppLogo
+  name={app.name}
+  src={app.icon.logoUrl}
+  fallbackIcon={app.icon.fallback ? <DynamicIcon name={app.icon.fallback} size={34} /> : undefined}
+/>;
 ```
 
 ## File and folder icons (Files app)

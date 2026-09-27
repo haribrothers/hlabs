@@ -6,3 +6,10 @@ dist/
 !.env.example
 target/
 .DS_Store
+.dev-data/
+coverage/
+playwright-report/
+test-results/
+
+.e2e-data/
+.astro/

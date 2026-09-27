@@ -1,0 +1,10 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "rangeStrategy": "bump",
+  "packageRules": [
+    { "matchManagers": ["docker-compose"], "matchFileNames": ["store/**"], "pinDigests": true },
+    { "matchPackageNames": ["typescript"], "allowedVersions": "<6" },
+    { "matchPackageNames": ["@types/node"], "allowedVersions": "<23" }
+  ]
+}

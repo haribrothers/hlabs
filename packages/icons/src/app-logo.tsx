@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Box } from 'lucide-react';
 
 /** Two-stop fallback gradients, picked by app name when the manifest gives none. */
@@ -17,7 +17,7 @@ export const FALLBACK_GRADIENTS: ReadonlyArray<readonly [string, string]> = [
 export function gradientFor(name: string): readonly [string, string] {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  return FALLBACK_GRADIENTS[h % FALLBACK_GRADIENTS.length];
+  return FALLBACK_GRADIENTS[h % FALLBACK_GRADIENTS.length]!;
 }
 
 export interface AppLogoProps {
@@ -42,8 +42,9 @@ export interface AppLogoProps {
  * The gradient also shows behind the logo while it loads.
  */
 export function AppLogo({ name, src, colors, fallbackIcon, size = 76, radius, className, style }: AppLogoProps) {
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [src]);
+  // Remember which src failed, so a new src gets a fresh attempt without an effect.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const failed = failedSrc !== null && failedSrc === src;
   const [c1, c2] = colors ?? gradientFor(name);
   const showImg = Boolean(src) && !failed;
   return (
@@ -74,7 +75,7 @@ export function AppLogo({ name, src, colors, fallbackIcon, size = 76, radius, cl
           loading="lazy"
           decoding="async"
           draggable={false}
-          onError={() => setFailed(true)}
+          onError={() => setFailedSrc(src ?? null)}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
         />
       ) : (

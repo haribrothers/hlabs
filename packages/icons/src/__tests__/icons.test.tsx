@@ -32,7 +32,12 @@ describe('logo', () => {
     expect(container.querySelector('svg')!.getAttribute('width')).toBe('201');
   });
   it('gives each instance its own gradient id', () => {
-    const { container } = render(<><LogoMark /><LogoMark /></>);
+    const { container } = render(
+      <>
+        <LogoMark />
+        <LogoMark />
+      </>,
+    );
     const ids = [...container.querySelectorAll('linearGradient')].map((g) => g.id);
     expect(new Set(ids).size).toBe(2);
   });
@@ -77,7 +82,9 @@ describe('manifest', () => {
     expect(AppIconManifest.safeParse({ logo: 'a.png', colour: '#fff' }).success).toBe(false);
   });
   it('keeps https logos as they are', () => {
-    expect(resolveAppIcon({ logo: 'https://cdn.example.org/x.png' }, '/a/').logoUrl).toBe('https://cdn.example.org/x.png');
+    expect(resolveAppIcon({ logo: 'https://cdn.example.org/x.png' }, '/a/').logoUrl).toBe(
+      'https://cdn.example.org/x.png',
+    );
   });
 });
 
@@ -105,7 +112,19 @@ describe('file icons', () => {
   });
   it('has art for every colour, folder kind and size', () => {
     for (const c of Object.values(FOLDER_COLOUR))
-      for (const k of ['plain', 'documents', 'pictures', 'music', 'videos', 'downloads', 'shared', 'apps', 'backup', 'network', 'private'])
+      for (const k of [
+        'plain',
+        'documents',
+        'pictures',
+        'music',
+        'videos',
+        'downloads',
+        'shared',
+        'apps',
+        'backup',
+        'network',
+        'private',
+      ])
         for (const s of ['24', '64']) expect(FILE_ICON_SVGS[`${s}/folder-${c}-${k}`]).toContain('<svg');
   });
   it('folders follow the accent', () => {
@@ -116,7 +135,7 @@ describe('file icons', () => {
   it('uses 24px art at small sizes and is decorative', () => {
     const { container } = render(<FileIcon name="a.pdf" size={24} />);
     const img = container.querySelector('img')!;
-    expect(decodeURIComponent(img.getAttribute('src')!)).toContain(FILE_ICON_SVGS['24/file-pdf'].slice(0, 40));
+    expect(decodeURIComponent(img.getAttribute('src')!)).toContain(FILE_ICON_SVGS['24/file-pdf']!.slice(0, 40));
     expect(img.getAttribute('alt')).toBe('');
   });
 });

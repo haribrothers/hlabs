@@ -1,0 +1,10 @@
+/* Starlight themed with @hlabs/ui tokens (tokens only; the site has its own layout). */
+@import '@hlabs/ui/tokens.css';
+
+:root {
+  --sl-color-accent: var(--accent);
+  --sl-color-accent-high: var(--accent-tab);
+  --sl-color-accent-low: var(--wall-base);
+  --sl-font: var(--hl-font-sans);
+  --sl-font-mono: var(--hl-font-mono);
+}

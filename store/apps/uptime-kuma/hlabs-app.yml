@@ -1,0 +1,26 @@
+schema: 1
+id: uptime-kuma
+name: Uptime Kuma
+version: '2.5.5'
+revision: 0
+tagline: Know the moment a website or service goes down
+description: |
+  Watch websites, servers and your own apps, see their uptime over time and get a message when
+  something stops answering.
+category: monitoring
+developer: { name: Louis Lam, url: https://github.com/louislam }
+source: https://github.com/louislam/uptime-kuma
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#4ade80', '#15803d']
+  fallback: activity
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 1024 }
+web: { service: uptime-kuma, port: 3001 }
+health: { service: uptime-kuma, container: true, timeout: 120 }
+ownLogin: true
+backup:
+  pause: [uptime-kuma]
+  beforeUpdate: true
+permissions: { network: internet }

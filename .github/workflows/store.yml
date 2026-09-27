@@ -1,0 +1,27 @@
+# Built-in store. Phase 0: validate every app. The nightly install matrix and index signing
+# (11 §CI, 06 §Store index) arrive with the store in phase 2.
+name: store
+
+on:
+  pull_request:
+    paths: ['store/**', 'packages/app-manifest/**', '.github/workflows/store.yml']
+  schedule:
+    - cron: '0 2 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @hlabs/icons build
+      - run: pnpm store:lint
+      - run: pnpm store:build

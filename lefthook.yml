@@ -1,0 +1,10 @@
+pre-commit:
+  commands:
+    format:
+      glob: '*.{ts,tsx,js,mjs,cjs,json,md,css,yml,yaml}'
+      run: pnpm prettier --write --ignore-unknown {staged_files}
+      stage_fixed: true
+pre-push:
+  commands:
+    typecheck:
+      run: pnpm typecheck

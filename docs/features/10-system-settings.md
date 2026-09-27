@@ -393,16 +393,16 @@ The system half of Settings: how hlabs is reached on the home network and over T
 
 **Acceptance criteria**
 - **Given** an update is available, **then** the card shows "hlabs <next> is available", "You have <current>. Apps restart for about a minute.", up to 5 release-note bullets and "Update now"; a "Full release notes" link opens the GitHub release.
-- **Given** I click "Update now", **when** `settings.updates.apply` succeeds, **then** the UI switches to SysUpdating and reloads by itself when `/healthz` returns 200.
+- **Given** I click "Update now", **when** `settings.updates.install` succeeds, **then** the UI switches to SysUpdating and reloads by itself when `/healthz` returns 200.
 - **Given** no update, **then** the card shows "hlabs is up to date", "Version <current>", "Last checked <relative time>" and "Check now".
-- **Given** macOS or Linux desktop, **when** `settings.updates.apply` creates the `system_update` job, **then** the daemon emits `update.applyRequested` and the tray downloads, verifies and installs the update (tray, daemon bundle and helper binaries), then restarts the daemon (02 §2.10, D-034).
+- **Given** macOS or Linux desktop, **when** `settings.updates.install` creates the `system_update` job, **then** the daemon emits `update.applyRequested` and the tray downloads, verifies and installs the update (tray, daemon bundle and helper binaries), then restarts the daemon (02 §2.10, D-034).
 - **Given** Linux headless (no tray), **then** the daemon applies the update itself: it downloads the signed tarball, verifies checksum and signature, unpacks it to `/opt/hlabs/<version>`, switches the `current` symlink and asks systemd to restart `hlabsd`; if `/healthz` isn't ready within 3 minutes, the symlink is switched back.
 - **Given** automatic updates are on, **then** they run only in the 03:00–05:00 window, after any running backup finishes (US-SYS-26, D-026).
 - **Given** the signature check fails, **then** the update is refused with `UPDATE_SIGNATURE_INVALID` and nothing is installed.
 - **Given** an exclusive job is running, **then** "Update now" is disabled with "Wait for <job> to finish".
 
 **Implementation notes**
-- API: `settings.updates.get`, `settings.updates.apply` (addition) → job; on desktop the daemon emits `update.applyRequested` and the tray runs the Tauri updater; on headless Linux the daemon's own updater runs (02 §2.10).
+- API: `settings.updates.get`, `settings.updates.install` (addition) → job; on desktop the daemon emits `update.applyRequested` and the tray runs the Tauri updater; on headless Linux the daemon's own updater runs (02 §2.10).
 - Data: `settings.updates`, `jobs` (kind `system_update`).
 - UI: GlassCard, List, Button.
 

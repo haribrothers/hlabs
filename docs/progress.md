@@ -4,7 +4,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 
 ## Phase 0 · Foundations
 
-- [ ] Phase 0 deliverables (see 10-phases)
+- [x] Phase 0 deliverables (see 10-phases)
 
 
 ## Phase 1 · Core, first run and sign in

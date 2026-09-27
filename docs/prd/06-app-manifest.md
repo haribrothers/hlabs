@@ -105,6 +105,9 @@ The index may also carry optional `featured: [appId]`, `collections: [{ title, a
 - No `ports:` except those declared under `ports` above. No `privileged: true`, no `network_mode: host`, no `pid: host`, no `/var/run/docker.sock` unless `permissions.dockerSocket: true`.
 - Images must be pinned by tag **and** digest in the built-in store (`image: ghcr.io/…:v1.135.3@sha256:…`).
 - hlabs injects: a loopback port mapping `127.0.0.1:<port>:<web.port>` for the web service (D-049), network `hlabs` (external), labels `dev.hlabs.app=<id>`, `restart: unless-stopped`, log options (json-file, 10 MB × 3), and `TZ`.
+- Named and anonymous volumes are not allowed: everything an app keeps goes under `${HLABS_APP_DATA}` or a declared folder, so backups include it. `build`, `container_name` and `env_file` are not allowed either (hlabs names the project `hlabs-<id>` and writes the variables to the project's `.env`).
+- Only the web service joins the external `hlabs` network (with the project's `default` network); databases and workers stay on the project network. Every service gets the labels `dev.hlabs.app=<id>` and `dev.hlabs.service=<service>`.
+- Validator issue codes (used by `pnpm store:lint` and install errors): `COMPOSE_INVALID`, `SERVICE_BUILD`, `IMAGE_NOT_PINNED`, `PRIVILEGED`, `HOST_NETWORK`, `HOST_PID`, `HOST_IPC`, `CONTAINER_NAME`, `ENV_FILE`, `PORT_NOT_DECLARED`, `BIND_MOUNT_NOT_ALLOWED`, `DOCKER_SOCKET`, `NAMED_VOLUME`, `UNKNOWN_FOLDER`, `MANIFEST_SERVICE_MISSING`.
 
 ## Variables available to compose
 `HLABS_APP_ID`, `HLABS_APP_DATA`, `HLABS_FOLDER_<KEY>`, `HLABS_HOSTNAME` (e.g. `immich.hlabs.local`), `HLABS_URL` (https URL), `HLABS_TAILNET_URL` (if remote access on), `TZ`, `PUID`, `PGID`, plus every `env` key.

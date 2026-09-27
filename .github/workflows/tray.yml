@@ -1,0 +1,55 @@
+# The Tauri tray: clippy, tests and an unsigned build on macOS arm64 and Linux x64 (11 §CI).
+name: tray
+
+on:
+  pull_request:
+    paths: ['apps/tray/**', 'packages/ui/**', 'packages/icons/**', '.github/workflows/tray.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  tray:
+    name: tray (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-arm64
+            os: macos-14
+            bundles: app
+          - platform: linux-x64
+            os: ubuntu-22.04
+            bundles: deb
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: apps/tray
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/tray/src-tauri
+      - name: Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @hlabs/icons build
+      - run: pnpm build
+      - run: cargo fmt --check
+        working-directory: apps/tray/src-tauri
+      - run: cargo clippy --all-targets -- -D warnings
+        working-directory: apps/tray/src-tauri
+      - run: cargo test
+        working-directory: apps/tray/src-tauri
+      - run: pnpm tauri build --bundles ${{ matrix.bundles }}

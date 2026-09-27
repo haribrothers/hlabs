@@ -192,7 +192,7 @@ The session cookie is set on `.hlabs.local` (and on the tailnet host) so one log
 
 ## 2.10 Updates
 - **hlabs itself — who applies it (D-034):**
-  - *macOS and Linux desktop:* the **tray** owns updates, using the Tauri updater (signed manifest on GitHub Releases, channels `stable` / `beta`). The dashboard's "Update now" (`settings.updates.apply`) creates a `system_update` job and emits `update.applyRequested`; the tray picks it up, downloads, verifies and installs (tray + daemon bundle + helper binaries), then restarts the daemon.
+  - *macOS and Linux desktop:* the **tray** owns updates, using the Tauri updater (signed manifest on GitHub Releases, channels `stable` / `beta`). The dashboard's "Update now" (`settings.updates.install`) creates a `system_update` job and emits `update.applyRequested`; the tray picks it up, downloads, verifies and installs (tray + daemon bundle + helper binaries), then restarts the daemon.
   - *Linux headless:* the **daemon** applies it: downloads the signed tarball, verifies checksum and signature, unpacks beside the current install (`/opt/hlabs/<version>`), switches the `current` symlink and asks systemd to restart `hlabsd`; if `/healthz` isn't ready within 3 minutes, systemd's `ExecStartPre` check switches the symlink back.
   - Migrations run on start; the UI shows `SysUpdating` until `/healthz` is back.
 - **Automatic update window:** one window, **03:00–05:00 local time**, for both hlabs and app auto-updates; it starts only after any running backup finishes (D-026). hlabs updates first, then apps.

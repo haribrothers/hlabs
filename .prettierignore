@@ -1,0 +1,11 @@
+pnpm-lock.yaml
+dist/
+docs/
+packages/icons/assets/
+**/migrations/meta/
+CLAUDE.md
+packages/icons/src/file-icons/data.ts
+packages/ui/src/styles/tokens.css
+packages/ui/src/styles/theme.css
+packages/ui/src/lib/tokens.ts
+apps/web/src/routeTree.gen.ts

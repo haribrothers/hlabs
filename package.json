@@ -1,0 +1,40 @@
+{
+  "name": "hlabs",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22 <25"
+  },
+  "scripts": {
+    "dev": "turbo run dev --filter=@hlabs/daemon --filter=@hlabs/web",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "eslint . && pnpm boundaries",
+    "boundaries": "depcruise $(ls -d apps packages 2>/dev/null) --config .dependency-cruiser.cjs",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "changeset": "changeset",
+    "db:generate": "pnpm --filter @hlabs/db db:generate",
+    "db:migrate": "pnpm --filter @hlabs/db db:migrate",
+    "store:lint": "pnpm --filter @hlabs/app-manifest store:lint",
+    "store:build": "pnpm --filter @hlabs/app-manifest store:build",
+    "ui:tokens": "pnpm --filter @hlabs/ui tokens",
+    "dev:tray": "pnpm --filter @hlabs/tray tauri dev",
+    "dev:site": "pnpm --filter @hlabs/site dev",
+    "site:build": "pnpm --filter @hlabs/site site:build",
+    "test:e2e": "pnpm --filter @hlabs/web test:e2e"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.3",
+    "@hlabs/config": "workspace:*",
+    "dependency-cruiser": "^18.4.0",
+    "eslint": "^10.11.0",
+    "lefthook": "^2.1.14",
+    "prettier": "^3.9.9",
+    "turbo": "^2.11.4",
+    "typescript": "~5.9.3"
+  }
+}

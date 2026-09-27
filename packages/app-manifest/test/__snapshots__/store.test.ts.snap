@@ -1,0 +1,194 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`built-in store > rendering immich > matches the snapshot 1`] = `
+"services:
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:v3.2.2@sha256:79cc1623323d5894922686d8743b4780181428f98eecbfb58ce12c41ef02d1ea
+    environment:
+      DB_HOSTNAME: database
+      DB_USERNAME: postgres
+      DB_PASSWORD: \${DB_PASSWORD}
+      DB_DATABASE_NAME: immich
+      REDIS_HOSTNAME: redis
+      TZ: \${TZ}
+    volumes:
+      - \${HLABS_FOLDER_LIBRARY}:/data
+    depends_on:
+      - redis
+      - database
+    labels:
+      dev.hlabs.app: immich
+      dev.hlabs.service: immich-server
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - default
+      - hlabs
+    ports:
+      - 127.0.0.1:12001:2283
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:v3.2.2@sha256:60dfcf266a9ef3b7376f5678e8c980d4fb61db5fc48c078fe8a326ab1535d60d
+    volumes:
+      - \${HLABS_APP_DATA}/model-cache:/cache
+    labels:
+      dev.hlabs.app: immich
+      dev.hlabs.service: immich-machine-learning
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    environment:
+      TZ: \${TZ}
+  redis:
+    image: docker.io/valkey/valkey:9@sha256:70739f85ad2ee01a726a965584a0f94895f01b0c60b3cc8b0aeef11eaa6888cf
+    healthcheck:
+      test: redis-cli ping | grep -q PONG || exit 1
+    labels:
+      dev.hlabs.app: immich
+      dev.hlabs.service: redis
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    environment:
+      TZ: \${TZ}
+  database:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+    environment:
+      POSTGRES_PASSWORD: \${DB_PASSWORD}
+      POSTGRES_USER: postgres
+      POSTGRES_DB: immich
+      POSTGRES_INITDB_ARGS: --data-checksums
+      TZ: \${TZ}
+    volumes:
+      - \${HLABS_APP_DATA}/postgres:/var/lib/postgresql/data
+    shm_size: 128mb
+    labels:
+      dev.hlabs.app: immich
+      dev.hlabs.service: database
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+name: hlabs-immich
+networks:
+  default: {}
+  hlabs:
+    external: true
+    name: hlabs
+"
+`;
+
+exports[`built-in store > rendering immich > matches the snapshot 2`] = `
+"DB_PASSWORD='generated-secret'
+SIGNUPS_ALLOWED='true'
+HLABS_APP_ID='immich'
+HLABS_APP_DATA='/home/hari/hlabs/app-data/immich'
+HLABS_HOSTNAME='immich.hlabs.local'
+HLABS_URL='https://immich.hlabs.local'
+TZ='Europe/London'
+PUID='1000'
+PGID='1000'
+HLABS_FOLDER_LIBRARY='/home/hari/hlabs/users/hari/Photos'
+"
+`;
+
+exports[`built-in store > rendering uptime-kuma > matches the snapshot 1`] = `
+"services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:2.5.5@sha256:c74379ac4509ce2d2c2633f509e67003ee2e45b6e995c5e43fc101f45a0e1fbe
+    volumes:
+      - \${HLABS_APP_DATA}/data:/app/data
+    labels:
+      dev.hlabs.app: uptime-kuma
+      dev.hlabs.service: uptime-kuma
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    environment:
+      TZ: \${TZ}
+    networks:
+      - default
+      - hlabs
+    ports:
+      - 127.0.0.1:12001:3001
+name: hlabs-uptime-kuma
+networks:
+  default: {}
+  hlabs:
+    external: true
+    name: hlabs
+"
+`;
+
+exports[`built-in store > rendering uptime-kuma > matches the snapshot 2`] = `
+"DB_PASSWORD='generated-secret'
+SIGNUPS_ALLOWED='true'
+HLABS_APP_ID='uptime-kuma'
+HLABS_APP_DATA='/home/hari/hlabs/app-data/uptime-kuma'
+HLABS_HOSTNAME='uptime-kuma.hlabs.local'
+HLABS_URL='https://uptime-kuma.hlabs.local'
+TZ='Europe/London'
+PUID='1000'
+PGID='1000'
+"
+`;
+
+exports[`built-in store > rendering vaultwarden > matches the snapshot 1`] = `
+"services:
+  vaultwarden:
+    image: vaultwarden/server:1.37.3@sha256:1587c45feaa479f1f5e8af3b00eded36bff77bcf1880cf8dbf0541706dd470e0
+    environment:
+      DOMAIN: \${HLABS_URL}
+      SIGNUPS_ALLOWED: \${SIGNUPS_ALLOWED}
+      TZ: \${TZ}
+    volumes:
+      - \${HLABS_APP_DATA}/data:/data
+    labels:
+      dev.hlabs.app: vaultwarden
+      dev.hlabs.service: vaultwarden
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - default
+      - hlabs
+    ports:
+      - 127.0.0.1:12001:80
+name: hlabs-vaultwarden
+networks:
+  default: {}
+  hlabs:
+    external: true
+    name: hlabs
+"
+`;
+
+exports[`built-in store > rendering vaultwarden > matches the snapshot 2`] = `
+"DB_PASSWORD='generated-secret'
+SIGNUPS_ALLOWED='true'
+HLABS_APP_ID='vaultwarden'
+HLABS_APP_DATA='/home/hari/hlabs/app-data/vaultwarden'
+HLABS_HOSTNAME='vaultwarden.hlabs.local'
+HLABS_URL='https://vaultwarden.hlabs.local'
+TZ='Europe/London'
+PUID='1000'
+PGID='1000'
+"
+`;

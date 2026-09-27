@@ -1,0 +1,17 @@
+{
+  "name": "@hlabs/site",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "site:build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "~0.37.7",
+    "@hlabs/ui": "workspace:*",
+    "astro": "^5.18.2"
+  }
+}

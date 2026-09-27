@@ -1,0 +1,32 @@
+{
+  "name": "@hlabs/app-manifest",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./node": "./src/node.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "store:lint": "tsx src/cli/store-lint.ts ../../store",
+    "store:build": "tsx src/cli/store-build.ts ../../store"
+  },
+  "dependencies": {
+    "@hlabs/icons": "workspace:*",
+    "@hlabs/shared": "workspace:*",
+    "yaml": "^2.8.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@hlabs/config": "workspace:*",
+    "@types/node": "^22.20.4",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  }
+}

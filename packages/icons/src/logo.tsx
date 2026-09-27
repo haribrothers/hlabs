@@ -44,9 +44,7 @@ function Shapes({ tone, gid, simplified }: { tone: LogoTone; gid: string; simpli
           </linearGradient>
         </defs>
         <path d={MARK_PATH} fill={`url(#${gid})`} {...(thick && { ...thick, stroke: `url(#${gid})` })} />
-        {simplified
-          ? null
-          : MARK_DOTS.map((cx, i) => <circle key={cx} cx={cx} cy={125.5} r={9} fill={p.dots[i]} />)}
+        {simplified ? null : MARK_DOTS.map((cx, i) => <circle key={cx} cx={cx} cy={125.5} r={9} fill={p.dots[i]} />)}
       </>
     );
   }
@@ -81,7 +79,13 @@ export function LogoLockup({ tone = 'color', size = 32, title = 'hlabs', simplif
   const gid = `hl-logo-${useId().replace(/:/g, '')}`;
   const word = tone === 'color' || tone === 'on-light' ? PALETTES[tone].word : SOLID[tone];
   return (
-    <svg width={(size * LOCKUP_WIDTH) / MARK_HEIGHT} height={size} viewBox={`0 0 ${LOCKUP_WIDTH} ${MARK_HEIGHT}`} {...a11y(title)} {...rest}>
+    <svg
+      width={(size * LOCKUP_WIDTH) / MARK_HEIGHT}
+      height={size}
+      viewBox={`0 0 ${LOCKUP_WIDTH} ${MARK_HEIGHT}`}
+      {...a11y(title)}
+      {...rest}
+    >
       {title ? <title>{title}</title> : null}
       <Shapes tone={tone} gid={gid} />
       <path transform={`translate(${WORDMARK_X} ${MARK_HEIGHT})`} d={WORDMARK_PATH} fill={word} />
