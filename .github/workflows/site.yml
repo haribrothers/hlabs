@@ -1,0 +1,26 @@
+# Website and help (D-055). Phase 0: build the site. site:check, axe and Cloudflare Pages
+# deploys arrive with the site content in phase 6.
+name: site
+
+on:
+  pull_request:
+    paths: ['apps/site/**', 'store/**', 'packages/ui/**', 'packages/icons/**', '.github/workflows/site.yml']
+  push:
+    branches: [main]
+    paths: ['apps/site/**', 'store/**', 'packages/ui/**', 'packages/icons/**']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm site:build
