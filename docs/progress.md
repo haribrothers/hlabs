@@ -20,7 +20,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ONB-09 · See what to fix when the account details are invalid
 - [x] US-ONB-10 · Only allow one admin to be created through onboarding
 - [x] US-ONB-11 · Turn on two-factor login
-- [ ] US-ONB-12 · Save recovery codes
+- [x] US-ONB-12 · Save recovery codes
 - [ ] US-ONB-13 · Skip two-factor for now
 - [ ] US-ONB-14 · Keep data on this computer
 - [ ] US-ONB-15 · Use an external drive

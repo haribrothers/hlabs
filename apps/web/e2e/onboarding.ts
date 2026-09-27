@@ -13,3 +13,15 @@ export async function createAdminInUi(page: Page, request: APIRequestContext) {
   await page.getByRole('button', { name: 'Create account' }).click();
   await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/twoFactor`);
 }
+
+/** On the two-factor step: reads the key, enters the current code and returns the recovery codes shown. */
+export async function turnOnTwoFactor(page: Page): Promise<string[]> {
+  const { generateSync } = await import('otplib');
+  await page.getByRole('button', { name: "Can't scan? Enter this key instead" }).click();
+  const secret = (await page.getByLabel('Setup key').innerText()).replace(/\s/g, '');
+  const code = generateSync({ secret });
+  for (let i = 0; i < 6; i++) await page.getByLabel(`Digit ${i + 1}`).fill(code[i]!);
+  const list = page.getByRole('list', { name: 'Recovery codes' });
+  await expect(list.getByRole('listitem')).toHaveCount(10);
+  return list.getByRole('listitem').allInnerTexts();
+}

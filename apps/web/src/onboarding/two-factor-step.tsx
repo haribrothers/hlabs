@@ -1,6 +1,7 @@
 // OnbTwoFactor (US-ONB-11): scan the QR code (or enter the key), then confirm a 6-digit code.
 import { Badge, Button, CodeInput } from '@hlabs/ui';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { TRPCClientError } from '@trpc/client';
 import QRCode from 'qrcode';
 import { useEffect, useRef, useState } from 'react';
@@ -20,20 +21,34 @@ const hlabsCode = (err: unknown) =>
 
 export function TwoFactorStep() {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const me = useQuery({ ...trpc.auth.me.queryOptions(), retry: false });
+  const info = useQuery({ ...trpc.system.info.queryOptions(), retry: false });
   const setup = useMutation(trpc.onboarding.setupTotp.mutationOptions());
+  const next = useMutation(
+    trpc.onboarding.setStep.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: trpc.onboarding.status.queryKey() });
+        await navigate({ to: '/setup/$step', params: { step: 'storage' } });
+      },
+    }),
+  );
+  const alreadyOn = me.data?.totpEnabled === true;
   const [qr, setQr] = useState<string | null>(null);
   const [showKey, setShowKey] = useState(false);
   const [code, setCode] = useState('');
   const [focusKey, setFocusKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  // A new secret each time the step opens; a reload replaces it (US-ONB-11).
+  // A new secret each time the step opens (a reload replaces it, US-ONB-11), unless two-factor is already on.
   const started = useRef(false);
+  const meSettled = !me.isPending;
   useEffect(() => {
-    if (started.current) return;
+    if (started.current || !meSettled || alreadyOn) return;
     started.current = true;
     setup.mutate();
-  }, [setup]);
+  }, [setup, meSettled, alreadyOn]);
 
   const otpauthUrl = setup.data?.otpauthUrl;
   useEffect(() => {
@@ -56,10 +71,39 @@ export function TwoFactorStep() {
     confirm.mutate({ code: value });
   };
 
+  const goOn = () => next.mutate({ step: 'storage' });
+  const continueError = next.isError ? (
+    <p role="alert" className="m-0 mt-4 text-body-sm">
+      {copy.continueFailed}
+    </p>
+  ) : null;
+
   if (confirm.data) {
     return (
       <StepFrame step="twoFactor" title={copy.codesTitle}>
-        <RecoveryCodes codes={confirm.data.recoveryCodes} />
+        <RecoveryCodes
+          codes={confirm.data.recoveryCodes}
+          hostname={info.data?.hostname ?? 'hlabs'}
+          username={me.data?.username ?? ''}
+          onContinue={goOn}
+          continuing={next.isPending}
+        />
+        {continueError}
+      </StepFrame>
+    );
+  }
+
+  // Reloaded after turning it on (or came Back from storage): the codes aren't shown again (US-ONB-12, D-022).
+  if (alreadyOn) {
+    return (
+      <StepFrame step="twoFactor" title={copy.codesTitle}>
+        <p className="m-0 mt-2 text-body text-ink-muted">{copy.alreadyOn}</p>
+        {continueError}
+        <div className="mt-8 flex justify-end">
+          <Button size="lg" onClick={goOn} disabled={next.isPending} aria-busy={next.isPending}>
+            {onboardingCopy.continue}
+          </Button>
+        </div>
       </StepFrame>
     );
   }
