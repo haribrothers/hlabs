@@ -76,6 +76,8 @@ export class DaemonContext implements ApiContext {
     if (access.includes('setup')) {
       const { onboarding } = this.services;
       if (onboarding.completed) throw hlabsError('ONBOARDING_COMPLETE');
+      // Once an admin exists, creating one answers the same for every caller: it already exists (US-ONB-10).
+      if (path === 'onboarding.createAdmin' && onboarding.status().hasUsers) throw hlabsError('ONBOARDING_USERS_EXIST');
       // Until an admin exists only the setup token counts (D-013); after that, only the admin's session
       // (US-ONB-03) — never the development-only anonymous admin.
       if (!onboarding.status().hasUsers) {

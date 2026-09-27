@@ -127,7 +127,10 @@ export function AccountStep() {
       <span>{passwordError ?? strength.text}</span>
     </span>
   );
-  const otherFailure = create.isError && !serverFieldError(hlabsCode(create.error));
+  const errorCode = create.isError ? hlabsCode(create.error) : undefined;
+  // A stale tab: someone already created the admin (US-ONB-10). The log-in screen comes with sign-in.
+  const adminExists = errorCode === 'ONBOARDING_USERS_EXIST';
+  const otherFailure = create.isError && !adminExists && !serverFieldError(errorCode);
 
   return (
     <StepFrame step="account" title={onboardingCopy.titles.account}>
@@ -170,6 +173,14 @@ export function AccountStep() {
           error={visible('confirm')}
           {...field('confirm')}
         />
+        {adminExists ? (
+          <div role="alert" className="flex items-center justify-between gap-4 rounded-sm bg-surface-row px-4 py-3">
+            <p className="m-0 text-body-sm">{copy.adminExists}</p>
+            <Button size="sm" variant="secondary" href="/login">
+              {copy.logIn}
+            </Button>
+          </div>
+        ) : null}
         {otherFailure ? (
           <p role="alert" className="m-0 text-body-sm">
             {copy.failed}

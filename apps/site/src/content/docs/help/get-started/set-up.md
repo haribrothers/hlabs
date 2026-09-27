@@ -48,6 +48,8 @@ The admin manages apps, people and settings; you can add family members later.
 
 If something needs changing, hlabs says what under that field and how many things are left to fix; each message goes away as soon as the field is right.
 
+Setup creates only one admin. If you see "An admin account already exists. Log in to continue.", the account was already made (perhaps in another tab): log in with it instead.
+
 Once the account is created you're signed in on this browser, and the setup address stops working: from here on, setup continues as you.
 
 ## "Finish setup on the computer running hlabs."
