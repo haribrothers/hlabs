@@ -62,8 +62,7 @@ describe('US-ONB-01', () => {
     const token = setupUrlIn(printed).match(SETUP_URL)![1]!;
     for (let tab = 0; tab < 2; tab++) {
       const res = await trpc(url, 'onboarding.setStep', { mutation: true, input: { step: 'system' }, token });
-      // Past the token check; the step itself is built by a later story.
-      expect(res.error?.data.hlabsCode).toBe('NOT_IMPLEMENTED');
+      expect(res.result?.data).toEqual({ ok: true });
     }
   });
 

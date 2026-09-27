@@ -1,5 +1,11 @@
 // First run: onboarding state and the one-time setup token that guards it (D-013, D-041, US-ONB-01).
-import { onboardingStepSchema } from '@hlabs/api';
+import {
+  hlabsError,
+  nextOnboardingStep,
+  onboardingStepSchema,
+  SKIPPABLE_ONBOARDING_STEPS,
+  type OnboardingStep,
+} from '@hlabs/api';
 import { getSetting, setSetting, users, type HlabsDb } from '@hlabs/db';
 import { count } from 'drizzle-orm';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
@@ -29,6 +35,19 @@ export class OnboardingService {
     const hasUsers = (this.db.select({ n: count() }).from(users).get()?.n ?? 0) > 0;
     const parsed = onboardingStepSchema.safeParse(step);
     return { completed: completedAt !== null, step: parsed.success ? parsed.data : 'welcome', hasUsers };
+  }
+
+  /**
+   * Moves past a step that needs no action (Get started on the welcome screen, US-ONB-02). Only the next
+   * enabled step is accepted; repeating the saved step is a no-op (two tabs, double clicks).
+   */
+  setStep(step: OnboardingStep): void {
+    const current = this.status().step;
+    if (step === current) return;
+    if (!SKIPPABLE_ONBOARDING_STEPS.includes(current) || nextOnboardingStep(current) !== step) {
+      throw hlabsError('ONBOARDING_STEP_INVALID');
+    }
+    setSetting(this.db, 'onboarding', { ...getSetting(this.db, 'onboarding'), step });
   }
 
   /**
