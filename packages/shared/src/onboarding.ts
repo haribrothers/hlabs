@@ -39,5 +39,8 @@ export function nextOnboardingStep(step: OnboardingStep, shippedPhase: number = 
   return steps[steps.indexOf(step) + 1] ?? 'done';
 }
 
-/** Steps `onboarding.setStep` may move past without doing anything. Skippable steps join as their stories ship. */
-export const SKIPPABLE_ONBOARDING_STEPS: readonly OnboardingStep[] = ['welcome'];
+/**
+ * Steps `onboarding.setStep` may move past without an action of their own: welcome (Get started), and two-factor
+ * (Continue after it's on, US-ONB-12, or Skip for now, US-ONB-13). Others join as their stories ship.
+ */
+export const SKIPPABLE_ONBOARDING_STEPS: readonly OnboardingStep[] = ['welcome', 'twoFactor'];

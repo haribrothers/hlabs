@@ -21,6 +21,7 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
       locale: user.locale,
       // Admin-required two-factor arrives with US-AUTH-10.
       mustSetupTotp: false,
+      totpEnabled: ctx.services.totp.isEnabled(user.id),
       appearance: null,
       csrfToken: csrfTokenFor(id.session.raw),
     };

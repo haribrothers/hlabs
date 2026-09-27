@@ -28,6 +28,8 @@ export const meSchema = z.object({
   avatarColor: z.string().nullable(),
   locale: z.string(),
   mustSetupTotp: z.boolean(),
+  /** Two-factor login is on for this account. */
+  totpEnabled: z.boolean(),
   appearance: pending,
   /** Send as `x-hlabs-csrf` on every mutation (07 §7.3). */
   csrfToken: z.string(),
