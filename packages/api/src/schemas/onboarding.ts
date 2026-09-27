@@ -13,12 +13,12 @@ import {
   usernameSchema,
 } from './common';
 
-/** Step registry (D-041); only enabled steps are shown. */
+/** Step registry (D-041; 04 `settings.onboarding.step`); only enabled steps are shown. */
 export const onboardingStepSchema = z.enum([
   'welcome',
   'system',
   'account',
-  'totp',
+  'twoFactor',
   'storage',
   'remote',
   'apps',
@@ -26,10 +26,8 @@ export const onboardingStepSchema = z.enum([
 ]);
 
 export const onboarding = {
-  status: io(
-    empty,
-    z.object({ complete: z.boolean(), step: onboardingStepSchema, steps: z.array(onboardingStepSchema) }),
-  ),
+  /** Public: never returns user data (US-ONB-01, US-ONB-03). */
+  status: io(empty, z.object({ completed: z.boolean(), step: onboardingStepSchema, hasUsers: z.boolean() })),
   checkSystem: io(z.object({ includeLog: z.boolean().optional() }).optional(), pending),
   confirmSystem: io(z.object({ startAtLogin: z.boolean() }), ok),
   installEngine: io(empty, jobRefSchema),

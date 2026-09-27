@@ -181,3 +181,11 @@ These were added while writing user stories and are **part of the API contract**
 - Event `system.test` (`{ message }`), emitted only in development by `POST /dev/emit-test-event`, to prove the event stream reaches the browser.
 - Placeholder output schemas (`pending`) are replaced by the story that implements each procedure.
 - Until sign-in ships (phase 1), `pnpm dev` sets `HLABS_DEV_ANONYMOUS_ADMIN=1` so the dashboard can call signed-in procedures such as `events.stream`. The daemon refuses to start with it when `NODE_ENV=production`; phase 1 removes it.
+
+### From phase 1 · Core, first run and sign in
+
+- `onboarding.status` (public) returns `{ completed, step, hasUsers }` and nothing else; `step` is one of `welcome | system | account | twoFactor | storage | remote | apps | done` (04 `settings.onboarding.step`). The enabled steps and "Step N of M" come from the step registry (D-041), not from this procedure.
+- Setup-token check (D-013): every `setupProcedure` first fails with `ONBOARDING_COMPLETE` once onboarding is done, then requires `x-hlabs-setup` to match the setup token (compared by SHA-256 hash in constant time) or fails with `ONBOARDING_SETUP_TOKEN_REQUIRED`. This check comes before any session check.
+- The daemon's dashboard base URL for the printed setup URL is `HLABS_DASHBOARD_URL` (default `http://127.0.0.1:<port>`; `pnpm dev` points it at Vite, `http://127.0.0.1:5173`). The setup URL is `<dashboard>/setup?token=<token>`.
+- Development only (never registered in production): `GET /dev/setup-url` → `{ url }` (null once onboarding is complete) and `POST /dev/complete-onboarding`, so e2e can reach both sides of the first-run gate.
+- Secret store (07 §7.7): `HLABS_SECRET_STORE=keychain|file` picks the backend. Default: `keychain` for a production desktop install (service `dev.hlabs`, D-050), `file` for headless Linux and for development and tests (AES-256-GCM, key in `<dataDir>/secret.key`, mode 0600), so development never touches the login keychain.
