@@ -35,7 +35,7 @@ New questions found during the build go here with the next free id (Q-09 onward)
 
 | ID | Question | Status |
 | --- | --- | --- |
-| Q-09 | D-036 hides controls whose phase hasn't shipped. Phase 0's Dock and tab bar show all areas as placeholder windows so the "working Dock" can be checked. From phase 1, should areas whose features haven't shipped (App Store until phase 2, Usage 4, Backups and Files 5) be hidden, leaving Home and Settings? | Open: before phase 1 |
+| Q-09 | D-036 hides controls whose phase hasn't shipped. Phase 0's Dock and tab bar show all areas as placeholder windows so the "working Dock" can be checked. From phase 1, should areas whose features haven't shipped (App Store until phase 2, Usage 4, Backups and Files 5) be hidden, leaving Home and Settings? | Answered 27 Sep 2026: hide them (D-056) |
 | Q-10 | D-055 names Astro 5; the current releases are Astro 7 and Starlight 0.42. Phase 0 pins Astro 5.18 and Starlight 0.37.7, the last Starlight that supports Astro 5. Move to Astro 7 before the site is built in phase 6? | Open: before phase 6 |
 
 ## Design follow-ups (copy changes already decided)
