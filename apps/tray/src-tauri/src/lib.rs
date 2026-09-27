@@ -13,7 +13,8 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
-            let icon = tauri::image::Image::from_bytes(include_bytes!("../icons/hlabsTemplate@2x.png"))?;
+            let icon =
+                tauri::image::Image::from_bytes(include_bytes!("../icons/hlabsTemplate@2x.png"))?;
             TrayIconBuilder::with_id("hlabs")
                 .icon(icon)
                 .icon_as_template(true)
@@ -27,7 +28,11 @@ pub fn run() {
                     {
                         if let Some(window) = tray.app_handle().get_webview_window("menu") {
                             let visible = window.is_visible().unwrap_or(false);
-                            let _ = if visible { window.hide() } else { window.show().and_then(|_| window.set_focus()) };
+                            let _ = if visible {
+                                window.hide()
+                            } else {
+                                window.show().and_then(|_| window.set_focus())
+                            };
                         }
                     }
                 })
