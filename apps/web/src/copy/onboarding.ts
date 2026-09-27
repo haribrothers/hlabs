@@ -15,6 +15,8 @@ export const onboardingCopy = {
     os: 'Operating system',
     runtime: 'Container runtime',
     runtimeMissing: 'Not found',
+    installing: (percent: number) => `Installing Colima… ${percent}%`,
+    installNote: 'No Docker found. OrbStack or Docker Desktop are used automatically when present.',
     runtimeStopped: (name: string) => `${name} isn't running`,
     disk: 'Free disk space',
     diskError: 'hlabs needs at least 10 GB free. Free up some space, then check again.',

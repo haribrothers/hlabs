@@ -37,6 +37,12 @@ describe('GlassCard, List, ListRow', () => {
     expect(within(group).getByText('After a restart')).toHaveClass('hl-list-sub');
     expect(within(group).getByRole('link', { name: 'Logs' })).toHaveAttribute('href', '/settings/logs');
   });
+
+  it('puts full-width content below a row', () => {
+    render(<ListRow title="Container runtime" below={<span>Installing</span>} />);
+    expect(screen.getByText('Installing').parentElement).toHaveClass('hl-list-below');
+    expect(screen.getByText('Installing').parentElement!.parentElement).toHaveClass('hl-list-row-below');
+  });
 });
 
 describe('AppIcon', () => {

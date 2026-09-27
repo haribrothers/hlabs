@@ -1,11 +1,12 @@
 // OnbSystem (US-ONB-04): check this computer, then Continue to the account step or go Back to welcome.
-import { Button, List, ListRow, StatusDot } from '@hlabs/ui';
+import { Button, List, ListRow, Progress, StatusDot } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { TRPCClientError } from '@trpc/client';
+import { useEffect, useRef } from 'react';
 import { onboardingCopy } from '../copy/onboarding';
 import { useTRPC } from '../lib/trpc';
-import { systemRows } from './system-rows';
+import { isInstalling, shouldInstallEngine, systemRows } from './system-rows';
 
 const copy = onboardingCopy.system;
 
@@ -18,7 +19,19 @@ export function SystemStep() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const check = useQuery({ ...trpc.onboarding.checkSystem.queryOptions(), staleTime: 0 });
+  const check = useQuery({
+    ...trpc.onboarding.checkSystem.queryOptions(),
+    staleTime: 0,
+    // Re-check every 2 s while the engine install runs (US-ONB-05).
+    refetchInterval: (query) => (isInstalling(query.state.data) ? 2_000 : false),
+  });
+  const install = useMutation(trpc.onboarding.installEngine.mutationOptions({ onSettled: () => check.refetch() }));
+  const installRequested = useRef(false);
+  useEffect(() => {
+    if (installRequested.current || !shouldInstallEngine(check.data)) return;
+    installRequested.current = true;
+    install.mutate();
+  }, [check.data, install]);
   const confirm = useMutation(
     trpc.onboarding.confirmSystem.mutationOptions({
       onSuccess: async () => {
@@ -41,6 +54,14 @@ export function SystemStep() {
               title={row.title}
               subtitle={row.hint}
               trailing={<StatusDot status={row.status}>{row.value}</StatusDot>}
+              below={
+                row.progress !== undefined ? (
+                  <>
+                    <Progress value={row.progress} aria-label={row.value} />
+                    <span>{row.note}</span>
+                  </>
+                ) : undefined
+              }
             />
           ))}
         </List>

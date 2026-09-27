@@ -15,6 +15,9 @@ export interface SystemRow {
   status: Status;
   /** What to do about a warning or error. */
   hint?: string;
+  /** A job in progress on this row (0–100), shown as a Progress bar with `note` under it. */
+  progress?: number;
+  note?: string;
 }
 
 const copy = onboardingCopy.system;
@@ -32,7 +35,26 @@ export function cpuLabel(cpu: SystemCheck['cpu'], platform: SystemCheck['os']['p
   return `${model} (${cpu.arch})`;
 }
 
+/** hlabs's Colima install is queued or running (US-ONB-05). */
+export const isInstalling = (check: SystemCheck | undefined) =>
+  check?.engine.install?.state === 'queued' || check?.engine.install?.state === 'running';
+
+/** A Mac with no engine and no install yet: hlabs installs Colima without asking (US-ONB-05). */
+export const shouldInstallEngine = (check: SystemCheck | undefined) =>
+  check?.os.platform === 'darwin' && check.engine.state === 'missing' && check.engine.install === null;
+
 function runtimeRow(engine: SystemCheck['engine']): SystemRow {
+  if (engine.state !== 'running' && (engine.install?.state === 'queued' || engine.install?.state === 'running')) {
+    const percent = engine.install.progress;
+    return {
+      id: 'runtime',
+      title: copy.runtime,
+      value: copy.installing(percent),
+      status: 'working',
+      progress: percent,
+      note: copy.installNote,
+    };
+  }
   const name = engine.kind ? copy.engines[engine.kind] : '';
   const value =
     engine.state === 'running'

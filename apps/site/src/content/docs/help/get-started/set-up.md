@@ -26,6 +26,7 @@ The first step checks the processor, the operating system, the container runtime
 - **Free disk space:** hlabs needs at least 10 GB free to continue. Under 30 GB you'll see a warning, but you can carry on.
 - **Ports 80 and 443:** if another app already uses one, hlabs uses 8080 or 8443 instead. You can carry on; the dashboard address then includes the port.
 - **Container runtime:** it must be running to continue. Start it, then press **Check again**.
+- **No container runtime on a Mac:** hlabs sets up Colima for you. It downloads Colima (about 150 MB) and starts it with up to 4 processor cores, 8 GB of memory and a 100 GB disk that only uses the space it needs. It takes a few minutes; you can go Back while it runs. If you install OrbStack or Docker Desktop later, hlabs uses that instead.
 
 ## "Finish setup on the computer running hlabs."
 
