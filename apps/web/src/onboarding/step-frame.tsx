@@ -4,7 +4,18 @@ import { GlassCard, Stepper } from '@hlabs/ui';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { onboardingCopy } from '../copy/onboarding';
 
-export function StepFrame({ step, title, children }: { step: OnboardingStep; title: string; children?: ReactNode }) {
+export function StepFrame({
+  step,
+  title,
+  badge,
+  children,
+}: {
+  step: OnboardingStep;
+  title: string;
+  /** Shown beside the heading, outside it ("Recommended"). */
+  badge?: ReactNode;
+  children?: ReactNode;
+}) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), [step]);
   const steps = stepperOnboardingSteps();
@@ -20,9 +31,12 @@ export function StepFrame({ step, title, children }: { step: OnboardingStep; tit
         />
       ) : null}
       <GlassCard level={2} className="w-full p-10">
-        <h1 ref={heading} tabIndex={-1} className="m-0 text-title-1 outline-none">
-          {title}
-        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 ref={heading} tabIndex={-1} className="m-0 text-title-1 outline-none">
+            {title}
+          </h1>
+          {badge}
+        </div>
         {children}
       </GlassCard>
     </div>

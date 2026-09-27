@@ -5,6 +5,7 @@ import { onboardingCopy } from '../copy/onboarding';
 import { AccountStep } from '../onboarding/account-step';
 import { StepFrame } from '../onboarding/step-frame';
 import { SystemStep } from '../onboarding/system-step';
+import { TwoFactorStep } from '../onboarding/two-factor-step';
 
 // One route for every step after welcome (/setup/<step>). The first-run gate has already sent unknown,
 // disabled and later-than-saved steps back to the saved step. Each step's content arrives with its story
@@ -12,7 +13,11 @@ import { SystemStep } from '../onboarding/system-step';
 export const Route = createFileRoute('/setup/$step')({ component: Step });
 
 /** Steps whose screen is built; each renders its own StepFrame. The rest show their title until their story. */
-const SCREENS: Partial<Record<OnboardingStep, ComponentType>> = { system: SystemStep, account: AccountStep };
+const SCREENS: Partial<Record<OnboardingStep, ComponentType>> = {
+  system: SystemStep,
+  account: AccountStep,
+  twoFactor: TwoFactorStep,
+};
 
 function Step() {
   const { step } = Route.useParams();

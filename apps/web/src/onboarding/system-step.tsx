@@ -7,6 +7,7 @@ import { TRPCClientError } from '@trpc/client';
 import { useEffect, useRef, useState } from 'react';
 import { onboardingCopy } from '../copy/onboarding';
 import { useTRPC } from '../lib/trpc';
+import { CopyButton } from './copy-button';
 import { LogDialog } from './log-dialog';
 import { StepFrame } from './step-frame';
 import { installFailed, isInstalling, shouldInstallEngine, systemRows, type SystemRow } from './system-rows';
@@ -16,19 +17,6 @@ const copy = onboardingCopy.system;
 function continueError(err: unknown): string {
   const code = err instanceof TRPCClientError ? (err.data as { hlabsCode?: string } | undefined)?.hlabsCode : undefined;
   return code === 'ENGINE_UNAVAILABLE' || code === 'DISK_FULL' ? copy.continueFailed[code] : copy.continueFailed.other;
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <Button
-      size="sm"
-      variant="secondary"
-      onClick={() => void navigator.clipboard.writeText(text).then(() => setCopied(true))}
-    >
-      {copied ? copy.copied : copy.copyCommand}
-    </Button>
-  );
 }
 
 export function SystemStep({ shippedPhase = SHIPPED_PHASE }: { shippedPhase?: number }) {
@@ -104,7 +92,7 @@ export function SystemStep({ shippedPhase = SHIPPED_PHASE }: { shippedPhase?: nu
             <Button size="sm" onClick={() => void retry()} disabled={check.isFetching}>
               {copy.retry}
             </Button>
-            {row.action.command ? <CopyButton text={row.action.command} /> : null}
+            {row.action.command ? <CopyButton text={row.action.command} label={copy.copyCommand} /> : null}
           </div>
         </>
       );

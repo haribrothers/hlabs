@@ -52,6 +52,15 @@ Setup creates only one admin. If you see "An admin account already exists. Log i
 
 Once the account is created you're signed in on this browser, and the setup address stops working: from here on, setup continues as you.
 
+## Turn on two-factor login
+
+Two-factor login asks for a 6-digit code from your phone as well as your password, so a leaked password isn't enough to get in. It works with any TOTP authenticator app, such as 1Password, Google Authenticator or Authy.
+
+1. Scan the QR code with the app. If you can't scan it, choose **Can't scan? Enter this key instead** and type or copy the key into the app.
+2. Enter the 6-digit code the app shows. hlabs checks it as soon as you type the sixth digit.
+
+If a code doesn't work, check that the time on your phone is set automatically, then try the next code. After 5 codes that don't work, wait 15 minutes. If you reload this page you get a new QR code, and the one you scanned before stops working.
+
 ## "Finish setup on the computer running hlabs."
 
 You'll see this if you open hlabs from another device, such as your phone, before setup is finished. It keeps anyone else on your network from creating the first admin account. Open the setup address on the computer running hlabs instead.
