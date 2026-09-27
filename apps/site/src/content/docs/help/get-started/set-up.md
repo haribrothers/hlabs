@@ -17,6 +17,8 @@ Setup opens on a welcome screen. It takes about five minutes: press **Get starte
 
 The address keeps working until setup is finished, even if hlabs or the computer restarts. You can open it in more than one tab.
 
+You don't have to finish in one go. Close the browser or restart the computer, then open the setup address again: setup picks up at the step you were on. **Back** takes you to earlier steps.
+
 ## "Finish setup on the computer running hlabs."
 
 You'll see this if you open hlabs from another device, such as your phone, before setup is finished. It keeps anyone else on your network from creating the first admin account. Open the setup address on the computer running hlabs instead.

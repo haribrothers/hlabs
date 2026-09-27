@@ -1,18 +1,13 @@
-// US-ONB-02 · See the welcome screen and start setup. Runs serially on the first-run instance because
-// Get started moves the shared onboarding step forward.
+// US-ONB-02 · See the welcome screen and start setup (first-run instance).
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { FIRST_RUN_URL } from './instances';
+import { FIRST_RUN_URL, resetOnboarding } from './instances';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
 test.describe('US-ONB-02', () => {
-  test.describe.configure({ mode: 'serial' });
-  test.skip(({ isMobile }) => isMobile, 'one run is enough: this story changes the shared onboarding step');
-
   test('the welcome screen, then Enter on Get started opens the system check', async ({ page, request }) => {
-    const { url } = (await (await request.get('/dev/setup-url')).json()) as { url: string };
-    await page.goto(url);
+    await page.goto(await resetOnboarding(request));
 
     await expect(page.getByRole('heading', { level: 1, name: 'Welcome to hlabs' })).toBeVisible();
     await expect(page.getByText('Your own cloud, running on this computer.')).toBeVisible();

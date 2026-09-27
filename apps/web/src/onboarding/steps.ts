@@ -1,5 +1,5 @@
 // Onboarding routes and where to resume (US-ONB-03, D-041). The server's saved step is the source of truth.
-import { enabledOnboardingSteps, onboardingStepSchema, type OnboardingStep } from '@hlabs/api/schemas';
+import { enabledOnboardingSteps, isOnboardingStep, type OnboardingStep } from '@hlabs/shared';
 import { SETUP_PATH } from '../lib/setup-token';
 
 /** `/setup` is the welcome screen; every other step lives at `/setup/<step>`. */
@@ -9,8 +9,8 @@ export const stepPath = (step: OnboardingStep): string => (step === 'welcome' ? 
 export function stepFromPath(pathname: string): OnboardingStep | 'unknown' | null {
   if (pathname === SETUP_PATH || pathname === `${SETUP_PATH}/`) return 'welcome';
   if (!pathname.startsWith(`${SETUP_PATH}/`)) return null;
-  const parsed = onboardingStepSchema.safeParse(pathname.slice(SETUP_PATH.length + 1).replace(/\/$/, ''));
-  return parsed.success && parsed.data !== 'welcome' ? parsed.data : 'unknown';
+  const step = pathname.slice(SETUP_PATH.length + 1).replace(/\/$/, '');
+  return isOnboardingStep(step) && step !== 'welcome' ? step : 'unknown';
 }
 
 /**

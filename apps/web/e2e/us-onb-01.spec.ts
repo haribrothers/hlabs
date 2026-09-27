@@ -1,16 +1,11 @@
 // US-ONB-01 · Open onboarding automatically on first run. Runs against the first-run instance (no admin yet).
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type APIRequestContext } from '@playwright/test';
-import { FIRST_RUN_URL } from './instances';
+import { FIRST_RUN_URL, resetOnboarding } from './instances';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
-async function setupUrl(request: APIRequestContext): Promise<string> {
-  const res = await request.get('/dev/setup-url');
-  const { url } = (await res.json()) as { url: string | null };
-  expect(url).toMatch(/^http:\/\/127\.0\.0\.1:5174\/setup\?token=[A-Za-z0-9_-]{43}$/);
-  return url!;
-}
+const setupUrl = (request: APIRequestContext) => resetOnboarding(request);
 
 test.describe('US-ONB-01', () => {
   test('the printed setup URL starts onboarding and the token leaves the address bar', async ({ page, request }) => {
@@ -36,7 +31,8 @@ test.describe('US-ONB-01', () => {
     await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup`);
   });
 
-  test('another device without the token is told to finish setup on the computer', async ({ page }) => {
+  test('another device without the token is told to finish setup on the computer', async ({ page, request }) => {
+    await resetOnboarding(request);
     for (const path of ['/', '/setup', '/files']) {
       await page.goto(path);
       await expect(
@@ -47,6 +43,7 @@ test.describe('US-ONB-01', () => {
   });
 
   test('onboarding calls without the token are refused', async ({ request }) => {
+    await resetOnboarding(request);
     const res = await request.post('/trpc/onboarding.setStep', { data: { step: 'system' } });
     expect(res.status()).toBe(403);
     const body = (await res.json()) as { error: { data: { hlabsCode: string } } };

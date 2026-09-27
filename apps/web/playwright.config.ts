@@ -9,6 +9,7 @@ import { defineConfig, devices } from '@playwright/test';
 //   (import FIRST_RUN_URL from e2e/instances.ts).
 const DATA_DIR = process.env.HLABS_E2E_DATA_DIR ?? '../../.e2e-data';
 const FIRST_RUN_DATA_DIR = '../../.e2e-data-first-run';
+const FIRST_RUN_SPECS = /us-onb-\d+\.spec\.ts/;
 
 const daemonEnv = {
   NODE_ENV: 'development',
@@ -27,10 +28,27 @@ export default defineConfig({
     { name: 'setup', testMatch: /global\.setup\.ts/ },
     {
       name: 'desktop',
+      testIgnore: FIRST_RUN_SPECS,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
       dependencies: ['setup'],
     },
-    { name: 'phone', use: { ...devices['Pixel 7'] }, dependencies: ['setup'] },
+    { name: 'phone', testIgnore: FIRST_RUN_SPECS, use: { ...devices['Pixel 7'] }, dependencies: ['setup'] },
+    // Onboarding specs share the first-run instance and reset it to a step, so they run one at a time.
+    {
+      name: 'first-run',
+      testMatch: FIRST_RUN_SPECS,
+      fullyParallel: false,
+      workers: 1,
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: 'first-run-phone',
+      testMatch: FIRST_RUN_SPECS,
+      fullyParallel: false,
+      workers: 1,
+      use: { ...devices['Pixel 7'] },
+      dependencies: ['first-run'],
+    },
   ],
   webServer: [
     {

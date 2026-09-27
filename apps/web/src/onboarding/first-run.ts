@@ -1,5 +1,5 @@
 // What the dashboard shows before onboarding is complete (US-ONB-01, US-ONB-03).
-import type { OnboardingStep } from '@hlabs/api/schemas';
+import type { OnboardingStep } from '@hlabs/shared';
 import { SETUP_PATH } from '../lib/setup-token';
 import { resumePath } from './steps';
 

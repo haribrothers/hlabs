@@ -1,5 +1,5 @@
 // Steps 1–6: the Stepper centred above a level-2 card whose heading takes focus when the step opens (US-ONB-03).
-import { stepperOnboardingSteps, type OnboardingStep } from '@hlabs/api/schemas';
+import { stepperOnboardingSteps, type OnboardingStep } from '@hlabs/shared';
 import { GlassCard, Stepper } from '@hlabs/ui';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { onboardingCopy } from '../copy/onboarding';

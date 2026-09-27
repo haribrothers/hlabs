@@ -1,4 +1,4 @@
-import { onboardingStepSchema } from '@hlabs/api/schemas';
+import { isOnboardingStep } from '@hlabs/shared';
 import { createFileRoute } from '@tanstack/react-router';
 import { onboardingCopy } from '../copy/onboarding';
 import { StepFrame } from '../onboarding/step-frame';
@@ -9,9 +9,8 @@ import { StepFrame } from '../onboarding/step-frame';
 export const Route = createFileRoute('/setup/$step')({ component: Step });
 
 function Step() {
-  const parsed = onboardingStepSchema.safeParse(Route.useParams().step);
-  if (!parsed.success || parsed.data === 'welcome') return null;
-  const step = parsed.data;
+  const { step } = Route.useParams();
+  if (!isOnboardingStep(step) || step === 'welcome') return null;
   const title = onboardingCopy.titles[step as keyof typeof onboardingCopy.titles] ?? '';
   return <StepFrame key={step} step={step} title={title} />;
 }

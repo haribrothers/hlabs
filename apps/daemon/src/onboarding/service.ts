@@ -1,11 +1,6 @@
 // First run: onboarding state and the one-time setup token that guards it (D-013, D-041, US-ONB-01).
-import {
-  hlabsError,
-  nextOnboardingStep,
-  onboardingStepSchema,
-  SKIPPABLE_ONBOARDING_STEPS,
-  type OnboardingStep,
-} from '@hlabs/api';
+import { hlabsError, onboardingStepSchema } from '@hlabs/api';
+import { nextOnboardingStep, SKIPPABLE_ONBOARDING_STEPS, type OnboardingStep } from '@hlabs/shared';
 import { getSetting, setSetting, users, type HlabsDb } from '@hlabs/db';
 import { count } from 'drizzle-orm';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
