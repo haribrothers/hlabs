@@ -145,7 +145,8 @@ describe('US-ONB-05', () => {
       }),
     ).rejects.toSatisfy((err: unknown) => hlabsCodeOf(err) === 'ENGINE_START_FAILED');
     expect(Math.max(...reports)).toBe(95);
-    expect(lines.at(-1)).toBe('Colima started but the engine did not answer');
+    expect(lines).toContain('Colima started but the engine did not answer');
+    expect(lines.at(-1)).toBe('colima start: engine did not answer docker ping');
   });
 
   it('refuses a download that does not match its pinned checksum', async () => {

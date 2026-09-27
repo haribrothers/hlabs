@@ -3,7 +3,8 @@ import { hlabsError } from '@hlabs/api';
 import { execFile, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createReadStream, createWriteStream } from 'node:fs';
-import { chmod, copyFile, mkdir } from 'node:fs/promises';
+import { access, chmod, copyFile, mkdir, readdir, rm } from 'node:fs/promises';
+import { basename } from 'node:path';
 import { createInterface } from 'node:readline';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -67,13 +68,20 @@ export function nodeInstallerHost(): InstallerHost {
         for (const stream of [child.stdout, child.stderr]) createInterface({ input: stream }).on('line', onLine);
         child.once('error', reject);
         child.once('close', (code) =>
-          code === 0 ? resolve() : reject(new Error(`${command} exited with code ${code ?? 'unknown'}`)),
+          code === 0 ? resolve() : reject(new Error(`${basename(command)} exited with code ${code ?? 'unknown'}`)),
         );
       });
     },
 
     ping: (socketPath) => new DockerodeEngine(socketPath).ping(),
     mkdir: (dir) => mkdir(dir, { recursive: true }).then(() => undefined),
+    exists: (path) =>
+      access(path).then(
+        () => true,
+        () => false,
+      ),
+    list: (dir) => readdir(dir).catch(() => []),
+    remove: (path) => rm(path, { recursive: true, force: true }),
     sleep: (ms, signal) => delay(ms, undefined, { signal }),
   };
 }

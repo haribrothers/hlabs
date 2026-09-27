@@ -3,11 +3,11 @@ import { mkdir, readFile, rm, appendFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { JobRunner } from '../jobs/runner';
 import type { SystemProbe } from '../platform/system';
-import { installColima, type InstallerHost } from './colima-installer';
+import { INSTALL_LOG, installColima, removeColimaInstall, type InstallerHost } from './colima-installer';
 import type { EngineService } from './service';
 
 export const engineDir = (dataDir: string) => join(dataDir, 'engine');
-export const installLogPath = (dataDir: string) => join(engineDir(dataDir), 'install.log');
+export const installLogPath = (dataDir: string) => join(engineDir(dataDir), INSTALL_LOG);
 
 export interface EngineInstallDeps {
   jobs: JobRunner;
@@ -29,17 +29,26 @@ export function registerEngineInstall(deps: EngineInstallDeps): void {
       await mkdir(dir, { recursive: true });
       await rm(logFile, { force: true });
       deps.onDownload();
-      await installColima({
-        engineDir: dir,
-        home: deps.home,
-        arch: deps.probe.cpu().arch === 'arm64' ? 'arm64' : 'x64',
-        host: deps.probe.resources(),
-        io: deps.io,
-        signal,
-        report,
-        appendLog: (line) => appendFile(logFile, `${line}\n`),
-        pingTimeoutMs: deps.pingTimeoutMs,
-      });
+      const appendLog = (line: string) => appendFile(logFile, `${line}\n`);
+      try {
+        await installColima({
+          engineDir: dir,
+          home: deps.home,
+          arch: deps.probe.cpu().arch === 'arm64' ? 'arm64' : 'x64',
+          host: deps.probe.resources(),
+          io: deps.io,
+          signal,
+          report,
+          appendLog,
+          pingTimeoutMs: deps.pingTimeoutMs,
+        });
+      } catch (err) {
+        // Clean up before the job is marked failed, so a Retry during cleanup gets this job back (US-ONB-06).
+        if (!signal.aborted) {
+          await removeColimaInstall({ engineDir: dir, home: deps.home, io: deps.io, appendLog }).catch(() => {});
+        }
+        throw err;
+      }
       // Pick up the new engine now instead of on the next 10 s check.
       await deps.engine.check();
     },

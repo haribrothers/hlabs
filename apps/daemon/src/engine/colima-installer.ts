@@ -28,6 +28,11 @@ export interface InstallerHost {
   ): Promise<void>;
   ping(socketPath: string): Promise<boolean>;
   mkdir(dir: string): Promise<void>;
+  exists(path: string): Promise<boolean>;
+  /** Names in a folder ([] when it doesn't exist). */
+  list(dir: string): Promise<string[]>;
+  /** Removes a file or folder, recursively. */
+  remove(path: string): Promise<void>;
   sleep(ms: number, signal: AbortSignal): Promise<void>;
 }
 
@@ -72,8 +77,61 @@ export function colimaEnv(engineDir: string, base: NodeJS.ProcessEnv = process.e
   };
 }
 
-// Progress: downloads 0–45, unpacking 45–50, `colima start` 50–95 (a step per output line), ping 95–100.
+/**
+ * Installs and starts hlabs's Colima. On failure the last log line says what was happening and why
+ * ("colima start: …", "lima download: …"), which the system check shows (US-ONB-06).
+ */
 export async function installColima(ctx: ColimaInstall): Promise<void> {
+  let stage = 'setup';
+  let progress = 0;
+  const report = (p: number, line?: string) => {
+    progress = p;
+    ctx.report(p, line);
+  };
+  try {
+    await runInstall({ ...ctx, report }, (s) => (stage = s));
+  } catch (err) {
+    if (!ctx.signal.aborted) {
+      const line = `${stage}: ${err instanceof Error ? err.message : String(err)}`;
+      await ctx.appendLog(line).catch(() => {});
+      ctx.report(progress, line);
+    }
+    throw err;
+  }
+}
+
+/**
+ * After a failed install: deletes the `hlabs` Colima profile if it was created and everything under
+ * <dataDir>/engine except the install log, so nothing on the computer has changed (US-ONB-06).
+ */
+export async function removeColimaInstall(ctx: Pick<ColimaInstall, 'engineDir' | 'home' | 'io' | 'appendLog'>) {
+  const { io, engineDir, home } = ctx;
+  const colima = join(engineDir, 'bin', 'colima');
+  const profileDirs = [
+    join(home, '.colima', HLABS_COLIMA_PROFILE),
+    join(home, '.colima', '_lima', `colima-${HLABS_COLIMA_PROFILE}`),
+  ];
+  const profileExists = (await Promise.all(profileDirs.map((d) => io.exists(d)))).some(Boolean);
+  if (profileExists && (await io.exists(colima))) {
+    await ctx.appendLog('Removing the hlabs Colima profile');
+    await io
+      .run(colima, ['delete', '--profile', HLABS_COLIMA_PROFILE, '--force'], {
+        env: colimaEnv(engineDir),
+        signal: new AbortController().signal,
+        onLine: (line) => void ctx.appendLog(line),
+      })
+      .catch((err: unknown) => ctx.appendLog(`colima delete: ${err instanceof Error ? err.message : String(err)}`));
+  }
+  for (const name of await io.list(engineDir)) {
+    if (name !== INSTALL_LOG) await io.remove(join(engineDir, name));
+  }
+  await ctx.appendLog('Removed the partly installed files');
+}
+
+export const INSTALL_LOG = 'install.log';
+
+// Progress: downloads 0–45, unpacking 45–50, `colima start` 50–95 (a step per output line), ping 95–100.
+async function runInstall(ctx: ColimaInstall, setStage: (stage: string) => void): Promise<void> {
   const { io, signal, engineDir } = ctx;
   const bin = join(engineDir, 'bin');
   const downloads = join(engineDir, 'downloads');
@@ -92,6 +150,7 @@ export async function installColima(ctx: ColimaInstall): Promise<void> {
       downloads,
       `${artifact.name}-${artifact.version}${artifact.format === 'tar.gz' ? '.tar.gz' : ''}`,
     );
+    setStage(`${artifact.name} download`);
     await log(`Downloading ${artifact.name} ${artifact.version}`, i * share);
     await io.download(
       artifact.url,
@@ -132,6 +191,7 @@ export async function installColima(ctx: ColimaInstall): Promise<void> {
     'docker',
   ];
   let progress = 50;
+  setStage('colima start');
   await log(`colima ${args.join(' ')}`, progress);
   // Output lines are logged in order, and all of them before the install moves on.
   let logged = Promise.resolve();
