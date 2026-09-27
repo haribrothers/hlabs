@@ -69,7 +69,7 @@ hlabs/
 
 ## Dependency rules
 - `apps/*` may depend on `packages/*`; packages never depend on apps.
-- `packages/api` depends only on `zod` and `@hlabs/shared`; it must not import server code. The daemon implements it; web, tray and CLI import its **types**.
+- `packages/api` depends only on `zod`, `@trpc/server` (to declare the router tree and each procedure's access) and `@hlabs/shared`; it must not import server code (no Node APIs, Fastify, database or daemon services). Each procedure hands its input to `ctx.handle(path, input)`, which the daemon's context implements; web, tray and CLI import its **types** (and may import its Zod schemas and error catalogue).
 - `packages/ui` has no data fetching. Screens live in `apps/web/src/features`.
 - `packages/db` is imported only by `apps/daemon`.
 - `apps/site` may use `packages/ui` (tokens, Tailwind preset, CSS), `packages/icons`, `packages/app-manifest` (to read `store/`) and `packages/shared`; it never imports `packages/api` or daemon code and never calls a hlabs server.

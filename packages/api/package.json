@@ -1,0 +1,31 @@
+{
+  "name": "@hlabs/api",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./errors": "./src/errors.ts",
+    "./events": "./src/events.ts",
+    "./health": "./src/health.ts",
+    "./schemas": "./src/schemas/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hlabs/shared": "workspace:*",
+    "@trpc/server": "^11.19.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@hlabs/config": "workspace:*",
+    "@types/node": "^22.20.4",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  }
+}

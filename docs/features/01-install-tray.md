@@ -324,7 +324,7 @@ This module gets hlabs onto a computer and keeps it running: the macOS `.dmg` an
 - **Given** the new daemon starts, **when** migrations fail, **then** `/healthz` reports the reason and the tray shows "Can't reach hlabs" with that reason (US-INST-13).
 - **Given** an exclusive job (restore, move all data, factory reset) is running, **when** I choose "Restart to update", **then** the button is disabled with the note "Finish the running task first".
 - **Given** `settings.updates.auto` is on, **when** an update is found, **then** it is applied automatically inside the update window 03:00–05:00 local time, starting only after any running backup finishes; hlabs updates before apps (D-034).
-- **Given** I choose "Update now" in the dashboard (`settings.updates.apply`), **when** the daemon emits `update.applyRequested`, **then** the tray picks it up and applies the update the same way as "Restart to update".
+- **Given** I choose "Update now" in the dashboard (`settings.updates.install`), **when** the daemon emits `update.applyRequested`, **then** the tray picks it up and applies the update the same way as "Restart to update".
 
 **Implementation notes**
 - Ownership (02 §2.10, D-034): on macOS and Linux desktop the tray applies hlabs updates with the Tauri updater; on headless Linux the daemon applies them itself (see US-INST-23 for upgrades by script).

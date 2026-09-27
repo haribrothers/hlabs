@@ -157,7 +157,7 @@ These were added while writing user stories and are **part of the API contract**
 - `files.emptyTrash` input adds `allUsers?: boolean` (admin only).
 - `settings.engine.restart` (admin mutation → job).
 - `settings.engine.planSwitch` (admin query): target → version, sizes, estimates, removable size.
-- `settings.updates.apply` (admin mutation → job `system_update`).
+- `settings.updates.install` (admin mutation → job `system_update`). Named `install`, not `apply`, because tRPC reserves `apply`, `call` and `then` as procedure names.
 - `settings.updates.setAuto` input: `{ hlabs, apps, backupBeforeUpdate }`.
 - `system.logs` (admin query): `{ source: 'daemon' | 'proxy' | 'installs', since?, limit }`.
 - `system.diagnostics` (admin mutation → job) and `GET /api/diagnostics/:jobId` (admin session, 15-minute expiry).
@@ -172,3 +172,12 @@ These were added while writing user stories and are **part of the API contract**
 - `system.status` event payload gains `state: "ready" | "updating"`.
 - `events.stream` uses tracked event ids and accepts `lastEventId` for resume (last 500 events buffered).
 - Error codes added to the catalogue: `ENGINE_START_FAILED`, `AUTH_INVALID_PASSWORD`, `DISK_FULL` (an exclusive-job clash is always `JOB_EXCLUSIVE_RUNNING`).
+
+### From phase 0 · Foundations
+
+- The router tree, schemas and access levels live in `packages/api/src/router.ts`; the daemon implements procedures as handlers keyed by path (`AppHandlers` in `packages/api/src/handlers.ts`). A procedure without a handler throws `NOT_IMPLEMENTED`.
+- `events.stream` accepts a session or the tray token (tray-scoped events only reach the tray).
+- General error codes in the catalogue: `NOT_IMPLEMENTED`, `VALIDATION_FAILED` (bad input), `NOT_FOUND`, `AUTH_REQUIRED` (signed out), `ACCESS_DENIED` (signed in but not allowed), `INTERNAL`. The tRPC error shape carries `data.hlabsCode` and optional `data.detail`.
+- Event `system.test` (`{ message }`), emitted only in development by `POST /dev/emit-test-event`, to prove the event stream reaches the browser.
+- Placeholder output schemas (`pending`) are replaced by the story that implements each procedure.
+
