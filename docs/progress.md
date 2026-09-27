@@ -1,0 +1,357 @@
+# Progress
+
+Tick a story when its acceptance criteria pass and its tests are green. Claude Code updates this file at the end of each story.
+
+## Phase 0 · Foundations
+
+- [ ] Phase 0 deliverables (see 10-phases)
+
+
+## Phase 1 · Core, first run and sign in
+
+- [ ] US-ONB-01 · Open onboarding automatically on first run
+- [ ] US-ONB-02 · See the welcome screen and start setup
+- [ ] US-ONB-03 · Resume onboarding where I left off, and only until it's done
+- [ ] US-ONB-04 · Run the system check
+- [ ] US-ONB-05 · Install Colima automatically when no engine is found (macOS)
+- [ ] US-ONB-06 · Recover from a failed system check
+- [ ] US-ONB-07 · Get Docker Engine instructions on Linux, and choose start at login
+- [ ] US-ONB-08 · Create the admin account
+- [ ] US-ONB-09 · See what to fix when the account details are invalid
+- [ ] US-ONB-10 · Only allow one admin to be created through onboarding
+- [ ] US-ONB-11 · Turn on two-factor login
+- [ ] US-ONB-12 · Save recovery codes
+- [ ] US-ONB-13 · Skip two-factor for now
+- [ ] US-ONB-14 · Keep data on this computer
+- [ ] US-ONB-15 · Use an external drive
+- [ ] US-ONB-16 · Use network storage (NAS)
+- [ ] US-ONB-21 · See a summary when setup is done
+- [ ] US-ONB-22 · Finish onboarding and open the dashboard
+- [ ] US-AUTH-01 · Pick my account from the user list
+- [ ] US-AUTH-02 · Log in as another user or with the list hidden
+- [ ] US-AUTH-03 · Log in with username and password
+- [ ] US-AUTH-04 · See a clear error when login fails
+- [ ] US-AUTH-05 · Open the right login screen
+- [ ] US-AUTH-06 · Log back in as the remembered user
+- [ ] US-AUTH-07 · Switch to another account
+- [ ] US-AUTH-08 · Enter my two-factor code
+- [ ] US-AUTH-09 · Log in with a recovery code
+- [ ] US-AUTH-10 · Set up two-factor when an admin requires it
+- [ ] US-AUTH-11 · Keep two-factor codes in step with the server clock
+- [ ] US-AUTH-12 · Pause logins after too many attempts
+- [ ] US-AUTH-13 · Tell the admin about repeated failed logins
+- [ ] US-AUTH-14 · Stay signed in, or not
+- [ ] US-AUTH-15 · Get signed out when my session is revoked
+- [ ] US-AUTH-16 · Log out
+- [ ] US-AUTH-18 · Return to the app I was opening after login
+- [ ] US-HOME-01 · See a greeting over my wallpaper
+- [ ] US-HOME-02 · Glance at system widgets
+- [ ] US-HOME-03 · Open my apps from the grid
+- [ ] US-HOME-04 · Move between sections with the Dock
+- [ ] US-HOME-05 · See badge counts on tabs
+- [ ] US-ACCT-01 · Settings sections depend on role
+- [ ] US-ACCT-02 · Moving around Settings on desktop, phone and keyboard
+- [ ] US-ACCT-03 · See and edit my profile
+- [ ] US-ACCT-04 · See the devices I am signed in on
+- [ ] US-ACCT-05 · Sign out a device, or log out
+- [ ] US-ACCT-06 · Change my password
+- [ ] US-ACCT-07 · Password change errors
+- [ ] US-ACCT-08 · See my two-factor and recovery code status
+- [ ] US-ACCT-09 · View, download and print recovery codes
+- [ ] US-ACCT-10 · Make new recovery codes
+- [ ] US-ACCT-11 · Move two-factor to a new phone
+- [ ] US-ACCT-12 · Turn two-factor on or off
+- [ ] US-SYS-17 · See the container engine
+- [ ] US-SYS-18 · Restart the container engine
+- [ ] US-SYS-19 · Set resources given to apps
+- [ ] US-SYS-20 · Control startup behaviour
+- [ ] US-STATE-04 · Serve a fallback page when the daemon is down
+- [ ] US-STATE-05 · Explain why hlabs can't be reached
+- [ ] US-STATE-06 · Retry on a countdown or on demand
+- [ ] US-STATE-11 · Confirm an action with the shared dialog
+- [ ] US-STATE-12 · Show progress and errors inside the confirm dialog
+- [ ] US-STATE-13 · Require a password or typed name for the riskiest actions
+- [ ] US-STATE-14 · Show toasts by severity
+- [ ] US-STATE-15 · Act on a toast
+- [ ] US-STATE-16 · Stack toasts and keep them in sync with notifications
+- [ ] US-STATE-17 · Map error codes to plain copy
+- [ ] US-STATE-18 · Reconnect the event stream
+- [ ] US-STATE-19 · Show an offline banner
+- [ ] US-STATE-20 · Send signed-out and forbidden requests to the right place
+
+## Phase 2 · Apps
+
+- [ ] US-ONB-19 · Pick starter apps
+- [ ] US-ONB-20 · Skip starter apps
+- [ ] US-HOME-06 · Recognise each app's state on its tile
+- [ ] US-HOME-07 · Act on an app from its menu
+- [ ] US-HOME-08 · Recover a stopped or broken app from its tile
+- [ ] US-HOME-09 · Open search from anywhere
+- [ ] US-HOME-10 · Find apps, actions, files, settings and store apps in one list
+- [ ] US-HOME-23 · See which apps are open in the Dock
+- [ ] US-STORE-01 · Browse the store home
+- [ ] US-STORE-02 · Navigate with the categories sidebar
+- [ ] US-STORE-03 · Search from the store home
+- [ ] US-STORE-06 · See an app's details before installing
+- [ ] US-STORE-07 · See requirements and what an app can access
+- [ ] US-STORE-08 · Choose folder access in the install sheet
+- [ ] US-STORE-09 · Review included services, address and login
+- [ ] US-STORE-10 · Fill in app settings and accept risky permissions
+- [ ] US-STORE-11 · Run an install as a job
+- [ ] US-STORE-12 · Watch install progress
+- [ ] US-STORE-13 · Understand why an install failed
+- [ ] US-STORE-14 · Retry or remove a failed install
+- [ ] US-STORE-17 · Roll back an update that doesn't start
+- [ ] US-APP-01 · Open an app in a window
+- [ ] US-APP-02 · App window controls
+- [ ] US-APP-03 · Opening an app that isn't running
+- [ ] US-APP-04 · See an app's status and start, stop or restart it
+- [ ] US-APP-05 · App address and tailnet address
+- [ ] US-APP-06 · Behaviour switches
+- [ ] US-APP-07 · Storage, resources and version
+- [ ] US-APP-08 · Follow an app's logs live
+- [ ] US-APP-09 · Filter logs
+- [ ] US-APP-10 · Download logs
+- [ ] US-APP-11 · Confirm uninstall and choose what happens to data
+- [ ] US-APP-12 · Uninstall runs and cleans up
+- [ ] US-STATE-08 · Grey out Home when the engine has stopped
+- [ ] US-STATE-09 · Start the engine from the banner
+- [ ] US-STATE-10 · Recover automatically when the engine comes back
+- [ ] US-AUTH-17 · Protect every app with forward auth
+- [ ] US-AUTH-19 · See a "no access" page for apps not shared with me
+
+## Phase 3 · Remote access and family
+
+- [ ] US-ONB-17 · Connect Tailscale for remote access
+- [ ] US-ONB-18 · Set up remote access later
+- [ ] US-AUTH-23 · Open an invite link
+- [ ] US-AUTH-24 · Create my account from an invite
+- [ ] US-HOME-11 · See only my shared apps on a member Home
+- [ ] US-HOME-12 · See my files and shared-apps summary
+- [ ] US-ACCT-13 · See everyone who uses hlabs
+- [ ] US-ACCT-14 · Give a member a reset-password link
+- [ ] US-ACCT-15 · Change role, disable or enable someone
+- [ ] US-ACCT-16 · Delete someone
+- [ ] US-ACCT-17 · Manage pending invites
+- [ ] US-ACCT-18 · Choose what the log-in screen shows
+- [ ] US-ACCT-19 · Require two-factor for everyone
+- [ ] US-ACCT-20 · Decide what members can do
+- [ ] US-ACCT-21 · Create an invite link
+- [ ] US-ACCT-22 · Choose the invitee's role and apps
+- [ ] US-ACCT-23 · Preview the invite page
+- [ ] US-ACCT-24 · Choose which apps a member can open
+- [ ] US-ACCT-25 · Shared folder and live usage for a member
+- [ ] US-ACCT-26 · Access changes apply straight away
+- [ ] US-ACCT-27 · Member sees a limited Settings
+- [ ] US-ACCT-28 · Member's account page
+- [ ] US-SYS-01 · See how hlabs is reached on the home network
+- [ ] US-SYS-02 · Connect remote access with Tailscale
+- [ ] US-SYS-03 · Disconnect remote access
+- [ ] US-SYS-04 · See each app's tailnet address
+- [ ] US-SYS-05 · See and change web ports
+- [ ] US-SYS-06 · Use Pi-hole for DNS
+
+## Phase 4 · Menu-bar app, monitoring and updates
+
+- [ ] US-INST-01 · First launch installs the background service
+- [ ] US-INST-02 · First launch hands off to onboarding in the browser
+- [ ] US-INST-05 · See status at a glance
+- [ ] US-INST-06 · Open the dashboard and copy its address
+- [ ] US-INST-07 · Back up now from the menu
+- [ ] US-INST-08 · Pause and resume all apps
+- [ ] US-INST-09 · Start at login
+- [ ] US-INST-10 · Quit hlabs
+- [ ] US-INST-11 · Starting state
+- [ ] US-INST-12 · Container engine stopped
+- [ ] US-INST-13 · Can't reach hlabs
+- [ ] US-INST-14 · Menu-bar icon reflects state
+- [ ] US-INST-15 · Tray authenticates to the daemon with a local token
+- [ ] US-INST-16 · Recover from a missing or mismatched tray token
+- [ ] US-INST-17 · Choose an account and a new password
+- [ ] US-INST-18 · Confirm with the OS and apply the reset
+- [ ] US-INST-19 · Check for hlabs updates
+- [ ] US-INST-20 · Restart to update
+- [ ] US-AUTH-20 · Understand how to reset a forgotten password
+- [ ] US-AUTH-21 · Recovery codes never reset a password
+- [ ] US-AUTH-22 · Set a new password from an admin's reset link
+- [ ] US-USE-01 · See host CPU, memory, storage and network at a glance
+- [ ] US-USE-02 · Tiles update live and respect who may see them
+- [ ] US-USE-03 · Change the time range
+- [ ] US-USE-04 · Read a metric's history and its peak
+- [ ] US-USE-05 · Use the charts with a keyboard and screen reader
+- [ ] US-USE-06 · Sort the per-app table
+- [ ] US-USE-07 · See stopped and failing apps in the table
+- [ ] US-USE-08 · Sample host and app usage every 5 seconds
+- [ ] US-USE-09 · Keep usage history at the right resolution
+- [ ] US-SYS-23 · Update hlabs
+- [ ] US-SYS-24 · Check for updates now
+- [ ] US-SYS-25 · Update apps from Settings
+- [ ] US-SYS-26 · Choose automatic updates
+- [ ] US-STATE-01 · Show a full-screen updating state
+- [ ] US-STATE-02 · Reconnect automatically when the update finishes
+- [ ] US-STATE-03 · Handle a failed or stuck update
+- [ ] US-STATE-07 · Show the daemon-down state in the tray
+
+## Phase 5 · Backups and Files
+
+- [ ] US-FILE-01 · See my places in the sidebar
+- [ ] US-FILE-02 · Browse a folder in grid view
+- [ ] US-FILE-03 · Create a folder
+- [ ] US-FILE-04 · Search files
+- [ ] US-FILE-05 · Download files
+- [ ] US-FILE-06 · Preview a file
+- [ ] US-FILE-07 · Open a file with an app
+- [ ] US-FILE-08 · Upload files with progress
+- [ ] US-FILE-09 · Pause, resume and cancel uploads
+- [ ] US-FILE-10 · Handle name conflicts when uploading
+- [ ] US-FILE-11 · Connect an SMB or NFS drive
+- [ ] US-FILE-12 · Disconnect or recover a network drive
+- [ ] US-BKP-01 · See the last backup's status
+- [ ] US-BKP-02 · See destinations and the schedule summary
+- [ ] US-BKP-03 · Review recent runs and run history
+- [ ] US-BKP-04 · Back up now
+- [ ] US-BKP-05 · Run a backup
+- [ ] US-BKP-06 · Apply retention after each run
+- [ ] US-BKP-07 · Handle failed runs
+- [ ] US-BKP-08 · Choose a destination type and fill in its details
+- [ ] US-BKP-09 · Test the connection and add the destination
+- [ ] US-BKP-10 · See the encryption password once
+- [ ] US-BKP-11 · Edit or remove a destination
+- [ ] US-BKP-17 · Start a restore and pick a restore point
+- [ ] US-BKP-18 · Choose apps or folders and how to restore
+- [ ] US-BKP-19 · Confirm a restore with my password
+- [ ] US-BKP-20 · Watch a restore in progress
+- [ ] US-BKP-21 · Roll back automatically if a restore fails
+- [ ] US-BKP-22 · Cancel a restore only before swap-in
+- [ ] US-BKP-23 · Choose what's included in backups
+
+## Phase 6 · Distribution
+
+- [ ] US-INST-03 · Install hlabs from the disk image
+- [ ] US-INST-04 · Launching from outside Applications
+- [ ] US-INST-21 · Choose what to keep when uninstalling
+- [ ] US-INST-22 · Uninstall removes hlabs cleanly
+- [ ] US-INST-23 · Install hlabs on a Linux server with one command
+- [ ] US-INST-24 · Finish setup in the browser after the Linux install
+- [ ] US-INST-25 · Manage a headless install from the command line
+- [ ] US-INST-26 · Native tray menu on Linux desktops
+- [ ] US-INST-27 · First run on a Linux desktop
+
+## Phase 7 · v1.0 completeness
+
+- [ ] US-HOME-13 · Open the notifications panel
+- [ ] US-HOME-14 · Act on and clear notifications
+- [ ] US-HOME-15 · See a friendly empty Home
+- [ ] US-HOME-16 · Enter and leave edit mode
+- [ ] US-HOME-17 · Rearrange apps and widgets
+- [ ] US-HOME-18 · Remove an app or widget from Home
+- [ ] US-HOME-19 · Add a widget from the picker
+- [ ] US-HOME-22 · Pin my favourite apps to the Dock
+- [ ] US-HOME-20 · Show app widgets with live data
+- [ ] US-STORE-04 · Browse a category
+- [ ] US-STORE-05 · Search results with filters
+- [ ] US-STORE-15 · See and apply available updates
+- [ ] US-STORE-16 · Check for updates and auto-update in the background
+- [ ] US-STORE-18 · See and manage app sources
+- [ ] US-STORE-19 · Add a source with a pinned signing key
+- [ ] US-APP-13 · Edit environment variables
+- [ ] US-APP-14 · Secrets are hidden and can be revealed by an admin
+- [ ] US-APP-15 · Change web address and port
+- [ ] US-APP-16 · Save configuration and restart
+- [ ] US-APP-17 · Folder access
+- [ ] US-APP-18 · Network access
+- [ ] US-APP-19 · Require hlabs login in front of an app
+- [ ] US-APP-20 · Resource use tiles and 24-hour chart
+- [ ] US-APP-21 · Per-container usage
+- [ ] US-ACCT-32 · Choose a wallpaper
+- [ ] US-ACCT-33 · Choose an accent colour
+- [ ] US-ACCT-34 · Home screen options
+- [ ] US-ACCT-35 · Reduce transparency and motion
+- [ ] US-SYS-11 · See what is using storage
+- [ ] US-SYS-12 · Manage data location and drives
+- [ ] US-SYS-13 · Free space from unused app images
+- [ ] US-SYS-14 · Empty everyone's trash
+- [ ] US-SYS-27 · View hlabs logs
+- [ ] US-SYS-28 · Download a diagnostics bundle
+- [ ] US-SYS-29 · See what hlabs connects to
+- [ ] US-SYS-30 · Opt in to beta updates
+- [ ] US-SYS-31 · Restart hlabs
+- [ ] US-SYS-37 · Confirm a factory reset
+- [ ] US-SYS-38 · Reset hlabs
+- [ ] US-PHONE-01 · Switch to the phone layout with a bottom tab bar
+- [ ] US-PHONE-02 · Touch targets, safe areas and phone-friendly inputs
+- [ ] US-PHONE-03 · Bottom sheets with soft spring and drag to dismiss
+- [ ] US-PHONE-04 · Back navigation and resuming after the phone sleeps
+- [ ] US-PHONE-05 · Log in on a phone
+- [ ] US-PHONE-06 · Two-factor, lockout and forgot password on phone
+- [ ] US-PHONE-07 · Phone Home header and stacked widgets
+- [ ] US-PHONE-08 · App grid and opening apps on phone
+- [ ] US-PHONE-09 · Search from Home on phone
+- [ ] US-PHONE-10 · Browse the App Store on phone
+- [ ] US-PHONE-11 · App details on phone
+- [ ] US-PHONE-12 · Install an app from the phone
+- [ ] US-PHONE-23 · Add hlabs to the home screen
+- [ ] US-PHONE-24 · Run as a standalone web app
+
+## Phase 8 · Power features (P3)
+
+- [ ] US-ONB-23 · Find a backup to restore from
+- [ ] US-ONB-24 · Open the backup and continue to restore
+- [ ] US-STORE-20 · Deploy a custom app from a compose file
+- [ ] US-STORE-21 · Edit and redeploy a custom app
+- [ ] US-APP-22 · Choose where to move an app's data
+- [ ] US-APP-23 · Move job
+- [ ] US-FILE-13 · Share a folder on the local network
+- [ ] US-FILE-14 · Detect and browse an external drive
+- [ ] US-FILE-15 · Eject an external drive
+- [ ] US-FILE-16 · Move items to Trash with undo
+- [ ] US-FILE-17 · Restore items from Trash
+- [ ] US-FILE-18 · Empty Trash manually and automatically
+- [ ] US-BKP-15 · Understand why a backup failed
+- [ ] US-BKP-16 · Download the log or try again
+- [ ] US-SYS-32 · Turn on AI access
+- [ ] US-SYS-33 · Choose what assistants may do
+- [ ] US-SYS-34 · Create and revoke tokens
+- [ ] US-SYS-35 · Assistants can't install or update apps
+- [ ] US-SYS-36 · See recent assistant activity
+- [ ] US-SYS-39 · See version and system information
+- [ ] US-SYS-40 · See the project and licences
+- [ ] US-STATE-21 · Show a page-not-found screen
+- [ ] US-STATE-22 · Show not-found for unknown app addresses
+
+## Phase 9 · Nice to have and polish
+
+- [ ] US-HOME-21 · Use Home with Reduce transparency on
+- [ ] US-STORE-22 · Show skeletons while the store loads
+- [ ] US-FILE-19 · Switch to list view and sort
+- [ ] US-FILE-20 · Select several items
+- [ ] US-FILE-21 · Use the right-click menu
+- [ ] US-FILE-22 · Move items to another folder
+- [ ] US-FILE-23 · Rename a file or folder
+- [ ] US-FILE-24 · See skeletons while a folder loads
+- [ ] US-BKP-12 · Choose how often backups run
+- [ ] US-BKP-13 · Set how many restore points to keep
+- [ ] US-BKP-14 · Pause apps briefly for a consistent copy
+- [ ] US-USE-10 · Show a loading state before usage arrives
+- [ ] US-USE-11 · Handle usage that can't be loaded
+- [ ] US-ACCT-29 · Choose where notifications go
+- [ ] US-ACCT-30 · Choose what to be told about
+- [ ] US-ACCT-31 · Quiet hours
+- [ ] US-SYS-07 · Pick a new server name
+- [ ] US-SYS-08 · Apply a rename everywhere
+- [ ] US-SYS-09 · Follow install steps for my device
+- [ ] US-SYS-10 · Download the certificate on a computer or phone
+- [ ] US-SYS-15 · Choose where to move all data
+- [ ] US-SYS-16 · Move all data as a safe job
+- [ ] US-SYS-21 · Review an engine switch
+- [ ] US-SYS-22 · Switch engine with automatic fallback
+- [ ] US-PHONE-13 · Open the app settings sheet
+- [ ] US-PHONE-14 · Toggle app options in the sheet
+- [ ] US-PHONE-15 · Share, configure and uninstall from the sheet
+- [ ] US-PHONE-16 · Browse files on phone
+- [ ] US-PHONE-17 · Upload from the phone
+- [ ] US-PHONE-18 · Search and file actions on phone
+- [ ] US-PHONE-19 · Settings list on phone
+- [ ] US-PHONE-20 · Settings pages on phone
+- [ ] US-PHONE-21 · Backup status and back up now on phone
+- [ ] US-PHONE-22 · Schedule, restore and recent runs on phone

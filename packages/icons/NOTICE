@@ -1,0 +1,15 @@
+@hlabs/icons
+Copyright (C) 2026 hlabs contributors. Licensed under AGPL-3.0-only.
+
+This package includes third-party material:
+
+1. Lucide icons (via lucide-react), ISC License.
+   https://lucide.dev
+
+2. Papirus icon theme: file and folder icons in assets/file-icons/ and
+   src/file-icons/data.ts. Copyright (C) Papirus Development Team.
+   Licensed under the GNU General Public License v3.0.
+   https://github.com/PapirusDevelopmentTeam/papirus-icon-theme
+   Full licence text: assets/file-icons/LICENSE-papirus.txt
+   Changes: selected icons only; files renamed to folder-<colour>-<kind>.svg
+   and file-<kind>.svg; SVGs inlined as data URLs. Artwork is unmodified.
