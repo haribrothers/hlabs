@@ -83,6 +83,11 @@ export const onboardingCopy = {
     strength: 'Password strength',
     create: 'Create account',
     failed: "Couldn't create the account. Try again.",
+    nameMissing: 'Enter your name',
+    usernameInvalid: 'Use 3–32 lowercase letters, numbers and dashes, starting with a letter, e.g. hari',
+    usernameTaken: 'That username is already taken. Choose another.',
+    confirmMismatch: "Passwords don't match",
+    fixCount: (n: number) => `Fix ${n} ${n === 1 ? 'thing' : 'things'} to continue.`,
   },
   stepNames: {
     system: 'System check',

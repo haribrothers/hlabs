@@ -17,7 +17,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ONB-06 · Recover from a failed system check
 - [x] US-ONB-07 · Get Docker Engine instructions on Linux, and choose start at login
 - [x] US-ONB-08 · Create the admin account
-- [ ] US-ONB-09 · See what to fix when the account details are invalid
+- [x] US-ONB-09 · See what to fix when the account details are invalid
 - [ ] US-ONB-10 · Only allow one admin to be created through onboarding
 - [ ] US-ONB-11 · Turn on two-factor login
 - [ ] US-ONB-12 · Save recovery codes

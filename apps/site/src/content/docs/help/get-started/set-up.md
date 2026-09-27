@@ -46,6 +46,8 @@ The admin manages apps, people and settings; you can add family members later.
 - **Username:** 3–32 lowercase letters, numbers and dashes, starting with a letter. hlabs suggests one from your name.
 - **Password:** at least 12 characters, and not one of the most common passwords. The hint under the field says when it's strong enough.
 
+If something needs changing, hlabs says what under that field and how many things are left to fix; each message goes away as soon as the field is right.
+
 Once the account is created you're signed in on this browser, and the setup address stops working: from here on, setup continues as you.
 
 ## "Finish setup on the computer running hlabs."

@@ -1,5 +1,5 @@
 // The admin account form (US-ONB-08): username suggestion and password strength, from the shared rules.
-import { passwordIssue } from '@hlabs/shared';
+import { passwordIssue, USERNAME_PATTERN } from '@hlabs/shared';
 import { onboardingCopy } from '../copy/onboarding';
 
 const copy = onboardingCopy.account;
@@ -24,4 +24,44 @@ export function passwordStrength(password: string): Strength {
   if (issue === 'tooShort') return { level: 'weak', bars: 1, text: copy.passwordWeak };
   if (issue === 'tooCommon') return { level: 'common', bars: 1, text: copy.passwordCommon };
   return { level: 'strong', bars: [...password].length >= 16 ? 4 : 3, text: copy.passwordStrong };
+}
+
+export interface AccountValues {
+  name: string;
+  username: string;
+  password: string;
+  confirm: string;
+}
+
+export type AccountField = keyof AccountValues;
+
+/** Form order, for focusing the first field to fix (US-ONB-09). */
+export const ACCOUNT_FIELDS: readonly AccountField[] = ['name', 'username', 'password', 'confirm'];
+
+/** What to fix in each field, by the same rules the daemon applies (the username is lowercased first). */
+export function accountErrors(values: AccountValues): Partial<Record<AccountField, string>> {
+  const errors: Partial<Record<AccountField, string>> = {};
+  if (!values.name.trim()) errors.name = copy.nameMissing;
+  if (!USERNAME_PATTERN.test(values.username.trim().toLowerCase())) errors.username = copy.usernameInvalid;
+  const issue = passwordIssue(values.password);
+  if (issue === 'tooShort') errors.password = copy.passwordWeak;
+  if (issue === 'tooCommon') errors.password = copy.passwordCommon;
+  if (values.confirm !== values.password) errors.confirm = copy.confirmMismatch;
+  return errors;
+}
+
+/** The field and message for a code the daemon refused the account with (US-ONB-09), or null. */
+export function serverFieldError(code: string | undefined): { field: AccountField; message: string } | null {
+  switch (code) {
+    case 'USERNAME_INVALID':
+      return { field: 'username', message: copy.usernameInvalid };
+    case 'USERNAME_TAKEN':
+      return { field: 'username', message: copy.usernameTaken };
+    case 'PASSWORD_TOO_SHORT':
+      return { field: 'password', message: copy.passwordWeak };
+    case 'PASSWORD_TOO_COMMON':
+      return { field: 'password', message: copy.passwordCommon };
+    default:
+      return null;
+  }
 }
