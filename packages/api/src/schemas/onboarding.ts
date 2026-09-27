@@ -36,7 +36,11 @@ export const systemCheckSchema = z.object({
   engine: z.object({
     kind: engineKindSchema.nullable(),
     version: z.string().nullable(),
-    state: z.enum(['running', 'stopped', 'missing']),
+    /**
+     * running; stopped (a socket that doesn't answer, or OrbStack / Docker Desktop installed but not started);
+     * noAccess (the socket exists but this account can't use it, e.g. not in the `docker` group); missing.
+     */
+    state: z.enum(['running', 'stopped', 'noAccess', 'missing']),
     level: checkLevelSchema,
     /** The latest hlabs-managed Colima install (US-ONB-05), if any. */
     install: z

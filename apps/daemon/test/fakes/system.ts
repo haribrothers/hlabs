@@ -1,3 +1,4 @@
+import type { EngineKind } from '@hlabs/api';
 import type { OsInfo, SystemProbe } from '../../src/platform/system';
 
 /** A roomy Mac with ports 80 and 443 free, unless a test says otherwise. */
@@ -21,5 +22,15 @@ export class FakeSystemProbe implements SystemProbe {
   }
   async portInUse(port: number) {
     return this.portsInUse.has(port);
+  }
+  /** Sockets this account can't open. */
+  noAccess = new Set<string>();
+  /** Engine apps installed but maybe not running. */
+  apps: EngineKind[] = [];
+  async canAccess(socketPath: string) {
+    return !this.noAccess.has(socketPath);
+  }
+  async installedEngineApps() {
+    return this.apps;
   }
 }

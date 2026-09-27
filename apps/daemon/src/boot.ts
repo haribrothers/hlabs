@@ -128,6 +128,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     secrets,
     dashboardUrl: config.dashboardUrl,
     jobs,
+    bus,
     dataDir: config.paths.dataDir,
     engineInstallAllowed: !config.devNoEngineInstall,
     systemCheck: {

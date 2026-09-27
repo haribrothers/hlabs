@@ -18,6 +18,29 @@ export interface SystemCheckDeps {
   headless: boolean;
 }
 
+type EngineCheck = Pick<SystemCheck['engine'], 'kind' | 'version' | 'state' | 'level'>;
+
+/**
+ * The engine as the check reports it (US-ONB-04, US-ONB-07): a socket this account can't open is `noAccess`, and
+ * on a Mac an installed but quit OrbStack or Docker Desktop (no socket) is `stopped`, not `missing`.
+ */
+async function engineState(
+  status: Awaited<ReturnType<EngineService['check']>>,
+  probe: SystemProbe,
+  platform: 'darwin' | 'linux',
+): Promise<EngineCheck> {
+  if (status.state === 'running') {
+    return { kind: status.candidate.kind, version: status.info.version, state: 'running', level: 'ok' };
+  }
+  if (status.state === 'stopped') {
+    const state = (await probe.canAccess(status.candidate.socketPath)) ? 'stopped' : 'noAccess';
+    return { kind: status.candidate.kind, version: null, state, level: 'error' };
+  }
+  const [app] = platform === 'darwin' ? await probe.installedEngineApps() : [];
+  if (app) return { kind: app, version: null, state: 'stopped', level: 'error' };
+  return { kind: null, version: null, state: 'missing', level: 'error' };
+}
+
 export async function runSystemCheck({ engine, probe, storageRoot, headless }: SystemCheckDeps): Promise<SystemCheck> {
   const [status, os, freeBytes, httpInUse, httpsInUse] = await Promise.all([
     engine.check(),
@@ -32,13 +55,7 @@ export async function runSystemCheck({ engine, probe, storageRoot, headless }: S
     path: storageRoot,
     level: freeBytes < DISK_ERROR_BYTES ? 'error' : freeBytes < DISK_WARNING_BYTES ? 'warning' : 'ok',
   } as const;
-  const engineCheck = {
-    kind: status.state === 'missing' ? null : status.candidate.kind,
-    version: status.state === 'running' ? status.info.version : null,
-    state: status.state,
-    level: status.state === 'running' ? 'ok' : 'error',
-    install: null,
-  } as const;
+  const engineCheck = { ...(await engineState(status, probe, os.platform)), install: null };
   const ports = {
     http: { port: 80, inUse: httpInUse, use: httpInUse ? FALLBACK_PORTS.http : 80 },
     https: { port: 443, inUse: httpsInUse, use: httpsInUse ? FALLBACK_PORTS.https : 443 },

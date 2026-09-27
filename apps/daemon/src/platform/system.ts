@@ -1,8 +1,10 @@
 // Facts about this computer for the onboarding system check (US-ONB-04). Behind an interface so tests use a fake.
-import { readFile, statfs } from 'node:fs/promises';
+import type { EngineKind } from '@hlabs/api';
+import { constants } from 'node:fs';
+import { access, readFile, statfs } from 'node:fs/promises';
 import { createServer } from 'node:net';
-import { arch, cpus, release, totalmem } from 'node:os';
-import { dirname } from 'node:path';
+import { arch, cpus, homedir, release, totalmem } from 'node:os';
+import { dirname, join } from 'node:path';
 
 export interface OsInfo {
   platform: 'darwin' | 'linux';
@@ -21,7 +23,17 @@ export interface SystemProbe {
   freeBytes(path: string): Promise<number>;
   /** Another process is listening on the port (all interfaces). */
   portInUse(port: number): Promise<boolean>;
+  /** This account may read and write the socket (false: e.g. not in the `docker` group). */
+  canAccess(socketPath: string): Promise<boolean>;
+  /** Engine apps installed on a Mac (OrbStack, Docker Desktop), in detection order, running or not. */
+  installedEngineApps(): Promise<EngineKind[]>;
 }
+
+/** Where the Mac engine apps live (/Applications or ~/Applications). */
+const ENGINE_APPS: Array<{ kind: EngineKind; app: string }> = [
+  { kind: 'orbstack', app: 'OrbStack.app' },
+  { kind: 'docker-desktop', app: 'Docker.app' },
+];
 
 /** macOS major version from the Darwin kernel release: Darwin 20–24 are macOS 11–15, Darwin 25 is macOS 26. */
 export function macosVersion(kernelRelease: string): string {
@@ -64,6 +76,34 @@ export class NodeSystemProbe implements SystemProbe {
         if ((err as NodeJS.ErrnoException).code !== 'ENOENT' || dirname(dir) === dir) throw err;
       }
     }
+  }
+
+  canAccess(socketPath: string): Promise<boolean> {
+    return access(socketPath, constants.R_OK | constants.W_OK).then(
+      () => true,
+      () => false,
+    );
+  }
+
+  async installedEngineApps(): Promise<EngineKind[]> {
+    if (process.platform !== 'darwin') return [];
+    const found: EngineKind[] = [];
+    for (const { kind, app } of ENGINE_APPS) {
+      for (const dir of ['/Applications', join(homedir(), 'Applications')]) {
+        if (await this.canRead(join(dir, app))) {
+          found.push(kind);
+          break;
+        }
+      }
+    }
+    return found;
+  }
+
+  private canRead(path: string) {
+    return access(path).then(
+      () => true,
+      () => false,
+    );
   }
 
   /**

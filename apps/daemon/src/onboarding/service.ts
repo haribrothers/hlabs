@@ -11,6 +11,7 @@ import { count } from 'drizzle-orm';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { SecretStore } from '../platform/secrets';
 import { readInstallLog } from '../engine/install-job';
+import type { EventBus } from '../events/bus';
 import type { JobRunner } from '../jobs/runner';
 import { runSystemCheck, type SystemCheck, type SystemCheckDeps } from './system-check';
 
@@ -33,6 +34,7 @@ export class OnboardingService {
       secrets: SecretStore;
       dashboardUrl: string;
       jobs: JobRunner;
+      bus: EventBus;
       dataDir: string;
       /** False in e2e (HLABS_DEV_NO_ENGINE_INSTALL). */
       engineInstallAllowed?: boolean;
@@ -89,13 +91,14 @@ export class OnboardingService {
    * returned instead of starting another (reloads, several tabs).
    */
   async installEngine(): Promise<string> {
-    const { probe, engine } = this.deps.systemCheck;
+    const { probe } = this.deps.systemCheck;
     if ((await probe.os()).platform !== 'darwin' || this.deps.engineInstallAllowed === false) {
       throw hlabsError('ENGINE_INSTALL_UNSUPPORTED');
     }
     const current = this.deps.jobs.latest('engine_install');
     if (current && (current.state === 'queued' || current.state === 'running')) return current.id;
-    if ((await engine.check()).state !== 'missing') {
+    // Not next to an engine that is only stopped, or that this account can't open (US-ONB-07).
+    if ((await runSystemCheck(this.deps.systemCheck)).engine.state !== 'missing') {
       throw hlabsError('VALIDATION_FAILED', 'A container engine is already present');
     }
     return this.deps.jobs.start('engine_install');
@@ -112,7 +115,10 @@ export class OnboardingService {
     if (check.engine.level === 'error') throw hlabsError('ENGINE_UNAVAILABLE');
     if (check.disk.level === 'error') throw hlabsError('DISK_FULL');
 
-    setSetting(this.db, 'startup', { ...getSetting(this.db, 'startup'), startAtLogin });
+    const startup = getSetting(this.db, 'startup');
+    setSetting(this.db, 'startup', { ...startup, startAtLogin });
+    // The tray applies start at login (D-042).
+    if (startup.startAtLogin !== startAtLogin) this.deps.bus.emit('startup.changeRequested', { startAtLogin });
     setSetting(this.db, 'network', {
       ...getSetting(this.db, 'network'),
       ports: { http: check.ports.http.use, https: check.ports.https.use },
