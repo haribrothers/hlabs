@@ -9,7 +9,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 
 ## Phase 1 · Core, first run and sign in
 
-- [ ] US-ONB-01 · Open onboarding automatically on first run
+- [x] US-ONB-01 · Open onboarding automatically on first run
 - [ ] US-ONB-02 · See the welcome screen and start setup
 - [ ] US-ONB-03 · Resume onboarding where I left off, and only until it's done
 - [ ] US-ONB-04 · Run the system check

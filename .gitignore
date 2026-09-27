@@ -12,4 +12,5 @@ playwright-report/
 test-results/
 
 .e2e-data/
+.e2e-data-first-run/
 .astro/

@@ -9,7 +9,15 @@ export default defineConfig({
     starlight({
       title: 'hlabs',
       customCss: ['./src/styles/site.css'],
-      sidebar: [{ label: 'Get started', items: [{ label: 'Welcome', link: '/help/' }] }],
+      sidebar: [
+        {
+          label: 'Get started',
+          items: [
+            { label: 'Welcome', link: '/help/' },
+            { label: 'Set up hlabs', link: '/help/get-started/set-up/' },
+          ],
+        },
+      ],
     }),
   ],
 });
