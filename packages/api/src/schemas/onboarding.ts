@@ -13,7 +13,6 @@ import {
   passwordSchema,
   pending,
   totpCodeSchema,
-  usernameSchema,
 } from './common';
 
 /** Steps from the shared registry (D-041; 04 `settings.onboarding.step`). */
@@ -69,8 +68,9 @@ export const onboarding = {
   confirmSystem: io(z.object({ startAtLogin: z.boolean() }), ok),
   installEngine: io(empty, jobRefSchema),
   setStep: io(z.object({ step: onboardingStepSchema }), ok),
+  /** The username is lowercased before it's checked, so any string up to 64 characters is accepted here. */
   createAdmin: io(
-    z.object({ username: usernameSchema, displayName: displayNameSchema, password: passwordSchema }),
+    z.object({ username: z.string().trim().min(1).max(64), displayName: displayNameSchema, password: passwordSchema }),
     z.object({ userId: z.string() }),
   ),
   setupTotp: io(empty, z.object({ otpauthUrl: z.string(), qrSvg: z.string(), secret: z.string() })),

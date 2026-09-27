@@ -1,7 +1,7 @@
 // US-ONB-06 · Recover from a failed system check (the Colima install fails).
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { colimaSocket } from '../src/engine/colima-installer';
 import { ENGINE_DOWNLOADS } from '../src/engine/downloads';
 import type { EngineCandidate } from '../src/engine/types';
@@ -144,9 +144,13 @@ describe('US-ONB-06', () => {
     io.existing.add(join(engineDir, 'bin', 'colima'));
     io.existing.add(join(home, '.colima', 'hlabs'));
     const first = (await install()).result!.data.jobId as string;
-    await new Promise((r) => setTimeout(r, 30));
-    expect((await install()).result!.data.jobId).toBe(first);
-    release();
+    try {
+      // Wait until the failed install is inside `colima delete` (held).
+      await vi.waitFor(() => expect(io.runs.some((r) => r.args[0] === 'delete')).toBe(true), { timeout: 5_000 });
+      expect((await install()).result!.data.jobId).toBe(first);
+    } finally {
+      release();
+    }
     await services!.jobs.settled(first);
   });
 });

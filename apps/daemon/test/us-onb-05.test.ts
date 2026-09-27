@@ -3,7 +3,7 @@ import { hlabsCodeOf } from '@hlabs/api';
 import { getSetting } from '@hlabs/db';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { colimaResources, colimaSocket, installColima } from '../src/engine/colima-installer';
 import { ENGINE_DOWNLOADS } from '../src/engine/downloads';
 import type { EngineCandidate } from '../src/engine/types';
@@ -106,13 +106,17 @@ describe('US-ONB-05', () => {
     io.hold = new Promise((r) => (release = r));
     const { install, check, services } = await start({ io });
     const first = (await install()).result?.data.jobId as string;
-    await new Promise((r) => setTimeout(r, 20));
-    expect((await install()).result?.data.jobId).toBe(first);
-    const during = (await check()).result?.data.engine as { install: { state: string; progress: number } };
-    expect(during.install).toMatchObject({ state: 'running' });
-    expect(during.install.progress).toBeGreaterThanOrEqual(50);
-    expect(during.install.progress).toBeLessThan(100);
-    release();
+    try {
+      // Wait until the install is inside `colima start` (held), however busy the machine is.
+      await vi.waitFor(() => expect(io.runs).toHaveLength(1), { timeout: 5_000 });
+      expect((await install()).result?.data.jobId).toBe(first);
+      const during = (await check()).result?.data.engine as { install: { state: string; progress: number } };
+      expect(during.install).toMatchObject({ state: 'running' });
+      expect(during.install.progress).toBeGreaterThanOrEqual(50);
+      expect(during.install.progress).toBeLessThan(100);
+    } finally {
+      release();
+    }
     await services!.jobs.settled(first);
     expect(io.runs).toHaveLength(1);
   });
