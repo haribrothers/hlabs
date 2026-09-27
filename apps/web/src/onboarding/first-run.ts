@@ -1,8 +1,11 @@
-// What the dashboard shows before onboarding is complete (US-ONB-01).
+// What the dashboard shows before onboarding is complete (US-ONB-01, US-ONB-03).
+import type { OnboardingStep } from '@hlabs/api/schemas';
 import { SETUP_PATH } from '../lib/setup-token';
+import { resumePath } from './steps';
 
 export interface OnboardingStatus {
   completed: boolean;
+  step: OnboardingStep;
 }
 
 export type FirstRunView =
@@ -26,11 +29,15 @@ export function firstRunView(opts: {
   hasSetupToken: boolean;
   /** Development pages under /dev stay reachable. */
   dev: boolean;
+  /** First page load of this tab: opening setup resumes at the saved step. */
+  entry?: boolean;
+  shippedPhase?: number;
 }): FirstRunView {
   const { pathname, status } = opts;
   if (opts.dev && pathname.startsWith('/dev/')) return { kind: 'app' };
   if (!status) return opts.failed ? { kind: 'app' } : { kind: 'loading' };
   if (status.completed) return isSetupPath(pathname) ? { kind: 'redirect', to: '/' } : { kind: 'app' };
   if (!opts.hasSetupToken) return { kind: 'elsewhere' };
-  return isSetupPath(pathname) ? { kind: 'setup' } : { kind: 'redirect', to: SETUP_PATH };
+  const to = resumePath({ pathname, saved: status.step, entry: opts.entry ?? false, shippedPhase: opts.shippedPhase });
+  return to && to !== pathname ? { kind: 'redirect', to } : { kind: 'setup' };
 }

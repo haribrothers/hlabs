@@ -13,7 +13,7 @@ function Welcome() {
     trpc.onboarding.setStep.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({ queryKey: trpc.onboarding.status.queryKey() });
-        await navigate({ to: '/setup/system' });
+        await navigate({ to: '/setup/$step', params: { step: 'system' } });
       },
     }),
   );

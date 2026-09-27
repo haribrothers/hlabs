@@ -18,7 +18,7 @@ import { Route as StoreRouteImport } from './routes/store'
 import { Route as UsageRouteImport } from './routes/usage'
 import { Route as DevUiRouteImport } from './routes/dev/ui'
 import { Route as SetupIndexRouteImport } from './routes/setup.index'
-import { Route as SetupSystemRouteImport } from './routes/setup.system'
+import { Route as SetupStepRouteImport } from './routes/setup.$step'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -65,9 +65,9 @@ const SetupIndexRoute = SetupIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SetupRoute,
 } as any)
-const SetupSystemRoute = SetupSystemRouteImport.update({
-  id: '/system',
-  path: '/system',
+const SetupStepRoute = SetupStepRouteImport.update({
+  id: '/$step',
+  path: '/$step',
   getParentRoute: () => SetupRoute,
 } as any)
 
@@ -80,7 +80,7 @@ export interface FileRoutesByFullPath {
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
-  '/setup/system': typeof SetupSystemRoute
+  '/setup/$step': typeof SetupStepRoute
   '/setup/': typeof SetupIndexRoute
 }
 export interface FileRoutesByTo {
@@ -91,7 +91,7 @@ export interface FileRoutesByTo {
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
-  '/setup/system': typeof SetupSystemRoute
+  '/setup/$step': typeof SetupStepRoute
   '/setup': typeof SetupIndexRoute
 }
 export interface FileRoutesById {
@@ -104,7 +104,7 @@ export interface FileRoutesById {
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
-  '/setup/system': typeof SetupSystemRoute
+  '/setup/$step': typeof SetupStepRoute
   '/setup/': typeof SetupIndexRoute
 }
 export interface FileRouteTypes {
@@ -118,7 +118,7 @@ export interface FileRouteTypes {
     | '/store'
     | '/usage'
     | '/dev/ui'
-    | '/setup/system'
+    | '/setup/$step'
     | '/setup/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -129,7 +129,7 @@ export interface FileRouteTypes {
     | '/store'
     | '/usage'
     | '/dev/ui'
-    | '/setup/system'
+    | '/setup/$step'
     | '/setup'
   id:
     | '__root__'
@@ -141,7 +141,7 @@ export interface FileRouteTypes {
     | '/store'
     | '/usage'
     | '/dev/ui'
-    | '/setup/system'
+    | '/setup/$step'
     | '/setup/'
   fileRoutesById: FileRoutesById
 }
@@ -221,23 +221,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupIndexRouteImport
       parentRoute: typeof SetupRoute
     }
-    '/setup/system': {
-      id: '/setup/system'
-      path: '/system'
-      fullPath: '/setup/system'
-      preLoaderRoute: typeof SetupSystemRouteImport
+    '/setup/$step': {
+      id: '/setup/$step'
+      path: '/$step'
+      fullPath: '/setup/$step'
+      preLoaderRoute: typeof SetupStepRouteImport
       parentRoute: typeof SetupRoute
     }
   }
 }
 
 interface SetupRouteChildren {
-  SetupSystemRoute: typeof SetupSystemRoute
+  SetupStepRoute: typeof SetupStepRoute
   SetupIndexRoute: typeof SetupIndexRoute
 }
 
 const SetupRouteChildren: SetupRouteChildren = {
-  SetupSystemRoute: SetupSystemRoute,
+  SetupStepRoute: SetupStepRoute,
   SetupIndexRoute: SetupIndexRoute,
 }
 

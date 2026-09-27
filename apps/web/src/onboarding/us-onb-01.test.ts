@@ -48,7 +48,7 @@ describe('US-ONB-01', () => {
 
   describe('what the dashboard shows before onboarding is complete', () => {
     const base = { failed: false, dev: false };
-    const incomplete = { completed: false };
+    const incomplete = { completed: false, step: 'welcome' as const };
 
     it('opens onboarding in the browser that has the setup token', () => {
       expect(firstRunView({ ...base, pathname: '/', status: incomplete, hasSetupToken: true })).toEqual({
@@ -69,7 +69,7 @@ describe('US-ONB-01', () => {
     });
 
     it('shows the dashboard once onboarding is complete, and leaves /setup', () => {
-      const completed = { completed: true };
+      const completed = { completed: true, step: 'done' as const };
       expect(firstRunView({ ...base, pathname: '/', status: completed, hasSetupToken: true })).toEqual({ kind: 'app' });
       expect(firstRunView({ ...base, pathname: '/setup', status: completed, hasSetupToken: false })).toEqual({
         kind: 'redirect',

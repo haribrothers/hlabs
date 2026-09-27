@@ -1,7 +1,7 @@
 // Sends the browser to onboarding, or explains where to finish it, until onboarding is complete.
 import { useQuery } from '@tanstack/react-query';
 import { Navigate, useRouterState } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { readSetupToken } from '../lib/setup-token';
 import { useTRPC } from '../lib/trpc';
 import { Shell } from '../shell/shell';
@@ -12,13 +12,17 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
   const trpc = useTRPC();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const status = useQuery(trpc.onboarding.status.queryOptions());
+  // Only the first decision of a page load counts as opening setup (US-ONB-03).
+  const entry = useRef(true);
   const view = firstRunView({
+    entry: entry.current,
     pathname,
     status: status.data,
     failed: status.isError,
     hasSetupToken: readSetupToken() !== null,
     dev: import.meta.env.DEV,
   });
+  if (view.kind !== 'loading') entry.current = false;
 
   switch (view.kind) {
     case 'loading':
