@@ -19,6 +19,8 @@ export const jobs = sqliteTable(
     state: text('state', { enum: JOB_STATES }).notNull(),
     progress: integer('progress').notNull().default(0),
     message: text('message'),
+    /** hlabsCode of a failed job, for the UI to map to copy. */
+    errorCode: text('error_code'),
     payloadJson: json<unknown>('payload_json'),
     createdAt: ms('created_at').notNull(),
     finishedAt: ms('finished_at'),

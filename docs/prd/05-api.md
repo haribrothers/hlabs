@@ -177,7 +177,7 @@ These were added while writing user stories and are **part of the API contract**
 
 - The router tree, schemas and access levels live in `packages/api/src/router.ts`; the daemon implements procedures as handlers keyed by path (`AppHandlers` in `packages/api/src/handlers.ts`). A procedure without a handler throws `NOT_IMPLEMENTED`.
 - `events.stream` accepts a session or the tray token (tray-scoped events only reach the tray).
-- General error codes in the catalogue: `NOT_IMPLEMENTED`, `VALIDATION_FAILED` (bad input), `NOT_FOUND`, `AUTH_REQUIRED` (signed out), `ACCESS_DENIED` (signed in but not allowed), `INTERNAL`. The tRPC error shape carries `data.hlabsCode` and optional `data.detail`.
+- General error codes in the catalogue: `NOT_IMPLEMENTED`, `VALIDATION_FAILED` (bad input), `NOT_FOUND`, `AUTH_REQUIRED` (signed out), `ACCESS_DENIED` (signed in but not allowed), `INTERNAL`, `DAEMON_STARTING` (API called before `/healthz` is ready), `JOB_NOT_CANCELLABLE` (`jobs.cancel` on a job kind that can't be cancelled). The tRPC error shape carries `data.hlabsCode` and optional `data.detail`.
 - Event `system.test` (`{ message }`), emitted only in development by `POST /dev/emit-test-event`, to prove the event stream reaches the browser.
 - Placeholder output schemas (`pending`) are replaced by the story that implements each procedure.
-
+- Until sign-in ships (phase 1), `pnpm dev` sets `HLABS_DEV_ANONYMOUS_ADMIN=1` so the dashboard can call signed-in procedures such as `events.stream`. The daemon refuses to start with it when `NODE_ENV=production`; phase 1 removes it.

@@ -27,7 +27,9 @@ const t = initTRPC
   .create({
     errorFormatter({ shape, error }) {
       const detail = error.cause instanceof HlabsError ? (error.cause.detail ?? null) : null;
-      return { ...shape, data: { ...shape.data, hlabsCode: hlabsCodeOf(error), detail } };
+      // No stack traces over the wire; the daemon logs them.
+      const { stack: _stack, ...data } = shape.data;
+      return { ...shape, data: { ...data, hlabsCode: hlabsCodeOf(error), detail } };
     },
     sse: {
       ping: { enabled: true, intervalMs: 15_000 },
