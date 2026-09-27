@@ -11,6 +11,7 @@ import { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
 import { OnboardingService } from './onboarding/service';
+import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 import type { ServiceHolder, Services } from './services';
@@ -31,6 +32,7 @@ export interface BootDeps {
   proxy?: ProxyManager;
   mdns?: MdnsPublisher;
   secrets?: SecretStore;
+  system?: SystemProbe;
   /** Where the setup URL is printed (stdout). */
   print?: (line: string) => void;
 }
@@ -95,7 +97,17 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
 
   // First run: keep the setup token ready and print the setup URL (US-ONB-01, D-041).
   const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);
-  const onboarding = new OnboardingService(db, secrets, config.dashboardUrl);
+  const onboarding = new OnboardingService({
+    db,
+    secrets,
+    dashboardUrl: config.dashboardUrl,
+    systemCheck: {
+      engine,
+      probe: deps.system ?? new NodeSystemProbe(),
+      storageRoot: config.paths.storageRootDefault,
+      headless: config.headless,
+    },
+  });
   const setupUrl = await onboarding.prepareSetupToken();
   if (setupUrl) {
     logger.info({ setupUrl }, 'hlabs is not set up yet: open the setup URL to start');

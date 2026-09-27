@@ -30,6 +30,8 @@ export interface DaemonConfig {
   host: '127.0.0.1';
   port: number;
   paths: PlatformPaths;
+  /** Linux system service without a desktop session. */
+  headless: boolean;
   /** Where the dashboard is opened from this computer; the setup URL is built from it (D-041). */
   dashboardUrl: string;
   /** Keychain on a production desktop, encrypted file otherwise (07 §7.7). */
@@ -61,6 +63,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
     host: '127.0.0.1',
     port: e.HLABS_PORT,
     paths,
+    headless: e.HLABS_HEADLESS,
     dashboardUrl: (e.HLABS_DASHBOARD_URL ?? `http://127.0.0.1:${e.HLABS_PORT}`).replace(/\/+$/, ''),
     secretStore: e.HLABS_SECRET_STORE ?? defaultSecretStoreKind({ env: e.NODE_ENV, headless: e.HLABS_HEADLESS }),
     logLevel: e.HLABS_LOG_LEVEL ?? (dev ? 'debug' : 'info'),

@@ -1,10 +1,16 @@
 // First run: onboarding state and the one-time setup token that guards it (D-013, D-041, US-ONB-01).
 import { hlabsError, onboardingStepSchema } from '@hlabs/api';
-import { nextOnboardingStep, SKIPPABLE_ONBOARDING_STEPS, type OnboardingStep } from '@hlabs/shared';
+import {
+  enabledOnboardingSteps,
+  nextOnboardingStep,
+  SKIPPABLE_ONBOARDING_STEPS,
+  type OnboardingStep,
+} from '@hlabs/shared';
 import { getSetting, setSetting, users, type HlabsDb } from '@hlabs/db';
 import { count } from 'drizzle-orm';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { SecretStore } from '../platform/secrets';
+import { runSystemCheck, type SystemCheck, type SystemCheckDeps } from './system-check';
 
 /** Secret-store ref of the setup token (04 `settings.onboarding.setupTokenRef`). */
 export const SETUP_TOKEN_REF = 'onboarding.setupToken';
@@ -15,11 +21,17 @@ export class OnboardingService {
   /** Only the hash is kept in memory; the plain token lives in the secret store. */
   private tokenHash: Buffer | null = null;
 
+  private readonly db: HlabsDb;
+  private readonly secrets: SecretStore;
+  private readonly dashboardUrl: string;
+
   constructor(
-    private readonly db: HlabsDb,
-    private readonly secrets: SecretStore,
-    private readonly dashboardUrl: string,
-  ) {}
+    private readonly deps: { db: HlabsDb; secrets: SecretStore; dashboardUrl: string; systemCheck: SystemCheckDeps },
+  ) {
+    this.db = deps.db;
+    this.secrets = deps.secrets;
+    this.dashboardUrl = deps.dashboardUrl;
+  }
 
   get completed(): boolean {
     return getSetting(this.db, 'onboarding').completedAt !== null;
@@ -43,6 +55,34 @@ export class OnboardingService {
       throw hlabsError('ONBOARDING_STEP_INVALID');
     }
     setSetting(this.db, 'onboarding', { ...getSetting(this.db, 'onboarding'), step });
+  }
+
+  /** The system check (US-ONB-04). Read-only; the engine is detected again each time. */
+  checkSystem(): Promise<SystemCheck> {
+    return runSystemCheck(this.deps.systemCheck);
+  }
+
+  /**
+   * Continue on the system check: blocking checks must pass; saves start at login and the web ports Caddy
+   * will use, and moves on to the account step (a later saved step is kept).
+   */
+  async confirmSystem(startAtLogin: boolean): Promise<void> {
+    const saved = this.status().step;
+    if (saved === 'welcome') throw hlabsError('ONBOARDING_STEP_INVALID');
+    const check = await this.checkSystem();
+    if (check.engine.level === 'error') throw hlabsError('ENGINE_UNAVAILABLE');
+    if (check.disk.level === 'error') throw hlabsError('DISK_FULL');
+
+    setSetting(this.db, 'startup', { ...getSetting(this.db, 'startup'), startAtLogin });
+    setSetting(this.db, 'network', {
+      ...getSetting(this.db, 'network'),
+      ports: { http: check.ports.http.use, https: check.ports.https.use },
+    });
+    const steps = enabledOnboardingSteps();
+    const next = nextOnboardingStep('system');
+    if (steps.indexOf(saved) < steps.indexOf(next)) {
+      setSetting(this.db, 'onboarding', { ...getSetting(this.db, 'onboarding'), step: next });
+    }
   }
 
   /**

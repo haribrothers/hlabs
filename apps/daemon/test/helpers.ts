@@ -9,6 +9,7 @@ import { Readiness } from '../src/readiness';
 import { buildServer } from '../src/server';
 import { ServiceHolder } from '../src/services';
 import { FakeEngine, fakeMachine } from './fakes/engine';
+import { FakeSystemProbe } from './fakes/system';
 
 export function tempDir(prefix = 'hlabsd-'): string {
   return mkdtempSync(join(tmpdir(), prefix));
@@ -23,6 +24,7 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
     host: '127.0.0.1',
     port: 0,
     paths: { dataDir, appDataDir: join(dataDir, 'app-data'), storageRootDefault: join(dataDir, 'storage') },
+    headless: false,
     dashboardUrl: 'http://127.0.0.1:5173',
     secretStore: 'file',
     logLevel: 'silent',
@@ -55,6 +57,7 @@ export async function startDaemon(
       detect: fakeMachine({ [FAKE_SOCKET]: engine }),
       retryMs: 60_000,
     },
+    system: new FakeSystemProbe(),
     ...options.boot,
   };
   const services = options.skipBoot ? null : await boot(bootDeps);
