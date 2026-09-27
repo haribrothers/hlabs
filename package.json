@@ -16,7 +16,9 @@
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "changeset": "changeset"
+    "changeset": "changeset",
+    "db:generate": "pnpm --filter @hlabs/db db:generate",
+    "db:migrate": "pnpm --filter @hlabs/db db:migrate"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",

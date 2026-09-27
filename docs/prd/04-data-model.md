@@ -16,7 +16,7 @@ Secrets never go in SQLite in plain text: passwords are Argon2id hashes, TOTP se
 | `login_attempts` | `id`, `username`, `ip`, `at`, `success` | Lockout: 5 failures / 15 min per username+IP → locked 15 min. |
 | `invites` | `id`, `token_hash`, `role`, `display_name`, `created_by`, `created_at`, `expires_at` (7 days), `used_at`, `revoked_at` | Single-use. |
 | `invite_app_access` | `invite_id`, `app_id` | Apps granted on accept. |
-| `password_resets` | `id`, `user_id`, `token_hash`, `created_via` (`tray`\|`admin`), `expires_at` (15 min), `used_at` | Only created locally (tray) or by an admin. |
+| `password_resets` | `id`, `user_id`, `token_hash`, `created_via` (`tray`\|`admin`), `expires_at` (15 min), `used_at` | Only created locally (tray) or by an admin. `token_hash` is null for tray resets, which apply directly. |
 
 ### Apps
 | Table | Columns | Notes |
@@ -54,6 +54,8 @@ Secrets never go in SQLite in plain text: passwords are Argon2id hashes, TOTP se
 | `audit_log` | `id`, `at`, `user_id`, `action`, `target`, `detail_json`, `ip` | Security-relevant actions (logins, role changes, uninstall, restore, factory reset, settings changes). Kept 180 days. |
 | `usage_samples` | `ts`, `resolution` (`1m`\|`1h`), `scope` (`host` or appId), `cpu`, `mem_bytes`, `net_rx`, `net_tx`, `disk_read`, `disk_write` | Downsampled history. |
 | `mcp_tokens` | `id`, `name`, `token_hash`, `scopes_json`, `created_at`, `last_used_at`, `revoked_at` | SettingsAI (P3). |
+
+The value shape and default of every `settings` key are the Zod schemas in `packages/db/src/settings.ts`; reads fall back to the default when a row is missing or invalid.
 
 ## Invariants (enforce in services, test them)
 1. At least one enabled admin exists.
