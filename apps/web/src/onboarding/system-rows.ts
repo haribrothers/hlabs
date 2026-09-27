@@ -18,6 +18,8 @@ export interface SystemRow {
   /** A job in progress on this row (0–100), shown as a Progress bar with `note` under it. */
   progress?: number;
   note?: string;
+  /** A failed install: its last log line and what to do (US-ONB-06). */
+  failure?: { line: string | null; hint: string };
 }
 
 const copy = onboardingCopy.system;
@@ -39,11 +41,29 @@ export function cpuLabel(cpu: SystemCheck['cpu'], platform: SystemCheck['os']['p
 export const isInstalling = (check: SystemCheck | undefined) =>
   check?.engine.install?.state === 'queued' || check?.engine.install?.state === 'running';
 
+/** hlabs's Colima install failed and there is still no running engine (US-ONB-06). */
+export const installFailed = (check: SystemCheck | undefined) =>
+  check !== undefined && check.engine.state !== 'running' && check.engine.install?.state === 'failed';
+
+function installHint(code: string | null): string {
+  const hints = copy.installHints;
+  return code === 'ENGINE_DOWNLOAD_TIMEOUT' || code === 'ENGINE_START_FAILED' ? hints[code] : hints.other;
+}
+
 /** A Mac with no engine and no install yet: hlabs installs Colima without asking (US-ONB-05). */
 export const shouldInstallEngine = (check: SystemCheck | undefined) =>
   check?.os.platform === 'darwin' && check.engine.state === 'missing' && check.engine.install === null;
 
 function runtimeRow(engine: SystemCheck['engine']): SystemRow {
+  if (engine.state !== 'running' && engine.install?.state === 'failed') {
+    return {
+      id: 'runtime',
+      title: copy.runtime,
+      value: copy.installFailed,
+      status: 'failed',
+      failure: { line: engine.install.lastLogLine, hint: installHint(engine.install.hlabsCode) },
+    };
+  }
   if (engine.state !== 'running' && (engine.install?.state === 'queued' || engine.install?.state === 'running')) {
     const percent = engine.install.progress;
     return {

@@ -10,17 +10,13 @@ import { SystemStep } from '../onboarding/system-step';
 // (US-ONB-04 system is built; 08 account, 11 two-factor, 14 storage, 21 done).
 export const Route = createFileRoute('/setup/$step')({ component: Step });
 
-/** Each step's content below its heading, added as its story ships. */
-const CONTENT: Partial<Record<OnboardingStep, ComponentType>> = { system: SystemStep };
+/** Steps whose screen is built; each renders its own StepFrame. The rest show their title until their story. */
+const SCREENS: Partial<Record<OnboardingStep, ComponentType>> = { system: SystemStep };
 
 function Step() {
   const { step } = Route.useParams();
   if (!isOnboardingStep(step) || step === 'welcome') return null;
   const title = onboardingCopy.titles[step as keyof typeof onboardingCopy.titles] ?? '';
-  const Content = CONTENT[step];
-  return (
-    <StepFrame key={step} step={step} title={title}>
-      {Content ? <Content /> : null}
-    </StepFrame>
-  );
+  const Screen = SCREENS[step];
+  return Screen ? <Screen key={step} /> : <StepFrame key={step} step={step} title={title} />;
 }
