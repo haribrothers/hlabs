@@ -17,7 +17,7 @@ export const FALLBACK_GRADIENTS: ReadonlyArray<readonly [string, string]> = [
 export function gradientFor(name: string): readonly [string, string] {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  return FALLBACK_GRADIENTS[h % FALLBACK_GRADIENTS.length];
+  return FALLBACK_GRADIENTS[h % FALLBACK_GRADIENTS.length]!;
 }
 
 export interface AppLogoProps {

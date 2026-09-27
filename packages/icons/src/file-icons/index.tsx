@@ -9,14 +9,53 @@ import { FILE_ICON_SVGS } from './data';
 export type Accent = 'violet' | 'mint' | 'amber' | 'rose';
 
 export type FolderKind =
-  | 'plain' | 'documents' | 'pictures' | 'music' | 'videos' | 'downloads'
-  | 'shared' | 'apps' | 'backup' | 'network' | 'private';
+  | 'plain'
+  | 'documents'
+  | 'pictures'
+  | 'music'
+  | 'videos'
+  | 'downloads'
+  | 'shared'
+  | 'apps'
+  | 'backup'
+  | 'network'
+  | 'private';
 
 export type FileKind =
-  | 'image' | 'design' | 'vector' | 'video' | 'audio' | 'pdf' | 'document' | 'spreadsheet' | 'presentation'
-  | 'archive' | 'disk-image' | 'mac-installer' | 'linux-package' | 'android-package' | 'executable' | 'windows-program'
-  | 'code' | 'javascript' | 'python' | 'html' | 'json' | 'markdown' | 'text' | 'log' | 'csv' | 'calendar' | 'contact'
-  | 'ebook' | 'font' | 'database' | 'sql' | 'key' | 'torrent' | 'unknown';
+  | 'image'
+  | 'design'
+  | 'vector'
+  | 'video'
+  | 'audio'
+  | 'pdf'
+  | 'document'
+  | 'spreadsheet'
+  | 'presentation'
+  | 'archive'
+  | 'disk-image'
+  | 'mac-installer'
+  | 'linux-package'
+  | 'android-package'
+  | 'executable'
+  | 'windows-program'
+  | 'code'
+  | 'javascript'
+  | 'python'
+  | 'html'
+  | 'json'
+  | 'markdown'
+  | 'text'
+  | 'log'
+  | 'csv'
+  | 'calendar'
+  | 'contact'
+  | 'ebook'
+  | 'font'
+  | 'database'
+  | 'sql'
+  | 'key'
+  | 'torrent'
+  | 'unknown';
 
 /** Folder colour follows the accent (D-053): Violet → violet, Mint → teal, Amber → yellow, Rose → magenta. */
 export const FOLDER_COLOUR: Record<Accent, 'violet' | 'teal' | 'yellow' | 'magenta'> = {
@@ -46,7 +85,10 @@ map('linux-package', 'deb rpm appimage flatpak snap');
 map('android-package', 'apk aab');
 map('executable', 'bin run sh command');
 map('windows-program', 'exe msi bat cmd');
-map('code', 'c h cpp hpp cs go rs java kt swift rb php lua pl r scala dart vue svelte css scss less toml ini conf cfg yml yaml xml');
+map(
+  'code',
+  'c h cpp hpp cs go rs java kt swift rb php lua pl r scala dart vue svelte css scss less toml ini conf cfg yml yaml xml',
+);
 map('javascript', 'js mjs cjs jsx ts tsx');
 map('python', 'py ipynb');
 map('html', 'html htm');
@@ -106,20 +148,21 @@ export function folderKindOf(path: string): FolderKind {
   if (parts[0] === 'appdata' && parts.length === 2) return 'apps';
   if (parts[0] === 'drives' && parts.length === 2) return 'network';
   const inHomeRoot = (parts[0] === 'home' && parts.length === 2) || (parts[0] === 'users' && parts.length === 3);
-  if (inHomeRoot) return SPECIAL[parts[parts.length - 1].toLowerCase()] ?? 'plain';
+  if (inHomeRoot) return SPECIAL[parts.at(-1)!.toLowerCase()] ?? 'plain';
   return 'plain';
 }
 
 function svgFor(key: string): string {
-  return FILE_ICON_SVGS[key] ?? FILE_ICON_SVGS[key.replace(/^\d+/, '64')] ?? FILE_ICON_SVGS['64/file-unknown'];
+  return FILE_ICON_SVGS[key] ?? FILE_ICON_SVGS[key.replace(/^\d+/, '64')] ?? FILE_ICON_SVGS['64/file-unknown']!;
 }
 
 /** A data: URL for an icon, e.g. for CSS backgrounds or <img>. 24px art is used at 32px and below. */
 export function fileIconUrl(opts: { kind: FileKind } | { folder: FolderKind; accent?: Accent }, size = 64): string {
   const art = size <= 32 ? '24' : '64';
-  const key = 'folder' in opts
-    ? `${art}/folder-${FOLDER_COLOUR[opts.accent ?? 'violet']}-${opts.folder}`
-    : `${art}/file-${opts.kind}`;
+  const key =
+    'folder' in opts
+      ? `${art}/folder-${FOLDER_COLOUR[opts.accent ?? 'violet']}-${opts.folder}`
+      : `${art}/file-${opts.kind}`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svgFor(key))}`;
 }
 
@@ -141,7 +184,17 @@ export interface FileIconProps {
 }
 
 /** Decorative icon for a file or folder (the visible file name is the accessible label). */
-export function FileIcon({ name = '', mime, folder, path = '', kind, accent = 'violet', size = 64, className, style }: FileIconProps) {
+export function FileIcon({
+  name = '',
+  mime,
+  folder,
+  path = '',
+  kind,
+  accent = 'violet',
+  size = 64,
+  className,
+  style,
+}: FileIconProps) {
   const src = folder
     ? fileIconUrl({ folder: folder === true ? folderKindOf(path) : folder, accent }, size)
     : fileIconUrl({ kind: kind ?? fileKindOf(name, mime) }, size);

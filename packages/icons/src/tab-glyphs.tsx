@@ -7,7 +7,10 @@ export interface GlyphProps extends Omit<SVGProps<SVGSVGElement>, 'ref'> {
   title?: string;
 }
 
-type Shape = { d: string; evenOdd?: boolean } | { rect: [number, number, number, number, number] } | { stroke: string; width: number };
+type Shape =
+  | { d: string; evenOdd?: boolean }
+  | { rect: [number, number, number, number, number] }
+  | { stroke: string; width: number };
 
 function createGlyph(displayName: string, shapes: Shape[]) {
   const Glyph = forwardRef<SVGSVGElement, GlyphProps>(({ size = 24, title, ...rest }, ref) => (
@@ -42,7 +45,9 @@ function createGlyph(displayName: string, shapes: Shape[]) {
    the glass lens and accent-tab colour show the selected tab. */
 
 export const TabHome = createGlyph('TabHome', [
-  { d: 'M11.3 3.3a1 1 0 0 1 1.4 0l8.6 7.7a1 1 0 0 1-1.3 1.5l-.5-.4V20a1.5 1.5 0 0 1-1.5 1.5H15v-5.2a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5.2H6A1.5 1.5 0 0 1 4.5 20v-7.9l-.5.4A1 1 0 0 1 2.7 11z' },
+  {
+    d: 'M11.3 3.3a1 1 0 0 1 1.4 0l8.6 7.7a1 1 0 0 1-1.3 1.5l-.5-.4V20a1.5 1.5 0 0 1-1.5 1.5H15v-5.2a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5.2H6A1.5 1.5 0 0 1 4.5 20v-7.9l-.5.4A1 1 0 0 1 2.7 11z',
+  },
 ]);
 
 export const TabStore = createGlyph('TabStore', [
@@ -53,7 +58,9 @@ export const TabStore = createGlyph('TabStore', [
 ]);
 
 export const TabFiles = createGlyph('TabFiles', [
-  { d: 'M3 7a2.5 2.5 0 0 1 2.5-2.5h3.9c.7 0 1.3.3 1.8.8l1.3 1.5h6A2.5 2.5 0 0 1 21 9.3v8.2a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z' },
+  {
+    d: 'M3 7a2.5 2.5 0 0 1 2.5-2.5h3.9c.7 0 1.3.3 1.8.8l1.3 1.5h6A2.5 2.5 0 0 1 21 9.3v8.2a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z',
+  },
 ]);
 
 export const TabUsage = createGlyph('TabUsage', [
@@ -63,15 +70,24 @@ export const TabUsage = createGlyph('TabUsage', [
 ]);
 
 export const TabBackups = createGlyph('TabBackups', [
-  { d: 'M12 2.8a9.2 9.2 0 1 1 0 18.4 9.2 9.2 0 0 1 0-18.4zm-.9 4.7a.9.9 0 0 1 1.8 0v4.1l2.8 1.7a.9.9 0 1 1-.9 1.5l-3.2-1.9a.9.9 0 0 1-.5-.8z', evenOdd: true },
+  {
+    d: 'M12 2.8a9.2 9.2 0 1 1 0 18.4 9.2 9.2 0 0 1 0-18.4zm-.9 4.7a.9.9 0 0 1 1.8 0v4.1l2.8 1.7a.9.9 0 1 1-.9 1.5l-3.2-1.9a.9.9 0 0 1-.5-.8z',
+    evenOdd: true,
+  },
 ]);
 
 export const TabSettings = createGlyph('TabSettings', [
-  { d: 'M10.3 2.5h3.4l.5 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.8a7 7 0 0 1 0 2l2 1.8-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.5 2.6h-3.4l-.5-2.6a7 7 0 0 1-1.7-.9l-2.5.9-1.7-2.9 2-1.8a7 7 0 0 1 0-2l-2-1.8 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', evenOdd: true },
+  {
+    d: 'M10.3 2.5h3.4l.5 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.8a7 7 0 0 1 0 2l2 1.8-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.5 2.6h-3.4l-.5-2.6a7 7 0 0 1-1.7-.9l-2.5.9-1.7-2.9 2-1.8a7 7 0 0 1 0-2l-2-1.8 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
+    evenOdd: true,
+  },
 ]);
 
 export const TabSearch = createGlyph('TabSearch', [
-  { d: 'M10.5 3a7.5 7.5 0 0 1 6 12l4.3 4.3a1.3 1.3 0 0 1-1.8 1.8L14.7 16.8A7.5 7.5 0 1 1 10.5 3zm0 2.5a5 5 0 1 0 0 10 5 5 0 0 0 0-10z', evenOdd: true },
+  {
+    d: 'M10.5 3a7.5 7.5 0 0 1 6 12l4.3 4.3a1.3 1.3 0 0 1-1.8 1.8L14.7 16.8A7.5 7.5 0 1 1 10.5 3zm0 2.5a5 5 0 1 0 0 10 5 5 0 0 0 0-10z',
+    evenOdd: true,
+  },
 ]);
 
 /** The six tab-bar areas plus search, keyed by route id. */

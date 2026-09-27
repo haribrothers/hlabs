@@ -33,6 +33,10 @@ export interface ResolvedAppIcon {
 /** Resolve a relative logo path against the app's asset base URL (e.g. /api/apps/jellyfin/assets/). */
 export function resolveAppIcon(icon: AppIconManifest | undefined, assetBase: string): ResolvedAppIcon {
   const logo = icon?.logo;
-  const logoUrl = !logo ? null : /^https:\/\//.test(logo) ? logo : new URL(logo, new URL(assetBase, 'http://x')).pathname;
+  const logoUrl = !logo
+    ? null
+    : /^https:\/\//.test(logo)
+      ? logo
+      : new URL(logo, new URL(assetBase, 'http://x')).pathname;
   return { logoUrl, gradient: icon?.gradient ?? null, fallback: icon?.fallback ?? null };
 }
