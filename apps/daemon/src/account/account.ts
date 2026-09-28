@@ -1,8 +1,10 @@
 // A person's own account (09-account-people.md): what Settings › Account shows, and changes to the profile.
 import { hlabsError } from '@hlabs/api';
 import { auditLog, recoveryCodes, users, userTotp, type HlabsDb } from '@hlabs/db';
-import { ulid } from '@hlabs/shared';
+import { passwordIssue, ulid } from '@hlabs/shared';
 import { and, asc, eq, isNull } from 'drizzle-orm';
+import { hashPassword, verifyPassword } from '../auth/passwords';
+import type { SessionService } from '../auth/sessions';
 
 export function getAccount(db: HlabsDb, userId: string) {
   const user = db.select().from(users).where(eq(users.id, userId)).get();
@@ -50,4 +52,42 @@ export function updateAccount(
       .values({ id: ulid(), at: now, userId, action: 'account.update', target: userId, detailJson: set, ip: opts.ip })
       .run();
   });
+}
+
+/**
+ * Change my password (US-ACCT-06, 07 §7.2/§7.3): the current one must match; the new one follows the password rule
+ * and differs from the current one. Every other session of mine ends (and hears `session.revoked`); this one stays.
+ */
+export async function changePassword(
+  db: HlabsDb,
+  sessions: SessionService,
+  who: { userId: string; sessionId: string },
+  input: { currentPassword: string; newPassword: string },
+  opts: { ip: string | null; now?: number },
+) {
+  const user = db.select().from(users).where(eq(users.id, who.userId)).get();
+  if (!user) throw hlabsError('AUTH_REQUIRED');
+  if (!(await verifyPassword(user.passwordHash, input.currentPassword))) throw hlabsError('AUTH_INVALID_PASSWORD');
+  const issue = passwordIssue(input.newPassword);
+  if (issue === 'tooShort') throw hlabsError('PASSWORD_TOO_SHORT');
+  if (issue === 'tooCommon') throw hlabsError('PASSWORD_TOO_COMMON');
+  if (input.newPassword === input.currentPassword) throw hlabsError('PASSWORD_UNCHANGED');
+
+  const passwordHash = await hashPassword(input.newPassword);
+  const now = opts.now ?? Date.now();
+  db.transaction((tx) => {
+    tx.update(users).set({ passwordHash, passwordChangedAt: now }).where(eq(users.id, who.userId)).run();
+    tx.insert(auditLog)
+      .values({
+        id: ulid(),
+        at: now,
+        userId: who.userId,
+        action: 'account.changePassword',
+        target: who.userId,
+        detailJson: null,
+        ip: opts.ip,
+      })
+      .run();
+  });
+  return sessions.revoke({ userId: who.userId, except: who.sessionId }, now).length;
 }

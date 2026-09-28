@@ -17,6 +17,8 @@ export const shellCopy = {
   skipToContent: 'Skip to content',
   mainLabel: 'Main content',
   areaEmpty: 'Nothing here yet.',
+  showPassword: 'Show password',
+  hidePassword: 'Hide password',
 } as const;
 
 /** Copy for words @hlabs/ui components render themselves. */

@@ -39,7 +39,6 @@ export async function createAdmin(db: HlabsDb, input: CreateAdminInput, now = Da
         role: 'admin',
         passwordHash,
         createdAt: now,
-        passwordChangedAt: now,
       })
       .run();
     tx.insert(auditLog)

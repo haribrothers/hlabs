@@ -1,6 +1,6 @@
 // OnbAccount (US-ONB-08, US-ONB-09): create the admin account and sign in, then two-factor. Errors show when
 // a field loses focus or on submit, clear as soon as the field is fixed, and are counted in a summary.
-import { CircleAlert, Eye, EyeOff, iconDefaults } from '@hlabs/icons';
+import { CircleAlert, iconDefaults } from '@hlabs/icons';
 import { Button, TextField } from '@hlabs/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -9,6 +9,7 @@ import { useState, type FormEvent } from 'react';
 import { onboardingCopy } from '../copy/onboarding';
 import { setCsrfToken } from '../lib/csrf';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { PasswordReveal } from '../shell/password-reveal';
 import {
   ACCOUNT_FIELDS,
   accountErrors,
@@ -21,21 +22,6 @@ import {
 import { StepFrame } from './step-frame';
 
 const copy = onboardingCopy.account;
-
-function Reveal({ shown, onToggle }: { shown: boolean; onToggle: () => void }) {
-  const Icon = shown ? EyeOff : Eye;
-  return (
-    <button
-      type="button"
-      className="grid size-8 place-items-center rounded-xs text-ink-muted hover:text-ink"
-      aria-label={shown ? copy.hide : copy.show}
-      aria-pressed={shown}
-      onClick={onToggle}
-    >
-      <Icon aria-hidden {...iconDefaults} />
-    </button>
-  );
-}
 
 function StrengthMeter({ bars, level }: { bars: number; level: string }) {
   return (
@@ -160,7 +146,10 @@ export function AccountStep() {
           type={shown.password ? 'text' : 'password'}
           autoComplete="new-password"
           trailing={
-            <Reveal shown={shown.password} onToggle={() => setShown((s) => ({ ...s, password: !s.password }))} />
+            <PasswordReveal
+              shown={shown.password}
+              onToggle={() => setShown((s) => ({ ...s, password: !s.password }))}
+            />
           }
           {...(passwordError ? { error: passwordMessage } : { hint: passwordMessage })}
           {...field('password')}
@@ -169,7 +158,9 @@ export function AccountStep() {
           label={copy.confirm}
           type={shown.confirm ? 'text' : 'password'}
           autoComplete="new-password"
-          trailing={<Reveal shown={shown.confirm} onToggle={() => setShown((s) => ({ ...s, confirm: !s.confirm }))} />}
+          trailing={
+            <PasswordReveal shown={shown.confirm} onToggle={() => setShown((s) => ({ ...s, confirm: !s.confirm }))} />
+          }
           error={visible('confirm')}
           {...field('confirm')}
         />

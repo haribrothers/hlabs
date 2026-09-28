@@ -1,7 +1,7 @@
 ---
 title: Settings
 description: Where to find Settings, and which sections you'll see.
-features: [F-ACCT-01, F-ACCT-02]
+features: [F-ACCT-01, F-ACCT-02, F-ACCT-03]
 ---
 
 For everyone who uses hlabs.
@@ -27,3 +27,7 @@ On a phone you see the list of sections first. Tap one to open it, and tap **Set
 **Settings › Account** lists every device where you're logged in, the one you're using first ("This device"). Each shows the kind of device and browser, how it reaches hlabs (your home network, Tailscale or this computer) and when it was last used. hlabs works these out from the browser, so it can't show a device's own name.
 
 Don't recognise a device, or lost one? Choose **Sign out** next to it. It's logged out straight away; if hlabs is open on it, it goes to the log-in screen. To log out of the device you're using, choose **Log out** at the bottom of Account.
+
+## Change your password
+
+In **Settings › Account › Security**, choose **Change** next to Password. Enter your current password, then the new one twice. It needs at least 12 characters and can't be one of the most common passwords. When you change it, every other device you're logged in on is logged out; the one you're using stays logged in.

@@ -74,8 +74,6 @@ export const onboardingCopy = {
     username: 'Username',
     password: 'Password',
     confirm: 'Confirm password',
-    show: 'Show password',
-    hide: 'Hide password',
     passwordEmpty: 'At least 12 characters',
     passwordWeak: 'Weak · use at least 12 characters',
     passwordCommon: 'This password is too common',
