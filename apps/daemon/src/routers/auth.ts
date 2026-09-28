@@ -8,6 +8,12 @@ import { clearSessionCookie, setSessionCookie } from './session-cookie';
 import type { DaemonContext } from '../context';
 
 export const auth: AppHandlers<DaemonContext>['auth'] = {
+  /** My signed-in devices (US-ACCT-04): only the caller's sessions. */
+  listSessions: (_input, ctx) => {
+    const id = ctx.identity;
+    if (id.kind !== 'user' || !id.session) throw hlabsError('AUTH_REQUIRED');
+    return { items: ctx.services.sessions.listFor(id.userId, id.session.id) };
+  },
   /**
    * Log out (US-AUTH-16): this session only; the cookie is cleared on the domain it was set on, so app hostnames'
    * next forward-auth check fails too. Other devices stay signed in.

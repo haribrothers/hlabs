@@ -21,3 +21,7 @@ On a phone you see the list of sections first. Tap one to open it, and tap **Set
 ## Your profile
 
 **Settings › Account** shows your name, username and whether you're an admin or a member. Choose **Edit profile** to change your display name (up to 40 characters) and your avatar colour. Your new name shows straight away, including in the Home greeting. Your username can't be changed. hlabs is in English for now.
+
+## Signed-in devices
+
+**Settings › Account** lists every device where you're logged in, the one you're using first ("This device"). Each shows the kind of device and browser, how it reaches hlabs (your home network, Tailscale or this computer) and when it was last used. hlabs works these out from the browser, so it can't show a device's own name.

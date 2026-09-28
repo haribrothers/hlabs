@@ -1,7 +1,7 @@
 // Sessions (07 §7.3): a random 32-byte id lives only in the `hlabs_session` cookie; the database keeps its
 // SHA-256. Idle timeout 12 h, or 30 days sliding with "Remember me". CSRF tokens are derived from the raw id.
 import { sessions, users, type HlabsDb } from '@hlabs/db';
-import { and, eq, isNull, ne } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, ne } from 'drizzle-orm';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { EventBus } from '../events/bus';
 
@@ -38,6 +38,27 @@ export class SessionService {
     private readonly db: HlabsDb,
     private readonly bus?: EventBus,
   ) {}
+
+  /**
+   * A person's live sessions (US-ACCT-04): not revoked, not expired; the current one first, then by last activity.
+   */
+  listFor(userId: string, currentId: string | null, now = Date.now()) {
+    const rows = this.db
+      .select()
+      .from(sessions)
+      .where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt), gt(sessions.expiresAt, now)))
+      .orderBy(desc(sessions.lastSeenAt))
+      .all();
+    const current = rows.filter((r) => r.id === currentId);
+    return [...current, ...rows.filter((r) => r.id !== currentId)].map((r) => ({
+      id: r.id,
+      current: r.id === currentId,
+      userAgent: r.userAgent,
+      ip: r.ip,
+      createdAt: r.createdAt,
+      lastSeenAt: r.lastSeenAt,
+    }));
+  }
 
   /**
    * Ends sessions now (US-AUTH-15): one session, or all of a user's (optionally but one). Each device still

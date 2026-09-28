@@ -11,7 +11,7 @@ import { MAIN_STORAGE_STATE } from './e2e/instances';
 const DATA_DIR = process.env.HLABS_E2E_DATA_DIR ?? '../../.e2e-data';
 const FIRST_RUN_DATA_DIR = '../../.e2e-data-first-run';
 // Specs that need a known admin they create themselves (all onboarding and log-in stories, and a few later ones).
-const FIRST_RUN_SPECS = /(us-(onb|auth)-\d+|us-acct-03)\.spec\.ts/;
+const FIRST_RUN_SPECS = /(us-(onb|auth)-\d+|us-acct-0[3-7])\.spec\.ts/;
 
 // HLABS_DEV_NO_ENGINE_INSTALL: a run on a machine with no engine must never download Colima (11: tests don't
 // reach the internet).
