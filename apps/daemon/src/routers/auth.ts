@@ -1,6 +1,6 @@
 import type { AppHandlers } from '@hlabs/api';
 import { hlabsError } from '@hlabs/api';
-import { auditLog, getSetting, getUserSetting, users } from '@hlabs/db';
+import { auditLog, getSetting, getUserSetting, sessions, users } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { asc, eq, isNull } from 'drizzle-orm';
 import { csrfTokenFor } from '../auth/sessions';
@@ -8,6 +8,32 @@ import { clearSessionCookie, setSessionCookie } from './session-cookie';
 import type { DaemonContext } from '../context';
 
 export const auth: AppHandlers<DaemonContext>['auth'] = {
+  /**
+   * Sign out one of my devices (US-ACCT-05): only my own sessions; already ended ones are fine (idempotent). The
+   * device hears `session.revoked` and goes to log in.
+   */
+  revokeSession: ({ sessionId }, ctx) => {
+    const id = ctx.identity;
+    if (id.kind !== 'user' || !id.session) throw hlabsError('AUTH_REQUIRED');
+    const { db, sessions: service } = ctx.services;
+    const row = db.select().from(sessions).where(eq(sessions.id, sessionId)).get();
+    if (!row || row.userId !== id.userId) throw hlabsError('NOT_FOUND');
+    const ended = service.revoke({ sessionId });
+    if (ended.length > 0) {
+      db.insert(auditLog)
+        .values({
+          id: ulid(),
+          at: Date.now(),
+          userId: id.userId,
+          action: 'session.revoke',
+          target: sessionId,
+          detailJson: null,
+          ip: ctx.request.ip,
+        })
+        .run();
+    }
+    return { ok: true as const };
+  },
   /** My signed-in devices (US-ACCT-04): only the caller's sessions. */
   listSessions: (_input, ctx) => {
     const id = ctx.identity;

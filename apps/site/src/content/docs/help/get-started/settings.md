@@ -25,3 +25,5 @@ On a phone you see the list of sections first. Tap one to open it, and tap **Set
 ## Signed-in devices
 
 **Settings › Account** lists every device where you're logged in, the one you're using first ("This device"). Each shows the kind of device and browser, how it reaches hlabs (your home network, Tailscale or this computer) and when it was last used. hlabs works these out from the browser, so it can't show a device's own name.
+
+Don't recognise a device, or lost one? Choose **Sign out** next to it. It's logged out straight away; if hlabs is open on it, it goes to the log-in screen. To log out of the device you're using, choose **Log out** at the bottom of Account.
