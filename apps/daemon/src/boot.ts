@@ -17,6 +17,7 @@ import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
 import { SessionService } from './auth/sessions';
 import { TotpService } from './auth/totp';
 import { OnboardingService } from './onboarding/service';
+import { NodeDriveProbe, type DriveProbe } from './platform/drives';
 import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
@@ -39,6 +40,7 @@ export interface BootDeps {
   mdns?: MdnsPublisher;
   secrets?: SecretStore;
   system?: SystemProbe;
+  drives?: DriveProbe;
   /** Downloads, tar and colima for the engine install (US-ONB-05). */
   installer?: InstallerHost;
   /** The user's home (where ~/.colima lives). */
@@ -161,6 +163,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     onboarding,
     sessions: new SessionService(db),
     totp: new TotpService(db, secrets),
+    drives: deps.drives ?? new NodeDriveProbe(),
   };
   holder.set(services);
 

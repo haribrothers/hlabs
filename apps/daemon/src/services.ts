@@ -10,6 +10,7 @@ import type { MdnsPublisher } from './mdns/index';
 import type { SessionService } from './auth/sessions';
 import type { TotpService } from './auth/totp';
 import type { OnboardingService } from './onboarding/service';
+import type { DriveProbe } from './platform/drives';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 
@@ -27,6 +28,7 @@ export interface Services {
   onboarding: OnboardingService;
   sessions: SessionService;
   totp: TotpService;
+  drives: DriveProbe;
 }
 
 /** Holds services once boot has created them; requests before then get DAEMON_STARTING. */

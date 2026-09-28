@@ -6,9 +6,10 @@ import { auth } from './auth';
 import { events } from './events';
 import { jobs } from './jobs';
 import { onboarding } from './onboarding';
+import { storage } from './storage';
 import { system } from './system';
 
-export const handlers: AppHandlers<DaemonContext> = { system, jobs, events, onboarding, auth };
+export const handlers: AppHandlers<DaemonContext> = { system, jobs, events, onboarding, auth, storage };
 
 type Fn = (input: unknown, ctx: DaemonContext, signal: AbortSignal | undefined) => unknown;
 

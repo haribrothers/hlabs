@@ -1,4 +1,5 @@
 // A daemon at the given onboarding step with the admin created and signed in (for stories after US-ONB-08).
+import type { BootDeps } from '../src/boot';
 import type { DaemonConfig } from '../src/config';
 import { startDaemon } from './helpers';
 
@@ -7,11 +8,15 @@ export type Reply = {
   error?: { data: { hlabsCode: string; detail?: unknown } };
 };
 
-export async function daemonWithAdmin(closers: Array<() => Promise<void>>, config: Partial<DaemonConfig> = {}) {
+export async function daemonWithAdmin(
+  closers: Array<() => Promise<void>>,
+  config: Partial<DaemonConfig> = {},
+  boot: Partial<BootDeps> = {},
+) {
   const printed: string[] = [];
   const d = await startDaemon({
     config: { devAnonymousAdmin: false, ...config },
-    boot: { print: (l) => printed.push(l) },
+    boot: { print: (l) => printed.push(l), ...boot },
   });
   closers.push(d.close);
   const token = new URL(printed.join('').match(/open (\S+)/)![1]!).searchParams.get('token')!;

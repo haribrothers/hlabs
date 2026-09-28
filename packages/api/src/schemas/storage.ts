@@ -13,9 +13,19 @@ const networkLocationSchema = z.object({
   autoMount: z.boolean().default(true),
 });
 
+/** A connected external drive (US-ONB-15). */
+export const driveSchema = z.object({
+  path: z.string(),
+  name: z.string(),
+  freeBytes: z.number().nonnegative(),
+  fsType: z.enum(['apfs', 'hfs', 'exfat', 'fat32', 'ntfs', 'ext4', 'btrfs', 'xfs', 'other']),
+  writable: z.boolean(),
+});
+
 export const storage = {
   summary: io(empty, pending),
-  listDrives: io(empty, pending),
+  /** Connected, writable external drives. */
+  listDrives: io(empty, z.object({ drives: z.array(driveSchema) })),
   locations: {
     list: io(empty, pending),
     discover: io(empty, pending),

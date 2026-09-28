@@ -60,6 +60,7 @@ export async function startDaemon(
       retryMs: 60_000,
     },
     system: new FakeSystemProbe(),
+    drives: { externalDrives: async () => [] },
     ...options.boot,
   };
   const services = options.skipBoot ? null : await boot(bootDeps);
