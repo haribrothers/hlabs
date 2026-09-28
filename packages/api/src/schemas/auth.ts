@@ -42,6 +42,10 @@ export const meSchema = z.object({
   mustSetupTotp: z.boolean(),
   /** Two-factor login is on for this account. */
   totpEnabled: z.boolean(),
+  /** Usage in the Dock: admins, or members when both the policy and their own switch allow (D-029, US-HOME-05). */
+  canSeeUsage: z.boolean(),
+  /** App Store in the Dock: admins, or members when "Members can install apps" is on (US-HOME-05). */
+  canInstallApps: z.boolean(),
   /** This session was started with "Remember me" (US-AUTH-14). */
   remember: z.boolean(),
   appearance: appearanceSchema,

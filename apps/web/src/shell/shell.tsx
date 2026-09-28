@@ -5,17 +5,24 @@ import type { ReactNode } from 'react';
 import { shellCopy } from '../copy/shell';
 import { useAppearance, wallpaperClass } from '../lib/appearance';
 import { useMe } from '../lib/use-me';
-import { AREA_PATHS, areaForPath, navigationAreas, phoneAreas } from './areas';
+import { AREA_PATHS, areaForPath, navigationAreas, phoneAreas, storeBadge, type NavAccess } from './areas';
 
 export function Shell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const active = areaForPath(pathname);
-  const areas = navigationAreas();
   const go = (id: string) => void navigate({ to: AREA_PATHS[id as AreaId] });
+  const me = useMe().data;
   // The person's wallpaper and accent (US-HOME-01); signed out (development pages) it's the defaults.
-  const appearance = useMe().data?.appearance;
+  const appearance = me?.appearance;
   useAppearance(appearance);
+  // Members see fewer areas (US-HOME-05). The update count comes from the App Store updates list (phase 7).
+  const access: NavAccess | undefined = me
+    ? { role: me.role, canSeeUsage: me.canSeeUsage, canInstallApps: me.canInstallApps }
+    : undefined;
+  const store = storeBadge(0, { access });
+  const areas = navigationAreas({ access });
+  const tabs = phoneAreas({ access }).map((a) => (a.id === 'store' && store ? { ...a, badge: store } : a));
 
   return (
     <div className={`${wallpaperClass(appearance?.wallpaper)} relative flex min-h-full flex-col`}>
@@ -34,10 +41,10 @@ export function Shell({ children }: { children: ReactNode }) {
       </main>
       {/* Search, the + tile and pinned apps arrive with their phases (D-036). */}
       <div className="hl-nav-desktop hidden md:flex" data-testid="dock-bar">
-        <Dock areas={areas} active={active} onSelect={go} search={false} />
+        <Dock areas={areas} active={active} onSelect={go} badges={store ? { store } : {}} search={false} />
       </div>
       <div className="hl-nav-phone flex md:hidden" data-testid="tab-bar">
-        <TabBar items={phoneAreas()} active={active} onSelect={go} />
+        <TabBar items={tabs} active={active} onSelect={go} />
       </div>
     </div>
   );

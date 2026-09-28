@@ -107,6 +107,8 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
     const user = ctx.services.db.select().from(users).where(eq(users.id, id.userId)).get();
     if (!user) throw hlabsError('AUTH_REQUIRED');
     const totpEnabled = ctx.services.totp.isEnabled(user.id);
+    const people = getSetting(ctx.services.db, 'people');
+    const admin = user.role === 'admin';
     return {
       id: user.id,
       username: user.username,
@@ -117,6 +119,8 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
       // The admin requires two-factor and this account hasn't set it up yet (US-AUTH-10).
       mustSetupTotp: getSetting(ctx.services.db, 'people').requireTotp && !totpEnabled,
       totpEnabled,
+      canSeeUsage: admin || (people.membersCanSeeUsage && user.canSeeUsage),
+      canInstallApps: admin || people.membersCanInstall,
       // Whether this session was started with "Remember me", so this device can reuse the choice (US-AUTH-14).
       remember: id.session.remember,
       appearance: getUserSetting(ctx.services.db, 'appearance', user.id),

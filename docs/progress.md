@@ -48,7 +48,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-HOME-02 · Glance at system widgets
 - [x] US-HOME-03 · Open my apps from the grid
 - [x] US-HOME-04 · Move between sections with the Dock
-- [ ] US-HOME-05 · See badge counts on tabs
+- [x] US-HOME-05 · See badge counts on tabs
 - [ ] US-ACCT-01 · Settings sections depend on role
 - [ ] US-ACCT-02 · Moving around Settings on desktop, phone and keyboard
 - [ ] US-ACCT-03 · See and edit my profile

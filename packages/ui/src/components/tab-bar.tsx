@@ -3,7 +3,7 @@ import { LayoutGroup, motion as m } from 'framer-motion';
 import { useId, useState } from 'react';
 import { motion, useReduceMotion } from '../lib/motion';
 import { useUiStrings } from '../lib/strings';
-import type { AreaItem } from './areas';
+import { badgeText, type AreaItem } from './areas';
 
 export interface TabBarProps {
   items: AreaItem[];
@@ -59,7 +59,7 @@ export function TabBar({ items, active, defaultActive, onSelect, search = false,
                     className="hl-count"
                     aria-label={item.id === 'store' ? t.badgeUpdates(item.badge) : t.badgeNew(item.badge)}
                   >
-                    {item.badge}
+                    {badgeText(item.badge)}
                   </span>
                 ) : null}
               </button>

@@ -29,3 +29,5 @@ New apps appear on Home as soon as they're installed, and removed apps disappear
 The Dock at the bottom of the screen takes you to each part of hlabs; a dot marks where you are. Point at a tile to see its name. With a keyboard, Tab to the Dock, use the left and right arrow keys (Home and End jump to the ends) and press Enter. On a phone, the tab bar does the same job.
 
 Parts of hlabs that haven't arrived yet aren't shown in the Dock. The App Store, Files, Usage and Backups appear as they're added.
+
+Family members see Home, Files and Settings in their Dock, plus Usage and the App Store when an admin allows them.
