@@ -1,9 +1,10 @@
 // Logging in (US-AUTH-03, US-AUTH-04; 07 §7.2): Argon2id verify (against a dummy hash for unknown accounts, so the
-// time is the same), every attempt recorded, 5 failures in 15 minutes per username and IP lock that pair.
+// time is the same), every attempt recorded. 5 failed passwords or codes in 15 minutes for a username and IP lock that
+// pair for 15 minutes (US-AUTH-12); a completed log-in starts the count again.
 import { hlabsError } from '@hlabs/api';
 import { auditLog, loginAttempts, notifications, recoveryCodes, users, type HlabsDb } from '@hlabs/db';
 import { safeNext, ulid } from '@hlabs/shared';
-import { and, eq, gte, isNull } from 'drizzle-orm';
+import { and, asc, eq, gte, isNull, lt } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import type { EventBus } from '../events/bus';
 import { hashPassword, verifyPassword } from './passwords';
@@ -14,8 +15,43 @@ export { safeNext };
 
 export const LOGIN_LOCK_ATTEMPTS = 5;
 export const LOGIN_LOCK_MS = 15 * 60 * 1000;
+/** `login_attempts` rows are kept this long (US-AUTH-12). */
+export const LOGIN_ATTEMPTS_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
 /** A password step waiting for its two-factor code (US-AUTH-08) lives this long. */
 export const CHALLENGE_MS = 5 * 60 * 1000;
+
+export interface LockState {
+  /** When the current lock ends, or null. */
+  lockedUntil: number | null;
+  /** Failures that count toward the next lock: in the last 15 minutes, since the last log-in and the last lock. */
+  failures: number[];
+}
+
+/**
+ * Where a username and IP stand, from their attempts in the last 30 minutes (oldest first): a lock that is still on
+ * started in the last 15 minutes, and its failures in the 15 minutes before that.
+ */
+export function lockState(attempts: Array<{ at: number; success: boolean }>, now: number): LockState {
+  let window: number[] = [];
+  let lockedUntil: number | null = null;
+  for (const a of attempts) {
+    if (a.success || (lockedUntil !== null && a.at >= lockedUntil)) {
+      window = [];
+      lockedUntil = null;
+      if (a.success) continue;
+    }
+    window = window.filter((t) => a.at - t < LOGIN_LOCK_MS);
+    window.push(a.at);
+    if (window.length >= LOGIN_LOCK_ATTEMPTS) lockedUntil = a.at + LOGIN_LOCK_MS;
+  }
+  if (lockedUntil !== null && lockedUntil <= now) return { lockedUntil: null, failures: [] };
+  return { lockedUntil, failures: window.filter((t) => now - t < LOGIN_LOCK_MS) };
+}
+
+const lockedError = (until: number, now: number) =>
+  hlabsError('AUTH_LOCKED', 'Too many failed logins', {
+    retryAfterSeconds: Math.max(1, Math.ceil((until - now) / 1000)),
+  });
 
 export interface LoginChallenge {
   userId: string;
@@ -41,22 +77,64 @@ export class LoginService {
     private readonly bus: EventBus,
   ) {}
 
-  /** Failed attempts for this username (as typed, lowercased) and IP in the last 15 minutes. */
-  recentFailures(username: string, ip: string, now = Date.now()): number[] {
-    return this.db
-      .select({ at: loginAttempts.at })
+  /** The lock state for this username (trimmed, lowercased) and IP. */
+  lockState(username: string, ip: string, now = Date.now()): LockState {
+    const attempts = this.db
+      .select({ at: loginAttempts.at, success: loginAttempts.success })
       .from(loginAttempts)
       .where(
         and(
           eq(loginAttempts.username, username),
           eq(loginAttempts.ip, ip),
-          eq(loginAttempts.success, false),
-          gte(loginAttempts.at, now - LOGIN_LOCK_MS),
+          gte(loginAttempts.at, now - 2 * LOGIN_LOCK_MS),
         ),
       )
-      .all()
-      .map((r) => r.at)
-      .sort((a, b) => a - b);
+      .orderBy(asc(loginAttempts.at))
+      .all();
+    return lockState(attempts, now);
+  }
+
+  /** While locked, nothing is checked and nothing is recorded, so the lock isn't extended. */
+  private assertNotLocked(username: string, ip: string, now: number): number[] {
+    const state = this.lockState(username, ip, now);
+    if (state.lockedUntil !== null) throw lockedError(state.lockedUntil, now);
+    return state.failures;
+  }
+
+  /** A wrong password or code: recorded and audited; the fifth in 15 minutes starts a lock. */
+  private recordFailure(opts: {
+    userId: string | null;
+    username: string;
+    detail: Record<string, unknown>;
+    failures: number[];
+    ip: string;
+    now: number;
+  }) {
+    const { username, ip, now } = opts;
+    this.db.insert(loginAttempts).values({ id: ulid(), username, ip, at: now, success: false }).run();
+    this.audit(opts.userId, 'auth.login.failed', opts.detail, ip, now);
+    if (opts.failures.length + 1 >= LOGIN_LOCK_ATTEMPTS) throw lockedError(now + LOGIN_LOCK_MS, now);
+  }
+
+  /** Drops attempts older than 30 days; runs at start and once a day. */
+  pruneAttempts(now = Date.now()): number {
+    return this.db
+      .delete(loginAttempts)
+      .where(lt(loginAttempts.at, now - LOGIN_ATTEMPTS_KEEP_MS))
+      .run().changes;
+  }
+
+  private pruneTimer: ReturnType<typeof setInterval> | null = null;
+
+  startPruning(): void {
+    this.pruneAttempts();
+    this.pruneTimer = setInterval(() => this.pruneAttempts(), 24 * 60 * 60 * 1000);
+    this.pruneTimer.unref();
+  }
+
+  stop(): void {
+    if (this.pruneTimer) clearInterval(this.pruneTimer);
+    this.pruneTimer = null;
   }
 
   async login(opts: {
@@ -72,27 +150,14 @@ export class LoginService {
     const typed = opts.username;
     const username = typed.trim().toLowerCase();
 
-    const failures = this.recentFailures(username, opts.ip, now);
-    if (failures.length >= LOGIN_LOCK_ATTEMPTS) {
-      throw hlabsError('AUTH_LOCKED', 'Too many failed logins', {
-        until: failures.at(-LOGIN_LOCK_ATTEMPTS)! + LOGIN_LOCK_MS,
-      });
-    }
+    const failures = this.assertNotLocked(username, opts.ip, now);
 
     const user = this.db.select().from(users).where(eq(users.username, username)).get();
     this.dummyHash ??= hashPassword(randomBytes(24).toString('base64url'));
     // Always one Argon2id verify, so an unknown or disabled account answers as fast as a wrong password.
     const matches = await verifyPassword(user?.passwordHash ?? (await this.dummyHash), opts.password);
-    const ok = matches && user !== undefined && user.disabledAt === null;
-
-    this.db.insert(loginAttempts).values({ id: ulid(), username, ip: opts.ip, at: now, success: ok }).run();
-    if (!ok || !user) {
-      this.audit(null, 'auth.login.failed', { username: typed }, opts.ip, now);
-      if (failures.length + 1 >= LOGIN_LOCK_ATTEMPTS) {
-        throw hlabsError('AUTH_LOCKED', 'Too many failed logins', {
-          until: [...failures, now].at(-LOGIN_LOCK_ATTEMPTS)! + LOGIN_LOCK_MS,
-        });
-      }
+    if (!matches || !user || user.disabledAt !== null) {
+      this.recordFailure({ userId: null, username, detail: { username: typed }, failures, ip: opts.ip, now });
       throw hlabsError('AUTH_INVALID_CREDENTIALS');
     }
 
@@ -215,16 +280,11 @@ export class LoginService {
       this.challenges.delete(challengeId);
       throw hlabsError('AUTH_CHALLENGE_EXPIRED');
     }
-    const failures = this.recentFailures(user.username, ip, now);
-    if (failures.length >= LOGIN_LOCK_ATTEMPTS) {
-      throw hlabsError('AUTH_LOCKED', 'Too many failed logins', {
-        until: failures.at(-LOGIN_LOCK_ATTEMPTS)! + LOGIN_LOCK_MS,
-      });
-    }
+    const failures = this.assertNotLocked(user.username, ip, now);
     return { challenge, user, failures };
   }
 
-  /** A wrong code counts like a wrong password; the fifth one locks. */
+  /** A wrong code counts like a wrong password (US-AUTH-12). */
   private secondStepFailed(
     user: { id: string; username: string },
     failures: number[],
@@ -232,13 +292,14 @@ export class LoginService {
     ip: string,
     now: number,
   ) {
-    this.db.insert(loginAttempts).values({ id: ulid(), username: user.username, ip, at: now, success: false }).run();
-    this.audit(user.id, 'auth.login.failed', { username: user.username, step }, ip, now);
-    if (failures.length + 1 >= LOGIN_LOCK_ATTEMPTS) {
-      throw hlabsError('AUTH_LOCKED', 'Too many failed logins', {
-        until: [...failures, now].at(-LOGIN_LOCK_ATTEMPTS)! + LOGIN_LOCK_MS,
-      });
-    }
+    this.recordFailure({
+      userId: user.id,
+      username: user.username,
+      detail: { username: user.username, step },
+      failures,
+      ip,
+      now,
+    });
   }
 
   /** The waiting two-factor step, if it hasn't expired (US-AUTH-08). */
@@ -261,7 +322,10 @@ export class LoginService {
     now = Date.now(),
   ) {
     const session = this.sessions.create({ userId, remember, ip, userAgent, now });
-    this.db.update(users).set({ lastActiveAt: now }).where(eq(users.id, userId)).run();
+    const user = this.db.update(users).set({ lastActiveAt: now }).where(eq(users.id, userId)).returning().get();
+    // A completed log-in (not just the password of a two-factor account) starts the count again.
+    if (user)
+      this.db.insert(loginAttempts).values({ id: ulid(), username: user.username, ip, at: now, success: true }).run();
     this.audit(userId, 'auth.login.succeeded', null, ip, now);
     return { session, redirectTo: safeNext(next) };
   }

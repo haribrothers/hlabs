@@ -12,7 +12,7 @@ import { showToast } from '../lib/toasts';
 import { useTRPCClient } from '../lib/trpc';
 import { LoginLayout } from './login-layout';
 import { withNext } from './search';
-import { useFinishLogin } from './use-login';
+import { lockedSearch, useFinishLogin } from './use-login';
 
 const copy = loginCopy;
 
@@ -25,7 +25,19 @@ const FAILURE_COPY: Record<string, string> = {
   AUTH_RECOVERY_INVALID: copy.wrongRecovery,
 };
 
-export function CodeView({ challenge, next, user }: { challenge: string; next?: string; user?: string }) {
+export function CodeView({
+  challenge,
+  next,
+  user,
+  from,
+}: {
+  challenge: string;
+  next?: string;
+  /** Whose log-in this is. */
+  user?: string;
+  /** Started on the username form rather than the remembered account's password screen. */
+  from?: 'username';
+}) {
   const client = useTRPCClient();
   const navigate = useNavigate();
   const finish = useFinishLogin();
@@ -47,7 +59,7 @@ export function CodeView({ challenge, next, user }: { challenge: string; next?: 
   // Back, or a timed-out challenge: the password screen this log-in started on, keeping next.
   const backToPassword = (reason?: 'timeout') =>
     navigate(
-      user
+      user && from !== 'username'
         ? { to: '/login/password', search: { user, ...withNext(next), ...(reason ? { reason } : {}) } }
         : { to: '/login/username', search: { ...withNext(next), ...(reason ? { reason } : {}) } },
     );
@@ -57,7 +69,7 @@ export function CodeView({ challenge, next, user }: { challenge: string; next?: 
     if (code === 'AUTH_CHALLENGE_EXPIRED') {
       void backToPassword('timeout');
     } else if (code === 'AUTH_LOCKED') {
-      void navigate({ to: '/login/locked', search: withNext(next) });
+      void navigate({ to: '/login/locked', search: user ? lockedSearch(err, user, next) : withNext(next) });
     } else {
       setError((code && FAILURE_COPY[code]) ?? copy.unreachable);
       setCode('');

@@ -40,11 +40,11 @@ describe('US-AUTH-04', () => {
   it('the fifth failure goes to the locked page, keeping next', async () => {
     const { router } = renderScreen(() => <UsernameView next="/files" />, {
       'auth.listLoginUsers': list,
-      'auth.login': () => Promise.reject(daemonError('AUTH_LOCKED', { until: Date.now() + 900_000 })),
+      'auth.login': () => Promise.reject(daemonError('AUTH_LOCKED', { retryAfterSeconds: 900 })),
     });
     await submit('hari', 'wrong password');
     await waitFor(() => expect(router.state.location.pathname).toBe('/login/locked'));
-    expect(router.state.location.search).toEqual({ next: '/files' });
+    expect(router.state.location.search).toMatchObject({ user: 'hari', next: '/files' });
   });
 
   it("when hlabs can't be reached it says so and keeps what was typed", async () => {

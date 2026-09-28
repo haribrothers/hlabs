@@ -42,7 +42,7 @@ describe('US-AUTH-08', () => {
 
   it('too many wrong codes go to the locked page', async () => {
     const { router } = renderScreen(() => <CodeView challenge="c1" next="/files" />, {
-      'auth.verifyTotp': () => Promise.reject(daemonError('AUTH_LOCKED', { until: Date.now() + 900_000 })),
+      'auth.verifyTotp': () => Promise.reject(daemonError('AUTH_LOCKED', { retryAfterSeconds: 900 })),
     });
     await screen.findByLabelText('Digit 1');
     type('123456');

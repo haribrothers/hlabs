@@ -28,8 +28,8 @@ export function useFinishLogin() {
 }
 
 /**
- * Logging in with a password. `fromUser` is set on the remembered account's screen, so the code step can go back to
- * it (US-AUTH-08).
+ * Logging in with a password. `fromUser` is set on the remembered account's screen; from the username form the code
+ * step is told so, and goes back there (US-AUTH-08). It always knows the username, for the locked page (US-AUTH-12).
  */
 export function useLogin(next: string | undefined, fromUser?: string) {
   const client = useTRPCClient();
@@ -37,18 +37,36 @@ export function useLogin(next: string | undefined, fromUser?: string) {
   const finish = useFinishLogin();
   return useMutation({
     mutationFn: (input: { username: string; password: string; remember: boolean }) =>
-      client.auth.login.mutate({ ...input, username: input.username.trim().toLowerCase(), ...withNext(next) }),
-    onSuccess: async (result) => {
+      client.auth.login.mutate({ ...input, username: normaliseUsername(input.username), ...withNext(next) }),
+    onSuccess: async (result, input) => {
       if (result.status === 'totp_required') {
         await router.navigate({
           to: '/login/code',
-          search: { challenge: result.challengeId, ...withNext(next), ...(fromUser ? { user: fromUser } : {}) },
+          search: {
+            challenge: result.challengeId,
+            user: normaliseUsername(input.username),
+            ...(fromUser ? {} : { from: 'username' as const }),
+            ...withNext(next),
+          },
         });
         return;
       }
       await finish(result.redirectTo);
     },
   });
+}
+
+const normaliseUsername = (username: string) => username.trim().toLowerCase();
+
+/** The locked page's search: whose log-in is paused and until when, from the server's `retryAfterSeconds`. */
+export function lockedSearch(err: unknown, username: string, next: string | undefined, now = Date.now()) {
+  const detail = err instanceof TRPCClientError ? (err.data as { detail?: unknown } | undefined)?.detail : undefined;
+  const retry = (detail as { retryAfterSeconds?: unknown } | null | undefined)?.retryAfterSeconds;
+  return {
+    user: normaliseUsername(username),
+    ...(typeof retry === 'number' ? { until: now + retry * 1000 } : {}),
+    ...withNext(next),
+  };
 }
 
 export type LoginFailure = 'credentials' | 'locked' | 'unreachable' | 'other';

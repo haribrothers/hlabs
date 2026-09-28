@@ -184,6 +184,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     }),
   };
   holder.set(services);
+  services.login.startPruning();
 
   // 6. Ready.
   readiness.ready();
@@ -195,6 +196,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
 export async function shutdown(services: Services | null): Promise<void> {
   if (!services) return;
   services.engine.stop();
+  services.login.stop();
   await services.jobs.shutdown();
   await services.mdns.unpublishAll();
   await services.proxy.stop();

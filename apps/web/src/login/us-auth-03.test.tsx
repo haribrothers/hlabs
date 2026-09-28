@@ -81,7 +81,7 @@ describe('US-AUTH-03', () => {
     fill('hari', 'correct horse battery');
     fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/login/code'));
-    expect(router.state.location.search).toEqual({ challenge: 'ch1' });
+    expect(router.state.location.search).toEqual({ challenge: 'ch1', user: 'hari', from: 'username' });
     expect(localStorage.getItem(LAST_USER_KEY)).toBeNull();
   });
 

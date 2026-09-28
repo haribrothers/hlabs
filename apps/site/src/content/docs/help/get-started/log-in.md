@@ -46,5 +46,5 @@ Each code works once. After you use one, hlabs tells you how many are left and a
 ## If you can't log in
 
 - **"Username or password is incorrect."**: check both and try again. hlabs doesn't say which one is wrong, so nobody can find out which accounts exist.
-- **Too many attempts**: after 5 wrong tries in 15 minutes, logging in as that user from this device is paused for 15 minutes.
+- **Too many attempts**: after 5 wrong passwords or codes in 15 minutes, logging in as that user from this device is paused for 15 minutes. The page counts down, and **Try again** takes you back to the password when the time is up. Trying again before then doesn't make the wait longer. Other people, and the same person on another device, can still log in. Choose **Use another account** to log in as someone else.
 - **"Can't reach hlabs right now."**: the computer running hlabs may be off, restarting or updating. Try again in a moment; what you typed is kept.

@@ -74,7 +74,7 @@ describe('US-AUTH-04', () => {
     ]);
     const locked = (await login(d.url, 'hari', 'correct horse battery')).body.error!;
     expect(locked.data.hlabsCode).toBe('AUTH_LOCKED');
-    expect((locked.data.detail as { until: number }).until).toBeGreaterThan(Date.now());
+    expect((locked.data.detail as { retryAfterSeconds: number }).retryAfterSeconds).toBe(900);
     // Another IP isn't locked.
     expect(
       (await login(d.url, 'hari', 'correct horse battery', { 'x-forwarded-for': '10.0.0.9' })).body.result,

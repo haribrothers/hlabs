@@ -9,7 +9,7 @@ import { useTRPC } from '../lib/trpc';
 import { OnboardingLogo } from '../onboarding/onboarding-layout';
 import { LoginLayout } from './login-layout';
 import { withNext } from './search';
-import { loginFailure, useLogin } from './use-login';
+import { lockedSearch, loginFailure, useLogin } from './use-login';
 
 const copy = loginCopy;
 
@@ -42,7 +42,7 @@ export function UsernameView({ next, reason }: { next?: string; reason?: 'timeou
         onError: (err) => {
           const failure = loginFailure(err);
           if (failure === 'locked') {
-            void navigate({ to: '/login/locked', search: withNext(next) });
+            void navigate({ to: '/login/locked', search: lockedSearch(err, username, next) });
           } else if (failure === 'credentials') {
             setPassword('');
             setError(copy.wrongDetails);

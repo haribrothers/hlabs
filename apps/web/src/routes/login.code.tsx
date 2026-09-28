@@ -7,9 +7,10 @@ export const Route = createFileRoute('/login/code')({
     ...validateLoginSearch(search),
     challenge: typeof search.challenge === 'string' ? search.challenge : '',
     ...(typeof search.user === 'string' && search.user ? { user: search.user } : {}),
+    ...(search.from === 'username' ? { from: 'username' as const } : {}),
   }),
   component: function LoginCode() {
-    const { challenge, next, user } = Route.useSearch();
-    return <CodeView challenge={challenge} next={next} user={user} />;
+    const { challenge, next, user, from } = Route.useSearch();
+    return <CodeView challenge={challenge} next={next} user={user} from={from} />;
   },
 });

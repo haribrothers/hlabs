@@ -25,5 +25,5 @@ test('US-AUTH-04 wrong details get one message; the fifth failure locks', async 
   // The fifth failure for hari from this IP.
   await password.fill('not the password');
   await other.getByRole('button', { name: 'Log in' }).click();
-  await expect(other).toHaveURL(/\/login\/locked$/);
+  await expect(other).toHaveURL(/\/login\/locked\?/);
 });
