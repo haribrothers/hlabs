@@ -3,6 +3,8 @@ import { Dock, TabBar, type AreaId } from '@hlabs/ui';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { shellCopy } from '../copy/shell';
+import { useAppearance, wallpaperClass } from '../lib/appearance';
+import { useMe } from '../lib/use-me';
 import { AREA_PATHS, areaForPath, navigationAreas, phoneAreas } from './areas';
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -11,9 +13,12 @@ export function Shell({ children }: { children: ReactNode }) {
   const active = areaForPath(pathname);
   const areas = navigationAreas();
   const go = (id: string) => void navigate({ to: AREA_PATHS[id as AreaId] });
+  // The person's wallpaper and accent (US-HOME-01); signed out (development pages) it's the defaults.
+  const appearance = useMe().data?.appearance;
+  useAppearance(appearance);
 
   return (
-    <div className="hl-wall relative flex min-h-full flex-col">
+    <div className={`${wallpaperClass(appearance?.wallpaper)} relative flex min-h-full flex-col`}>
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-pill focus:bg-fill-primary focus:px-4 focus:py-2 focus:text-ink-on-light"

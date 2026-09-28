@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { io } from '../trpc';
+import { accentSchema } from './settings';
 import {
   displayNameSchema,
   empty,
   idSchema,
   ok,
   passwordSchema,
-  pending,
   roleSchema,
   timestampSchema,
   totpCodeSchema,
@@ -22,6 +22,16 @@ export const loginUserSchema = z.object({
   avatarColor: z.string().nullable(),
 });
 
+/** Per-user look (D-010): Settings › Appearance changes it (phase 7); Home applies it (US-HOME-01). */
+export const appearanceSchema = z.object({
+  wallpaper: z.string(),
+  accent: accentSchema,
+  reduceTransparency: z.boolean(),
+  reduceMotion: z.boolean(),
+  showWidgets: z.boolean(),
+  showGreeting: z.boolean(),
+});
+
 export const meSchema = z.object({
   id: idSchema,
   username: usernameSchema,
@@ -34,7 +44,7 @@ export const meSchema = z.object({
   totpEnabled: z.boolean(),
   /** This session was started with "Remember me" (US-AUTH-14). */
   remember: z.boolean(),
-  appearance: pending,
+  appearance: appearanceSchema,
   /** Send as `x-hlabs-csrf` on every mutation (07 §7.3). */
   csrfToken: z.string(),
 });

@@ -16,6 +16,7 @@ export default defineConfig({
             { label: 'Welcome', link: '/help/' },
             { label: 'Set up hlabs', link: '/help/get-started/set-up/' },
             { label: 'Log in', link: '/help/get-started/log-in/' },
+            { label: 'Your Home screen', link: '/help/get-started/home/' },
           ],
         },
       ],

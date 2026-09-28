@@ -1,6 +1,6 @@
 import type { AppHandlers } from '@hlabs/api';
 import { hlabsError } from '@hlabs/api';
-import { auditLog, getSetting, users } from '@hlabs/db';
+import { auditLog, getSetting, getUserSetting, users } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { asc, eq, isNull } from 'drizzle-orm';
 import { csrfTokenFor } from '../auth/sessions';
@@ -119,7 +119,7 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
       totpEnabled,
       // Whether this session was started with "Remember me", so this device can reuse the choice (US-AUTH-14).
       remember: id.session.remember,
-      appearance: null,
+      appearance: getUserSetting(ctx.services.db, 'appearance', user.id),
       csrfToken: csrfTokenFor(id.session.raw),
     };
   },

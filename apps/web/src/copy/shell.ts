@@ -16,7 +16,6 @@ export const phoneAreaLabels = { ...areaLabels, store: 'Apps' } as const;
 export const shellCopy = {
   skipToContent: 'Skip to content',
   mainLabel: 'Main content',
-  homeHeading: 'Home',
   areaEmpty: 'Nothing here yet.',
 } as const;
 
