@@ -23,7 +23,23 @@ export const driveSchema = z.object({
 });
 
 export const storage = {
-  summary: io(empty, pending),
+  /**
+   * This computer's disk, where hlabs and its apps keep their data (US-HOME-02). Apps, files and the backup cache
+   * are counted as their phases ship; until then they are 0 and "system" is everything else in use.
+   */
+  summary: io(
+    empty,
+    z.object({
+      totalBytes: z.number().nonnegative(),
+      freeBytes: z.number().nonnegative(),
+      appsBytes: z.number().nonnegative(),
+      filesBytes: z.number().nonnegative(),
+      systemBytes: z.number().nonnegative(),
+      hlabsBytes: z.number().nonnegative(),
+      backupCacheBytes: z.number().nonnegative(),
+      reclaimableImageBytes: z.number().nonnegative(),
+    }),
+  ),
   /** Connected, writable external drives. */
   listDrives: io(empty, z.object({ drives: z.array(driveSchema) })),
   locations: {

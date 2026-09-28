@@ -180,6 +180,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       }),
     ),
     drives: deps.drives ?? new NodeDriveProbe(),
+    system: probe,
     network: new NetworkStorage({
       db,
       secrets,

@@ -12,6 +12,7 @@ import type { TotpService } from './auth/totp';
 import type { LoginService } from './auth/login';
 import type { OnboardingService } from './onboarding/service';
 import type { DriveProbe } from './platform/drives';
+import type { SystemProbe } from './platform/system';
 import type { NetworkStorage } from './storage/network';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
@@ -32,6 +33,8 @@ export interface Services {
   totp: TotpService;
   login: LoginService;
   drives: DriveProbe;
+  /** CPU, memory and disk of this computer. */
+  system: SystemProbe;
   network: NetworkStorage;
 }
 

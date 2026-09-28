@@ -20,6 +20,10 @@ export class FakeSystemProbe implements SystemProbe {
   async freeBytes() {
     return this.freeSpace;
   }
+  totalSpace = 256e9;
+  async diskSpace() {
+    return { totalBytes: this.totalSpace, freeBytes: this.freeSpace };
+  }
   async portInUse(port: number) {
     return this.portsInUse.has(port);
   }

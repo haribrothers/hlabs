@@ -21,6 +21,8 @@ export interface SystemProbe {
   os(): Promise<OsInfo>;
   /** Free bytes on the volume holding `path` (or its nearest existing parent). */
   freeBytes(path: string): Promise<number>;
+  /** Size and free space of the volume holding `path` (US-HOME-02). */
+  diskSpace(path: string): Promise<{ totalBytes: number; freeBytes: number }>;
   /** Another process is listening on the port (all interfaces). */
   portInUse(port: number): Promise<boolean>;
   /** This account may read and write the socket (false: e.g. not in the `docker` group). */
@@ -68,10 +70,14 @@ export class NodeSystemProbe implements SystemProbe {
   }
 
   async freeBytes(path: string): Promise<number> {
+    return (await this.diskSpace(path)).freeBytes;
+  }
+
+  async diskSpace(path: string) {
     for (let dir = path; ; dir = dirname(dir)) {
       try {
         const stats = await statfs(dir);
-        return stats.bavail * stats.bsize;
+        return { totalBytes: stats.blocks * stats.bsize, freeBytes: stats.bavail * stats.bsize };
       } catch (err) {
         if ((err as NodeJS.ErrnoException).code !== 'ENOENT' || dirname(dir) === dir) throw err;
       }

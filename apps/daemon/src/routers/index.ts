@@ -4,12 +4,13 @@ import { listProcedures, type AppHandlers } from '@hlabs/api';
 import type { DaemonContext, Dispatcher } from '../context';
 import { auth } from './auth';
 import { events } from './events';
+import { home } from './home';
 import { jobs } from './jobs';
 import { onboarding } from './onboarding';
 import { storage } from './storage';
 import { system } from './system';
 
-export const handlers: AppHandlers<DaemonContext> = { system, jobs, events, onboarding, auth, storage };
+export const handlers: AppHandlers<DaemonContext> = { system, jobs, events, onboarding, auth, storage, home };
 
 type Fn = (input: unknown, ctx: DaemonContext, signal: AbortSignal | undefined) => unknown;
 
