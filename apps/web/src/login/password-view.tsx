@@ -8,6 +8,7 @@ import { loginCopy } from '../copy/login';
 import { useTRPC } from '../lib/trpc';
 import { LoginLayout } from './login-layout';
 import { withNext } from './search';
+import { useLogin } from './use-login';
 
 const copy = loginCopy;
 
@@ -17,14 +18,17 @@ export function PasswordView({ username, next }: { username: string; next?: stri
   const user = list.data?.users.find((u) => u.username === username);
   const [password, setPassword] = useState('');
   const field = useRef<HTMLInputElement>(null);
+  const login = useLogin(next);
   useEffect(() => field.current?.focus(), [user]);
 
   if (list.isError || (list.data && !user)) return <Navigate to="/login/username" search={withNext(next)} replace />;
   if (!user) return <LoginLayout>{null}</LoginLayout>;
 
   const role = copy.roles[user.role];
-  // Logging in arrives with US-AUTH-03.
-  const submit = (e: FormEvent) => e.preventDefault();
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (password && !login.isPending) login.mutate({ username: user.username, password, remember: false });
+  };
 
   return (
     <LoginLayout back={{ label: copy.allUsers, to: '/login/users', search: withNext(next) }}>
@@ -39,10 +43,11 @@ export function PasswordView({ username, next }: { username: string; next?: stri
           placeholder={copy.password}
           type="password"
           autoComplete="current-password"
+          readOnly={login.isPending}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <Button type="submit" size="lg" disabled={!password}>
+        <Button type="submit" size="lg" disabled={!password} busy={login.isPending}>
           {copy.logIn}
         </Button>
       </form>

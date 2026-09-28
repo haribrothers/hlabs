@@ -53,6 +53,16 @@ describe('Switch', () => {
   });
 });
 
+describe('Button busy', () => {
+  it('is disabled, announced as busy and shows a spinner', () => {
+    render(<Button busy>Log in</Button>);
+    const button = screen.getByRole('button', { name: 'Log in' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    expect(button.querySelector('.hl-spin')).not.toBeNull();
+  });
+});
+
 describe('TextField', () => {
   it('links its label and hint', () => {
     render(<TextField label="Username" hint="Lowercase letters and numbers" />);

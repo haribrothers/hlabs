@@ -8,6 +8,7 @@ import { useTRPC } from '../lib/trpc';
 import { OnboardingLogo } from '../onboarding/onboarding-layout';
 import { LoginLayout } from './login-layout';
 import { withNext } from './search';
+import { useLogin } from './use-login';
 
 const copy = loginCopy;
 
@@ -22,8 +23,13 @@ export function UsernameView({ next }: { next?: string }) {
   const field = useRef<HTMLInputElement>(null);
   useEffect(() => field.current?.focus(), []);
 
-  // Logging in arrives with US-AUTH-03.
-  const submit = (e: FormEvent) => e.preventDefault();
+  const login = useLogin(next);
+  const busy = login.isPending;
+  const ready = username.trim() !== '' && password !== '';
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (ready && !busy) login.mutate({ username, password, remember });
+  };
 
   return (
     <LoginLayout back={listShown ? { label: copy.allUsers, to: '/login/users', search: withNext(next) } : undefined}>
@@ -38,6 +44,7 @@ export function UsernameView({ next }: { next?: string }) {
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
+          readOnly={busy}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
@@ -45,11 +52,12 @@ export function UsernameView({ next }: { next?: string }) {
           label={copy.password}
           type="password"
           autoComplete="current-password"
+          readOnly={busy}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
         <Switch label={copy.remember} checked={remember} onChange={setRemember} />
-        <Button type="submit" size="lg" disabled={!username.trim() || !password}>
+        <Button type="submit" size="lg" disabled={!ready} busy={busy}>
           {copy.logIn}
         </Button>
       </form>

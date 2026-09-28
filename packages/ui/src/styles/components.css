@@ -232,6 +232,24 @@
     color: var(--danger);
   }
 
+  /* Spinner (Button busy) */
+  .hl-spin {
+    animation: hl-spin 0.9s linear infinite;
+  }
+  @keyframes hl-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hl-spin {
+      animation: none;
+    }
+  }
+  [data-reduce-motion='true'] .hl-spin {
+    animation: none;
+  }
+
   /* Avatar: an initial on the person's accent colour */
   .hl-avatar {
     display: grid;
