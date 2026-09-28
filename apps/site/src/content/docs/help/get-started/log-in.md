@@ -26,6 +26,8 @@ Usernames don't care about capital letters or spaces at the ends: "Hari " works 
 
 **Remember me on this device** keeps you signed in for 30 days while you keep using hlabs. Leave it off on a computer other people use; you're then signed out after 12 hours without using hlabs.
 
+When hlabs greets you by name, it uses the choice you made the last time you logged in on this device, so there's no switch on that screen. If you're signed out while using hlabs, you're asked to log in and then taken back to the page you were on.
+
 ## Enter your two-factor code
 
 If two-factor login is on for your account, hlabs asks for a code after your password. Open your authenticator app and type the 6-digit code for hlabs; it's checked as soon as you type the sixth digit.

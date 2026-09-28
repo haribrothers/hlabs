@@ -2,6 +2,8 @@
 import { expect, type APIRequestContext } from '@playwright/test';
 
 export const MAIN_URL = 'http://127.0.0.1:5173';
+/** The main instance's signed-in browser state, written by global.setup.ts. */
+export const MAIN_STORAGE_STATE = 'e2e/.auth/main.json';
 /** A hlabs that has not been set up; its data dir is wiped at the start of every run. */
 export const FIRST_RUN_URL = 'http://127.0.0.1:5174';
 

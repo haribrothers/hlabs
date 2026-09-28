@@ -32,6 +32,8 @@ export const meSchema = z.object({
   mustSetupTotp: z.boolean(),
   /** Two-factor login is on for this account. */
   totpEnabled: z.boolean(),
+  /** This session was started with "Remember me" (US-AUTH-14). */
+  remember: z.boolean(),
   appearance: pending,
   /** Send as `x-hlabs-csrf` on every mutation (07 §7.3). */
   csrfToken: z.string(),

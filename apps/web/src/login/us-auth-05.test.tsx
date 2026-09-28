@@ -7,7 +7,13 @@ import { chooseLoginView } from './choose';
 import { PasswordView } from './password-view';
 import { LAST_USER_KEY, type RememberedUser } from './remembered';
 
-const HARI: RememberedUser = { username: 'hari', displayName: 'Hari', role: 'admin', avatarColor: 'violet' };
+const HARI: RememberedUser = {
+  username: 'hari',
+  displayName: 'Hari',
+  role: 'admin',
+  avatarColor: 'violet',
+  remember: false,
+};
 const LoginIndex = LoginIndexRoute.options.component!;
 
 beforeEach(() => localStorage.clear());

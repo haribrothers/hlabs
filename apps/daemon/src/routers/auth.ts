@@ -2,7 +2,8 @@ import type { AppHandlers } from '@hlabs/api';
 import { hlabsError } from '@hlabs/api';
 import { getSetting, users } from '@hlabs/db';
 import { asc, eq, isNull } from 'drizzle-orm';
-import { csrfTokenFor, sessionCookie } from '../auth/sessions';
+import { csrfTokenFor } from '../auth/sessions';
+import { setSessionCookie } from './session-cookie';
 import type { DaemonContext } from '../context';
 
 export const auth: AppHandlers<DaemonContext>['auth'] = {
@@ -16,7 +17,7 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
       ip,
       userAgent,
     });
-    ctx.request.setCookie(sessionCookie(session.raw, session));
+    setSessionCookie(ctx, session);
     return { redirectTo, recoveryCodesLeft };
   },
   /** The two-factor step of a log-in (US-AUTH-08). */
@@ -24,7 +25,7 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
     const { origin, allowedOrigins, ip, userAgent } = ctx.request;
     if (origin !== null && !allowedOrigins.includes(origin)) throw hlabsError('CSRF_REJECTED');
     const { session, redirectTo } = await ctx.services.login.verifyTotp({ challengeId, code, ip, userAgent });
-    ctx.request.setCookie(sessionCookie(session.raw, session));
+    setSessionCookie(ctx, session);
     return { redirectTo };
   },
   /**
@@ -43,7 +44,7 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
       userAgent,
     });
     if (result.kind === 'totp') return { status: 'totp_required' as const, challengeId: result.challengeId };
-    ctx.request.setCookie(sessionCookie(result.session.raw, result.session));
+    setSessionCookie(ctx, result.session);
     return { status: 'ok' as const, redirectTo: result.redirectTo };
   },
   /**
@@ -92,6 +93,8 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
       // The admin requires two-factor and this account hasn't set it up yet (US-AUTH-10).
       mustSetupTotp: getSetting(ctx.services.db, 'people').requireTotp && !totpEnabled,
       totpEnabled,
+      // Whether this session was started with "Remember me", so this device can reuse the choice (US-AUTH-14).
+      remember: id.session.remember,
       appearance: null,
       csrfToken: csrfTokenFor(id.session.raw),
     };

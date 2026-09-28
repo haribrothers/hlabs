@@ -6,7 +6,13 @@ import { PasswordView } from './password-view';
 import { LAST_USER_KEY, readRememberedUser, type RememberedUser } from './remembered';
 import { UsernameView } from './username-view';
 
-const HARI: RememberedUser = { username: 'hari', displayName: 'Hari', role: 'admin', avatarColor: 'violet' };
+const HARI: RememberedUser = {
+  username: 'hari',
+  displayName: 'Hari',
+  role: 'admin',
+  avatarColor: 'violet',
+  remember: false,
+};
 
 beforeEach(() => {
   localStorage.clear();

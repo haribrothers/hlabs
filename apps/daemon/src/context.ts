@@ -10,7 +10,7 @@ import type { Services } from './services';
  */
 export type Identity =
   | { kind: 'anonymous' }
-  | { kind: 'user'; userId: string; role: 'admin' | 'member'; session?: { raw: string } }
+  | { kind: 'user'; userId: string; role: 'admin' | 'member'; session?: { id: string; raw: string; remember: boolean } }
   | { kind: 'tray' };
 
 export interface RequestInfo {
@@ -22,6 +22,8 @@ export interface RequestInfo {
   csrfToken: string | null;
   /** The `Origin` header; mutations from a session must come from the dashboard. */
   origin: string | null;
+  /** The `Host` header, for the cookie's Domain (US-AUTH-14). */
+  host: string | null;
   /** Origins the dashboard is served from. */
   allowedOrigins: readonly string[];
   /** Adds a Set-Cookie header to the response. */

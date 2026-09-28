@@ -1,5 +1,5 @@
 import { hlabsError, type AppHandlers } from '@hlabs/api';
-import { sessionCookie } from '../auth/sessions';
+import { setSessionCookie } from './session-cookie';
 import type { DaemonContext } from '../context';
 import { createAdmin } from '../onboarding/create-admin';
 import { setExternalStorage, setNetworkStorage, setStorageRoot } from '../onboarding/storage';
@@ -24,7 +24,7 @@ export const onboarding: AppHandlers<DaemonContext>['onboarding'] = {
     const { db, sessions } = ctx.services;
     const userId = await createAdmin(db, { username, displayName, password, ip: ctx.request.ip });
     const session = sessions.create({ userId, ip: ctx.request.ip, userAgent: ctx.request.userAgent });
-    ctx.request.setCookie(sessionCookie(session.raw, session));
+    setSessionCookie(ctx, session);
     return { userId };
   },
   /** A new pending secret for the signed-in admin; a reload replaces it (US-ONB-11). */

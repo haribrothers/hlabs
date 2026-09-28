@@ -40,7 +40,8 @@ export function PasswordView({ username, next, reason }: { username: string; nex
     if (!password || login.isPending) return;
     setError(null);
     login.mutate(
-      { username: user.username, password, remember: false },
+      // No switch here: the choice from this account's last log-in on this device (US-AUTH-14).
+      { username: user.username, password, remember: remembered?.username === user.username && remembered.remember },
       {
         onError: (err) => {
           const failure = loginFailure(err);

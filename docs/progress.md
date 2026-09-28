@@ -40,7 +40,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-AUTH-11 · Keep two-factor codes in step with the server clock
 - [x] US-AUTH-12 · Pause logins after too many attempts
 - [x] US-AUTH-13 · Tell the admin about repeated failed logins
-- [ ] US-AUTH-14 · Stay signed in, or not
+- [x] US-AUTH-14 · Stay signed in, or not
 - [ ] US-AUTH-15 · Get signed out when my session is revoked
 - [ ] US-AUTH-16 · Log out
 - [ ] US-AUTH-18 · Return to the app I was opening after login

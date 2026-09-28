@@ -57,7 +57,7 @@ describe('US-AUTH-12', () => {
   });
 
   it('Use another account forgets the remembered account and opens the list, or the form when hidden', async () => {
-    writeRememberedUser({ username: 'hari', displayName: 'Hari', role: 'admin', avatarColor: null });
+    writeRememberedUser({ username: 'hari', displayName: 'Hari', role: 'admin', avatarColor: null, remember: false });
     const { router } = renderScreen(() => <LockedView user="hari" until={Date.now() + 60_000} />, {
       'auth.listLoginUsers': noList,
     });

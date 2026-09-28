@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { MAIN_STORAGE_STATE } from './e2e/instances';
 
 // E2E specs are named by user story id (us-<code>-<nn>.spec.ts); phase checks by phase.
 // Locally they reuse a running `pnpm dev`; in CI Playwright starts the daemons and Vite itself.
@@ -32,10 +33,15 @@ export default defineConfig({
     {
       name: 'desktop',
       testIgnore: FIRST_RUN_SPECS,
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, storageState: MAIN_STORAGE_STATE },
       dependencies: ['setup'],
     },
-    { name: 'phone', testIgnore: FIRST_RUN_SPECS, use: { ...devices['Pixel 7'] }, dependencies: ['setup'] },
+    {
+      name: 'phone',
+      testIgnore: FIRST_RUN_SPECS,
+      use: { ...devices['Pixel 7'], storageState: MAIN_STORAGE_STATE },
+      dependencies: ['setup'],
+    },
     // Onboarding specs share the first-run instance and reset it to a step, so they run one at a time.
     {
       name: 'first-run',

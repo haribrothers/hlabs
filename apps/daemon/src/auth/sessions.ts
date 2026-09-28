@@ -81,10 +81,33 @@ export class SessionService {
   }
 }
 
+/**
+ * The cookie's Domain (US-AUTH-14): `.<hostname>.local` when the dashboard is reached on its mDNS name, so app
+ * hostnames under it share the session; otherwise none, so it stays on the host it was set on (tailnet name, an IP or
+ * a fallback port).
+ */
+export function cookieDomain(host: string | null, hostname: string): string | undefined {
+  const name = host?.replace(/:\d+$/, '').toLowerCase();
+  const local = `${hostname.toLowerCase()}.local`;
+  return name === local ? `.${local}` : undefined;
+}
+
 /** `hlabs_session` cookie: HttpOnly, Secure, SameSite=Lax, Path=/; persistent only with "Remember me". */
-export function sessionCookie(raw: string, opts: { remember: boolean; expiresAt: number; now?: number }): string {
+export function sessionCookie(
+  raw: string,
+  opts: { remember: boolean; expiresAt: number; now?: number; domain?: string },
+): string {
   const parts = [`${SESSION_COOKIE}=${raw}`, 'Path=/', 'HttpOnly', 'Secure', 'SameSite=Lax'];
-  if (opts.remember) parts.push(`Max-Age=${Math.floor((opts.expiresAt - (opts.now ?? Date.now())) / 1000)}`);
+  if (opts.domain) parts.push(`Domain=${opts.domain}`);
+  if (opts.remember) parts.push(`Max-Age=${Math.round((opts.expiresAt - (opts.now ?? Date.now())) / 1000)}`);
+  return parts.join('; ');
+}
+
+/** Clears the cookie on the same domain it was set on (US-AUTH-16). */
+export function clearedSessionCookie(domain?: string): string {
+  const parts = [`${SESSION_COOKIE}=`, 'Path=/', 'HttpOnly', 'Secure', 'SameSite=Lax'];
+  if (domain) parts.push(`Domain=${domain}`);
+  parts.push('Max-Age=0');
   return parts.join('; ');
 }
 

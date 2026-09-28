@@ -21,6 +21,7 @@ export function useFinishLogin() {
       displayName: me.displayName,
       role: me.role,
       avatarColor: me.avatarColor,
+      remember: me.remember,
     });
     await queryClient.invalidateQueries();
     await router.navigate({ href: redirectTo });

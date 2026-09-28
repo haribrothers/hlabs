@@ -19,6 +19,7 @@ export default defineConfig({
       '/dev/setup-url': DAEMON,
       '/dev/complete-onboarding': DAEMON,
       '/dev/reset-onboarding': DAEMON,
+      '/dev/sign-in': DAEMON,
     },
   },
   build: { target: 'es2022', sourcemap: true },

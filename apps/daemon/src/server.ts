@@ -25,7 +25,14 @@ function identify(config: DaemonConfig, holder: ServiceHolder, req: FastifyReque
   const services = holder.current;
   if (raw && services?.readiness.isReady) {
     const session = services.sessions.resolve(raw);
-    if (session) return { kind: 'user', userId: session.userId, role: session.role, session: { raw } };
+    if (session) {
+      return {
+        kind: 'user',
+        userId: session.userId,
+        role: session.role,
+        session: { id: session.sessionId, raw, remember: session.remember },
+      };
+    }
   }
   if (config.devAnonymousAdmin) return { kind: 'user', userId: 'dev', role: 'admin' };
   return { kind: 'anonymous' };
@@ -56,6 +63,7 @@ export async function buildServer({ config, logger, readiness, holder }: ServerD
           setupToken: headerValue(req.headers['x-hlabs-setup']),
           csrfToken: headerValue(req.headers['x-hlabs-csrf']),
           origin: headerValue(req.headers.origin),
+          host: headerValue(req.headers['x-forwarded-host']) ?? headerValue(req.headers.host),
           allowedOrigins: [new URL(config.dashboardUrl).origin],
           setCookie: (cookie) => void res.header('set-cookie', cookie),
         }),
