@@ -15,7 +15,10 @@ const router = createRouter({ routeTree, defaultPreload: 'intent' });
 
 // A session that ends while the app is open (expired or revoked) goes to log in, then back here (US-AUTH-14).
 setAuthLostHandler(() => {
-  const to = loginRedirect(router.state.location);
+  const status = queryClient
+    .getQueriesData<{ hasUsers?: boolean }>({ queryKey: [['onboarding', 'status']] })
+    .find(([, data]) => data)?.[1];
+  const to = loginRedirect(router.state.location, { hasUsers: status?.hasUsers });
   if (to) void router.navigate(to);
 });
 

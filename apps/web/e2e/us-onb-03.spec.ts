@@ -48,6 +48,12 @@ test.describe('US-ONB-03', () => {
     expect((await request.post('/dev/complete-onboarding')).ok()).toBe(true);
     await page.goto('/setup/system');
     await expect(page).toHaveURL(`${FIRST_RUN_URL}/`);
+    // And it stays there once the dashboard has loaded (nobody to log in as: no redirect to log in).
+    await expect(
+      page.getByRole('navigation', { name: 'Dock' }).or(page.getByRole('navigation', { name: 'Tab bar' })),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page).toHaveURL(`${FIRST_RUN_URL}/`);
 
     const res = await request.post('/trpc/onboarding.setStep', {
       data: { step: 'system' },

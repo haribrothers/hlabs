@@ -63,6 +63,8 @@ describe('US-AUTH-14', () => {
     expect(loginRedirect({ pathname: '/', href: '/' })).toEqual({ to: '/login', search: {} });
     expect(loginRedirect({ pathname: '/login/users', href: '/login/users' })).toBeNull();
     expect(loginRedirect({ pathname: '/setup/storage', href: '/setup/storage' })).toBeNull();
+    // Nobody has an account yet (a development shortcut): there's no one to log in as.
+    expect(loginRedirect({ pathname: '/files', href: '/files' }, { hasUsers: false })).toBeNull();
   });
 
   it('any call that finds the session gone triggers the log-in redirect', async () => {
