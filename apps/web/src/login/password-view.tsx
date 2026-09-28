@@ -2,7 +2,7 @@
 import { isFeatureEnabled } from '@hlabs/shared';
 import { Avatar, avatarColorFor, Button, TextField } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
-import { Navigate, useNavigate } from '@tanstack/react-router';
+import { Link, Navigate, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { loginCopy } from '../copy/login';
 import { useTRPC } from '../lib/trpc';
@@ -16,11 +16,12 @@ const copy = loginCopy;
 export function PasswordView({ username, next }: { username: string; next?: string }) {
   const trpc = useTRPC();
   const list = useQuery({ ...trpc.auth.listLoginUsers.queryOptions(), retry: false });
-  // The account from the list, or the one remembered on this device when the list is hidden (US-AUTH-05/06).
+  // The account remembered on this device, as saved at its last log-in (US-AUTH-06), or the one chosen from the
+  // list. A remembered account that no longer exists is still shown: logging in just fails like a wrong password.
   const remembered = readRememberedUser();
   const user =
-    list.data?.users.find((u) => u.username === username) ??
-    (remembered?.username === username ? remembered : undefined);
+    (remembered?.username === username ? remembered : undefined) ??
+    list.data?.users.find((u) => u.username === username);
   const listShown = (list.data?.users.length ?? 0) > 0;
   const [password, setPassword] = useState('');
   const field = useRef<HTMLInputElement>(null);
@@ -79,7 +80,16 @@ export function PasswordView({ username, next }: { username: string; next?: stri
           {copy.logIn}
         </Button>
       </form>
-      {isFeatureEnabled('forgotPassword') ? <p className="m-0 text-body-sm">{copy.forgot}</p> : null}
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-body-sm">
+        <Link
+          to={listShown ? '/login/users' : '/login/username'}
+          search={withNext(next)}
+          className="hl-focus rounded-xs text-ink no-underline"
+        >
+          {copy.notYou(user.displayName)}
+        </Link>
+        {isFeatureEnabled('forgotPassword') ? <span>{copy.forgot}</span> : null}
+      </div>
     </LoginLayout>
   );
 }

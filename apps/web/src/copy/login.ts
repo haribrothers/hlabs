@@ -9,6 +9,7 @@ export const loginCopy = {
   roles: { admin: 'Admin', member: 'Member' },
   userName: (displayName: string, role: string) => `${displayName}, ${role}`,
   allUsers: 'All users',
+  notYou: (displayName: string) => `Not ${displayName}? Use another account`,
   welcomeBack: (displayName: string) => `Welcome back, ${displayName}`,
   who: (username: string, role: string) => `@${username} · ${role}`,
   usernameTitle: 'Log in to hlabs',

@@ -6,7 +6,7 @@ features: [F-AUTH-01, F-AUTH-02, F-AUTH-03]
 
 For everyone who uses hlabs.
 
-hlabs remembers the last account used on this device and asks only for its password next time. No password is stored on the device.
+hlabs remembers the last account used on this device and greets it by name next time ("Welcome back, …"), asking only for its password. No password is stored on the device. If the password is wrong you'll see "Password is incorrect."
 
 ## Choose your account
 
