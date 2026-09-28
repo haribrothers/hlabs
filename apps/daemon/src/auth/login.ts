@@ -113,7 +113,18 @@ export class LoginService {
     const { username, ip, now } = opts;
     this.db.insert(loginAttempts).values({ id: ulid(), username, ip, at: now, success: false }).run();
     this.audit(opts.userId, 'auth.login.failed', opts.detail, ip, now);
-    if (opts.failures.length + 1 >= LOGIN_LOCK_ATTEMPTS) throw lockedError(now + LOGIN_LOCK_MS, now);
+    if (opts.failures.length + 1 >= LOGIN_LOCK_ATTEMPTS) {
+      // A lock starts (US-AUTH-13): audited, and every admin is told once (D-045).
+      this.audit(opts.userId, 'auth.locked', { username, ip }, ip, now);
+      this.notify({
+        userId: null,
+        kind: 'auth.locked',
+        title: 'Repeated failed logins',
+        body: `${LOGIN_LOCK_ATTEMPTS} failed logins for @${username} from ${ip}. Logging in as @${username} is paused for 15 minutes.`,
+        now,
+      });
+      throw lockedError(now + LOGIN_LOCK_MS, now);
+    }
   }
 
   /** Drops attempts older than 30 days; runs at start and once a day. */
@@ -244,27 +255,13 @@ export class LoginService {
     this.challenges.delete(opts.challengeId);
     const left = unused.length - 1;
     this.audit(user.id, 'auth.login.recovery_code', { left }, opts.ip, now);
-    const notificationId = ulid();
-    const title = 'Recovery code used';
-    this.db
-      .insert(notifications)
-      .values({
-        id: notificationId,
-        userId: user.id,
-        kind: 'auth.recovery_code',
-        severity: 'warning',
-        title,
-        body: `Someone logged in as @${user.username} with a recovery code. ${left} left. If this wasn't you, change your password.`,
-        actionJson: null,
-        createdAt: now,
-        readAt: null,
-      })
-      .run();
-    this.bus.emit(
-      'notification.created',
-      { notificationId, severity: 'warning', title },
-      { kind: 'user', userId: user.id },
-    );
+    this.notify({
+      userId: user.id,
+      kind: 'auth.recovery_code',
+      title: 'Recovery code used',
+      body: `Someone logged in as @${user.username} with a recovery code. ${left} left. If this wasn't you, change your password.`,
+      now,
+    });
     return {
       ...this.startSession(user.id, challenge.remember, challenge.next, opts.ip, opts.userAgent, now),
       recoveryCodesLeft: left,
@@ -328,6 +325,30 @@ export class LoginService {
       this.db.insert(loginAttempts).values({ id: ulid(), username: user.username, ip, at: now, success: true }).run();
     this.audit(userId, 'auth.login.succeeded', null, ip, now);
     return { session, redirectTo: safeNext(next) };
+  }
+
+  /** A warning notification for one user, or for all admins (`userId` null), announced on the bus. */
+  private notify(n: { userId: string | null; kind: string; title: string; body: string; now: number }) {
+    const id = ulid();
+    this.db
+      .insert(notifications)
+      .values({
+        id,
+        userId: n.userId,
+        kind: n.kind,
+        severity: 'warning',
+        title: n.title,
+        body: n.body,
+        actionJson: null,
+        createdAt: n.now,
+        readAt: null,
+      })
+      .run();
+    this.bus.emit(
+      'notification.created',
+      { notificationId: id, severity: 'warning', title: n.title },
+      n.userId ? { kind: 'user', userId: n.userId } : { kind: 'admins' },
+    );
   }
 
   private audit(

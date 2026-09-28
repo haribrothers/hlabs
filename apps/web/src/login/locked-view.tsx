@@ -1,4 +1,4 @@
-// LoginLocked (US-AUTH-12): logging in as this username from this device is paused; a countdown from the server's
+// LoginLocked (US-AUTH-12, US-AUTH-13): logging in as this username from this device is paused; a countdown from the server's
 // retryAfter, then back to the password screen.
 import { isFeatureEnabled } from '@hlabs/shared';
 import { Lock, iconDefaults } from '@hlabs/icons';
@@ -45,7 +45,7 @@ export function LockedView({ user, until, next }: { user?: string; until?: numbe
   useEffect(() => heading.current?.focus(), []);
 
   return (
-    <LoginLayout>
+    <LoginLayout note={copy.adminNotified}>
       <GlassCard className="mb-2 grid size-18 place-items-center rounded-full p-0 text-warning">
         <Lock aria-hidden {...iconDefaults} />
       </GlassCard>

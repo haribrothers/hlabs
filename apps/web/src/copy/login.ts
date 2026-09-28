@@ -32,6 +32,7 @@ export const loginCopy = {
   tryAgain: 'Try again',
   timeLeft: 'Time left',
   useAnother: 'Use another account',
+  adminNotified: 'The admin gets a notification about repeated failed logins.',
   timedOut: 'Your login timed out. Enter your password again.',
   codeTitle: 'Enter your code',
   codeLead: 'Open your authenticator app and type the 6-digit code for hlabs.',

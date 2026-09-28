@@ -26,6 +26,8 @@ test('US-AUTH-12 five failures pause logging in as that user, with a countdown',
   const first = await timer.innerText();
   await expect(timer).not.toHaveText(first);
   await expect(other.getByRole('button', { name: /^Try again in \d+:\d\d$/ })).toBeDisabled();
+  // US-AUTH-13: the admin is told.
+  await expect(other.getByText('The admin gets a notification about repeated failed logins.')).toBeVisible();
   expect((await new AxeBuilder({ page: other }).analyze()).violations).toEqual([]);
 
   // The right password is refused while paused.

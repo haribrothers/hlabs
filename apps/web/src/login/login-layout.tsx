@@ -11,9 +11,12 @@ export function hostLine(location: Pick<Location, 'host' | 'protocol'>) {
 
 export function LoginLayout({
   back,
+  note,
   children,
 }: {
   back?: { label: string; to: string; search?: object };
+  /** A line at the foot of the page, above the host. */
+  note?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -31,10 +34,13 @@ export function LoginLayout({
         </nav>
       ) : null}
       <main className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-10 text-center">{children}</main>
-      <footer className="flex items-center justify-center gap-2 pb-6 text-caption text-ink-muted">
-        {/* The padlock only when the connection really is HTTPS. */}
-        {window.location.protocol === 'https:' ? <Lock aria-hidden {...iconDefaults} className="size-3" /> : null}
-        {hostLine(window.location)}
+      <footer className="flex flex-col items-center gap-2 px-4 pb-6 text-center text-caption text-ink-muted">
+        {note ? <p className="m-0">{note}</p> : null}
+        <p className="m-0 flex items-center justify-center gap-2">
+          {/* The padlock only when the connection really is HTTPS. */}
+          {window.location.protocol === 'https:' ? <Lock aria-hidden {...iconDefaults} className="size-3" /> : null}
+          {hostLine(window.location)}
+        </p>
       </footer>
     </div>
   );
