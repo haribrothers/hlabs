@@ -7,6 +7,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { TRPCClientError } from '@trpc/client';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { loginCopy } from '../copy/login';
+import { TWO_FACTOR_MANAGE_PATH } from '../lib/paths';
 import { showToast } from '../lib/toasts';
 import { useTRPCClient } from '../lib/trpc';
 import { LoginLayout } from './login-layout';
@@ -14,9 +15,6 @@ import { withNext } from './search';
 import { useFinishLogin } from './use-login';
 
 const copy = loginCopy;
-
-/** Where "Make new codes" goes: TwoFactorManage (US-ACCT-08). */
-export const TWO_FACTOR_MANAGE_PATH = '/settings/account/two-factor';
 
 const hlabsCode = (err: unknown) =>
   err instanceof TRPCClientError ? (err.data as { hlabsCode?: string } | undefined)?.hlabsCode : undefined;

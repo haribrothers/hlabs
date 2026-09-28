@@ -36,7 +36,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-AUTH-07 · Switch to another account
 - [x] US-AUTH-08 · Enter my two-factor code
 - [x] US-AUTH-09 · Log in with a recovery code
-- [ ] US-AUTH-10 · Set up two-factor when an admin requires it
+- [x] US-AUTH-10 · Set up two-factor when an admin requires it (phase 1 part: `mustSetupTotp` and the redirect; the policy switch is phase 3, `/auth/verify` phase 2, and continuing to `next` after setup lands with US-ACCT-12)
 - [ ] US-AUTH-11 · Keep two-factor codes in step with the server clock
 - [ ] US-AUTH-12 · Pause logins after too many attempts
 - [ ] US-AUTH-13 · Tell the admin about repeated failed logins

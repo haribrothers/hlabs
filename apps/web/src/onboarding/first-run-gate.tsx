@@ -26,6 +26,7 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
     failed: status.isError,
     hasSetupToken: readSetupToken() !== null,
     dev: import.meta.env.DEV,
+    mustSetupTotp: me.data?.mustSetupTotp,
   });
   const decided = view.kind !== 'loading';
   useEffect(() => {
@@ -41,7 +42,7 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
     case 'elsewhere':
       return <FinishSetupElsewhere />;
     case 'redirect':
-      return <Navigate to={view.to} replace />;
+      return <Navigate to={view.to} search={view.search} replace />;
     case 'app':
       return <Shell>{children}</Shell>;
   }

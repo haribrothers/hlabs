@@ -81,6 +81,7 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
     if (id.kind !== 'user' || !id.session) throw hlabsError('AUTH_REQUIRED');
     const user = ctx.services.db.select().from(users).where(eq(users.id, id.userId)).get();
     if (!user) throw hlabsError('AUTH_REQUIRED');
+    const totpEnabled = ctx.services.totp.isEnabled(user.id);
     return {
       id: user.id,
       username: user.username,
@@ -88,9 +89,9 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
       role: user.role,
       avatarColor: user.avatarColor,
       locale: user.locale,
-      // Admin-required two-factor arrives with US-AUTH-10.
-      mustSetupTotp: false,
-      totpEnabled: ctx.services.totp.isEnabled(user.id),
+      // The admin requires two-factor and this account hasn't set it up yet (US-AUTH-10).
+      mustSetupTotp: getSetting(ctx.services.db, 'people').requireTotp && !totpEnabled,
+      totpEnabled,
       appearance: null,
       csrfToken: csrfTokenFor(id.session.raw),
     };

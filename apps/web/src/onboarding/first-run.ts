@@ -1,5 +1,6 @@
 // What the dashboard shows before onboarding is complete (US-ONB-01, US-ONB-03).
 import type { OnboardingStep } from '@hlabs/shared';
+import { TWO_FACTOR_MANAGE_PATH } from '../lib/paths';
 import { SETUP_PATH } from '../lib/setup-token';
 import { resumePath } from './steps';
 
@@ -18,7 +19,7 @@ export type FirstRunView =
   | { kind: 'plain' }
   /** No setup token in this browser: setup must be finished on the computer running hlabs. */
   | { kind: 'elsewhere' }
-  | { kind: 'redirect'; to: string };
+  | { kind: 'redirect'; to: string; search?: { next: string } };
 
 /** `/setup` and every step under it (`/setup/<step>`). */
 export const isSetupPath = (pathname: string) => pathname === SETUP_PATH || pathname.startsWith(`${SETUP_PATH}/`);
@@ -37,6 +38,8 @@ export function firstRunView(opts: {
   /** First page load of this tab: opening setup resumes at the saved step. */
   entry?: boolean;
   shippedPhase?: number;
+  /** The admin requires two-factor and this account has none yet (US-AUTH-10). */
+  mustSetupTotp?: boolean;
 }): FirstRunView {
   const { pathname, status } = opts;
   if (opts.dev && pathname.startsWith('/dev/')) return { kind: 'app' };
@@ -45,6 +48,14 @@ export function firstRunView(opts: {
     // The finish screen stays up when setup completes in this tab; loading it afterwards goes home (US-ONB-22).
     if (pathname === `${SETUP_PATH}/done` && !opts.entry) return { kind: 'setup' };
     if (isSetupPath(pathname)) return { kind: 'redirect', to: '/' };
+    // Everything but two-factor setup (and the log-in screens) waits until it's done, then goes on to where it was.
+    if (opts.mustSetupTotp && pathname !== TWO_FACTOR_MANAGE_PATH && !isLoginPath(pathname)) {
+      return {
+        kind: 'redirect',
+        to: TWO_FACTOR_MANAGE_PATH,
+        ...(pathname === '/' ? {} : { search: { next: pathname } }),
+      };
+    }
     return isLoginPath(pathname) ? { kind: 'plain' } : { kind: 'app' };
   }
   if (!opts.hasSetupToken) return { kind: 'elsewhere' };
