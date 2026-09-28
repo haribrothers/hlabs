@@ -2,7 +2,7 @@ import { hlabsError, type AppHandlers } from '@hlabs/api';
 import { sessionCookie } from '../auth/sessions';
 import type { DaemonContext } from '../context';
 import { createAdmin } from '../onboarding/create-admin';
-import { setExternalStorage, setStorageRoot } from '../onboarding/storage';
+import { setExternalStorage, setNetworkStorage, setStorageRoot } from '../onboarding/storage';
 
 /** Setup procedures after the admin exists run on their session (checked in DaemonContext.authorize). */
 function signedInUser(ctx: DaemonContext): string {
@@ -32,7 +32,7 @@ export const onboarding: AppHandlers<DaemonContext>['onboarding'] = {
   confirmTotp: async ({ code }, ctx) => ({
     recoveryCodes: await ctx.services.totp.confirm(signedInUser(ctx), code, { ip: ctx.request.ip }),
   }),
-  /** This computer (US-ONB-14) or an external drive (US-ONB-15); a NAS arrives with US-ONB-16. */
+  /** This computer (US-ONB-14), an external drive (US-ONB-15) or a network share (US-ONB-16). */
   setStorage: async (input, ctx) => {
     const { db, drives, config } = ctx.services;
     const userId = signedInUser(ctx);
@@ -41,7 +41,7 @@ export const onboarding: AppHandlers<DaemonContext>['onboarding'] = {
     } else if (input.kind === 'external') {
       await setExternalStorage(db, drives, { userId, path: input.path });
     } else {
-      throw hlabsError('NOT_IMPLEMENTED', 'Network storage is not built yet');
+      await setNetworkStorage(db, { userId, locationId: input.locationId });
     }
     return { ok: true };
   },

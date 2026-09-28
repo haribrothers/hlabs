@@ -1,5 +1,6 @@
 // Daemon configuration from the environment, validated once at startup.
 import { homedir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import { defaultPaths, type PlatformPaths } from './platform/paths';
@@ -20,6 +21,8 @@ const envSchema = z.object({
   HLABS_DEV_ANONYMOUS_ADMIN: flag,
   HLABS_DEV_IGNORE_ENGINES: flag,
   HLABS_DEV_NO_ENGINE_INSTALL: flag,
+  HLABS_NETMOUNT_BIN: z.string().optional(),
+  HLABS_PRIV_HELPER: z.string().optional(),
   HLABS_SECRET_STORE: z.enum(['keychain', 'file']).optional(),
   HLABS_DASHBOARD_URL: z.url().optional(),
 });
@@ -36,6 +39,10 @@ export interface DaemonConfig {
   headless: boolean;
   /** Where the dashboard is opened from this computer; the setup URL is built from it (D-041). */
   dashboardUrl: string;
+  /** macOS: the NetFS helper for SMB (D-060). */
+  netmountHelper: string;
+  /** Linux: the privileged helper for mounts (D-061). */
+  privHelper: string;
   /** Keychain on a production desktop, encrypted file otherwise (07 §7.7). */
   secretStore: SecretStoreKind;
   logLevel: string;
@@ -76,6 +83,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
     port: e.HLABS_PORT,
     paths,
     headless: e.HLABS_HEADLESS,
+    netmountHelper: e.HLABS_NETMOUNT_BIN ?? fileURLToPath(new URL('../native/.build/hlabs-netmount', import.meta.url)),
+    privHelper: e.HLABS_PRIV_HELPER ?? '/usr/lib/hlabs/hlabs-priv',
     dashboardUrl: (e.HLABS_DASHBOARD_URL ?? `http://127.0.0.1:${e.HLABS_PORT}`).replace(/\/+$/, ''),
     secretStore: e.HLABS_SECRET_STORE ?? defaultSecretStoreKind({ env: e.NODE_ENV, headless: e.HLABS_HEADLESS }),
     logLevel: e.HLABS_LOG_LEVEL ?? (dev ? 'debug' : 'info'),

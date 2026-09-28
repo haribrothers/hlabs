@@ -3,7 +3,7 @@
 import { hlabsError } from '@hlabs/api';
 import { getSetting, setSetting, storageLocations, users, type HlabsDb } from '@hlabs/db';
 import { enabledOnboardingSteps, nextOnboardingStep, ulid } from '@hlabs/shared';
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray, ne } from 'drizzle-orm';
 import { constants } from 'node:fs';
 import { access, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -58,5 +58,32 @@ export async function setExternalStorage(db: HlabsDb, drives: DriveProbe, opts: 
     kind: 'external',
     name: drive.name,
     path: join(drive.path, 'hlabs'),
+  });
+}
+
+/**
+ * A network share added with storage.locations.addNetwork (US-ONB-16) becomes the root: the share itself holds
+ * Home folders, Shared and media. App data stays on this computer (D-011).
+ */
+export async function setNetworkStorage(db: HlabsDb, opts: { userId: string; locationId: string; now?: number }) {
+  const steps = enabledOnboardingSteps() as string[];
+  if (steps.indexOf(getSetting(db, 'onboarding').step) < steps.indexOf('storage')) {
+    throw hlabsError('ONBOARDING_STEP_INVALID');
+  }
+  const location = db.select().from(storageLocations).where(eq(storageLocations.id, opts.locationId)).get();
+  if (!location || (location.kind !== 'smb' && location.kind !== 'nfs')) throw hlabsError('NOT_FOUND');
+  const user = db.select({ username: users.username }).from(users).where(eq(users.id, opts.userId)).get();
+  if (!user) throw hlabsError('AUTH_REQUIRED');
+  await prepareStorageRoot(location.path, user.username);
+
+  db.transaction((tx) => {
+    // An earlier local or external choice goes; other network locations stay, just not as the root.
+    tx.delete(storageLocations)
+      .where(and(eq(storageLocations.isRoot, true), inArray(storageLocations.kind, ['local', 'external'])))
+      .run();
+    tx.update(storageLocations).set({ isRoot: false }).where(ne(storageLocations.id, location.id)).run();
+    tx.update(storageLocations).set({ isRoot: true }).where(eq(storageLocations.id, location.id)).run();
+    const inTx = tx as unknown as HlabsDb;
+    setSetting(inTx, 'onboarding', { ...getSetting(inTx, 'onboarding'), step: nextOnboardingStep('storage') });
   });
 }

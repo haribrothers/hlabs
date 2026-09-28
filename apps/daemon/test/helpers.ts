@@ -25,6 +25,8 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
     port: 0,
     paths: { dataDir, appDataDir: join(dataDir, 'app-data'), storageRootDefault: join(dataDir, 'storage') },
     headless: false,
+    netmountHelper: '/nonexistent/hlabs-netmount',
+    privHelper: '/nonexistent/hlabs-priv',
     dashboardUrl: 'http://127.0.0.1:5173',
     secretStore: 'file',
     logLevel: 'silent',

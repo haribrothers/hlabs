@@ -11,6 +11,7 @@ import type { SessionService } from './auth/sessions';
 import type { TotpService } from './auth/totp';
 import type { OnboardingService } from './onboarding/service';
 import type { DriveProbe } from './platform/drives';
+import type { NetworkStorage } from './storage/network';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 
@@ -29,6 +30,7 @@ export interface Services {
   sessions: SessionService;
   totp: TotpService;
   drives: DriveProbe;
+  network: NetworkStorage;
 }
 
 /** Holds services once boot has created them; requests before then get DAEMON_STARTING. */

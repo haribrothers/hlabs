@@ -3,6 +3,7 @@
 import { MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
 import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NoopProxyManager, type ProxyManager } from './caddy/index';
 import type { DaemonConfig } from './config';
@@ -18,6 +19,8 @@ import { SessionService } from './auth/sessions';
 import { TotpService } from './auth/totp';
 import { OnboardingService } from './onboarding/service';
 import { NodeDriveProbe, type DriveProbe } from './platform/drives';
+import { LinuxNetworkMounter, MacNetworkMounter, type NetworkMounter } from './platform/network-mount';
+import { NetworkStorage } from './storage/network';
 import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
@@ -41,6 +44,7 @@ export interface BootDeps {
   secrets?: SecretStore;
   system?: SystemProbe;
   drives?: DriveProbe;
+  mounter?: NetworkMounter;
   /** Downloads, tar and colima for the engine install (US-ONB-05). */
   installer?: InstallerHost;
   /** The user's home (where ~/.colima lives). */
@@ -164,6 +168,16 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     sessions: new SessionService(db),
     totp: new TotpService(db, secrets),
     drives: deps.drives ?? new NodeDriveProbe(),
+    network: new NetworkStorage({
+      db,
+      secrets,
+      mounter:
+        deps.mounter ??
+        (process.platform === 'darwin'
+          ? new MacNetworkMounter(config.netmountHelper)
+          : new LinuxNetworkMounter(config.privHelper, join(config.paths.dataDir, 'tmp'))),
+      mountsDir: join(config.paths.dataDir, 'mounts'),
+    }),
   };
   holder.set(services);
 

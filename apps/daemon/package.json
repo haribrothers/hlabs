@@ -5,10 +5,12 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
+    "predev": "node native/build.mjs",
     "dev": "HLABS_DATA_DIR=../../.dev-data HLABS_DASHBOARD_URL=http://127.0.0.1:5173 HLABS_DEV_ANONYMOUS_ADMIN=1 NODE_ENV=development tsx watch --clear-screen=false src/main.ts",
     "build": "node build.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:native": "node native/build.mjs"
   },
   "dependencies": {
     "@hlabs/api": "workspace:*",
