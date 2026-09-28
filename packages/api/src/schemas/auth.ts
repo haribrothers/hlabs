@@ -13,10 +13,12 @@ import {
   usernameSchema,
 } from './common';
 
+/** One account on the log-in screen (US-AUTH-01): nothing more than the list needs. */
 export const loginUserSchema = z.object({
   id: idSchema,
   username: usernameSchema,
   displayName: displayNameSchema,
+  role: roleSchema,
   avatarColor: z.string().nullable(),
 });
 
