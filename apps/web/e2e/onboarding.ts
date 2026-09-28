@@ -33,26 +33,30 @@ export async function skipTwoFactor(page: Page) {
   await expect(page).toHaveURL(/\/setup\/storage$/);
 }
 
-/** A finished first run: admin "hari" (two-factor skipped) with data on this computer. The page ends on Home. */
-export async function finishOnboarding(page: Page, request: APIRequestContext) {
-  await createAdminInUi(page, request);
-  await skipTwoFactor(page);
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/setup\/done$/);
-  await page.getByRole('button', { name: 'Open dashboard' }).click();
-  await expect(page).toHaveURL(/\/$/);
+/**
+ * A finished first run in one call (the dev-only seed): admin "hari" (two-factor off unless asked) with data on this
+ * computer, then this browser signed in as them and on Home. Specs about onboarding itself walk the real screens.
+ */
+async function seed(page: Page, request: APIRequestContext, twoFactor: boolean) {
+  const res = await request.post(`${FIRST_RUN_URL}/dev/seed`, {
+    data: { username: ADMIN.username, displayName: ADMIN.name, password: ADMIN.password, twoFactor },
+  });
+  expect(res.ok()).toBe(true);
+  const seeded = (await res.json()) as { secret: string | null; recoveryCodes: string[] };
+  await page.goto(`${FIRST_RUN_URL}/dev/sign-in`);
+  await expect(page).toHaveURL(`${FIRST_RUN_URL}/`);
+  return seeded;
 }
 
-/** A finished first run with two-factor on: returns its recovery codes and key. The page ends on Home. */
+/** A finished first run: admin "hari" (two-factor skipped) with data on this computer. The page ends on Home. */
+export async function finishOnboarding(page: Page, request: APIRequestContext) {
+  await seed(page, request, false);
+}
+
+/** A finished first run with two-factor on (as if during setup): returns its recovery codes and key. On Home. */
 export async function finishOnboardingWithTwoFactor(page: Page, request: APIRequestContext) {
-  await createAdminInUi(page, request);
-  const codes = await turnOnTwoFactor(page);
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/setup\/done$/);
-  await page.getByRole('button', { name: 'Open dashboard' }).click();
-  await expect(page).toHaveURL(`${FIRST_RUN_URL}/`);
-  return codes;
+  const { secret, recoveryCodes } = await seed(page, request, true);
+  return Object.assign(recoveryCodes, { secret: secret! });
 }
 
 /** In a fresh browser: username and password for the admin, ending on the code step. */

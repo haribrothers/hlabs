@@ -3,7 +3,10 @@ import { apps, appSources, catalogApps, getSetting, loginAttempts, setSetting, u
 import { ulid } from '@hlabs/shared';
 import { eq } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
+import { generateSync } from 'otplib';
 import { hashPassword } from '../auth/passwords';
+import { createAdmin } from '../onboarding/create-admin';
+import { setStorageRoot } from '../onboarding/storage';
 import { sessionCookie } from '../auth/sessions';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -54,7 +57,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
 
   // Signs this browser in as the first admin (making a `dev` admin with a random password when there is none), so
   // dashboard specs and `pnpm dev` get past the log-in screens (US-AUTH-14).
-  app.get('/dev/sign-in', async (_req, reply) => {
+  app.get('/dev/sign-in', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
     const { db } = services;
@@ -73,7 +76,12 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
         .returning()
         .get();
     }
-    const session = services.sessions.create({ userId: admin.id, remember: true });
+    const session = services.sessions.create({
+      userId: admin.id,
+      remember: true,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] ?? null,
+    });
     return reply.header('set-cookie', sessionCookie(session.raw, session)).redirect('/');
   });
 
@@ -134,5 +142,35 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
       .run();
     bus.emit('app.stateChanged', { appId: id, state: 'running', detail: null }, { kind: 'all' });
     return { added: id };
+  });
+
+  // A finished first run in one call, for e2e specs that aren't about onboarding: the admin (optionally with
+  // two-factor on, as if during setup), data on this computer, onboarding complete. Returns the two-factor key and
+  // recovery codes so specs can log in. Onboarding specs walk the real screens instead.
+  const seedBody = z.object({
+    username: z.string(),
+    displayName: z.string(),
+    password: z.string(),
+    twoFactor: z.boolean().default(false),
+  });
+  app.post('/dev/seed', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const input = seedBody.parse(req.body);
+    const { db, totp, onboarding, config } = services;
+    db.delete(users).run();
+    db.delete(loginAttempts).run();
+    setSetting(db, 'onboarding', { ...getSetting(db, 'onboarding'), completedAt: null, step: 'account' });
+    const userId = await createAdmin(db, { ...input, ip: null });
+    let secret: string | null = null;
+    let recoveryCodes: string[] = [];
+    if (input.twoFactor) {
+      secret = totp.begin(userId).secret;
+      recoveryCodes = await totp.confirm(userId, generateSync({ secret }), { ip: null });
+    }
+    onboarding.setStep('storage');
+    await setStorageRoot(db, { userId, kind: 'local', name: 'This computer', path: config.paths.storageRootDefault });
+    await onboarding.complete({ userId, ip: null });
+    return { userId, secret, recoveryCodes };
   });
 }
