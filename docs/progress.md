@@ -42,7 +42,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-AUTH-13 · Tell the admin about repeated failed logins
 - [x] US-AUTH-14 · Stay signed in, or not
 - [x] US-AUTH-15 · Get signed out when my session is revoked
-- [ ] US-AUTH-16 · Log out
+- [x] US-AUTH-16 · Log out
 - [ ] US-AUTH-18 · Return to the app I was opening after login
 - [ ] US-HOME-01 · See a greeting over my wallpaper
 - [ ] US-HOME-02 · Glance at system widgets

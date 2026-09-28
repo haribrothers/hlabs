@@ -47,6 +47,10 @@ Lost your phone? Choose **Use a recovery code** and type one of the codes you sa
 
 Each code works once. After you use one, hlabs tells you how many are left and adds a notice to your notifications, so you'd notice if someone else used one. When 2 or fewer are left, make new codes in **Settings › Account**. A code that was already used, or mistyped, counts as a wrong try toward the pause after 5.
 
+## Log out
+
+Choose **Log out** in **Settings**. hlabs signs out this device only; your other devices stay signed in. The next time you open hlabs here it greets you by name and asks for your password. If hlabs can't be reached when you log out, this browser still forgets your session and shows the log-in screen.
+
 ## If you can't log in
 
 - **"Username or password is incorrect."**: check both and try again. hlabs doesn't say which one is wrong, so nobody can find out which accounts exist.

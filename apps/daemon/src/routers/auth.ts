@@ -1,12 +1,36 @@
 import type { AppHandlers } from '@hlabs/api';
 import { hlabsError } from '@hlabs/api';
-import { getSetting, users } from '@hlabs/db';
+import { auditLog, getSetting, users } from '@hlabs/db';
+import { ulid } from '@hlabs/shared';
 import { asc, eq, isNull } from 'drizzle-orm';
 import { csrfTokenFor } from '../auth/sessions';
-import { setSessionCookie } from './session-cookie';
+import { clearSessionCookie, setSessionCookie } from './session-cookie';
 import type { DaemonContext } from '../context';
 
 export const auth: AppHandlers<DaemonContext>['auth'] = {
+  /**
+   * Log out (US-AUTH-16): this session only; the cookie is cleared on the domain it was set on, so app hostnames'
+   * next forward-auth check fails too. Other devices stay signed in.
+   */
+  logout: (_input, ctx) => {
+    const id = ctx.identity;
+    if (id.kind !== 'user' || !id.session) throw hlabsError('AUTH_REQUIRED');
+    const { sessions, db } = ctx.services;
+    sessions.revoke({ sessionId: id.session.id });
+    db.insert(auditLog)
+      .values({
+        id: ulid(),
+        at: Date.now(),
+        userId: id.userId,
+        action: 'auth.logout',
+        target: id.userId,
+        detailJson: null,
+        ip: ctx.request.ip,
+      })
+      .run();
+    clearSessionCookie(ctx);
+    return { ok: true as const };
+  },
   /** A recovery code instead of the two-factor code (US-AUTH-09). */
   useRecoveryCode: async ({ challengeId, code }, ctx) => {
     const { origin, allowedOrigins, ip, userAgent } = ctx.request;
