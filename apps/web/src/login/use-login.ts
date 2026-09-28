@@ -8,28 +8,45 @@ import { useTRPCClient } from '../lib/trpc';
 import { writeRememberedUser } from './remembered';
 import { withNext } from './search';
 
-export function useLogin(next: string | undefined) {
+/** After a session starts: pick up its CSRF token, remember the account on this device (US-AUTH-06), go on. */
+export function useFinishLogin() {
   const client = useTRPCClient();
   const queryClient = useQueryClient();
   const router = useRouter();
+  return async (redirectTo: string) => {
+    const me = await client.auth.me.query();
+    setCsrfToken(me.csrfToken);
+    writeRememberedUser({
+      username: me.username,
+      displayName: me.displayName,
+      role: me.role,
+      avatarColor: me.avatarColor,
+    });
+    await queryClient.invalidateQueries();
+    await router.navigate({ href: redirectTo });
+  };
+}
+
+/**
+ * Logging in with a password. `fromUser` is set on the remembered account's screen, so the code step can go back to
+ * it (US-AUTH-08).
+ */
+export function useLogin(next: string | undefined, fromUser?: string) {
+  const client = useTRPCClient();
+  const router = useRouter();
+  const finish = useFinishLogin();
   return useMutation({
     mutationFn: (input: { username: string; password: string; remember: boolean }) =>
       client.auth.login.mutate({ ...input, username: input.username.trim().toLowerCase(), ...withNext(next) }),
     onSuccess: async (result) => {
       if (result.status === 'totp_required') {
-        await router.navigate({ to: '/login/code', search: { challenge: result.challengeId, ...withNext(next) } });
+        await router.navigate({
+          to: '/login/code',
+          search: { challenge: result.challengeId, ...withNext(next), ...(fromUser ? { user: fromUser } : {}) },
+        });
         return;
       }
-      const me = await client.auth.me.query();
-      setCsrfToken(me.csrfToken);
-      writeRememberedUser({
-        username: me.username,
-        displayName: me.displayName,
-        role: me.role,
-        avatarColor: me.avatarColor,
-      });
-      await queryClient.invalidateQueries();
-      await router.navigate({ href: result.redirectTo });
+      await finish(result.redirectTo);
     },
   });
 }

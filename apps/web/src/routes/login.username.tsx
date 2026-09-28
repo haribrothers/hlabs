@@ -5,6 +5,7 @@ import { UsernameView } from '../login/username-view';
 export const Route = createFileRoute('/login/username')({
   validateSearch: validateLoginSearch,
   component: function LoginUsername() {
-    return <UsernameView next={Route.useSearch().next} />;
+    const { next, reason } = Route.useSearch();
+    return <UsernameView next={next} reason={reason} />;
   },
 });

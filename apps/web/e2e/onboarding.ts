@@ -14,8 +14,8 @@ export async function createAdminInUi(page: Page, request: APIRequestContext) {
   await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/twoFactor`);
 }
 
-/** On the two-factor step: reads the key, enters the current code and returns the recovery codes shown. */
-export async function turnOnTwoFactor(page: Page): Promise<string[]> {
+/** On the two-factor step: reads the key, enters the current code and returns the recovery codes shown, with the key. */
+export async function turnOnTwoFactor(page: Page): Promise<string[] & { secret: string }> {
   const { generateSync } = await import('otplib');
   await page.getByRole('button', { name: "Can't scan? Enter this key instead" }).click();
   const secret = (await page.getByLabel('Setup key').innerText()).replace(/\s/g, '');
@@ -23,7 +23,7 @@ export async function turnOnTwoFactor(page: Page): Promise<string[]> {
   for (let i = 0; i < 6; i++) await page.getByLabel(`Digit ${i + 1}`).fill(code[i]!);
   const list = page.getByRole('list', { name: 'Recovery codes' });
   await expect(list.getByRole('listitem')).toHaveCount(10);
-  return list.getByRole('listitem').allInnerTexts();
+  return Object.assign(await list.getByRole('listitem').allInnerTexts(), { secret });
 }
 
 /** On the two-factor step: Skip for now, confirmed; ends on the storage step. */

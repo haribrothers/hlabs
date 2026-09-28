@@ -1,16 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { LoginLayout } from '../login/login-layout';
+import { CodeView } from '../login/code-view';
 import { validateLoginSearch } from '../login/search';
 
-// Login2FA: entering the code arrives with US-AUTH-08.
 export const Route = createFileRoute('/login/code')({
   validateSearch: (search: Record<string, unknown>) => ({
     ...validateLoginSearch(search),
     challenge: typeof search.challenge === 'string' ? search.challenge : '',
+    ...(typeof search.user === 'string' && search.user ? { user: search.user } : {}),
   }),
-  component: () => (
-    <LoginLayout>
-      <h1 className="m-0 text-display">Enter your code</h1>
-    </LoginLayout>
-  ),
+  component: function LoginCode() {
+    const { challenge, next, user } = Route.useSearch();
+    return <CodeView challenge={challenge} next={next} user={user} />;
+  },
 });

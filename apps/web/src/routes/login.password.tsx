@@ -8,7 +8,7 @@ export const Route = createFileRoute('/login/password')({
     user: typeof search.user === 'string' ? search.user : '',
   }),
   component: function LoginPassword() {
-    const { user, next } = Route.useSearch();
-    return <PasswordView username={user} next={next} />;
+    const { user, next, reason } = Route.useSearch();
+    return <PasswordView username={user} next={next} reason={reason} />;
   },
 });

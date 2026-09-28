@@ -13,7 +13,7 @@ import { loginFailure, useLogin } from './use-login';
 
 const copy = loginCopy;
 
-export function PasswordView({ username, next }: { username: string; next?: string }) {
+export function PasswordView({ username, next, reason }: { username: string; next?: string; reason?: 'timeout' }) {
   const trpc = useTRPC();
   const list = useQuery({ ...trpc.auth.listLoginUsers.queryOptions(), retry: false });
   // The account remembered on this device, as saved at its last log-in (US-AUTH-06), or the one chosen from the
@@ -25,9 +25,10 @@ export function PasswordView({ username, next }: { username: string; next?: stri
   const listShown = (list.data?.users.length ?? 0) > 0;
   const [password, setPassword] = useState('');
   const field = useRef<HTMLInputElement>(null);
-  const login = useLogin(next);
+  const login = useLogin(next, username);
   const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
+  // Back here after the code step timed out (US-AUTH-08).
+  const [error, setError] = useState<string | null>(reason === 'timeout' ? copy.timedOut : null);
   useEffect(() => field.current?.focus(), [user]);
 
   if (!user && (list.isError || list.data)) return <Navigate to="/login/username" search={withNext(next)} replace />;

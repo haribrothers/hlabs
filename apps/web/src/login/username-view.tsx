@@ -13,7 +13,7 @@ import { loginFailure, useLogin } from './use-login';
 
 const copy = loginCopy;
 
-export function UsernameView({ next }: { next?: string }) {
+export function UsernameView({ next, reason }: { next?: string; reason?: 'timeout' }) {
   const trpc = useTRPC();
   // "All users" only when the list is shown (US-AUTH-02).
   const list = useQuery({ ...trpc.auth.listLoginUsers.queryOptions(), retry: false });
@@ -21,7 +21,8 @@ export function UsernameView({ next }: { next?: string }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Back here after the code step timed out (US-AUTH-08).
+  const [error, setError] = useState<string | null>(reason === 'timeout' ? copy.timedOut : null);
   const field = useRef<HTMLInputElement>(null);
   const passwordField = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
