@@ -19,6 +19,7 @@ import { Route as UsageRouteImport } from './routes/usage'
 import { Route as DevUiRouteImport } from './routes/dev/ui'
 import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as LoginCodeRouteImport } from './routes/login.code'
+import { Route as LoginLockedRouteImport } from './routes/login.locked'
 import { Route as LoginPasswordRouteImport } from './routes/login.password'
 import { Route as LoginUsernameRouteImport } from './routes/login.username'
 import { Route as LoginUsersRouteImport } from './routes/login.users'
@@ -75,6 +76,11 @@ const LoginCodeRoute = LoginCodeRouteImport.update({
   path: '/login/code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginLockedRoute = LoginLockedRouteImport.update({
+  id: '/login/locked',
+  path: '/login/locked',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginPasswordRoute = LoginPasswordRouteImport.update({
   id: '/login/password',
   path: '/login/password',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
   '/login/code': typeof LoginCodeRoute
+  '/login/locked': typeof LoginLockedRoute
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
   '/login/users': typeof LoginUsersRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
   '/login/code': typeof LoginCodeRoute
+  '/login/locked': typeof LoginLockedRoute
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
   '/login/users': typeof LoginUsersRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
   '/login/code': typeof LoginCodeRoute
+  '/login/locked': typeof LoginLockedRoute
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
   '/login/users': typeof LoginUsersRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/dev/ui'
     | '/login/code'
+    | '/login/locked'
     | '/login/password'
     | '/login/username'
     | '/login/users'
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/dev/ui'
     | '/login/code'
+    | '/login/locked'
     | '/login/password'
     | '/login/username'
     | '/login/users'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/dev/ui'
     | '/login/code'
+    | '/login/locked'
     | '/login/password'
     | '/login/username'
     | '/login/users'
@@ -215,6 +227,7 @@ export interface RootRouteChildren {
   UsageRoute: typeof UsageRoute
   DevUiRoute: typeof DevUiRoute
   LoginCodeRoute: typeof LoginCodeRoute
+  LoginLockedRoute: typeof LoginLockedRoute
   LoginPasswordRoute: typeof LoginPasswordRoute
   LoginUsernameRoute: typeof LoginUsernameRoute
   LoginUsersRoute: typeof LoginUsersRoute
@@ -293,6 +306,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login/locked': {
+      id: '/login/locked'
+      path: '/login/locked'
+      fullPath: '/login/locked'
+      preLoaderRoute: typeof LoginLockedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login/password': {
       id: '/login/password'
       path: '/login/password'
@@ -353,6 +373,7 @@ const rootRouteChildren: RootRouteChildren = {
   UsageRoute: UsageRoute,
   DevUiRoute: DevUiRoute,
   LoginCodeRoute: LoginCodeRoute,
+  LoginLockedRoute: LoginLockedRoute,
   LoginPasswordRoute: LoginPasswordRoute,
   LoginUsernameRoute: LoginUsernameRoute,
   LoginUsersRoute: LoginUsersRoute,

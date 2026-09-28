@@ -79,6 +79,14 @@ describe('TextField', () => {
     expect(screen.queryByText('12 characters')).toBeNull();
   });
 
+  it('can announce an error politely instead of as an alert', () => {
+    render(<TextField label="Password" error="Username or password is incorrect." announce="polite" />);
+    const message = screen.getByText('Username or password is incorrect.');
+    expect(message).toHaveAttribute('aria-live', 'polite');
+    expect(message).not.toHaveAttribute('role');
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription('Username or password is incorrect.');
+  });
+
   it('puts a control inside the input, keeping the label on the input', () => {
     render(<TextField label="Password" type="password" trailing={<button type="button">Show password</button>} />);
     expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'password');

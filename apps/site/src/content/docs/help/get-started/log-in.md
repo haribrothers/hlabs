@@ -23,3 +23,9 @@ Usernames don't care about capital letters or spaces at the ends: "Hari " works 
 **Remember me on this device** keeps you signed in for 30 days while you keep using hlabs. Leave it off on a computer other people use; you're then signed out after 12 hours without using hlabs.
 
 If two-factor login is on for your account, hlabs asks for the 6-digit code from your authenticator app after your password.
+
+## If you can't log in
+
+- **"Username or password is incorrect."**: check both and try again. hlabs doesn't say which one is wrong, so nobody can find out which accounts exist.
+- **Too many attempts**: after 5 wrong tries in 15 minutes, logging in as that user from this device is paused for 15 minutes.
+- **"Can't reach hlabs right now."**: the computer running hlabs may be off, restarting or updating. Try again in a moment; what you typed is kept.

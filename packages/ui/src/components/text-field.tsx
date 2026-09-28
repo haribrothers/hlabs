@@ -9,10 +9,21 @@ export interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   /** A small control inside the input's right edge, such as a show/hide password button. */
   trailing?: ReactNode;
   ref?: Ref<HTMLInputElement>;
+  /** How an error is announced: 'assertive' (role="alert", default) or 'polite' (after what's being read). */
+  announce?: 'assertive' | 'polite';
 }
 
 /** A labelled input with a hint or an error below it. */
-export function TextField({ label, hint, error, trailing, className, id, ...rest }: TextFieldProps) {
+export function TextField({
+  label,
+  hint,
+  error,
+  trailing,
+  announce = 'assertive',
+  className,
+  id,
+  ...rest
+}: TextFieldProps) {
   const autoId = useId();
   const inputId = id ?? autoId;
   const messageId = `${inputId}-msg`;
@@ -40,7 +51,12 @@ export function TextField({ label, hint, error, trailing, className, id, ...rest
         input
       )}
       {message ? (
-        <span id={messageId} className="hl-field-msg" role={error ? 'alert' : undefined}>
+        <span
+          id={messageId}
+          className="hl-field-msg"
+          role={error && announce === 'assertive' ? 'alert' : undefined}
+          aria-live={error && announce === 'polite' ? 'polite' : undefined}
+        >
           {message}
         </span>
       ) : null}

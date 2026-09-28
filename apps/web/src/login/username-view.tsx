@@ -2,13 +2,14 @@
 import { isFeatureEnabled } from '@hlabs/shared';
 import { Button, Switch, TextField } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { loginCopy } from '../copy/login';
 import { useTRPC } from '../lib/trpc';
 import { OnboardingLogo } from '../onboarding/onboarding-layout';
 import { LoginLayout } from './login-layout';
 import { withNext } from './search';
-import { useLogin } from './use-login';
+import { loginFailure, useLogin } from './use-login';
 
 const copy = loginCopy;
 
@@ -20,7 +21,10 @@ export function UsernameView({ next }: { next?: string }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const field = useRef<HTMLInputElement>(null);
+  const passwordField = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   useEffect(() => field.current?.focus(), []);
 
   const login = useLogin(next);
@@ -28,7 +32,26 @@ export function UsernameView({ next }: { next?: string }) {
   const ready = username.trim() !== '' && password !== '';
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (ready && !busy) login.mutate({ username, password, remember });
+    if (!ready || busy) return;
+    setError(null);
+    login.mutate(
+      { username, password, remember },
+      {
+        // The same words whether the account doesn't exist, is disabled or the password is wrong (US-AUTH-04).
+        onError: (err) => {
+          const failure = loginFailure(err);
+          if (failure === 'locked') {
+            void navigate({ to: '/login/locked', search: withNext(next) });
+          } else if (failure === 'credentials') {
+            setPassword('');
+            setError(copy.wrongDetails);
+            passwordField.current?.focus();
+          } else {
+            setError(failure === 'unreachable' ? copy.unreachable : copy.failed);
+          }
+        },
+      },
+    );
   };
 
   return (
@@ -49,7 +72,10 @@ export function UsernameView({ next }: { next?: string }) {
           onChange={(e) => setUsername(e.target.value)}
         />
         <TextField
+          ref={passwordField}
           label={copy.password}
+          error={error ?? undefined}
+          announce="polite"
           type="password"
           autoComplete="current-password"
           readOnly={busy}

@@ -2,13 +2,13 @@
 import { isFeatureEnabled } from '@hlabs/shared';
 import { Avatar, avatarColorFor, Button, TextField } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
-import { Navigate } from '@tanstack/react-router';
+import { Navigate, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { loginCopy } from '../copy/login';
 import { useTRPC } from '../lib/trpc';
 import { LoginLayout } from './login-layout';
 import { withNext } from './search';
-import { useLogin } from './use-login';
+import { loginFailure, useLogin } from './use-login';
 
 const copy = loginCopy;
 
@@ -19,6 +19,8 @@ export function PasswordView({ username, next }: { username: string; next?: stri
   const [password, setPassword] = useState('');
   const field = useRef<HTMLInputElement>(null);
   const login = useLogin(next);
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => field.current?.focus(), [user]);
 
   if (list.isError || (list.data && !user)) return <Navigate to="/login/username" search={withNext(next)} replace />;
@@ -27,7 +29,25 @@ export function PasswordView({ username, next }: { username: string; next?: stri
   const role = copy.roles[user.role];
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (password && !login.isPending) login.mutate({ username: user.username, password, remember: false });
+    if (!password || login.isPending) return;
+    setError(null);
+    login.mutate(
+      { username: user.username, password, remember: false },
+      {
+        onError: (err) => {
+          const failure = loginFailure(err);
+          if (failure === 'locked') {
+            void navigate({ to: '/login/locked', search: withNext(next) });
+          } else if (failure === 'credentials') {
+            setPassword('');
+            setError(copy.wrongPassword);
+            field.current?.focus();
+          } else {
+            setError(failure === 'unreachable' ? copy.unreachable : copy.failed);
+          }
+        },
+      },
+    );
   };
 
   return (
@@ -41,6 +61,8 @@ export function PasswordView({ username, next }: { username: string; next?: stri
           ref={field}
           label={<span className="sr-only">{copy.password}</span>}
           placeholder={copy.password}
+          error={error ?? undefined}
+          announce="polite"
           type="password"
           autoComplete="current-password"
           readOnly={login.isPending}

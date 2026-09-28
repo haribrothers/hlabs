@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { setCsrfToken } from '../lib/csrf';
+import { TRPCClientError } from '@trpc/client';
 import { useTRPCClient } from '../lib/trpc';
 import { writeRememberedUser } from './remembered';
 import { withNext } from './search';
@@ -31,4 +32,16 @@ export function useLogin(next: string | undefined) {
       await router.navigate({ href: result.redirectTo });
     },
   });
+}
+
+export type LoginFailure = 'credentials' | 'locked' | 'unreachable' | 'other';
+
+/** Why logging in failed (US-AUTH-04). No response at all, or a daemon still starting, is "can't reach hlabs". */
+export function loginFailure(err: unknown): LoginFailure {
+  if (!(err instanceof TRPCClientError)) return 'unreachable';
+  const code = (err.data as { hlabsCode?: string } | undefined)?.hlabsCode;
+  if (code === 'AUTH_INVALID_CREDENTIALS') return 'credentials';
+  if (code === 'AUTH_LOCKED') return 'locked';
+  if (!code || code === 'DAEMON_STARTING') return 'unreachable';
+  return 'other';
 }

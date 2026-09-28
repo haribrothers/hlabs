@@ -19,5 +19,10 @@ export const loginCopy = {
   remember: 'Remember me on this device',
   logIn: 'Log in',
   forgot: 'Forgot password?',
+  wrongDetails: 'Username or password is incorrect.',
+  wrongPassword: 'Password is incorrect.',
+  unreachable: "Can't reach hlabs right now. Try again in a moment.",
+  failed: "Couldn't log in. Try again.",
+  lockedTitle: 'Too many attempts',
   secure: (host: string) => `${host} · secured with HTTPS`,
 } as const;

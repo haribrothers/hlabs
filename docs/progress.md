@@ -30,7 +30,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-AUTH-01 · Pick my account from the user list
 - [x] US-AUTH-02 · Log in as another user or with the list hidden
 - [x] US-AUTH-03 · Log in with username and password
-- [ ] US-AUTH-04 · See a clear error when login fails
+- [x] US-AUTH-04 · See a clear error when login fails
 - [ ] US-AUTH-05 · Open the right login screen
 - [ ] US-AUTH-06 · Log back in as the remembered user
 - [ ] US-AUTH-07 · Switch to another account
