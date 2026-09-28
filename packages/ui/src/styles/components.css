@@ -938,9 +938,15 @@
   .hl-scroll {
     overflow-y: auto;
     overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-glass) transparent;
     scrollbar-gutter: stable;
+  }
+  /* Firefox: the standard properties. Elsewhere they'd override the styles below (and the track inset), so only
+     browsers without ::-webkit-scrollbar get them. */
+  @supports not selector(::-webkit-scrollbar) {
+    .hl-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-glass) transparent;
+    }
   }
   .hl-scroll::-webkit-scrollbar {
     width: 8px;
@@ -956,34 +962,33 @@
     background: var(--border-input);
   }
 
-  /* Scroll pane: a sticky header on bar-blur glass that content scrolls under (iOS style). The scrollbar track and
-     keyboard scrolling start below the header. */
+  /* Scroll pane (macOS Settings style): a header over the scrolling content with no box. Content fades out as it
+     scrolls up under the header (mask). The scrollbar track starts below the header. */
   .hl-scroll-pane {
+    position: relative;
+    display: flex;
+    flex-direction: column;
     min-height: 0;
-    scroll-padding-top: var(--hl-scroll-header);
   }
-  .hl-scroll-pane::-webkit-scrollbar-track {
+  .hl-scroll-pane-scroller {
+    flex: 1;
+    min-height: 0;
+    padding-top: var(--hl-scroll-header);
+    scroll-padding-top: var(--hl-scroll-header);
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      rgba(0, 0, 0, 0.12) calc(var(--hl-scroll-header) * 0.7),
+      #000 calc(var(--hl-scroll-header) + var(--space-2))
+    );
+  }
+  .hl-scroll-pane-scroller::-webkit-scrollbar-track {
     margin-top: var(--hl-scroll-header);
   }
   .hl-scroll-pane-header {
-    position: sticky;
-    top: 0;
+    position: absolute;
+    inset: 0 0 auto 0;
     z-index: 1;
-    padding-bottom: var(--space-4);
-    border-bottom: 1px solid transparent;
-    transition:
-      background-color 120ms ease,
-      border-color 120ms ease;
-  }
-  /* Clear at rest; once content is under it, a light tint over bar blur and a hairline, like an iOS bar. */
-  .hl-scroll-pane[data-scrolled] > .hl-scroll-pane-header {
-    background: color-mix(in srgb, var(--surface-window) 45%, transparent);
-    backdrop-filter: blur(var(--blur-bar)) saturate(160%);
-    -webkit-backdrop-filter: blur(var(--blur-bar)) saturate(160%);
-    border-bottom-color: var(--hairline);
-  }
-  .hl-scroll-pane-body {
-    padding-top: var(--space-4);
   }
 
   /* Dialog */

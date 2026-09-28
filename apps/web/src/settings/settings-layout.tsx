@@ -103,11 +103,12 @@ export function SettingsLayout() {
       level={2}
       className="mx-auto grid min-h-0 w-full max-w-window flex-1 grid-cols-[240px_1fr] overflow-hidden p-0"
     >
-      <div className="flex min-h-0 flex-col border-r border-hairline pr-2 pb-5">
+      <div className="flex min-h-0 flex-col border-r border-hairline">
         <ScrollPane
           className="flex-1"
-          headerClassName="pt-5 pl-5 pr-3"
-          bodyClassName="pl-5 pr-3"
+          headerClassName="px-5 pt-5 pb-3"
+          scrollClassName="mr-2 mb-5"
+          bodyClassName="pl-5 pr-3 pt-2"
           header={
             <p className="m-0 px-3 text-title-2 font-bold" aria-hidden="true">
               {copy.title}
@@ -117,7 +118,7 @@ export function SettingsLayout() {
           {sidebar}
         </ScrollPane>
       </div>
-      <div className="flex min-h-0 min-w-0 flex-col pr-4 pb-7">
+      <div className="flex min-h-0 min-w-0 flex-col">
         <Outlet />
       </div>
     </GlassCard>

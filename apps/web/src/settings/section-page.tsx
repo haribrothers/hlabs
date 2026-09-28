@@ -29,13 +29,14 @@ export function SectionPage({ id }: { id: string }) {
   if (access.kind !== 'ok') return <AccessDenied kind={access.kind} />;
   const Content = CONTENT[access.section.id];
   return (
-    // The title stays on a bar that blurs the content scrolling under it. The pane reaches the window's top edge; the
-    // scrollbar starts below the bar and stays inset from the right and bottom edges.
+    // The title stays put while the content scrolls under it and fades out (macOS Settings style). The pane
+    // reaches the window's top and right edges; the scrollbar starts below the title and stays clear of the corners.
     <section className="flex min-h-0 flex-1 flex-col" aria-labelledby="settings-section-heading">
       <ScrollPane
         className="flex-1"
-        headerClassName={desktop ? 'pt-7 pl-7 pr-4' : 'px-5 pt-5'}
-        bodyClassName={desktop ? 'pl-7 pr-4' : 'px-5 pb-5'}
+        headerClassName={desktop ? 'px-7 pt-7 pb-3' : 'px-5 pt-5 pb-3'}
+        scrollClassName={desktop ? 'mr-4 mb-7' : 'mr-2 mb-5'}
+        bodyClassName={desktop ? 'pl-7 pr-3 pt-2' : 'pl-5 pr-3 pt-2'}
         data-testid="settings-scroll"
         header={
           <h1 id="settings-section-heading" ref={heading} tabIndex={-1} className="m-0 text-title-1 outline-none">

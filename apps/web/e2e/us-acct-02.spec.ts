@@ -40,7 +40,7 @@ test.describe('US-ACCT-02 desktop', () => {
 test.describe('US-ACCT-02 window', () => {
   test.skip(({ isMobile }) => isMobile, 'desktop layout');
 
-  test('the window fills the space above the Dock; only its content scrolls, under a fixed title; the divider is a hairline', async ({
+  test('the window fills the space above the Dock; only its content scrolls, fading under a fixed title with the scrollbar below it; the divider is a hairline', async ({
     page,
   }) => {
     await page.goto('/settings/account');
@@ -61,23 +61,25 @@ test.describe('US-ACCT-02 window', () => {
         main: document.querySelector('main')!.scrollHeight - document.querySelector('main')!.clientHeight,
         pane: pane.scrollHeight - pane.clientHeight,
         divider: getComputedStyle(sidebar).borderRightColor,
-        scrollbar: getComputedStyle(pane).scrollbarWidth,
       };
     });
     expect(layout.page).toBe(0);
     expect(layout.main).toBeLessThanOrEqual(1);
     expect(layout.pane).toBeGreaterThan(1000);
     expect(layout.divider).toBe('rgba(255, 255, 255, 0.08)');
-    expect(layout.scrollbar).toBe('thin');
 
     // The title stays while the content scrolls, and the scroll area sits inside the window's edges.
     await scroll.evaluate((el) => (el.scrollTop = 2000));
     await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeInViewport();
-    // The title sits on a blurred bar, with a hairline under it once the content has scrolled.
+    // The title has no box and no blur: content fades out as it goes under it (macOS style), and the scrollbar
+    // starts below it.
     const bar = page.getByRole('heading', { level: 1, name: 'Account' }).locator('xpath=..');
-    await expect(bar).toHaveCSS('position', 'sticky');
-    await expect(bar).toHaveCSS('backdrop-filter', /blur\(20px\)/);
-    await expect(bar).toHaveCSS('border-bottom-color', 'rgba(255, 255, 255, 0.08)');
+    await expect(bar).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(bar).toHaveCSS('backdrop-filter', 'none');
+    await expect(scroll).toHaveCSS('mask-image', /linear-gradient/);
+    const barHeight = (await bar.boundingBox())!.height;
+    const track = await scroll.evaluate((el) => getComputedStyle(el, '::-webkit-scrollbar-track').marginTop);
+    expect(Math.abs(parseFloat(track) - barHeight)).toBeLessThanOrEqual(1);
     const window = (await nav.locator('xpath=ancestor::section[1]').boundingBox())!;
     const area = (await scroll.boundingBox())!;
     expect(window.x + window.width - (area.x + area.width)).toBeGreaterThanOrEqual(16);

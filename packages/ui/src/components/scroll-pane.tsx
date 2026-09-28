@@ -2,27 +2,35 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { cn } from '../lib/cn';
 
 export interface ScrollPaneProps {
-  /** Stays at the top on a blurred bar while the content scrolls under it (iOS style). */
+  /** Stays at the top while the content scrolls under it and fades out (macOS style). */
   header: ReactNode;
   children: ReactNode;
   className?: string;
-  /** Extra classes on the header bar, e.g. the window's padding (the bar reaches the pane's edges). */
+  /** Classes on the header bar, e.g. the window's padding. The bar spans the whole pane. */
   headerClassName?: string;
-  /** Extra classes on the scrolling content, e.g. gutters. */
+  /** Classes on the scrolling area itself, e.g. margins that keep the scrollbar clear of the window's corners. */
+  scrollClassName?: string;
+  /** Classes on the scrolling content, e.g. gutters. */
   bodyClassName?: string;
-  /** For tests and styling hooks. */
+  /** Put on the scrolling element (tests, styling hooks). */
   'data-testid'?: string;
 }
 
 /**
- * A scrolling area with a sticky header on bar-blur glass. Content scrolls up underneath the header; the scrollbar
- * starts below it (the track is inset by the header's height) and a hairline appears under the header once scrolled.
+ * A scrolling area under a fixed header, like macOS Settings: the header has no box, and content scrolling up under
+ * it fades out (a gradient mask). The scrollbar starts below the header.
  */
-export function ScrollPane({ header, children, className, headerClassName, bodyClassName, ...rest }: ScrollPaneProps) {
-  const scroller = useRef<HTMLDivElement>(null);
+export function ScrollPane({
+  header,
+  children,
+  className,
+  headerClassName,
+  scrollClassName,
+  bodyClassName,
+  ...rest
+}: ScrollPaneProps) {
   const bar = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
-  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const el = bar.current;
@@ -35,17 +43,15 @@ export function ScrollPane({ header, children, className, headerClassName, bodyC
 
   return (
     <div
-      ref={scroller}
-      className={cn('hl-scroll hl-scroll-pane', className)}
+      className={cn('hl-scroll-pane', className)}
       style={{ '--hl-scroll-header': `${headerHeight}px` } as CSSProperties}
-      data-scrolled={scrolled ? '' : undefined}
-      onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 0)}
-      data-testid={rest['data-testid']}
     >
+      <div className={cn('hl-scroll hl-scroll-pane-scroller', scrollClassName)} data-testid={rest['data-testid']}>
+        <div className={cn('hl-scroll-pane-body', bodyClassName)}>{children}</div>
+      </div>
       <div ref={bar} className={cn('hl-scroll-pane-header', headerClassName)}>
         {header}
       </div>
-      <div className={cn('hl-scroll-pane-body', bodyClassName)}>{children}</div>
     </div>
   );
 }
