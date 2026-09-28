@@ -8,6 +8,7 @@ import { engineCopy } from '../copy/engine';
 import { useTRPC } from '../lib/trpc';
 import { EngineRestartControl } from './engine-restart';
 import { EngineResources } from './engine-resources';
+import { StartupSettings } from './startup-settings';
 import type { EngineOverview } from './engine-types';
 
 export type { EngineOverview };
@@ -103,6 +104,7 @@ export function EngineSection() {
           engineName={copy.names[o.active.kind]}
         />
       ) : null}
+      <StartupSettings />
     </div>
   );
 }

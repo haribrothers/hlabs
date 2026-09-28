@@ -1,5 +1,5 @@
 import { hlabsError, type AppHandlers } from '@hlabs/api';
-import { getSetting } from '@hlabs/db';
+import { getSetting, setSetting } from '@hlabs/db';
 import { homedir } from 'node:os';
 import { access } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -23,6 +23,27 @@ function restartEngine(ctx: DaemonContext) {
 }
 
 export const settings: AppHandlers<DaemonContext>['settings'] = {
+  get: (_input, ctx) => ({ startup: getSetting(ctx.services.db, 'startup') }),
+  startup: {
+    /**
+     * Startup behaviour (US-SYS-20). "Start at login" belongs to the tray (D-042): the daemon saves the choice and
+     * asks the tray (startup.changeRequested), which applies it now or the next time it starts. Autostart is read by
+     * reconciliation at startup (phase 2); keep awake applies at once.
+     */
+    update: (input, ctx) => {
+      const { db, bus, keepAwake } = ctx.services;
+      const before = getSetting(db, 'startup');
+      const after = setSetting(db, 'startup', {
+        ...before,
+        ...Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined)),
+      });
+      if (after.startAtLogin !== before.startAtLogin) {
+        bus.emit('startup.changeRequested', { startAtLogin: after.startAtLogin });
+      }
+      keepAwake.update();
+      return { ok: true as const };
+    },
+  },
   engine: {
     restart: (_input, ctx) => restartEngine(ctx),
     start: (_input, ctx) => restartEngine(ctx),

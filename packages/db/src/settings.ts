@@ -91,9 +91,10 @@ export const settingsSchemas = {
     .object({
       startAtLogin: z.boolean().default(true),
       autostartApps: z.boolean().default(true),
-      keepAwake: z.boolean().default(false),
+      keepAwake: z.boolean().default(true),
     })
-    .default({ startAtLogin: true, autostartApps: true, keepAwake: false }),
+    // All three on after onboarding (US-SYS-20).
+    .default({ startAtLogin: true, autostartApps: true, keepAwake: true }),
   /** Last-contacted time per outbound service (Advanced › What hlabs connects to). */
   connections: z.record(z.string(), z.object({ lastContactAt: z.number().int() })).default({}),
 } as const;

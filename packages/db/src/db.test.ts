@@ -169,7 +169,7 @@ describe('settings', () => {
     const { db } = fresh();
     expect(() => setSetting(db, 'hostname', 'Not Valid')).toThrow();
     db.$client.prepare("insert into settings (key, value_json) values ('startup', '\"garbage\"')").run();
-    expect(getSetting(db, 'startup')).toEqual({ startAtLogin: true, autostartApps: true, keepAwake: false });
+    expect(getSetting(db, 'startup')).toEqual({ startAtLogin: true, autostartApps: true, keepAwake: true });
   });
 
   it('keeps appearance per user (D-010)', () => {

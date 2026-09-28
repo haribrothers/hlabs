@@ -1,6 +1,8 @@
 // The daemon boot sequence (docs/prd/02-architecture.md §2.3). The HTTP server is already listening,
 // so /healthz reports each step and, if the database can't be opened, why.
 import { noEngineControl, nodeEngineControl, type EngineControl } from './engine/control';
+import { KeepAwake, processSleepBlocker, type SleepBlocker } from './platform/keep-awake';
+import { eq } from 'drizzle-orm';
 import { registerEngineRestart } from './engine/restart-job';
 import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
 import { nextOrigins } from '@hlabs/shared';
@@ -53,6 +55,8 @@ export interface BootDeps {
   installer?: InstallerHost;
   /** Restarts the engine (US-SYS-18); tests pass a fake. */
   engineControl?: EngineControl;
+  /** Holds off sleep (US-SYS-20); tests pass a fake. */
+  sleepBlocker?: SleepBlocker;
   /** The user's home (where ~/.colima lives). */
   home?: string;
   /** Where the setup URL is printed (stdout). */
@@ -196,6 +200,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     ),
     drives: deps.drives ?? new NodeDriveProbe(),
     system: probe,
+    keepAwake: new KeepAwake(deps.sleepBlocker ?? processSleepBlocker(), () => ({
+      keepAwake: getSetting(db, 'startup').keepAwake,
+      appsRunning: db.select({ id: apps.id }).from(apps).where(eq(apps.state, 'running')).all().length,
+    })),
     network: new NetworkStorage({
       db,
       secrets,
@@ -208,6 +216,11 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     }),
   };
   holder.set(services);
+  // Keep awake follows the setting and whether any app runs.
+  services.keepAwake.update();
+  bus.on((entry) => {
+    if (entry.event.type === 'app.stateChanged') services.keepAwake.update();
+  });
   services.login.startPruning();
 
   // 6. Ready.
@@ -221,6 +234,7 @@ export async function shutdown(services: Services | null): Promise<void> {
   if (!services) return;
   services.engine.stop();
   services.login.stop();
+  services.keepAwake.stop();
   await services.jobs.shutdown();
   await services.mdns.unpublishAll();
   await services.proxy.stop();

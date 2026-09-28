@@ -4,8 +4,18 @@ import { empty, engineKindSchema, jobRefSchema, ok, pending } from './common';
 
 export const accentSchema = z.enum(['violet', 'mint', 'amber', 'rose']);
 
+export const startupSchema = z.object({
+  /** Start hlabs when the person logs in; the tray applies it (D-042). */
+  startAtLogin: z.boolean(),
+  /** Apps set to start automatically come back after a restart. */
+  autostartApps: z.boolean(),
+  /** Hold off sleep while an app runs. */
+  keepAwake: z.boolean(),
+});
+
 export const settings = {
-  get: io(empty, pending),
+  /** Global settings shown in Settings; more keys join with their sections. */
+  get: io(empty, z.object({ startup: startupSchema })),
   appearance: {
     update: io(
       z.object({

@@ -12,6 +12,7 @@ import type { TotpService } from './auth/totp';
 import type { LoginService } from './auth/login';
 import type { OnboardingService } from './onboarding/service';
 import type { DriveProbe } from './platform/drives';
+import type { KeepAwake } from './platform/keep-awake';
 import type { SystemProbe } from './platform/system';
 import type { NetworkStorage } from './storage/network';
 import type { SecretStore } from './platform/secrets';
@@ -35,6 +36,8 @@ export interface Services {
   drives: DriveProbe;
   /** CPU, memory and disk of this computer. */
   system: SystemProbe;
+  /** Holds off sleep while apps run, when the setting is on (US-SYS-20). */
+  keepAwake: KeepAwake;
   network: NetworkStorage;
 }
 

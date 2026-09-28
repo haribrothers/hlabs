@@ -10,6 +10,7 @@ import { buildServer } from '../src/server';
 import { ServiceHolder } from '../src/services';
 import { FakeEngine, fakeMachine } from './fakes/engine';
 import { FakeEngineControl } from './fakes/engine-control';
+import { FakeSleepBlocker } from './fakes/sleep-blocker';
 import { FakeSystemProbe } from './fakes/system';
 
 export function tempDir(prefix = 'hlabsd-'): string {
@@ -66,6 +67,7 @@ export async function startDaemon(
     system: new FakeSystemProbe(),
     drives: { externalDrives: async () => [] },
     engineControl: new FakeEngineControl(),
+    sleepBlocker: new FakeSleepBlocker(),
     ...options.boot,
   };
   const services = options.skipBoot ? null : await boot(bootDeps);
