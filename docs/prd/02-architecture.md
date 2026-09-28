@@ -206,7 +206,7 @@ The session cookie is set on `.hlabs.local` (and on the tailnet host) so one log
 
 Typed events (see `packages/api/src/events.ts`), fanned out to SSE subscribers filtered by the user's permissions:
 
-`system.status`, `engine.status`, `access.changed`, `storage.locationChanged`, `update.applyRequested` (tray-scoped), `startup.changeRequested` (tray-scoped), `app.stateChanged`, `app.installProgress`, `app.log` (only when a log view is open), `job.progress`, `job.finished`, `backup.run`, `notification.created`, `usage.sample`, `update.available`, `session.revoked`.
+`system.status`, `engine.status`, `access.changed`, `storage.locationChanged`, `update.applyRequested` (tray-scoped), `startup.changeRequested` (tray-scoped), `app.stateChanged`, `app.installProgress`, `app.log` (only when a log view is open), `job.progress`, `job.finished`, `backup.run`, `notification.created`, `usage.sample`, `update.available`, `session.revoked`. `session.revoked` reaches only the device whose session ended (audience `session`).
 
 ## 2.13 AI access (MCP) — P3
 The daemon can expose an **MCP server** (streamable HTTP at `/mcp`, token-authenticated, off by default) with scoped tools: list apps, app status, start/stop/restart, read logs, usage summary, list backups. Destructive tools (uninstall, restore, factory reset) are never exposed. See SettingsAI.

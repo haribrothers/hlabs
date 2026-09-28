@@ -74,7 +74,13 @@ export type EventOf<T extends EventType> = Extract<HlabsEvent, { type: T }>;
  * Who may receive an event. The daemon attaches one when it emits; `events.stream` filters by it.
  * - `all`: every signed-in user · `admins` · `user`: one user · `tray`: the tray token only.
  */
-export type EventAudience = { kind: 'all' } | { kind: 'admins' } | { kind: 'user'; userId: string } | { kind: 'tray' };
+export type EventAudience =
+  | { kind: 'all' }
+  | { kind: 'admins' }
+  | { kind: 'user'; userId: string }
+  /** One signed-in device: the stream opened with that session (US-AUTH-15). */
+  | { kind: 'session'; sessionId: string }
+  | { kind: 'tray' };
 
 /** Tray-scoped events never reach browser sessions (02 §2.12). */
 export const TRAY_EVENTS: ReadonlySet<EventType> = new Set(['update.applyRequested', 'startup.changeRequested']);

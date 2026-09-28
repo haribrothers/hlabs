@@ -154,7 +154,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     print(`\n  Set up hlabs: open ${setupUrl}\n`);
   }
 
-  const sessions = new SessionService(db);
+  const sessions = new SessionService(db, bus);
   const totp = new TotpService(db, secrets);
   const services: Services = {
     config,

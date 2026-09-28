@@ -1,8 +1,9 @@
 // Sessions (07 §7.3): a random 32-byte id lives only in the `hlabs_session` cookie; the database keeps its
 // SHA-256. Idle timeout 12 h, or 30 days sliding with "Remember me". CSRF tokens are derived from the raw id.
 import { sessions, users, type HlabsDb } from '@hlabs/db';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, ne } from 'drizzle-orm';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import type { EventBus } from '../events/bus';
 
 export const SESSION_COOKIE = 'hlabs_session';
 export const IDLE_MS = 12 * 60 * 60 * 1000;
@@ -33,7 +34,34 @@ export function csrfMatches(rawSessionId: string, header: string | null): boolea
 }
 
 export class SessionService {
-  constructor(private readonly db: HlabsDb) {}
+  constructor(
+    private readonly db: HlabsDb,
+    private readonly bus?: EventBus,
+  ) {}
+
+  /**
+   * Ends sessions now (US-AUTH-15): one session, or all of a user's (optionally but one). Each device still
+   * connected hears `session.revoked` on its own event stream and goes to log in. Returns the ended ids.
+   */
+  revoke(which: { sessionId: string } | { userId: string; except?: string }, now = Date.now()): string[] {
+    const where =
+      'sessionId' in which
+        ? and(eq(sessions.id, which.sessionId), isNull(sessions.revokedAt))
+        : and(
+            eq(sessions.userId, which.userId),
+            isNull(sessions.revokedAt),
+            ...(which.except ? [ne(sessions.id, which.except)] : []),
+          );
+    const ended = this.db
+      .update(sessions)
+      .set({ revokedAt: now })
+      .where(where)
+      .returning({ id: sessions.id })
+      .all()
+      .map((r) => r.id);
+    for (const sessionId of ended) this.bus?.emit('session.revoked', { sessionId }, { kind: 'session', sessionId });
+    return ended;
+  }
 
   create(opts: { userId: string; remember?: boolean; ip?: string | null; userAgent?: string | null; now?: number }) {
     const now = opts.now ?? Date.now();

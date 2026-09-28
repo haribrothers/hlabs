@@ -14,7 +14,8 @@ export interface BusEntry {
 }
 
 /** Who is listening; decides which audiences they may see. */
-export type Listener = { kind: 'user'; userId: string; role: 'admin' | 'member' } | { kind: 'tray' };
+export type Listener =
+  { kind: 'user'; userId: string; role: 'admin' | 'member'; sessionId?: string } | { kind: 'tray' };
 
 /** Default audience per event type when the emitter doesn't give one. */
 const DEFAULT_AUDIENCE: Partial<Record<EventType, EventAudience>> = {
@@ -37,6 +38,8 @@ export function canSee(listener: Listener, audience: EventAudience): boolean {
       return listener.role === 'admin';
     case 'user':
       return audience.userId === listener.userId;
+    case 'session':
+      return audience.sessionId === listener.sessionId;
     case 'tray':
       return false;
   }

@@ -76,4 +76,15 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     const session = services.sessions.create({ userId: admin.id, remember: true });
     return reply.header('set-cookie', sessionCookie(session.raw, session)).redirect('/');
   });
+
+  // Ends every session of a user, as revoking from another device will (US-AUTH-15 e2e).
+  const revokeBody = z.object({ username: z.string() });
+  app.post('/dev/revoke-sessions', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { username } = revokeBody.parse(req.body);
+    const user = services.db.select().from(users).where(eq(users.username, username)).get();
+    if (!user) return reply.code(404).send({ reason: 'no such user' });
+    return { revoked: services.sessions.revoke({ userId: user.id }).length };
+  });
 }

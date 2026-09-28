@@ -28,6 +28,8 @@ Usernames don't care about capital letters or spaces at the ends: "Hari " works 
 
 When hlabs greets you by name, it uses the choice you made the last time you logged in on this device, so there's no switch on that screen. If you're signed out while using hlabs, you're asked to log in and then taken back to the page you were on.
 
+When a device is signed out from somewhere else, for example after a password change, it goes to the log-in screen within a few seconds and says "You were logged out on this device."
+
 ## Enter your two-factor code
 
 If two-factor login is on for your account, hlabs asks for a code after your password. Open your authenticator app and type the 6-digit code for hlabs; it's checked as soon as you type the sixth digit.

@@ -5,6 +5,7 @@ import { useEffect, type ReactNode } from 'react';
 import { setCsrfToken } from '../lib/csrf';
 import { readSetupToken } from '../lib/setup-token';
 import { isAuthLost, useTRPC } from '../lib/trpc';
+import { SessionWatch } from '../login/session-watch';
 import { loginRedirect } from '../login/signed-out';
 import { Shell } from '../shell/shell';
 import { FinishSetupElsewhere } from './finish-setup-elsewhere';
@@ -52,7 +53,12 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
       if (status.data?.hasUsers && me.isPending && !pathname.startsWith('/dev/')) {
         return <div className="hl-wall min-h-full" aria-busy="true" />;
       }
-      return <Shell>{children}</Shell>;
+      return (
+        <Shell>
+          {me.isSuccess ? <SessionWatch /> : null}
+          {children}
+        </Shell>
+      );
     }
   }
 }

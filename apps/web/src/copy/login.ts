@@ -32,6 +32,7 @@ export const loginCopy = {
   tryAgain: 'Try again',
   timeLeft: 'Time left',
   useAnother: 'Use another account',
+  loggedOutHere: 'You were logged out on this device.',
   adminNotified: 'The admin gets a notification about repeated failed logins.',
   timedOut: 'Your login timed out. Enter your password again.',
   codeTitle: 'Enter your code',

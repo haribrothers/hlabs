@@ -68,7 +68,7 @@ export class DaemonContext implements ApiContext {
   get listener(): Listener {
     const id = this.identity;
     if (id.kind === 'tray') return { kind: 'tray' };
-    if (id.kind === 'user') return { kind: 'user', userId: id.userId, role: id.role };
+    if (id.kind === 'user') return { kind: 'user', userId: id.userId, role: id.role, sessionId: id.session?.id };
     throw hlabsError('AUTH_REQUIRED');
   }
 

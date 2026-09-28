@@ -20,6 +20,7 @@ export default defineConfig({
       '/dev/complete-onboarding': DAEMON,
       '/dev/reset-onboarding': DAEMON,
       '/dev/sign-in': DAEMON,
+      '/dev/revoke-sessions': DAEMON,
     },
   },
   build: { target: 'es2022', sourcemap: true },
