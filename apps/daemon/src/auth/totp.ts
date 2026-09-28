@@ -14,6 +14,8 @@ export const RECOVERY_CODE_COUNT = 10;
 /** 5 wrong codes in 15 minutes lock confirmation for 15 minutes (07 §7.2, same numbers as login). */
 export const LOCK_ATTEMPTS = 5;
 export const LOCK_WINDOW_MS = 15 * 60 * 1000;
+/** A secret shown for setup waits this long to be confirmed (US-ACCT-11). */
+export const PENDING_MS = 10 * 60 * 1000;
 
 /** No 0/o, 1/l/i: easy to read back from paper. */
 const CODE_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';
@@ -52,8 +54,11 @@ export async function makeRecoveryCodes(): Promise<{ codes: string[]; hashes: st
 }
 
 export class TotpService {
-  /** Secrets shown but not yet confirmed, by user; a new setup replaces the old one (US-ONB-11). */
-  private readonly pending = new Map<string, string>();
+  /**
+   * Secrets shown but not yet confirmed, by user; a new setup replaces the old one (US-ONB-11). They're kept 10
+   * minutes (US-ACCT-11); cancelling just leaves one to expire.
+   */
+  private readonly pending = new Map<string, { secret: string; at: number }>();
   private readonly failures = new Map<string, number[]>();
   /** The last step accepted at log-in, per user: the same code can't be used twice (US-AUTH-08). */
   private readonly lastStep = new Map<string, number>();
@@ -67,12 +72,15 @@ export class TotpService {
     return this.db.select().from(userTotp).where(eq(userTotp.userId, userId)).get()?.enabledAt != null;
   }
 
-  begin(userId: string): { secret: string; otpauthUrl: string } {
-    if (this.isEnabled(userId)) throw hlabsError('VALIDATION_FAILED', 'Two-factor is already on');
+  /** A new pending secret. `move`: two-factor is on and this replaces it on confirm (US-ACCT-11). */
+  begin(userId: string, opts: { move?: boolean; now?: number } = {}): { secret: string; otpauthUrl: string } {
+    if (this.isEnabled(userId) !== (opts.move ?? false)) {
+      throw hlabsError('VALIDATION_FAILED', opts.move ? 'Two-factor is off' : 'Two-factor is already on');
+    }
     const user = this.db.select({ username: users.username }).from(users).where(eq(users.id, userId)).get();
     if (!user) throw hlabsError('NOT_FOUND');
     const secret = generateSecret();
-    this.pending.set(userId, secret);
+    this.pending.set(userId, { secret, at: opts.now ?? Date.now() });
     return { secret, otpauthUrl: generateURI({ issuer: TOTP_ISSUER, label: user.username, secret }) };
   }
 
@@ -120,21 +128,43 @@ export class TotpService {
   }
 
   /** Checks the code against the pending secret; on success turns two-factor on and returns new recovery codes. */
+  /**
+   * Checks the code against the pending secret. Turning two-factor on: stores it and returns 10 new recovery codes.
+   * Moving to a new phone (already on): swaps the secret, keeps the recovery codes and returns none; codes from the
+   * old app stop working.
+   */
   async confirm(userId: string, code: string, opts: { ip: string | null; now?: number }): Promise<string[]> {
     const now = opts.now ?? Date.now();
     const recent = (this.failures.get(userId) ?? []).filter((t) => now - t < LOCK_WINDOW_MS);
     if (recent.length >= LOCK_ATTEMPTS) {
       throw hlabsError('AUTH_LOCKED', 'Too many wrong codes', { until: recent[0]! + LOCK_WINDOW_MS });
     }
-    const secret = this.pending.get(userId);
-    if (!secret) throw hlabsError('VALIDATION_FAILED', 'Start two-factor setup first');
+    const pending = this.pending.get(userId);
+    if (!pending || now - pending.at > PENDING_MS) {
+      this.pending.delete(userId);
+      throw hlabsError('VALIDATION_FAILED', 'Start two-factor setup first');
+    }
+    const { secret } = pending;
     if (!verifyTotpCode(secret, code, now)) {
       this.failures.set(userId, [...recent, now]);
       throw hlabsError('TOTP_INVALID_CODE');
     }
 
-    const { codes, hashes } = await makeRecoveryCodes();
     const secretRef = totpSecretRef(userId);
+    if (this.isEnabled(userId)) {
+      await this.secrets.set(secretRef, secret);
+      this.db.transaction((tx) => {
+        tx.update(userTotp).set({ secretRef, enabledAt: now }).where(eq(userTotp.userId, userId)).run();
+        tx.insert(auditLog)
+          .values({ id: ulid(), at: now, userId, action: 'totp.move', target: userId, detailJson: null, ip: opts.ip })
+          .run();
+      });
+      this.pending.delete(userId);
+      this.failures.delete(userId);
+      this.lastStep.delete(userId);
+      return [];
+    }
+    const { codes, hashes } = await makeRecoveryCodes();
     await this.secrets.set(secretRef, secret);
     this.db.transaction((tx) => {
       tx.insert(userTotp)

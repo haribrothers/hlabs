@@ -21,6 +21,20 @@ export const account: AppHandlers<DaemonContext>['account'] = {
     });
     return { ok: true as const };
   },
+  totp: {
+    /** Start turning two-factor on, or moving it to a new phone (US-ACCT-11, US-ACCT-12), after the password. */
+    begin: async ({ password }, ctx) => {
+      const userId = userOf(ctx);
+      const { db, login, totp } = ctx.services;
+      const user = db.select().from(users).where(eq(users.id, userId)).get();
+      if (!user) throw hlabsError('AUTH_REQUIRED');
+      await login.confirmPassword({ user, password, action: 'totp.begin', ip: ctx.request.ip });
+      return totp.begin(userId, { move: totp.isEnabled(userId) });
+    },
+    confirm: async ({ code }, ctx) => ({
+      recoveryCodes: await ctx.services.totp.confirm(userOf(ctx), code, { ip: ctx.request.ip }),
+    }),
+  },
   recoveryCodes: {
     /** New codes after confirming the password (US-ACCT-10); a wrong password counts toward the log-in lockout. */
     regenerate: async ({ password }, ctx) => {

@@ -8,8 +8,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { accountCopy } from '../copy/account';
 import { downloadText, recoveryCodesText } from '../lib/recovery-file';
+import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { ConfirmWithPassword, passwordStepError } from './confirm-with-password';
+import { codeError, TotpSetup } from './totp-setup';
 
 const copy = accountCopy;
 
@@ -64,12 +66,17 @@ export function TwoFactorManage({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   // Which step the dialog shows; plain codes live only here and go when the dialog closes.
-  const [view, setView] = useState<'overview' | 'newCodes'>('overview');
+  const [view, setView] = useState<'overview' | 'newCodes' | 'move' | 'moveCode'>('overview');
+  const [pairing, setPairing] = useState<{ otpauthUrl: string; secret: string } | null>(null);
+  const [codeProblem, setCodeProblem] = useState<string | null>(null);
   const [fresh, setFresh] = useState<string[] | undefined>(codes);
   const [stepError, setStepError] = useState<{ field?: string; form?: string } | null>(null);
+  // Cancelling part-way changes nothing: an unconfirmed secret just expires on the server.
   const back = () => {
     setView('overview');
     setStepError(null);
+    setPairing(null);
+    setCodeProblem(null);
   };
 
   // Make new codes (US-ACCT-10): the old ones stop working, the new ones show once.
@@ -82,6 +89,61 @@ export function TwoFactorManage({
     },
     onError: (err) => setStepError(passwordStepError(err)),
   });
+
+  // Move to a new phone (US-ACCT-11): password, then pair the new app; the old app's codes stop working.
+  const begin = useMutation({
+    mutationFn: (password: string) => client.account.totp.begin.mutate({ password }),
+    onSuccess: (setup) => {
+      setPairing(setup);
+      setView('moveCode');
+    },
+    onError: (err) => setStepError(passwordStepError(err)),
+  });
+  const pairNew = useMutation({
+    mutationFn: (code: string) => client.account.totp.confirm.mutate({ code }),
+    // Done: close the dialog (so the toast isn't hidden behind it) and say so.
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: trpc.account.get.queryKey() });
+      onClose();
+      showToast({ tone: 'success', title: copy.moved });
+    },
+    onError: (err) => setCodeProblem(codeError(err)),
+  });
+
+  if (view === 'move') {
+    return (
+      <ModalDialog open onOpenChange={(open) => (open ? null : onClose())} title={copy.moveToNewPhone}>
+        <ConfirmWithPassword
+          message={copy.moveIntro}
+          confirmLabel={copy.confirm}
+          busy={begin.isPending}
+          error={stepError}
+          onCancel={back}
+          onConfirm={(password) => {
+            setStepError(null);
+            begin.mutate(password);
+          }}
+        />
+      </ModalDialog>
+    );
+  }
+  if (view === 'moveCode' && pairing) {
+    return (
+      <ModalDialog open onOpenChange={(open) => (open ? null : onClose())} title={copy.scanTitle}>
+        <TotpSetup
+          setup={pairing}
+          lead={copy.scanLead}
+          busy={pairNew.isPending}
+          error={codeProblem}
+          onCancel={back}
+          onConfirm={(code) => {
+            setCodeProblem(null);
+            pairNew.mutate(code);
+          }}
+        />
+      </ModalDialog>
+    );
+  }
 
   if (view === 'newCodes') {
     return (
@@ -125,6 +187,9 @@ export function TwoFactorManage({
               <span>{copy.authenticatorApp}</span>
               <span className="hl-list-sub">{added}</span>
             </span>
+            <Button variant="secondary" size="sm" onClick={() => setView('move')}>
+              {copy.moveToNewPhone}
+            </Button>
           </div>
         </div>
         <CodesBlock account={account} codes={fresh} />

@@ -55,10 +55,9 @@ export const account = {
   ),
   changePassword: io(z.object({ currentPassword: passwordSchema, newPassword: passwordSchema }), ok),
   totp: {
-    begin: io(
-      z.object({ password: passwordSchema }),
-      z.object({ otpauthUrl: z.string(), qrSvg: z.string(), secret: z.string() }),
-    ),
+    /** After the password: a pending secret (10 minutes) to turn two-factor on, or to move it to a new phone. */
+    begin: io(z.object({ password: passwordSchema }), z.object({ otpauthUrl: z.string(), secret: z.string() })),
+    /** Turning on: 10 new recovery codes. Moving: none (the codes are kept). */
     confirm: io(z.object({ code: totpCodeSchema }), z.object({ recoveryCodes: z.array(z.string()) })),
     disable: io(z.object({ password: passwordSchema }), ok),
   },

@@ -41,3 +41,5 @@ If something's wrong, hlabs says so next to the field: the current password isn'
 hlabs stores your recovery codes scrambled, like passwords, so it can't show them again later: in **Manage** you see which ones you've used, but not the codes themselves. Right after you make new codes (or turn on two-factor login), they're shown once in full, and you can **Download** them as a text file or **Print** them. Keep them somewhere safe, like a password manager.
 
 To replace your codes, choose **Make new codes** and enter your password. Your old codes stop working straight away, and the 10 new ones are shown once so you can save them.
+
+Got a new phone? In **Manage**, choose **Move to a new phone**, enter your password, then scan the QR code with the authenticator app on the new phone (or type the key) and enter the 6-digit code it shows. From then on, only the new phone's codes work. Your recovery codes stay the same.
