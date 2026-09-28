@@ -140,6 +140,22 @@ export const onboardingCopy = {
     driveDetail: (free: string, fs: string) => `${free} free · ${fs}`,
     noPermissions: "This drive's format doesn't support file permissions. Some apps may not work.",
     driveGone: 'That drive was disconnected. Connect it again, or choose another.',
+    nasForm: {
+      protocol: 'Protocol',
+      address: 'Address',
+      addressHint: 'For example nas.local/media',
+      username: 'Username',
+      password: 'Password',
+      testing: 'Testing the connection…',
+      badAddress: 'Enter the address as name/share, for example nas.local/media',
+      unreachable: (host: string) => `Can't reach ${host}. Check the address and that the NAS is on.`,
+      noShare: (share: string, host: string) => `There's no share called “${share}” on ${host}.`,
+      privilegedPort:
+        'This NAS only accepts connections from system ports. Allow non-privileged ports ("insecure") in its NFS settings, or use SMB.',
+      authFailed: 'Wrong username or password.',
+      readOnly: 'hlabs can only read this share. Let this user write to it, then try again.',
+      helperMissing: "hlabs can't connect network storage on this computer yet.",
+    },
     fsNames: {
       apfs: 'APFS',
       hfs: 'Mac OS Extended',

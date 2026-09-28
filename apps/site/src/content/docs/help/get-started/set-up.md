@@ -82,6 +82,17 @@ Choose **External drive**, then pick one of the connected drives hlabs can write
 
 Drives formatted **FAT32** or **exFAT** can't keep file permissions, so some apps may not work with them. If you can, use a drive formatted APFS or Mac OS Extended (Mac) or ext4 (Linux). If the drive is disconnected before you continue, choose it again once it's back.
 
+### Use network storage (NAS)
+
+Choose **Network storage (NAS)**, pick **SMB** or **NFS**, and enter the address as name/share, for example `nas.local/media`. For SMB, also enter the username and password you use for the NAS. hlabs tests the connection first and keeps the password in your computer's keychain.
+
+- **"Can't reach …"**: check the address, and that the NAS is on and on the same network.
+- **"Wrong username or password."**: check them in your NAS's user settings.
+- **"hlabs can only read this share."**: let that user write to the share on the NAS.
+- **NFS on a Mac**: if the NAS only accepts system ports, allow non-privileged ports ("insecure") in its NFS settings, or use SMB.
+
+On a Mac, the share appears in Finder while hlabs uses it.
+
 App databases always stay on this computer for speed, wherever your files go. Once you continue, setup is finished.
 
 ## "Finish setup on the computer running hlabs."

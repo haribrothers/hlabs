@@ -18,8 +18,8 @@ import { TRPCProvider } from '../lib/trpc';
 export type Handlers = Record<string, (input: unknown) => unknown>;
 
 /** An error the way the daemon sends it: a tRPC error carrying an hlabsCode. */
-export function daemonError(hlabsCode: string) {
-  return new TRPCClientError(hlabsCode, { result: { error: { data: { hlabsCode } } } as never });
+export function daemonError(hlabsCode: string, detail: Record<string, unknown> | null = null) {
+  return new TRPCClientError(hlabsCode, { result: { error: { data: { hlabsCode, detail } } } as never });
 }
 
 export function renderScreen(Screen: ComponentType, handlers: Handlers, opts: { path?: string } = {}) {
