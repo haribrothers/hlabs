@@ -80,14 +80,8 @@ export const onboarding = {
     z.discriminatedUnion('kind', [
       z.object({ kind: z.literal('local'), path: z.string().optional() }),
       z.object({ kind: z.literal('external'), path: z.string() }),
-      z.object({
-        kind: z.literal('nas'),
-        protocol: z.enum(['smb', 'nfs']),
-        host: z.string(),
-        share: z.string(),
-        username: z.string().optional(),
-        password: z.string().optional(),
-      }),
+      /** A share added with storage.locations.addNetwork (US-ONB-16). */
+      z.object({ kind: z.literal('nas'), locationId: z.string() }),
     ]),
     ok,
   ),
