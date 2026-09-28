@@ -2,12 +2,14 @@
 // time is the same), every attempt recorded, 5 failures in 15 minutes per username and IP lock that pair.
 import { hlabsError } from '@hlabs/api';
 import { auditLog, loginAttempts, users, type HlabsDb } from '@hlabs/db';
-import { ulid } from '@hlabs/shared';
+import { safeNext, ulid } from '@hlabs/shared';
 import { and, eq, gte } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import { hashPassword, verifyPassword } from './passwords';
 import type { SessionService } from './sessions';
 import type { TotpService } from './totp';
+
+export { safeNext };
 
 export const LOGIN_LOCK_ATTEMPTS = 5;
 export const LOGIN_LOCK_MS = 15 * 60 * 1000;
@@ -19,13 +21,6 @@ export interface LoginChallenge {
   remember: boolean;
   next?: string;
   expiresAt: number;
-}
-
-/** Where to go after logging in: a path on this dashboard, never another site or the log-in page (US-AUTH-18). */
-export function safeNext(next: string | undefined): string {
-  if (!next || !next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return '/';
-  if (next === '/login' || next.startsWith('/login/') || next.startsWith('/login?')) return '/';
-  return next;
 }
 
 export class LoginService {

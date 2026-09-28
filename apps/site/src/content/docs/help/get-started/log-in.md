@@ -6,6 +6,8 @@ features: [F-AUTH-01, F-AUTH-02, F-AUTH-03]
 
 For everyone who uses hlabs.
 
+hlabs remembers the last account used on this device and asks only for its password next time. No password is stored on the device.
+
 ## Choose your account
 
 When you open hlabs, **Who's using hlabs?** shows everyone who can log in. Choose your name, then enter your password. You can also use the arrow keys to move between names and press Enter.

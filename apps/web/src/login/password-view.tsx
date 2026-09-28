@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { loginCopy } from '../copy/login';
 import { useTRPC } from '../lib/trpc';
 import { LoginLayout } from './login-layout';
+import { readRememberedUser } from './remembered';
 import { withNext } from './search';
 import { loginFailure, useLogin } from './use-login';
 
@@ -15,7 +16,12 @@ const copy = loginCopy;
 export function PasswordView({ username, next }: { username: string; next?: string }) {
   const trpc = useTRPC();
   const list = useQuery({ ...trpc.auth.listLoginUsers.queryOptions(), retry: false });
-  const user = list.data?.users.find((u) => u.username === username);
+  // The account from the list, or the one remembered on this device when the list is hidden (US-AUTH-05/06).
+  const remembered = readRememberedUser();
+  const user =
+    list.data?.users.find((u) => u.username === username) ??
+    (remembered?.username === username ? remembered : undefined);
+  const listShown = (list.data?.users.length ?? 0) > 0;
   const [password, setPassword] = useState('');
   const field = useRef<HTMLInputElement>(null);
   const login = useLogin(next);
@@ -23,7 +29,7 @@ export function PasswordView({ username, next }: { username: string; next?: stri
   const [error, setError] = useState<string | null>(null);
   useEffect(() => field.current?.focus(), [user]);
 
-  if (list.isError || (list.data && !user)) return <Navigate to="/login/username" search={withNext(next)} replace />;
+  if (!user && (list.isError || list.data)) return <Navigate to="/login/username" search={withNext(next)} replace />;
   if (!user) return <LoginLayout>{null}</LoginLayout>;
 
   const role = copy.roles[user.role];
@@ -51,7 +57,7 @@ export function PasswordView({ username, next }: { username: string; next?: stri
   };
 
   return (
-    <LoginLayout back={{ label: copy.allUsers, to: '/login/users', search: withNext(next) }}>
+    <LoginLayout back={listShown ? { label: copy.allUsers, to: '/login/users', search: withNext(next) } : undefined}>
       <Avatar name={user.displayName} color={avatarColorFor(user.username, user.avatarColor)} />
       <h1 className="m-0 mt-2 text-display">{copy.welcomeBack(user.displayName)}</h1>
       <p className="m-0 text-body text-ink-muted">{copy.who(user.username, role)}</p>
