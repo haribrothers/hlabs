@@ -27,8 +27,13 @@ export const settingsSchemas = {
   engine: z
     .object({
       preferred: z.enum(['auto', ...ENGINE_KINDS]).default('auto'),
+      /** hlabs's Colima as last applied (US-SYS-19); null: the install defaults. */
       resources: z
-        .object({ cpus: z.number().int().positive(), memoryBytes: z.number().int().positive() })
+        .object({
+          cpus: z.number().int().positive(),
+          memoryBytes: z.number().int().positive(),
+          diskBytes: z.number().int().positive().optional(),
+        })
         .nullable()
         .default(null),
     })

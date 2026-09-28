@@ -20,6 +20,8 @@ const mac = (over: Partial<EngineFacts> = {}): EngineFacts => ({
   busy: false,
   installedApps: ['orbstack'],
   colimaInstalled: true,
+  host: { cpus: 10, memoryBytes: 32 * 2 ** 30, freeDiskBytes: 500 * 2 ** 30 },
+  colimaResources: null,
   ...over,
 });
 
@@ -29,6 +31,7 @@ describe('US-SYS-17', () => {
       platform: 'darwin',
       status: 'running',
       active: { kind: 'colima', managedByHlabs: true, version: '27.3.1' },
+      resources: expect.objectContaining({ editable: true }),
       engines: [
         { kind: 'orbstack', availability: 'found' },
         { kind: 'docker-desktop', availability: 'notInstalled' },

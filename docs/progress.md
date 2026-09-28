@@ -63,7 +63,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ACCT-12 · Turn two-factor on or off
 - [x] US-SYS-17 · See the container engine
 - [x] US-SYS-18 · Restart the container engine
-- [ ] US-SYS-19 · Set resources given to apps
+- [x] US-SYS-19 · Set resources given to apps
 - [ ] US-SYS-20 · Control startup behaviour
 - [ ] US-STATE-04 · Serve a fallback page when the daemon is down
 - [ ] US-STATE-05 · Explain why hlabs can't be reached

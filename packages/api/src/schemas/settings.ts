@@ -38,10 +38,34 @@ export const settings = {
         engines: z.array(
           z.object({ kind: engineKindSchema, availability: z.enum(['active', 'found', 'notInstalled']) }),
         ),
+        /**
+         * Resources for apps (US-SYS-19); null on Linux or with no engine. Editable only for hlabs's own Colima;
+         * other engines show what they report (disk unknown).
+         */
+        resources: z
+          .object({
+            editable: z.boolean(),
+            cpus: z.number().int().nullable(),
+            memoryBytes: z.number().nullable(),
+            diskBytes: z.number().nullable(),
+            limits: z.object({
+              maxCpus: z.number().int(),
+              minMemoryBytes: z.number(),
+              maxMemoryBytes: z.number(),
+              minDiskBytes: z.number(),
+              maxDiskBytes: z.number(),
+            }),
+          })
+          .nullable(),
       }),
     ),
+    /** hlabs's Colima only: apply by restarting the engine (US-SYS-19); disk can only grow. */
     setResources: io(
-      z.object({ cpus: z.number().int().positive(), memoryBytes: z.number().int().positive() }),
+      z.object({
+        cpus: z.number().int().positive(),
+        memoryBytes: z.number().int().positive(),
+        diskBytes: z.number().int().positive(),
+      }),
       jobRefSchema,
     ),
     planSwitch: io(z.object({ target: engineKindSchema }), pending),

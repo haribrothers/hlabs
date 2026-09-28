@@ -1,18 +1,18 @@
 // Settings › Engine & startup (US-SYS-17…20): the container engine hlabs uses and the others on this computer, the
 // resources given to apps, and startup behaviour. It follows engine.status live.
-import type { AppRouter } from '@hlabs/api';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { Button, List, ListRow, StatusDot, type Status } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from '@trpc/tanstack-react-query';
-import type { inferRouterOutputs } from '@trpc/server';
 import { engineCopy } from '../copy/engine';
 import { useTRPC } from '../lib/trpc';
 import { EngineRestartControl } from './engine-restart';
+import { EngineResources } from './engine-resources';
+import type { EngineOverview } from './engine-types';
+
+export type { EngineOverview };
 
 const copy = engineCopy;
-
-export type EngineOverview = inferRouterOutputs<AppRouter>['settings']['engine']['get'];
 
 const DOT: Record<EngineOverview['status'], Status> = {
   running: 'running',
@@ -95,6 +95,14 @@ export function EngineSection() {
           />
         ))}
       </List>
+      {o.resources && o.active ? (
+        // Keyed by the engine's values, so the sliders start again from what's applied.
+        <EngineResources
+          key={`${o.active.kind}:${o.resources.cpus}:${o.resources.memoryBytes}:${o.resources.diskBytes}`}
+          resources={o.resources}
+          engineName={copy.names[o.active.kind]}
+        />
+      ) : null}
     </div>
   );
 }
