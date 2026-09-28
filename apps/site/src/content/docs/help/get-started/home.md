@@ -17,3 +17,9 @@ Your wallpaper and accent colour are your own: other people on this hlabs keep t
 Admins see a row of widgets under the greeting. **Storage** shows how much space is left on this computer and what's using it. Select it to open Usage. If a widget can't load, it says so and has a button to try again; the others keep working.
 
 More widgets (live usage, remote access and backups) appear as those parts of hlabs arrive.
+
+## Your apps
+
+Under the widgets are the apps you can open: every installed app for admins, and the apps an admin shared with you for everyone else. Select an app to open it in a new browser tab. On your tailnet, apps open on their own port of the hlabs address.
+
+New apps appear on Home as soon as they're installed, and removed apps disappear, without reloading the page. With a keyboard, use Tab to reach the apps and the arrow keys to move between them.

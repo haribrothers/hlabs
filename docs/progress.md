@@ -46,7 +46,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-AUTH-18 · Return to the app I was opening after login
 - [x] US-HOME-01 · See a greeting over my wallpaper
 - [x] US-HOME-02 · Glance at system widgets
-- [ ] US-HOME-03 · Open my apps from the grid
+- [x] US-HOME-03 · Open my apps from the grid
 - [ ] US-HOME-04 · Move between sections with the Dock
 - [ ] US-HOME-05 · See badge counts on tabs
 - [ ] US-ACCT-01 · Settings sections depend on role

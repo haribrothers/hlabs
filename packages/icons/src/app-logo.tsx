@@ -1,5 +1,6 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Box } from 'lucide-react';
+import { DynamicIcon, iconNames, type IconName } from 'lucide-react/dynamic';
 
 /** Two-stop fallback gradients, picked by app name when the manifest gives none. */
 export const FALLBACK_GRADIENTS: ReadonlyArray<readonly [string, string]> = [
@@ -85,4 +86,38 @@ export function AppLogo({ name, src, colors, fallbackIcon, size = 76, radius, cl
       )}
     </span>
   );
+}
+
+/** The tile when an app has neither a logo gradient nor a fallback icon: neutral, with the name's first letter. */
+export const NEUTRAL_GRADIENT: readonly [string, string] = ['#64748b', '#334155'];
+
+const ICON_NAMES = new Set<string>(iconNames);
+
+/** A Lucide icon by its kebab-case name (a manifest's `icon.fallback`), loaded on demand; Box until it arrives. */
+export function AppGlyph({ name, size }: { name: string; size: number }) {
+  const box = <Box size={size} strokeWidth={2} aria-hidden />;
+  if (!ICON_NAMES.has(name)) return box;
+  return <DynamicIcon name={name as IconName} size={size} strokeWidth={2} aria-hidden fallback={() => box} />;
+}
+
+/**
+ * How an app's fallback tile looks (US-HOME-03): the manifest gradient and glyph; without a glyph, the name's first
+ * letter; without either, the neutral gradient and the letter.
+ */
+export function appTileLook(
+  name: string,
+  icon: { gradient: readonly [string, string] | null; fallback: string | null },
+  size = 76,
+): { colors: readonly [string, string]; fallbackIcon: ReactNode } {
+  const glyph = Math.round(size * 0.44);
+  return {
+    colors: icon.gradient ?? (icon.fallback ? gradientFor(name) : NEUTRAL_GRADIENT),
+    fallbackIcon: icon.fallback ? (
+      <AppGlyph name={icon.fallback} size={glyph} />
+    ) : (
+      <span aria-hidden style={{ fontSize: glyph, fontWeight: 700, lineHeight: 1 }}>
+        {name.charAt(0).toUpperCase()}
+      </span>
+    ),
+  };
 }

@@ -2,9 +2,12 @@
 export const homeCopy = {
   title: 'hlabs — Home',
   widgets: 'Widgets',
+  apps: 'Apps',
+  openApp: (name: string) => `Open ${name}`,
+  installApp: 'Install app',
   storage: 'Storage',
   leftOf: (total: string) => `left of ${total}`,
-  apps: 'Apps',
+  appsUsage: 'Apps',
   system: 'System',
   couldntLoad: "Couldn't load",
   retry: 'Try again',

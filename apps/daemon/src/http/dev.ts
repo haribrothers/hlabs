@@ -1,5 +1,5 @@
 import { onboardingStepSchema } from '@hlabs/api';
-import { getSetting, loginAttempts, setSetting, users } from '@hlabs/db';
+import { apps, appSources, catalogApps, getSetting, loginAttempts, setSetting, users } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { eq } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
@@ -86,5 +86,53 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     const user = services.db.select().from(users).where(eq(users.username, username)).get();
     if (!user) return reply.code(404).send({ reason: 'no such user' });
     return { revoked: services.sessions.revoke({ userId: user.id }).length };
+  });
+
+  // Adds or removes a stand-in installed app and announces it, as AppService will (US-HOME-03 e2e, before phase 2).
+  const fakeApp = z.object({
+    id: z.string().regex(/^[a-z0-9-]{2,39}$/),
+    name: z.string().optional(),
+    remove: z.boolean().default(false),
+  });
+  app.post('/dev/fake-app', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { id, name, remove } = fakeApp.parse(req.body);
+    const { db, bus } = services;
+    if (remove) {
+      db.delete(apps).where(eq(apps.id, id)).run();
+      db.delete(catalogApps).where(eq(catalogApps.appId, id)).run();
+      bus.emit('app.stateChanged', { appId: id, state: 'uninstalling', detail: 'removed' }, { kind: 'all' });
+      return { removed: id };
+    }
+    db.insert(appSources)
+      .values({ id: 'dev', kind: 'local', name: 'Development', url: 'dev:' })
+      .onConflictDoNothing()
+      .run();
+    db.insert(catalogApps)
+      .values({
+        sourceId: 'dev',
+        appId: id,
+        version: '0.0.0',
+        manifestJson: { name: name ?? id },
+        updatedAt: Date.now(),
+        firstSeenAt: Date.now(),
+      })
+      .onConflictDoNothing()
+      .run();
+    db.insert(apps)
+      .values({
+        id,
+        sourceId: 'dev',
+        version: '0.0.0',
+        state: 'running',
+        hostname: id,
+        installedAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+      .onConflictDoNothing()
+      .run();
+    bus.emit('app.stateChanged', { appId: id, state: 'running', detail: null }, { kind: 'all' });
+    return { added: id };
   });
 }

@@ -46,7 +46,7 @@ export function StorageWidget() {
       </p>
       <StackedBar
         segments={[
-          { label: copy.apps, value: s.appsBytes },
+          { label: copy.appsUsage, value: s.appsBytes },
           { label: copy.system, value: s.systemBytes },
         ]}
         total={s.totalBytes}

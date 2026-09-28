@@ -1,19 +1,35 @@
 // Main (US-HOME-01…05): the greeting over the wallpaper, the widgets row and the app grid.
 import { LogoMark } from '@hlabs/icons';
 import { GlassCard } from '@hlabs/ui';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSubscription } from '@trpc/tanstack-react-query';
 import { useEffect } from 'react';
 import { homeCopy } from '../copy/home';
 import { useTRPC } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
+import { AppGrid, orderApps } from './app-grid';
 import { greetingFor } from './greeting';
 import { WidgetsRow } from './widgets';
 
 export function HomeView() {
   const trpc = useTRPC();
   const me = useMe();
+  const queryClient = useQueryClient();
   const layout = useQuery({ ...trpc.home.getLayout.queryOptions(), retry: false });
+  const apps = useQuery({ ...trpc.apps.list.queryOptions(), retry: false });
+  // Installed, removed or changed apps show up without a reload (US-HOME-03).
+  useSubscription(
+    trpc.events.stream.subscriptionOptions(
+      { types: ['app.stateChanged'] },
+      {
+        onData: () => {
+          void queryClient.invalidateQueries({ queryKey: trpc.apps.list.queryKey() });
+          void queryClient.invalidateQueries({ queryKey: trpc.home.getLayout.queryKey() });
+        },
+      },
+    ),
+  );
   const now = useNow();
   useEffect(() => {
     document.title = homeCopy.title;
@@ -34,6 +50,15 @@ export function HomeView() {
       </header>
       {me.data?.appearance.showWidgets !== false && layout.data ? (
         <WidgetsRow ids={layout.data.items.filter((i) => i.kind === 'widget').map((i) => i.id)} />
+      ) : null}
+      {apps.data ? (
+        <AppGrid
+          apps={orderApps(
+            apps.data.apps,
+            (layout.data?.items ?? []).filter((i) => i.kind === 'app').map((i) => i.id),
+          )}
+          isAdmin={me.data?.role === 'admin'}
+        />
       ) : null}
     </div>
   );
