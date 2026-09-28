@@ -1,36 +1,14 @@
 // The recovery codes, shown once after two-factor is turned on (US-ONB-12): download, copy, then Continue.
 import { Button } from '@hlabs/ui';
 import { onboardingCopy } from '../copy/onboarding';
+import { downloadText, recoveryCodesText } from '../lib/recovery-file';
 import { CopyButton } from './copy-button';
 
 const copy = onboardingCopy.twoFactor;
 
 export const RECOVERY_FILE_NAME = 'hlabs-recovery-codes.txt';
 
-/** The downloaded file: server, username, date and the 10 codes. */
-export function recoveryCodesText(opts: { hostname: string; username: string; date: Date; codes: string[] }): string {
-  const f = copy.file;
-  return [
-    f.title,
-    `${f.server}: ${opts.hostname}`,
-    `${f.username}: ${opts.username}`,
-    `${f.created}: ${opts.date.toISOString().slice(0, 10)}`,
-    '',
-    f.note,
-    '',
-    ...opts.codes,
-    '',
-  ].join('\n');
-}
-
-function download(text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = RECOVERY_FILE_NAME;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+export { recoveryCodesText };
 
 export function RecoveryCodes(props: {
   codes: string[];
@@ -57,7 +35,7 @@ export function RecoveryCodes(props: {
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => download(recoveryCodesText({ ...props, date: new Date() }))}
+            onClick={() => downloadText(recoveryCodesText({ ...props, date: new Date() }), RECOVERY_FILE_NAME)}
           >
             {copy.download}
           </Button>
