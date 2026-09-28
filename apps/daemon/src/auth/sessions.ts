@@ -102,7 +102,8 @@ export class SessionService {
         ip: opts.ip ?? null,
       })
       .run();
-    return { raw, expiresAt, remember };
+    // `issuedAt`: the cookie's Max-Age counts from here, so it's exactly 30 days however long the request takes.
+    return { raw, expiresAt, remember, issuedAt: now };
   }
 
   /** The signed-in user for a cookie, sliding the expiry; null when unknown, revoked, expired or disabled. */

@@ -5,8 +5,11 @@ import type { DaemonContext } from '../context';
 
 const domainFor = (ctx: DaemonContext) => cookieDomain(ctx.request.host, getSetting(ctx.services.db, 'hostname'));
 
-export function setSessionCookie(ctx: DaemonContext, session: { raw: string; remember: boolean; expiresAt: number }) {
-  ctx.request.setCookie(sessionCookie(session.raw, { ...session, domain: domainFor(ctx) }));
+export function setSessionCookie(
+  ctx: DaemonContext,
+  session: { raw: string; remember: boolean; expiresAt: number; issuedAt?: number },
+) {
+  ctx.request.setCookie(sessionCookie(session.raw, { ...session, now: session.issuedAt, domain: domainFor(ctx) }));
 }
 
 export function clearSessionCookie(ctx: DaemonContext) {

@@ -12,13 +12,14 @@ import { MAIN_STORAGE_STATE } from './e2e/instances';
 const DATA_DIR = process.env.HLABS_E2E_DATA_DIR ?? '../../.e2e-data';
 const WORKERS = process.env.CI ? 2 : 4;
 // Specs that need a known admin they create themselves (all onboarding and log-in stories, and a few later ones).
-const FIRST_RUN_SPECS = /(us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-2]))\.spec\.ts/;
+const FIRST_RUN_SPECS = /(us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-2])|us-sys-(1[89]|20))\.spec\.ts/;
 
 // HLABS_DEV_NO_ENGINE_INSTALL: a run on a machine with no engine must never download Colima (11: tests don't
 // reach the internet).
 const daemonEnv = {
   NODE_ENV: 'development',
   HLABS_DEV_NO_ENGINE_INSTALL: '1',
+  HLABS_DEV_NO_ENGINE_CONTROL: '1',
   HLABS_DEV_ANONYMOUS_ADMIN: '1',
   HLABS_LOG_LEVEL: 'warn',
 };

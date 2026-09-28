@@ -1,5 +1,5 @@
 // Shared building blocks for every router's schemas.
-import { appIdSchema, displayNameSchema, hostnameSchema, usernameSchema } from '@hlabs/shared';
+import { appIdSchema, displayNameSchema, EXCLUSIVE_JOB_KINDS, hostnameSchema, usernameSchema } from '@hlabs/shared';
 import { z } from 'zod';
 import { HLABS_CODES, type HlabsCode } from '../errors';
 
@@ -43,14 +43,7 @@ export type EngineKind = z.infer<typeof engineKindSchema>;
 export const severitySchema = z.enum(['info', 'success', 'warning', 'critical']);
 
 /** Exclusive job kinds (D-020): one at a time, and never alongside app jobs. */
-export const EXCLUSIVE_JOB_KINDS = [
-  'system_update',
-  'restore',
-  'move_all_data',
-  'engine_switch',
-  'rename_host',
-  'factory_reset',
-] as const;
+export { EXCLUSIVE_JOB_KINDS };
 
 export const jobKindSchema = z.enum([
   ...EXCLUSIVE_JOB_KINDS,

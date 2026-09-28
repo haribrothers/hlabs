@@ -1,5 +1,7 @@
 // The daemon boot sequence (docs/prd/02-architecture.md §2.3). The HTTP server is already listening,
 // so /healthz reports each step and, if the database can't be opened, why.
+import { noEngineControl, nodeEngineControl, type EngineControl } from './engine/control';
+import { registerEngineRestart } from './engine/restart-job';
 import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
 import { nextOrigins } from '@hlabs/shared';
 import { mkdirSync } from 'node:fs';
@@ -9,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { NoopProxyManager, type ProxyManager } from './caddy/index';
 import type { DaemonConfig } from './config';
 import type { InstallerHost } from './engine/colima-installer';
-import { registerEngineInstall } from './engine/install-job';
+import { engineDir, registerEngineInstall } from './engine/install-job';
 import { nodeInstallerHost } from './engine/installer-host';
 import { defaultCandidates, EngineService, type EngineServiceDeps } from './engine/service';
 import { EventBus } from './events/bus';
@@ -49,6 +51,8 @@ export interface BootDeps {
   mounter?: NetworkMounter;
   /** Downloads, tar and colima for the engine install (US-ONB-05). */
   installer?: InstallerHost;
+  /** Restarts the engine (US-SYS-18); tests pass a fake. */
+  engineControl?: EngineControl;
   /** The user's home (where ~/.colima lives). */
   home?: string;
   /** Where the setup URL is printed (stdout). */
@@ -131,6 +135,17 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
         ...getSetting(db, 'connections'),
         engineDownload: { lastContactAt: Date.now() },
       }),
+  });
+  registerEngineRestart({
+    jobs,
+    engine,
+    db,
+    control:
+      deps.engineControl ??
+      (config.devNoEngineControl
+        ? noEngineControl()
+        : nodeEngineControl({ engineDir: engineDir(config.paths.dataDir), privHelper: config.privHelper })),
+    onResources: (resources) => setSetting(db, 'engine', { ...getSetting(db, 'engine'), resources }),
   });
   const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);
   const onboarding = new OnboardingService({

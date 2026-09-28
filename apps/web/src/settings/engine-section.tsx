@@ -8,6 +8,7 @@ import { useSubscription } from '@trpc/tanstack-react-query';
 import type { inferRouterOutputs } from '@trpc/server';
 import { engineCopy } from '../copy/engine';
 import { useTRPC } from '../lib/trpc';
+import { EngineRestartControl } from './engine-restart';
 
 const copy = engineCopy;
 
@@ -82,7 +83,9 @@ export function EngineSection() {
             }
             subtitle={engineDetail(o, engine)}
             trailing={
-              // Switching engines is US-SYS-21 (phase 9, D-036).
+              engine.availability === 'active' ? (
+                <EngineRestartControl stopped={o.status === 'stopped'} />
+              ) : // Switching engines is US-SYS-21 (phase 9, D-036).
               engine.availability === 'found' && isFeatureEnabled('engineSwitch') ? (
                 <Button variant="secondary" size="sm">
                   {copy.switch}

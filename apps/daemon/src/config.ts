@@ -21,6 +21,7 @@ const envSchema = z.object({
   HLABS_DEV_ANONYMOUS_ADMIN: flag,
   HLABS_DEV_IGNORE_ENGINES: flag,
   HLABS_DEV_NO_ENGINE_INSTALL: flag,
+  HLABS_DEV_NO_ENGINE_CONTROL: flag,
   HLABS_NETMOUNT_BIN: z.string().optional(),
   HLABS_PRIV_HELPER: z.string().optional(),
   HLABS_SECRET_STORE: z.enum(['keychain', 'file']).optional(),
@@ -52,6 +53,8 @@ export interface DaemonConfig {
   devIgnoreEngines: boolean;
   /** Development and e2e: never download or start an engine (tests must not reach the internet, 11). */
   devNoEngineInstall: boolean;
+  /** Development and e2e: engine restarts are pretended, so tests never restart the real engine. */
+  devNoEngineControl: boolean;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
@@ -61,6 +64,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
   }
   if (e.HLABS_DEV_NO_ENGINE_INSTALL && e.NODE_ENV === 'production') {
     throw new Error('HLABS_DEV_NO_ENGINE_INSTALL is for development only and is refused in production.');
+  }
+  if (e.HLABS_DEV_NO_ENGINE_CONTROL && e.NODE_ENV === 'production') {
+    throw new Error('HLABS_DEV_NO_ENGINE_CONTROL is for development only and is refused in production.');
   }
   if (e.HLABS_DEV_IGNORE_ENGINES && e.NODE_ENV === 'production') {
     throw new Error('HLABS_DEV_IGNORE_ENGINES is for development only and is refused in production.');
@@ -91,5 +97,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
     devAnonymousAdmin: e.HLABS_DEV_ANONYMOUS_ADMIN,
     devIgnoreEngines: e.HLABS_DEV_IGNORE_ENGINES,
     devNoEngineInstall: e.HLABS_DEV_NO_ENGINE_INSTALL,
+    devNoEngineControl: e.HLABS_DEV_NO_ENGINE_CONTROL,
   };
 }

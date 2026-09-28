@@ -37,6 +37,7 @@ export default async function firstRunServers(config: FullConfig) {
       start('pnpm', ['--filter', '@hlabs/daemon', 'exec', 'tsx', 'src/main.ts'], ROOT, {
         NODE_ENV: 'development',
         HLABS_DEV_NO_ENGINE_INSTALL: '1',
+        HLABS_DEV_NO_ENGINE_CONTROL: '1',
         HLABS_DEV_ANONYMOUS_ADMIN: '1',
         HLABS_LOG_LEVEL: 'warn',
         HLABS_PORT: String(ports.daemon),

@@ -9,6 +9,7 @@ import { Readiness } from '../src/readiness';
 import { buildServer } from '../src/server';
 import { ServiceHolder } from '../src/services';
 import { FakeEngine, fakeMachine } from './fakes/engine';
+import { FakeEngineControl } from './fakes/engine-control';
 import { FakeSystemProbe } from './fakes/system';
 
 export function tempDir(prefix = 'hlabsd-'): string {
@@ -33,6 +34,7 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
     devAnonymousAdmin: true,
     devIgnoreEngines: false,
     devNoEngineInstall: false,
+    devNoEngineControl: true,
     ...overrides,
   };
 }
@@ -63,6 +65,7 @@ export async function startDaemon(
     },
     system: new FakeSystemProbe(),
     drives: { externalDrives: async () => [] },
+    engineControl: new FakeEngineControl(),
     ...options.boot,
   };
   const services = options.skipBoot ? null : await boot(bootDeps);

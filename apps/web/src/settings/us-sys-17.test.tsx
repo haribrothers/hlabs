@@ -27,13 +27,13 @@ describe('US-SYS-17', () => {
   });
 
   it('lists each engine with its status; Switch… waits for phase 9', async () => {
-    renderScreen(EngineSection, { 'settings.engine.get': overview() });
+    renderScreen(EngineSection, { 'settings.engine.get': overview(), 'jobs.list': () => ({ items: [] }) });
     const list = await screen.findByRole('group', { name: 'Container engine' });
     const rows = [...list.querySelectorAll('.hl-list-row')] as HTMLElement[];
     expect(rows.map((r) => r.textContent)).toEqual([
       'OrbStackFound on this Mac',
       'Docker DesktopNot installed',
-      'Colima, in useInstalled by hlabs · open source',
+      'Colima, in useInstalled by hlabs · open sourceRestart engine',
     ]);
     expect(within(list).queryByRole('button', { name: 'Switch…' })).toBeNull();
   });

@@ -11,8 +11,19 @@ const exists = (path: string) =>
     () => false,
   );
 
+/** Restart (or start) the engine as a job (US-SYS-18); one at a time: a second call gets the running one. */
+function restartEngine(ctx: DaemonContext) {
+  const { jobs } = ctx.services;
+  const running = jobs.listActive().find((j) => j.kind === 'engine_restart');
+  if (running) return { jobId: running.id };
+  const userId = ctx.identity.kind === 'user' ? ctx.identity.userId : null;
+  return { jobId: jobs.start('engine_restart', { payload: { userId } }) };
+}
+
 export const settings: AppHandlers<DaemonContext>['settings'] = {
   engine: {
+    restart: (_input, ctx) => restartEngine(ctx),
+    start: (_input, ctx) => restartEngine(ctx),
     get: async (_input, ctx) => {
       const { engine, system, jobs, config } = ctx.services;
       const os = await system.os();
