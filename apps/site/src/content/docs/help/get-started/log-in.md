@@ -8,6 +8,8 @@ For everyone who uses hlabs.
 
 hlabs remembers the last account used on this device and greets it by name next time ("Welcome back, …"), asking only for its password. No password is stored on the device. If the password is wrong you'll see "Password is incorrect."
 
+On a shared computer, choose **Not <name>? Use another account** to log in as yourself: hlabs forgets the remembered account on this device and shows the list (or the username form). Logging out keeps the remembered account; only this link clears it. In a private window nothing is remembered.
+
 ## Choose your account
 
 When you open hlabs, **Who's using hlabs?** shows everyone who can log in. Choose your name, then enter your password. You can also use the arrow keys to move between names and press Enter.

@@ -33,7 +33,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-AUTH-04 · See a clear error when login fails
 - [x] US-AUTH-05 · Open the right login screen
 - [x] US-AUTH-06 · Log back in as the remembered user
-- [ ] US-AUTH-07 · Switch to another account
+- [x] US-AUTH-07 · Switch to another account
 - [ ] US-AUTH-08 · Enter my two-factor code
 - [ ] US-AUTH-09 · Log in with a recovery code
 - [ ] US-AUTH-10 · Set up two-factor when an admin requires it

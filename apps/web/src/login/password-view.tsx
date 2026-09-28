@@ -7,7 +7,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { loginCopy } from '../copy/login';
 import { useTRPC } from '../lib/trpc';
 import { LoginLayout } from './login-layout';
-import { readRememberedUser } from './remembered';
+import { forgetRememberedUser, readRememberedUser } from './remembered';
 import { withNext } from './search';
 import { loginFailure, useLogin } from './use-login';
 
@@ -84,6 +84,8 @@ export function PasswordView({ username, next }: { username: string; next?: stri
         <Link
           to={listShown ? '/login/users' : '/login/username'}
           search={withNext(next)}
+          // Someone else on this device: forget the remembered account first (US-AUTH-07).
+          onClick={() => forgetRememberedUser()}
           className="hl-focus rounded-xs text-ink no-underline"
         >
           {copy.notYou(user.displayName)}
