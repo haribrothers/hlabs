@@ -8,10 +8,11 @@ import { and, asc, eq, gte, isNull, lt } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import type { EventBus } from '../events/bus';
 import { hashPassword, verifyPassword } from './passwords';
+import { normaliseRecoveryCode } from './recovery-code';
 import type { SessionService } from './sessions';
 import type { TotpService } from './totp';
 
-export { safeNext };
+export { normaliseRecoveryCode, safeNext };
 
 export const LOGIN_LOCK_ATTEMPTS = 5;
 export const LOGIN_LOCK_MS = 15 * 60 * 1000;
@@ -58,12 +59,6 @@ export interface LoginChallenge {
   remember: boolean;
   next?: string;
   expiresAt: number;
-}
-
-/** `ABCD 2345`, `abcd2345` and `abcd-2345` are the same code; anything else can't match. */
-export function normaliseRecoveryCode(input: string): string | null {
-  const bare = input.toLowerCase().replace(/[\s-]/g, '');
-  return /^[a-z0-9]{8}$/.test(bare) ? `${bare.slice(0, 4)}-${bare.slice(4)}` : null;
 }
 
 export class LoginService {

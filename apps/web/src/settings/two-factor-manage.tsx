@@ -1,7 +1,7 @@
 // TwoFactorManage (US-ACCT-08…12): two-factor status, the authenticator app and the recovery codes, in a dialog over
 // Account. Done closes it and puts focus back on the button that opened it.
 import { Smartphone, iconDefaults } from '@hlabs/icons';
-import { Badge, Button, ModalDialog } from '@hlabs/ui';
+import { Badge, Button, ModalDialog, TextField } from '@hlabs/ui';
 import type { AppRouter } from '@hlabs/api';
 import type { inferRouterOutputs } from '@trpc/server';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { accountCopy } from '../copy/account';
 import { downloadText, recoveryCodesText } from '../lib/recovery-file';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { TRPCClientError } from '@trpc/client';
 import { ConfirmWithPassword, passwordStepError } from './confirm-with-password';
 import { codeError, TotpSetup } from './totp-setup';
 
@@ -66,7 +67,8 @@ export function TwoFactorManage({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   // Which step the dialog shows; plain codes live only here and go when the dialog closes.
-  const [view, setView] = useState<'overview' | 'newCodes' | 'move' | 'moveCode'>('overview');
+  const [view, setView] = useState<'overview' | 'newCodes' | 'move' | 'moveCode' | 'turnOff'>('overview');
+  const [offCode, setOffCode] = useState('');
   const [pairing, setPairing] = useState<{ otpauthUrl: string; secret: string } | null>(null);
   const [codeProblem, setCodeProblem] = useState<string | null>(null);
   const [fresh, setFresh] = useState<string[] | undefined>(codes);
@@ -77,6 +79,7 @@ export function TwoFactorManage({
     setStepError(null);
     setPairing(null);
     setCodeProblem(null);
+    setOffCode('');
   };
 
   // Make new codes (US-ACCT-10): the old ones stop working, the new ones show once.
@@ -109,6 +112,62 @@ export function TwoFactorManage({
     },
     onError: (err) => setCodeProblem(codeError(err)),
   });
+
+  // Turn off (US-ACCT-12): password and a current code (or a recovery code); other devices are signed out.
+  const turnOff = useMutation({
+    mutationFn: (password: string) => client.account.totp.disable.mutate({ password, code: offCode }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: trpc.account.get.queryKey() }),
+        queryClient.invalidateQueries({ queryKey: trpc.auth.listSessions.queryKey() }),
+        queryClient.invalidateQueries({ queryKey: trpc.auth.me.queryKey() }),
+      ]);
+      onClose();
+      showToast({ tone: 'success', title: copy.turnedOff });
+    },
+    onError: (err) => {
+      const code =
+        err instanceof TRPCClientError ? (err.data as { hlabsCode?: string } | undefined)?.hlabsCode : undefined;
+      if (code === 'TOTP_INVALID_CODE') setCodeProblem(copy.wrongCodeOrRecovery);
+      else if (code === 'TOTP_REQUIRED_BY_ADMIN') setStepError({ form: copy.requiredByAdmin });
+      else setStepError(passwordStepError(err));
+    },
+  });
+
+  if (view === 'turnOff') {
+    return (
+      <ModalDialog open role="alertdialog" onOpenChange={(open) => (open ? null : onClose())} title={copy.turnOffTitle}>
+        <ConfirmWithPassword
+          message={copy.turnOffWarning}
+          confirmLabel={copy.turnOffConfirm}
+          destructive
+          busy={turnOff.isPending}
+          error={stepError}
+          onCancel={back}
+          onConfirm={(password) => {
+            setStepError(null);
+            setCodeProblem(null);
+            if (offCode.trim()) turnOff.mutate(password);
+            else setCodeProblem(copy.wrongCodeOrRecovery);
+          }}
+        >
+          <TextField
+            label={copy.codeOrRecovery}
+            autoComplete="one-time-code"
+            autoCapitalize="none"
+            spellCheck={false}
+            value={offCode}
+            error={codeProblem ?? undefined}
+            announce="polite"
+            onChange={(e) => {
+              setOffCode(e.target.value);
+              setCodeProblem(null);
+            }}
+          />
+        </ConfirmWithPassword>
+      </ModalDialog>
+    );
+  }
 
   if (view === 'move') {
     return (
@@ -177,7 +236,25 @@ export function TwoFactorManage({
           <Badge tone="success">{copy.on}</Badge>
         </span>
       }
-      actions={<Button onClick={onClose}>{copy.done}</Button>}
+      actions={
+        <div className="flex w-full flex-wrap items-center justify-between gap-3">
+          {account.totpRequired ? (
+            <span className="flex flex-col">
+              <Button variant="link" className="self-start text-danger" disabled aria-describedby="totp-required-note">
+                {copy.turnOff}
+              </Button>
+              <span id="totp-required-note" className="text-caption text-ink-muted">
+                {copy.requiredByAdmin}
+              </span>
+            </span>
+          ) : (
+            <Button variant="link" className="text-danger" onClick={() => setView('turnOff')}>
+              {copy.turnOff}
+            </Button>
+          )}
+          <Button onClick={onClose}>{copy.done}</Button>
+        </div>
+      }
     >
       <div className="flex flex-col gap-4">
         <div className="hl-list-box">

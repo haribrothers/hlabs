@@ -59,7 +59,8 @@ export const account = {
     begin: io(z.object({ password: passwordSchema }), z.object({ otpauthUrl: z.string(), secret: z.string() })),
     /** Turning on: 10 new recovery codes. Moving: none (the codes are kept). */
     confirm: io(z.object({ code: totpCodeSchema }), z.object({ recoveryCodes: z.array(z.string()) })),
-    disable: io(z.object({ password: passwordSchema }), ok),
+    /** Turn two-factor off (US-ACCT-12): the password and a current 6-digit code or a recovery code. */
+    disable: io(z.object({ password: passwordSchema, code: z.string().min(1).max(64) }), ok),
   },
   recoveryCodes: {
     regenerate: io(z.object({ password: passwordSchema }), z.object({ recoveryCodes: z.array(z.string()) })),

@@ -3,11 +3,12 @@
 import { hlabsError } from '@hlabs/api';
 import { auditLog, recoveryCodes, users, userTotp, type HlabsDb } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { randomInt } from 'node:crypto';
 import { generateSecret, generateURI, verifySync } from 'otplib';
 import type { SecretStore } from '../platform/secrets';
-import { hashPassword } from './passwords';
+import { normaliseRecoveryCode } from './recovery-code';
+import { hashPassword, verifyPassword } from './passwords';
 
 export const TOTP_ISSUER = 'hlabs';
 export const RECOVERY_CODE_COUNT = 10;
@@ -121,6 +122,44 @@ export class TotpService {
         .run();
     });
     return codes;
+  }
+
+  /**
+   * Turn two-factor off (US-ACCT-12), given a current 6-digit code or an unused recovery code: the secret, the
+   * two-factor row and every recovery code go. The caller has checked the password and signs out other devices.
+   */
+  async disable(userId: string, code: string, opts: { ip: string | null; now?: number }): Promise<void> {
+    const now = opts.now ?? Date.now();
+    if (!this.isEnabled(userId)) throw hlabsError('VALIDATION_FAILED', 'Two-factor is off');
+    const secretRef = totpSecretRef(userId);
+    const secret = await this.secrets.get(secretRef).catch(() => null);
+    let ok = /^\d{6}$/.test(code.trim()) && secret !== null && verifyTotpCode(secret, code.trim(), now);
+    if (!ok) {
+      const recovery = normaliseRecoveryCode(code);
+      if (recovery) {
+        const unused = this.db
+          .select()
+          .from(recoveryCodes)
+          .where(and(eq(recoveryCodes.userId, userId), isNull(recoveryCodes.usedAt)))
+          .all();
+        for (const row of unused) {
+          if (await verifyPassword(row.codeHash, recovery)) {
+            ok = true;
+            break;
+          }
+        }
+      }
+    }
+    if (!ok) throw hlabsError('TOTP_INVALID_CODE');
+    this.db.transaction((tx) => {
+      tx.delete(recoveryCodes).where(eq(recoveryCodes.userId, userId)).run();
+      tx.delete(userTotp).where(eq(userTotp.userId, userId)).run();
+      tx.insert(auditLog)
+        .values({ id: ulid(), at: now, userId, action: 'totp.disable', target: userId, detailJson: null, ip: opts.ip })
+        .run();
+    });
+    await this.secrets.delete(secretRef).catch(() => undefined);
+    this.lastStep.delete(userId);
   }
 
   discard(userId: string): void {

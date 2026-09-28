@@ -43,3 +43,5 @@ hlabs stores your recovery codes scrambled, like passwords, so it can't show the
 To replace your codes, choose **Make new codes** and enter your password. Your old codes stop working straight away, and the 10 new ones are shown once so you can save them.
 
 Got a new phone? In **Manage**, choose **Move to a new phone**, enter your password, then scan the QR code with the authenticator app on the new phone (or type the key) and enter the 6-digit code it shows. From then on, only the new phone's codes work. Your recovery codes stay the same.
+
+To turn two-factor login on, choose **Turn on** next to it, enter your password, scan the QR code with your authenticator app and enter the 6-digit code. You then get your 10 recovery codes. To turn it off, open **Manage** and choose **Turn off two-factor…**: enter your password and a code from your app (or a recovery code). Anyone with your password can then log in, and your other devices are logged out. If your admin requires two-factor login for everyone, you can't turn it off.

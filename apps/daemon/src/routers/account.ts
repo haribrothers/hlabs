@@ -1,6 +1,6 @@
 import type { AppHandlers } from '@hlabs/api';
 import { hlabsError } from '@hlabs/api';
-import { users } from '@hlabs/db';
+import { getSetting, users } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
 import { changePassword, getAccount, updateAccount } from '../account/account';
 import type { DaemonContext } from '../context';
@@ -30,6 +30,19 @@ export const account: AppHandlers<DaemonContext>['account'] = {
       if (!user) throw hlabsError('AUTH_REQUIRED');
       await login.confirmPassword({ user, password, action: 'totp.begin', ip: ctx.request.ip });
       return totp.begin(userId, { move: totp.isEnabled(userId) });
+    },
+    /** Turn two-factor off (US-ACCT-12); not while an admin requires it. Other devices are signed out. */
+    disable: async ({ password, code }, ctx) => {
+      const id = ctx.identity;
+      if (id.kind !== 'user' || !id.session) throw hlabsError('AUTH_REQUIRED');
+      const { db, login, totp, sessions } = ctx.services;
+      if (getSetting(db, 'people').requireTotp) throw hlabsError('TOTP_REQUIRED_BY_ADMIN');
+      const user = db.select().from(users).where(eq(users.id, id.userId)).get();
+      if (!user) throw hlabsError('AUTH_REQUIRED');
+      await login.confirmPassword({ user, password, action: 'totp.disable', ip: ctx.request.ip });
+      await totp.disable(id.userId, code, { ip: ctx.request.ip });
+      sessions.revoke({ userId: id.userId, except: id.session.id });
+      return { ok: true as const };
     },
     confirm: async ({ code }, ctx) => ({
       recoveryCodes: await ctx.services.totp.confirm(userOf(ctx), code, { ip: ctx.request.ip }),

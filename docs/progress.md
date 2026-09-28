@@ -36,7 +36,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-AUTH-07 · Switch to another account
 - [x] US-AUTH-08 · Enter my two-factor code
 - [x] US-AUTH-09 · Log in with a recovery code
-- [x] US-AUTH-10 · Set up two-factor when an admin requires it (phase 1 part: `mustSetupTotp` and the redirect; the policy switch is phase 3, `/auth/verify` phase 2, and continuing to `next` after setup lands with US-ACCT-12)
+- [x] US-AUTH-10 · Set up two-factor when an admin requires it (phase 1 part: `mustSetupTotp`, the redirect to setup and back to `next` after it; the policy switch is phase 3, `/auth/verify` phase 2)
 - [x] US-AUTH-11 · Keep two-factor codes in step with the server clock
 - [x] US-AUTH-12 · Pause logins after too many attempts
 - [x] US-AUTH-13 · Tell the admin about repeated failed logins
@@ -60,7 +60,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ACCT-09 · View, download and print recovery codes
 - [x] US-ACCT-10 · Make new recovery codes
 - [x] US-ACCT-11 · Move two-factor to a new phone
-- [ ] US-ACCT-12 · Turn two-factor on or off
+- [x] US-ACCT-12 · Turn two-factor on or off
 - [ ] US-SYS-17 · See the container engine
 - [ ] US-SYS-18 · Restart the container engine
 - [ ] US-SYS-19 · Set resources given to apps

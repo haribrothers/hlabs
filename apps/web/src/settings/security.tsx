@@ -7,6 +7,7 @@ import { accountCopy } from '../copy/account';
 import { timeAgo } from '../lib/relative-time';
 import { useTRPC } from '../lib/trpc';
 import { ChangePassword } from './change-password';
+import { TurnOnTwoFactor } from './turn-on-two-factor';
 import { TwoFactorManage } from './two-factor-manage';
 
 const copy = accountCopy;
@@ -24,14 +25,16 @@ export function Security({
   const trpc = useTRPC();
   const account = useQuery({ ...trpc.account.get.queryOptions(), retry: false });
   const [changing, setChanging] = useState(false);
-  // Opened from Manage or View, or straight from /settings/account/two-factor.
-  const [managing, setManaging] = useState(openTwoFactor);
+  // Which two-factor dialog is open: from Manage, View or Turn on, or straight from /settings/account/two-factor
+  // ('auto': manage when it's on, turn on when it's off). Turning on keeps its dialog until Done.
+  const [dialog, setDialog] = useState<'auto' | 'manage' | 'turnOn' | null>(openTwoFactor ? 'auto' : null);
   if (!account.data) return null;
+  if (dialog === 'auto') setDialog(account.data.totpEnabledAt !== null ? 'manage' : 'turnOn');
   const a = account.data;
   const changedAt = a.passwordChangedAt;
   const on = a.totpEnabledAt !== null;
-  const closeManage = () => {
-    setManaging(false);
+  const closeDialog = () => {
+    setDialog(null);
     onTwoFactorClosed?.();
   };
   return (
@@ -55,10 +58,14 @@ export function Security({
         subtitle={on ? <span className="text-success">{copy.twoFactorOn}</span> : copy.twoFactorOff}
         trailing={
           on ? (
-            <Button variant="secondary" size="sm" aria-label={copy.manageTwoFactor} onClick={() => setManaging(true)}>
+            <Button variant="secondary" size="sm" aria-label={copy.manageTwoFactor} onClick={() => setDialog('manage')}>
               {copy.manage}
             </Button>
-          ) : null
+          ) : (
+            <Button variant="secondary" size="sm" aria-label={copy.turnOnTwoFactor} onClick={() => setDialog('turnOn')}>
+              {copy.turnOn}
+            </Button>
+          )
         }
       />
       {on ? (
@@ -72,7 +79,7 @@ export function Security({
                 variant="secondary"
                 size="sm"
                 aria-label={copy.viewRecoveryCodes}
-                onClick={() => setManaging(true)}
+                onClick={() => setDialog('manage')}
               >
                 {copy.view}
               </Button>
@@ -81,7 +88,8 @@ export function Security({
         />
       ) : null}
       {changing ? <ChangePassword onClose={() => setChanging(false)} /> : null}
-      {managing && on ? <TwoFactorManage account={a} onClose={closeManage} /> : null}
+      {dialog === 'manage' && on ? <TwoFactorManage account={a} onClose={closeDialog} /> : null}
+      {dialog === 'turnOn' ? <TurnOnTwoFactor onClose={closeDialog} /> : null}
     </List>
   );
 }

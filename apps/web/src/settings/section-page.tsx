@@ -9,11 +9,11 @@ import { AccessDenied } from '../shell/access-denied';
 import { AccountSection } from './account-section';
 import { sectionAccess, type SectionId } from './sections';
 
-const CONTENT: Partial<Record<SectionId, ComponentType<{ openTwoFactor?: boolean }>>> = {
+const CONTENT: Partial<Record<SectionId, ComponentType<{ openTwoFactor?: boolean; next?: string }>>> = {
   account: AccountSection,
 };
 
-export function SectionPage({ id, openTwoFactor }: { id: string; openTwoFactor?: boolean }) {
+export function SectionPage({ id, openTwoFactor, next }: { id: string; openTwoFactor?: boolean; next?: string }) {
   const me = useMe().data;
   const desktop = useIsDesktop();
   const heading = useRef<HTMLHeadingElement>(null);
@@ -45,7 +45,7 @@ export function SectionPage({ id, openTwoFactor }: { id: string; openTwoFactor?:
         }
       >
         {Content ? (
-          <Content openTwoFactor={openTwoFactor} />
+          <Content openTwoFactor={openTwoFactor} next={next} />
         ) : (
           <p className="m-0 text-body text-ink-muted">{settingsCopy.empty}</p>
         )}
