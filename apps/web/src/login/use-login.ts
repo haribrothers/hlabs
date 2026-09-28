@@ -2,6 +2,7 @@
 // this device (US-AUTH-06) and go on; two-factor accounts go to the code step (US-AUTH-08).
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
+import { browser } from '../lib/browser';
 import { setCsrfToken } from '../lib/csrf';
 import { TRPCClientError } from '@trpc/client';
 import { useTRPCClient } from '../lib/trpc';
@@ -24,7 +25,9 @@ export function useFinishLogin() {
       remember: me.remember,
     });
     await queryClient.invalidateQueries();
-    await router.navigate({ href: redirectTo });
+    // The server has already checked `next` (US-AUTH-18): an app's https address loads that app; a path stays here.
+    if (/^https:\/\//.test(redirectTo)) browser.assign(redirectTo);
+    else await router.navigate({ href: redirectTo });
   };
 }
 

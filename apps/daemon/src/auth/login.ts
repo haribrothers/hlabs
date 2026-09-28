@@ -75,6 +75,8 @@ export class LoginService {
     private readonly sessions: SessionService,
     private readonly totp: TotpService,
     private readonly bus: EventBus,
+    /** Where `next` may point besides dashboard paths (US-AUTH-18). */
+    private readonly nextOrigins: () => ReadonlySet<string> = () => new Set(),
   ) {}
 
   /** The lock state for this username (trimmed, lowercased) and IP. */
@@ -324,7 +326,7 @@ export class LoginService {
     if (user)
       this.db.insert(loginAttempts).values({ id: ulid(), username: user.username, ip, at: now, success: true }).run();
     this.audit(userId, 'auth.login.succeeded', null, ip, now);
-    return { session, redirectTo: safeNext(next) };
+    return { session, redirectTo: safeNext(next, this.nextOrigins()) };
   }
 
   /** A warning notification for one user, or for all admins (`userId` null), announced on the bus. */

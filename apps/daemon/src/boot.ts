@@ -1,6 +1,7 @@
 // The daemon boot sequence (docs/prd/02-architecture.md §2.3). The HTTP server is already listening,
 // so /healthz reports each step and, if the database can't be opened, why.
-import { MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
+import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
+import { nextOrigins } from '@hlabs/shared';
 import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -170,7 +171,14 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     onboarding,
     sessions,
     totp,
-    login: new LoginService(db, sessions, totp, bus),
+    login: new LoginService(db, sessions, totp, bus, () =>
+      nextOrigins({
+        dashboardUrl: config.dashboardUrl,
+        hostname: getSetting(db, 'hostname'),
+        apps: db.select({ hostname: apps.hostname, port: apps.portFallback }).from(apps).all(),
+        tailnet: getSetting(db, 'remote').tailnetName,
+      }),
+    ),
     drives: deps.drives ?? new NodeDriveProbe(),
     network: new NetworkStorage({
       db,
