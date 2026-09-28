@@ -1,4 +1,5 @@
 import type { AppHandlers } from '@hlabs/api';
+import { storageLocations } from '@hlabs/db';
 import type { DaemonContext } from '../context';
 
 export const storage: AppHandlers<DaemonContext>['storage'] = {
@@ -7,6 +8,19 @@ export const storage: AppHandlers<DaemonContext>['storage'] = {
     drives: (await ctx.services.drives.externalDrives()).filter((d) => d.writable),
   }),
   locations: {
+    list: (_input, ctx) => ({
+      locations: ctx.services.db
+        .select({
+          id: storageLocations.id,
+          kind: storageLocations.kind,
+          name: storageLocations.name,
+          path: storageLocations.path,
+          isRoot: storageLocations.isRoot,
+          status: storageLocations.status,
+        })
+        .from(storageLocations)
+        .all(),
+    }),
     testNetwork: async (input, ctx) => {
       await ctx.services.network.test(input);
       return { ok: true };

@@ -27,7 +27,22 @@ export const storage = {
   /** Connected, writable external drives. */
   listDrives: io(empty, z.object({ drives: z.array(driveSchema) })),
   locations: {
-    list: io(empty, pending),
+    /** Storage locations; exactly one is the root (04 invariant 4). */
+    list: io(
+      empty,
+      z.object({
+        locations: z.array(
+          z.object({
+            id: idSchema,
+            kind: z.enum(['local', 'external', 'smb', 'nfs']),
+            name: z.string(),
+            path: z.string(),
+            isRoot: z.boolean(),
+            status: z.string(),
+          }),
+        ),
+      }),
+    ),
     discover: io(empty, pending),
     testNetwork: io(networkLocationSchema, ok),
     addNetwork: io(networkLocationSchema, z.object({ locationId: idSchema })),

@@ -13,7 +13,12 @@ export const system: AppHandlers<DaemonContext>['system'] = {
     return {
       version: config.version,
       hostname: getSetting(db, 'hostname'),
-      os: { platform: process.platform === 'darwin' ? 'darwin' : 'linux', release: release(), arch: process.arch },
+      os: {
+        platform: process.platform === 'darwin' ? 'darwin' : 'linux',
+        release: release(),
+        arch: process.arch,
+        headless: config.headless,
+      },
       cpu: { model: cpuList[0]?.model ?? 'unknown', cores: cpuList.length },
       memoryBytes: totalmem(),
       uptimeSeconds: Math.round(uptime()),

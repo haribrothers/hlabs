@@ -170,6 +170,16 @@ export const onboardingCopy = {
     notWritable: (path: string) => `hlabs can't write to ${path}. Check the folder's permissions, then try again.`,
     failed: "Couldn't save where your data lives. Try again.",
   },
+  done: {
+    title: (firstName: string) => (firstName ? `You're all set, ${firstName}` : "You're all set"),
+    appsInstalling: 'Your apps are installing.',
+    menuBar: 'hlabs keeps running from the menu bar.',
+    background: 'hlabs keeps running in the background.',
+    summary: 'What was set up',
+    admin: 'Admin account',
+    adminDetail: (username: string, totp: boolean) => `${username} · 2FA ${totp ? 'on' : 'off'}`,
+    storage: 'Storage',
+  },
   stepNames: {
     system: 'System check',
     account: 'Admin account',

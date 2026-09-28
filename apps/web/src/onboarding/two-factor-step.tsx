@@ -59,6 +59,8 @@ export function TwoFactorStep() {
 
   const confirm = useMutation(
     trpc.onboarding.confirmTotp.mutationOptions({
+      // Two-factor is on now: anything showing the account (the finish screen) must not use the old answer.
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: trpc.auth.me.queryKey() }),
       onError: (err) => {
         setError(hlabsCode(err) === 'AUTH_LOCKED' ? copy.locked : copy.wrongCode);
         setCode('');

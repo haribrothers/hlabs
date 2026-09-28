@@ -95,6 +95,10 @@ On a Mac, the share appears in Finder while hlabs uses it.
 
 App databases always stay on this computer for speed, wherever your files go. Once you continue, setup is finished.
 
+## When setup is done
+
+hlabs shows a summary of what was set up: your admin account (and whether two-factor login is on) and where your data lives. hlabs keeps running from the menu bar (in the background on a Linux server).
+
 ## "Finish setup on the computer running hlabs."
 
 You'll see this if you open hlabs from another device, such as your phone, before setup is finished. It keeps anyone else on your network from creating the first admin account. Open the setup address on the computer running hlabs instead.
