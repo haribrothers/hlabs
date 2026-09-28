@@ -76,6 +76,12 @@ Home folders, shared files and media go in one place, the storage location. You 
 - **This computer** (the default, and the fastest) keeps them in `~/hlabs` in your home folder (`/var/lib/hlabs/storage` on a Linux server). hlabs creates the folders it needs there and never deletes anything already in that folder.
 - **External drive** and **Network storage (NAS)** put your files on a connected drive or a network share instead.
 
+### Use an external drive
+
+Choose **External drive**, then pick one of the connected drives hlabs can write to. If none is listed, connect the drive; the list refreshes by itself. hlabs keeps your files in an `hlabs` folder on the drive.
+
+Drives formatted **FAT32** or **exFAT** can't keep file permissions, so some apps may not work with them. If you can, use a drive formatted APFS or Mac OS Extended (Mac) or ext4 (Linux). If the drive is disconnected before you continue, choose it again once it's back.
+
 App databases always stay on this computer for speed, wherever your files go. Once you continue, setup is finished.
 
 ## "Finish setup on the computer running hlabs."

@@ -23,7 +23,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ONB-12 · Save recovery codes
 - [ ] US-ONB-13 · Skip two-factor for now (built except the "2FA off" row on the finish screen, which US-ONB-21 shows)
 - [x] US-ONB-14 · Keep data on this computer
-- [ ] US-ONB-15 · Use an external drive
+- [x] US-ONB-15 · Use an external drive
 - [ ] US-ONB-16 · Use network storage (NAS)
 - [ ] US-ONB-21 · See a summary when setup is done
 - [ ] US-ONB-22 · Finish onboarding and open the dashboard

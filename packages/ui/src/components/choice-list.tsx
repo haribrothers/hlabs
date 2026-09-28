@@ -15,7 +15,8 @@ export interface ChoiceListProps<V extends string> {
   /** Names the group for screen readers: "Storage location". */
   label: string;
   options: ChoiceOption<V>[];
-  value: V;
+  /** The chosen option's value, or '' before anything is chosen. */
+  value: V | '';
   onChange: (value: V) => void;
   className?: string;
 }
@@ -45,6 +46,12 @@ export function ChoiceList<V extends string>({ label, options, value, onChange, 
     refs.current[next]?.focus();
   };
 
+  // With nothing chosen yet, the first option takes the Tab stop.
+  const tabStop = Math.max(
+    0,
+    options.findIndex((o) => o.value === value),
+  );
+
   return (
     <div role="radiogroup" aria-label={label} className={cn('hl-choices', className)} onKeyDown={onKeyDown}>
       {options.map((o, i) => {
@@ -58,7 +65,7 @@ export function ChoiceList<V extends string>({ label, options, value, onChange, 
             type="button"
             role="radio"
             aria-checked={checked}
-            tabIndex={checked ? 0 : -1}
+            tabIndex={i === tabStop ? 0 : -1}
             className="hl-choice"
             onClick={() => onChange(o.value)}
           >

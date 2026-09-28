@@ -24,6 +24,12 @@ describe('ChoiceList', () => {
     expect(screen.getByRole('radio', { name: /External drive/ })).toHaveAttribute('tabindex', '-1');
   });
 
+  it('with nothing chosen, the first option takes the Tab stop', () => {
+    render(<ChoiceList label="Drives" options={options} value="" onChange={() => {}} />);
+    expect(screen.getByRole('radio', { name: /This computer/ })).toHaveAttribute('tabindex', '0');
+    expect(screen.getAllByRole('radio').every((r) => r.getAttribute('aria-checked') === 'false')).toBe(true);
+  });
+
   it('arrow keys move and select; click selects', () => {
     render(<Harness />);
     const local = screen.getByRole('radio', { name: /This computer/ });
