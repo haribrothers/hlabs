@@ -6,6 +6,19 @@ import { csrfTokenFor, sessionCookie } from '../auth/sessions';
 import type { DaemonContext } from '../context';
 
 export const auth: AppHandlers<DaemonContext>['auth'] = {
+  /** A recovery code instead of the two-factor code (US-AUTH-09). */
+  useRecoveryCode: async ({ challengeId, code }, ctx) => {
+    const { origin, allowedOrigins, ip, userAgent } = ctx.request;
+    if (origin !== null && !allowedOrigins.includes(origin)) throw hlabsError('CSRF_REJECTED');
+    const { session, redirectTo, recoveryCodesLeft } = await ctx.services.login.useRecoveryCode({
+      challengeId,
+      code,
+      ip,
+      userAgent,
+    });
+    ctx.request.setCookie(sessionCookie(session.raw, session));
+    return { redirectTo, recoveryCodesLeft };
+  },
   /** The two-factor step of a log-in (US-AUTH-08). */
   verifyTotp: async ({ challengeId, code }, ctx) => {
     const { origin, allowedOrigins, ip, userAgent } = ctx.request;

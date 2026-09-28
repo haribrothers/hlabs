@@ -170,7 +170,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     onboarding,
     sessions,
     totp,
-    login: new LoginService(db, sessions, totp),
+    login: new LoginService(db, sessions, totp, bus),
     drives: deps.drives ?? new NodeDriveProbe(),
     network: new NetworkStorage({
       db,

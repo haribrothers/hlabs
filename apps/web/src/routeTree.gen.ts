@@ -25,6 +25,7 @@ import { Route as LoginUsernameRouteImport } from './routes/login.username'
 import { Route as LoginUsersRouteImport } from './routes/login.users'
 import { Route as SetupIndexRouteImport } from './routes/setup.index'
 import { Route as SetupStepRouteImport } from './routes/setup.$step'
+import { Route as SettingsAccountTwoFactorRouteImport } from './routes/settings.account.two-factor'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -106,12 +107,18 @@ const SetupStepRoute = SetupStepRouteImport.update({
   path: '/$step',
   getParentRoute: () => SetupRoute,
 } as any)
+const SettingsAccountTwoFactorRoute =
+  SettingsAccountTwoFactorRouteImport.update({
+    id: '/account/two-factor',
+    path: '/account/two-factor',
+    getParentRoute: () => SettingsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/setup': typeof SetupRouteWithChildren
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
@@ -124,12 +131,13 @@ export interface FileRoutesByFullPath {
   '/setup/$step': typeof SetupStepRoute
   '/login/': typeof LoginIndexRoute
   '/setup/': typeof SetupIndexRoute
+  '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
@@ -141,13 +149,14 @@ export interface FileRoutesByTo {
   '/setup/$step': typeof SetupStepRoute
   '/login': typeof LoginIndexRoute
   '/setup': typeof SetupIndexRoute
+  '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/setup': typeof SetupRouteWithChildren
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
@@ -160,6 +169,7 @@ export interface FileRoutesById {
   '/setup/$step': typeof SetupStepRoute
   '/login/': typeof LoginIndexRoute
   '/setup/': typeof SetupIndexRoute
+  '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/setup/$step'
     | '/login/'
     | '/setup/'
+    | '/settings/account/two-factor'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/setup/$step'
     | '/login'
     | '/setup'
+    | '/settings/account/two-factor'
   id:
     | '__root__'
     | '/'
@@ -215,13 +227,14 @@ export interface FileRouteTypes {
     | '/setup/$step'
     | '/login/'
     | '/setup/'
+    | '/settings/account/two-factor'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BackupsRoute: typeof BackupsRoute
   FilesRoute: typeof FilesRoute
-  SettingsRoute: typeof SettingsRoute
+  SettingsRoute: typeof SettingsRouteWithChildren
   SetupRoute: typeof SetupRouteWithChildren
   StoreRoute: typeof StoreRoute
   UsageRoute: typeof UsageRoute
@@ -348,8 +361,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupStepRouteImport
       parentRoute: typeof SetupRoute
     }
+    '/settings/account/two-factor': {
+      id: '/settings/account/two-factor'
+      path: '/account/two-factor'
+      fullPath: '/settings/account/two-factor'
+      preLoaderRoute: typeof SettingsAccountTwoFactorRouteImport
+      parentRoute: typeof SettingsRoute
+    }
   }
 }
+
+interface SettingsRouteChildren {
+  SettingsAccountTwoFactorRoute: typeof SettingsAccountTwoFactorRoute
+}
+
+const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsAccountTwoFactorRoute: SettingsAccountTwoFactorRoute,
+}
+
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
 
 interface SetupRouteChildren {
   SetupStepRoute: typeof SetupStepRoute
@@ -367,7 +399,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BackupsRoute: BackupsRoute,
   FilesRoute: FilesRoute,
-  SettingsRoute: SettingsRoute,
+  SettingsRoute: SettingsRouteWithChildren,
   SetupRoute: SetupRouteWithChildren,
   StoreRoute: StoreRoute,
   UsageRoute: UsageRoute,

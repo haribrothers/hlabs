@@ -3,28 +3,16 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { generateSync } from 'otplib';
 import { FIRST_RUN_URL } from './instances';
-import { ADMIN, createAdminInUi, turnOnTwoFactor } from './onboarding';
+import { finishOnboardingWithTwoFactor, passwordStep } from './onboarding';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
 test('US-AUTH-08 after the password, the 6-digit code logs in and goes to next', async ({ page, request, browser }) => {
   test.setTimeout(90_000);
-  await createAdminInUi(page, request);
-  const { secret } = await turnOnTwoFactor(page);
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/setup\/done$/);
-  await page.getByRole('button', { name: 'Open dashboard' }).click();
-  await expect(page).toHaveURL(`${FIRST_RUN_URL}/`);
+  const { secret } = await finishOnboardingWithTwoFactor(page, request);
 
   const other = await (await browser.newContext({ baseURL: FIRST_RUN_URL })).newPage();
-  const password = async () => {
-    await other.goto('/login/username?next=%2Fsettings');
-    await other.getByLabel('Username').fill(ADMIN.username);
-    await other.getByLabel('Password', { exact: true }).fill(ADMIN.password);
-    await other.getByRole('button', { name: 'Log in' }).click();
-    await expect(other).toHaveURL(/\/login\/code\?/);
-  };
+  const password = () => passwordStep(other);
   const type = async (code: string) => {
     for (let i = 0; i < 6; i++) await other.getByLabel(`Digit ${i + 1}`).fill(code[i]!);
   };

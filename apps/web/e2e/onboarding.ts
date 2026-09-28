@@ -42,3 +42,24 @@ export async function finishOnboarding(page: Page, request: APIRequestContext) {
   await page.getByRole('button', { name: 'Open dashboard' }).click();
   await expect(page).toHaveURL(/\/$/);
 }
+
+/** A finished first run with two-factor on: returns its recovery codes and key. The page ends on Home. */
+export async function finishOnboardingWithTwoFactor(page: Page, request: APIRequestContext) {
+  await createAdminInUi(page, request);
+  const codes = await turnOnTwoFactor(page);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page).toHaveURL(/\/setup\/done$/);
+  await page.getByRole('button', { name: 'Open dashboard' }).click();
+  await expect(page).toHaveURL(`${FIRST_RUN_URL}/`);
+  return codes;
+}
+
+/** In a fresh browser: username and password for the admin, ending on the code step. */
+export async function passwordStep(page: Page, next = '/settings') {
+  await page.goto(`/login/username?next=${encodeURIComponent(next)}`);
+  await page.getByLabel('Username').fill(ADMIN.username);
+  await page.getByLabel('Password', { exact: true }).fill(ADMIN.password);
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page).toHaveURL(/\/login\/code\?/);
+}

@@ -54,7 +54,11 @@ export const auth = {
     ]),
   ),
   verifyTotp: io(z.object({ challengeId: idSchema, code: totpCodeSchema }), redirectSchema),
-  useRecoveryCode: io(z.object({ challengeId: idSchema, code: z.string().min(1).max(64) }), redirectSchema),
+  useRecoveryCode: io(
+    z.object({ challengeId: idSchema, code: z.string().min(1).max(64) }),
+    /** `recoveryCodesLeft`: unused codes after this one (US-AUTH-09). */
+    redirectSchema.extend({ recoveryCodesLeft: z.number().int().min(0) }),
+  ),
   logout: io(empty, ok),
   me: io(empty, meSchema),
   listSessions: io(

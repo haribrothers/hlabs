@@ -1,10 +1,11 @@
 // Logging in (US-AUTH-03, US-AUTH-04; 07 §7.2): Argon2id verify (against a dummy hash for unknown accounts, so the
 // time is the same), every attempt recorded, 5 failures in 15 minutes per username and IP lock that pair.
 import { hlabsError } from '@hlabs/api';
-import { auditLog, loginAttempts, users, type HlabsDb } from '@hlabs/db';
+import { auditLog, loginAttempts, notifications, recoveryCodes, users, type HlabsDb } from '@hlabs/db';
 import { safeNext, ulid } from '@hlabs/shared';
-import { and, eq, gte } from 'drizzle-orm';
+import { and, eq, gte, isNull } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
+import type { EventBus } from '../events/bus';
 import { hashPassword, verifyPassword } from './passwords';
 import type { SessionService } from './sessions';
 import type { TotpService } from './totp';
@@ -23,6 +24,12 @@ export interface LoginChallenge {
   expiresAt: number;
 }
 
+/** `ABCD 2345`, `abcd2345` and `abcd-2345` are the same code; anything else can't match. */
+export function normaliseRecoveryCode(input: string): string | null {
+  const bare = input.toLowerCase().replace(/[\s-]/g, '');
+  return /^[a-z0-9]{8}$/.test(bare) ? `${bare.slice(0, 4)}-${bare.slice(4)}` : null;
+}
+
 export class LoginService {
   private dummyHash: Promise<string> | null = null;
   private readonly challenges = new Map<string, LoginChallenge>();
@@ -31,6 +38,7 @@ export class LoginService {
     private readonly db: HlabsDb,
     private readonly sessions: SessionService,
     private readonly totp: TotpService,
+    private readonly bus: EventBus,
   ) {}
 
   /** Failed attempts for this username (as typed, lowercased) and IP in the last 15 minutes. */
@@ -110,34 +118,119 @@ export class LoginService {
    */
   async verifyTotp(opts: { challengeId: string; code: string; ip: string; userAgent: string | null; now?: number }) {
     const now = opts.now ?? Date.now();
-    const challenge = this.challenge(opts.challengeId, now);
+    const { user, challenge, failures } = this.secondStep(opts.challengeId, opts.ip, now);
+    if (!(await this.totp.verifyLogin(user.id, opts.code, now))) {
+      this.secondStepFailed(user, failures, 'totp', opts.ip, now);
+      throw hlabsError('AUTH_TOTP_INVALID');
+    }
+    this.challenges.delete(opts.challengeId);
+    return this.startSession(user.id, challenge.remember, challenge.next, opts.ip, opts.userAgent, now);
+  }
+
+  /**
+   * A recovery code instead of the 6-digit code (US-AUTH-09): typed with or without the dash, in any case. A match
+   * is used up (only one of two tabs using it at once wins), audited, and the user gets a warning notification.
+   */
+  async useRecoveryCode(opts: {
+    challengeId: string;
+    code: string;
+    ip: string;
+    userAgent: string | null;
+    now?: number;
+  }) {
+    const now = opts.now ?? Date.now();
+    const { user, challenge, failures } = this.secondStep(opts.challengeId, opts.ip, now);
+    const code = normaliseRecoveryCode(opts.code);
+    const unused = this.db
+      .select()
+      .from(recoveryCodes)
+      .where(and(eq(recoveryCodes.userId, user.id), isNull(recoveryCodes.usedAt)))
+      .all();
+    let matched: string | null = null;
+    if (code) {
+      // One Argon2id verify per unused code; they're hashed, so there's nothing to look up.
+      for (const row of unused) {
+        if (await verifyPassword(row.codeHash, code)) {
+          matched = row.id;
+          break;
+        }
+      }
+    }
+    const used =
+      matched !== null &&
+      this.db
+        .update(recoveryCodes)
+        .set({ usedAt: now })
+        .where(and(eq(recoveryCodes.id, matched), isNull(recoveryCodes.usedAt)))
+        .run().changes === 1;
+    if (!used) {
+      this.secondStepFailed(user, failures, 'recovery_code', opts.ip, now);
+      throw hlabsError('AUTH_RECOVERY_INVALID');
+    }
+
+    this.challenges.delete(opts.challengeId);
+    const left = unused.length - 1;
+    this.audit(user.id, 'auth.login.recovery_code', { left }, opts.ip, now);
+    const notificationId = ulid();
+    const title = 'Recovery code used';
+    this.db
+      .insert(notifications)
+      .values({
+        id: notificationId,
+        userId: user.id,
+        kind: 'auth.recovery_code',
+        severity: 'warning',
+        title,
+        body: `Someone logged in as @${user.username} with a recovery code. ${left} left. If this wasn't you, change your password.`,
+        actionJson: null,
+        createdAt: now,
+        readAt: null,
+      })
+      .run();
+    this.bus.emit(
+      'notification.created',
+      { notificationId, severity: 'warning', title },
+      { kind: 'user', userId: user.id },
+    );
+    return {
+      ...this.startSession(user.id, challenge.remember, challenge.next, opts.ip, opts.userAgent, now),
+      recoveryCodesLeft: left,
+    };
+  }
+
+  /** The waiting challenge and its user, unless it expired or the pair is locked. */
+  private secondStep(challengeId: string, ip: string, now: number) {
+    const challenge = this.challenge(challengeId, now);
     if (!challenge) throw hlabsError('AUTH_CHALLENGE_EXPIRED');
     const user = this.db.select().from(users).where(eq(users.id, challenge.userId)).get();
     if (!user || user.disabledAt !== null) {
-      this.challenges.delete(opts.challengeId);
+      this.challenges.delete(challengeId);
       throw hlabsError('AUTH_CHALLENGE_EXPIRED');
     }
-    const failures = this.recentFailures(user.username, opts.ip, now);
+    const failures = this.recentFailures(user.username, ip, now);
     if (failures.length >= LOGIN_LOCK_ATTEMPTS) {
       throw hlabsError('AUTH_LOCKED', 'Too many failed logins', {
         until: failures.at(-LOGIN_LOCK_ATTEMPTS)! + LOGIN_LOCK_MS,
       });
     }
-    if (!(await this.totp.verifyLogin(user.id, opts.code, now))) {
-      this.db
-        .insert(loginAttempts)
-        .values({ id: ulid(), username: user.username, ip: opts.ip, at: now, success: false })
-        .run();
-      this.audit(user.id, 'auth.login.failed', { username: user.username, step: 'totp' }, opts.ip, now);
-      if (failures.length + 1 >= LOGIN_LOCK_ATTEMPTS) {
-        throw hlabsError('AUTH_LOCKED', 'Too many failed logins', {
-          until: [...failures, now].at(-LOGIN_LOCK_ATTEMPTS)! + LOGIN_LOCK_MS,
-        });
-      }
-      throw hlabsError('AUTH_TOTP_INVALID');
+    return { challenge, user, failures };
+  }
+
+  /** A wrong code counts like a wrong password; the fifth one locks. */
+  private secondStepFailed(
+    user: { id: string; username: string },
+    failures: number[],
+    step: 'totp' | 'recovery_code',
+    ip: string,
+    now: number,
+  ) {
+    this.db.insert(loginAttempts).values({ id: ulid(), username: user.username, ip, at: now, success: false }).run();
+    this.audit(user.id, 'auth.login.failed', { username: user.username, step }, ip, now);
+    if (failures.length + 1 >= LOGIN_LOCK_ATTEMPTS) {
+      throw hlabsError('AUTH_LOCKED', 'Too many failed logins', {
+        until: [...failures, now].at(-LOGIN_LOCK_ATTEMPTS)! + LOGIN_LOCK_MS,
+      });
     }
-    this.challenges.delete(opts.challengeId);
-    return this.startSession(user.id, challenge.remember, challenge.next, opts.ip, opts.userAgent, now);
   }
 
   /** The waiting two-factor step, if it hasn't expired (US-AUTH-08). */

@@ -36,6 +36,10 @@ export const loginCopy = {
   recoveryLabel: 'Recovery code',
   recoveryPlaceholder: 'xxxx-xxxx',
   wrongCode: "That code didn't work. Check the time on your phone and try again.",
+  wrongRecovery: "That recovery code didn't work.",
+  recoveryUsed: (left: number) => `Recovery code used. You have ${left} left.`,
+  recoveryLow: 'Make new codes in Settings › Account.',
+  manageCodes: 'Make new codes',
   cantCheck: "hlabs can't check codes right now. Use a recovery code or ask your admin.",
   secure: (host: string) => `${host} · secured with HTTPS`,
 } as const;

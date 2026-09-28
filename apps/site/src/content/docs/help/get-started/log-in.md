@@ -33,7 +33,13 @@ If two-factor login is on for your account, hlabs asks for a code after your pas
 - **"That code didn't work."**: codes change every 30 seconds, and each one works only once. Wait for the next code and check that the time on your phone is set automatically.
 - **"Your login timed out."**: you have 5 minutes to enter the code. Enter your password again to get a new chance.
 - Wrong codes count toward the same limit as wrong passwords: after 5 in 15 minutes, logging in is paused for 15 minutes.
-- **Back** returns to the password screen. Lost your phone? Choose **Use a recovery code**.
+- **Back** returns to the password screen.
+
+## Use a recovery code
+
+Lost your phone? Choose **Use a recovery code** and type one of the codes you saved when you turned on two-factor login. Capital letters and the dash don't matter: `ABCD2345` works as `abcd-2345`.
+
+Each code works once. After you use one, hlabs tells you how many are left and adds a notice to your notifications, so you'd notice if someone else used one. When 2 or fewer are left, make new codes in **Settings › Account**. A code that was already used, or mistyped, counts as a wrong try toward the pause after 5.
 
 ## If you can't log in
 
