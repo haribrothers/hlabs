@@ -4,8 +4,12 @@ import { Smartphone, iconDefaults } from '@hlabs/icons';
 import { Badge, Button, ModalDialog } from '@hlabs/ui';
 import type { AppRouter } from '@hlabs/api';
 import type { inferRouterOutputs } from '@trpc/server';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { accountCopy } from '../copy/account';
 import { downloadText, recoveryCodesText } from '../lib/recovery-file';
+import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { ConfirmWithPassword, passwordStepError } from './confirm-with-password';
 
 const copy = accountCopy;
 
@@ -56,6 +60,47 @@ export function TwoFactorManage({
   codes?: string[];
   onClose: () => void;
 }) {
+  const client = useTRPCClient();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  // Which step the dialog shows; plain codes live only here and go when the dialog closes.
+  const [view, setView] = useState<'overview' | 'newCodes'>('overview');
+  const [fresh, setFresh] = useState<string[] | undefined>(codes);
+  const [stepError, setStepError] = useState<{ field?: string; form?: string } | null>(null);
+  const back = () => {
+    setView('overview');
+    setStepError(null);
+  };
+
+  // Make new codes (US-ACCT-10): the old ones stop working, the new ones show once.
+  const regenerate = useMutation({
+    mutationFn: (password: string) => client.account.recoveryCodes.regenerate.mutate({ password }),
+    onSuccess: async ({ recoveryCodes }) => {
+      setFresh(recoveryCodes);
+      back();
+      await queryClient.invalidateQueries({ queryKey: trpc.account.get.queryKey() });
+    },
+    onError: (err) => setStepError(passwordStepError(err)),
+  });
+
+  if (view === 'newCodes') {
+    return (
+      <ModalDialog open onOpenChange={(open) => (open ? null : onClose())} title={copy.makeNewCodes}>
+        <ConfirmWithPassword
+          message={copy.oldCodesStop}
+          confirmLabel={copy.makeNewCodes}
+          busy={regenerate.isPending}
+          error={stepError}
+          onCancel={back}
+          onConfirm={(password) => {
+            setStepError(null);
+            regenerate.mutate(password);
+          }}
+        />
+      </ModalDialog>
+    );
+  }
+
   const added =
     account.totpAddedDuringSetup || account.totpEnabledAt === null
       ? copy.addedAtSetup
@@ -82,23 +127,23 @@ export function TwoFactorManage({
             </span>
           </div>
         </div>
-        <CodesBlock account={account} codes={codes} />
+        <CodesBlock account={account} codes={fresh} />
         <div className="flex flex-wrap gap-2">
           {/* Download and Print need the codes in plain text, which exist only right after they're made. */}
-          <span title={codes ? undefined : copy.seeAgain}>
+          <span title={fresh ? undefined : copy.seeAgain}>
             <Button
               variant="secondary"
               size="sm"
-              disabled={!codes}
-              aria-description={codes ? undefined : copy.seeAgain}
+              disabled={!fresh}
+              aria-description={fresh ? undefined : copy.seeAgain}
               onClick={() =>
-                codes &&
+                fresh &&
                 downloadText(
                   recoveryCodesText({
                     hostname: account.hostname,
                     username: account.username,
                     date: new Date(),
-                    codes,
+                    codes: fresh,
                   }),
                   recoveryFileName(account.username),
                 )
@@ -107,17 +152,20 @@ export function TwoFactorManage({
               {copy.download}
             </Button>
           </span>
-          <span title={codes ? undefined : copy.seeAgain}>
+          <span title={fresh ? undefined : copy.seeAgain}>
             <Button
               variant="secondary"
               size="sm"
-              disabled={!codes}
-              aria-description={codes ? undefined : copy.seeAgain}
+              disabled={!fresh}
+              aria-description={fresh ? undefined : copy.seeAgain}
               onClick={() => window.print()}
             >
               {copy.print}
             </Button>
           </span>
+          <Button variant="secondary" size="sm" onClick={() => setView('newCodes')}>
+            {copy.makeNewCodes}
+          </Button>
         </div>
       </div>
     </ModalDialog>

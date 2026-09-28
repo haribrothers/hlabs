@@ -43,6 +43,14 @@ export function newRecoveryCode(): string {
   return `${part()}-${part()}`;
 }
 
+/** 10 new codes and their Argon2id hashes, one at a time (each hash takes 64 MiB). */
+export async function makeRecoveryCodes(): Promise<{ codes: string[]; hashes: string[] }> {
+  const codes = Array.from({ length: RECOVERY_CODE_COUNT }, newRecoveryCode);
+  const hashes: string[] = [];
+  for (const c of codes) hashes.push(await hashPassword(c));
+  return { codes, hashes };
+}
+
 export class TotpService {
   /** Secrets shown but not yet confirmed, by user; a new setup replaces the old one (US-ONB-11). */
   private readonly pending = new Map<string, string>();
@@ -81,6 +89,32 @@ export class TotpService {
     return true;
   }
 
+  /**
+   * New recovery codes (US-ACCT-10): the old ones are deleted and the new ones stored in one transaction, so the old
+   * codes stop working at once. Two-factor must be on.
+   */
+  async regenerateRecoveryCodes(userId: string, opts: { ip: string | null; now?: number }): Promise<string[]> {
+    if (!this.isEnabled(userId)) throw hlabsError('VALIDATION_FAILED', 'Two-factor is off');
+    const { codes, hashes } = await makeRecoveryCodes();
+    const now = opts.now ?? Date.now();
+    this.db.transaction((tx) => {
+      tx.delete(recoveryCodes).where(eq(recoveryCodes.userId, userId)).run();
+      for (const codeHash of hashes) tx.insert(recoveryCodes).values({ id: ulid(), userId, codeHash }).run();
+      tx.insert(auditLog)
+        .values({
+          id: ulid(),
+          at: now,
+          userId,
+          action: 'account.recoveryCodes.regenerate',
+          target: userId,
+          detailJson: null,
+          ip: opts.ip,
+        })
+        .run();
+    });
+    return codes;
+  }
+
   discard(userId: string): void {
     this.pending.delete(userId);
   }
@@ -99,10 +133,7 @@ export class TotpService {
       throw hlabsError('TOTP_INVALID_CODE');
     }
 
-    const codes = Array.from({ length: RECOVERY_CODE_COUNT }, newRecoveryCode);
-    // One at a time: each Argon2id hash takes 64 MiB.
-    const hashes: string[] = [];
-    for (const c of codes) hashes.push(await hashPassword(c));
+    const { codes, hashes } = await makeRecoveryCodes();
     const secretRef = totpSecretRef(userId);
     await this.secrets.set(secretRef, secret);
     this.db.transaction((tx) => {

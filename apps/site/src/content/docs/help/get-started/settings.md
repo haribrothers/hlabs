@@ -39,3 +39,5 @@ If something's wrong, hlabs says so next to the field: the current password isn'
 **Settings › Account › Security** shows whether two-factor login is on, and how many of your 10 recovery codes you haven't used yet. When 3 or fewer are left it says "Running low": make new codes before you run out. Choose **Manage** or **View** to see the details.
 
 hlabs stores your recovery codes scrambled, like passwords, so it can't show them again later: in **Manage** you see which ones you've used, but not the codes themselves. Right after you make new codes (or turn on two-factor login), they're shown once in full, and you can **Download** them as a text file or **Print** them. Keep them somewhere safe, like a password manager.
+
+To replace your codes, choose **Make new codes** and enter your password. Your old codes stop working straight away, and the 10 new ones are shown once so you can save them.

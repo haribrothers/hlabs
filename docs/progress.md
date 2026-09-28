@@ -58,7 +58,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ACCT-07 · Password change errors
 - [x] US-ACCT-08 · See my two-factor and recovery code status
 - [x] US-ACCT-09 · View, download and print recovery codes
-- [ ] US-ACCT-10 · Make new recovery codes
+- [x] US-ACCT-10 · Make new recovery codes
 - [ ] US-ACCT-11 · Move two-factor to a new phone
 - [ ] US-ACCT-12 · Turn two-factor on or off
 - [ ] US-SYS-17 · See the container engine
