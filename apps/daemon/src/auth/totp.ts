@@ -20,9 +20,22 @@ const CODE_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';
 
 export const totpSecretRef = (userId: string) => `totp:${userId}`;
 
+/** The 30-second step the code belongs to (current ±1), or null. `after` refuses that step and earlier (replay). */
+export function totpCodeStep(secret: string, code: string, opts: { now?: number; after?: number } = {}): number | null {
+  if (!/^\d{6}$/.test(code)) return null;
+  const result = verifySync({
+    secret,
+    token: code,
+    epoch: Math.floor((opts.now ?? Date.now()) / 1000),
+    epochTolerance: 30,
+    ...(opts.after !== undefined ? { afterTimeStep: opts.after } : {}),
+  });
+  // The union also covers HOTP results, which have no timeStep.
+  return result.valid && 'timeStep' in result ? result.timeStep : null;
+}
+
 export function verifyTotpCode(secret: string, code: string, now = Date.now()): boolean {
-  if (!/^\d{6}$/.test(code)) return false;
-  return verifySync({ secret, token: code, epoch: Math.floor(now / 1000), epochTolerance: 30 }).valid;
+  return totpCodeStep(secret, code, { now }) !== null;
 }
 
 export function newRecoveryCode(): string {
@@ -34,6 +47,8 @@ export class TotpService {
   /** Secrets shown but not yet confirmed, by user; a new setup replaces the old one (US-ONB-11). */
   private readonly pending = new Map<string, string>();
   private readonly failures = new Map<string, number[]>();
+  /** The last step accepted at log-in, per user: the same code can't be used twice (US-AUTH-08). */
+  private readonly lastStep = new Map<string, number>();
 
   constructor(
     private readonly db: HlabsDb,
@@ -51,6 +66,19 @@ export class TotpService {
     const secret = generateSecret();
     this.pending.set(userId, secret);
     return { secret, otpauthUrl: generateURI({ issuer: TOTP_ISSUER, label: user.username, secret }) };
+  }
+
+  /**
+   * Checks a code at log-in (US-AUTH-08, US-AUTH-11). A secret that can't be read from the secret store is
+   * AUTH_SECRET_UNAVAILABLE, which the caller doesn't count as a failed attempt.
+   */
+  async verifyLogin(userId: string, code: string, now = Date.now()): Promise<boolean> {
+    const secret = await this.secrets.get(totpSecretRef(userId)).catch(() => null);
+    if (!secret) throw hlabsError('AUTH_SECRET_UNAVAILABLE');
+    const step = totpCodeStep(secret, code, { now, after: this.lastStep.get(userId) });
+    if (step === null) return false;
+    this.lastStep.set(userId, step);
+    return true;
   }
 
   discard(userId: string): void {

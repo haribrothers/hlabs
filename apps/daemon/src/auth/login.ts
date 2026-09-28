@@ -104,6 +104,42 @@ export class LoginService {
     };
   }
 
+  /**
+   * The code step of a log-in (US-AUTH-08): the challenge must be under 5 minutes old; a wrong code counts toward
+   * the lockout like a wrong password; the right one starts the session.
+   */
+  async verifyTotp(opts: { challengeId: string; code: string; ip: string; userAgent: string | null; now?: number }) {
+    const now = opts.now ?? Date.now();
+    const challenge = this.challenge(opts.challengeId, now);
+    if (!challenge) throw hlabsError('AUTH_CHALLENGE_EXPIRED');
+    const user = this.db.select().from(users).where(eq(users.id, challenge.userId)).get();
+    if (!user || user.disabledAt !== null) {
+      this.challenges.delete(opts.challengeId);
+      throw hlabsError('AUTH_CHALLENGE_EXPIRED');
+    }
+    const failures = this.recentFailures(user.username, opts.ip, now);
+    if (failures.length >= LOGIN_LOCK_ATTEMPTS) {
+      throw hlabsError('AUTH_LOCKED', 'Too many failed logins', {
+        until: failures.at(-LOGIN_LOCK_ATTEMPTS)! + LOGIN_LOCK_MS,
+      });
+    }
+    if (!(await this.totp.verifyLogin(user.id, opts.code, now))) {
+      this.db
+        .insert(loginAttempts)
+        .values({ id: ulid(), username: user.username, ip: opts.ip, at: now, success: false })
+        .run();
+      this.audit(user.id, 'auth.login.failed', { username: user.username, step: 'totp' }, opts.ip, now);
+      if (failures.length + 1 >= LOGIN_LOCK_ATTEMPTS) {
+        throw hlabsError('AUTH_LOCKED', 'Too many failed logins', {
+          until: [...failures, now].at(-LOGIN_LOCK_ATTEMPTS)! + LOGIN_LOCK_MS,
+        });
+      }
+      throw hlabsError('AUTH_TOTP_INVALID');
+    }
+    this.challenges.delete(opts.challengeId);
+    return this.startSession(user.id, challenge.remember, challenge.next, opts.ip, opts.userAgent, now);
+  }
+
   /** The waiting two-factor step, if it hasn't expired (US-AUTH-08). */
   challenge(id: string, now = Date.now()): LoginChallenge | null {
     const c = this.challenges.get(id);

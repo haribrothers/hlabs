@@ -6,6 +6,14 @@ import { csrfTokenFor, sessionCookie } from '../auth/sessions';
 import type { DaemonContext } from '../context';
 
 export const auth: AppHandlers<DaemonContext>['auth'] = {
+  /** The two-factor step of a log-in (US-AUTH-08). */
+  verifyTotp: async ({ challengeId, code }, ctx) => {
+    const { origin, allowedOrigins, ip, userAgent } = ctx.request;
+    if (origin !== null && !allowedOrigins.includes(origin)) throw hlabsError('CSRF_REJECTED');
+    const { session, redirectTo } = await ctx.services.login.verifyTotp({ challengeId, code, ip, userAgent });
+    ctx.request.setCookie(sessionCookie(session.raw, session));
+    return { redirectTo };
+  },
   /**
    * Username and password (US-AUTH-03). Public, but only from the dashboard's own origin. Two-factor accounts get a
    * challenge instead of a session (US-AUTH-08).
