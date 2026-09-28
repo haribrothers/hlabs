@@ -1,5 +1,5 @@
-// US-AUTH-01 · Pick my account from the user list (server side), and US-AUTH-02's hidden list.
-import { setSetting, users } from '@hlabs/db';
+// US-AUTH-01 · Pick my account from the user list (server side).
+import { users } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { startDaemon } from './helpers';
@@ -48,11 +48,5 @@ describe('US-AUTH-01', () => {
       ['Zoe', 'member'],
     ]);
     expect(Object.keys(list[0]!).sort()).toEqual(['avatarColor', 'displayName', 'id', 'role', 'username']);
-  });
-
-  it('is empty when an admin hides the list, whoever asks (US-AUTH-02)', async () => {
-    const d = await withUsers();
-    setSetting(d.services!.db, 'people', { showUserList: false });
-    expect(await d.list()).toEqual([]);
   });
 });

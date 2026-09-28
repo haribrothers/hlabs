@@ -1,0 +1,59 @@
+// LoginUsername (US-AUTH-02, US-AUTH-03): type a username when your name isn't listed, or the list is hidden.
+import { isFeatureEnabled } from '@hlabs/shared';
+import { Button, Switch, TextField } from '@hlabs/ui';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { loginCopy } from '../copy/login';
+import { useTRPC } from '../lib/trpc';
+import { OnboardingLogo } from '../onboarding/onboarding-layout';
+import { LoginLayout } from './login-layout';
+import { withNext } from './search';
+
+const copy = loginCopy;
+
+export function UsernameView({ next }: { next?: string }) {
+  const trpc = useTRPC();
+  // "All users" only when the list is shown (US-AUTH-02).
+  const list = useQuery({ ...trpc.auth.listLoginUsers.queryOptions(), retry: false });
+  const listShown = (list.data?.users.length ?? 0) > 0;
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
+  const field = useRef<HTMLInputElement>(null);
+  useEffect(() => field.current?.focus(), []);
+
+  // Logging in arrives with US-AUTH-03.
+  const submit = (e: FormEvent) => e.preventDefault();
+
+  return (
+    <LoginLayout back={listShown ? { label: copy.allUsers, to: '/login/users', search: withNext(next) } : undefined}>
+      <OnboardingLogo />
+      <h1 className="m-0 text-display">{copy.usernameTitle}</h1>
+      <p className="m-0 text-body text-ink-muted">{copy.usernameLead}</p>
+      <form className="mt-4 flex w-full max-w-sm flex-col gap-4 text-left" onSubmit={submit}>
+        <TextField
+          ref={field}
+          label={copy.username}
+          placeholder={copy.usernamePlaceholder}
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <TextField
+          label={copy.password}
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <Switch label={copy.remember} checked={remember} onChange={setRemember} />
+        <Button type="submit" size="lg" disabled={!username.trim() || !password}>
+          {copy.logIn}
+        </Button>
+      </form>
+      {isFeatureEnabled('forgotPassword') ? <p className="m-0 text-body-sm">{copy.forgot}</p> : null}
+    </LoginLayout>
+  );
+}
