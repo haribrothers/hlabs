@@ -31,6 +31,8 @@ Usernames don't care about capital letters or spaces at the ends: "Hari " works 
 If two-factor login is on for your account, hlabs asks for a code after your password. Open your authenticator app and type the 6-digit code for hlabs; it's checked as soon as you type the sixth digit.
 
 - **"That code didn't work."**: codes change every 30 seconds, and each one works only once. Wait for the next code and check that the time on your phone is set automatically.
+- A code from just before or just after the current one still works, so a phone clock a few seconds out is fine.
+- **"hlabs can't check codes right now."**: hlabs couldn't read your two-factor key from this computer's keychain. This doesn't count as a wrong try. Use a recovery code, or ask your admin.
 - **"Your login timed out."**: you have 5 minutes to enter the code. Enter your password again to get a new chance.
 - Wrong codes count toward the same limit as wrong passwords: after 5 in 15 minutes, logging in is paused for 15 minutes.
 - **Back** returns to the password screen.

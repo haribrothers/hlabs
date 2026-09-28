@@ -119,7 +119,15 @@ export class LoginService {
   async verifyTotp(opts: { challengeId: string; code: string; ip: string; userAgent: string | null; now?: number }) {
     const now = opts.now ?? Date.now();
     const { user, challenge, failures } = this.secondStep(opts.challengeId, opts.ip, now);
-    if (!(await this.totp.verifyLogin(user.id, opts.code, now))) {
+    let right: boolean;
+    try {
+      right = await this.totp.verifyLogin(user.id, opts.code, now);
+    } catch (err) {
+      // The secret can't be read (US-AUTH-11): logged, and not the person's fault, so it doesn't count.
+      this.audit(user.id, 'auth.totp.secret_unavailable', null, opts.ip, now);
+      throw err;
+    }
+    if (!right) {
       this.secondStepFailed(user, failures, 'totp', opts.ip, now);
       throw hlabsError('AUTH_TOTP_INVALID');
     }
