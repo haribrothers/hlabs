@@ -38,6 +38,11 @@ export const FEATURE_PHASE = {
   renameServer: 9,
   moveAllData: 9,
   engineSwitch: 9,
+  /** Settings sections (US-ACCT-01): Storage and Advanced (phase 7), About (8), Notification preferences (9). */
+  storageSettings: 7,
+  advancedSettings: 7,
+  about: 8,
+  notificationPrefs: 9,
 } as const satisfies Record<string, number>;
 
 export type Feature = keyof typeof FEATURE_PHASE;

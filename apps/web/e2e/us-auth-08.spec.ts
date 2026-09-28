@@ -34,5 +34,5 @@ test('US-AUTH-08 after the password, the 6-digit code logs in and goes to next',
   // The right code (the sixth digit submits) goes on to next.
   await password();
   await type(right);
-  await expect(other).toHaveURL(`${FIRST_RUN_URL}/settings`);
+  await expect(other).toHaveURL(new RegExp(`^${FIRST_RUN_URL}/settings(/account)?$`));
 });

@@ -13,11 +13,11 @@ test('US-AUTH-16 Log out ends this device only and lands on Login with my name',
   await finishOnboarding(setup, request);
   const context = await browser.newContext({ baseURL: FIRST_RUN_URL });
   const page = await context.newPage();
-  await page.goto('/login/username?next=%2Fsettings');
+  await page.goto('/login/username?next=%2Fsettings%2Faccount');
   await page.getByLabel('Username').fill(ADMIN.username);
   await page.getByLabel('Password', { exact: true }).fill(ADMIN.password);
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL(`${FIRST_RUN_URL}/settings`);
+  await expect(page).toHaveURL(`${FIRST_RUN_URL}/settings/account`);
 
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page).toHaveURL(/\/login\/password\?user=hari$/);

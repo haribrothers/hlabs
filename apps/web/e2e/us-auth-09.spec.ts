@@ -17,7 +17,7 @@ test('US-AUTH-09 a saved recovery code logs in once', async ({ page, request, br
   await expect(other.getByRole('button', { name: 'Use my authenticator app' })).toBeVisible();
   await other.getByLabel('Recovery code').fill(codes[0]!.replace('-', '').toUpperCase());
   await other.getByRole('button', { name: 'Verify' }).click();
-  await expect(other).toHaveURL(`${FIRST_RUN_URL}/settings`);
+  await expect(other).toHaveURL(new RegExp(`^${FIRST_RUN_URL}/settings(/account)?$`));
   await expect(other.getByRole('status').filter({ hasText: 'Recovery code used. You have 9 left.' })).toBeVisible();
 
   // The same code again doesn't work.

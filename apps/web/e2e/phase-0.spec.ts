@@ -25,8 +25,9 @@ test.describe('desktop', () => {
     await expect(dock.getByRole('button', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
 
     await dock.getByRole('button', { name: 'Settings' }).click();
-    await expect(page).toHaveURL(/\/settings$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    // Settings opens on Account on a desktop (US-ACCT-01).
+    await expect(page).toHaveURL(/\/settings\/account$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeVisible();
     await expect(dock.getByRole('button', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
   });
 
@@ -37,7 +38,7 @@ test.describe('desktop', () => {
     await page.keyboard.press('End');
     await expect(dock.getByRole('button', { name: 'Settings' })).toBeFocused();
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/\/settings$/);
+    await expect(page).toHaveURL(/\/settings\/account$/);
   });
 
   test('events.stream delivers a test event to the browser', async ({ page, request }) => {

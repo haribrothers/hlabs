@@ -14,7 +14,7 @@ test('US-AUTH-05 /login opens the screen that fits: signed in, fresh device, rem
 
   // Signed in: straight on to next, no form.
   await page.goto('/login?next=%2Fsettings');
-  await expect(page).toHaveURL(`${FIRST_RUN_URL}/settings`);
+  await expect(page).toHaveURL(new RegExp(`^${FIRST_RUN_URL}/settings(/account)?$`));
 
   // A device nobody has logged in on: the list of accounts.
   const context = await browser.newContext({ baseURL: FIRST_RUN_URL });

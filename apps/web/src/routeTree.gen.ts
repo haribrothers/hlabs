@@ -23,6 +23,8 @@ import { Route as LoginLockedRouteImport } from './routes/login.locked'
 import { Route as LoginPasswordRouteImport } from './routes/login.password'
 import { Route as LoginUsernameRouteImport } from './routes/login.username'
 import { Route as LoginUsersRouteImport } from './routes/login.users'
+import { Route as SettingsIndexRouteImport } from './routes/settings.index'
+import { Route as SettingsSectionRouteImport } from './routes/settings.$section'
 import { Route as SetupIndexRouteImport } from './routes/setup.index'
 import { Route as SetupStepRouteImport } from './routes/setup.$step'
 import { Route as SettingsAccountTwoFactorRouteImport } from './routes/settings.account.two-factor'
@@ -97,6 +99,16 @@ const LoginUsersRoute = LoginUsersRouteImport.update({
   path: '/login/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsSectionRoute = SettingsSectionRouteImport.update({
+  id: '/$section',
+  path: '/$section',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const SetupIndexRoute = SetupIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -128,8 +140,10 @@ export interface FileRoutesByFullPath {
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
   '/login/users': typeof LoginUsersRoute
+  '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/login/': typeof LoginIndexRoute
+  '/settings/': typeof SettingsIndexRoute
   '/setup/': typeof SetupIndexRoute
   '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
 }
@@ -137,7 +151,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
-  '/settings': typeof SettingsRouteWithChildren
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
@@ -146,8 +159,10 @@ export interface FileRoutesByTo {
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
   '/login/users': typeof LoginUsersRoute
+  '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/login': typeof LoginIndexRoute
+  '/settings': typeof SettingsIndexRoute
   '/setup': typeof SetupIndexRoute
   '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
 }
@@ -166,8 +181,10 @@ export interface FileRoutesById {
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
   '/login/users': typeof LoginUsersRoute
+  '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/login/': typeof LoginIndexRoute
+  '/settings/': typeof SettingsIndexRoute
   '/setup/': typeof SetupIndexRoute
   '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
 }
@@ -187,8 +204,10 @@ export interface FileRouteTypes {
     | '/login/password'
     | '/login/username'
     | '/login/users'
+    | '/settings/$section'
     | '/setup/$step'
     | '/login/'
+    | '/settings/'
     | '/setup/'
     | '/settings/account/two-factor'
   fileRoutesByTo: FileRoutesByTo
@@ -196,7 +215,6 @@ export interface FileRouteTypes {
     | '/'
     | '/backups'
     | '/files'
-    | '/settings'
     | '/store'
     | '/usage'
     | '/dev/ui'
@@ -205,8 +223,10 @@ export interface FileRouteTypes {
     | '/login/password'
     | '/login/username'
     | '/login/users'
+    | '/settings/$section'
     | '/setup/$step'
     | '/login'
+    | '/settings'
     | '/setup'
     | '/settings/account/two-factor'
   id:
@@ -224,8 +244,10 @@ export interface FileRouteTypes {
     | '/login/password'
     | '/login/username'
     | '/login/users'
+    | '/settings/$section'
     | '/setup/$step'
     | '/login/'
+    | '/settings/'
     | '/setup/'
     | '/settings/account/two-factor'
   fileRoutesById: FileRoutesById
@@ -347,6 +369,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/': {
+      id: '/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/$section': {
+      id: '/settings/$section'
+      path: '/$section'
+      fullPath: '/settings/$section'
+      preLoaderRoute: typeof SettingsSectionRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/setup/': {
       id: '/setup/'
       path: '/'
@@ -372,10 +408,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface SettingsRouteChildren {
+  SettingsSectionRoute: typeof SettingsSectionRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
   SettingsAccountTwoFactorRoute: typeof SettingsAccountTwoFactorRoute
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsSectionRoute: SettingsSectionRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
   SettingsAccountTwoFactorRoute: SettingsAccountTwoFactorRoute,
 }
 
