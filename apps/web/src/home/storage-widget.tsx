@@ -15,7 +15,11 @@ export function StorageWidget() {
   const summary = useQuery({ ...trpc.storage.summary.queryOptions(), retry: false });
 
   if (summary.isPending) {
-    return <div className={`${CARD} animate-pulse`} aria-busy="true" aria-label={copy.storage} />;
+    return (
+      <div className={`${CARD} animate-pulse`} aria-busy="true">
+        <h2 className="m-0 text-body-sm font-normal text-ink-muted">{copy.storage}</h2>
+      </div>
+    );
   }
   if (summary.isError) {
     return (
