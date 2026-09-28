@@ -5,7 +5,7 @@ import {
   avatarColorFor,
   AVATAR_COLORS,
   Button,
-  GlassCard,
+  ListRow,
   ModalDialog,
   TextField,
   type AvatarColor,
@@ -127,17 +127,20 @@ export function Profile() {
   const [editing, setEditing] = useState(false);
   if (!account.data) return null;
   const a = account.data;
+  // One row on the list surface, as in the design: avatar, name over "<username> · <role>", Edit profile.
   return (
-    <GlassCard className="flex items-center gap-4 p-4">
-      <Avatar name={a.displayName} color={avatarColorFor(a.username, a.avatarColor)} size="md" />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-headline">{a.displayName}</span>
-        <span className="text-body-sm text-ink-muted">{copy.who(a.username, copy.roles[a.role])}</span>
-      </div>
-      <Button variant="secondary" onClick={() => setEditing(true)}>
-        {copy.editProfile}
-      </Button>
+    <div className="hl-list-box">
+      <ListRow
+        leading={<Avatar name={a.displayName} color={avatarColorFor(a.username, a.avatarColor)} size="xl" />}
+        title={<span className="text-headline font-bold">{a.displayName}</span>}
+        subtitle={copy.who(a.username, copy.roles[a.role])}
+        trailing={
+          <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+            {copy.editProfile}
+          </Button>
+        }
+      />
       {editing ? <EditProfile account={a} onClose={() => setEditing(false)} /> : null}
-    </GlassCard>
+    </div>
   );
 }

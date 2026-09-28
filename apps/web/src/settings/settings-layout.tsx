@@ -2,7 +2,7 @@
 // the right. On a phone the list comes first and a section opens as a sheet with a "Settings" back control. Escape
 // closes the window and puts focus back where it was on Home.
 import { ChevronLeft, ChevronRight, iconDefaults } from '@hlabs/icons';
-import { GlassCard } from '@hlabs/ui';
+import { GlassCard, ScrollPane } from '@hlabs/ui';
 import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { settingsCopy } from '../copy/settings';
@@ -87,7 +87,7 @@ export function SettingsLayout() {
               <ChevronLeft aria-hidden {...iconDefaults} />
               {copy.back}
             </Link>
-            <GlassCard level={2} className="flex min-h-0 flex-1 flex-col p-5">
+            <GlassCard level={2} className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
               <Outlet />
             </GlassCard>
           </>
@@ -103,13 +103,21 @@ export function SettingsLayout() {
       level={2}
       className="mx-auto grid min-h-0 w-full max-w-window flex-1 grid-cols-[240px_1fr] overflow-hidden p-0"
     >
-      <div className="flex min-h-0 flex-col gap-4 border-r border-hairline p-5">
-        <p className="m-0 px-3 text-title-2 font-bold" aria-hidden="true">
-          {copy.title}
-        </p>
-        <div className="hl-scroll -m-1 min-h-0 flex-1 p-1">{sidebar}</div>
+      <div className="flex min-h-0 flex-col border-r border-hairline pr-2 pb-5">
+        <ScrollPane
+          className="flex-1"
+          headerClassName="pt-5 pl-5 pr-3"
+          bodyClassName="pl-5 pr-3"
+          header={
+            <p className="m-0 px-3 text-title-2 font-bold" aria-hidden="true">
+              {copy.title}
+            </p>
+          }
+        >
+          {sidebar}
+        </ScrollPane>
       </div>
-      <div className="flex min-h-0 min-w-0 flex-col p-7">
+      <div className="flex min-h-0 min-w-0 flex-col pr-4 pb-7">
         <Outlet />
       </div>
     </GlassCard>

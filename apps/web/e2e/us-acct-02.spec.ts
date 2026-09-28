@@ -47,15 +47,15 @@ test.describe('US-ACCT-02 window', () => {
     const nav = page.getByRole('navigation', { name: 'Settings sections' });
     await expect(nav).toBeVisible();
     // Lots of content (say, many signed-in devices).
-    await page.getByRole('heading', { level: 1, name: 'Account' }).evaluate((h) => {
+    await page.getByTestId('settings-scroll').evaluate((pane) => {
       const tall = document.createElement('div');
       tall.style.height = '3000px';
-      h.parentElement!.append(tall);
+      pane.querySelector('.hl-scroll-pane-body')!.append(tall);
     });
     const scroll = page.getByTestId('settings-scroll');
     const layout = await page.evaluate(() => {
       const pane = document.querySelector<HTMLElement>('[data-testid="settings-scroll"]')!;
-      const sidebar = document.querySelector('nav[aria-label="Settings sections"]')!.parentElement!.parentElement!;
+      const sidebar = document.querySelector('nav[aria-label="Settings sections"]')!.closest<HTMLElement>('.border-r')!;
       return {
         page: document.scrollingElement!.scrollHeight - document.scrollingElement!.clientHeight,
         main: document.querySelector('main')!.scrollHeight - document.querySelector('main')!.clientHeight,
@@ -73,6 +73,11 @@ test.describe('US-ACCT-02 window', () => {
     // The title stays while the content scrolls, and the scroll area sits inside the window's edges.
     await scroll.evaluate((el) => (el.scrollTop = 2000));
     await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeInViewport();
+    // The title sits on a blurred bar, with a hairline under it once the content has scrolled.
+    const bar = page.getByRole('heading', { level: 1, name: 'Account' }).locator('xpath=..');
+    await expect(bar).toHaveCSS('position', 'sticky');
+    await expect(bar).toHaveCSS('backdrop-filter', /blur\(20px\)/);
+    await expect(bar).toHaveCSS('border-bottom-color', 'rgba(255, 255, 255, 0.08)');
     const window = (await nav.locator('xpath=ancestor::section[1]').boundingBox())!;
     const area = (await scroll.boundingBox())!;
     expect(window.x + window.width - (area.x + area.width)).toBeGreaterThanOrEqual(16);
@@ -89,10 +94,10 @@ test.describe('US-ACCT-02 phone', () => {
     await page.goto('/settings/account');
     const back = page.getByRole('link', { name: 'Settings' });
     await expect(back).toBeVisible();
-    await page.getByRole('heading', { level: 1, name: 'Account' }).evaluate((h) => {
+    await page.getByTestId('settings-scroll').evaluate((pane) => {
       const tall = document.createElement('div');
       tall.style.height = '3000px';
-      h.parentElement!.append(tall);
+      pane.querySelector('.hl-scroll-pane-body')!.append(tall);
     });
     await page.getByTestId('settings-scroll').evaluate((el) => (el.scrollTop = 2000));
     await expect(back).toBeInViewport();

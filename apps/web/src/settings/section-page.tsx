@@ -1,7 +1,9 @@
 // One Settings section (US-ACCT-01): the section, "You don't have access to this" for a member at an admin-only URL
 // (no redirect, no admin data asked for), or "Page not found". Opening a section moves focus to its heading.
+import { ScrollPane } from '@hlabs/ui';
 import { useEffect, useRef, type ComponentType } from 'react';
 import { settingsCopy } from '../copy/settings';
+import { useIsDesktop } from '../lib/use-media';
 import { useMe } from '../lib/use-me';
 import { AccessDenied } from '../shell/access-denied';
 import { AccountSection } from './account-section';
@@ -13,6 +15,7 @@ const CONTENT: Partial<Record<SectionId, ComponentType>> = {
 
 export function SectionPage({ id }: { id: string }) {
   const me = useMe().data;
+  const desktop = useIsDesktop();
   const heading = useRef<HTMLHeadingElement>(null);
   const access = me ? sectionAccess(id, me.role) : null;
   const label = access?.kind === 'ok' ? access.section.label : null;
@@ -26,14 +29,22 @@ export function SectionPage({ id }: { id: string }) {
   if (access.kind !== 'ok') return <AccessDenied kind={access.kind} />;
   const Content = CONTENT[access.section.id];
   return (
-    // The title stays put; only what's under it scrolls (in a scroll area inset from the window's edges).
-    <section className="flex min-h-0 flex-1 flex-col gap-6" aria-labelledby="settings-section-heading">
-      <h1 id="settings-section-heading" ref={heading} tabIndex={-1} className="m-0 text-title-1 outline-none">
-        {access.section.label}
-      </h1>
-      <div className="hl-scroll -m-1 min-h-0 flex-1 p-1 pr-3" data-testid="settings-scroll">
+    // The title stays on a bar that blurs the content scrolling under it. The pane reaches the window's top edge; the
+    // scrollbar starts below the bar and stays inset from the right and bottom edges.
+    <section className="flex min-h-0 flex-1 flex-col" aria-labelledby="settings-section-heading">
+      <ScrollPane
+        className="flex-1"
+        headerClassName={desktop ? 'pt-7 pl-7 pr-4' : 'px-5 pt-5'}
+        bodyClassName={desktop ? 'pl-7 pr-4' : 'px-5 pb-5'}
+        data-testid="settings-scroll"
+        header={
+          <h1 id="settings-section-heading" ref={heading} tabIndex={-1} className="m-0 text-title-1 outline-none">
+            {access.section.label}
+          </h1>
+        }
+      >
         {Content ? <Content /> : <p className="m-0 text-body text-ink-muted">{settingsCopy.empty}</p>}
-      </div>
+      </ScrollPane>
     </section>
   );
 }

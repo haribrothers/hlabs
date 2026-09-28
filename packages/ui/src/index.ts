@@ -18,6 +18,7 @@ export * from './components/glass-card';
 export * from './components/list';
 export * from './components/menu';
 export * from './components/progress';
+export * from './components/scroll-pane';
 export * from './components/segmented';
 export * from './components/status-dot';
 export * from './components/stepper';

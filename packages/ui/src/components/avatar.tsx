@@ -16,7 +16,7 @@ export interface AvatarProps {
   /** Display name: its first letter is shown. */
   name: string;
   color: AvatarColor;
-  size?: 'md' | 'lg';
+  size?: 'md' | 'xl' | 'lg';
   className?: string;
 }
 
