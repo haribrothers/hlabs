@@ -96,6 +96,33 @@ export class LoginService {
     return lockState(attempts, now);
   }
 
+  /**
+   * A signed-in person confirming their current password (change password, recovery codes, two-factor:
+   * US-ACCT-07). It shares the log-in lockout for their username and this IP: while locked it's AUTH_LOCKED without
+   * checking; a wrong password is AUTH_INVALID_PASSWORD, and the fifth in 15 minutes locks (and notifies admins).
+   */
+  async confirmPassword(opts: {
+    user: { id: string; username: string; passwordHash: string };
+    password: string;
+    action: string;
+    ip: string;
+    now?: number;
+  }): Promise<void> {
+    const now = opts.now ?? Date.now();
+    const { user, ip } = opts;
+    const failures = this.assertNotLocked(user.username, ip, now);
+    if (await verifyPassword(user.passwordHash, opts.password)) return;
+    this.recordFailure({
+      userId: user.id,
+      username: user.username,
+      detail: { username: user.username, step: opts.action },
+      failures,
+      ip,
+      now,
+    });
+    throw hlabsError('AUTH_INVALID_PASSWORD');
+  }
+
   /** While locked, nothing is checked and nothing is recorded, so the lock isn't extended. */
   private assertNotLocked(username: string, ip: string, now: number): number[] {
     const state = this.lockState(username, ip, now);

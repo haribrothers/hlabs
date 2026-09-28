@@ -3,7 +3,8 @@ import { hlabsError } from '@hlabs/api';
 import { auditLog, recoveryCodes, users, userTotp, type HlabsDb } from '@hlabs/db';
 import { passwordIssue, ulid } from '@hlabs/shared';
 import { and, asc, eq, isNull } from 'drizzle-orm';
-import { hashPassword, verifyPassword } from '../auth/passwords';
+import type { LoginService } from '../auth/login';
+import { hashPassword } from '../auth/passwords';
 import type { SessionService } from '../auth/sessions';
 
 export function getAccount(db: HlabsDb, userId: string) {
@@ -60,14 +61,21 @@ export function updateAccount(
  */
 export async function changePassword(
   db: HlabsDb,
-  sessions: SessionService,
+  services: { sessions: SessionService; login: LoginService },
   who: { userId: string; sessionId: string },
   input: { currentPassword: string; newPassword: string },
-  opts: { ip: string | null; now?: number },
+  opts: { ip: string; now?: number },
 ) {
   const user = db.select().from(users).where(eq(users.id, who.userId)).get();
   if (!user) throw hlabsError('AUTH_REQUIRED');
-  if (!(await verifyPassword(user.passwordHash, input.currentPassword))) throw hlabsError('AUTH_INVALID_PASSWORD');
+  // A wrong current password counts toward the log-in lockout (US-ACCT-07).
+  await services.login.confirmPassword({
+    user,
+    password: input.currentPassword,
+    action: 'changePassword',
+    ip: opts.ip,
+    now: opts.now,
+  });
   const issue = passwordIssue(input.newPassword);
   if (issue === 'tooShort') throw hlabsError('PASSWORD_TOO_SHORT');
   if (issue === 'tooCommon') throw hlabsError('PASSWORD_TOO_COMMON');
@@ -89,5 +97,5 @@ export async function changePassword(
       })
       .run();
   });
-  return sessions.revoke({ userId: who.userId, except: who.sessionId }, now).length;
+  return services.sessions.revoke({ userId: who.userId, except: who.sessionId }, now).length;
 }

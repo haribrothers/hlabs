@@ -31,3 +31,5 @@ Don't recognise a device, or lost one? Choose **Sign out** next to it. It's logg
 ## Change your password
 
 In **Settings › Account › Security**, choose **Change** next to Password. Enter your current password, then the new one twice. It needs at least 12 characters and can't be one of the most common passwords. When you change it, every other device you're logged in on is logged out; the one you're using stays logged in.
+
+If something's wrong, hlabs says so next to the field: the current password isn't right, the new one is too common or the same as the one you have, or the two new ones don't match. After 5 wrong current passwords in 15 minutes, changing it (and logging in as you from this device) is paused for 15 minutes.

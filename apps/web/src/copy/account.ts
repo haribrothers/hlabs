@@ -33,6 +33,12 @@ export const accountCopy = {
   changePassword: 'Change password',
   passwordChanged: 'Password changed. Your other devices are signed out.',
   changeFailed: "Couldn't change your password. Check the fields and try again.",
+  wrongCurrent: "That's not your current password",
+  tooCommon: 'This password is too common. Try a longer phrase.',
+  unchanged: "Choose a password you haven't used here",
+  noMatch: "Passwords don't match",
+  tooManyAttempts: (minutes: number) =>
+    `Too many attempts. Try again in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}.`,
   devices: 'Signed-in devices',
   thisDevice: 'This device',
   signOut: 'Sign out',

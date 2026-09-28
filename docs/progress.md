@@ -55,7 +55,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ACCT-04 · See the devices I am signed in on
 - [x] US-ACCT-05 · Sign out a device, or log out
 - [x] US-ACCT-06 · Change my password
-- [ ] US-ACCT-07 · Password change errors
+- [x] US-ACCT-07 · Password change errors
 - [ ] US-ACCT-08 · See my two-factor and recovery code status
 - [ ] US-ACCT-09 · View, download and print recovery codes
 - [ ] US-ACCT-10 · Make new recovery codes
