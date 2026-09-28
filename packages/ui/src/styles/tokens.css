@@ -92,6 +92,14 @@
   --border-glass: rgba(255,255,255,0.14);
 }
 
+[data-accent='violet'] {
+  --accent: #a78bfa;
+  --accent-strong: #8b5cf6;
+  --accent-link: #c4b5fd;
+  --accent-tab: #d9ccff;
+  --accent-wash: rgba(167,139,250,0.2);
+}
+
 [data-accent='mint'] {
   --accent: #5eead4;
   --accent-strong: #0d9488;

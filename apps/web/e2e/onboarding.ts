@@ -32,3 +32,13 @@ export async function skipTwoFactor(page: Page) {
   await page.getByRole('dialog').getByRole('button', { name: 'Skip' }).click();
   await expect(page).toHaveURL(/\/setup\/storage$/);
 }
+
+/** A finished first run: admin "hari" (two-factor skipped) with data on this computer. The page ends on Home. */
+export async function finishOnboarding(page: Page, request: APIRequestContext) {
+  await createAdminInUi(page, request);
+  await skipTwoFactor(page);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page).toHaveURL(/\/setup\/done$/);
+  await page.getByRole('button', { name: 'Open dashboard' }).click();
+  await expect(page).toHaveURL(/\/$/);
+}

@@ -36,6 +36,7 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
     case 'loading':
       return <div className="hl-wall min-h-full" aria-busy="true" />;
     case 'setup':
+    case 'plain':
       return children;
     case 'elsewhere':
       return <FinishSetupElsewhere />;

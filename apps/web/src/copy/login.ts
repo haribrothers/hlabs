@@ -1,0 +1,23 @@
+// Words for signing in (docs/features/03-sign-in.md). Sentence case, plain words.
+export const loginCopy = {
+  usersTitle: "Who's using hlabs?",
+  usersLead: 'Choose your account to log in',
+  usersLabel: 'Accounts',
+  usersFooter: 'Admins can hide this list in Settings › Users',
+  otherUser: 'Other user',
+  otherUserDetail: 'Enter username',
+  roles: { admin: 'Admin', member: 'Member' },
+  userName: (displayName: string, role: string) => `${displayName}, ${role}`,
+  allUsers: 'All users',
+  welcomeBack: (displayName: string) => `Welcome back, ${displayName}`,
+  who: (username: string, role: string) => `@${username} · ${role}`,
+  usernameTitle: 'Log in to hlabs',
+  usernameLead: 'Use the username your admin gave you',
+  username: 'Username',
+  usernamePlaceholder: 'e.g. hari',
+  password: 'Password',
+  remember: 'Remember me on this device',
+  logIn: 'Log in',
+  forgot: 'Forgot password?',
+  secure: (host: string) => `${host} · secured with HTTPS`,
+} as const;

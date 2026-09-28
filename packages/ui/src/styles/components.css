@@ -232,6 +232,30 @@
     color: var(--danger);
   }
 
+  /* Avatar: an initial on the person's accent colour */
+  .hl-avatar {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: var(--radius-pill);
+    border: 2px solid var(--accent-link);
+    background: linear-gradient(160deg, var(--accent), var(--accent-strong));
+    color: var(--ink);
+    font-family: var(--hl-font-sans);
+    font-weight: 700;
+    user-select: none;
+  }
+  .hl-avatar-md {
+    width: var(--size-control);
+    height: var(--size-control);
+    font-size: var(--text-headline);
+  }
+  .hl-avatar-lg {
+    width: calc(var(--size-control) * 2);
+    height: calc(var(--size-control) * 2);
+    font-size: var(--text-display);
+  }
+
   /* Choice list: a radio group of larger options */
   .hl-choices {
     display: flex;

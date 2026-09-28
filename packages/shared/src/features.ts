@@ -6,6 +6,8 @@ export const SHIPPED_PHASE = 0;
 export const FEATURE_PHASE = {
   onboarding: 1,
   signIn: 1,
+  /** ForgotPassword (US-AUTH-20): the tray and CLI resets it explains ship in phase 4. */
+  forgotPassword: 4,
   apps: 2,
   starterApps: 2,
   appStore: 2,

@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
+import { useId, type InputHTMLAttributes, type ReactNode, type Ref } from 'react';
 import { cn } from '../lib/cn';
 
 export interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -8,6 +8,7 @@ export interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: ReactNode;
   /** A small control inside the input's right edge, such as a show/hide password button. */
   trailing?: ReactNode;
+  ref?: Ref<HTMLInputElement>;
 }
 
 /** A labelled input with a hint or an error below it. */

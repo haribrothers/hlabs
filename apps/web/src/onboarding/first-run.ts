@@ -14,12 +14,17 @@ export type FirstRunView =
   | { kind: 'app' }
   /** The onboarding flow. */
   | { kind: 'setup' }
+  /** A page without the Dock: the log-in screens. */
+  | { kind: 'plain' }
   /** No setup token in this browser: setup must be finished on the computer running hlabs. */
   | { kind: 'elsewhere' }
   | { kind: 'redirect'; to: string };
 
 /** `/setup` and every step under it (`/setup/<step>`). */
 export const isSetupPath = (pathname: string) => pathname === SETUP_PATH || pathname.startsWith(`${SETUP_PATH}/`);
+
+/** `/login` and its views. */
+export const isLoginPath = (pathname: string) => pathname === '/login' || pathname.startsWith('/login/');
 
 export function firstRunView(opts: {
   pathname: string;
@@ -39,7 +44,8 @@ export function firstRunView(opts: {
   if (status.completed) {
     // The finish screen stays up when setup completes in this tab; loading it afterwards goes home (US-ONB-22).
     if (pathname === `${SETUP_PATH}/done` && !opts.entry) return { kind: 'setup' };
-    return isSetupPath(pathname) ? { kind: 'redirect', to: '/' } : { kind: 'app' };
+    if (isSetupPath(pathname)) return { kind: 'redirect', to: '/' };
+    return isLoginPath(pathname) ? { kind: 'plain' } : { kind: 'app' };
   }
   if (!opts.hasSetupToken) return { kind: 'elsewhere' };
   const to = resumePath({ pathname, saved: status.step, entry: opts.entry ?? false, shippedPhase: opts.shippedPhase });
