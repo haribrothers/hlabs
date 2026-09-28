@@ -26,7 +26,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ONB-15 · Use an external drive
 - [x] US-ONB-16 · Use network storage (NAS)
 - [x] US-ONB-21 · See a summary when setup is done
-- [ ] US-ONB-22 · Finish onboarding and open the dashboard
+- [x] US-ONB-22 · Finish onboarding and open the dashboard
 - [ ] US-AUTH-01 · Pick my account from the user list
 - [ ] US-AUTH-02 · Log in as another user or with the list hidden
 - [ ] US-AUTH-03 · Log in with username and password

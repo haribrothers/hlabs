@@ -28,7 +28,7 @@ export const DRIVES_REFRESH_MS = 3_000;
 
 const errorData = (err: unknown) =>
   err instanceof TRPCClientError
-    ? (err.data as { hlabsCode?: string; detail?: { reason?: string } | null } | undefined)
+    ? (err.data as { hlabsCode?: string; detail?: { reason?: string; missing?: string } | null } | undefined)
     : undefined;
 const hlabsCode = (err: unknown) => errorData(err)?.hlabsCode;
 
@@ -104,6 +104,12 @@ export function StorageStep() {
       await navigate({ to: '/setup/$step', params: { step } });
     },
     onError: (err) => {
+      // A required step is missing after all: go back to it (US-ONB-22).
+      const missing = errorData(err)?.detail?.missing;
+      if (hlabsCode(err) === 'ONBOARDING_INCOMPLETE' && (missing === 'account' || missing === 'storage')) {
+        void navigate({ to: '/setup/$step', params: { step: missing } });
+        return;
+      }
       if (choice === 'external' && hlabsCode(err) === 'NOT_FOUND') {
         setDrivePath('');
         setDriveGone(true);

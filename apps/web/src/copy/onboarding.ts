@@ -179,6 +179,7 @@ export const onboardingCopy = {
     admin: 'Admin account',
     adminDetail: (username: string, totp: boolean) => `${username} · 2FA ${totp ? 'on' : 'off'}`,
     storage: 'Storage',
+    openDashboard: 'Open dashboard',
   },
   stepNames: {
     system: 'System check',

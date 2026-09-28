@@ -97,7 +97,7 @@ App databases always stay on this computer for speed, wherever your files go. On
 
 ## When setup is done
 
-hlabs shows a summary of what was set up: your admin account (and whether two-factor login is on) and where your data lives. hlabs keeps running from the menu bar (in the background on a Linux server).
+hlabs shows a summary of what was set up: your admin account (and whether two-factor login is on) and where your data lives. hlabs keeps running from the menu bar (in the background on a Linux server). Choose **Open dashboard** to go to Home; you're already signed in. Setup doesn't open again after this.
 
 ## "Finish setup on the computer running hlabs."
 

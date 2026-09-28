@@ -1,8 +1,9 @@
 // OnbDone (US-ONB-21): what was set up. Laid out like the welcome screen, with no Stepper. The remote access and
-// installing-apps rows wait for phases 3 and 2 (D-036); "Open dashboard" is US-ONB-22.
-import { Check, iconDefaults } from '@hlabs/icons';
-import { List, ListRow } from '@hlabs/ui';
+// installing-apps rows wait for phases 3 and 2 (D-036). "Open dashboard" goes Home (US-ONB-22).
+import { ArrowRight, Check, iconDefaults } from '@hlabs/icons';
+import { Button, List, ListRow } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 import { onboardingCopy } from '../copy/onboarding';
 import { useTRPC } from '../lib/trpc';
@@ -27,6 +28,7 @@ function Done() {
 
 export function DoneStep() {
   const trpc = useTRPC();
+  const navigate = useNavigate();
   // Always fresh: the summary must match what was just set up.
   const me = useQuery({ ...trpc.auth.me.queryOptions(), retry: false, staleTime: 0 });
   const info = useQuery({ ...trpc.system.info.queryOptions(), retry: false });
@@ -61,6 +63,11 @@ export function DoneStep() {
           {row(copy.storage, root?.name)}
         </List>
       </div>
+      {/* Onboarding is complete by now; Home opens with the admin still signed in (US-ONB-22). */}
+      <Button size="lg" className="mt-4" onClick={() => void navigate({ to: '/' })}>
+        {copy.openDashboard}
+        <ArrowRight aria-hidden {...iconDefaults} />
+      </Button>
     </>
   );
 }

@@ -171,8 +171,10 @@ export class OnboardingService {
    * done, retires the setup token and records it in the audit log.
    */
   async complete(opts: { userId: string; ip: string | null; now?: number }): Promise<void> {
+    // Which required step is missing, so the dashboard can go back to it (US-ONB-22).
     const hasRoot = this.db.select().from(storageLocations).where(eq(storageLocations.isRoot, true)).get();
-    if (!this.status().hasUsers || !hasRoot) throw hlabsError('ONBOARDING_INCOMPLETE');
+    if (!this.status().hasUsers) throw hlabsError('ONBOARDING_INCOMPLETE', 'No admin yet', { missing: 'account' });
+    if (!hasRoot) throw hlabsError('ONBOARDING_INCOMPLETE', 'No storage location yet', { missing: 'storage' });
     const now = opts.now ?? Date.now();
     await this.markComplete(now);
     this.db
