@@ -50,6 +50,8 @@ If something needs changing, hlabs says what under that field and how many thing
 
 Setup creates only one admin. If you see "An admin account already exists. Log in to continue.", the account was already made (perhaps in another tab): log in with it instead.
 
+Closed the browser after creating your admin account? Open setup again: hlabs asks you to log in with that account, then takes you back to the step you were on. From then on your account, not the setup link, is what lets you finish setup, so you can finish it from any browser you log in on.
+
 Once the account is created you're signed in on this browser, and the setup address stops working: from here on, setup continues as you.
 
 ## Turn on two-factor login

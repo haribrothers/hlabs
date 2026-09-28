@@ -7,6 +7,8 @@ import { resumePath } from './steps';
 export interface OnboardingStatus {
   completed: boolean;
   step: OnboardingStep;
+  /** An admin exists (US-ONB-10). */
+  hasUsers?: boolean;
 }
 
 export type FirstRunView =
@@ -40,6 +42,11 @@ export function firstRunView(opts: {
   shippedPhase?: number;
   /** The admin requires two-factor and this account has none yet (US-AUTH-10). */
   mustSetupTotp?: boolean;
+  /**
+   * Once an admin exists, this browser's session: `none` (signed out), `pending` (still asking) or `ok`. Setup then
+   * needs the admin's session rather than the setup token (US-ONB-03).
+   */
+  session?: 'none' | 'pending' | 'ok';
 }): FirstRunView {
   const { pathname, status } = opts;
   if (opts.dev && pathname.startsWith('/dev/')) return { kind: 'app' };
@@ -58,7 +65,17 @@ export function firstRunView(opts: {
     }
     return isLoginPath(pathname) ? { kind: 'plain' } : { kind: 'app' };
   }
-  if (!opts.hasSetupToken) return { kind: 'elsewhere' };
+  if (status.hasUsers) {
+    // An admin exists: log in first (the log-in pages stay reachable), then back to the saved step (US-ONB-03).
+    if (isLoginPath(pathname)) return { kind: 'plain' };
+    if (opts.session === 'pending') return { kind: 'loading' };
+    if (opts.session === 'none') {
+      const saved = resumePath({ pathname, saved: status.step, entry: true, shippedPhase: opts.shippedPhase });
+      return { kind: 'redirect', to: '/login', search: { next: saved ?? pathname } };
+    }
+  } else if (!opts.hasSetupToken) {
+    return { kind: 'elsewhere' };
+  }
   const to = resumePath({ pathname, saved: status.step, entry: opts.entry ?? false, shippedPhase: opts.shippedPhase });
   return to && to !== pathname ? { kind: 'redirect', to } : { kind: 'setup' };
 }

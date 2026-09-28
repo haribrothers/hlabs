@@ -11,7 +11,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 
 - [x] US-ONB-01 · Open onboarding automatically on first run
 - [x] US-ONB-02 · See the welcome screen and start setup
-- [ ] US-ONB-03 · Resume onboarding where I left off, and only until it's done (built except sending a signed-out browser to log in and back once an admin exists: the server side is done in US-ONB-08, the log-in screen comes with sign-in)
+- [x] US-ONB-03 · Resume onboarding where I left off, and only until it's done
 - [x] US-ONB-04 · Run the system check
 - [x] US-ONB-05 · Install Colima automatically when no engine is found (macOS)
 - [x] US-ONB-06 · Recover from a failed system check

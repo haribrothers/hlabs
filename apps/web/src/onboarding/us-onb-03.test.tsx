@@ -43,6 +43,29 @@ describe('US-ONB-03', () => {
       expect(firstRunView({ ...base, pathname: '/setup/storage', status, entry: true })).toEqual({ kind: 'setup' });
     });
 
+    it('once an admin exists, a signed-out browser logs in first and comes back to the saved step', () => {
+      const status = { completed: false, step: 'storage' as const, hasUsers: true };
+      const base = { failed: false, dev: false, shippedPhase: 1, entry: true, status };
+      // With or without the setup token: after the admin exists only the session counts.
+      for (const hasSetupToken of [true, false]) {
+        expect(firstRunView({ ...base, hasSetupToken, pathname: '/setup', session: 'none' })).toEqual({
+          kind: 'redirect',
+          to: '/login',
+          search: { next: '/setup/storage' },
+        });
+      }
+      expect(firstRunView({ ...base, hasSetupToken: false, pathname: '/login/users', session: 'none' })).toEqual({
+        kind: 'plain',
+      });
+      expect(firstRunView({ ...base, hasSetupToken: false, pathname: '/setup', session: 'pending' })).toEqual({
+        kind: 'loading',
+      });
+      // Signed in (even in a browser without the token): straight to the saved step.
+      expect(firstRunView({ ...base, hasSetupToken: false, pathname: '/setup/storage', session: 'ok' })).toEqual({
+        kind: 'setup',
+      });
+    });
+
     it('finished onboarding sends every setup route home', () => {
       const status = { completed: true, step: 'done' as const };
       for (const pathname of ['/setup', '/setup/system', '/setup/done']) {

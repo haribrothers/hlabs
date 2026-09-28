@@ -2,6 +2,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL, resetOnboarding } from './instances';
+import { ADMIN, createAdminInUi, skipTwoFactor } from './onboarding';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
@@ -56,5 +57,30 @@ test.describe('US-ONB-03', () => {
     expect(((await res.json()) as { error: { data: { hlabsCode: string } } }).error.data.hlabsCode).toBe(
       'ONBOARDING_COMPLETE',
     );
+  });
+
+  test('once the admin exists, a signed-out browser logs in and returns to the saved step', async ({
+    page,
+    request,
+    browser,
+  }) => {
+    await createAdminInUi(page, request);
+    await skipTwoFactor(page);
+    const setupUrl = page.url().replace(/\/setup\/storage$/, '/setup');
+
+    // Another browser, no session: the setup URL goes to log in, then to the storage step.
+    const other = await (await browser.newContext({ baseURL: FIRST_RUN_URL })).newPage();
+    await other.goto(setupUrl);
+    await expect(other).toHaveURL(/\/login\/(users|username)\?next=%2Fsetup%2Fstorage$/);
+    if (other.url().includes('/login/users')) {
+      await other.getByRole('button', { name: new RegExp(`^${ADMIN.name}`) }).click();
+      await other.getByPlaceholder('Password').fill(ADMIN.password);
+    } else {
+      await other.getByRole('textbox', { name: 'Username' }).fill(ADMIN.username);
+      await other.getByLabel('Password', { exact: true }).fill(ADMIN.password);
+    }
+    await other.getByRole('button', { name: 'Log in' }).click();
+    await expect(other).toHaveURL(`${FIRST_RUN_URL}/setup/storage`);
+    await expect(other.getByRole('heading', { level: 1, name: 'Where should your data live?' })).toBeVisible();
   });
 });

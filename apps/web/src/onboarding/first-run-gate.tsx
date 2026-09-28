@@ -30,6 +30,15 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
     hasSetupToken: readSetupToken() !== null,
     dev: import.meta.env.DEV,
     mustSetupTotp: me.data?.mustSetupTotp,
+    session: !status.data?.hasUsers
+      ? undefined
+      : me.isSuccess
+        ? 'ok'
+        : me.isError && isAuthLost(me.error)
+          ? 'none'
+          : me.isError
+            ? 'ok'
+            : 'pending',
   });
   const decided = view.kind !== 'loading';
   useEffect(() => {
