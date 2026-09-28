@@ -1,6 +1,6 @@
 // A person's own account (09-account-people.md): what Settings › Account shows, and changes to the profile.
 import { hlabsError } from '@hlabs/api';
-import { auditLog, recoveryCodes, users, userTotp, type HlabsDb } from '@hlabs/db';
+import { auditLog, getSetting, recoveryCodes, users, userTotp, type HlabsDb } from '@hlabs/db';
 import { passwordIssue, ulid } from '@hlabs/shared';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { LoginService } from '../auth/login';
@@ -11,11 +11,13 @@ export function getAccount(db: HlabsDb, userId: string) {
   const user = db.select().from(users).where(eq(users.id, userId)).get();
   if (!user) throw hlabsError('AUTH_REQUIRED');
   const totp = db.select().from(userTotp).where(eq(userTotp.userId, userId)).get();
-  const unused = db
-    .select({ id: recoveryCodes.id })
+  const codes = db
+    .select({ usedAt: recoveryCodes.usedAt })
     .from(recoveryCodes)
-    .where(and(eq(recoveryCodes.userId, userId), isNull(recoveryCodes.usedAt)))
-    .all().length;
+    .where(eq(recoveryCodes.userId, userId))
+    .orderBy(asc(recoveryCodes.id))
+    .all();
+  const setupDone = getSetting(db, 'onboarding').completedAt;
   const admin = db
     .select({ displayName: users.displayName })
     .from(users)
@@ -31,7 +33,11 @@ export function getAccount(db: HlabsDb, userId: string) {
     locale: user.locale,
     passwordChangedAt: user.passwordChangedAt,
     totpEnabledAt: totp?.enabledAt ?? null,
-    recoveryCodesUnused: unused,
+    recoveryCodesUnused: codes.filter((c) => c.usedAt === null).length,
+    recoveryCodesUsed: codes.map((c) => c.usedAt !== null),
+    totpAddedDuringSetup: totp?.enabledAt != null && (setupDone === null || totp.enabledAt <= setupDone),
+    totpRequired: getSetting(db, 'people').requireTotp,
+    hostname: getSetting(db, 'hostname'),
     homeFolderBytes: null,
     adminName: admin?.displayName ?? null,
   };

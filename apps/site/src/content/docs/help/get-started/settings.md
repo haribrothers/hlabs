@@ -1,7 +1,7 @@
 ---
 title: Settings
 description: Where to find Settings, and which sections you'll see.
-features: [F-ACCT-01, F-ACCT-02, F-ACCT-03]
+features: [F-ACCT-01, F-ACCT-02, F-ACCT-03, F-ACCT-04]
 ---
 
 For everyone who uses hlabs.
@@ -33,3 +33,7 @@ Don't recognise a device, or lost one? Choose **Sign out** next to it. It's logg
 In **Settings › Account › Security**, choose **Change** next to Password. Enter your current password, then the new one twice. It needs at least 12 characters and can't be one of the most common passwords. When you change it, every other device you're logged in on is logged out; the one you're using stays logged in.
 
 If something's wrong, hlabs says so next to the field: the current password isn't right, the new one is too common or the same as the one you have, or the two new ones don't match. After 5 wrong current passwords in 15 minutes, changing it (and logging in as you from this device) is paused for 15 minutes.
+
+## Two-factor login and recovery codes
+
+**Settings › Account › Security** shows whether two-factor login is on, and how many of your 10 recovery codes you haven't used yet. When 3 or fewer are left it says "Running low": make new codes before you run out. Choose **Manage** or **View** to see the details.

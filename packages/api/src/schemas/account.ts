@@ -31,6 +31,14 @@ export const account = {
       passwordChangedAt: timestampSchema.nullable(),
       totpEnabledAt: timestampSchema.nullable(),
       recoveryCodesUnused: z.number().int().nonnegative(),
+      /** One entry per recovery code slot, in order: true once that code was used (US-ACCT-09). */
+      recoveryCodesUsed: z.array(z.boolean()),
+      /** Two-factor was turned on during setup ("Added when you set up hlabs", US-ACCT-08). */
+      totpAddedDuringSetup: z.boolean(),
+      /** An admin requires two-factor for everyone: it can't be turned off (US-ACCT-12). */
+      totpRequired: z.boolean(),
+      /** This hlabs's name, for the recovery codes file (US-ACCT-09). */
+      hostname: z.string(),
       /** Size of the person's Home folder; null until Files (phase 5). */
       homeFolderBytes: z.number().nonnegative().nullable(),
       /** An admin's display name, for "ask <admin>" copy. */
