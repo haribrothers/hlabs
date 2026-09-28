@@ -26,11 +26,14 @@ export function SectionPage({ id }: { id: string }) {
   if (access.kind !== 'ok') return <AccessDenied kind={access.kind} />;
   const Content = CONTENT[access.section.id];
   return (
-    <section className="flex flex-col gap-6" aria-labelledby="settings-section-heading">
+    // The title stays put; only what's under it scrolls (in a scroll area inset from the window's edges).
+    <section className="flex min-h-0 flex-1 flex-col gap-6" aria-labelledby="settings-section-heading">
       <h1 id="settings-section-heading" ref={heading} tabIndex={-1} className="m-0 text-title-1 outline-none">
         {access.section.label}
       </h1>
-      {Content ? <Content /> : <p className="m-0 text-body text-ink-muted">{settingsCopy.empty}</p>}
+      <div className="hl-scroll -m-1 min-h-0 flex-1 p-1 pr-3" data-testid="settings-scroll">
+        {Content ? <Content /> : <p className="m-0 text-body text-ink-muted">{settingsCopy.empty}</p>}
+      </div>
     </section>
   );
 }

@@ -40,7 +40,7 @@ test.describe('US-ACCT-02 desktop', () => {
 test.describe('US-ACCT-02 window', () => {
   test.skip(({ isMobile }) => isMobile, 'desktop layout');
 
-  test('the window fills the space above the Dock; only its content scrolls; the divider is a hairline', async ({
+  test('the window fills the space above the Dock; only its content scrolls, under a fixed title; the divider is a hairline', async ({
     page,
   }) => {
     await page.goto('/settings/account');
@@ -52,22 +52,31 @@ test.describe('US-ACCT-02 window', () => {
       tall.style.height = '3000px';
       h.parentElement!.append(tall);
     });
+    const scroll = page.getByTestId('settings-scroll');
     const layout = await page.evaluate(() => {
-      const pane = document.querySelector('h1')!.closest('section')!.parentElement!;
-      const sidebar = document.querySelector('nav[aria-label="Settings sections"]')!.parentElement!;
+      const pane = document.querySelector<HTMLElement>('[data-testid="settings-scroll"]')!;
+      const sidebar = document.querySelector('nav[aria-label="Settings sections"]')!.parentElement!.parentElement!;
       return {
         page: document.scrollingElement!.scrollHeight - document.scrollingElement!.clientHeight,
         main: document.querySelector('main')!.scrollHeight - document.querySelector('main')!.clientHeight,
         pane: pane.scrollHeight - pane.clientHeight,
         divider: getComputedStyle(sidebar).borderRightColor,
+        scrollbar: getComputedStyle(pane).scrollbarWidth,
       };
     });
     expect(layout.page).toBe(0);
     expect(layout.main).toBeLessThanOrEqual(1);
     expect(layout.pane).toBeGreaterThan(1000);
     expect(layout.divider).toBe('rgba(255, 255, 255, 0.08)');
+    expect(layout.scrollbar).toBe('thin');
 
+    // The title stays while the content scrolls, and the scroll area sits inside the window's edges.
+    await scroll.evaluate((el) => (el.scrollTop = 2000));
+    await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeInViewport();
     const window = (await nav.locator('xpath=ancestor::section[1]').boundingBox())!;
+    const area = (await scroll.boundingBox())!;
+    expect(window.x + window.width - (area.x + area.width)).toBeGreaterThanOrEqual(16);
+    expect(window.y + window.height - (area.y + area.height)).toBeGreaterThanOrEqual(16);
     const dock = (await page.getByRole('navigation', { name: 'Dock' }).boundingBox())!;
     expect(dock.y - (window.y + window.height)).toBeGreaterThanOrEqual(16);
   });
@@ -76,7 +85,7 @@ test.describe('US-ACCT-02 window', () => {
 test.describe('US-ACCT-02 phone', () => {
   test.skip(({ isMobile }) => !isMobile, 'phone layout');
 
-  test('a section sheet scrolls inside, under a fixed back link', async ({ page }) => {
+  test('a section sheet scrolls inside, under a fixed back link and title', async ({ page }) => {
     await page.goto('/settings/account');
     const back = page.getByRole('link', { name: 'Settings' });
     await expect(back).toBeVisible();
@@ -85,9 +94,9 @@ test.describe('US-ACCT-02 phone', () => {
       tall.style.height = '3000px';
       h.parentElement!.append(tall);
     });
-    const sheet = page.getByRole('heading', { level: 1, name: 'Account' }).locator('xpath=ancestor::section[2]');
-    await sheet.evaluate((el) => (el.scrollTop = 2000));
+    await page.getByTestId('settings-scroll').evaluate((el) => (el.scrollTop = 2000));
     await expect(back).toBeInViewport();
+    await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeInViewport();
     const scrolls = await page.evaluate(
       () => document.scrollingElement!.scrollHeight - document.scrollingElement!.clientHeight,
     );

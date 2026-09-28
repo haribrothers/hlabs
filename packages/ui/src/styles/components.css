@@ -927,6 +927,29 @@
     justify-content: center;
   }
 
+  /* Scroll area inside a window: a thin, translucent scrollbar on a clear track, kept clear of the window's
+     rounded edges by the window's own padding. */
+  .hl-scroll {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-glass) transparent;
+    scrollbar-gutter: stable;
+  }
+  .hl-scroll::-webkit-scrollbar {
+    width: 8px;
+  }
+  .hl-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .hl-scroll::-webkit-scrollbar-thumb {
+    border-radius: var(--radius-pill);
+    background: var(--border-glass);
+  }
+  .hl-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--border-input);
+  }
+
   /* Dialog */
   .hl-scrim {
     position: fixed;
