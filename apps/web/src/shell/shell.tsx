@@ -25,7 +25,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const tabs = phoneAreas({ access }).map((a) => (a.id === 'store' && store ? { ...a, badge: store } : a));
 
   return (
-    <div className={`${wallpaperClass(appearance?.wallpaper)} relative flex min-h-full flex-col`}>
+    // Exactly the viewport: pages scroll inside main, and windows (Settings) can fill it without the page scrolling.
+    <div className={`${wallpaperClass(appearance?.wallpaper)} relative flex h-dvh flex-col`}>
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-pill focus:bg-fill-primary focus:px-4 focus:py-2 focus:text-ink-on-light"
@@ -35,7 +36,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <main
         id="main"
         aria-label={shellCopy.mainLabel}
-        className="flex flex-1 flex-col px-4 pt-10 pb-36 md:px-10 md:pt-14 md:pb-40"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-10 pb-36 md:px-10 md:pt-14 md:pb-40"
       >
         {children}
       </main>

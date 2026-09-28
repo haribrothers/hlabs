@@ -71,7 +71,7 @@ export function AppGrid({ apps, isAdmin }: { apps: readonly HomeApp[]; isAdmin: 
       {showInstall ? (
         <li className="flex justify-center">
           <Link to="/store" className="hl-app" aria-label={homeCopy.installApp}>
-            <span className="hl-app-icon grid place-items-center rounded-icon border border-dashed border-glass">
+            <span className="hl-app-icon grid place-items-center rounded-icon border border-dashed border-border-glass">
               <Plus aria-hidden {...iconDefaults} />
             </span>
             <span className="hl-app-name">{homeCopy.installApp}</span>

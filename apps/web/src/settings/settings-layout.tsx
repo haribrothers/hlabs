@@ -69,9 +69,10 @@ export function SettingsLayout() {
     </nav>
   );
 
+  // On a phone: the list, or a sheet whose content scrolls under a fixed back link (above the tab bar).
   if (!desktop) {
     return (
-      <div className="flex w-full flex-col gap-4">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
         {atList ? (
           <>
             <h1 className="m-0 text-display">{copy.title}</h1>
@@ -86,7 +87,7 @@ export function SettingsLayout() {
               <ChevronLeft aria-hidden {...iconDefaults} />
               {copy.back}
             </Link>
-            <GlassCard level={2} className="p-5">
+            <GlassCard level={2} className="min-h-0 flex-1 overflow-y-auto p-5">
               <Outlet />
             </GlassCard>
           </>
@@ -96,14 +97,19 @@ export function SettingsLayout() {
   }
 
   return (
-    <GlassCard level={2} className="mx-auto grid w-full max-w-window grid-cols-[240px_1fr] overflow-hidden p-0">
-      <div className="flex flex-col gap-4 border-r border-glass p-5">
+    // A window that fills the space above the Dock and never makes the page scroll: the sidebar and the section
+    // scroll on their own. The divider is a hairline (design tokens: dividers).
+    <GlassCard
+      level={2}
+      className="mx-auto grid min-h-0 w-full max-w-window flex-1 grid-cols-[240px_1fr] overflow-hidden p-0"
+    >
+      <div className="flex min-h-0 flex-col gap-4 overflow-y-auto border-r border-hairline p-5">
         <p className="m-0 px-3 text-title-2 font-bold" aria-hidden="true">
           {copy.title}
         </p>
         {sidebar}
       </div>
-      <div className="min-w-0 p-7">
+      <div className="min-h-0 min-w-0 overflow-y-auto p-7">
         <Outlet />
       </div>
     </GlassCard>
