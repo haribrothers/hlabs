@@ -9,6 +9,7 @@ import type { Logger } from './logger';
 import type { MdnsPublisher } from './mdns/index';
 import type { SessionService } from './auth/sessions';
 import type { TotpService } from './auth/totp';
+import type { LoginService } from './auth/login';
 import type { OnboardingService } from './onboarding/service';
 import type { DriveProbe } from './platform/drives';
 import type { NetworkStorage } from './storage/network';
@@ -29,6 +30,7 @@ export interface Services {
   onboarding: OnboardingService;
   sessions: SessionService;
   totp: TotpService;
+  login: LoginService;
   drives: DriveProbe;
   network: NetworkStorage;
 }

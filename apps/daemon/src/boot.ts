@@ -17,6 +17,7 @@ import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
 import { SessionService } from './auth/sessions';
 import { TotpService } from './auth/totp';
+import { LoginService } from './auth/login';
 import { OnboardingService } from './onboarding/service';
 import { NodeDriveProbe, type DriveProbe } from './platform/drives';
 import { LinuxNetworkMounter, MacNetworkMounter, type NetworkMounter } from './platform/network-mount';
@@ -153,6 +154,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     print(`\n  Set up hlabs: open ${setupUrl}\n`);
   }
 
+  const sessions = new SessionService(db);
+  const totp = new TotpService(db, secrets);
   const services: Services = {
     config,
     logger,
@@ -165,8 +168,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     proxy,
     mdns,
     onboarding,
-    sessions: new SessionService(db),
-    totp: new TotpService(db, secrets),
+    sessions,
+    totp,
+    login: new LoginService(db, sessions, totp),
     drives: deps.drives ?? new NodeDriveProbe(),
     network: new NetworkStorage({
       db,

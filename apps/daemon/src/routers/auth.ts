@@ -2,10 +2,29 @@ import type { AppHandlers } from '@hlabs/api';
 import { hlabsError } from '@hlabs/api';
 import { getSetting, users } from '@hlabs/db';
 import { asc, eq, isNull } from 'drizzle-orm';
-import { csrfTokenFor } from '../auth/sessions';
+import { csrfTokenFor, sessionCookie } from '../auth/sessions';
 import type { DaemonContext } from '../context';
 
 export const auth: AppHandlers<DaemonContext>['auth'] = {
+  /**
+   * Username and password (US-AUTH-03). Public, but only from the dashboard's own origin. Two-factor accounts get a
+   * challenge instead of a session (US-AUTH-08).
+   */
+  login: async ({ username, password, remember, next }, ctx) => {
+    const { origin, allowedOrigins, ip, userAgent } = ctx.request;
+    if (origin !== null && !allowedOrigins.includes(origin)) throw hlabsError('CSRF_REJECTED');
+    const result = await ctx.services.login.login({
+      username,
+      password,
+      remember: remember ?? false,
+      next,
+      ip,
+      userAgent,
+    });
+    if (result.kind === 'totp') return { status: 'totp_required' as const, challengeId: result.challengeId };
+    ctx.request.setCookie(sessionCookie(result.session.raw, result.session));
+    return { status: 'ok' as const, redirectTo: result.redirectTo };
+  },
   /**
    * Enabled users for the log-in screen (US-AUTH-01): admins first, then members, each by display name. Empty when
    * an admin hides the list; the server enforces that, not the UI (US-AUTH-02).
