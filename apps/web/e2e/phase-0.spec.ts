@@ -3,7 +3,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-const AREAS = ['Home', 'App Store', 'Files', 'Usage', 'Backups', 'Settings'];
+// Areas whose phase hasn't shipped are hidden (D-036, US-HOME-04): in phase 1, Home and Settings.
+const AREAS = ['Home', 'Settings'];
 
 test('GET /healthz returns 200 when the daemon is ready', async ({ request }) => {
   const res = await request.get('/healthz');
@@ -14,27 +15,25 @@ test('GET /healthz returns 200 when the daemon is ready', async ({ request }) =>
 test.describe('desktop', () => {
   test.skip(({ isMobile }) => isMobile, 'desktop layout');
 
-  test('the Dock shows the six areas and moves between them', async ({ page }) => {
+  test('the Dock shows the shipped areas and moves between them', async ({ page }) => {
     await page.goto('/');
     const dock = page.getByRole('navigation', { name: 'Dock' });
     await expect(dock).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Tab bar' })).toBeHidden();
-    await expect(dock.getByRole('button')).toHaveCount(6);
+    await expect(dock.getByRole('button')).toHaveCount(AREAS.length);
     for (const area of AREAS) await expect(dock.getByRole('button', { name: area })).toBeVisible();
     await expect(dock.getByRole('button', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
 
-    await dock.getByRole('button', { name: 'Files' }).click();
-    await expect(page).toHaveURL(/\/files$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Files' })).toBeVisible();
-    await expect(dock.getByRole('button', { name: 'Files' })).toHaveAttribute('aria-current', 'page');
+    await dock.getByRole('button', { name: 'Settings' }).click();
+    await expect(page).toHaveURL(/\/settings$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    await expect(dock.getByRole('button', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
   });
 
   test('the Dock works from the keyboard', async ({ page }) => {
     await page.goto('/');
     const dock = page.getByRole('navigation', { name: 'Dock' });
     await dock.getByRole('button', { name: 'Home' }).focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(dock.getByRole('button', { name: 'App Store' })).toBeFocused();
     await page.keyboard.press('End');
     await expect(dock.getByRole('button', { name: 'Settings' })).toBeFocused();
     await page.keyboard.press('Enter');
@@ -54,19 +53,19 @@ test.describe('desktop', () => {
 test.describe('phone', () => {
   test.skip(({ isMobile }) => !isMobile, 'phone layout');
 
-  test('the tab bar shows five tabs that fit the screen and moves between them', async ({ page }) => {
+  test('the tab bar shows the shipped tabs, fits the screen and moves between them', async ({ page }) => {
     await page.goto('/');
     const tabs = page.getByRole('navigation', { name: 'Tab bar' });
     await expect(tabs).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Dock' })).toBeHidden();
-    await expect(tabs.getByRole('button')).toHaveText(['Home', 'Apps', 'Files', 'Usage', 'Settings']);
+    await expect(tabs.getByRole('button')).toHaveText(AREAS);
     const bar = (await tabs.boundingBox())!;
     const viewport = page.viewportSize()!;
     expect(bar.x).toBeGreaterThanOrEqual(0);
     expect(bar.x + bar.width).toBeLessThanOrEqual(viewport.width);
-    await tabs.getByRole('button', { name: 'Usage' }).tap();
-    await expect(page).toHaveURL(/\/usage$/);
-    await expect(tabs.getByRole('button', { name: 'Usage' })).toHaveAttribute('aria-current', 'page');
+    await tabs.getByRole('button', { name: 'Settings' }).tap();
+    await expect(page).toHaveURL(/\/settings$/);
+    await expect(tabs.getByRole('button', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
   });
 
   test('tab targets are at least 44px (08 accessibility)', async ({ page }) => {
