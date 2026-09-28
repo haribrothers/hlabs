@@ -24,7 +24,22 @@ export const settings = {
     test: io(empty, ok),
   },
   engine: {
-    get: io(empty, pending),
+    /** Engine & startup (US-SYS-17): which engine runs apps, its state, and the others on this computer. */
+    get: io(
+      empty,
+      z.object({
+        platform: z.enum(['darwin', 'linux']),
+        /** `starting` while an engine install or restart job runs. */
+        status: z.enum(['running', 'stopped', 'starting', 'missing']),
+        active: z
+          .object({ kind: engineKindSchema, managedByHlabs: z.boolean(), version: z.string().nullable() })
+          .nullable(),
+        /** macOS: OrbStack, Docker Desktop, Colima; Linux: Docker Engine (and any other engine found). */
+        engines: z.array(
+          z.object({ kind: engineKindSchema, availability: z.enum(['active', 'found', 'notInstalled']) }),
+        ),
+      }),
+    ),
     setResources: io(
       z.object({ cpus: z.number().int().positive(), memoryBytes: z.number().int().positive() }),
       jobRefSchema,

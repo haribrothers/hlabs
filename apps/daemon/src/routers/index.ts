@@ -10,6 +10,7 @@ import { home } from './home';
 import { jobs } from './jobs';
 import { onboarding } from './onboarding';
 import { storage } from './storage';
+import { settings } from './settings';
 import { system } from './system';
 
 export const handlers: AppHandlers<DaemonContext> = {
@@ -22,6 +23,7 @@ export const handlers: AppHandlers<DaemonContext> = {
   home,
   apps,
   account,
+  settings,
 };
 
 type Fn = (input: unknown, ctx: DaemonContext, signal: AbortSignal | undefined) => unknown;

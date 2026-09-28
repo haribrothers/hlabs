@@ -7,10 +7,17 @@ import { useIsDesktop } from '../lib/use-media';
 import { useMe } from '../lib/use-me';
 import { AccessDenied } from '../shell/access-denied';
 import { AccountSection } from './account-section';
+import { EngineSection, EngineStatus } from './engine-section';
 import { sectionAccess, type SectionId } from './sections';
 
 const CONTENT: Partial<Record<SectionId, ComponentType<{ openTwoFactor?: boolean; next?: string }>>> = {
   account: AccountSection,
+  engine: EngineSection,
+};
+
+/** Something shown next to a section's title, such as the engine's state. */
+const ASIDE: Partial<Record<SectionId, ComponentType>> = {
+  engine: EngineStatus,
 };
 
 export function SectionPage({ id, openTwoFactor, next }: { id: string; openTwoFactor?: boolean; next?: string }) {
@@ -28,6 +35,7 @@ export function SectionPage({ id, openTwoFactor, next }: { id: string; openTwoFa
   if (!access) return null;
   if (access.kind !== 'ok') return <AccessDenied kind={access.kind} />;
   const Content = CONTENT[access.section.id];
+  const Aside = ASIDE[access.section.id];
   return (
     // The title stays put while the content scrolls under it and fades out (macOS Settings style). The pane
     // reaches the window's top and right edges; the scrollbar starts below the title and stays clear of the corners.
@@ -39,9 +47,12 @@ export function SectionPage({ id, openTwoFactor, next }: { id: string; openTwoFa
         bodyClassName={desktop ? 'pl-7 pr-3 pt-2' : 'pl-5 pr-3 pt-2'}
         data-testid="settings-scroll"
         header={
-          <h1 id="settings-section-heading" ref={heading} tabIndex={-1} className="m-0 text-title-1 outline-none">
-            {access.section.label}
-          </h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1 id="settings-section-heading" ref={heading} tabIndex={-1} className="m-0 text-title-1 outline-none">
+              {access.section.label}
+            </h1>
+            {Aside ? <Aside /> : null}
+          </div>
         }
       >
         {Content ? (

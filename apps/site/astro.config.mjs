@@ -18,6 +18,7 @@ export default defineConfig({
             { label: 'Log in', link: '/help/get-started/log-in/' },
             { label: 'Your Home screen', link: '/help/get-started/home/' },
             { label: 'Settings', link: '/help/get-started/settings/' },
+            { label: 'Engine and startup', link: '/help/get-started/engine/' },
           ],
         },
       ],

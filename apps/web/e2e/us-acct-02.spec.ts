@@ -73,7 +73,9 @@ test.describe('US-ACCT-02 window', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeInViewport();
     // The title has no box and no blur: content fades out as it goes under it (macOS style), and the scrollbar
     // starts below it.
-    const bar = page.getByRole('heading', { level: 1, name: 'Account' }).locator('xpath=..');
+    const bar = page
+      .locator('.hl-scroll-pane-header')
+      .filter({ has: page.getByRole('heading', { level: 1, name: 'Account' }) });
     await expect(bar).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     await expect(bar).toHaveCSS('backdrop-filter', 'none');
     await expect(scroll).toHaveCSS('mask-image', /linear-gradient/);
