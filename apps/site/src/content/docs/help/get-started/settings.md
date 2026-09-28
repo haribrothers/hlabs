@@ -1,7 +1,7 @@
 ---
 title: Settings
 description: Where to find Settings, and which sections you'll see.
-features: [F-ACCT-01]
+features: [F-ACCT-01, F-ACCT-02]
 ---
 
 For everyone who uses hlabs.
@@ -17,3 +17,7 @@ Some sections arrive with later updates of hlabs and aren't listed until then.
 On a computer, Settings opens as a window: sections on the left, the one you chose on the right. With a keyboard, use the up and down arrow keys in the list of sections and press Enter to open one. Press Escape to close Settings and go back to Home.
 
 On a phone you see the list of sections first. Tap one to open it, and tap **Settings** at the top to go back to the list.
+
+## Your profile
+
+**Settings › Account** shows your name, username and whether you're an admin or a member. Choose **Edit profile** to change your display name (up to 40 characters) and your avatar colour. Your new name shows straight away, including in the Home greeting. Your username can't be changed. hlabs is in English for now.

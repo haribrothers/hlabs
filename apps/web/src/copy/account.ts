@@ -1,4 +1,21 @@
 // Settings › Account (09-account-people.md).
 export const accountCopy = {
   logOut: 'Log out',
-};
+  roles: { admin: 'Admin', member: 'Member' },
+  who: (username: string, role: string) => `${username} · ${role}`,
+  editProfile: 'Edit profile',
+  profileTitle: 'Edit profile',
+  displayName: 'Display name',
+  enterName: 'Enter a name',
+  username: 'Username',
+  usernameHint: "Usernames can't be changed.",
+  avatarColor: 'Avatar colour',
+  colors: { violet: 'Violet', mint: 'Mint', amber: 'Amber', rose: 'Rose' },
+  language: 'Language',
+  languages: { en: 'English' },
+  cancel: 'Cancel',
+  save: 'Save',
+  profileUpdated: 'Profile updated',
+  saveFailed: "Couldn't save your profile. Try again.",
+  unreachable: "Can't reach hlabs right now. Try again in a moment.",
+} as const;
