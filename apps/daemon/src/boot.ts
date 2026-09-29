@@ -18,6 +18,7 @@ import { engineDir, registerEngineInstall } from './engine/install-job';
 import { nodeInstallerHost } from './engine/installer-host';
 import { defaultCandidates, EngineService, type EngineServiceDeps } from './engine/service';
 import { EventBus } from './events/bus';
+import { CatalogService } from './store/catalog';
 import { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
@@ -120,8 +121,11 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   await proxy.start();
   await mdns.publish(getSetting(db, 'hostname'));
 
-  // 4. Reconcile installed apps with the engine (phase 2: AppService).
+  // 4. The built-in store, then reconcile installed apps with the engine.
   readiness.step(3);
+  const catalog = new CatalogService(db, config.resources.storeDir, logger);
+  const { synced, skipped } = catalog.syncBuiltin();
+  logger.info({ apps: synced.length, skipped: skipped.length }, 'built-in store loaded');
 
   // 5. Scheduler: backups, update checks, health probes, usage sampling (added by their phases).
   readiness.step(4);
@@ -188,6 +192,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     secrets,
     proxy,
     mdns,
+    catalog,
     onboarding,
     sessions,
     totp,

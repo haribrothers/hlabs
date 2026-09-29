@@ -14,7 +14,10 @@ afterEach(async () => {
 async function withApps() {
   const d = await daemonWithAdmin(closers);
   const db = d.services!.db;
-  db.insert(appSources).values({ id: 'builtin', kind: 'builtin', name: 'hlabs', url: 'builtin:' }).run();
+  db.insert(appSources)
+    .values({ id: 'builtin', kind: 'builtin', name: 'hlabs', url: 'builtin:' })
+    .onConflictDoNothing()
+    .run();
   const add = (id: string, name: string, at: number, icon?: object) => {
     db.insert(catalogApps)
       .values({

@@ -18,6 +18,7 @@ import type { NotificationService } from './notifications/service';
 import type { NetworkStorage } from './storage/network';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
+import type { CatalogService } from './store/catalog';
 
 export interface Services {
   config: DaemonConfig;
@@ -30,6 +31,7 @@ export interface Services {
   secrets: SecretStore;
   proxy: ProxyManager;
   mdns: MdnsPublisher;
+  catalog: CatalogService;
   onboarding: OnboardingService;
   sessions: SessionService;
   totp: TotpService;

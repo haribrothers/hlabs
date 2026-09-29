@@ -63,6 +63,9 @@ importers:
       '@hlabs/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@hlabs/app-manifest':
+        specifier: workspace:*
+        version: link:../../packages/app-manifest
       '@hlabs/db':
         specifier: workspace:*
         version: link:../../packages/db

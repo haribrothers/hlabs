@@ -26,6 +26,24 @@ describe('config', () => {
     expect(loadConfig({ HLABS_DASHBOARD_URL: 'http://127.0.0.1:5173/' }).dashboardUrl).toBe('http://127.0.0.1:5173');
   });
 
+  it('runs Caddy and mDNS in production only, unless told otherwise', () => {
+    expect(loadConfig({ NODE_ENV: 'production' })).toMatchObject({ proxy: 'caddy', mdns: true });
+    expect(loadConfig({ NODE_ENV: 'development' })).toMatchObject({ proxy: 'none', mdns: false });
+    expect(loadConfig({ NODE_ENV: 'development', HLABS_PROXY: 'caddy', HLABS_MDNS: '1' })).toMatchObject({
+      proxy: 'caddy',
+      mdns: true,
+    });
+  });
+
+  it('finds the store, binaries and fallback page in the repository when run from source', () => {
+    const { resources, dashboardUpstream } = loadConfig({ HLABS_PORT: '7480' });
+    expect(resources.storeDir).toMatch(/\/store$/);
+    expect(resources.binDir).toMatch(/\/\.bin$/);
+    expect(resources.webFallbackDir).toMatch(/\/apps\/web\/dist-fallback$/);
+    expect(dashboardUpstream).toBe('127.0.0.1:7480');
+    expect(loadConfig({ HLABS_BIN_DIR: '/opt/hlabs/bin' }).resources.binDir).toBe('/opt/hlabs/bin');
+  });
+
   it('keeps secrets in the keychain on a production desktop and in the encrypted file otherwise', () => {
     expect(loadConfig({ NODE_ENV: 'production' }).secretStore).toBe('keychain');
     expect(loadConfig({ NODE_ENV: 'production', HLABS_HEADLESS: '1' }).secretStore).toBe('file');
