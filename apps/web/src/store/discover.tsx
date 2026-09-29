@@ -1,19 +1,12 @@
 // The store home (US-STORE-01): "Featured" cards, then the curated rows, each with "See all".
-import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { storeCopy, tagLabels } from '../copy/store';
-import { pageQuery } from '../lib/error-copy';
-import { useTRPC } from '../lib/trpc';
 import { AppCard, FeaturedCard } from './cards';
 import { StoreView } from './store-layout';
 import { useInstalls } from './use-installs';
+import { useStoreHome } from './use-store-home';
 
 const copy = storeCopy;
-
-export function useStoreHome() {
-  const trpc = useTRPC();
-  return useQuery({ ...trpc.store.getHome.queryOptions(), retry: false, ...pageQuery });
-}
 
 export function Discover() {
   const home = useStoreHome();

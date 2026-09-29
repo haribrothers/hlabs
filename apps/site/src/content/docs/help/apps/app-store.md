@@ -24,6 +24,10 @@ The list on the left starts with **Discover** (the store's front page) and has o
 
 You can move through the list with the Tab key and open an entry with Enter.
 
+## Search
+
+The search field at the top says how many apps you can search. Start typing: after a moment the results appear, matching app names first and then what the apps do. Press Enter to search straight away, and Escape (or clear the field) to go back to where you were. On a computer, press **/** anywhere in the App Store to jump to the search field.
+
 ## Apple Silicon and ARM64
 
 On a Mac with Apple Silicon, apps that have a version for it are tagged **Apple Silicon** (**ARM64** on an ARM Linux computer). Apps without one are listed after the others and are never featured.

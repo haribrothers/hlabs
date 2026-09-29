@@ -28,6 +28,7 @@ import { Route as SettingsSectionRouteImport } from './routes/settings.$section'
 import { Route as SetupIndexRouteImport } from './routes/setup.index'
 import { Route as SetupStepRouteImport } from './routes/setup.$step'
 import { Route as StoreIndexRouteImport } from './routes/store.index'
+import { Route as StoreSearchRouteImport } from './routes/store.search'
 import { Route as SettingsAccountTwoFactorRouteImport } from './routes/settings.account.two-factor'
 import { Route as StoreCategoryCategoryRouteImport } from './routes/store.category.$category'
 import { Route as StoreCollectionCollectionIdRouteImport } from './routes/store.collection.$collectionId'
@@ -128,6 +129,11 @@ const StoreIndexRoute = StoreIndexRouteImport.update({
   path: '/',
   getParentRoute: () => StoreRoute,
 } as any)
+const StoreSearchRoute = StoreSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => StoreRoute,
+} as any)
 const SettingsAccountTwoFactorRoute =
   SettingsAccountTwoFactorRouteImport.update({
     id: '/account/two-factor',
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/login/users': typeof LoginUsersRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
+  '/store/search': typeof StoreSearchRoute
   '/login/': typeof LoginIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/setup/': typeof SetupIndexRoute
@@ -189,6 +196,7 @@ export interface FileRoutesByTo {
   '/login/users': typeof LoginUsersRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
+  '/store/search': typeof StoreSearchRoute
   '/login': typeof LoginIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/setup': typeof SetupIndexRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/login/users': typeof LoginUsersRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
+  '/store/search': typeof StoreSearchRoute
   '/login/': typeof LoginIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/setup/': typeof SetupIndexRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/login/users'
     | '/settings/$section'
     | '/setup/$step'
+    | '/store/search'
     | '/login/'
     | '/settings/'
     | '/setup/'
@@ -264,6 +274,7 @@ export interface FileRouteTypes {
     | '/login/users'
     | '/settings/$section'
     | '/setup/$step'
+    | '/store/search'
     | '/login'
     | '/settings'
     | '/setup'
@@ -289,6 +300,7 @@ export interface FileRouteTypes {
     | '/login/users'
     | '/settings/$section'
     | '/setup/$step'
+    | '/store/search'
     | '/login/'
     | '/settings/'
     | '/setup/'
@@ -452,6 +464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreIndexRouteImport
       parentRoute: typeof StoreRoute
     }
+    '/store/search': {
+      id: '/store/search'
+      path: '/search'
+      fullPath: '/store/search'
+      preLoaderRoute: typeof StoreSearchRouteImport
+      parentRoute: typeof StoreRoute
+    }
     '/settings/account/two-factor': {
       id: '/settings/account/two-factor'
       path: '/account/two-factor'
@@ -512,12 +531,14 @@ const SetupRouteChildren: SetupRouteChildren = {
 const SetupRouteWithChildren = SetupRoute._addFileChildren(SetupRouteChildren)
 
 interface StoreRouteChildren {
+  StoreSearchRoute: typeof StoreSearchRoute
   StoreIndexRoute: typeof StoreIndexRoute
   StoreCategoryCategoryRoute: typeof StoreCategoryCategoryRoute
   StoreCollectionCollectionIdRoute: typeof StoreCollectionCollectionIdRoute
 }
 
 const StoreRouteChildren: StoreRouteChildren = {
+  StoreSearchRoute: StoreSearchRoute,
   StoreIndexRoute: StoreIndexRoute,
   StoreCategoryCategoryRoute: StoreCategoryCategoryRoute,
   StoreCollectionCollectionIdRoute: StoreCollectionCollectionIdRoute,

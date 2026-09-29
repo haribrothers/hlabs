@@ -16,13 +16,11 @@ type ListInput = inferRouterInputs<AppRouter>['store']['listApps'];
 export function AppListView({
   input,
   title,
-  actions,
   empty,
 }: {
   input: ListInput;
   /** Defaults to the collection's title from the daemon. */
   title?: string;
-  actions?: ReactNode;
   empty?: ReactNode;
 }) {
   const trpc = useTRPC();
@@ -30,7 +28,7 @@ export function AppListView({
   const installs = useInstalls();
   const heading = title ?? (list.data?.title || storeCopy.allApps);
   return (
-    <StoreView title={heading} actions={actions}>
+    <StoreView title={heading}>
       {list.data ? (
         list.data.items.length ? (
           <ul

@@ -25,6 +25,10 @@ export const storeCopy = {
   detailsOf: (name: string) => `${name} details`,
   appCount: (n: number) => `${n} ${n === 1 ? 'app' : 'apps'}`,
   empty: 'No apps here yet.',
+  searchLabel: 'Search apps',
+  searchPlaceholder: (n: number) => `Search ${n} ${n === 1 ? 'app' : 'apps'}`,
+  resultsFor: (q: string) => `Results for “${q}”`,
+  noResults: (q: string) => `No apps match “${q}”`,
   /** The "platform" tag: an arm64 image on an arm64 computer. */
   arm64Tag: { macos: 'Apple Silicon', linux: 'ARM64' },
 } as const;

@@ -1,17 +1,24 @@
-// The App Store window (US-STORE-01, US-STORE-02): on desktop a sidebar ("Back to Home", the title, Discover and the
-// categories) and the open view; on a phone the title and a chip row of categories over the view.
+// The App Store window (US-STORE-01…03): on desktop a sidebar ("Back to Home", the title, Discover and the
+// categories) and the open view under a header with its title and the search field; on a phone the title, the search
+// field and a chip row of categories over the view. The search field belongs to the window, not the view, so it keeps
+// focus while typing moves between Discover and the results.
 import { ChevronLeft, iconDefaults } from '@hlabs/icons';
 import { GlassCard, ScrollPane } from '@hlabs/ui';
 import { Link, Outlet } from '@tanstack/react-router';
-import { StoreChips, StoreSidebar } from './categories';
-import { useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
 import { storeCopy } from '../copy/store';
 import { useIsDesktop } from '../lib/use-media';
+import { StoreChips, StoreSidebar } from './categories';
+import { StoreSearchField } from './search';
 
 const copy = storeCopy;
 
+/** Lets a view put its title in the window's header. */
+const TitleContext = createContext<(title: string) => void>(() => {});
+
 export function StoreLayout() {
   const desktop = useIsDesktop();
+  const [title, setTitle] = useState('');
   useEffect(() => {
     document.title = copy.docTitle;
   }, []);
@@ -20,8 +27,11 @@ export function StoreLayout() {
     return (
       <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
         <h1 className="m-0 text-display">{copy.title}</h1>
+        <StoreSearchField desktop={false} />
         <StoreChips />
-        <Outlet />
+        <TitleContext.Provider value={setTitle}>
+          <Outlet />
+        </TitleContext.Provider>
       </div>
     );
   }
@@ -56,52 +66,46 @@ export function StoreLayout() {
         </ScrollPane>
       </div>
       <div className="flex min-h-0 min-w-0 flex-col">
-        <Outlet />
+        <ScrollPane
+          className="flex-1"
+          headerClassName="px-8 pt-6 pb-4"
+          scrollClassName="mr-2 mb-5"
+          bodyClassName="px-8 pb-2"
+          header={
+            <div className="flex items-center justify-between gap-6">
+              <h2 className="m-0 min-w-0 truncate text-display">{title}</h2>
+              <StoreSearchField desktop />
+            </div>
+          }
+        >
+          <TitleContext.Provider value={setTitle}>
+            <Outlet />
+          </TitleContext.Provider>
+        </ScrollPane>
       </div>
     </GlassCard>
   );
 }
 
-/** One store view: its heading (and the search field, US-STORE-03) over content that scrolls on its own. */
+/** One store view: it names itself in the window's header (desktop) or above its content (phone). */
 export function StoreView({
   title,
   children,
-  actions,
   phoneTitle = true,
 }: {
   title: string;
   children: ReactNode;
-  actions?: ReactNode;
   /** Off where the phone's "App Store" title already names the view (Discover). */
   phoneTitle?: boolean;
 }) {
   const desktop = useIsDesktop();
-  const heading = <h2 className="m-0 text-display">{title}</h2>;
-  if (!desktop) {
-    return (
-      <section className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3">
-          {actions}
-          {phoneTitle ? <h2 className="m-0 text-title-1">{title}</h2> : <h2 className="sr-only">{title}</h2>}
-        </div>
-        {children}
-      </section>
-    );
-  }
+  const setTitle = useContext(TitleContext);
+  useLayoutEffect(() => setTitle(title), [setTitle, title]);
+  if (desktop) return <>{children}</>;
   return (
-    <ScrollPane
-      className="flex-1"
-      headerClassName="px-8 pt-6 pb-4"
-      scrollClassName="mr-2 mb-5"
-      bodyClassName="px-8 pb-2"
-      header={
-        <div className="flex items-center justify-between gap-6">
-          {heading}
-          {actions}
-        </div>
-      }
-    >
+    <section className="flex flex-col gap-4">
+      <h2 className={phoneTitle ? 'm-0 text-title-1' : 'sr-only'}>{title}</h2>
       {children}
-    </ScrollPane>
+    </section>
   );
 }
