@@ -45,6 +45,8 @@ const tryAgain = 'Try again. If it keeps happening, check the logs in Settings â
 export const errorCopy = {
   generic: { title: 'Something went wrong', body: tryAgain } satisfies ErrorText,
   offline: { title: "Can't reach hlabs", body: 'Check your connection and try again.' } satisfies ErrorText,
+  /** A mutation the person isn't allowed to make (US-STATE-20). */
+  forbiddenToast: "You don't have access to that.",
   codes: {
     // General
     NOT_IMPLEMENTED: () => ({ title: "This isn't ready yet", body: 'It arrives with a later update of hlabs.' }),

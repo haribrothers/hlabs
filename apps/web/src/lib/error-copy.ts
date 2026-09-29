@@ -40,8 +40,37 @@ export function errorLine(err: unknown): string {
   return `${title}. ${body}`;
 }
 
-/** A mutation started from a button failed: say so in a danger toast (dialogs and forms show errors inline). */
+/** A mutation started from a button failed: say so in a danger toast (dialogs and forms show errors inline). The
+ * same error again updates that toast. */
 export function showErrorToast(err: unknown): number {
   const { title, body } = errorText(err);
-  return showToast({ tone: 'danger', title, body });
+  return showToast({ tone: 'danger', title, body, key: `error:${errorCode(err) ?? 'unknown'}` });
+}
+
+export const isForbidden = (err: unknown) => errorCode(err) === 'ACCESS_DENIED';
+
+/** Spread into the query that a whole page depends on: FORBIDDEN then shows "You don't have access to this" at the
+ * same URL (the root route's error component) instead of a half-empty page (US-STATE-20). */
+export const pageQuery = { throwOnError: (err: unknown) => isForbidden(err) } as const;
+
+/**
+ * The same answer for every mutation (US-STATE-20): FORBIDDEN is a danger toast "You don't have access to that." and
+ * nothing else changes; JOB_EXCLUSIVE_RUNNING a warning toast naming what's running. Mutations that show their
+ * errors inline (`meta.inlineErrors`, such as confirm dialogs) are left to do that.
+ */
+/** Errors every mutation already answers with a toast; a screen's own "couldn't save" toast steps aside. */
+export const handledGlobally = (err: unknown) => {
+  const code = errorCode(err);
+  return code === 'ACCESS_DENIED' || code === 'JOB_EXCLUSIVE_RUNNING';
+};
+
+export function mutationErrorNotice(err: unknown, meta: Record<string, unknown> | undefined) {
+  if (meta?.inlineErrors || !handledGlobally(err)) return;
+  const code = errorCode(err);
+  if (code === 'ACCESS_DENIED') {
+    showToast({ tone: 'danger', title: errorCopy.forbiddenToast, key: 'error:ACCESS_DENIED' });
+  } else if (code === 'JOB_EXCLUSIVE_RUNNING') {
+    const { title, body } = errorText(err);
+    showToast({ tone: 'warning', title, body, key: 'error:JOB_EXCLUSIVE_RUNNING' });
+  }
 }

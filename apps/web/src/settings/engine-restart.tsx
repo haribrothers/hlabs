@@ -44,6 +44,8 @@ export function EngineRestartControl({ stopped }: { stopped: boolean }) {
 
   const restart = useMutation({
     mutationFn: () => (stopped ? client.settings.engine.start.mutate() : client.settings.engine.restart.mutate()),
+    // Restart's errors show in its dialog, Start engine's in showErrorToast.
+    meta: { inlineErrors: true },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: trpc.jobs.list.queryKey() });
       void queryClient.invalidateQueries({ queryKey: trpc.settings.engine.get.queryKey() });

@@ -5,6 +5,7 @@ import { Button, List, ListRow, StatusDot, type Status } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from '@trpc/tanstack-react-query';
 import { engineCopy } from '../copy/engine';
+import { pageQuery } from '../lib/error-copy';
 import { useTRPC } from '../lib/trpc';
 import { EngineRestartControl } from './engine-restart';
 import { EngineResources } from './engine-resources';
@@ -30,7 +31,7 @@ export function useEngineOverview() {
   useSubscription(
     trpc.events.stream.subscriptionOptions({ types: ['engine.status', 'job.finished'] }, { onData: refresh }),
   );
-  return useQuery({ ...trpc.settings.engine.get.queryOptions(), retry: false });
+  return useQuery({ ...trpc.settings.engine.get.queryOptions(), retry: false, ...pageQuery });
 }
 
 /** "Engine running" in the section header. */

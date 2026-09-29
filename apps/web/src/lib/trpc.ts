@@ -4,6 +4,7 @@ import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import { createTRPCClient, TRPCClientError, httpBatchLink, httpSubscriptionLink, splitLink } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import { csrfHeaders } from './csrf';
+import { mutationErrorNotice } from './error-copy';
 import { offlineLink } from './offline-link';
 import { closingEventSource, streamLink } from './stream-link';
 import { setupHeaders } from './setup-token';
@@ -24,7 +25,12 @@ const authLost = (err: unknown) => {
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({ onError: authLost }),
-  mutationCache: new MutationCache({ onError: authLost }),
+  mutationCache: new MutationCache({
+    onError: (err, _variables, _context, mutation) => {
+      authLost(err);
+      mutationErrorNotice(err, mutation.meta);
+    },
+  }),
   defaultOptions: {
     queries: { staleTime: 5_000, retry: 1, refetchOnWindowFocus: false },
     // Offline, mutations reach the offline link and fail at once instead of waiting paused (US-STATE-19).

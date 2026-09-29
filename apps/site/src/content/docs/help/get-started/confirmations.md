@@ -41,3 +41,5 @@ Up to three notices show at a time, newest on top; others wait their turn and ap
 ## When something goes wrong
 
 hlabs explains problems in plain words and says what to do next, for example "Uptime Kuma couldn't start. Port 3001 is already in use by another program." When something you started from a button fails, a notice says so; in a question or a form, the message appears right next to what needs fixing. If hlabs doesn't know what went wrong, it says "Something went wrong" and suggests checking the logs in **Settings › Advanced**, where the technical details are kept.
+
+If you try something your account isn't allowed to do, hlabs says "You don't have access to that." and leaves everything as it was. If you open a page you can't use, such as an admin setting on a family member's account, you see **You don't have access to this** at that address, with a way back to Home; ask an admin if you need it. An address that doesn't exist shows **Page not found**. If your session has ended, hlabs takes you to log in and then back to where you were.

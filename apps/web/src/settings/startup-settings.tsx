@@ -6,6 +6,7 @@ import { List, ListRow, Switch } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { engineCopy } from '../copy/engine';
 import { showToast } from '../lib/toasts';
+import { handledGlobally, pageQuery } from '../lib/error-copy';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 
 const copy = engineCopy;
@@ -15,7 +16,7 @@ export function StartupSettings() {
   const client = useTRPCClient();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const settings = useQuery({ ...trpc.settings.get.queryOptions(), retry: false });
+  const settings = useQuery({ ...trpc.settings.get.queryOptions(), retry: false, ...pageQuery });
   const tray = isFeatureEnabled('tray');
   const info = useQuery({ ...trpc.system.info.queryOptions(), enabled: tray, retry: false });
   const key = trpc.settings.get.queryKey();
@@ -29,9 +30,9 @@ export function StartupSettings() {
       queryClient.setQueryData(key, (old) => (old ? { ...old, startup: { ...old.startup, ...change } } : old));
       return { before };
     },
-    onError: (_err, _change, context) => {
+    onError: (err, _change, context) => {
       queryClient.setQueryData(key, context?.before);
-      showToast({ tone: 'danger', title: copy.saveFailed });
+      if (!handledGlobally(err)) showToast({ tone: 'danger', title: copy.saveFailed });
     },
     onSettled: () => void queryClient.invalidateQueries({ queryKey: key }),
   });
