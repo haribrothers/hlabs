@@ -35,3 +35,5 @@ hlabs tells you about things that happen, such as an app finishing its install, 
 Moving the pointer over a notice, or tabbing into it, keeps it on screen until you move away. If **Reduce motion** is on, notices appear and leave without sliding.
 
 Some notices come with a button for the next step, such as **Retry** when an app couldn't start. Retry tries again straight away: if it works, the notice is replaced by one saying so; if not, it stays and says what went wrong this time. Buttons that change hlabs are only shown to admins; family members see the notice and the **×**.
+
+Up to three notices show at a time, newest on top; others wait their turn and appear as those go. If the same problem happens again while its notice is showing, such as an app failing to start twice, the notice is updated rather than repeated. Notices about hlabs itself show in every browser and device where you're logged in: close one with **×** and it goes from the others too, and it's marked as read.

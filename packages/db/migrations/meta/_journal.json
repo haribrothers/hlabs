@@ -15,6 +15,13 @@
       "when": 1790509106101,
       "tag": "0001_jobs_error_code",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790664369824,
+      "tag": "0002_notifications_target",
+      "breakpoints": true
     }
   ]
 }

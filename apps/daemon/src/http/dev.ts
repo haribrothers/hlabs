@@ -1,4 +1,4 @@
-import { onboardingStepSchema } from '@hlabs/api';
+import { notificationActionsSchema, onboardingStepSchema, severitySchema } from '@hlabs/api';
 import { apps, appSources, catalogApps, getSetting, loginAttempts, setSetting, users } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { eq } from 'drizzle-orm';
@@ -24,6 +24,22 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     const { message } = body.parse(req.body ?? undefined);
     const entry = services.bus.emit('system.test', { message });
     return { id: entry.id };
+  });
+
+  // A notification for all admins (US-STATE-16 e2e), as a service would raise it.
+  const notifyBody = z.object({
+    kind: z.string().default('dev.test'),
+    target: z.string().nullable().default(null),
+    severity: severitySchema.default('warning'),
+    title: z.string().min(1).max(120),
+    body: z.string().max(300).nullable().default(null),
+    actions: notificationActionsSchema.default([]),
+  });
+  app.post('/dev/notify', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const n = notifyBody.parse(req.body);
+    return { notificationId: services.notifications.create({ userId: null, ...n }) };
   });
 
   // First-run gate in e2e (US-ONB-01): the setup URL the daemon printed, and a shortcut past onboarding

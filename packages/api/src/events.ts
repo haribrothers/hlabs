@@ -1,7 +1,7 @@
 // Typed events on the daemon's bus, forwarded through `events.stream` (docs/prd/02-architecture.md §2.12).
 import { z } from 'zod';
 import { hlabsCodeSchema } from './schemas/common';
-import { appStateSchema, engineKindSchema, jobKindSchema, jobStateSchema, severitySchema } from './schemas/common';
+import { appStateSchema, engineKindSchema, jobKindSchema, jobStateSchema, notificationSchema } from './schemas/common';
 
 export const eventSchemas = {
   'system.status': z.object({ state: z.enum(['ready', 'updating']) }),
@@ -51,7 +51,10 @@ export const eventSchemas = {
     status: z.enum(['running', 'succeeded', 'failed', 'cancelled']),
     progress: z.number().min(0).max(100).optional(),
   }),
-  'notification.created': z.object({ notificationId: z.string(), severity: severitySchema, title: z.string() }),
+  /** The whole notification, so every open session can toast it (US-STATE-16). */
+  'notification.created': notificationSchema.omit({ id: true, readAt: true }).extend({ notificationId: z.string() }),
+  /** Marked read in one session; the others drop its toast. */
+  'notification.read': z.object({ ids: z.array(z.string()).min(1) }),
   'usage.sample': z.object({
     ts: z.number(),
     host: z.object({ cpu: z.number(), memBytes: z.number(), netRx: z.number(), netTx: z.number() }),

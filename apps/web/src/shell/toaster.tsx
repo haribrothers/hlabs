@@ -8,6 +8,7 @@ import { errorLine } from '../lib/error-copy';
 import { needsAdmin, runToastMutation, visibleActions } from '../lib/toast-actions';
 import {
   dismissToast,
+  onScreen,
   pauseToast,
   resumeToast,
   showToast,
@@ -19,8 +20,20 @@ import {
 import { useTRPCClient } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
 
+/** The person dealt with it: a notification's toast marks that read, so their other sessions drop it too. */
+function useHandled() {
+  const client = useTRPCClient();
+  return (toast: ToastItem) => {
+    dismissToast(toast.id);
+    if (toast.notificationId) {
+      void client.notifications.markRead.mutate({ ids: [toast.notificationId] }).catch(() => {});
+    }
+  };
+}
+
 function ToastActions({ toast, actions }: { toast: ToastItem; actions: ToastAction[] }) {
   const client = useTRPCClient();
+  const handled = useHandled();
   const [running, setRunning] = useState<string | null>(null);
   if (actions.length === 0) return null;
 
@@ -28,7 +41,7 @@ function ToastActions({ toast, actions }: { toast: ToastItem; actions: ToastActi
     setRunning(a.procedure);
     try {
       await runToastMutation(client, a.procedure, a.input);
-      dismissToast(toast.id);
+      handled(toast);
       showToast({ tone: 'success', title: a.done ?? toastCopy.done[a.procedure] });
     } catch (err) {
       // The toast stays, saying what went wrong this time.
@@ -44,7 +57,7 @@ function ToastActions({ toast, actions }: { toast: ToastItem; actions: ToastActi
           <Link
             key={a.label}
             to={a.to}
-            onClick={() => dismissToast(toast.id)}
+            onClick={() => handled(toast)}
             className="hl-btn hl-btn-secondary hl-btn-sm hl-focus"
           >
             {a.label}
@@ -68,6 +81,7 @@ function ToastActions({ toast, actions }: { toast: ToastItem; actions: ToastActi
 
 export function Toaster() {
   const toasts = useToasts();
+  const handled = useHandled();
   // Only ask who's signed in when a toast has an admin-only button.
   const needsRole = toasts.some((t) => t.actions?.some(needsAdmin));
   const me = useMe(needsRole);
@@ -75,28 +89,31 @@ export function Toaster() {
   if (toasts.length === 0) return null;
   return (
     <div className="pointer-events-none fixed inset-x-4 bottom-24 z-50 flex flex-col items-end gap-2 sm:inset-x-auto sm:right-6 sm:bottom-6">
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          className="pointer-events-auto w-full sm:w-auto"
-          onMouseEnter={() => pauseToast(t.id, 'hover')}
-          onMouseLeave={() => resumeToast(t.id, 'hover')}
-          onFocus={() => pauseToast(t.id, 'focus')}
-          onBlur={(e) => {
-            if (!e.currentTarget.contains(e.relatedTarget)) resumeToast(t.id, 'focus');
-          }}
-        >
-          <Toast
-            tone={t.tone}
-            title={t.title}
-            leaving={t.leaving}
-            onDismiss={() => dismissToast(t.id)}
-            action={<ToastActions toast={t} actions={visibleActions(t.actions, { isAdmin })} />}
+      {/* Newest on top; the rest wait (US-STATE-16). */}
+      {onScreen(toasts)
+        .reverse()
+        .map((t) => (
+          <div
+            key={t.id}
+            className="pointer-events-auto w-full sm:w-auto"
+            onMouseEnter={() => pauseToast(t.id, 'hover')}
+            onMouseLeave={() => resumeToast(t.id, 'hover')}
+            onFocus={() => pauseToast(t.id, 'focus')}
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget)) resumeToast(t.id, 'focus');
+            }}
           >
-            {t.body}
-          </Toast>
-        </div>
-      ))}
+            <Toast
+              tone={t.tone}
+              title={t.title}
+              leaving={t.leaving}
+              onDismiss={() => handled(t)}
+              action={<ToastActions toast={t} actions={visibleActions(t.actions, { isAdmin })} />}
+            >
+              {t.body}
+            </Toast>
+          </div>
+        ))}
     </div>
   );
 }

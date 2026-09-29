@@ -68,6 +68,21 @@ export const notificationActionSchema = z.discriminatedUnion('kind', [
 export const notificationActionsSchema = z.array(notificationActionSchema).max(2);
 export type NotificationAction = z.infer<typeof notificationActionSchema>;
 
+/** One notification as a user sees it (US-STATE-16; HomeNotifications later). */
+export const notificationSchema = z.object({
+  id: z.string(),
+  kind: z.string(),
+  /** With `kind`, identifies repeats (an app id, a location id). */
+  target: z.string().nullable(),
+  severity: severitySchema,
+  title: z.string(),
+  body: z.string().nullable(),
+  actions: notificationActionsSchema,
+  createdAt: z.number().int().nonnegative(),
+  readAt: z.number().int().nonnegative().nullable(),
+});
+export type Notification = z.infer<typeof notificationSchema>;
+
 /** Exclusive job kinds (D-020): one at a time, and never alongside app jobs. */
 export { EXCLUSIVE_JOB_KINDS };
 

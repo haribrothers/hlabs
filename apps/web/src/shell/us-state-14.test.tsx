@@ -17,13 +17,13 @@ describe('US-STATE-14', () => {
     showToast({ tone: 'success', title: 'Immich is ready', body: 'Open it from your Home screen.' });
     showToast({ tone: 'neutral', title: 'Checking for updates' });
     showToast({ tone: 'warning', title: 'Low disk space' });
-    showToast({ tone: 'danger', title: "Uptime Kuma couldn't start" });
     vi.advanceTimersByTime(4_999);
-    expect(titles()).toHaveLength(4);
+    expect(titles()).toHaveLength(3);
     vi.advanceTimersByTime(1);
-    expect(titles()).toEqual(['Low disk space', "Uptime Kuma couldn't start"]);
+    expect(titles()).toEqual(['Low disk space']);
     vi.advanceTimersByTime(5_000);
-    expect(titles()).toEqual(["Uptime Kuma couldn't start"]);
+    expect(titles()).toEqual([]);
+    showToast({ tone: 'danger', title: "Uptime Kuma couldn't start" });
     vi.advanceTimersByTime(10 * 60_000);
     expect(titles()).toEqual(["Uptime Kuma couldn't start"]);
   });
@@ -35,11 +35,12 @@ describe('US-STATE-14', () => {
   it('each tone has an icon; danger is an alert, the rest are polite status messages; Dismiss is labelled', () => {
     renderWithDaemon(<Toaster />);
     act(() => {
-      for (const tone of ['success', 'neutral', 'warning', 'danger'] as const) showToast({ tone, title: tone });
+      for (const tone of ['neutral', 'warning', 'danger'] as const) showToast({ tone, title: tone });
     });
     expect(screen.getByRole('alert')).toHaveTextContent('danger');
     const statuses = screen.getAllByRole('status');
-    expect(statuses.map((s) => s.textContent)).toEqual(['success', 'neutral', 'warning']);
+    // Newest on top.
+    expect(statuses.map((s) => s.textContent)).toEqual(['warning', 'neutral']);
     for (const toast of [...statuses, screen.getByRole('alert')]) {
       expect(toast.querySelector('.hl-toast-icon svg')).not.toBeNull();
       expect(within(toast).getByRole('button', { name: 'Dismiss' })).toBeInTheDocument();

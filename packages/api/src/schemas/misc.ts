@@ -6,14 +6,18 @@ import {
   idSchema,
   jobRefSchema,
   jobSchema,
+  notificationSchema,
   ok,
   pageInputSchema,
+  pageOf,
+  timestampSchema,
   pending,
   usernameSchema,
 } from './common';
 
 export const notifications = {
-  list: io(pageInputSchema, pending),
+  /** Newest first. `since`: only those created at or after it (catching up after a reconnect, US-STATE-16). */
+  list: io(pageInputSchema.extend({ since: timestampSchema.optional() }), pageOf(notificationSchema)),
   unreadCount: io(empty, z.object({ count: z.number().int().nonnegative() })),
   markRead: io(z.object({ ids: z.array(idSchema).min(1) }), ok),
   markAllRead: io(empty, ok),

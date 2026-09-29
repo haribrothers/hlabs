@@ -39,6 +39,8 @@ export const notifications = sqliteTable(
     /** Null = all admins. */
     userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
     kind: text('kind').notNull(),
+    /** What it's about (an app id, a location id); with `kind`, repeats update one toast (US-STATE-16). */
+    target: text('target'),
     severity: text('severity', { enum: NOTIFICATION_SEVERITIES }).notNull(),
     title: text('title').notNull(),
     body: text('body'),

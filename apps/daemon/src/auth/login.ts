@@ -2,10 +2,11 @@
 // time is the same), every attempt recorded. 5 failed passwords or codes in 15 minutes for a username and IP lock that
 // pair for 15 minutes (US-AUTH-12); a completed log-in starts the count again.
 import { hlabsError } from '@hlabs/api';
-import { auditLog, loginAttempts, notifications, recoveryCodes, users, type HlabsDb } from '@hlabs/db';
+import { auditLog, loginAttempts, recoveryCodes, users, type HlabsDb } from '@hlabs/db';
 import { safeNext, ulid } from '@hlabs/shared';
 import { and, asc, eq, gte, isNull, lt } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
+import { createNotification } from '../notifications/service';
 import type { EventBus } from '../events/bus';
 import { hashPassword, verifyPassword } from './passwords';
 import { normaliseRecoveryCode } from './recovery-code';
@@ -353,26 +354,7 @@ export class LoginService {
 
   /** A warning notification for one user, or for all admins (`userId` null), announced on the bus. */
   private notify(n: { userId: string | null; kind: string; title: string; body: string; now: number }) {
-    const id = ulid();
-    this.db
-      .insert(notifications)
-      .values({
-        id,
-        userId: n.userId,
-        kind: n.kind,
-        severity: 'warning',
-        title: n.title,
-        body: n.body,
-        actionJson: null,
-        createdAt: n.now,
-        readAt: null,
-      })
-      .run();
-    this.bus.emit(
-      'notification.created',
-      { notificationId: id, severity: 'warning', title: n.title },
-      n.userId ? { kind: 'user', userId: n.userId } : { kind: 'admins' },
-    );
+    createNotification(this.db, this.bus, { ...n, severity: 'warning' });
   }
 
   private audit(

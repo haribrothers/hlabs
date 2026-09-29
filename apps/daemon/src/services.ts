@@ -14,6 +14,7 @@ import type { OnboardingService } from './onboarding/service';
 import type { DriveProbe } from './platform/drives';
 import type { KeepAwake } from './platform/keep-awake';
 import type { SystemProbe } from './platform/system';
+import type { NotificationService } from './notifications/service';
 import type { NetworkStorage } from './storage/network';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
@@ -39,6 +40,7 @@ export interface Services {
   /** Holds off sleep while apps run, when the setting is on (US-SYS-20). */
   keepAwake: KeepAwake;
   network: NetworkStorage;
+  notifications: NotificationService;
 }
 
 /** Holds services once boot has created them; requests before then get DAEMON_STARTING. */

@@ -23,6 +23,7 @@ export default defineConfig({
       '/dev/revoke-sessions': DAEMON,
       '/dev/fake-app': DAEMON,
       '/dev/seed': DAEMON,
+      '/dev/notify': DAEMON,
     },
   },
   build: { target: 'es2022', sourcemap: true },

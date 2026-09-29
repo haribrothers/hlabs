@@ -1,5 +1,6 @@
 // The daemon boot sequence (docs/prd/02-architecture.md §2.3). The HTTP server is already listening,
 // so /healthz reports each step and, if the database can't be opened, why.
+import { NotificationService } from './notifications/service';
 import { noEngineControl, nodeEngineControl, type EngineControl } from './engine/control';
 import { KeepAwake, processSleepBlocker, type SleepBlocker } from './platform/keep-awake';
 import { eq } from 'drizzle-orm';
@@ -198,6 +199,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
         tailnet: getSetting(db, 'remote').tailnetName,
       }),
     ),
+    notifications: new NotificationService(db, bus),
     drives: deps.drives ?? new NodeDriveProbe(),
     system: probe,
     keepAwake: new KeepAwake(deps.sleepBlocker ?? processSleepBlocker(), () => ({
