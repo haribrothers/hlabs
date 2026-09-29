@@ -26,6 +26,11 @@ export function HealthGate({
     failingSince.current = null;
     let stopped = false;
     const tick = async () => {
+      // Offline, the banner says so and the page stays (US-STATE-19); this is about hlabs, not the device.
+      if (!navigator.onLine) {
+        failingSince.current = null;
+        return;
+      }
       const result = await check();
       if (stopped) return;
       if (result.ok || result.reason === 'updating') {

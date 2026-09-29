@@ -15,3 +15,7 @@ While you wait, check that:
 1. The hlabs icon is in the menu bar (or tray) on the computer running hlabs.
 2. That computer is awake and on the same network as you, or on Tailscale.
 3. On a Linux server, hlabs is running: run `systemctl status hlabsd`.
+
+## "You're offline" and "Reconnecting…"
+
+If your device loses its connection, a small **You're offline** strip appears at the top of the screen. What you were looking at stays there, but changes can't be made until you're connected again: hlabs says "You're offline. Try again when you're connected." straight away instead of trying. If your device is online but hlabs's live updates have stopped for a few seconds, the strip says **Reconnecting…** while hlabs picks them up again. When the connection is back, the strip goes and everything on screen refreshes.

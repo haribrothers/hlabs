@@ -76,7 +76,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-STATE-16 · Stack toasts and keep them in sync with notifications
 - [x] US-STATE-17 · Map error codes to plain copy
 - [x] US-STATE-18 · Reconnect the event stream
-- [ ] US-STATE-19 · Show an offline banner
+- [x] US-STATE-19 · Show an offline banner
 - [ ] US-STATE-20 · Send signed-out and forbidden requests to the right place
 
 ## Phase 2 · Apps
