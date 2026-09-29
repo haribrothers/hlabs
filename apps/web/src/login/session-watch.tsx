@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { loginCopy } from '../copy/login';
 import { setCsrfToken } from '../lib/csrf';
 import { NotificationFeed } from '../lib/notification-feed';
+import { useReconnectWhenVisible } from '../lib/stream-status';
 import { dismissNotificationToasts, showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 
@@ -32,6 +33,7 @@ export function SessionWatch() {
   const trpc = useTRPC();
   const client = useTRPCClient();
   const signedOut = useSignedOutHere();
+  useReconnectWhenVisible();
   const [feed] = useState(
     () =>
       new NotificationFeed({

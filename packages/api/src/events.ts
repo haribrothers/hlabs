@@ -61,6 +61,9 @@ export const eventSchemas = {
   }),
   'update.available': z.object({ version: z.string(), channel: z.enum(['stable', 'beta']) }),
   'session.revoked': z.object({ sessionId: z.string() }),
+  /** Sent by `events.stream` itself (not the bus) when it can't resume from the client's lastEventId, such as after
+   * a daemon restart or a gap longer than the buffer: the client refetches everything (US-STATE-18). */
+  'stream.reset': z.object({}),
   /** Dev only: proves events reach the browser (phase 0 "Done when"). */
   'system.test': z.object({ message: z.string() }),
 } as const;

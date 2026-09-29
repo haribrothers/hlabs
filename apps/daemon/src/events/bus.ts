@@ -82,7 +82,17 @@ export class EventBus {
     return this.subscribers.size;
   }
 
-  /** Buffered replay after lastEventId, then live events, filtered for the listener. */
+  /** The seq to resume after, or null when that isn't possible (another boot, or events since then were dropped). */
+  private resumeAfter(lastEventId: string): number | null {
+    const dash = lastEventId.lastIndexOf('-');
+    const seq = Number(lastEventId.slice(dash + 1));
+    if (lastEventId.slice(0, dash) !== this.bootId || !Number.isInteger(seq) || seq < 0 || seq > this.seq) return null;
+    const oldest = this.buffer[0]?.seq ?? this.seq + 1;
+    return seq >= oldest - 1 ? seq : null;
+  }
+
+  /** Buffered replay after lastEventId (or `stream.reset` when it can't), then live events, filtered for the
+   * listener. */
   async *stream(options: StreamOptions): AsyncGenerator<TrackedEnvelope<HlabsEvent>> {
     const { listener, lastEventId, types, signal } = options;
     const accept = (e: BusEntry) => canSee(listener, e.audience) && (!types || types.includes(e.event.type));
@@ -99,9 +109,17 @@ export class EventBus {
     const replayUpTo = this.seq;
     try {
       if (lastEventId) {
-        const idx = this.buffer.findIndex((e) => e.id === lastEventId);
-        if (idx >= 0) {
-          for (const entry of this.buffer.slice(idx + 1)) {
+        const after = this.resumeAfter(lastEventId);
+        if (after === null) {
+          // The client missed events we no longer have: it refetches everything instead.
+          yield tracked(`${this.bootId}-${replayUpTo}`, {
+            type: 'stream.reset',
+            at: Date.now(),
+            data: {},
+          } as HlabsEvent);
+        } else {
+          for (const entry of this.buffer) {
+            if (entry.seq <= after) continue;
             if (entry.seq > replayUpTo) break;
             if (accept(entry)) yield tracked(entry.id, entry.event);
           }

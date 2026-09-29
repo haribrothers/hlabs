@@ -32,10 +32,14 @@ test('US-STATE-16 a notification reaches both sessions; dismissing in one marks 
         body: 'Port 3001 is already in use by another program.',
       },
     });
-  await notify(`Uptime Kuma couldn't start (${target})`);
   const toastIn = (p: Page) => p.getByRole('alert').filter({ hasText: target });
-  await expect(toastIn(page)).toHaveCount(1);
-  await expect(toastIn(other)).toHaveCount(1);
+  // The stream's headers arrive a moment before the daemon starts listening, so the first one can land in that gap;
+  // sending it again is safe, since a repeat updates the same toast.
+  await expect(async () => {
+    await notify(`Uptime Kuma couldn't start (${target})`);
+    await expect(toastIn(page)).toHaveCount(1, { timeout: 1_000 });
+    await expect(toastIn(other)).toHaveCount(1, { timeout: 1_000 });
+  }).toPass();
 
   // The same kind and target again: the toast updates instead of stacking.
   const { notificationId } = (await (await notify(`Uptime Kuma couldn't start again (${target})`)).json()) as {

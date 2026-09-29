@@ -4,6 +4,7 @@ import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import { createTRPCClient, TRPCClientError, httpBatchLink, httpSubscriptionLink, splitLink } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import { csrfHeaders } from './csrf';
+import { closingEventSource, streamLink } from './stream-link';
 import { setupHeaders } from './setup-token';
 
 let onAuthLost: (() => void) | null = null;
@@ -30,7 +31,10 @@ export const trpcClient = createTRPCClient<AppRouter>({
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',
-      true: httpSubscriptionLink({ url: '/trpc' }),
+      true: [
+        streamLink({ onReset: () => void queryClient.invalidateQueries() }),
+        httpSubscriptionLink({ url: '/trpc', EventSource: closingEventSource() }),
+      ],
       false: httpBatchLink({
         url: '/trpc',
         headers: ({ opList }) => ({ ...setupHeaders(opList.map((op) => op.path)), ...csrfHeaders() }),

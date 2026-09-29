@@ -51,13 +51,15 @@ describe('EventBus', () => {
   it(`keeps only the last ${EVENT_BUFFER_SIZE} events`, async () => {
     const bus = new EventBus();
     const first = bus.emit('system.test', { message: 'old' });
-    for (let i = 0; i < EVENT_BUFFER_SIZE; i++) bus.emit('system.test', { message: String(i) });
+    // One more than the buffer holds, so an event after `first` is gone.
+    for (let i = 0; i < EVENT_BUFFER_SIZE + 1; i++) bus.emit('system.test', { message: String(i) });
     const controller = new AbortController();
     const stream = bus.stream({ listener: admin, lastEventId: first.id, signal: controller.signal });
     setTimeout(() => bus.emit('system.test', { message: 'live' }), 10);
-    const [next] = await take(stream, 1);
+    const [reset, next] = await take(stream, 2);
     controller.abort();
-    // The resume point fell out of the buffer, so the client only gets live events.
+    // The resume point fell out of the buffer: the client is told to refetch (US-STATE-18), then gets live events.
+    expect((reset![1] as { type: string }).type).toBe('stream.reset');
     expect((next![1] as { data: { message: string } }).data.message).toBe('live');
   });
 
