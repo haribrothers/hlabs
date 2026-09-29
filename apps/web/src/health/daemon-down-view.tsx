@@ -2,7 +2,7 @@
 // Caddy serves when the daemon doesn't answer. Try now comes first in the tab order.
 import { WifiOff, iconDefaults } from '@hlabs/icons';
 import { Button, GlassCard } from '@hlabs/ui';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { healthCopy, reasonLine } from '../copy/health';
 import type { DaemonDownController } from './daemon-down';
 
@@ -38,6 +38,14 @@ export function DaemonDownView({
     (l) => controller.subscribe(l),
     () => controller.snapshot,
   );
+  // Try now is disabled while it checks, which drops focus; give it back afterwards so Enter or Space works again.
+  const tryNow = useRef<HTMLButtonElement>(null);
+  const refocus = useRef(false);
+  useEffect(() => {
+    if (state.checking || !refocus.current) return;
+    refocus.current = false;
+    tryNow.current?.focus();
+  }, [state.checking]);
   useEffect(() => {
     controller.start({ now: checkAtOnce });
     return () => controller.stop();
@@ -54,9 +62,20 @@ export function DaemonDownView({
         <p aria-live="polite" className="m-0 max-w-lg text-body empty:hidden">
           {reasonLine(state.reason)}
         </p>
-        <p className="m-0 text-body text-ink-muted">{state.checking ? copy.trying : copy.tryingIn(5)}</p>
+        <p className="m-0 text-body text-ink-muted">
+          {state.checking ? copy.trying : copy.tryingIn(state.secondsLeft)}
+        </p>
       </div>
-      <Button size="lg" className="order-last" busy={state.checking} onClick={() => controller.tryNow()}>
+      <Button
+        ref={tryNow}
+        size="lg"
+        className="order-last"
+        busy={state.checking}
+        onClick={(event) => {
+          refocus.current = document.activeElement === event.currentTarget;
+          controller.tryNow();
+        }}
+      >
         {copy.tryNow}
       </Button>
       {/* While hlabs is starting there's nothing to check. */}

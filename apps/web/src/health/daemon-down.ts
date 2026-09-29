@@ -20,16 +20,39 @@ export async function checkHealth(url = '/healthz', timeoutMs = 4_000): Promise<
 
 export interface DaemonDownState {
   reason: string | null;
-  /** A check is in flight. */
+  /** A check is in flight ("Trying again…"). */
   checking: boolean;
+  /** Seconds until the next check, counting down once a second. */
+  secondsLeft: number;
 }
 
-export const POLL_MS = 5_000;
+/** Seconds between checks while the page is visible, and while it's hidden (US-STATE-06). */
+export const POLL_SECONDS = 5;
+export const HIDDEN_POLL_SECONDS = 30;
+export const POLL_MS = POLL_SECONDS * 1_000;
+
+/** Whether the page is hidden, and a way to hear when that changes; the document by default. */
+export interface Visibility {
+  hidden(): boolean;
+  onChange(listener: () => void): () => void;
+}
+
+const documentVisibility: Visibility = {
+  hidden: () => typeof document !== 'undefined' && document.hidden,
+  onChange: (listener) => {
+    if (typeof document === 'undefined') return () => {};
+    document.addEventListener('visibilitychange', listener);
+    return () => document.removeEventListener('visibilitychange', listener);
+  },
+};
 
 export class DaemonDownController {
   private state: DaemonDownState;
-  private timer: ReturnType<typeof setTimeout> | null = null;
-  private stopped = false;
+  private ticker: ReturnType<typeof setInterval> | null = null;
+  private stopped = true;
+  /** Bumped on stop, so a check from before a stop (React StrictMode restarts effects) is ignored. */
+  private generation = 0;
+  private unwatch: (() => void) | null = null;
   private readonly listeners = new Set<() => void>();
 
   constructor(
@@ -38,9 +61,14 @@ export class DaemonDownController {
       /** hlabs answers again. */
       onBack: () => void;
       reason?: string | null;
+      visibility?: Visibility;
     },
   ) {
-    this.state = { reason: opts.reason ?? null, checking: false };
+    this.state = { reason: opts.reason ?? null, checking: false, secondsLeft: POLL_SECONDS };
+  }
+
+  private get visibility(): Visibility {
+    return this.opts.visibility ?? documentVisibility;
   }
 
   get snapshot(): DaemonDownState {
@@ -52,23 +80,35 @@ export class DaemonDownController {
     return () => this.listeners.delete(listener);
   }
 
-  /** `now`: check at once (the fallback page, to learn why straight away); otherwise in 5 seconds. */
+  /** `now`: check at once (the fallback page, to learn why straight away); otherwise count down first. */
   start(opts: { now?: boolean } = {}): void {
     this.stopped = false;
+    // Coming back to the tab checks at once; while hidden, checks slow to every 30 seconds.
+    this.unwatch = this.visibility.onChange(() => {
+      if (this.stopped) return;
+      if (this.visibility.hidden()) this.countFrom(HIDDEN_POLL_SECONDS);
+      else void this.run();
+    });
     if (opts.now) void this.run();
-    else this.schedule();
+    else this.countFrom(this.interval());
   }
 
   stop(): void {
     this.stopped = true;
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
+    this.generation++;
+    this.clearTicker();
+    this.unwatch?.();
+    this.unwatch = null;
   }
 
-  /** Try now: check at once. */
+  /** Try now: check at once; the countdown starts again afterwards. */
   tryNow(): void {
-    if (this.state.checking) return;
+    if (this.state.checking || this.stopped) return;
     void this.run();
+  }
+
+  private interval() {
+    return this.visibility.hidden() ? HIDDEN_POLL_SECONDS : POLL_SECONDS;
   }
 
   private set(next: Partial<DaemonDownState>) {
@@ -76,17 +116,29 @@ export class DaemonDownController {
     for (const l of this.listeners) l();
   }
 
-  private schedule() {
-    if (this.timer) clearTimeout(this.timer);
+  private clearTicker() {
+    if (this.ticker) clearInterval(this.ticker);
+    this.ticker = null;
+  }
+
+  /** Count down once a second, then check. */
+  private countFrom(seconds: number) {
+    this.clearTicker();
     if (this.stopped) return;
-    this.timer = setTimeout(() => void this.run(), POLL_MS);
+    this.set({ secondsLeft: seconds });
+    this.ticker = setInterval(() => {
+      const left = this.state.secondsLeft - 1;
+      if (left > 0) this.set({ secondsLeft: left });
+      else void this.run();
+    }, 1_000);
   }
 
   private async run() {
-    if (this.timer) clearTimeout(this.timer);
+    this.clearTicker();
+    const generation = this.generation;
     this.set({ checking: true });
     const result = await this.opts.check();
-    if (this.stopped) return;
+    if (this.stopped || generation !== this.generation) return;
     if (result.ok) {
       this.stop();
       this.set({ checking: false });
@@ -94,6 +146,6 @@ export class DaemonDownController {
       return;
     }
     this.set({ checking: false, reason: result.reason });
-    this.schedule();
+    this.countFrom(this.interval());
   }
 }
