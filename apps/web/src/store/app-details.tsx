@@ -87,9 +87,10 @@ function Screenshots({ urls, name }: { urls: string[]; name: string }) {
   };
   return (
     <section aria-label={copy.screenshots}>
-      <ul className="m-0 flex list-none gap-4 overflow-x-auto p-0">
+      {/* Three to a row, as the AppDetails screen draws them; a phone scrolls them sideways. */}
+      <ul className="m-0 flex list-none gap-4 overflow-x-auto p-0 md:grid md:grid-cols-3 md:overflow-visible">
         {urls.map((url, i) => (
-          <li key={url} className="w-80 max-w-[80%] shrink-0">
+          <li key={url} className="w-4/5 shrink-0 md:w-auto">
             <button
               type="button"
               className="hl-focus block w-full overflow-hidden rounded-lg border border-hairline bg-surface-control p-0"

@@ -1,7 +1,7 @@
 // US-STORE-06 · See an app's details before installing: store.getApp.
 import { hlabsCodeOf } from '@hlabs/api';
 import { openDb, setSetting } from '@hlabs/db';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { silentLogger } from '../src/logger';
@@ -39,7 +39,10 @@ describe('US-STORE-06', () => {
       ...d.folders.slice(1),
     ]);
     expect(d.readme).toBeNull();
-    expect(d.screenshots).toEqual([]);
+    expect(d.screenshots).toEqual([
+      '/api/store/apps/builtin/immich/assets/screenshots/1.webp',
+      '/api/store/apps/builtin/immich/assets/screenshots/2.webp',
+    ]);
   });
 
   it('the address uses this hlabs’s name', async () => {
@@ -52,6 +55,7 @@ describe('US-STORE-06', () => {
     const fixture = storeFixture();
     const dir = join(fixture, 'apps', 'vaultwarden');
     writeFileSync(join(dir, 'README.md'), '# Vaultwarden\n\nMore about it.');
+    rmSync(join(dir, 'screenshots'), { recursive: true, force: true });
     mkdirSync(join(dir, 'screenshots'));
     for (const f of ['10.webp', '2.webp', '1.png', '3.jpg']) writeFileSync(join(dir, 'screenshots', f), 'x');
     const d = await service(fixture).store.getApp('vaultwarden');
