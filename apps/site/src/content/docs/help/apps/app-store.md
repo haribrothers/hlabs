@@ -18,6 +18,12 @@ Each app shows its name, what it's for and one button:
 
 Select an app's name or card to see its page.
 
+## Categories
+
+The list on the left starts with **Discover** (the store's front page) and has one entry for each kind of app the store has, such as **Files & photos**, **Security** or **Monitoring**. Choose one to see every app of that kind. On a phone the categories are a row you can swipe along above the apps.
+
+You can move through the list with the Tab key and open an entry with Enter.
+
 ## Apple Silicon and ARM64
 
 On a Mac with Apple Silicon, apps that have a version for it are tagged **Apple Silicon** (**ARM64** on an ARM Linux computer). Apps without one are listed after the others and are never featured.

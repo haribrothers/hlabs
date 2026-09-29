@@ -1,35 +1,14 @@
 // The App Store window (US-STORE-01, US-STORE-02): on desktop a sidebar ("Back to Home", the title, Discover and the
-// categories) and the open view; on a phone the title and views, with categories as a chip row.
+// categories) and the open view; on a phone the title and a chip row of categories over the view.
 import { ChevronLeft, iconDefaults } from '@hlabs/icons';
 import { GlassCard, ScrollPane } from '@hlabs/ui';
 import { Link, Outlet } from '@tanstack/react-router';
+import { StoreChips, StoreSidebar } from './categories';
 import { useEffect, type ReactNode } from 'react';
 import { storeCopy } from '../copy/store';
 import { useIsDesktop } from '../lib/use-media';
 
 const copy = storeCopy;
-
-const navItem =
-  'hl-focus flex min-h-11 items-center justify-between rounded-md px-3 text-body text-ink no-underline hover:bg-surface-control aria-[current=page]:bg-accent-wash aria-[current=page]:font-semibold';
-
-export function StoreSidebar() {
-  return (
-    <nav aria-label={copy.categories}>
-      <ul className="m-0 flex list-none flex-col gap-1 p-0">
-        <li>
-          <Link
-            to="/store"
-            activeOptions={{ exact: true }}
-            className={navItem}
-            activeProps={{ 'aria-current': 'page' }}
-          >
-            {copy.discover}
-          </Link>
-        </li>
-      </ul>
-    </nav>
-  );
-}
 
 export function StoreLayout() {
   const desktop = useIsDesktop();
@@ -41,6 +20,7 @@ export function StoreLayout() {
     return (
       <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
         <h1 className="m-0 text-display">{copy.title}</h1>
+        <StoreChips />
         <Outlet />
       </div>
     );

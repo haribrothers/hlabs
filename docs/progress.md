@@ -90,7 +90,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [ ] US-HOME-10 · Find apps, actions, files, settings and store apps in one list
 - [ ] US-HOME-23 · See which apps are open in the Dock
 - [x] US-STORE-01 · Browse the store home
-- [ ] US-STORE-02 · Navigate with the categories sidebar
+- [x] US-STORE-02 · Navigate with the categories sidebar
 - [ ] US-STORE-03 · Search from the store home
 - [ ] US-STORE-06 · See an app's details before installing
 - [ ] US-STORE-07 · See requirements and what an app can access
