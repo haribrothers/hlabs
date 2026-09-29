@@ -21,7 +21,7 @@ export function Discover() {
             <h3 id="store-featured" className="sr-only">
               {copy.featured}
             </h3>
-            <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 xl:grid-cols-2">
+            <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 lg:grid-cols-2">
               {featured.map((app) => (
                 <li key={app.id}>
                   <FeaturedCard
@@ -41,7 +41,7 @@ export function Discover() {
           return (
             <section key={row.id} aria-labelledby={headingId} className="flex flex-col gap-4">
               <div className="flex items-baseline justify-between gap-4">
-                <h3 id={headingId} className="m-0 text-title-2">
+                <h3 id={headingId} className="m-0 text-title-2 font-bold">
                   {title}
                 </h3>
                 <Link
@@ -53,7 +53,7 @@ export function Discover() {
                   {copy.seeAll}
                 </Link>
               </div>
-              <ul aria-label={title} className="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-2 xl:grid-cols-3">
+              <ul aria-label={title} className="m-0 grid list-none grid-cols-1 gap-4 p-0 md:grid-cols-2 xl:grid-cols-3">
                 {row.apps.map((app) => (
                   <li key={app.id}>
                     <AppCard app={app} host={host} installs={installs} />

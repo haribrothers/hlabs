@@ -78,7 +78,7 @@ export function StoreLayout() {
           bodyClassName="px-8 pb-2"
           header={
             <div className="flex items-center justify-between gap-6">
-              <h2 className="m-0 min-w-0 truncate text-display">{title}</h2>
+              <h2 className="m-0 min-w-0 truncate text-title-1 font-bold">{title}</h2>
               <StoreSearchField desktop />
             </div>
           }

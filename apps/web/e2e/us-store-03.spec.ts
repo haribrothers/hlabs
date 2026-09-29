@@ -35,7 +35,8 @@ test('US-STORE-03 "/" focuses the search field on desktop', async ({ page }, inf
   test.skip(info.project.name === 'phone', 'Keyboard shortcut is for desktop');
   await page.goto('/store');
   await expect(page.getByRole('heading', { name: 'Discover' })).toBeVisible();
-  await page.locator('body').click();
+  // Nothing focused (a click could land on a card and open its details).
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.keyboard.press('/');
   await expect(page.getByRole('searchbox', { name: 'Search apps' })).toBeFocused();
 });

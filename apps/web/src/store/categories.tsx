@@ -61,7 +61,7 @@ function CategoryLink({ id, className, children }: NavLinkProps & { id: StoreCat
 }
 
 const sideItem =
-  'hl-focus flex min-h-11 items-center justify-between rounded-md px-3 text-body text-ink no-underline hover:bg-surface-control aria-[current=page]:bg-accent-wash aria-[current=page]:font-semibold';
+  'hl-focus flex min-h-11 items-center justify-between rounded-md px-3 text-body text-ink no-underline hover:bg-surface-row aria-[current=page]:bg-surface-control';
 
 /** The desktop sidebar's lists. */
 export function StoreSidebar() {
@@ -110,7 +110,7 @@ function UpdatesBadge() {
 }
 
 const chip =
-  'hl-focus inline-flex min-h-11 shrink-0 items-center rounded-pill bg-surface-row px-4 text-body-sm text-ink no-underline aria-[current=page]:bg-accent-wash aria-[current=page]:font-semibold';
+  'hl-focus inline-flex min-h-11 shrink-0 items-center rounded-pill bg-surface-row px-4 text-body-sm text-ink no-underline aria-[current=page]:bg-surface-control aria-[current=page]:font-semibold';
 
 /** The phone's categories: a row of chips that scrolls sideways, and "Manage apps" in a menu. */
 export function StoreChips() {

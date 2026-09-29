@@ -18,6 +18,8 @@ import { useInstalls } from './use-installs';
 
 const copy = storeCopy;
 const Readme = lazy(() => import('./readme'));
+/** The details page's logo (104 px, as the AppDetails screen draws it). */
+const DETAILS_LOGO = tokens.SIZE_APP_ICON + tokens.SPACE_7;
 
 export function useAppDetails(appId: string) {
   const trpc = useTRPC();
@@ -193,17 +195,15 @@ export function AppDetails({ appId }: { appId: string }) {
       </Link>
 
       <header className="flex flex-col gap-5 md:flex-row md:items-center">
-        <StoreLogo app={app} size={tokens.SIZE_APP_ICON} />
+        <StoreLogo app={app} size={DETAILS_LOGO} />
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <h1 className="m-0 text-display">{app.name}</h1>
+          <h1 className="m-0 text-display font-bold">{app.name}</h1>
           <p className="m-0 text-body text-ink-muted">{app.tagline}</p>
           <div className="flex flex-wrap gap-1.5">
             {tags.map((t) => (
               <Badge key={t}>{t}</Badge>
             ))}
-            <Badge tone={d.source.official ? 'accent' : 'neutral'}>
-              {d.source.official ? copy.officialSource : d.source.name}
-            </Badge>
+            <Badge>{d.source.official ? copy.officialSource : d.source.name}</Badge>
           </div>
         </div>
         <div className="flex flex-col items-start gap-2 md:items-end">

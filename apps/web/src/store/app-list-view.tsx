@@ -33,7 +33,7 @@ export function AppListView({
         list.data.items.length ? (
           <ul
             aria-label={heading}
-            className="m-0 grid list-none grid-cols-1 gap-3 p-0 pb-6 md:grid-cols-2 xl:grid-cols-3"
+            className="m-0 grid list-none grid-cols-1 gap-4 p-0 pb-6 md:grid-cols-2 xl:grid-cols-3"
           >
             {list.data.items.map((app) => (
               <li key={app.id}>
