@@ -54,9 +54,8 @@ export function EngineRestartControl({ stopped }: { stopped: boolean }) {
 
   if (restarting) {
     return (
-      <div className="w-48">
-        <Progress value={restarting.progress} aria-label={copy.restarting} />
-      </div>
+      // Fits the row's trailing slot, inside its padding.
+      <Progress className="w-48 min-w-0" value={restarting.progress} aria-label={copy.restarting} />
     );
   }
   const waitFor = exclusive ? copy.waitFor(copy.jobs[exclusive.kind] ?? exclusive.kind) : undefined;
