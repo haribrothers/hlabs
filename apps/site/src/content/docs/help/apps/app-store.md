@@ -37,6 +37,18 @@ Every app has a page with its screenshots (select one to see it large, then use 
 - **Opens at**: the address it will have, such as `immich.hlabs.local`.
 - **Needs access to**: the folders it asks for. You choose where they are when you install.
 
+## What an app can access
+
+Before you install, an app's page lists what it can reach:
+
+- **Network**: "Internet", "Your home network only" or "No network".
+- **Folders**: each folder it asks for, and whether it can change what's in it ("Read and write") or only look ("Read only").
+- **Ports**: some apps (like a DNS server) open a port on this computer to your network. These are marked **Risky**.
+- **Graphics card**: apps that use it to run faster.
+- **Control of your other apps (Docker)**: the app can start, stop and change every app on hlabs. This is marked **Risky**; install it only if you trust it.
+
+If an app recommends more memory than hlabs has left, its page says so; you can still install it, but it may be slow. If there isn't enough disk space, or it needs another app installed first, **Install** is turned off and the page says what to do.
+
 **hlabs official** means the app comes from the store that ships with hlabs. **App Store** at the top takes you back to where you were, scrolled to the same place.
 
 ## Apple Silicon and ARM64

@@ -11,6 +11,7 @@ import { browser } from '../lib/browser';
 import { pageQuery } from '../lib/error-copy';
 import { useTRPC } from '../lib/trpc';
 import { StoreLogo } from './cards';
+import { AccessList, blockers, RequirementNotes } from './app-access';
 import { cardAction, storeTags } from './store-app';
 import { pageScroller, storeReturnHref } from './store-return';
 import { useInstalls } from './use-installs';
@@ -45,6 +46,7 @@ function PrimaryAction({ details, onInstall }: { details: StoreAppDetails; onIns
   const { app, host } = details;
   const action = cardAction(app, installs.byId.get(app.id), installs.progress.get(app.id));
   const noPlatform = host.arm64 && !app.arm64;
+  const blocked = blockers(details).blocksInstall;
   switch (action.kind) {
     case 'open':
       return (
@@ -62,7 +64,7 @@ function PrimaryAction({ details, onInstall }: { details: StoreAppDetails; onIns
       return <Badge tone="success">{copy.installed}</Badge>;
     case 'install':
       return (
-        <Button size="lg" disabled={noPlatform} onClick={onInstall}>
+        <Button size="lg" disabled={noPlatform || blocked} onClick={onInstall}>
           {copy.install}
         </Button>
       );
@@ -210,6 +212,8 @@ export function AppDetails({ appId }: { appId: string }) {
         </div>
       </header>
 
+      <RequirementNotes d={d} />
+
       <Screenshots urls={d.screenshots} name={app.name} />
 
       <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
@@ -231,6 +235,7 @@ export function AppDetails({ appId }: { appId: string }) {
             )}
           </section>
           {d.releaseNotes ? <WhatsNew notes={d.releaseNotes.trim()} /> : null}
+          <AccessList d={d} />
         </div>
         <dl aria-label={copy.facts} className="m-0 flex flex-col gap-2">
           <Fact label={copy.version} value={d.version} />
