@@ -16,4 +16,10 @@ With a keyboard, Tab moves between the two buttons only. For something that can'
 
 On a phone, the question slides up from the bottom of the screen, with the action above **Cancel**.
 
+## Extra checks for the riskiest actions
+
+A few actions can't be undone and affect everyone, so hlabs asks for more than a click. Restoring from a backup and resetting hlabs to factory settings ask for **your password**; a factory reset also asks you to type your hostname exactly as shown (capital letters count). The button stays unavailable until you've filled these in. Your password manager can fill the password, and you can paste into both fields.
+
+If the password isn't right, hlabs says "That password isn't right." and clears the field so you can try again. Wrong passwords here count towards the same limit as logging in: after 5 in 15 minutes, you have to wait 15 minutes.
+
 Once you choose the action, the button shows that hlabs is working, and the question stays until it's done. If it doesn't work, the question stays open and says why and what to do next, so you can try again or cancel. Something that takes a while, such as a restart, carries on after the question closes, and hlabs tells you when it's finished. If an action takes longer than 30 seconds, the question closes anyway and the result appears as a notice.

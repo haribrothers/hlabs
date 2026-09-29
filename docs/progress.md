@@ -70,7 +70,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-STATE-06 · Retry on a countdown or on demand
 - [x] US-STATE-11 · Confirm an action with the shared dialog
 - [x] US-STATE-12 · Show progress and errors inside the confirm dialog
-- [ ] US-STATE-13 · Require a password or typed name for the riskiest actions
+- [x] US-STATE-13 · Require a password or typed name for the riskiest actions
 - [ ] US-STATE-14 · Show toasts by severity
 - [ ] US-STATE-15 · Act on a toast
 - [ ] US-STATE-16 · Stack toasts and keep them in sync with notifications

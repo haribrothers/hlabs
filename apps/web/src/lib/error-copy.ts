@@ -13,6 +13,9 @@ function errorData(err: unknown): ErrorData | null {
   return err instanceof TRPCClientError ? ((err.data as ErrorData | undefined) ?? null) : null;
 }
 
+/** The error's hlabsCode, if the daemon sent one. */
+export const errorCode = (err: unknown): string | null => errorData(err)?.hlabsCode ?? null;
+
 export function errorLine(err: unknown): string {
   const data = errorData(err);
   if (!data) return errorCopy.offline;
