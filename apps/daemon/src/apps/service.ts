@@ -46,8 +46,6 @@ export interface AppServiceDeps {
   compose: ComposeRunner;
   /** `<dataDir>/apps`: one compose project folder per app. */
   projectsDir: string;
-  /** Called when the set of routes may have changed (Caddy and mDNS follow). */
-  onRoutesChanged?: () => Promise<void>;
   probes?: HealthProbes;
   now?: () => number;
 }
@@ -181,7 +179,6 @@ export class AppService {
         this.settle(app.id, 'stopped');
       }
     }
-    await this.deps.onRoutesChanged?.();
     await Promise.all(pending);
   }
 

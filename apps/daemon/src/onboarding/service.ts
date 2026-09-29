@@ -40,6 +40,8 @@ export class OnboardingService {
       /** False in e2e (HLABS_DEV_NO_ENGINE_INSTALL). */
       engineInstallAllowed?: boolean;
       systemCheck: SystemCheckDeps;
+      /** Onboarding finished: port 80 stops serving the dashboard (07 §7.1). */
+      onCompleted?: () => void;
     },
   ) {
     this.db = deps.db;
@@ -197,6 +199,7 @@ export class OnboardingService {
     if (current.setupTokenRef) await this.secrets.delete(current.setupTokenRef);
     setSetting(this.db, 'onboarding', { completedAt: now, step: 'done', setupTokenRef: null });
     this.tokenHash = null;
+    this.deps.onCompleted?.();
   }
 
   private urlFor(token: string) {

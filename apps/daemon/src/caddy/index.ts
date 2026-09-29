@@ -1,12 +1,31 @@
-// Caddy is managed through its admin API (D-006). Phase 0 ships the interface; phase 2 the real client.
+// Caddy is managed through its admin API (D-006): NetworkService builds the whole state from the database and the
+// proxy applies it. `pnpm dev` and tests run without Caddy (NoopProxyManager); production and `pnpm dev:full` use
+// CaddyProxy.
+import type { AppRoute } from '../apps/service';
+
+export interface ProxyState {
+  /** The dashboard name: `hlabs` → `hlabs.local`, apps at `<app>.hlabs.local`. */
+  hostname: string;
+  ports: { https: number; http: number };
+  /** Before onboarding finishes, port 80 serves the dashboard too (07 §7.1, D-013). */
+  onboardingComplete: boolean;
+  /** Where dashboard pages go (the daemon; Vite under `pnpm dev:full`). */
+  dashboardUpstream: string;
+  /** The daemon itself, for forward auth. */
+  daemon: string;
+  apps: AppRoute[];
+}
 
 export interface ProxyManager {
-  /** Start Caddy with the base config (dashboard route, local CA). */
-  start(): Promise<void>;
+  /** Starts Caddy on first use, then replaces its config. */
+  apply(state: ProxyState): Promise<void>;
   stop(): Promise<void>;
 }
 
 export class NoopProxyManager implements ProxyManager {
-  async start() {}
+  last: ProxyState | null = null;
+  async apply(state: ProxyState) {
+    this.last = state;
+  }
   async stop() {}
 }

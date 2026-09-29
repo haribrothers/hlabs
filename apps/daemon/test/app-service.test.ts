@@ -49,7 +49,6 @@ async function setup(options: { probes?: HealthProbes; engineRunning?: boolean }
   });
   await engine.check();
   const compose = new FakeCompose(fake);
-  let routesChanged = 0;
   const service = new AppService({
     db,
     bus,
@@ -59,7 +58,6 @@ async function setup(options: { probes?: HealthProbes; engineRunning?: boolean }
     projectsDir: join(dir, 'apps'),
     probes: options.probes ?? fakeProbes(),
     now: () => 42,
-    onRoutesChanged: async () => void routesChanged++,
   });
 
   /** An installed app: its row, project files and pulled images. */
@@ -104,7 +102,7 @@ async function setup(options: { probes?: HealthProbes; engineRunning?: boolean }
       .from(apps)
       .all()
       .find((a) => a.id === appId)?.state;
-  return { db, dir, service, fake, compose, states, install, stateOf, routesChanged: () => routesChanged };
+  return { db, dir, service, fake, compose, states, install, stateOf };
 }
 
 describe('state machine', () => {
@@ -304,7 +302,6 @@ describe('reconcile (02 §2.3 step 4)', () => {
     expect(t.stateOf('uptime-kuma')).toBe('install_failed');
     expect(t.stateOf('vaultwarden')).toBe('error');
     expect(t.stateOf('immich')).toBe('stopped');
-    expect(t.routesChanged()).toBe(1);
     expect(t.fake.networks.has('hlabs')).toBe(true);
   });
 

@@ -12,6 +12,8 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NoopProxyManager, type ProxyManager } from './caddy/index';
+import { CaddyProxy } from './caddy/proxy';
+import { NetworkService } from './network/service';
 import type { DaemonConfig } from './config';
 import type { InstallerHost } from './engine/colima-installer';
 import { engineDir, registerEngineInstall } from './engine/install-job';
@@ -120,18 +122,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   const engineStatus = await engine.start();
   logger.info({ engine: engineStatus.state }, 'container engine checked');
 
-  // 3. Caddy base config and mDNS names (real implementations arrive in phase 2).
+  // 3. Caddy and mDNS names, from the database (D-006).
   readiness.step(2);
-  const proxy = deps.proxy ?? new NoopProxyManager();
-  const mdns = deps.mdns ?? new NoopMdnsPublisher();
-  await proxy.start();
-  await mdns.publish(getSetting(db, 'hostname'));
-
-  // 4. The built-in store, then reconcile installed apps with the engine.
-  readiness.step(3);
-  const catalog = new CatalogService(db, config.resources.storeDir, logger);
-  const { synced, skipped } = catalog.syncBuiltin();
-  logger.info({ apps: synced.length, skipped: skipped.length }, 'built-in store loaded');
   const appService = new AppService({
     db,
     bus,
@@ -146,6 +138,34 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     projectsDir: join(config.paths.dataDir, 'apps'),
     probes: deps.healthProbes,
   });
+  const proxy =
+    deps.proxy ??
+    (config.proxy === 'caddy'
+      ? new CaddyProxy({
+          binary: join(config.resources.binDir, 'caddy'),
+          dir: join(config.paths.dataDir, 'caddy'),
+          webFallbackDir: config.resources.webFallbackDir,
+          logger,
+        })
+      : new NoopProxyManager());
+  const mdns = deps.mdns ?? new NoopMdnsPublisher();
+  const network = new NetworkService({
+    db,
+    proxy,
+    mdns,
+    logger,
+    routes: () => appService.routes(),
+    dashboardUpstream: config.dashboardUpstream,
+    daemon: `127.0.0.1:${config.port}`,
+  });
+  await network.sync();
+  network.watch(bus);
+
+  // 4. The built-in store, then reconcile installed apps with the engine.
+  readiness.step(3);
+  const catalog = new CatalogService(db, config.resources.storeDir, logger);
+  const { synced, skipped } = catalog.syncBuiltin();
+  logger.info({ apps: synced.length, skipped: skipped.length }, 'built-in store loaded');
   // Health waits take up to minutes, so apps come up in the background; /healthz doesn't wait for them.
   const reconciled = appService.reconcile().catch((err: unknown) => logger.error({ err }, 'reconciling apps failed'));
 
@@ -187,6 +207,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     bus,
     dataDir: config.paths.dataDir,
     engineInstallAllowed: !config.devNoEngineInstall,
+    onCompleted: () => void network.sync(),
     systemCheck: {
       engine,
       probe,
@@ -215,6 +236,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     proxy,
     mdns,
     catalog,
+    routing: network,
     apps: appService,
     reconciled,
     onboarding,

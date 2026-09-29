@@ -1,11 +1,17 @@
-// mDNS names (hlabs.local, <app>.hlabs.local): dns-sd on macOS, Avahi on Linux (02 §2.6). Real publishers ship in phase 2.
+// mDNS names (hlabs.local, <app>.hlabs.local): dns-sd on macOS, Avahi on Linux (02 §2.6).
 
 export interface MdnsPublisher {
-  publish(hostname: string): Promise<void>;
+  /** Publishes exactly these names (e.g. `hlabs.local`, `immich.hlabs.local`) and withdraws any others. */
+  sync(names: string[]): Promise<void>;
   unpublishAll(): Promise<void>;
 }
 
 export class NoopMdnsPublisher implements MdnsPublisher {
-  async publish() {}
-  async unpublishAll() {}
+  names: string[] = [];
+  async sync(names: string[]) {
+    this.names = [...names];
+  }
+  async unpublishAll() {
+    this.names = [];
+  }
 }
