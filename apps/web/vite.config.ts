@@ -25,6 +25,7 @@ export default defineConfig({
       '/dev/sign-in': DAEMON,
       '/dev/revoke-sessions': DAEMON,
       '/dev/fake-app': DAEMON,
+      '/dev/remove-app': DAEMON,
       '/dev/seed': DAEMON,
       '/dev/notify': DAEMON,
     },

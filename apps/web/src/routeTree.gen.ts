@@ -33,6 +33,7 @@ import { Route as SettingsAccountTwoFactorRouteImport } from './routes/settings.
 import { Route as StoreCategoryCategoryRouteImport } from './routes/store.category.$category'
 import { Route as StoreCollectionCollectionIdRouteImport } from './routes/store.collection.$collectionId'
 import { Route as StoreAppAppIdRouteImport } from './routes/store_.app.$appId'
+import { Route as StoreInstallAppIdRouteImport } from './routes/store_.install.$appId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -156,6 +157,11 @@ const StoreAppAppIdRoute = StoreAppAppIdRouteImport.update({
   path: '/store/app/$appId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoreInstallAppIdRoute = StoreInstallAppIdRouteImport.update({
+  id: '/store_/install/$appId',
+  path: '/store/install/$appId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/store/category/$category': typeof StoreCategoryCategoryRoute
   '/store/collection/$collectionId': typeof StoreCollectionCollectionIdRoute
   '/store/app/$appId': typeof StoreAppAppIdRoute
+  '/store/install/$appId': typeof StoreInstallAppIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/store/category/$category': typeof StoreCategoryCategoryRoute
   '/store/collection/$collectionId': typeof StoreCollectionCollectionIdRoute
   '/store/app/$appId': typeof StoreAppAppIdRoute
+  '/store/install/$appId': typeof StoreInstallAppIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/store/category/$category': typeof StoreCategoryCategoryRoute
   '/store/collection/$collectionId': typeof StoreCollectionCollectionIdRoute
   '/store_/app/$appId': typeof StoreAppAppIdRoute
+  '/store_/install/$appId': typeof StoreInstallAppIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/store/category/$category'
     | '/store/collection/$collectionId'
     | '/store/app/$appId'
+    | '/store/install/$appId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -283,6 +293,7 @@ export interface FileRouteTypes {
     | '/store/category/$category'
     | '/store/collection/$collectionId'
     | '/store/app/$appId'
+    | '/store/install/$appId'
   id:
     | '__root__'
     | '/'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/store/category/$category'
     | '/store/collection/$collectionId'
     | '/store_/app/$appId'
+    | '/store_/install/$appId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -327,6 +339,7 @@ export interface RootRouteChildren {
   LoginUsersRoute: typeof LoginUsersRoute
   LoginIndexRoute: typeof LoginIndexRoute
   StoreAppAppIdRoute: typeof StoreAppAppIdRoute
+  StoreInstallAppIdRoute: typeof StoreInstallAppIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -499,6 +512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreAppAppIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/store_/install/$appId': {
+      id: '/store_/install/$appId'
+      path: '/store/install/$appId'
+      fullPath: '/store/install/$appId'
+      preLoaderRoute: typeof StoreInstallAppIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -562,6 +582,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginUsersRoute: LoginUsersRoute,
   LoginIndexRoute: LoginIndexRoute,
   StoreAppAppIdRoute: StoreAppAppIdRoute,
+  StoreInstallAppIdRoute: StoreInstallAppIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

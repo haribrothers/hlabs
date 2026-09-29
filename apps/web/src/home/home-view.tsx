@@ -3,7 +3,7 @@ import { LogoMark } from '@hlabs/icons';
 import { GlassCard } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from '@trpc/tanstack-react-query';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { homeCopy } from '../copy/home';
 import { useTRPC } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
@@ -18,12 +18,18 @@ export function HomeView() {
   const queryClient = useQueryClient();
   const layout = useQuery({ ...trpc.home.getLayout.queryOptions(), retry: false });
   const apps = useQuery({ ...trpc.apps.list.queryOptions(), retry: false });
-  // Installed, removed or changed apps show up without a reload (US-HOME-03).
+  const [progress, setProgress] = useState(() => new Map<string, number>());
+  // Installed, removed or changed apps show up without a reload (US-HOME-03); installs fill their ring (US-STORE-12).
   useSubscription(
     trpc.events.stream.subscriptionOptions(
-      { types: ['app.stateChanged'] },
+      { types: ['app.stateChanged', 'app.installProgress'] },
       {
-        onData: () => {
+        onData: ({ data: event }) => {
+          if (event.type === 'app.installProgress') {
+            const { appId, progress: pct } = event.data;
+            setProgress((m) => (m.get(appId) === pct ? m : new Map(m).set(appId, pct)));
+            return;
+          }
           void queryClient.invalidateQueries({ queryKey: trpc.apps.list.queryKey() });
           void queryClient.invalidateQueries({ queryKey: trpc.home.getLayout.queryKey() });
         },
@@ -58,6 +64,7 @@ export function HomeView() {
             (layout.data?.items ?? []).filter((i) => i.kind === 'app').map((i) => i.id),
           )}
           isAdmin={me.data?.role === 'admin'}
+          progress={progress}
         />
       ) : null}
     </div>

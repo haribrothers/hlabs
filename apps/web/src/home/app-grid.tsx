@@ -4,8 +4,8 @@
 import type { AppRouter } from '@hlabs/api';
 import { appTileLook, Plus, iconDefaults } from '@hlabs/icons';
 import { isFeatureEnabled } from '@hlabs/shared';
-import { AppIcon } from '@hlabs/ui';
-import { Link } from '@tanstack/react-router';
+import { AppIcon, type AppIconState } from '@hlabs/ui';
+import { Link, useNavigate } from '@tanstack/react-router';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { KeyboardEvent } from 'react';
 import { homeCopy } from '../copy/home';
@@ -41,7 +41,24 @@ function moveFocus(e: KeyboardEvent<HTMLElement>) {
   }
 }
 
-export function AppGrid({ apps, isAdmin }: { apps: readonly HomeApp[]; isAdmin: boolean }) {
+/** The tile's state: installing shows its ring, a failed install or a crash an error badge (US-STORE-14). */
+export function tileState(state: HomeApp['state']): AppIconState {
+  if (state === 'installing') return 'installing';
+  if (state === 'install_failed' || state === 'error') return 'error';
+  if (state === 'stopped') return 'stopped';
+  return 'running';
+}
+
+export function AppGrid({
+  apps,
+  isAdmin,
+  progress,
+}: {
+  apps: readonly HomeApp[];
+  isAdmin: boolean;
+  progress?: ReadonlyMap<string, number>;
+}) {
+  const navigate = useNavigate();
   const showInstall = isAdmin && isFeatureEnabled('appStore');
   if (apps.length === 0 && !showInstall) return null;
   return (
@@ -59,10 +76,15 @@ export function AppGrid({ apps, isAdmin }: { apps: readonly HomeApp[]; isAdmin: 
               src={app.icon.logoUrl}
               colors={look.colors}
               icon={look.fallbackIcon}
-              ariaLabel={homeCopy.openApp(app.name)}
-              // AppWindow for embedded apps arrives with US-APP-01; until then every app opens in a new tab.
+              state={tileState(app.state)}
+              progress={progress?.get(app.id) ?? 0}
+              ariaLabel={app.state === 'running' ? homeCopy.openApp(app.name) : undefined}
+              // AppWindow for embedded apps arrives with US-APP-01; until then every app opens in a new tab. An install
+              // that's running or failed opens its page (US-STORE-12, US-STORE-14).
               onClick={() => {
                 if (app.state === 'running') browser.open(appUrl(app));
+                else if (app.state === 'installing' || app.state === 'install_failed')
+                  void navigate({ to: '/store/install/$appId', params: { appId: app.id } });
               }}
             />
           </li>
