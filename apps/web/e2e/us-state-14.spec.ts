@@ -14,7 +14,9 @@ test('US-STATE-14 toasts sit bottom-right (above the tab bar on a phone), hold w
   await expect(danger).toContainText('Port 3001 is already in use by another program.');
   await expect(success).toBeVisible();
 
-  const box = (await success.boundingBox())!;
+  // Newest on top (US-STATE-16): the first one shown sits at the bottom of the stack.
+  expect((await success.boundingBox())!.y).toBeLessThan((await danger.boundingBox())!.y);
+  const box = (await danger.boundingBox())!;
   const viewport = page.viewportSize()!;
   if (testInfo.project.name === 'phone') {
     // The real tab bar (the gallery also shows one as a sample): the fixed one.
