@@ -70,7 +70,7 @@ function Row({ title, detail, risky }: { title: string; detail?: string; risky?:
   return (
     <li className="flex items-start justify-between gap-3 rounded-md bg-surface-row px-4 py-3">
       <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-body-sm font-semibold">{title}</span>
+        <span className="text-body font-bold">{title}</span>
         {detail ? <span className="text-caption text-ink-muted">{detail}</span> : null}
       </span>
       {risky ? <Badge tone="danger">{copy.risky}</Badge> : null}
@@ -83,7 +83,7 @@ export function AccessList({ d }: { d: StoreAppDetails }) {
   const { access } = d;
   return (
     <section aria-labelledby="details-access" className="flex flex-col gap-2">
-      <h2 id="details-access" className="m-0 text-title-2">
+      <h2 id="details-access" className="m-0 text-title-2 font-bold">
         {copy.access}
       </h2>
       <ul aria-labelledby="details-access" className="m-0 flex list-none flex-col gap-2 p-0">

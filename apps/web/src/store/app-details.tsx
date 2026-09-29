@@ -2,7 +2,7 @@
 // opens, what it needs), and the view's one white button: Install (the install sheet, US-STORE-08) or Open.
 import type { StoreAppDetails } from '@hlabs/api';
 import { ChevronLeft, ChevronRight, iconDefaults } from '@hlabs/icons';
-import { Badge, Button, GlassCard, ModalDialog, tokens } from '@hlabs/ui';
+import { Badge, Button, GlassCard, ModalDialog, ScrollPane, tokens } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
@@ -10,6 +10,7 @@ import { categoryLabels, storeCopy } from '../copy/store';
 import { browser } from '../lib/browser';
 import { pageQuery } from '../lib/error-copy';
 import { useTRPC } from '../lib/trpc';
+import { useIsDesktop } from '../lib/use-media';
 import { StoreLogo } from './cards';
 import { AccessList, blockers, RequirementNotes } from './app-access';
 import { cardAction, storeTags } from './store-app';
@@ -142,7 +143,7 @@ function WhatsNew({ notes }: { notes: string }) {
   }, [notes, expanded]);
   return (
     <section aria-labelledby="details-whats-new" className="flex flex-col gap-2">
-      <h2 id="details-whats-new" className="m-0 text-title-2">
+      <h2 id="details-whats-new" className="m-0 text-title-2 font-bold">
         {copy.whatsNew}
       </h2>
       <p ref={text} className={`m-0 whitespace-pre-line text-body text-ink-muted ${expanded ? '' : 'line-clamp-6'}`}>
@@ -161,7 +162,7 @@ function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-0.5 rounded-md bg-surface-row px-4 py-3">
       <dt className="text-caption text-ink-muted">{label}</dt>
-      <dd className="m-0 text-body-sm font-semibold">{value}</dd>
+      <dd className="m-0 text-body font-bold">{value}</dd>
     </div>
   );
 }
@@ -169,6 +170,7 @@ function Fact({ label, value }: { label: string; value: string }) {
 export function AppDetails({ appId }: { appId: string }) {
   const details = useAppDetails(appId);
   const navigate = useNavigate();
+  const desktop = useIsDesktop();
   // Details opens at its top, wherever the list was scrolled to.
   useLayoutEffect(() => {
     const page = pageScroller();
@@ -184,66 +186,95 @@ export function AppDetails({ appId }: { appId: string }) {
   const noPlatform = host.arm64 && !app.arm64;
   const onInstall = () => void navigate({ to: '/store/app/$appId', params: { appId }, search: { install: true } });
 
-  return (
-    <GlassCard level={2} className="mx-auto flex w-full max-w-window flex-col gap-6 p-6 md:p-10">
-      <Link
-        to={storeReturnHref()}
-        className="hl-focus inline-flex items-center gap-1 self-start rounded-xs text-body-sm text-ink-muted no-underline hover:text-ink"
-      >
-        <ChevronLeft aria-hidden {...iconDefaults} className="size-4" />
-        {copy.title}
-      </Link>
+  const back = (
+    <Link
+      to={storeReturnHref()}
+      className="hl-focus inline-flex items-center gap-2.5 self-start rounded-xs text-body-sm text-ink-muted no-underline hover:text-ink"
+    >
+      <ChevronLeft aria-hidden {...iconDefaults} className="size-4" />
+      {copy.title}
+    </Link>
+  );
+  const appHeader = (
+    <header className="flex flex-col gap-5 md:flex-row md:items-center">
+      <StoreLogo app={app} size={DETAILS_LOGO} />
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <h1 className="m-0 text-display font-bold">{app.name}</h1>
+        <p className="m-0 text-body text-ink">{app.tagline}</p>
+        <div className="flex flex-wrap gap-1.5">
+          {tags.map((t) => (
+            <Badge key={t}>{t}</Badge>
+          ))}
+          <Badge>{d.source.official ? copy.officialSource : d.source.name}</Badge>
+        </div>
+      </div>
+      <div className="flex flex-col items-start gap-2 md:items-end">
+        <PrimaryAction details={d} onInstall={onInstall} />
+        {noPlatform ? <p className="m-0 max-w-xs text-body-sm text-ink-muted">{copy.noArm64[host.os]}</p> : null}
+      </div>
+    </header>
+  );
 
-      <header className="flex flex-col gap-5 md:flex-row md:items-center">
-        <StoreLogo app={app} size={DETAILS_LOGO} />
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <h1 className="m-0 text-display font-bold">{app.name}</h1>
-          <p className="m-0 text-body text-ink-muted">{app.tagline}</p>
-          <div className="flex flex-wrap gap-1.5">
-            {tags.map((t) => (
-              <Badge key={t}>{t}</Badge>
-            ))}
-            <Badge>{d.source.official ? copy.officialSource : d.source.name}</Badge>
+  // A window as tall as the screen allows: the back link and the app (desktop) stay put and only what's below them
+  // scrolls. On a phone the app scrolls too, so the content isn't squeezed under it.
+  // The body sits inside the scroller's right margin and scrollbar gutter (16px), so its right padding is 16px less
+  // than the header's and the two line up.
+  return (
+    <GlassCard level={2} className="mx-auto flex min-h-0 w-full max-w-window flex-1 flex-col overflow-hidden p-0">
+      <ScrollPane
+        className="flex-1"
+        headerClassName="px-6 pt-6 pb-5 md:px-10 md:pt-8"
+        scrollClassName="mr-2 mb-5"
+        bodyClassName="pl-6 pr-2 pb-4 md:pl-10 md:pr-6"
+        header={
+          desktop ? (
+            <div className="flex flex-col gap-6">
+              {back}
+              {appHeader}
+            </div>
+          ) : (
+            back
+          )
+        }
+      >
+        <div className="flex flex-col gap-6">
+          {desktop ? null : appHeader}
+          <RequirementNotes d={d} />
+          <Screenshots urls={d.screenshots} name={app.name} />
+          <div className="grid gap-8 lg:grid-cols-[1fr_23rem]">
+            <div className="flex min-w-0 flex-col gap-6">
+              <section aria-labelledby="details-about" className="flex flex-col gap-2">
+                <h2 id="details-about" className="m-0 text-title-2 font-bold">
+                  {copy.about}
+                </h2>
+                {d.readme ? (
+                  <Suspense fallback={null}>
+                    <Readme markdown={d.readme} />
+                  </Suspense>
+                ) : (
+                  paragraphs(d.description).map((p) => (
+                    <p key={p} className="m-0 text-body text-ink-muted">
+                      {p}
+                    </p>
+                  ))
+                )}
+              </section>
+              {d.releaseNotes ? <WhatsNew notes={d.releaseNotes.trim()} /> : null}
+              <AccessList d={d} />
+            </div>
+            <div className="flex flex-col gap-6">
+              <dl aria-label={copy.facts} className="m-0 flex flex-col gap-2">
+                <Fact label={copy.version} value={d.version} />
+                {d.services.length ? <Fact label={copy.runsAs} value={runsAs(d.services)} /> : null}
+                <Fact label={copy.opensAt} value={d.address} />
+                {d.folders.length ? (
+                  <Fact label={copy.needsAccess} value={d.folders.map((f) => f.label).join(', ')} />
+                ) : null}
+              </dl>
+            </div>
           </div>
         </div>
-        <div className="flex flex-col items-start gap-2 md:items-end">
-          <PrimaryAction details={d} onInstall={onInstall} />
-          {noPlatform ? <p className="m-0 max-w-xs text-body-sm text-ink-muted">{copy.noArm64[host.os]}</p> : null}
-        </div>
-      </header>
-
-      <RequirementNotes d={d} />
-
-      <Screenshots urls={d.screenshots} name={app.name} />
-
-      <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
-        <div className="flex min-w-0 flex-col gap-6">
-          <section aria-labelledby="details-about" className="flex flex-col gap-2">
-            <h2 id="details-about" className="m-0 text-title-2">
-              {copy.about}
-            </h2>
-            {d.readme ? (
-              <Suspense fallback={null}>
-                <Readme markdown={d.readme} />
-              </Suspense>
-            ) : (
-              paragraphs(d.description).map((p) => (
-                <p key={p} className="m-0 text-body text-ink-muted">
-                  {p}
-                </p>
-              ))
-            )}
-          </section>
-          {d.releaseNotes ? <WhatsNew notes={d.releaseNotes.trim()} /> : null}
-          <AccessList d={d} />
-        </div>
-        <dl aria-label={copy.facts} className="m-0 flex flex-col gap-2">
-          <Fact label={copy.version} value={d.version} />
-          {d.services.length ? <Fact label={copy.runsAs} value={runsAs(d.services)} /> : null}
-          <Fact label={copy.opensAt} value={d.address} />
-          {d.folders.length ? <Fact label={copy.needsAccess} value={d.folders.map((f) => f.label).join(', ')} /> : null}
-        </dl>
-      </div>
+      </ScrollPane>
     </GlassCard>
   );
 }

@@ -34,3 +34,24 @@ test('US-STORE-06 back from details returns to the same scroll position', async 
   await expect(page).toHaveURL(/\/store$/);
   await expect.poll(() => page.evaluate(() => document.getElementById('main')!.scrollTop)).toBe(before);
 });
+
+test('US-STORE-06 details is a full-height window: only its content scrolls, never the page', async ({ page }) => {
+  await page.goto('/store/app/immich');
+  await expect(page.getByRole('heading', { level: 1, name: 'Immich' })).toBeVisible();
+  const layout = await page.evaluate(() => {
+    const main = document.getElementById('main')!;
+    const window_ = document.querySelector('main section.hl-glass-2') as HTMLElement;
+    const pane = window_.querySelector('.hl-scroll-pane-scroller') as HTMLElement;
+    return {
+      pageScrolls: document.documentElement.scrollHeight > innerHeight + 1,
+      mainScrolls: main.scrollHeight > main.clientHeight + 1,
+      paneScrollsItself: getComputedStyle(pane).overflowY !== 'visible',
+      // The window reaches down to the Dock or tab bar (the space main keeps for it).
+      gapToBottom: innerHeight - window_.getBoundingClientRect().bottom,
+    };
+  });
+  expect(layout.pageScrolls).toBe(false);
+  expect(layout.mainScrolls).toBe(false);
+  expect(layout.paneScrollsItself).toBe(true);
+  expect(layout.gapToBottom).toBeLessThan(200);
+});
