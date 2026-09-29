@@ -65,7 +65,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-SYS-18 · Restart the container engine
 - [x] US-SYS-19 · Set resources given to apps
 - [x] US-SYS-20 · Control startup behaviour
-- [ ] US-STATE-04 · Serve a fallback page when the daemon is down
+- [x] US-STATE-04 · Serve a fallback page when the daemon is down
 - [ ] US-STATE-05 · Explain why hlabs can't be reached
 - [ ] US-STATE-06 · Retry on a countdown or on demand
 - [ ] US-STATE-11 · Confirm an action with the shared dialog

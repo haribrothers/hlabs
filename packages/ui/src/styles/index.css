@@ -6,9 +6,4 @@
 @import '@fontsource/plus-jakarta-sans/500.css';
 @import '@fontsource/plus-jakarta-sans/600.css';
 @import '@fontsource/plus-jakarta-sans/700.css';
-@import './tokens.css';
-@import './theme.css';
-@import './components.css';
-
-/* Let Tailwind see the classes used inside @hlabs/ui components. */
-@source '../';
+@import './base.css';

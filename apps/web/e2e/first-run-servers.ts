@@ -1,6 +1,6 @@
 // Global setup: one first-run hlabs per Playwright worker (daemon + Vite on their own ports, fresh data dir), so the
 // onboarding, log-in and account specs can run in parallel. Returns the teardown that stops them.
-import { spawn, type ChildProcess } from 'node:child_process';
+import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import { rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { FullConfig } from '@playwright/test';
@@ -23,6 +23,8 @@ async function waitFor(url: string, timeoutMs = 60_000) {
 }
 
 export default async function firstRunServers(config: FullConfig) {
+  // The fallback page Caddy serves when the daemon is down (US-STATE-04), for its spec.
+  execFileSync('pnpm', ['build:fallback'], { cwd: WEB_DIR, stdio: 'ignore' });
   const count = config.workers;
   const children: ChildProcess[] = [];
   const start = (command: string, args: string[], cwd: string, env: Record<string, string>) => {

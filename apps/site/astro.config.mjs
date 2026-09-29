@@ -19,6 +19,7 @@ export default defineConfig({
             { label: 'Your Home screen', link: '/help/get-started/home/' },
             { label: 'Settings', link: '/help/get-started/settings/' },
             { label: 'Engine and startup', link: '/help/get-started/engine/' },
+            { label: "Can't reach hlabs", link: '/help/get-started/cant-reach/' },
           ],
         },
       ],

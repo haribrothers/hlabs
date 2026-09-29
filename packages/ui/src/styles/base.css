@@ -1,0 +1,8 @@
+/* @hlabs/ui without fonts: tokens, the Tailwind theme and component styles. The fallback page (US-STATE-04) uses it
+   with fonts-latin.css so everything can be inlined. */
+@import './tokens.css';
+@import './theme.css';
+@import './components.css';
+
+/* Let Tailwind see the classes used inside @hlabs/ui components. */
+@source '../';
