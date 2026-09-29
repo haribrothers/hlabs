@@ -62,9 +62,11 @@ export class JobRunner {
         .from(jobs)
         .where(inArray(jobs.state, [...ACTIVE]))
         .all();
-      const exclusiveActive = active.some((j) => EXCLUSIVE.has(j.kind));
+      const exclusiveActive = active.find((j) => EXCLUSIVE.has(j.kind));
       if (exclusiveActive || (EXCLUSIVE.has(kind) && active.length > 0)) {
-        throw hlabsError('JOB_EXCLUSIVE_RUNNING');
+        // Name what's in the way, so people know what to wait for (US-STATE-20).
+        const runningKind = (exclusiveActive ?? active[0]!).kind;
+        throw hlabsError('JOB_EXCLUSIVE_RUNNING', undefined, { runningKind });
       }
       tx.insert(jobs)
         .values({

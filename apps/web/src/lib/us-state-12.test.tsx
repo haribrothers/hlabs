@@ -77,7 +77,7 @@ describe('US-STATE-12', () => {
     const go = within(dialog).getByRole('button', { name: 'Restart' });
     fireEvent.click(go);
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
-      'hlabs is busy with something that must finish first. Try again when it’s done.',
+      'hlabs is busy. Wait for what it’s doing to finish, then try again.',
     );
     expect(go).toBeEnabled();
     expect(within(dialog).getByRole('button', { name: 'Cancel' })).toBeEnabled();
@@ -107,7 +107,7 @@ describe('US-STATE-12', () => {
     const dialog = await screen.findByRole('alertdialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Restart' }));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
-      "Can't reach hlabs right now. Check your connection and try again.",
+      "Can't reach hlabs. Check your connection and try again.",
     );
     expect(dialog).not.toHaveTextContent('Failed to fetch');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
@@ -125,7 +125,7 @@ describe('US-STATE-12', () => {
 
   it.each([
     ['succeeds', true, 'Restart finished'],
-    ['fails', false, 'hlabs is busy with something that must finish first. Try again when it’s done.'],
+    ['fails', false, 'hlabs is busy. Wait for what it’s doing to finish, then try again.'],
   ])('after 30 s it closes, and when the action %s the result is a toast', async (_how, ok, toast) => {
     vi.useFakeTimers();
     renderWithDaemon(

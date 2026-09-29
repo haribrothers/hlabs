@@ -48,7 +48,6 @@ export const engineCopy = {
   restartConfirm: 'Restart',
   restarting: 'Restarting the engine',
   notBack: "The engine didn't come back. Start it again, or restart this computer.",
-  restartFailed: "Couldn't restart the engine. Try again.",
   waitFor: (job: string) => `Wait for ${job} to finish`,
   jobs: {
     system_update: 'the hlabs update',

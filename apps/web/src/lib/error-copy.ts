@@ -1,14 +1,16 @@
-// What an error means for people, in one line (US-STATE-12 inline in the confirm dialog; US-STATE-17 completes the
-// catalogue). Never the raw message: an unknown error gets the generic line, and no response at all the offline one.
+// What an error means for people (US-STATE-17): the title and body for its hlabsCode, filled from its detail. An
+// unknown or missing code gets the generic copy, and nothing answering (offline, or hlabs down) the offline copy.
+// The raw message only goes to the browser console, never on screen.
 import { TRPCClientError } from '@trpc/client';
-import { errorCopy } from '../copy/errors';
+import { errorCopy, type ErrorText } from '../copy/errors';
+import { showToast } from './toasts';
 
 interface ErrorData {
   hlabsCode?: string;
   detail?: Record<string, unknown> | null;
 }
 
-/** The hlabsCode the daemon sent, or null when nothing answered (offline, or hlabs is down). */
+/** What the daemon sent, or null when nothing answered. */
 function errorData(err: unknown): ErrorData | null {
   return err instanceof TRPCClientError ? ((err.data as ErrorData | undefined) ?? null) : null;
 }
@@ -16,11 +18,30 @@ function errorData(err: unknown): ErrorData | null {
 /** The error's hlabsCode, if the daemon sent one. */
 export const errorCode = (err: unknown): string | null => errorData(err)?.hlabsCode ?? null;
 
-export function errorLine(err: unknown): string {
+const catalogue = errorCopy.codes as Record<string, ((detail: Record<string, unknown>) => ErrorText) | undefined>;
+
+export function errorText(err: unknown): ErrorText {
   const data = errorData(err);
-  if (!data) return errorCopy.offline;
-  const code = data.hlabsCode as keyof typeof errorCopy.codes | undefined;
-  const line = code ? errorCopy.codes[code] : undefined;
-  if (typeof line === 'function') return line(data.detail ?? {});
-  return line ?? errorCopy.generic;
+  if (!data) {
+    if (!(err instanceof TRPCClientError)) console.error(err);
+    return errorCopy.offline;
+  }
+  const copy = data.hlabsCode ? catalogue[data.hlabsCode] : undefined;
+  if (!copy) {
+    console.error(err);
+    return errorCopy.generic;
+  }
+  return copy(data.detail ?? {});
+}
+
+/** Title and body as one line, for inline errors in a dialog or form. */
+export function errorLine(err: unknown): string {
+  const { title, body } = errorText(err);
+  return `${title}. ${body}`;
+}
+
+/** A mutation started from a button failed: say so in a danger toast (dialogs and forms show errors inline). */
+export function showErrorToast(err: unknown): number {
+  const { title, body } = errorText(err);
+  return showToast({ tone: 'danger', title, body });
 }

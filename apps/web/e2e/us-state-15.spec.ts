@@ -36,7 +36,7 @@ test('US-STATE-15 Retry runs the action; a failure updates the toast, success re
   await expect(toast.getByRole('link', { name: 'View logs' })).toHaveCount(0);
 
   await retry.click();
-  await expect(toast).toContainText('hlabs is busy with something that must finish first. Try again when it’s done.');
+  await expect(toast).toContainText('hlabs is busy. Wait for what it’s doing to finish, then try again.');
   await expect(retry).toBeEnabled();
 
   await retry.click();

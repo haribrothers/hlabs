@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from '@trpc/tanstack-react-query';
 import { engineCopy } from '../copy/engine';
 import { confirm } from '../lib/confirm';
+import { showErrorToast } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 
@@ -67,7 +68,8 @@ export function EngineRestartControl({ stopped }: { stopped: boolean }) {
         busy={restart.isPending}
         onClick={() =>
           stopped
-            ? restart.mutate()
+            ? // Start engine has no dialog, so a failure is a danger toast; Restart's shows in its dialog.
+              restart.mutate(undefined, { onError: showErrorToast })
             : void confirm({
                 title: copy.restartTitle,
                 body: copy.restartBody,

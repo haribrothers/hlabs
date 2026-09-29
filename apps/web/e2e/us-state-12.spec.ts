@@ -46,16 +46,14 @@ test('US-STATE-12 the dialog is busy while it works, and a failure shows inline 
 
   release();
   await expect(dialog.getByRole('alert')).toHaveText(
-    'hlabs is busy with something that must finish first. Try again when it’s done.',
+    'hlabs is busy. Wait for what it’s doing to finish, then try again.',
   );
   await expect(dialog).not.toContainText('already running');
   await expect(go).toBeEnabled();
   await expect(cancel).toBeEnabled();
 
   await go.click();
-  await expect(dialog.getByRole('alert')).toHaveText(
-    "Can't reach hlabs right now. Check your connection and try again.",
-  );
+  await expect(dialog.getByRole('alert')).toHaveText("Can't reach hlabs. Check your connection and try again.");
   await cancel.click();
   await expect(dialog).toBeHidden();
   await expect(status).toHaveText('Engine running');

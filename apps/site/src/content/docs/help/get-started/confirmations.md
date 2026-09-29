@@ -1,7 +1,7 @@
 ---
 title: Confirmations and notices
 description: How hlabs asks before it interrupts things, and the notices it shows.
-features: [F-STATE-04, F-STATE-05]
+features: [F-STATE-04, F-STATE-05, F-STATE-06]
 ---
 
 For everyone who uses hlabs.
@@ -37,3 +37,7 @@ Moving the pointer over a notice, or tabbing into it, keeps it on screen until y
 Some notices come with a button for the next step, such as **Retry** when an app couldn't start. Retry tries again straight away: if it works, the notice is replaced by one saying so; if not, it stays and says what went wrong this time. Buttons that change hlabs are only shown to admins; family members see the notice and the **×**.
 
 Up to three notices show at a time, newest on top; others wait their turn and appear as those go. If the same problem happens again while its notice is showing, such as an app failing to start twice, the notice is updated rather than repeated. Notices about hlabs itself show in every browser and device where you're logged in: close one with **×** and it goes from the others too, and it's marked as read.
+
+## When something goes wrong
+
+hlabs explains problems in plain words and says what to do next, for example "Uptime Kuma couldn't start. Port 3001 is already in use by another program." When something you started from a button fails, a notice says so; in a question or a form, the message appears right next to what needs fixing. If hlabs doesn't know what went wrong, it says "Something went wrong" and suggests checking the logs in **Settings › Advanced**, where the technical details are kept.

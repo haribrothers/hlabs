@@ -31,6 +31,19 @@ function visibleTo(reader: Reader): SQL {
   return reader.role === 'admin' ? or(own, isNull(notifications.userId))! : own;
 }
 
+const cursorOf = (row: { createdAt: number; id: string }) => `${row.createdAt}:${row.id}`;
+
+/** Rows after the cursor in newest-first order. */
+function before(cursor: string): SQL | undefined {
+  const [at, id] = cursor.split(':');
+  const createdAt = Number(at);
+  if (!id || !Number.isFinite(createdAt)) return undefined;
+  return or(
+    lt(notifications.createdAt, createdAt),
+    and(eq(notifications.createdAt, createdAt), lt(notifications.id, id)),
+  );
+}
+
 function toApi(row: typeof notifications.$inferSelect): Notification {
   return {
     id: row.id,
@@ -79,7 +92,7 @@ export class NotificationService {
     return createNotification(this.db, this.bus, n);
   }
 
-  /** Newest first, `limit` at a time; `cursor` is the last id of the previous page. */
+  /** Newest first, `limit` at a time; `cursor` comes from the previous page (`<createdAt>:<id>`). */
   list(reader: Reader, input: { cursor?: string; limit?: number; since?: number }) {
     const limit = input.limit ?? 50;
     const rows = this.db
@@ -88,15 +101,15 @@ export class NotificationService {
       .where(
         and(
           visibleTo(reader),
-          input.cursor ? lt(notifications.id, input.cursor) : undefined,
+          input.cursor ? before(input.cursor) : undefined,
           input.since !== undefined ? gte(notifications.createdAt, input.since) : undefined,
         ),
       )
-      .orderBy(desc(notifications.id))
+      .orderBy(desc(notifications.createdAt), desc(notifications.id))
       .limit(limit + 1)
       .all();
     const page = rows.slice(0, limit);
-    return { items: page.map(toApi), nextCursor: rows.length > limit ? page.at(-1)!.id : null };
+    return { items: page.map(toApi), nextCursor: rows.length > limit ? cursorOf(page.at(-1)!) : null };
   }
 
   /** Marks these read (only ones the reader can see) and tells their other sessions, so the toasts go. */

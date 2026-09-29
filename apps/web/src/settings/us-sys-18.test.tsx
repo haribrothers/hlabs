@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderScreen } from '../test/render';
+import { currentToasts } from '../lib/toasts';
+import { daemonError, renderScreen } from '../test/render';
 import { EngineRestartControl } from './engine-restart';
 
 const job = (kind: string, progress = 0) => ({
@@ -59,5 +60,16 @@ describe('US-SYS-18', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Start engine' }));
     await waitFor(() => expect(start).toHaveBeenCalled());
     expect(screen.queryByRole('alertdialog')).toBeNull();
+  });
+
+  it('Start engine failing says so in a danger toast', async () => {
+    renderScreen(() => <EngineRestartControl stopped />, {
+      'jobs.list': () => ({ items: [] }),
+      'settings.engine.start': () => Promise.reject(daemonError('ENGINE_START_FAILED')),
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Start engine' }));
+    await waitFor(() =>
+      expect(currentToasts().at(-1)).toMatchObject({ tone: 'danger', title: "The engine didn't start" }),
+    );
   });
 });

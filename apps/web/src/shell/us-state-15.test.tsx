@@ -85,7 +85,7 @@ describe('US-STATE-15', () => {
     const retry = await within(toast).findByRole('button', { name: 'Retry' });
     fireEvent.click(retry);
     await waitFor(() =>
-      expect(toast).toHaveTextContent('hlabs is busy with something that must finish first. Try again when it’s done.'),
+      expect(toast).toHaveTextContent('hlabs is busy. Wait for what it’s doing to finish, then try again.'),
     );
     expect(toast).toHaveTextContent("Uptime Kuma couldn't start");
     expect(retry).toBeEnabled();
