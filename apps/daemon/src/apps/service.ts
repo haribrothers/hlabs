@@ -5,7 +5,7 @@ import { hlabsCodeOf, hlabsError } from '@hlabs/api';
 import { HLABS_NETWORK, type AppManifest, type RenderedApp } from '@hlabs/app-manifest';
 import { apps, getSetting, type AppState, type HlabsDb } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { EngineService } from '../engine/service';
 import type { EventBus } from '../events/bus';
@@ -162,6 +162,10 @@ export class AppService {
           continue;
       }
       if (!engineUp) continue;
+      if (!existsSync(join(this.project(app.id).dir, MANIFEST_COPY))) {
+        this.deps.logger.warn({ appId: app.id }, 'app has no compose project; left as it is');
+        continue;
+      }
       // starting, running, restarting, error: running and healthy stays running; otherwise start it if it should.
       const check = await checkHealthOnce({
         engine: this.requireEngine(),

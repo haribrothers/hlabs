@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:full": "vite",
     "build": "vite build && pnpm build:fallback",
     "build:fallback": "vite build -c vite.fallback.config.ts && node scripts/inline-fallback.mjs",
     "preview": "vite preview",

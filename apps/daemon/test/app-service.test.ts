@@ -336,6 +336,27 @@ describe('reconcile (02 §2.3 step 4)', () => {
     expect(u.compose.calls).toEqual([]);
   });
 
+  it('leaves an app without a compose project alone and reconciles the rest', async () => {
+    const t = await setup();
+    t.db
+      .insert(apps)
+      .values({
+        id: 'ghost',
+        version: '1',
+        state: 'running',
+        hostname: 'ghost',
+        portFallback: 12900,
+        installedAt: 1,
+        updatedAt: 1,
+      })
+      .run();
+    t.install('vaultwarden', 'running');
+    await t.service.reconcile();
+    expect(t.stateOf('ghost')).toBe('running');
+    expect(t.stateOf('vaultwarden')).toBe('running');
+    expect(t.compose.calls).toEqual([{ op: 'up', project: 'hlabs-vaultwarden' }]);
+  });
+
   it('without an engine, only settles leftover states', async () => {
     const t = await setup({ engineRunning: false });
     t.install('uptime-kuma', 'running');

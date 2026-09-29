@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "turbo run dev --filter=@hlabs/daemon --filter=@hlabs/web",
+    "dev:full": "pnpm fetch-binaries && turbo run dev:full --filter=@hlabs/daemon --filter=@hlabs/web",
     "fetch-binaries": "node scripts/fetch-binaries.ts",
     "build": "turbo run build",
     "test": "turbo run test",

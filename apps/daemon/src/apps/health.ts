@@ -1,6 +1,6 @@
 // Waiting for an app to be healthy after `compose up` (02 §2.5): the manifest's `health` check, or by default the web
 // service answering on its loopback port, within the manifest's timeout (default 120 s). Only the web service is
-// published on the host (D-049), so an http or tcp check on another service falls back to its container state.
+// published on the host (D-049), so an http or tcp check on another service falls back to its container state (D-075).
 import type { AppManifest } from '@hlabs/app-manifest';
 import { connect } from 'node:net';
 import type { ContainerEngine, ContainerState } from '../engine/types';

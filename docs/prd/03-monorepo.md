@@ -79,7 +79,8 @@ hlabs/
 | Script | Does |
 | --- | --- |
 | `pnpm dev` | Turbo: daemon (tsx watch, data dir `./.dev-data`), web (Vite, proxied to the daemon), no Caddy (web talks to daemon directly) |
-| `pnpm dev:full` | Also runs Caddy and mDNS so `https://hlabs.local` works locally |
+| `pnpm dev:full` | Also runs Caddy and mDNS so `https://hlabs.local` works locally (fetches the binaries first; Caddy binds 443 and 80, so on Linux run it where that's allowed) |
+| `pnpm fetch-binaries` | Downloads Caddy and docker-compose into `.bin/`, checked against pinned checksums (D-072); `--target` and `--out` for other platforms |
 | `pnpm dev:tray` | `tauri dev` against the running dev daemon |
 | `pnpm build` | Builds everything |
 | `pnpm test` / `pnpm test:e2e` | Vitest / Playwright |

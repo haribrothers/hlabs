@@ -36,7 +36,7 @@ const envSchema = z.object({
 
 declare const __HLABS_BUNDLE__: boolean | undefined;
 
-/** Bundled files (the built-in store, caddy and docker-compose, the fallback page). In the bundle they sit next to
+/** Bundled files (the built-in store, caddy and docker-compose, the fallback page; D-076). In the bundle they sit next to
  * hlabsd.mjs; from source they are the repository's (`store/`, `.bin/` from `pnpm fetch-binaries`, the fallback
  * page build). */
 export interface ResourcePaths {

@@ -12,6 +12,8 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
+    // pnpm dev:full: Caddy sends https://hlabs.local here.
+    allowedHosts: ['.local'],
     proxy: {
       '/trpc': { target: DAEMON, changeOrigin: false },
       '/healthz': DAEMON,
