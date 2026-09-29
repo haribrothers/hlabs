@@ -42,7 +42,8 @@ export const notifications = sqliteTable(
     severity: text('severity', { enum: NOTIFICATION_SEVERITIES }).notNull(),
     title: text('title').notNull(),
     body: text('body'),
-    actionJson: json<NotificationAction>('action_json'),
+    /** Up to two buttons (US-STATE-15). */
+    actionJson: json<NotificationAction[]>('action_json'),
     createdAt: ms('created_at').notNull(),
     readAt: ms('read_at'),
   },

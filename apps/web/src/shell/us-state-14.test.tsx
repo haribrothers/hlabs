@@ -1,6 +1,7 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { currentToasts, dismissToast, SEVERITY_TONE, showToast } from '../lib/toasts';
+import { renderWithDaemon } from '../test/render';
 import { Toaster } from './toaster';
 
 afterEach(() => {
@@ -32,7 +33,7 @@ describe('US-STATE-14', () => {
   });
 
   it('each tone has an icon; danger is an alert, the rest are polite status messages; Dismiss is labelled', () => {
-    render(<Toaster />);
+    renderWithDaemon(<Toaster />);
     act(() => {
       for (const tone of ['success', 'neutral', 'warning', 'danger'] as const) showToast({ tone, title: tone });
     });
@@ -49,7 +50,7 @@ describe('US-STATE-14', () => {
 
   it('hover and focus hold the timer until both have left', () => {
     vi.useFakeTimers();
-    render(<Toaster />);
+    renderWithDaemon(<Toaster />);
     act(() => void showToast({ tone: 'success', title: 'Immich is ready' }));
     const toast = screen.getByRole('status').parentElement!;
     const dismiss = within(toast).getByRole('button', { name: 'Dismiss' });

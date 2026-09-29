@@ -12,7 +12,7 @@ import {
 import { render } from '@testing-library/react';
 import { createTRPCClient, TRPCClientError, type TRPCLink } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { ConfirmHost } from '../lib/confirm';
 import { TRPCProvider } from '../lib/trpc';
 
@@ -23,7 +23,8 @@ export function daemonError(hlabsCode: string, detail: Record<string, unknown> |
   return new TRPCClientError(hlabsCode, { result: { error: { data: { hlabsCode, detail } } } as never });
 }
 
-export function renderScreen(Screen: ComponentType, handlers: Handlers, opts: { path?: string } = {}) {
+/** A tRPC client answered by `handlers`, and a query client. */
+function fakeDaemon(handlers: Handlers) {
   const calls: Array<{ path: string; input: unknown }> = [];
   const link: TRPCLink<AppRouter> =
     () =>
@@ -49,6 +50,24 @@ export function renderScreen(Screen: ComponentType, handlers: Handlers, opts: { 
       });
   const client = createTRPCClient<AppRouter>({ links: [link] });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  return { client, queryClient, calls };
+}
+
+/** Renders `ui` with the fake daemon but no router (for pieces without links, such as the Toaster). */
+export function renderWithDaemon(ui: ReactNode, handlers: Handlers = {}) {
+  const { client, queryClient, calls } = fakeDaemon(handlers);
+  const result = render(
+    <QueryClientProvider client={queryClient}>
+      <TRPCProvider trpcClient={client} queryClient={queryClient}>
+        {ui}
+      </TRPCProvider>
+    </QueryClientProvider>,
+  );
+  return { ...result, calls };
+}
+
+export function renderScreen(Screen: ComponentType, handlers: Handlers, opts: { path?: string } = {}) {
+  const { client, queryClient, calls } = fakeDaemon(handlers);
 
   const root = createRootRoute({
     component: () => (

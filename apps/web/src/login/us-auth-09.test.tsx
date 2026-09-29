@@ -44,7 +44,7 @@ describe('US-AUTH-09', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/files'));
     expect(recover).toHaveBeenCalledWith({ challengeId: 'c1', code: 'ABCD 2345' });
     expect(currentToasts().at(-1)).toMatchObject({ tone: 'success', title: 'Recovery code used. You have 7 left.' });
-    expect(currentToasts().at(-1)?.action).toBeUndefined();
+    expect(currentToasts().at(-1)?.actions).toBeUndefined();
   });
 
   it('with 2 or fewer left the toast says to make new codes, with a link there', async () => {
@@ -58,7 +58,7 @@ describe('US-AUTH-09', () => {
       tone: 'warning',
       title: 'Recovery code used. You have 2 left.',
       body: 'Make new codes in Settings › Account.',
-      action: { label: 'Make new codes', to: '/settings/account/two-factor' },
+      actions: [{ kind: 'navigate', label: 'Make new codes', to: '/settings/account/two-factor' }],
     });
   });
 
@@ -68,7 +68,7 @@ describe('US-AUTH-09', () => {
       tone: 'warning',
       title: 'Recovery code used. You have 1 left.',
       body: 'Make new codes in Settings › Account.',
-      action: { label: 'Make new codes', to: '/settings/account/two-factor' },
+      actions: [{ kind: 'navigate', label: 'Make new codes', to: '/settings/account/two-factor' }],
     });
     expect(await screen.findByRole('status')).toHaveTextContent('Recovery code used. You have 1 left.');
     expect(screen.getByRole('link', { name: 'Make new codes' })).toHaveAttribute(

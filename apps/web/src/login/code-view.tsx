@@ -91,7 +91,12 @@ export function CodeView({
       showToast({
         tone: low ? 'warning' : 'success',
         title: copy.recoveryUsed(recoveryCodesLeft),
-        ...(low ? { body: copy.recoveryLow, action: { label: copy.manageCodes, to: TWO_FACTOR_MANAGE_PATH } } : {}),
+        ...(low
+          ? {
+              body: copy.recoveryLow,
+              actions: [{ kind: 'navigate', label: copy.manageCodes, to: TWO_FACTOR_MANAGE_PATH }],
+            }
+          : {}),
       });
     },
     onError: failed,

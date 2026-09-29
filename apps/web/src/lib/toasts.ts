@@ -2,6 +2,7 @@
 // Hovering or focusing a toast pauses its timer until both have gone. Leaving toasts stay a moment for their exit
 // animation (none with Reduce motion). The first user was US-AUTH-09's "Recovery code used" (D-063).
 import type { Severity } from '@hlabs/api';
+import type { Feature, ToastMutation } from '@hlabs/shared';
 import type { ToastTone } from '@hlabs/ui';
 import { useSyncExternalStore } from 'react';
 
@@ -15,13 +16,33 @@ export const SEVERITY_TONE: Record<Severity, ToastTone> = {
   critical: 'danger',
 };
 
+/** A toast's button (US-STATE-15), verb first: go somewhere in the dashboard, or run an allow-listed mutation. */
+export type ToastAction =
+  | {
+      kind: 'navigate';
+      label: string;
+      to: string;
+      /** Hidden from members. */
+      admin?: boolean;
+      /** Hidden until the phase that delivers it ships (D-036). */
+      feature?: Feature;
+    }
+  | {
+      kind: 'mutation';
+      label: string;
+      procedure: ToastMutation;
+      input: Record<string, unknown>;
+      /** The success toast that replaces this one; a line per procedure otherwise. */
+      done?: string;
+    };
+
 export interface ToastItem {
   id: number;
   tone: ToastTone;
   title: string;
   body?: string;
-  /** At most one action: a link inside the dashboard. */
-  action?: { label: string; to: string };
+  /** At most two are shown. */
+  actions?: readonly ToastAction[];
   /** On its way out (exit animation). */
   leaving?: boolean;
 }
@@ -66,6 +87,11 @@ export function dismissToast(id: number) {
   if (ms <= 0) return remove();
   publish(items.map((i) => (i.id === id ? { ...i, leaving: true } : i)));
   setTimeout(remove, ms);
+}
+
+/** Changes a showing toast in place (a failed Retry says why). */
+export function updateToast(id: number, patch: Partial<Pick<ToastItem, 'title' | 'body' | 'tone'>>) {
+  publish(items.map((i) => (i.id === id ? { ...i, ...patch } : i)));
 }
 
 function run(id: number) {

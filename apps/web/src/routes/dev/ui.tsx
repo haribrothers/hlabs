@@ -32,6 +32,7 @@ import { TRPCClientError } from '@trpc/client';
 import { useEffect, useState, type ReactNode } from 'react';
 import { devCopy } from '../../copy/dev';
 import { confirm } from '../../lib/confirm';
+import { actionsFromNotification } from '../../lib/toast-actions';
 import { showToast } from '../../lib/toasts';
 import { useEventStream } from '../../lib/use-event-stream';
 import { navigationAreas } from '../../shell/areas';
@@ -84,13 +85,26 @@ function ConfirmDemo() {
   );
 }
 
-/** The toasts from SysDialogs, one per tone (US-STATE-14). */
+/** The toasts from SysDialogs, one per tone (US-STATE-14), with their buttons as notifications carry them (15). */
 function ToastDemo() {
   const examples = [
     { tone: 'success', title: 'Immich is ready', body: 'Open it from your Home screen.' },
     { tone: 'neutral', title: 'Checking for updates', body: 'This takes a few seconds.' },
-    { tone: 'warning', title: 'Low disk space', body: '8 GB left on this computer. Some apps may stop working.' },
-    { tone: 'danger', title: "Uptime Kuma couldn't start", body: 'Port 3001 is already in use by another program.' },
+    {
+      tone: 'warning',
+      title: 'Low disk space',
+      body: '8 GB left on this computer. Some apps may stop working.',
+      actions: actionsFromNotification([{ kind: 'navigate', to: '/settings/storage' }]),
+    },
+    {
+      tone: 'danger',
+      title: "Uptime Kuma couldn't start",
+      body: 'Port 3001 is already in use by another program.',
+      actions: actionsFromNotification([
+        { kind: 'navigate', to: '/apps/uptime-kuma/logs' },
+        { kind: 'mutation', procedure: 'apps.start', input: { appId: 'uptime-kuma' }, label: 'Retry' },
+      ]),
+    },
   ] as const;
   return (
     <div className="flex flex-wrap gap-2">

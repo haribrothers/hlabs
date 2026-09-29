@@ -72,7 +72,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-STATE-12 · Show progress and errors inside the confirm dialog
 - [x] US-STATE-13 · Require a password or typed name for the riskiest actions
 - [x] US-STATE-14 · Show toasts by severity
-- [ ] US-STATE-15 · Act on a toast
+- [x] US-STATE-15 · Act on a toast
 - [ ] US-STATE-16 · Stack toasts and keep them in sync with notifications
 - [ ] US-STATE-17 · Map error codes to plain copy
 - [ ] US-STATE-18 · Reconnect the event stream

@@ -47,7 +47,7 @@ One tRPC v11 router tree in `packages/api`, implemented in `apps/daemon`. Every 
 ## Canonical names (use exactly these)
 - Error when an exclusive job blocks another: `JOB_EXCLUSIVE_RUNNING` (not `JOB_CONFLICT` or `SYSTEM_BUSY`). Common password: `PASSWORD_TOO_COMMON`. Username taken: `USERNAME_TAKEN`.
 - `/healthz` 503 reasons: `starting`, `updating`, `migration_failed`, `storage_unavailable`; `daemon_unreachable` is produced by Caddy's error page, and `update_stuck` is a **client-side** state (updating for more than 10 minutes), not a server reason. Engine problems never fail `/healthz`; they surface as `engine.status` events and `SysEngineStopped`.
-- Notification `action_json`: `{ kind: 'navigate', to: string, params?: object } | { kind: 'mutation', procedure: string, input: object, label: string }`.
+- Notification `action_json`: up to two actions (`notificationActionsSchema`), each `{ kind: 'navigate', to: string, params?: object } | { kind: 'mutation', procedure: string, input: object, label: string }`. `procedure` must be on the allow-list `TOAST_MUTATIONS` in `@hlabs/shared` (`apps.start`, `apps.restart`, `backups.runNow`, `settings.updates.check`); anything else is dropped. A navigate action has no label: the dashboard names it from where it goes (`/apps/<id>/logs` → "View logs", `/settings/storage` → "Manage storage", otherwise "Open") (US-STATE-15, D-066).
 - Backup errors: `BACKUP_REPO_PASSWORD_WRONG` (wrong repository password) and `BACKUP_DEST_UNREACHABLE` (destination can't be reached), everywhere including onboarding restore.
 - Access-denied behaviour: a signed-in user who opens a page or app they can't use gets the "You don't have access to this" page (US-STATE-20), never a redirect or a 404. Unknown URLs get the 404 page.
 

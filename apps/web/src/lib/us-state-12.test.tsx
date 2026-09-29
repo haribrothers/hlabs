@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { TRPCClientError } from '@trpc/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Toaster } from '../shell/toaster';
-import { daemonError } from '../test/render';
+import { daemonError, renderWithDaemon } from '../test/render';
 import { confirm, CONFIRM_PENDING_MS, ConfirmHost } from './confirm';
 import { currentToasts, dismissToast } from './toasts';
 
@@ -128,7 +128,7 @@ describe('US-STATE-12', () => {
     ['fails', false, 'hlabs is busy with something that must finish first. Try again when it’s done.'],
   ])('after 30 s it closes, and when the action %s the result is a toast', async (_how, ok, toast) => {
     vi.useFakeTimers();
-    render(
+    renderWithDaemon(
       <>
         <ConfirmHost />
         <Toaster />

@@ -1,11 +1,77 @@
 // Where toasts show: bottom-right on a desktop, above the tab bar on a phone (US-STATE-14). Hovering or focusing
-// one holds it; it goes on once the pointer and focus have both left.
-import { Toast } from '@hlabs/ui';
+// one holds it; it goes on once the pointer and focus have both left. Up to two buttons each (US-STATE-15).
+import { Button, Toast } from '@hlabs/ui';
 import { Link } from '@tanstack/react-router';
-import { dismissToast, pauseToast, resumeToast, useToasts } from '../lib/toasts';
+import { useState } from 'react';
+import { toastCopy } from '../copy/toasts';
+import { errorLine } from '../lib/error-copy';
+import { needsAdmin, runToastMutation, visibleActions } from '../lib/toast-actions';
+import {
+  dismissToast,
+  pauseToast,
+  resumeToast,
+  showToast,
+  updateToast,
+  useToasts,
+  type ToastAction,
+  type ToastItem,
+} from '../lib/toasts';
+import { useTRPCClient } from '../lib/trpc';
+import { useMe } from '../lib/use-me';
+
+function ToastActions({ toast, actions }: { toast: ToastItem; actions: ToastAction[] }) {
+  const client = useTRPCClient();
+  const [running, setRunning] = useState<string | null>(null);
+  if (actions.length === 0) return null;
+
+  const run = async (a: Extract<ToastAction, { kind: 'mutation' }>) => {
+    setRunning(a.procedure);
+    try {
+      await runToastMutation(client, a.procedure, a.input);
+      dismissToast(toast.id);
+      showToast({ tone: 'success', title: a.done ?? toastCopy.done[a.procedure] });
+    } catch (err) {
+      // The toast stays, saying what went wrong this time.
+      updateToast(toast.id, { body: errorLine(err) });
+      setRunning(null);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap gap-2 pt-1">
+      {actions.map((a) =>
+        a.kind === 'navigate' ? (
+          <Link
+            key={a.label}
+            to={a.to}
+            onClick={() => dismissToast(toast.id)}
+            className="hl-btn hl-btn-secondary hl-btn-sm hl-focus"
+          >
+            {a.label}
+          </Link>
+        ) : (
+          <Button
+            key={a.label}
+            variant="secondary"
+            size="sm"
+            busy={running === a.procedure}
+            disabled={running !== null}
+            onClick={() => void run(a)}
+          >
+            {a.label}
+          </Button>
+        ),
+      )}
+    </div>
+  );
+}
 
 export function Toaster() {
   const toasts = useToasts();
+  // Only ask who's signed in when a toast has an admin-only button.
+  const needsRole = toasts.some((t) => t.actions?.some(needsAdmin));
+  const me = useMe(needsRole);
+  const isAdmin = me.data?.role === 'admin';
   if (toasts.length === 0) return null;
   return (
     <div className="pointer-events-none fixed inset-x-4 bottom-24 z-50 flex flex-col items-end gap-2 sm:inset-x-auto sm:right-6 sm:bottom-6">
@@ -25,17 +91,7 @@ export function Toaster() {
             title={t.title}
             leaving={t.leaving}
             onDismiss={() => dismissToast(t.id)}
-            action={
-              t.action ? (
-                <Link
-                  to={t.action.to}
-                  onClick={() => dismissToast(t.id)}
-                  className="hl-btn hl-btn-link hl-focus self-start"
-                >
-                  {t.action.label}
-                </Link>
-              ) : undefined
-            }
+            action={<ToastActions toast={t} actions={visibleActions(t.actions, { isAdmin })} />}
           >
             {t.body}
           </Toast>
