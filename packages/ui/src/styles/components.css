@@ -68,7 +68,8 @@
   [data-theme='solid'] .hl-glass-1,
   [data-theme='solid'] .hl-glass-2,
   [data-theme='solid'] .hl-glass-3,
-  [data-theme='solid'] .hl-tabbar-glass {
+  [data-theme='solid'] .hl-tabbar-glass,
+  [data-theme='solid'] .hl-scrim {
     backdrop-filter: none;
   }
 
@@ -992,10 +993,15 @@
   }
 
   /* Dialog */
+  /* Above the Dock and tab bar (40) and toasts and banners (50): everything behind a dialog is dimmed, blurred and
+     inert. */
   .hl-scrim {
     position: fixed;
     inset: 0;
+    z-index: 60;
     background: var(--scrim-strong);
+    /* Everything behind a dialog or sheet is dimmed and blurred (FactoryReset); solid theme: dimmed only. */
+    backdrop-filter: blur(var(--blur-scrim));
   }
   .hl-dialog {
     width: 520px;
@@ -1010,6 +1016,7 @@
   }
   .hl-dialog-modal {
     position: fixed;
+    z-index: 60;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
