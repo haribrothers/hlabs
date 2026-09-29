@@ -17,6 +17,7 @@ export default defineConfig({
     proxy: {
       '/trpc': { target: DAEMON, changeOrigin: false },
       '/healthz': DAEMON,
+      '/api': DAEMON,
       '/dev/emit-test-event': DAEMON,
       '/dev/setup-url': DAEMON,
       '/dev/complete-onboarding': DAEMON,

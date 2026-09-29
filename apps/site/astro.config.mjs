@@ -23,6 +23,10 @@ export default defineConfig({
             { label: 'Confirmations and notices', link: '/help/get-started/confirmations/' },
           ],
         },
+        {
+          label: 'Apps',
+          items: [{ label: 'The App Store', link: '/help/apps/app-store/' }],
+        },
       ],
     }),
   ],

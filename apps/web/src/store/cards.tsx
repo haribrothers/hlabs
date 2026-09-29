@@ -1,0 +1,136 @@
+// Store cards (US-STORE-01): the featured card, the card in a row, and the list row. The card body opens the app's
+// details; its one button installs (by way of the details page, so access is always seen first), opens or shows
+// install progress. Buttons are secondary: the view's one white button is on the details page (09 §rules, D-077).
+import type { StoreApp } from '@hlabs/api';
+import { AppLogo, appTileLook } from '@hlabs/icons';
+import { Badge, Button, cn, GlassCard, tokens } from '@hlabs/ui';
+import { Link } from '@tanstack/react-router';
+import type { CSSProperties } from 'react';
+import { storeCopy } from '../copy/store';
+import { browser } from '../lib/browser';
+import { cardAction, storeTags, type StoreHost } from './store-app';
+import type { Installs } from './use-installs';
+
+export interface CardProps {
+  app: StoreApp;
+  host: StoreHost;
+  installs: Installs;
+}
+
+export const detailsPath = (appId: string) => ({ to: '/store/app/$appId', params: { appId } }) as const;
+
+export function StoreLogo({ app, size }: { app: StoreApp; size: number }) {
+  const look = appTileLook(app.name, app.icon, size);
+  return (
+    <AppLogo name={app.name} src={app.icon.logoUrl} colors={look.colors} fallbackIcon={look.fallbackIcon} size={size} />
+  );
+}
+
+/** Install, Open, Installing… N% or Installed (US-STORE-01). */
+export function CardButton({ app, installs, size = 'sm' }: Omit<CardProps, 'host'> & { size?: 'sm' | 'md' }) {
+  const action = cardAction(app, installs.byId.get(app.id), installs.progress.get(app.id));
+  // Above the card's stretched link, so it gets its own clicks.
+  const place = 'relative z-10 shrink-0';
+  switch (action.kind) {
+    case 'install':
+      return (
+        <Link
+          {...detailsPath(app.id)}
+          className={cn('hl-btn hl-btn-secondary hl-focus no-underline', `hl-btn-${size}`, place)}
+          aria-label={storeCopy.installApp(app.name)}
+        >
+          {storeCopy.install}
+        </Link>
+      );
+    case 'open':
+      return (
+        <Button
+          variant="secondary"
+          size={size}
+          className={place}
+          aria-label={storeCopy.openApp(app.name)}
+          onClick={() => browser.open(action.url)}
+        >
+          {storeCopy.open}
+        </Button>
+      );
+    case 'installing':
+      return (
+        <Button variant="secondary" size={size} className={place} busy disabled aria-live="polite">
+          {storeCopy.installing(action.percent)}
+        </Button>
+      );
+    case 'installed':
+      return (
+        <Badge tone="success" className={place}>
+          {storeCopy.installed}
+        </Badge>
+      );
+  }
+}
+
+/** The name as a link whose hit area covers the whole card (the button sits above it). */
+function NameLink({ app, className }: { app: StoreApp; className?: string }) {
+  return (
+    <Link
+      {...detailsPath(app.id)}
+      className={cn(
+        'hl-focus rounded-xs text-ink no-underline after:absolute after:inset-0 after:content-[""]',
+        className,
+      )}
+    >
+      {app.name}
+    </Link>
+  );
+}
+
+function Tags({ tags }: { tags: string[] }) {
+  if (tags.length === 0) return null;
+  return (
+    <span className="flex flex-wrap gap-1.5">
+      {tags.map((t) => (
+        <Badge key={t}>{t}</Badge>
+      ))}
+    </span>
+  );
+}
+
+/** A large card in "Featured", tinted with the app's colours. */
+export function FeaturedCard({ app, host, installs, eyebrow }: CardProps & { eyebrow: string }) {
+  const [from, to] = app.icon.gradient ?? appTileLook(app.name, app.icon).colors;
+  const tint = { '--card-from': from, '--card-to': to } as CSSProperties;
+  return (
+    <GlassCard
+      level={1}
+      className="relative flex flex-row items-start gap-5 overflow-hidden p-6 [background-image:linear-gradient(135deg,color-mix(in_srgb,var(--card-from)_38%,transparent),color-mix(in_srgb,var(--card-to)_22%,transparent))]"
+      style={tint}
+    >
+      <StoreLogo app={app} size={tokens.SIZE_APP_ICON} />
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <span className="text-caption font-semibold uppercase tracking-wide text-ink-muted">{eyebrow}</span>
+        <h3 className="m-0 text-title-2">
+          <NameLink app={app} />
+        </h3>
+        <p className="m-0 text-body text-ink-muted">{app.tagline}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-3">
+          <CardButton app={app} installs={installs} size="md" />
+          <Tags tags={storeTags(app, host)} />
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+/** A card in a row of the store home or a list view. */
+export function AppCard({ app, installs }: CardProps) {
+  return (
+    <GlassCard level={1} className="relative flex flex-row items-center gap-4 p-4">
+      <StoreLogo app={app} size={tokens.SIZE_DOCK_TILE} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <NameLink app={app} className="text-headline font-semibold" />
+        <span className="line-clamp-2 text-body-sm text-ink-muted">{app.tagline}</span>
+      </div>
+      <CardButton app={app} installs={installs} />
+    </GlassCard>
+  );
+}

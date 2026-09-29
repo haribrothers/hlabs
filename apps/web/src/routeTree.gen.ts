@@ -27,7 +27,10 @@ import { Route as SettingsIndexRouteImport } from './routes/settings.index'
 import { Route as SettingsSectionRouteImport } from './routes/settings.$section'
 import { Route as SetupIndexRouteImport } from './routes/setup.index'
 import { Route as SetupStepRouteImport } from './routes/setup.$step'
+import { Route as StoreIndexRouteImport } from './routes/store.index'
 import { Route as SettingsAccountTwoFactorRouteImport } from './routes/settings.account.two-factor'
+import { Route as StoreCollectionCollectionIdRouteImport } from './routes/store.collection.$collectionId'
+import { Route as StoreAppAppIdRouteImport } from './routes/store_.app.$appId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -119,12 +122,28 @@ const SetupStepRoute = SetupStepRouteImport.update({
   path: '/$step',
   getParentRoute: () => SetupRoute,
 } as any)
+const StoreIndexRoute = StoreIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StoreRoute,
+} as any)
 const SettingsAccountTwoFactorRoute =
   SettingsAccountTwoFactorRouteImport.update({
     id: '/account/two-factor',
     path: '/account/two-factor',
     getParentRoute: () => SettingsRoute,
   } as any)
+const StoreCollectionCollectionIdRoute =
+  StoreCollectionCollectionIdRouteImport.update({
+    id: '/collection/$collectionId',
+    path: '/collection/$collectionId',
+    getParentRoute: () => StoreRoute,
+  } as any)
+const StoreAppAppIdRoute = StoreAppAppIdRouteImport.update({
+  id: '/store_/app/$appId',
+  path: '/store/app/$appId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -132,7 +151,7 @@ export interface FileRoutesByFullPath {
   '/files': typeof FilesRoute
   '/settings': typeof SettingsRouteWithChildren
   '/setup': typeof SetupRouteWithChildren
-  '/store': typeof StoreRoute
+  '/store': typeof StoreRouteWithChildren
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
   '/login/code': typeof LoginCodeRoute
@@ -145,13 +164,15 @@ export interface FileRoutesByFullPath {
   '/login/': typeof LoginIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/setup/': typeof SetupIndexRoute
+  '/store/': typeof StoreIndexRoute
   '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
+  '/store/collection/$collectionId': typeof StoreCollectionCollectionIdRoute
+  '/store/app/$appId': typeof StoreAppAppIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
-  '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
   '/login/code': typeof LoginCodeRoute
@@ -164,7 +185,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/setup': typeof SetupIndexRoute
+  '/store': typeof StoreIndexRoute
   '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
+  '/store/collection/$collectionId': typeof StoreCollectionCollectionIdRoute
+  '/store/app/$appId': typeof StoreAppAppIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -173,7 +197,7 @@ export interface FileRoutesById {
   '/files': typeof FilesRoute
   '/settings': typeof SettingsRouteWithChildren
   '/setup': typeof SetupRouteWithChildren
-  '/store': typeof StoreRoute
+  '/store': typeof StoreRouteWithChildren
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
   '/login/code': typeof LoginCodeRoute
@@ -186,7 +210,10 @@ export interface FileRoutesById {
   '/login/': typeof LoginIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/setup/': typeof SetupIndexRoute
+  '/store/': typeof StoreIndexRoute
   '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
+  '/store/collection/$collectionId': typeof StoreCollectionCollectionIdRoute
+  '/store_/app/$appId': typeof StoreAppAppIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -209,13 +236,15 @@ export interface FileRouteTypes {
     | '/login/'
     | '/settings/'
     | '/setup/'
+    | '/store/'
     | '/settings/account/two-factor'
+    | '/store/collection/$collectionId'
+    | '/store/app/$appId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/backups'
     | '/files'
-    | '/store'
     | '/usage'
     | '/dev/ui'
     | '/login/code'
@@ -228,7 +257,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/settings'
     | '/setup'
+    | '/store'
     | '/settings/account/two-factor'
+    | '/store/collection/$collectionId'
+    | '/store/app/$appId'
   id:
     | '__root__'
     | '/'
@@ -249,7 +281,10 @@ export interface FileRouteTypes {
     | '/login/'
     | '/settings/'
     | '/setup/'
+    | '/store/'
     | '/settings/account/two-factor'
+    | '/store/collection/$collectionId'
+    | '/store_/app/$appId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -258,7 +293,7 @@ export interface RootRouteChildren {
   FilesRoute: typeof FilesRoute
   SettingsRoute: typeof SettingsRouteWithChildren
   SetupRoute: typeof SetupRouteWithChildren
-  StoreRoute: typeof StoreRoute
+  StoreRoute: typeof StoreRouteWithChildren
   UsageRoute: typeof UsageRoute
   DevUiRoute: typeof DevUiRoute
   LoginCodeRoute: typeof LoginCodeRoute
@@ -267,6 +302,7 @@ export interface RootRouteChildren {
   LoginUsernameRoute: typeof LoginUsernameRoute
   LoginUsersRoute: typeof LoginUsersRoute
   LoginIndexRoute: typeof LoginIndexRoute
+  StoreAppAppIdRoute: typeof StoreAppAppIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -397,12 +433,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupStepRouteImport
       parentRoute: typeof SetupRoute
     }
+    '/store/': {
+      id: '/store/'
+      path: '/'
+      fullPath: '/store/'
+      preLoaderRoute: typeof StoreIndexRouteImport
+      parentRoute: typeof StoreRoute
+    }
     '/settings/account/two-factor': {
       id: '/settings/account/two-factor'
       path: '/account/two-factor'
       fullPath: '/settings/account/two-factor'
       preLoaderRoute: typeof SettingsAccountTwoFactorRouteImport
       parentRoute: typeof SettingsRoute
+    }
+    '/store/collection/$collectionId': {
+      id: '/store/collection/$collectionId'
+      path: '/collection/$collectionId'
+      fullPath: '/store/collection/$collectionId'
+      preLoaderRoute: typeof StoreCollectionCollectionIdRouteImport
+      parentRoute: typeof StoreRoute
+    }
+    '/store_/app/$appId': {
+      id: '/store_/app/$appId'
+      path: '/store/app/$appId'
+      fullPath: '/store/app/$appId'
+      preLoaderRoute: typeof StoreAppAppIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -435,13 +492,25 @@ const SetupRouteChildren: SetupRouteChildren = {
 
 const SetupRouteWithChildren = SetupRoute._addFileChildren(SetupRouteChildren)
 
+interface StoreRouteChildren {
+  StoreIndexRoute: typeof StoreIndexRoute
+  StoreCollectionCollectionIdRoute: typeof StoreCollectionCollectionIdRoute
+}
+
+const StoreRouteChildren: StoreRouteChildren = {
+  StoreIndexRoute: StoreIndexRoute,
+  StoreCollectionCollectionIdRoute: StoreCollectionCollectionIdRoute,
+}
+
+const StoreRouteWithChildren = StoreRoute._addFileChildren(StoreRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BackupsRoute: BackupsRoute,
   FilesRoute: FilesRoute,
   SettingsRoute: SettingsRouteWithChildren,
   SetupRoute: SetupRouteWithChildren,
-  StoreRoute: StoreRoute,
+  StoreRoute: StoreRouteWithChildren,
   UsageRoute: UsageRoute,
   DevUiRoute: DevUiRoute,
   LoginCodeRoute: LoginCodeRoute,
@@ -450,6 +519,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginUsernameRoute: LoginUsernameRoute,
   LoginUsersRoute: LoginUsersRoute,
   LoginIndexRoute: LoginIndexRoute,
+  StoreAppAppIdRoute: StoreAppAppIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
