@@ -8,7 +8,7 @@
     "dev": "vite",
     "dev:full": "vite",
     "build": "vite build && pnpm build:fallback",
-    "build:fallback": "vite build -c vite.fallback.config.ts && node scripts/inline-fallback.mjs",
+    "build:fallback": "vite build -c vite.fallback.config.ts && HLABS_FALLBACK_PAGE=pages vite build -c vite.fallback.config.ts && node scripts/inline-fallback.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

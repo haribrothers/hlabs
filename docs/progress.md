@@ -117,7 +117,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [ ] US-STATE-08 · Grey out Home when the engine has stopped
 - [ ] US-STATE-09 · Start the engine from the banner
 - [ ] US-STATE-10 · Recover automatically when the engine comes back
-- [ ] US-AUTH-17 · Protect every app with forward auth
+- [x] US-AUTH-17 · Protect every app with forward auth
 - [ ] US-AUTH-19 · See a "no access" page for apps not shared with me
 
 ## Phase 3 · Remote access and family
