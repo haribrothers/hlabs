@@ -27,6 +27,7 @@ import type { HealthProbes } from './apps/health';
 import { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
+import { createMdnsPublisher } from './mdns/publisher';
 import { SessionService } from './auth/sessions';
 import { TotpService } from './auth/totp';
 import { LoginService } from './auth/login';
@@ -148,7 +149,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
           logger,
         })
       : new NoopProxyManager());
-  const mdns = deps.mdns ?? new NoopMdnsPublisher();
+  const mdns =
+    deps.mdns ??
+    (config.mdns ? createMdnsPublisher(logger, () => getSetting(db, 'network').ports.https) : new NoopMdnsPublisher());
   const network = new NetworkService({
     db,
     proxy,
