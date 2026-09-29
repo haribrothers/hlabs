@@ -19,6 +19,7 @@ import type { NetworkStorage } from './storage/network';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 import type { CatalogService } from './store/catalog';
+import type { AppService } from './apps/service';
 
 export interface Services {
   config: DaemonConfig;
@@ -32,6 +33,9 @@ export interface Services {
   proxy: ProxyManager;
   mdns: MdnsPublisher;
   catalog: CatalogService;
+  apps: AppService;
+  /** Settles when the start-up reconcile has finished (tests). */
+  reconciled: Promise<void>;
   onboarding: OnboardingService;
   sessions: SessionService;
   totp: TotpService;

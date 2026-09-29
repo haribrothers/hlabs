@@ -58,6 +58,8 @@ export const HLABS_ERRORS = {
   APP_HAS_DEPENDENTS: 'PRECONDITION_FAILED',
   APP_ENV_INVALID: 'BAD_REQUEST',
   APP_DISK_FULL: 'INTERNAL_SERVER_ERROR',
+  /** Start, stop or restart while the app is installing, updating or already changing state (02 §2.5). */
+  APP_BUSY: 'CONFLICT',
   HOSTNAME_TAKEN: 'CONFLICT',
 
   // Storage, files and network

@@ -19,6 +19,9 @@ import { nodeInstallerHost } from './engine/installer-host';
 import { defaultCandidates, EngineService, type EngineServiceDeps } from './engine/service';
 import { EventBus } from './events/bus';
 import { CatalogService } from './store/catalog';
+import { AppService } from './apps/service';
+import { CliComposeRunner, type ComposeRunner } from './apps/compose';
+import type { HealthProbes } from './apps/health';
 import { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
@@ -57,6 +60,9 @@ export interface BootDeps {
   installer?: InstallerHost;
   /** Restarts the engine (US-SYS-18); tests pass a fake. */
   engineControl?: EngineControl;
+  /** App stacks (compose CLI); tests pass a fake. */
+  compose?: ComposeRunner;
+  healthProbes?: HealthProbes;
   /** Holds off sleep (US-SYS-20); tests pass a fake. */
   sleepBlocker?: SleepBlocker;
   /** The user's home (where ~/.colima lives). */
@@ -126,6 +132,22 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   const catalog = new CatalogService(db, config.resources.storeDir, logger);
   const { synced, skipped } = catalog.syncBuiltin();
   logger.info({ apps: synced.length, skipped: skipped.length }, 'built-in store loaded');
+  const appService = new AppService({
+    db,
+    bus,
+    logger,
+    engine,
+    compose:
+      deps.compose ??
+      new CliComposeRunner({
+        binDir: config.resources.binDir,
+        socketPath: () => (engine.status.state === 'running' ? engine.status.candidate.socketPath : null),
+      }),
+    projectsDir: join(config.paths.dataDir, 'apps'),
+    probes: deps.healthProbes,
+  });
+  // Health waits take up to minutes, so apps come up in the background; /healthz doesn't wait for them.
+  const reconciled = appService.reconcile().catch((err: unknown) => logger.error({ err }, 'reconciling apps failed'));
 
   // 5. Scheduler: backups, update checks, health probes, usage sampling (added by their phases).
   readiness.step(4);
@@ -193,6 +215,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     proxy,
     mdns,
     catalog,
+    apps: appService,
+    reconciled,
     onboarding,
     sessions,
     totp,
