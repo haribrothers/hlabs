@@ -47,12 +47,40 @@ export function storeAssetUrl(sourceId: string, appId: string, file: string): st
   return `/api/store/apps/${sourceId}/${appId}/assets/${file.replace(/^\.?\//, '')}`;
 }
 
+/** What this computer has for a new app (US-STORE-07); null when it can't be measured. */
+export interface StoreResources {
+  engineMemoryBytes(): number | null;
+  appDataFreeBytes(): Promise<number | null>;
+}
+
+const unmeasured: StoreResources = { engineMemoryBytes: () => null, appDataFreeBytes: async () => null };
+
+const MB = 1024 * 1024;
+
 export class StoreService {
   constructor(
     private readonly db: HlabsDb,
     private readonly catalog: CatalogService,
     readonly host: StoreHost = currentHost(),
+    private readonly resources: StoreResources = unmeasured,
   ) {}
+
+  /** The engine's memory less what installed apps recommend (D-080): a rough "free for a new app". */
+  private memoryFree(entries: StoreEntry[]): number | null {
+    const total = this.resources.engineMemoryBytes();
+    if (total === null) return null;
+    const installed = new Set(
+      this.db
+        .select({ id: apps.id })
+        .from(apps)
+        .all()
+        .map((a) => a.id),
+    );
+    const promised = entries
+      .filter((e) => installed.has(e.app.id))
+      .reduce((sum, e) => sum + (e.manifest.requirements.memory ?? 0) * MB, 0);
+    return Math.max(0, total - promised);
+  }
 
   /** Members browse the store only while "Members can install apps" is on (07 §7.4, US-STORE-01). */
   assertCanBrowse(user: { role: 'admin' | 'member' }): void {
@@ -157,9 +185,10 @@ export class StoreService {
     return scored.sort((a, b) => a.score - b.score).map((s) => s.e);
   }
 
-  /** An app's details page (US-STORE-06). */
-  getApp(appId: string) {
-    const entry = this.entries().find((e) => e.app.id === appId);
+  /** An app's details page (US-STORE-06, US-STORE-07). */
+  async getApp(appId: string) {
+    const entries = this.entries();
+    const entry = entries.find((e) => e.app.id === appId);
     if (!entry) throw hlabsError('NOT_FOUND');
     const { app, manifest: m } = entry;
     const source = this.db.select().from(appSources).where(eq(appSources.id, app.sourceId)).get();
@@ -189,6 +218,22 @@ export class StoreService {
         mode: f.mode,
         required: f.required,
       })),
+      requirements: {
+        memoryBytes: m.requirements.memory ? m.requirements.memory * MB : null,
+        diskBytes: m.requirements.disk ? m.requirements.disk * MB : null,
+        memoryFreeBytes: m.requirements.memory ? this.memoryFree(entries) : null,
+        diskFreeBytes: m.requirements.disk ? await this.resources.appDataFreeBytes().catch(() => null) : null,
+      },
+      access: {
+        network: m.permissions.network,
+        ports: m.ports.map((p) => ({ label: p.label, host: p.host, protocol: p.protocol })),
+        gpu: m.permissions.gpu,
+        dockerSocket: m.permissions.dockerSocket,
+      },
+      dependsOn: m.dependsOn.map((id) => {
+        const dep = entries.find((e) => e.app.id === id);
+        return { appId: id, name: dep?.app.name ?? id, installed: dep?.app.installed ?? false };
+      }),
     };
   }
 

@@ -62,6 +62,24 @@ export const storeAppDetailsSchema = z.object({
       required: z.boolean(),
     }),
   ),
+  /** What it needs from this computer (US-STORE-07). Null where the manifest doesn't say or it can't be measured. */
+  requirements: z.object({
+    memoryBytes: z.number().nullable(),
+    diskBytes: z.number().nullable(),
+    /** The engine's memory less what installed apps recommend (D-080). */
+    memoryFreeBytes: z.number().nullable(),
+    /** Free space where app data lives (D-011). */
+    diskFreeBytes: z.number().nullable(),
+  }),
+  /** What it can reach (US-STORE-07). */
+  access: z.object({
+    network: z.enum(['none', 'lan', 'internet']),
+    ports: z.array(z.object({ label: z.string(), host: z.number(), protocol: z.enum(['tcp', 'udp']) })),
+    gpu: z.boolean(),
+    dockerSocket: z.boolean(),
+  }),
+  /** Other apps it needs installed first. */
+  dependsOn: z.array(z.object({ appId: z.string(), name: z.string(), installed: z.boolean() })),
 });
 export type StoreAppDetails = z.infer<typeof storeAppDetailsSchema>;
 

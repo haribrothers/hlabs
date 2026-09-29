@@ -24,9 +24,9 @@ function service(fixture = storeFixture()) {
 }
 
 describe('US-STORE-06', () => {
-  it('has what the details page shows: the app, its official source, version, services, address and folders', () => {
+  it('has what the details page shows: the app, its official source, version, services, address and folders', async () => {
     const { store } = service();
-    const d = store.getApp('immich');
+    const d = await store.getApp('immich');
     expect(d.app).toMatchObject({ id: 'immich', name: 'Immich', group: 'files', arm64: true });
     expect(d.source).toEqual({ id: 'builtin', name: 'hlabs', official: true });
     expect(d.version).toBe('3.2.2');
@@ -42,19 +42,19 @@ describe('US-STORE-06', () => {
     expect(d.screenshots).toEqual([]);
   });
 
-  it('the address uses this hlabs’s name', () => {
+  it('the address uses this hlabs’s name', async () => {
     const { db, store } = service();
     setSetting(db, 'hostname', 'home');
-    expect(store.getApp('vaultwarden').address).toBe('vaultwarden.home.local');
+    expect((await store.getApp('vaultwarden')).address).toBe('vaultwarden.home.local');
   });
 
-  it('includes the README and the screenshots in name order (store:lint allows at most 5)', () => {
+  it('includes the README and the screenshots in name order (store:lint allows at most 5)', async () => {
     const fixture = storeFixture();
     const dir = join(fixture, 'apps', 'vaultwarden');
     writeFileSync(join(dir, 'README.md'), '# Vaultwarden\n\nMore about it.');
     mkdirSync(join(dir, 'screenshots'));
     for (const f of ['10.webp', '2.webp', '1.png', '3.jpg']) writeFileSync(join(dir, 'screenshots', f), 'x');
-    const d = service(fixture).store.getApp('vaultwarden');
+    const d = await service(fixture).store.getApp('vaultwarden');
     expect(d.readme).toBe('# Vaultwarden\n\nMore about it.');
     expect(d.screenshots).toEqual(
       ['1.png', '2.webp', '3.jpg', '10.webp'].map((f) => `/api/store/apps/builtin/vaultwarden/assets/screenshots/${f}`),
@@ -69,19 +69,9 @@ describe('US-STORE-06', () => {
     expect(serviceRole('ml', 'ghcr.io/immich-app/immich-machine-learning:v1', 'web')).toBeNull();
   });
 
-  it('an app that isn’t in the store is NOT_FOUND', () => {
+  it('an app that isn’t in the store is NOT_FOUND', async () => {
     const { store } = service();
-    expect(
-      hlabsCodeOf(
-        (() => {
-          try {
-            store.getApp('nextcloud');
-          } catch (e) {
-            return e;
-          }
-        })(),
-      ),
-    ).toBe('NOT_FOUND');
+    await expect(store.getApp('nextcloud')).rejects.toSatisfy((e) => hlabsCodeOf(e) === 'NOT_FOUND');
   });
 
   it('is served as store.getApp, with the store’s member rule', async () => {

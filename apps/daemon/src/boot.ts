@@ -240,7 +240,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     proxy,
     mdns,
     catalog,
-    store: new StoreService(db, catalog),
+    store: new StoreService(db, catalog, undefined, {
+      engineMemoryBytes: () => (engine.status.state === 'running' ? engine.status.info.memoryBytes : null),
+      appDataFreeBytes: () => probe.freeBytes(config.paths.appDataDir),
+    }),
     routing: network,
     apps: appService,
     reconciled,
