@@ -13,6 +13,7 @@ import { render } from '@testing-library/react';
 import { createTRPCClient, TRPCClientError, type TRPCLink } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
 import type { ComponentType } from 'react';
+import { ConfirmHost } from '../lib/confirm';
 import { TRPCProvider } from '../lib/trpc';
 
 export type Handlers = Record<string, (input: unknown) => unknown>;
@@ -49,7 +50,14 @@ export function renderScreen(Screen: ComponentType, handlers: Handlers, opts: { 
   const client = createTRPCClient<AppRouter>({ links: [link] });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
 
-  const root = createRootRoute({ component: Outlet });
+  const root = createRootRoute({
+    component: () => (
+      <>
+        <Outlet />
+        <ConfirmHost />
+      </>
+    ),
+  });
   const path = opts.path ?? '/';
   const screen = createRoute({ getParentRoute: () => root, path, component: () => <Screen /> });
   const other = createRoute({ getParentRoute: () => root, path: '$', component: () => <p>elsewhere</p> });

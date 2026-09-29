@@ -45,7 +45,6 @@ export const engineCopy = {
   start: 'Start engine',
   restartTitle: 'Restart the container engine?',
   restartBody: 'All apps stop for about a minute.',
-  cancel: 'Cancel',
   restartConfirm: 'Restart',
   restarting: 'Restarting the engine',
   notBack: "The engine didn't come back. Start it again, or restart this computer.",

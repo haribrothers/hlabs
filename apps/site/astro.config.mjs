@@ -20,6 +20,7 @@ export default defineConfig({
             { label: 'Settings', link: '/help/get-started/settings/' },
             { label: 'Engine and startup', link: '/help/get-started/engine/' },
             { label: "Can't reach hlabs", link: '/help/get-started/cant-reach/' },
+            { label: 'Confirmations and notices', link: '/help/get-started/confirmations/' },
           ],
         },
       ],

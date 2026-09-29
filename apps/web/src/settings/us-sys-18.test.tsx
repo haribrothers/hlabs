@@ -24,13 +24,13 @@ describe('US-SYS-18', () => {
       'settings.engine.get': () => ({}),
     });
     fireEvent.click(await screen.findByRole('button', { name: 'Restart engine' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Restart the container engine?' });
+    const dialog = await screen.findByRole('alertdialog', { name: 'Restart the container engine?' });
     expect(within(dialog).getByText('All apps stop for about a minute.')).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
     expect(restart).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Restart engine' }));
-    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Restart' }));
+    fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Restart' }));
     await waitFor(() => expect(restart).toHaveBeenCalled());
   });
 
@@ -58,6 +58,6 @@ describe('US-SYS-18', () => {
     });
     fireEvent.click(await screen.findByRole('button', { name: 'Start engine' }));
     await waitFor(() => expect(start).toHaveBeenCalled());
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('alertdialog')).toBeNull();
   });
 });

@@ -15,7 +15,7 @@ test('US-SYS-18 Restart engine asks first, runs as a job and comes back', async 
   test.skip((await status.innerText()) !== 'Engine running', 'needs a running engine on this machine');
 
   await restart.click();
-  const dialog = page.getByRole('dialog', { name: 'Restart the container engine?' });
+  const dialog = page.getByRole('alertdialog', { name: 'Restart the container engine?' });
   await expect(dialog.getByText('All apps stop for about a minute.')).toBeVisible();
   await dialog.getByRole('button', { name: 'Restart' }).click();
   await expect(dialog).toBeHidden();
