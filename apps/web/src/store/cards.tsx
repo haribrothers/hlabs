@@ -118,7 +118,7 @@ export function FeaturedCard({ app, host, installs, eyebrow }: CardProps & { eye
   const tint = { '--card-from': from, '--card-to': to } as CSSProperties;
   return (
     <div
-      className="relative flex h-full flex-row items-start gap-6 overflow-hidden rounded-xl border border-glass p-6 [background-image:linear-gradient(135deg,color-mix(in_srgb,var(--card-from)_48%,transparent),color-mix(in_srgb,var(--card-to)_30%,transparent))]"
+      className="relative flex h-full flex-row items-start gap-6 overflow-hidden rounded-xl border border-border-glass p-6 [background-image:linear-gradient(135deg,color-mix(in_srgb,var(--card-from)_48%,transparent),color-mix(in_srgb,var(--card-to)_30%,transparent))]"
       style={tint}
     >
       <StoreLogo app={app} size={FEATURED_LOGO} />

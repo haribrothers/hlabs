@@ -1,7 +1,10 @@
 // US-STORE-03 · Search from the store home: the store's search field.
-import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderScreen } from '../test/render';
+import { fakeMe } from '../test/me';
+import { storeApp } from '../test/store';
+import { SearchResults } from './search-results';
 import { cleanQuery, SEARCH_DELAY_MS, StoreSearchField } from './search';
 
 const handlers = {
@@ -65,5 +68,66 @@ describe('US-STORE-03', () => {
   it('queries are trimmed and capped at 100 characters', () => {
     expect(cleanQuery('  photo  ')).toBe('photo');
     expect(cleanQuery('x'.repeat(150))).toHaveLength(100);
+  });
+});
+
+describe('US-STORE-03 · results, as the StoreSearch screen draws them', () => {
+  const results = (arm64 = true) => ({
+    'store.listApps': () => ({
+      host: { os: 'macos', arm64 },
+      title: null,
+      nextCursor: null,
+      items: [
+        storeApp('immich', 'Immich', { installed: true, group: 'files', tagline: 'Phone photo backup' }),
+        storeApp('photoprism', 'PhotoPrism', { group: 'files', tagline: 'Browse photos', arm64: false }),
+        storeApp('piwigo', 'Piwigo', { group: 'files', tagline: 'Photo gallery' }),
+      ],
+    }),
+    'apps.list': () => ({
+      apps: [
+        {
+          id: 'immich',
+          name: 'Immich',
+          state: 'running',
+          icon: { logoUrl: null, gradient: null, fallback: null },
+          embed: false,
+          urls: { local: 'https://immich.hlabs.local', tailnet: null },
+        },
+      ],
+    }),
+    'events.stream': () => new Promise(() => {}),
+    'auth.me': fakeMe(),
+  });
+
+  it('one list: name, "tagline · category", Installed with Open, or a white Install', async () => {
+    renderScreen(() => <SearchResults query="photo" />, results(), { path: '/store/search' });
+    const list = await screen.findByRole('list', { name: 'Results for “photo”' });
+    const rows = within(list).getAllByRole('listitem');
+    expect(rows).toHaveLength(3);
+    expect(within(rows[0]!).getByText('Phone photo backup · Files & photos')).toBeInTheDocument();
+    expect(await within(rows[0]!).findByText('Installed')).toBeInTheDocument();
+    expect(within(rows[0]!).getByRole('button', { name: 'Open Immich' })).toBeInTheDocument();
+    expect(within(rows[1]!).getByRole('link', { name: 'Install PhotoPrism' })).toHaveClass('hl-btn-primary');
+  });
+
+  it('chips count and filter: All · 3, Installed · 1, Apple Silicon only', async () => {
+    renderScreen(() => <SearchResults query="photo" />, results(), { path: '/store/search' });
+    const all = await screen.findByRole('button', { name: 'All · 3' });
+    expect(all).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Installed · 1' }));
+    expect(within(screen.getByRole('list', { name: 'Results for “photo”' })).getAllByRole('listitem')).toHaveLength(1);
+    fireEvent.click(all);
+    fireEvent.click(screen.getByRole('button', { name: 'Apple Silicon only' }));
+    const names = within(screen.getByRole('list', { name: 'Results for “photo”' }))
+      .getAllByRole('listitem')
+      .map((r) => within(r).getAllByRole('link')[0]!.textContent);
+    expect(names).toEqual(['Immich', 'Piwigo']);
+  });
+
+  it('no "Apple Silicon only" off arm64; no "Add another app source" before phase 7 (D-036)', async () => {
+    renderScreen(() => <SearchResults query="photo" />, results(false), { path: '/store/search' });
+    await screen.findByRole('button', { name: 'All · 3' });
+    expect(screen.queryByRole('button', { name: /only$/ })).toBeNull();
+    expect(screen.queryByText('Add another app source')).toBeNull();
   });
 });

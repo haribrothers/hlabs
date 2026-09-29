@@ -26,7 +26,7 @@ You can move through the list with the Tab key and open an entry with Enter.
 
 ## Search
 
-The search field at the top says how many apps you can search. Start typing: after a moment the results appear, matching app names first and then what the apps do. Press Enter to search straight away, and Escape (or clear the field) to go back to where you were. On a computer, press **/** anywhere in the App Store to jump to the search field.
+The search field at the top says how many apps you can search. Start typing: after a moment the results appear, matching app names first and then what the apps do. The chips above the results narrow them to apps you've installed or, on a Mac with Apple Silicon, to apps that have a version for it. Press Enter to search straight away, and Escape (or clear the field) to go back to where you were. On a computer, press **/** anywhere in the App Store to jump to the search field.
 
 ## An app's page
 

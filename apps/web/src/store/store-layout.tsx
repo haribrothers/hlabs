@@ -52,10 +52,10 @@ export function StoreLayout() {
           scrollClassName="mr-2 mb-5"
           bodyClassName="pl-5 pr-3 pt-2"
           header={
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-7">
               <Link
                 to="/"
-                className="hl-focus inline-flex items-center gap-1 self-start rounded-xs px-3 text-body-sm text-ink-muted no-underline hover:text-ink"
+                className="hl-focus inline-flex items-center gap-2.5 self-start rounded-xs pl-3 text-body-sm text-ink-muted no-underline hover:text-ink"
               >
                 <ChevronLeft aria-hidden {...iconDefaults} className="size-4" />
                 {copy.backHome}
@@ -73,7 +73,9 @@ export function StoreLayout() {
         <ScrollPane
           scrollRef={scroller}
           className="flex-1"
-          headerClassName="px-8 pt-6 pb-4"
+          // The body sits inside the scroller's right margin (mr-2) and its scrollbar gutter (8px), so the header's right
+          // padding adds both: the search field lines up with the cards below.
+          headerClassName="pl-8 pr-12 pt-6 pb-4"
           scrollClassName="mr-2 mb-5"
           bodyClassName="px-8 pb-2"
           header={

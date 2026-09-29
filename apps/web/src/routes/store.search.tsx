@@ -1,11 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { storeCopy } from '../copy/store';
-import { AppListView } from '../store/app-list-view';
 import { cleanQuery } from '../store/search';
+import { SearchResults } from '../store/search-results';
 
 function SearchPage() {
-  const q = cleanQuery(Route.useSearch().q);
-  return <AppListView input={{ query: q }} title={storeCopy.resultsFor(q)} empty={storeCopy.noResults(q)} />;
+  return <SearchResults query={cleanQuery(Route.useSearch().q)} />;
 }
 
 export const Route = createFileRoute('/store/search')({

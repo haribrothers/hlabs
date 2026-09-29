@@ -29,6 +29,12 @@ export const storeCopy = {
   searchPlaceholder: (n: number) => `Search ${n} ${n === 1 ? 'app' : 'apps'}`,
   resultsFor: (q: string) => `Results for “${q}”`,
   noResults: (q: string) => `No apps match “${q}”`,
+  filterAll: (n: number) => `All · ${n}`,
+  filterInstalled: (n: number) => `Installed · ${n}`,
+  filterArm64: { macos: 'Apple Silicon only', linux: 'ARM64 only' },
+  filters: 'Filter results',
+  cantFind: 'Can’t find an app?',
+  addSource: 'Add another app source',
   // App details (US-STORE-06)
   officialSource: 'hlabs official',
   about: 'About',
