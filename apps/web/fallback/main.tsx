@@ -13,7 +13,7 @@ const controller = new DaemonDownController({ check: () => checkHealth('/healthz
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <UiStringsProvider strings={uiStrings}>
-      <DaemonDownView controller={controller} />
+      <DaemonDownView controller={controller} checkAtOnce />
     </UiStringsProvider>
   </StrictMode>,
 );

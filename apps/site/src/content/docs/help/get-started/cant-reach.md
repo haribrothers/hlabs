@@ -8,6 +8,8 @@ For everyone who uses hlabs.
 
 If hlabs isn't answering, you see **Can't reach hlabs** instead of a browser error. It means your browser reached the computer running hlabs, but hlabs itself isn't responding. The page keeps trying on its own and comes back as soon as hlabs does; choose **Try now** to try straight away.
 
+When hlabs knows why it isn't ready, the page says so: for example that it's starting (this usually takes less than a minute), or that it can't find its storage folder because a drive isn't connected.
+
 While you wait, check that:
 
 1. The hlabs icon is in the menu bar (or tray) on the computer running hlabs.

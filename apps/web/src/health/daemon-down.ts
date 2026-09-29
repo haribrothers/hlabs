@@ -52,9 +52,11 @@ export class DaemonDownController {
     return () => this.listeners.delete(listener);
   }
 
-  start(): void {
+  /** `now`: check at once (the fallback page, to learn why straight away); otherwise in 5 seconds. */
+  start(opts: { now?: boolean } = {}): void {
     this.stopped = false;
-    this.schedule();
+    if (opts.now) void this.run();
+    else this.schedule();
   }
 
   stop(): void {

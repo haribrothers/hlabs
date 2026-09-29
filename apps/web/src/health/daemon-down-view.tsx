@@ -3,7 +3,7 @@
 import { WifiOff, iconDefaults } from '@hlabs/icons';
 import { Button, GlassCard } from '@hlabs/ui';
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { healthCopy } from '../copy/health';
+import { healthCopy, reasonLine } from '../copy/health';
 import type { DaemonDownController } from './daemon-down';
 
 const copy = healthCopy;
@@ -26,15 +26,22 @@ function CopyCommand({ command }: { command: string }) {
   );
 }
 
-export function DaemonDownView({ controller }: { controller: DaemonDownController }) {
+export function DaemonDownView({
+  controller,
+  checkAtOnce = false,
+}: {
+  controller: DaemonDownController;
+  /** The fallback page checks at once to learn why hlabs is down. */
+  checkAtOnce?: boolean;
+}) {
   const state = useSyncExternalStore(
     (l) => controller.subscribe(l),
     () => controller.snapshot,
   );
   useEffect(() => {
-    controller.start();
+    controller.start({ now: checkAtOnce });
     return () => controller.stop();
-  }, [controller]);
+  }, [controller, checkAtOnce]);
 
   return (
     <main className="hl-wall flex min-h-full flex-col items-center justify-center gap-5 px-4 py-10 text-center">
@@ -43,36 +50,43 @@ export function DaemonDownView({ controller }: { controller: DaemonDownControlle
       </span>
       <div className="flex flex-col gap-2">
         <h1 className="m-0 text-display">{copy.title}</h1>
+        {/* Why, when hlabs knows (US-STATE-05); announced when it changes, not the countdown. */}
+        <p aria-live="polite" className="m-0 max-w-lg text-body empty:hidden">
+          {reasonLine(state.reason)}
+        </p>
         <p className="m-0 text-body text-ink-muted">{state.checking ? copy.trying : copy.tryingIn(5)}</p>
       </div>
       <Button size="lg" className="order-last" busy={state.checking} onClick={() => controller.tryNow()}>
         {copy.tryNow}
       </Button>
-      <GlassCard className="w-full max-w-lg p-0 text-left">
-        <ol aria-label={copy.checksLabel} className="m-0 list-none p-0">
-          {[...copy.checks, null].map((check, i) => (
-            <li key={i} className="flex gap-3 border-t border-hairline px-4 py-3 first:border-t-0">
-              <span
-                aria-hidden="true"
-                className="grid size-6 shrink-0 place-items-center rounded-pill bg-surface-control text-caption font-semibold"
-              >
-                {i + 1}
-              </span>
-              <span className="min-w-0 text-body-sm">
-                {check ?? (
-                  <>
-                    {copy.linuxCheck}{' '}
-                    <code className="rounded-xs bg-surface-input px-1.5 py-0.5 font-mono text-mono break-all">
-                      {copy.linuxCommand}
-                    </code>{' '}
-                    <CopyCommand command={copy.linuxCommand} />
-                  </>
-                )}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </GlassCard>
+      {/* While hlabs is starting there's nothing to check. */}
+      {state.reason === 'starting' ? null : (
+        <GlassCard className="w-full max-w-lg p-0 text-left">
+          <ol aria-label={copy.checksLabel} className="m-0 list-none p-0">
+            {[...copy.checks, null].map((check, i) => (
+              <li key={i} className="flex gap-3 border-t border-hairline px-4 py-3 first:border-t-0">
+                <span
+                  aria-hidden="true"
+                  className="grid size-6 shrink-0 place-items-center rounded-pill bg-surface-control text-caption font-semibold"
+                >
+                  {i + 1}
+                </span>
+                <span className="min-w-0 text-body-sm">
+                  {check ?? (
+                    <>
+                      {copy.linuxCheck}{' '}
+                      <code className="rounded-xs bg-surface-input px-1.5 py-0.5 font-mono text-mono break-all">
+                        {copy.linuxCommand}
+                      </code>{' '}
+                      <CopyCommand command={copy.linuxCommand} />
+                    </>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </GlassCard>
+      )}
     </main>
   );
 }
