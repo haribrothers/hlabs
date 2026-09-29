@@ -25,6 +25,20 @@ export function logoUrl(appId: string, logo: string | undefined): string | null 
   return `/api/apps/${appId}/assets/${logo.replace(/^\.?\//, '')}`;
 }
 
+/** The name, icon and web bits of an installed app's catalog manifest (its own source first). */
+export function catalogManifest(db: HlabsDb, app: { id: string; sourceId: string | null }) {
+  const row =
+    (app.sourceId
+      ? db
+          .select()
+          .from(catalogApps)
+          .where(and(eq(catalogApps.sourceId, app.sourceId), eq(catalogApps.appId, app.id)))
+          .get()
+      : undefined) ?? db.select().from(catalogApps).where(eq(catalogApps.appId, app.id)).get();
+  const parsed = manifestBits.safeParse(row?.manifestJson);
+  return parsed.success ? parsed.data : {};
+}
+
 export function listApps(db: HlabsDb, user: { id: string; role: 'admin' | 'member' }) {
   const hostname = getSetting(db, 'hostname');
   const tailnet = getSetting(db, 'remote').tailnetName?.replace(/\.ts\.net$/, '') ?? null;
@@ -37,16 +51,7 @@ export function listApps(db: HlabsDb, user: { id: string; role: 'admin' | 'membe
       .all()
       .filter((app) => visible.has(app.id))
       .map((app) => {
-        const row =
-          (app.sourceId
-            ? db
-                .select()
-                .from(catalogApps)
-                .where(and(eq(catalogApps.sourceId, app.sourceId), eq(catalogApps.appId, app.id)))
-                .get()
-            : undefined) ?? db.select().from(catalogApps).where(eq(catalogApps.appId, app.id)).get();
-        const parsed = manifestBits.safeParse(row?.manifestJson);
-        const m = parsed.success ? parsed.data : {};
+        const m = catalogManifest(db, app);
         return {
           id: app.id,
           name: m.name ?? app.id,

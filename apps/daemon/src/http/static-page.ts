@@ -5,9 +5,20 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export type StaticPageData =
-  | { kind: 'notFound'; homeUrl: string }
-  | { kind: 'noAccess'; homeUrl: string; appName: string; adminName: string | null; username: string };
+export interface NoAccessPage {
+  kind: 'noAccess';
+  homeUrl: string;
+  appName: string;
+  /** The oldest enabled admin, to ask; null if there's none. */
+  adminName: string | null;
+  username: string;
+  displayName: string;
+  avatarColor: string | null;
+  /** The member's accent (Settings › Appearance). */
+  accent: string;
+}
+
+export type StaticPageData = { kind: 'notFound'; homeUrl: string } | NoAccessPage;
 
 export const PAGES_FILE = 'pages.html';
 

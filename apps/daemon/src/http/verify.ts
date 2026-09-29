@@ -2,15 +2,17 @@
 // the X-Forwarded-* headers Caddy sets and answers:
 //   200 + X-Hlabs-User / X-Hlabs-Role: signed in and allowed; Caddy passes the request on to the app.
 //   302 to the dashboard's log in (or two-factor setup) for a browser navigation; 401 with no body otherwise.
-//   403 for a member the app isn't shared with; 404 for a host that is no installed app.
+//   403 for a member the app isn't shared with, with the "no access" page for a browser (US-AUTH-19); 404 with
+//   the 404 page for a host that is no installed app.
 // Answers are cached for 10 s per cookie and host, and the cache is cleared whenever a session is revoked, access
 // changes or an app's state changes, so it stays under 5 ms at 100 requests a second.
-import { appAccess, apps, getSetting, users, type HlabsDb } from '@hlabs/db';
-import { and, eq } from 'drizzle-orm';
+import { appAccess, apps, getSetting, getUserSetting, users, type HlabsDb } from '@hlabs/db';
+import { and, asc, eq, isNull } from 'drizzle-orm';
+import { catalogManifest } from '../apps/list';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { readCookie, SESSION_COOKIE } from '../auth/sessions';
 import type { ServiceHolder, Services } from '../services';
-import { StaticPages } from './static-page';
+import { StaticPages, type NoAccessPage } from './static-page';
 
 export const VERIFY_CACHE_MS = 10_000;
 
@@ -20,7 +22,9 @@ const LIVE = new Set(['starting', 'running', 'stopping', 'stopped', 'restarting'
 export type Verdict =
   | { status: 200; username: string; role: 'admin' | 'member' }
   | { status: 302; location: string }
-  | { status: 401 | 403 | 404 };
+  /** A member the app isn't shared with (US-AUTH-19): what the "no access" page says. */
+  | { status: 403; page: Omit<NoAccessPage, 'kind' | 'homeUrl'> }
+  | { status: 401 | 404 };
 
 interface Request {
   cookie: string | null;
@@ -81,7 +85,11 @@ export class ForwardAuth {
     if (getSetting(db, 'people').requireTotp && !this.services.totp.isEnabled(session.userId)) {
       return { status: 302, location: `${dashboard}/settings/account/two-factor` };
     }
-    const user = db.select({ username: users.username }).from(users).where(eq(users.id, session.userId)).get();
+    const user = db
+      .select({ username: users.username, displayName: users.displayName, avatarColor: users.avatarColor })
+      .from(users)
+      .where(eq(users.id, session.userId))
+      .get();
     if (!user) return { status: 302, location: `${dashboard}/login` };
     if (session.role !== 'admin') {
       const shared = db
@@ -89,7 +97,25 @@ export class ForwardAuth {
         .from(appAccess)
         .where(and(eq(appAccess.appId, app.id), eq(appAccess.userId, session.userId)))
         .get();
-      if (!shared) return { status: 403 };
+      if (!shared) {
+        const admin = db
+          .select({ displayName: users.displayName })
+          .from(users)
+          .where(and(eq(users.role, 'admin'), isNull(users.disabledAt)))
+          .orderBy(asc(users.createdAt))
+          .get();
+        return {
+          status: 403,
+          page: {
+            appName: catalogManifest(db, app).name ?? app.id,
+            adminName: admin?.displayName ?? null,
+            username: user.username,
+            displayName: user.displayName,
+            avatarColor: user.avatarColor,
+            accent: getUserSetting(db, 'appearance', session.userId).accent,
+          },
+        };
+      }
     }
     return { status: 200, username: user.username, role: session.role };
   }
@@ -132,14 +158,16 @@ export function registerAuthVerify(app: FastifyInstance, holder: ServiceHolder, 
         return reply.header('x-hlabs-user', verdict.username).header('x-hlabs-role', verdict.role).code(200).send();
       case 302:
         return reply.redirect(verdict.location, 302);
+      case 403:
       case 404: {
+        // Browsers get a page; anything else just the status.
         const navigation = (header(req, 'accept') ?? '').includes('text/html');
-        if (!navigation) return reply.code(404).send();
+        if (!navigation) return reply.code(verdict.status).send();
         const homeUrl = `${dashboardOrigin(services.db, host)}/`;
-        return reply
-          .code(404)
-          .type('text/html; charset=utf-8')
-          .send(pages.render({ kind: 'notFound', homeUrl }));
+        const html = pages.render(
+          verdict.status === 403 ? { kind: 'noAccess', homeUrl, ...verdict.page } : { kind: 'notFound', homeUrl },
+        );
+        return reply.code(verdict.status).type('text/html; charset=utf-8').send(html);
       }
       default:
         return reply.code(verdict.status).send();

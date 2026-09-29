@@ -57,6 +57,8 @@ Each app has its own address, like `https://immich.hlabs.local`, and hlabs check
 
 A few apps that have their own login skip this check.
 
+If your admin hasn't shared an app with you, its address shows **You don't have access to this** with the name of the admin to ask. Once they share it, reload the page; it opens within a few seconds.
+
 If an app's address shows **This page doesn't exist**, that app isn't installed (it may have been uninstalled or renamed). **Go to Home** takes you back to hlabs.
 
 ## Log out
