@@ -60,7 +60,15 @@ export function generate(tokens: Tokens): { tokensCss: string; themeCss: string;
     ...scale(tokens.size),
   ];
 
-  const accents = tokens.color.accentSets.sets.map(
+  // Violet is the default accent (in :root); it also gets its own rule so any element (an avatar) can ask for it
+  // inside a page with another accent.
+  const byName = new Map(tokens.color.tokens.map((t) => [t.name, t.value]));
+  const violet: Record<string, string> = { id: 'violet' };
+  for (const k of ACCENT_KEYS) {
+    const v = byName.get(k);
+    violet[k] = typeof v === 'string' ? v : (v?.glass ?? '');
+  }
+  const accents = [violet, ...tokens.color.accentSets.sets].map(
     (set) => `[data-accent='${set.id}'] {\n${ACCENT_KEYS.map((k) => `  --${k}: ${set[k]};`).join('\n')}\n}`,
   );
 

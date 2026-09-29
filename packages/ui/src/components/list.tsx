@@ -30,9 +30,11 @@ export interface ListRowProps {
   trailing?: ReactNode;
   /** Makes the whole row a link; don't put another control in it. */
   href?: string;
+  /** Full-width content under the row, such as a Progress bar and a note. */
+  below?: ReactNode;
 }
 
-export function ListRow({ title, subtitle, leading, trailing, href }: ListRowProps) {
+export function ListRow({ title, subtitle, leading, trailing, href, below }: ListRowProps) {
   const inner = (
     <>
       {leading}
@@ -41,13 +43,15 @@ export function ListRow({ title, subtitle, leading, trailing, href }: ListRowPro
         {subtitle ? <span className="hl-list-sub">{subtitle}</span> : null}
       </span>
       {trailing}
+      {below ? <div className="hl-list-below">{below}</div> : null}
     </>
   );
+  const className = below ? 'hl-list-row hl-list-row-below' : 'hl-list-row';
   return href ? (
-    <a href={href} className="hl-list-row hl-row-link">
+    <a href={href} className={`${className} hl-row-link`}>
       {inner}
     </a>
   ) : (
-    <div className="hl-list-row">{inner}</div>
+    <div className={className}>{inner}</div>
   );
 }

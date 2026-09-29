@@ -180,7 +180,7 @@ The session cookie is set on `.hlabs.local` (and on the tailnet host) so one log
 ## 2.8 Storage and files
 - **App data** (`<appDataDir>/<appId>`; `appDataDir` is `~/hlabs/app-data` on desktops and `/var/lib/hlabs/app-data` on headless Linux) always stays on this computer's disk, because app databases need a fast, always-present disk (D-011).
 - The **storage root** (chosen in onboarding: this computer, an external drive or a NAS) holds `users/<username>/` (Home folders), `shared/` and `.trash/`. Media folders for apps can also point to other **storage locations** (NAS, external drives).
-- **Network drives:** SMB/NFS mounted by the daemon (macOS `mount_smbfs`/`mount_nfs` into `<dataDir>/mounts/<id>`; Linux `mount.cifs` via a small privileged helper, or GVFS for desktop) and exposed in Files and as app folder options. Credentials in the OS keychain.
+- **Network drives:** SMB/NFS mounted by the daemon (macOS: SMB with the NetFS helper `hlabs-netmount` into `/Volumes/<share>`, D-060, and NFS with `mount_nfs` into `<dataDir>/mounts/<id>`, D-062; Linux: `mount.cifs` / NFS into `<dataDir>/mounts/<id>` via the privileged helper `hlabs-priv`, D-061) and exposed in Files and as app folder options. Credentials in the OS keychain.
 - **Files API** is streaming HTTP under `/api/files` (upload with resumable chunks, download with range support) plus tRPC for listing, metadata, move, rename, trash.
 - **Moving data** (AppMoveData, MoveAllData) runs as a job: stop affected apps → rsync-style copy with verification → update paths → start apps → delete source only after success.
 
@@ -206,7 +206,7 @@ The session cookie is set on `.hlabs.local` (and on the tailnet host) so one log
 
 Typed events (see `packages/api/src/events.ts`), fanned out to SSE subscribers filtered by the user's permissions:
 
-`system.status`, `engine.status`, `access.changed`, `storage.locationChanged`, `update.applyRequested` (tray-scoped), `startup.changeRequested` (tray-scoped), `app.stateChanged`, `app.installProgress`, `app.log` (only when a log view is open), `job.progress`, `job.finished`, `backup.run`, `notification.created`, `usage.sample`, `update.available`, `session.revoked`.
+`system.status`, `engine.status`, `access.changed`, `storage.locationChanged`, `update.applyRequested` (tray-scoped), `startup.changeRequested` (tray-scoped), `app.stateChanged`, `app.installProgress`, `app.log` (only when a log view is open), `job.progress`, `job.finished`, `backup.run`, `notification.created`, `usage.sample`, `update.available`, `session.revoked`. `session.revoked` reaches only the device whose session ended (audience `session`).
 
 ## 2.13 AI access (MCP) — P3
 The daemon can expose an **MCP server** (streamable HTTP at `/mcp`, token-authenticated, off by default) with scoped tools: list apps, app status, start/stop/restart, read logs, usage summary, list backups. Destructive tools (uninstall, restore, factory reset) are never exposed. See SettingsAI.

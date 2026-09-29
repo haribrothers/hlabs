@@ -18,6 +18,8 @@ export interface AppIconProps {
   /** 0–100, shown as a ring while installing. */
   progress?: number;
   href?: string;
+  /** Replaces the accessible name, e.g. "Open Jellyfin" on Home. */
+  ariaLabel?: string;
   onClick?: (e: MouseEvent<HTMLElement>) => void;
   onContextMenu?: (e: MouseEvent<HTMLElement>) => void;
 }
@@ -34,6 +36,7 @@ export function AppIcon({
   state = 'running',
   progress = 0,
   href,
+  ariaLabel: ariaLabelOverride,
   onClick,
   onContextMenu,
 }: AppIconProps) {
@@ -41,7 +44,7 @@ export function AppIcon({
   const pct = Math.max(0, Math.min(100, Math.round(progress)));
   const badge = state === 'update' || state === 'error' || state === 'stopped' ? t.appState[state] : null;
   const label = state === 'installing' ? t.installing(pct) : name;
-  const ariaLabel = state === 'running' ? name : `${name}, ${(badge ?? label).toLowerCase()}`;
+  const ariaLabel = ariaLabelOverride ?? (state === 'running' ? name : `${name}, ${(badge ?? label).toLowerCase()}`);
   const content = (
     <>
       {badge ? <span className={`hl-app-badge hl-app-badge-${state}`}>{badge}</span> : null}

@@ -93,7 +93,7 @@ const realDetectDeps: DetectDeps = {
   connect: (candidate) => new DockerodeEngine(candidate.socketPath),
 };
 
-async function defaultCandidates(preferred: EngineKind | 'auto'): Promise<EngineCandidate[]> {
+export async function defaultCandidates(preferred: EngineKind | 'auto'): Promise<EngineCandidate[]> {
   const home = homedir();
   const colimaProfiles = await readdir(join(home, '.colima'), { withFileTypes: true }).then(
     (entries) => entries.filter((e) => e.isDirectory()).map((e) => e.name),

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { cn } from '../lib/cn';
 
 export interface ProgressProps {
   /** 0–100 */
@@ -9,12 +10,14 @@ export interface ProgressProps {
   detail?: ReactNode;
   /** Accessible name when there is no visible label. */
   'aria-label'?: string;
+  /** Sizing where it sits in a row: the default minimum width (260px) suits a card, not a row's trailing slot. */
+  className?: string;
 }
 
-export function Progress({ value, label, detail, ...aria }: ProgressProps) {
+export function Progress({ value, label, detail, className, ...aria }: ProgressProps) {
   const v = Math.max(0, Math.min(100, Math.round(value || 0)));
   return (
-    <div className="hl-progress">
+    <div className={cn('hl-progress', className)}>
       {label !== undefined || detail !== undefined ? (
         <div className="hl-progress-top">
           <span>{label}</span>

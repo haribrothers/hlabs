@@ -11,7 +11,9 @@
     ".": "./src/index.ts",
     "./files": "./src/files.ts",
     "./styles.css": "./src/styles/index.css",
-    "./tokens.css": "./src/styles/tokens.css"
+    "./tokens.css": "./src/styles/tokens.css",
+    "./base.css": "./src/styles/base.css",
+    "./fonts-latin.css": "./src/styles/fonts-latin.css"
   },
   "scripts": {
     "tokens": "tsx scripts/generate-tokens.ts",

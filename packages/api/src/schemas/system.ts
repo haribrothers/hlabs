@@ -6,7 +6,8 @@ import { empty, engineKindSchema, hostnameSchema, jobRefSchema, ok, passwordSche
 export const systemInfoSchema = z.object({
   version: z.string(),
   hostname: hostnameSchema,
-  os: z.object({ platform: z.enum(['darwin', 'linux']), release: z.string(), arch: z.string() }),
+  /** `headless`: a Linux server without a desktop session (no menu bar). */
+  os: z.object({ platform: z.enum(['darwin', 'linux']), release: z.string(), arch: z.string(), headless: z.boolean() }),
   cpu: z.object({ model: z.string(), cores: z.number().int() }),
   memoryBytes: z.number(),
   uptimeSeconds: z.number(),

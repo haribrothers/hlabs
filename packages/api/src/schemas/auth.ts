@@ -1,23 +1,35 @@
 import { z } from 'zod';
 import { io } from '../trpc';
+import { accentSchema } from './settings';
 import {
   displayNameSchema,
   empty,
   idSchema,
   ok,
   passwordSchema,
-  pending,
   roleSchema,
   timestampSchema,
   totpCodeSchema,
   usernameSchema,
 } from './common';
 
+/** One account on the log-in screen (US-AUTH-01): nothing more than the list needs. */
 export const loginUserSchema = z.object({
   id: idSchema,
   username: usernameSchema,
   displayName: displayNameSchema,
+  role: roleSchema,
   avatarColor: z.string().nullable(),
+});
+
+/** Per-user look (D-010): Settings › Appearance changes it (phase 7); Home applies it (US-HOME-01). */
+export const appearanceSchema = z.object({
+  wallpaper: z.string(),
+  accent: accentSchema,
+  reduceTransparency: z.boolean(),
+  reduceMotion: z.boolean(),
+  showWidgets: z.boolean(),
+  showGreeting: z.boolean(),
 });
 
 export const meSchema = z.object({
@@ -28,7 +40,17 @@ export const meSchema = z.object({
   avatarColor: z.string().nullable(),
   locale: z.string(),
   mustSetupTotp: z.boolean(),
-  appearance: pending,
+  /** Two-factor login is on for this account. */
+  totpEnabled: z.boolean(),
+  /** Usage in the Dock: admins, or members when both the policy and their own switch allow (D-029, US-HOME-05). */
+  canSeeUsage: z.boolean(),
+  /** App Store in the Dock: admins, or members when "Members can install apps" is on (US-HOME-05). */
+  canInstallApps: z.boolean(),
+  /** This session was started with "Remember me" (US-AUTH-14). */
+  remember: z.boolean(),
+  appearance: appearanceSchema,
+  /** Send as `x-hlabs-csrf` on every mutation (07 §7.3). */
+  csrfToken: z.string(),
 });
 
 const redirectSchema = z.object({ redirectTo: z.string() });
@@ -48,7 +70,11 @@ export const auth = {
     ]),
   ),
   verifyTotp: io(z.object({ challengeId: idSchema, code: totpCodeSchema }), redirectSchema),
-  useRecoveryCode: io(z.object({ challengeId: idSchema, code: z.string().min(1).max(64) }), redirectSchema),
+  useRecoveryCode: io(
+    z.object({ challengeId: idSchema, code: z.string().min(1).max(64) }),
+    /** `recoveryCodesLeft`: unused codes after this one (US-AUTH-09). */
+    redirectSchema.extend({ recoveryCodesLeft: z.number().int().min(0) }),
+  ),
   logout: io(empty, ok),
   me: io(empty, meSchema),
   listSessions: io(

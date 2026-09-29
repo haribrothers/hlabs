@@ -1,5 +1,12 @@
 // Shared building blocks for every router's schemas.
-import { appIdSchema, displayNameSchema, hostnameSchema, usernameSchema } from '@hlabs/shared';
+import {
+  appIdSchema,
+  displayNameSchema,
+  EXCLUSIVE_JOB_KINDS,
+  hostnameSchema,
+  TOAST_MUTATIONS,
+  usernameSchema,
+} from '@hlabs/shared';
 import { z } from 'zod';
 import { HLABS_CODES, type HlabsCode } from '../errors';
 
@@ -41,16 +48,43 @@ export const engineKindSchema = z.enum(['orbstack', 'docker-desktop', 'colima', 
 export type EngineKind = z.infer<typeof engineKindSchema>;
 
 export const severitySchema = z.enum(['info', 'success', 'warning', 'critical']);
+export type Severity = z.infer<typeof severitySchema>;
+
+/** A notification's button (05 Canonical names, US-STATE-15): go to a dashboard path, or run an allow-listed
+ * mutation. `action_json` holds up to two. */
+export const notificationActionSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('navigate'),
+    to: z.string().startsWith('/'),
+    params: z.record(z.string(), z.unknown()).optional(),
+  }),
+  z.object({
+    kind: z.literal('mutation'),
+    procedure: z.enum(TOAST_MUTATIONS),
+    input: z.record(z.string(), z.unknown()),
+    label: z.string().min(1).max(40),
+  }),
+]);
+export const notificationActionsSchema = z.array(notificationActionSchema).max(2);
+export type NotificationAction = z.infer<typeof notificationActionSchema>;
+
+/** One notification as a user sees it (US-STATE-16; HomeNotifications later). */
+export const notificationSchema = z.object({
+  id: z.string(),
+  kind: z.string(),
+  /** With `kind`, identifies repeats (an app id, a location id). */
+  target: z.string().nullable(),
+  severity: severitySchema,
+  title: z.string(),
+  body: z.string().nullable(),
+  actions: notificationActionsSchema,
+  createdAt: z.number().int().nonnegative(),
+  readAt: z.number().int().nonnegative().nullable(),
+});
+export type Notification = z.infer<typeof notificationSchema>;
 
 /** Exclusive job kinds (D-020): one at a time, and never alongside app jobs. */
-export const EXCLUSIVE_JOB_KINDS = [
-  'system_update',
-  'restore',
-  'move_all_data',
-  'engine_switch',
-  'rename_host',
-  'factory_reset',
-] as const;
+export { EXCLUSIVE_JOB_KINDS };
 
 export const jobKindSchema = z.enum([
   ...EXCLUSIVE_JOB_KINDS,

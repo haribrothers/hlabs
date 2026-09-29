@@ -28,8 +28,12 @@ import {
 } from '@hlabs/ui';
 import { FileItem } from '@hlabs/ui/files';
 import { createFileRoute, notFound } from '@tanstack/react-router';
+import { TRPCClientError } from '@trpc/client';
 import { useEffect, useState, type ReactNode } from 'react';
 import { devCopy } from '../../copy/dev';
+import { confirm } from '../../lib/confirm';
+import { actionsFromNotification } from '../../lib/toast-actions';
+import { showToast } from '../../lib/toasts';
 import { useEventStream } from '../../lib/use-event-stream';
 import { navigationAreas } from '../../shell/areas';
 
@@ -46,6 +50,70 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       <h2 className="m-0 text-headline">{title}</h2>
       <div className="flex flex-wrap items-start gap-4">{children}</div>
     </section>
+  );
+}
+
+/** The riskiest confirm (US-STATE-13): password and typed name. The fake action takes "correct horse battery". */
+function ConfirmDemo() {
+  const [result, setResult] = useState('');
+  const ask = async () => {
+    const confirmed = await confirm({
+      title: 'Reset hlabs to factory settings?',
+      body: 'All apps, users and settings are deleted. Backups on your NAS are not touched.',
+      confirmLabel: 'Reset hlabs',
+      tone: 'danger',
+      requirePassword: true,
+      typeToConfirm: 'hlabs',
+      onConfirm: async ({ password }) => {
+        await new Promise((r) => setTimeout(r, 200));
+        if (password !== 'correct horse battery') {
+          throw new TRPCClientError('wrong password', {
+            result: { error: { data: { hlabsCode: 'AUTH_INVALID_PASSWORD' } } } as never,
+          });
+        }
+      },
+    });
+    setResult(confirmed ? 'Reset confirmed' : 'Reset cancelled');
+  };
+  return (
+    <div className="flex items-center gap-3">
+      <Button variant="destructive" onClick={() => void ask()}>
+        Factory reset…
+      </Button>
+      <span data-testid="confirm-result">{result}</span>
+    </div>
+  );
+}
+
+/** The toasts from SysDialogs, one per tone (US-STATE-14), with their buttons as notifications carry them (15). */
+function ToastDemo() {
+  const examples = [
+    { tone: 'success', title: 'Immich is ready', body: 'Open it from your Home screen.' },
+    { tone: 'neutral', title: 'Checking for updates', body: 'This takes a few seconds.' },
+    {
+      tone: 'warning',
+      title: 'Low disk space',
+      body: '8 GB left on this computer. Some apps may stop working.',
+      actions: actionsFromNotification([{ kind: 'navigate', to: '/settings/storage' }]),
+    },
+    {
+      tone: 'danger',
+      title: "Uptime Kuma couldn't start",
+      body: 'Port 3001 is already in use by another program.',
+      actions: actionsFromNotification([
+        { kind: 'navigate', to: '/apps/uptime-kuma/logs' },
+        { kind: 'mutation', procedure: 'apps.start', input: { appId: 'uptime-kuma' }, label: 'Retry' },
+      ]),
+    },
+  ] as const;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {examples.map((t) => (
+        <Button key={t.tone} variant="secondary" size="sm" onClick={() => showToast(t)}>
+          {`Show ${t.tone} toast`}
+        </Button>
+      ))}
+    </div>
   );
 }
 
@@ -203,6 +271,8 @@ function DevUi() {
         >
           Focus is trapped here; Escape closes.
         </ModalDialog>
+        <ConfirmDemo />
+        <ToastDemo />
         <Toast title="Backup finished" action={<Button variant="link">View log</Button>}>
           2.1 GB added
         </Toast>

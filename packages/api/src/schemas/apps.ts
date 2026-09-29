@@ -1,6 +1,16 @@
 import { z } from 'zod';
 import { io } from '../trpc';
-import { appRefSchema, empty, hostnameSchema, idSchema, jobIdsSchema, jobRefSchema, ok, pending } from './common';
+import {
+  appRefSchema,
+  appStateSchema,
+  empty,
+  hostnameSchema,
+  idSchema,
+  jobIdsSchema,
+  jobRefSchema,
+  ok,
+  pending,
+} from './common';
 
 const envSchema = z.record(z.string(), z.string());
 const mountSchema = z.object({
@@ -19,8 +29,32 @@ export const logLineSchema = z.object({
 });
 export type LogLine = z.infer<typeof logLineSchema>;
 
+/** An app on Home (US-HOME-03): what its tile needs and where it opens. */
+export const homeAppSchema = z.object({
+  id: z.string(),
+  /** The manifest's name, e.g. "Jellyfin". */
+  name: z.string(),
+  state: appStateSchema,
+  icon: z.object({
+    /** The manifest logo, as a URL the dashboard can load; null without one. */
+    logoUrl: z.string().nullable(),
+    gradient: z.tuple([z.string(), z.string()]).nullable(),
+    /** A Lucide icon name (kebab-case). */
+    fallback: z.string().nullable(),
+  }),
+  /** D-038: opens in AppWindow (phase 2) instead of a new tab. */
+  embed: z.boolean(),
+  urls: z.object({
+    /** `https://<app>.<hostname>.local` */
+    local: z.string(),
+    /** `https://<hostname>.<tailnet>.ts.net:<port>` when remote access is on (D-012). */
+    tailnet: z.string().nullable(),
+  }),
+});
+
 export const apps = {
-  list: io(empty, pending),
+  /** The apps this person can open, admins all, members those shared with them. */
+  list: io(empty, z.object({ apps: z.array(homeAppSchema) })),
   get: io(appRefSchema, pending),
   install: io(
     appRefSchema.extend({

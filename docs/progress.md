@@ -9,75 +9,75 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 
 ## Phase 1 · Core, first run and sign in
 
-- [ ] US-ONB-01 · Open onboarding automatically on first run
-- [ ] US-ONB-02 · See the welcome screen and start setup
-- [ ] US-ONB-03 · Resume onboarding where I left off, and only until it's done
-- [ ] US-ONB-04 · Run the system check
-- [ ] US-ONB-05 · Install Colima automatically when no engine is found (macOS)
-- [ ] US-ONB-06 · Recover from a failed system check
-- [ ] US-ONB-07 · Get Docker Engine instructions on Linux, and choose start at login
-- [ ] US-ONB-08 · Create the admin account
-- [ ] US-ONB-09 · See what to fix when the account details are invalid
-- [ ] US-ONB-10 · Only allow one admin to be created through onboarding
-- [ ] US-ONB-11 · Turn on two-factor login
-- [ ] US-ONB-12 · Save recovery codes
-- [ ] US-ONB-13 · Skip two-factor for now
-- [ ] US-ONB-14 · Keep data on this computer
-- [ ] US-ONB-15 · Use an external drive
-- [ ] US-ONB-16 · Use network storage (NAS)
-- [ ] US-ONB-21 · See a summary when setup is done
-- [ ] US-ONB-22 · Finish onboarding and open the dashboard
-- [ ] US-AUTH-01 · Pick my account from the user list
-- [ ] US-AUTH-02 · Log in as another user or with the list hidden
-- [ ] US-AUTH-03 · Log in with username and password
-- [ ] US-AUTH-04 · See a clear error when login fails
-- [ ] US-AUTH-05 · Open the right login screen
-- [ ] US-AUTH-06 · Log back in as the remembered user
-- [ ] US-AUTH-07 · Switch to another account
-- [ ] US-AUTH-08 · Enter my two-factor code
-- [ ] US-AUTH-09 · Log in with a recovery code
-- [ ] US-AUTH-10 · Set up two-factor when an admin requires it
-- [ ] US-AUTH-11 · Keep two-factor codes in step with the server clock
-- [ ] US-AUTH-12 · Pause logins after too many attempts
-- [ ] US-AUTH-13 · Tell the admin about repeated failed logins
-- [ ] US-AUTH-14 · Stay signed in, or not
-- [ ] US-AUTH-15 · Get signed out when my session is revoked
-- [ ] US-AUTH-16 · Log out
-- [ ] US-AUTH-18 · Return to the app I was opening after login
-- [ ] US-HOME-01 · See a greeting over my wallpaper
-- [ ] US-HOME-02 · Glance at system widgets
-- [ ] US-HOME-03 · Open my apps from the grid
-- [ ] US-HOME-04 · Move between sections with the Dock
-- [ ] US-HOME-05 · See badge counts on tabs
-- [ ] US-ACCT-01 · Settings sections depend on role
-- [ ] US-ACCT-02 · Moving around Settings on desktop, phone and keyboard
-- [ ] US-ACCT-03 · See and edit my profile
-- [ ] US-ACCT-04 · See the devices I am signed in on
-- [ ] US-ACCT-05 · Sign out a device, or log out
-- [ ] US-ACCT-06 · Change my password
-- [ ] US-ACCT-07 · Password change errors
-- [ ] US-ACCT-08 · See my two-factor and recovery code status
-- [ ] US-ACCT-09 · View, download and print recovery codes
-- [ ] US-ACCT-10 · Make new recovery codes
-- [ ] US-ACCT-11 · Move two-factor to a new phone
-- [ ] US-ACCT-12 · Turn two-factor on or off
-- [ ] US-SYS-17 · See the container engine
-- [ ] US-SYS-18 · Restart the container engine
-- [ ] US-SYS-19 · Set resources given to apps
-- [ ] US-SYS-20 · Control startup behaviour
-- [ ] US-STATE-04 · Serve a fallback page when the daemon is down
-- [ ] US-STATE-05 · Explain why hlabs can't be reached
-- [ ] US-STATE-06 · Retry on a countdown or on demand
-- [ ] US-STATE-11 · Confirm an action with the shared dialog
-- [ ] US-STATE-12 · Show progress and errors inside the confirm dialog
-- [ ] US-STATE-13 · Require a password or typed name for the riskiest actions
-- [ ] US-STATE-14 · Show toasts by severity
-- [ ] US-STATE-15 · Act on a toast
-- [ ] US-STATE-16 · Stack toasts and keep them in sync with notifications
-- [ ] US-STATE-17 · Map error codes to plain copy
-- [ ] US-STATE-18 · Reconnect the event stream
-- [ ] US-STATE-19 · Show an offline banner
-- [ ] US-STATE-20 · Send signed-out and forbidden requests to the right place
+- [x] US-ONB-01 · Open onboarding automatically on first run
+- [x] US-ONB-02 · See the welcome screen and start setup
+- [x] US-ONB-03 · Resume onboarding where I left off, and only until it's done
+- [x] US-ONB-04 · Run the system check
+- [x] US-ONB-05 · Install Colima automatically when no engine is found (macOS)
+- [x] US-ONB-06 · Recover from a failed system check
+- [x] US-ONB-07 · Get Docker Engine instructions on Linux, and choose start at login
+- [x] US-ONB-08 · Create the admin account
+- [x] US-ONB-09 · See what to fix when the account details are invalid
+- [x] US-ONB-10 · Only allow one admin to be created through onboarding
+- [x] US-ONB-11 · Turn on two-factor login
+- [x] US-ONB-12 · Save recovery codes
+- [x] US-ONB-13 · Skip two-factor for now
+- [x] US-ONB-14 · Keep data on this computer
+- [x] US-ONB-15 · Use an external drive
+- [x] US-ONB-16 · Use network storage (NAS)
+- [x] US-ONB-21 · See a summary when setup is done
+- [x] US-ONB-22 · Finish onboarding and open the dashboard
+- [x] US-AUTH-01 · Pick my account from the user list
+- [x] US-AUTH-02 · Log in as another user or with the list hidden
+- [x] US-AUTH-03 · Log in with username and password
+- [x] US-AUTH-04 · See a clear error when login fails
+- [x] US-AUTH-05 · Open the right login screen
+- [x] US-AUTH-06 · Log back in as the remembered user
+- [x] US-AUTH-07 · Switch to another account
+- [x] US-AUTH-08 · Enter my two-factor code
+- [x] US-AUTH-09 · Log in with a recovery code
+- [x] US-AUTH-10 · Set up two-factor when an admin requires it (phase 1 part: `mustSetupTotp`, the redirect to setup and back to `next` after it; the policy switch is phase 3, `/auth/verify` phase 2)
+- [x] US-AUTH-11 · Keep two-factor codes in step with the server clock
+- [x] US-AUTH-12 · Pause logins after too many attempts
+- [x] US-AUTH-13 · Tell the admin about repeated failed logins
+- [x] US-AUTH-14 · Stay signed in, or not
+- [x] US-AUTH-15 · Get signed out when my session is revoked
+- [x] US-AUTH-16 · Log out
+- [x] US-AUTH-18 · Return to the app I was opening after login
+- [x] US-HOME-01 · See a greeting over my wallpaper
+- [x] US-HOME-02 · Glance at system widgets
+- [x] US-HOME-03 · Open my apps from the grid
+- [x] US-HOME-04 · Move between sections with the Dock
+- [x] US-HOME-05 · See badge counts on tabs
+- [x] US-ACCT-01 · Settings sections depend on role
+- [x] US-ACCT-02 · Moving around Settings on desktop, phone and keyboard
+- [x] US-ACCT-03 · See and edit my profile
+- [x] US-ACCT-04 · See the devices I am signed in on
+- [x] US-ACCT-05 · Sign out a device, or log out
+- [x] US-ACCT-06 · Change my password
+- [x] US-ACCT-07 · Password change errors
+- [x] US-ACCT-08 · See my two-factor and recovery code status
+- [x] US-ACCT-09 · View, download and print recovery codes
+- [x] US-ACCT-10 · Make new recovery codes
+- [x] US-ACCT-11 · Move two-factor to a new phone
+- [x] US-ACCT-12 · Turn two-factor on or off
+- [x] US-SYS-17 · See the container engine
+- [x] US-SYS-18 · Restart the container engine
+- [x] US-SYS-19 · Set resources given to apps
+- [x] US-SYS-20 · Control startup behaviour
+- [x] US-STATE-04 · Serve a fallback page when the daemon is down
+- [x] US-STATE-05 · Explain why hlabs can't be reached
+- [x] US-STATE-06 · Retry on a countdown or on demand
+- [x] US-STATE-11 · Confirm an action with the shared dialog
+- [x] US-STATE-12 · Show progress and errors inside the confirm dialog
+- [x] US-STATE-13 · Require a password or typed name for the riskiest actions
+- [x] US-STATE-14 · Show toasts by severity
+- [x] US-STATE-15 · Act on a toast
+- [x] US-STATE-16 · Stack toasts and keep them in sync with notifications
+- [x] US-STATE-17 · Map error codes to plain copy
+- [x] US-STATE-18 · Reconnect the event stream
+- [x] US-STATE-19 · Show an offline banner
+- [x] US-STATE-20 · Send signed-out and forbidden requests to the right place (the `/auth/verify` 403 page lands with US-AUTH-17, D-070)
 
 ## Phase 2 · Apps
 

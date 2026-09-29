@@ -1,0 +1,67 @@
+#!/bin/sh
+# hlabs-priv: the only commands hlabsd runs as root on Linux (D-061, 07 §7.1). Installed by the phase 6 installers
+# with a sudoers rule (headless) or a polkit rule (desktop) that lets the hlabs user run exactly this script.
+#
+#   hlabs-priv mount-cifs <//host/share> <target> <credentials-file>
+#   hlabs-priv mount-nfs  <host:/export> <target>
+#   hlabs-priv umount     <target>
+#
+# <target> must be a folder directly inside an hlabs mounts folder: /var/lib/hlabs/mounts (headless) or the calling
+# user's ~/.local/share/hlabs/mounts (desktop). Files are owned by the calling user ($SUDO_USER, else hlabs).
+# HLABS_PRIV_DRY_RUN=1 prints the command instead of running it, and HLABS_MOUNTS_DIR sets the folder (tests only:
+# sudo doesn't pass the environment on).
+set -eu
+
+OWNER="${SUDO_USER:-hlabs}"
+if [ -n "${HLABS_MOUNTS_DIR:-}" ]; then
+  MOUNTS_DIRS="$HLABS_MOUNTS_DIR"
+else
+  OWNER_HOME="$(getent passwd "$OWNER" | cut -d: -f6 || true)"
+  MOUNTS_DIRS="/var/lib/hlabs/mounts ${OWNER_HOME:+$OWNER_HOME/.local/share/hlabs/mounts}"
+fi
+
+die() { echo "hlabs-priv: $1" >&2; exit 64; }
+
+check_target() {
+  for dir in $MOUNTS_DIRS; do
+    case "$1" in
+      "$dir"/*)
+        name="${1#"$dir"/}"
+        printf '%s' "$name" | grep -Eq '^[A-Za-z0-9_][A-Za-z0-9_-]*$' || die "target must be a folder directly inside $dir"
+        return 0
+        ;;
+    esac
+  done
+  die "target must be inside an hlabs mounts folder"
+}
+
+run() {
+  if [ "${HLABS_PRIV_DRY_RUN:-}" = "1" ]; then echo "$@"; else exec "$@"; fi
+}
+
+[ $# -ge 1 ] || die "usage: hlabs-priv mount-cifs|mount-nfs|umount ..."
+cmd="$1"
+shift
+case "$cmd" in
+  mount-cifs)
+    [ $# -eq 3 ] || die "usage: hlabs-priv mount-cifs <//host/share> <target> <credentials-file>"
+    printf '%s' "$1" | grep -Eq '^//[A-Za-z0-9._-]+/[^,[:space:]]+$' || die "bad share"
+    check_target "$2"
+    [ -f "$3" ] || die "no credentials file"
+    uid="$(id -u "$OWNER")" || die "no user $OWNER"
+    gid="$(id -g "$OWNER")" || die "no user $OWNER"
+    run mount -t cifs "$1" "$2" -o "credentials=$3,uid=$uid,gid=$gid,nosuid,nodev,noexec"
+    ;;
+  mount-nfs)
+    [ $# -eq 2 ] || die "usage: hlabs-priv mount-nfs <host:/export> <target>"
+    printf '%s' "$1" | grep -Eq '^[A-Za-z0-9._-]+:/[^,[:space:]]*$' || die "bad export"
+    check_target "$2"
+    run mount -t nfs "$1" "$2" -o nosuid,nodev,noexec
+    ;;
+  umount)
+    [ $# -eq 1 ] || die "usage: hlabs-priv umount <target>"
+    check_target "$1"
+    run umount "$1"
+    ;;
+  *) die "unknown command: $cmd" ;;
+esac

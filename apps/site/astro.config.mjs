@@ -9,7 +9,21 @@ export default defineConfig({
     starlight({
       title: 'hlabs',
       customCss: ['./src/styles/site.css'],
-      sidebar: [{ label: 'Get started', items: [{ label: 'Welcome', link: '/help/' }] }],
+      sidebar: [
+        {
+          label: 'Get started',
+          items: [
+            { label: 'Welcome', link: '/help/' },
+            { label: 'Set up hlabs', link: '/help/get-started/set-up/' },
+            { label: 'Log in', link: '/help/get-started/log-in/' },
+            { label: 'Your Home screen', link: '/help/get-started/home/' },
+            { label: 'Settings', link: '/help/get-started/settings/' },
+            { label: 'Engine and startup', link: '/help/get-started/engine/' },
+            { label: "Can't reach hlabs", link: '/help/get-started/cant-reach/' },
+            { label: 'Confirmations and notices', link: '/help/get-started/confirmations/' },
+          ],
+        },
+      ],
     }),
   ],
 });

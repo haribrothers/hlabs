@@ -27,8 +27,13 @@ export const settingsSchemas = {
   engine: z
     .object({
       preferred: z.enum(['auto', ...ENGINE_KINDS]).default('auto'),
+      /** hlabs's Colima as last applied (US-SYS-19); null: the install defaults. */
       resources: z
-        .object({ cpus: z.number().int().positive(), memoryBytes: z.number().int().positive() })
+        .object({
+          cpus: z.number().int().positive(),
+          memoryBytes: z.number().int().positive(),
+          diskBytes: z.number().int().positive().optional(),
+        })
         .nullable()
         .default(null),
     })
@@ -86,9 +91,10 @@ export const settingsSchemas = {
     .object({
       startAtLogin: z.boolean().default(true),
       autostartApps: z.boolean().default(true),
-      keepAwake: z.boolean().default(false),
+      keepAwake: z.boolean().default(true),
     })
-    .default({ startAtLogin: true, autostartApps: true, keepAwake: false }),
+    // All three on after onboarding (US-SYS-20).
+    .default({ startAtLogin: true, autostartApps: true, keepAwake: true }),
   /** Last-contacted time per outbound service (Advanced › What hlabs connects to). */
   connections: z.record(z.string(), z.object({ lastContactAt: z.number().int() })).default({}),
 } as const;

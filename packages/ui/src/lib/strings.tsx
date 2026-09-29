@@ -15,6 +15,8 @@ export interface UiStrings {
   appState: { update: string; error: string; stopped: string };
   dismiss: string;
   step: (current: number, total: number) => string;
+  /** CodeInput field names: "Digit 1"… */
+  digit: (n: number) => string;
   setupProgress: string;
   chartHint: string;
   chartData: string;
@@ -40,6 +42,7 @@ export const defaultStrings: UiStrings = {
   appState: { update: 'Update', error: 'Error', stopped: 'Stopped' },
   dismiss: 'Dismiss',
   step: (c, t) => `Step ${c} of ${t}`,
+  digit: (n) => `Digit ${n}`,
   setupProgress: 'Setup progress',
   chartHint: 'Use left and right arrow keys to read values.',
   chartData: 'Chart data',

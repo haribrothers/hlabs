@@ -15,3 +15,19 @@
     -webkit-font-smoothing: antialiased;
   }
 }
+
+/* Printing recovery codes (US-ACCT-09): only the element marked hl-print-area is printed. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .hl-print-area,
+  .hl-print-area * {
+    visibility: visible;
+    color: #000;
+  }
+  .hl-print-area {
+    position: absolute;
+    inset: 0 auto auto 0;
+  }
+}

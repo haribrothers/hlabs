@@ -50,8 +50,8 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - Engine & startup settings.
 
 **Done when**
-- [ ] A clean data dir → onboarding → Home works end to end in Playwright.
-- [ ] Sessions, lockout and 2FA pass their unit and e2e tests.
+- [x] A clean data dir → onboarding → Home works end to end in Playwright (`us-onb-22.spec.ts`).
+- [x] Sessions, lockout and 2FA pass their unit and e2e tests (`sessions.test.ts`, US-AUTH-08/09/11–14, US-ONB-11–13).
 
 **Stories**
 

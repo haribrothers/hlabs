@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-fallback/
 .turbo/
 *.log
 .env*
@@ -10,6 +11,11 @@ target/
 coverage/
 playwright-report/
 test-results/
+apps/web/e2e/.auth/
 
 .e2e-data/
+.e2e-data-first-run/
+.e2e-data-first-run-*/
 .astro/
+
+apps/daemon/native/.build/

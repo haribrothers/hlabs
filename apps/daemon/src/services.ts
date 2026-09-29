@@ -7,6 +7,15 @@ import type { EventBus } from './events/bus';
 import type { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import type { MdnsPublisher } from './mdns/index';
+import type { SessionService } from './auth/sessions';
+import type { TotpService } from './auth/totp';
+import type { LoginService } from './auth/login';
+import type { OnboardingService } from './onboarding/service';
+import type { DriveProbe } from './platform/drives';
+import type { KeepAwake } from './platform/keep-awake';
+import type { SystemProbe } from './platform/system';
+import type { NotificationService } from './notifications/service';
+import type { NetworkStorage } from './storage/network';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 
@@ -21,6 +30,17 @@ export interface Services {
   secrets: SecretStore;
   proxy: ProxyManager;
   mdns: MdnsPublisher;
+  onboarding: OnboardingService;
+  sessions: SessionService;
+  totp: TotpService;
+  login: LoginService;
+  drives: DriveProbe;
+  /** CPU, memory and disk of this computer. */
+  system: SystemProbe;
+  /** Holds off sleep while apps run, when the setting is on (US-SYS-20). */
+  keepAwake: KeepAwake;
+  network: NetworkStorage;
+  notifications: NotificationService;
 }
 
 /** Holds services once boot has created them; requests before then get DAEMON_STARTING. */

@@ -4,8 +4,18 @@ import { empty, engineKindSchema, jobRefSchema, ok, pending } from './common';
 
 export const accentSchema = z.enum(['violet', 'mint', 'amber', 'rose']);
 
+export const startupSchema = z.object({
+  /** Start hlabs when the person logs in; the tray applies it (D-042). */
+  startAtLogin: z.boolean(),
+  /** Apps set to start automatically come back after a restart. */
+  autostartApps: z.boolean(),
+  /** Hold off sleep while an app runs. */
+  keepAwake: z.boolean(),
+});
+
 export const settings = {
-  get: io(empty, pending),
+  /** Global settings shown in Settings; more keys join with their sections. */
+  get: io(empty, z.object({ startup: startupSchema })),
   appearance: {
     update: io(
       z.object({
@@ -24,9 +34,48 @@ export const settings = {
     test: io(empty, ok),
   },
   engine: {
-    get: io(empty, pending),
+    /** Engine & startup (US-SYS-17): which engine runs apps, its state, and the others on this computer. */
+    get: io(
+      empty,
+      z.object({
+        platform: z.enum(['darwin', 'linux']),
+        /** `starting` while an engine install or restart job runs. */
+        status: z.enum(['running', 'stopped', 'starting', 'missing']),
+        active: z
+          .object({ kind: engineKindSchema, managedByHlabs: z.boolean(), version: z.string().nullable() })
+          .nullable(),
+        /** macOS: OrbStack, Docker Desktop, Colima; Linux: Docker Engine (and any other engine found). */
+        engines: z.array(
+          z.object({ kind: engineKindSchema, availability: z.enum(['active', 'found', 'notInstalled']) }),
+        ),
+        /**
+         * Resources for apps (US-SYS-19); null on Linux or with no engine. Editable only for hlabs's own Colima;
+         * other engines show what they report (disk unknown).
+         */
+        resources: z
+          .object({
+            editable: z.boolean(),
+            cpus: z.number().int().nullable(),
+            memoryBytes: z.number().nullable(),
+            diskBytes: z.number().nullable(),
+            limits: z.object({
+              maxCpus: z.number().int(),
+              minMemoryBytes: z.number(),
+              maxMemoryBytes: z.number(),
+              minDiskBytes: z.number(),
+              maxDiskBytes: z.number(),
+            }),
+          })
+          .nullable(),
+      }),
+    ),
+    /** hlabs's Colima only: apply by restarting the engine (US-SYS-19); disk can only grow. */
     setResources: io(
-      z.object({ cpus: z.number().int().positive(), memoryBytes: z.number().int().positive() }),
+      z.object({
+        cpus: z.number().int().positive(),
+        memoryBytes: z.number().int().positive(),
+        diskBytes: z.number().int().positive(),
+      }),
       jobRefSchema,
     ),
     planSwitch: io(z.object({ target: engineKindSchema }), pending),

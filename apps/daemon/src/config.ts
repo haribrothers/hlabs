@@ -1,8 +1,10 @@
 // Daemon configuration from the environment, validated once at startup.
 import { homedir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import { defaultPaths, type PlatformPaths } from './platform/paths';
+import { defaultSecretStoreKind, type SecretStoreKind } from './platform/secrets';
 import { VERSION } from './version';
 
 const flag = z
@@ -17,6 +19,13 @@ const envSchema = z.object({
   HLABS_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
   HLABS_HEADLESS: flag,
   HLABS_DEV_ANONYMOUS_ADMIN: flag,
+  HLABS_DEV_IGNORE_ENGINES: flag,
+  HLABS_DEV_NO_ENGINE_INSTALL: flag,
+  HLABS_DEV_NO_ENGINE_CONTROL: flag,
+  HLABS_NETMOUNT_BIN: z.string().optional(),
+  HLABS_PRIV_HELPER: z.string().optional(),
+  HLABS_SECRET_STORE: z.enum(['keychain', 'file']).optional(),
+  HLABS_DASHBOARD_URL: z.url().optional(),
 });
 
 export interface DaemonConfig {
@@ -27,15 +36,40 @@ export interface DaemonConfig {
   host: '127.0.0.1';
   port: number;
   paths: PlatformPaths;
+  /** Linux system service without a desktop session. */
+  headless: boolean;
+  /** Where the dashboard is opened from this computer; the setup URL is built from it (D-041). */
+  dashboardUrl: string;
+  /** macOS: the NetFS helper for SMB (D-060). */
+  netmountHelper: string;
+  /** Linux: the privileged helper for mounts (D-061). */
+  privHelper: string;
+  /** Keychain on a production desktop, encrypted file otherwise (07 §7.7). */
+  secretStore: SecretStoreKind;
   logLevel: string;
   /** Phase 0 only: treat every request as a signed-in admin (see 05-api "From phase 0"). */
   devAnonymousAdmin: boolean;
+  /** Development only: detect nothing but hlabs's own Colima, to try the install next to OrbStack (US-ONB-05). */
+  devIgnoreEngines: boolean;
+  /** Development and e2e: never download or start an engine (tests must not reach the internet, 11). */
+  devNoEngineInstall: boolean;
+  /** Development and e2e: engine restarts are pretended, so tests never restart the real engine. */
+  devNoEngineControl: boolean;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
   const e = envSchema.parse(env);
   if (e.HLABS_DEV_ANONYMOUS_ADMIN && e.NODE_ENV === 'production') {
     throw new Error('HLABS_DEV_ANONYMOUS_ADMIN is for development only and is refused in production.');
+  }
+  if (e.HLABS_DEV_NO_ENGINE_INSTALL && e.NODE_ENV === 'production') {
+    throw new Error('HLABS_DEV_NO_ENGINE_INSTALL is for development only and is refused in production.');
+  }
+  if (e.HLABS_DEV_NO_ENGINE_CONTROL && e.NODE_ENV === 'production') {
+    throw new Error('HLABS_DEV_NO_ENGINE_CONTROL is for development only and is refused in production.');
+  }
+  if (e.HLABS_DEV_IGNORE_ENGINES && e.NODE_ENV === 'production') {
+    throw new Error('HLABS_DEV_IGNORE_ENGINES is for development only and is refused in production.');
   }
   const platformPaths = defaultPaths({ platform: process.platform, home: homedir(), headless: e.HLABS_HEADLESS });
   const paths = e.HLABS_DATA_DIR
@@ -54,7 +88,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
     host: '127.0.0.1',
     port: e.HLABS_PORT,
     paths,
+    headless: e.HLABS_HEADLESS,
+    netmountHelper: e.HLABS_NETMOUNT_BIN ?? fileURLToPath(new URL('../native/.build/hlabs-netmount', import.meta.url)),
+    privHelper: e.HLABS_PRIV_HELPER ?? '/usr/lib/hlabs/hlabs-priv',
+    dashboardUrl: (e.HLABS_DASHBOARD_URL ?? `http://127.0.0.1:${e.HLABS_PORT}`).replace(/\/+$/, ''),
+    secretStore: e.HLABS_SECRET_STORE ?? defaultSecretStoreKind({ env: e.NODE_ENV, headless: e.HLABS_HEADLESS }),
     logLevel: e.HLABS_LOG_LEVEL ?? (dev ? 'debug' : 'info'),
     devAnonymousAdmin: e.HLABS_DEV_ANONYMOUS_ADMIN,
+    devIgnoreEngines: e.HLABS_DEV_IGNORE_ENGINES,
+    devNoEngineInstall: e.HLABS_DEV_NO_ENGINE_INSTALL,
+    devNoEngineControl: e.HLABS_DEV_NO_ENGINE_CONTROL,
   };
 }

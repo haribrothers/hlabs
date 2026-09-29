@@ -13,9 +13,21 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BackupsRouteImport } from './routes/backups'
 import { Route as FilesRouteImport } from './routes/files'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as StoreRouteImport } from './routes/store'
 import { Route as UsageRouteImport } from './routes/usage'
 import { Route as DevUiRouteImport } from './routes/dev/ui'
+import { Route as LoginIndexRouteImport } from './routes/login.index'
+import { Route as LoginCodeRouteImport } from './routes/login.code'
+import { Route as LoginLockedRouteImport } from './routes/login.locked'
+import { Route as LoginPasswordRouteImport } from './routes/login.password'
+import { Route as LoginUsernameRouteImport } from './routes/login.username'
+import { Route as LoginUsersRouteImport } from './routes/login.users'
+import { Route as SettingsIndexRouteImport } from './routes/settings.index'
+import { Route as SettingsSectionRouteImport } from './routes/settings.$section'
+import { Route as SetupIndexRouteImport } from './routes/setup.index'
+import { Route as SetupStepRouteImport } from './routes/setup.$step'
+import { Route as SettingsAccountTwoFactorRouteImport } from './routes/settings.account.two-factor'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -37,6 +49,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StoreRoute = StoreRouteImport.update({
   id: '/store',
   path: '/store',
@@ -52,61 +69,204 @@ const DevUiRoute = DevUiRouteImport.update({
   path: '/dev/ui',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginCodeRoute = LoginCodeRouteImport.update({
+  id: '/login/code',
+  path: '/login/code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginLockedRoute = LoginLockedRouteImport.update({
+  id: '/login/locked',
+  path: '/login/locked',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginPasswordRoute = LoginPasswordRouteImport.update({
+  id: '/login/password',
+  path: '/login/password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginUsernameRoute = LoginUsernameRouteImport.update({
+  id: '/login/username',
+  path: '/login/username',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginUsersRoute = LoginUsersRouteImport.update({
+  id: '/login/users',
+  path: '/login/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsSectionRoute = SettingsSectionRouteImport.update({
+  id: '/$section',
+  path: '/$section',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SetupIndexRoute = SetupIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SetupRoute,
+} as any)
+const SetupStepRoute = SetupStepRouteImport.update({
+  id: '/$step',
+  path: '/$step',
+  getParentRoute: () => SetupRoute,
+} as any)
+const SettingsAccountTwoFactorRoute =
+  SettingsAccountTwoFactorRouteImport.update({
+    id: '/account/two-factor',
+    path: '/account/two-factor',
+    getParentRoute: () => SettingsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
+  '/setup': typeof SetupRouteWithChildren
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
+  '/login/code': typeof LoginCodeRoute
+  '/login/locked': typeof LoginLockedRoute
+  '/login/password': typeof LoginPasswordRoute
+  '/login/username': typeof LoginUsernameRoute
+  '/login/users': typeof LoginUsersRoute
+  '/settings/$section': typeof SettingsSectionRoute
+  '/setup/$step': typeof SetupStepRoute
+  '/login/': typeof LoginIndexRoute
+  '/settings/': typeof SettingsIndexRoute
+  '/setup/': typeof SetupIndexRoute
+  '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
-  '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
+  '/login/code': typeof LoginCodeRoute
+  '/login/locked': typeof LoginLockedRoute
+  '/login/password': typeof LoginPasswordRoute
+  '/login/username': typeof LoginUsernameRoute
+  '/login/users': typeof LoginUsersRoute
+  '/settings/$section': typeof SettingsSectionRoute
+  '/setup/$step': typeof SetupStepRoute
+  '/login': typeof LoginIndexRoute
+  '/settings': typeof SettingsIndexRoute
+  '/setup': typeof SetupIndexRoute
+  '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
+  '/setup': typeof SetupRouteWithChildren
   '/store': typeof StoreRoute
   '/usage': typeof UsageRoute
   '/dev/ui': typeof DevUiRoute
+  '/login/code': typeof LoginCodeRoute
+  '/login/locked': typeof LoginLockedRoute
+  '/login/password': typeof LoginPasswordRoute
+  '/login/username': typeof LoginUsernameRoute
+  '/login/users': typeof LoginUsersRoute
+  '/settings/$section': typeof SettingsSectionRoute
+  '/setup/$step': typeof SetupStepRoute
+  '/login/': typeof LoginIndexRoute
+  '/settings/': typeof SettingsIndexRoute
+  '/setup/': typeof SetupIndexRoute
+  '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/backups' | '/files' | '/settings' | '/store' | '/usage' | '/dev/ui'
+    | '/'
+    | '/backups'
+    | '/files'
+    | '/settings'
+    | '/setup'
+    | '/store'
+    | '/usage'
+    | '/dev/ui'
+    | '/login/code'
+    | '/login/locked'
+    | '/login/password'
+    | '/login/username'
+    | '/login/users'
+    | '/settings/$section'
+    | '/setup/$step'
+    | '/login/'
+    | '/settings/'
+    | '/setup/'
+    | '/settings/account/two-factor'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/backups' | '/files' | '/settings' | '/store' | '/usage' | '/dev/ui'
+    | '/'
+    | '/backups'
+    | '/files'
+    | '/store'
+    | '/usage'
+    | '/dev/ui'
+    | '/login/code'
+    | '/login/locked'
+    | '/login/password'
+    | '/login/username'
+    | '/login/users'
+    | '/settings/$section'
+    | '/setup/$step'
+    | '/login'
+    | '/settings'
+    | '/setup'
+    | '/settings/account/two-factor'
   id:
     | '__root__'
     | '/'
     | '/backups'
     | '/files'
     | '/settings'
+    | '/setup'
     | '/store'
     | '/usage'
     | '/dev/ui'
+    | '/login/code'
+    | '/login/locked'
+    | '/login/password'
+    | '/login/username'
+    | '/login/users'
+    | '/settings/$section'
+    | '/setup/$step'
+    | '/login/'
+    | '/settings/'
+    | '/setup/'
+    | '/settings/account/two-factor'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BackupsRoute: typeof BackupsRoute
   FilesRoute: typeof FilesRoute
-  SettingsRoute: typeof SettingsRoute
+  SettingsRoute: typeof SettingsRouteWithChildren
+  SetupRoute: typeof SetupRouteWithChildren
   StoreRoute: typeof StoreRoute
   UsageRoute: typeof UsageRoute
   DevUiRoute: typeof DevUiRoute
+  LoginCodeRoute: typeof LoginCodeRoute
+  LoginLockedRoute: typeof LoginLockedRoute
+  LoginPasswordRoute: typeof LoginPasswordRoute
+  LoginUsernameRoute: typeof LoginUsernameRoute
+  LoginUsersRoute: typeof LoginUsersRoute
+  LoginIndexRoute: typeof LoginIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -139,6 +299,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/store': {
       id: '/store'
       path: '/store'
@@ -160,17 +327,129 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevUiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login/': {
+      id: '/login/'
+      path: '/login'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/code': {
+      id: '/login/code'
+      path: '/login/code'
+      fullPath: '/login/code'
+      preLoaderRoute: typeof LoginCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/locked': {
+      id: '/login/locked'
+      path: '/login/locked'
+      fullPath: '/login/locked'
+      preLoaderRoute: typeof LoginLockedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/password': {
+      id: '/login/password'
+      path: '/login/password'
+      fullPath: '/login/password'
+      preLoaderRoute: typeof LoginPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/username': {
+      id: '/login/username'
+      path: '/login/username'
+      fullPath: '/login/username'
+      preLoaderRoute: typeof LoginUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/users': {
+      id: '/login/users'
+      path: '/login/users'
+      fullPath: '/login/users'
+      preLoaderRoute: typeof LoginUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/': {
+      id: '/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/$section': {
+      id: '/settings/$section'
+      path: '/$section'
+      fullPath: '/settings/$section'
+      preLoaderRoute: typeof SettingsSectionRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/setup/': {
+      id: '/setup/'
+      path: '/'
+      fullPath: '/setup/'
+      preLoaderRoute: typeof SetupIndexRouteImport
+      parentRoute: typeof SetupRoute
+    }
+    '/setup/$step': {
+      id: '/setup/$step'
+      path: '/$step'
+      fullPath: '/setup/$step'
+      preLoaderRoute: typeof SetupStepRouteImport
+      parentRoute: typeof SetupRoute
+    }
+    '/settings/account/two-factor': {
+      id: '/settings/account/two-factor'
+      path: '/account/two-factor'
+      fullPath: '/settings/account/two-factor'
+      preLoaderRoute: typeof SettingsAccountTwoFactorRouteImport
+      parentRoute: typeof SettingsRoute
+    }
   }
 }
+
+interface SettingsRouteChildren {
+  SettingsSectionRoute: typeof SettingsSectionRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
+  SettingsAccountTwoFactorRoute: typeof SettingsAccountTwoFactorRoute
+}
+
+const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsSectionRoute: SettingsSectionRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
+  SettingsAccountTwoFactorRoute: SettingsAccountTwoFactorRoute,
+}
+
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
+
+interface SetupRouteChildren {
+  SetupStepRoute: typeof SetupStepRoute
+  SetupIndexRoute: typeof SetupIndexRoute
+}
+
+const SetupRouteChildren: SetupRouteChildren = {
+  SetupStepRoute: SetupStepRoute,
+  SetupIndexRoute: SetupIndexRoute,
+}
+
+const SetupRouteWithChildren = SetupRoute._addFileChildren(SetupRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BackupsRoute: BackupsRoute,
   FilesRoute: FilesRoute,
-  SettingsRoute: SettingsRoute,
+  SettingsRoute: SettingsRouteWithChildren,
+  SetupRoute: SetupRouteWithChildren,
   StoreRoute: StoreRoute,
   UsageRoute: UsageRoute,
   DevUiRoute: DevUiRoute,
+  LoginCodeRoute: LoginCodeRoute,
+  LoginLockedRoute: LoginLockedRoute,
+  LoginPasswordRoute: LoginPasswordRoute,
+  LoginUsernameRoute: LoginUsernameRoute,
+  LoginUsersRoute: LoginUsersRoute,
+  LoginIndexRoute: LoginIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

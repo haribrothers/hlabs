@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { areaForPath, navigationAreas, phoneAreas } from './areas';
 
 describe('shell areas', () => {
-  it('lists the six areas in the fixed Dock order (D-054)', () => {
-    expect(navigationAreas().map((a) => a.label)).toEqual([
+  it('lists the six areas in the fixed Dock order once every phase has shipped (D-054)', () => {
+    expect(navigationAreas({ shippedPhase: 9 }).map((a) => a.label)).toEqual([
       'Home',
       'App Store',
       'Files',
@@ -14,7 +14,7 @@ describe('shell areas', () => {
   });
 
   it('gives phones five tabs with "Apps" for the App Store (US-PHONE-01)', () => {
-    expect(phoneAreas().map((a) => a.label)).toEqual(['Home', 'Apps', 'Files', 'Usage', 'Settings']);
+    expect(phoneAreas({ shippedPhase: 9 }).map((a) => a.label)).toEqual(['Home', 'Apps', 'Files', 'Usage', 'Settings']);
   });
 
   it('maps paths to their area', () => {

@@ -9,6 +9,9 @@ import { Readiness } from '../src/readiness';
 import { buildServer } from '../src/server';
 import { ServiceHolder } from '../src/services';
 import { FakeEngine, fakeMachine } from './fakes/engine';
+import { FakeEngineControl } from './fakes/engine-control';
+import { FakeSleepBlocker } from './fakes/sleep-blocker';
+import { FakeSystemProbe } from './fakes/system';
 
 export function tempDir(prefix = 'hlabsd-'): string {
   return mkdtempSync(join(tmpdir(), prefix));
@@ -23,8 +26,16 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
     host: '127.0.0.1',
     port: 0,
     paths: { dataDir, appDataDir: join(dataDir, 'app-data'), storageRootDefault: join(dataDir, 'storage') },
+    headless: false,
+    netmountHelper: '/nonexistent/hlabs-netmount',
+    privHelper: '/nonexistent/hlabs-priv',
+    dashboardUrl: 'http://127.0.0.1:5173',
+    secretStore: 'file',
     logLevel: 'silent',
     devAnonymousAdmin: true,
+    devIgnoreEngines: false,
+    devNoEngineInstall: false,
+    devNoEngineControl: true,
     ...overrides,
   };
 }
@@ -53,6 +64,10 @@ export async function startDaemon(
       detect: fakeMachine({ [FAKE_SOCKET]: engine }),
       retryMs: 60_000,
     },
+    system: new FakeSystemProbe(),
+    drives: { externalDrives: async () => [] },
+    engineControl: new FakeEngineControl(),
+    sleepBlocker: new FakeSleepBlocker(),
     ...options.boot,
   };
   const services = options.skipBoot ? null : await boot(bootDeps);

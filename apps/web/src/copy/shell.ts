@@ -14,10 +14,15 @@ export const areaLabels = {
 export const phoneAreaLabels = { ...areaLabels, store: 'Apps' } as const;
 
 export const shellCopy = {
+  /** The connection banner (US-STATE-19). */
+  offline: "You're offline",
+  reconnecting: 'Reconnecting…',
+  offlineToast: "You're offline. Try again when you're connected.",
   skipToContent: 'Skip to content',
   mainLabel: 'Main content',
-  homeHeading: 'Home',
   areaEmpty: 'Nothing here yet.',
+  showPassword: 'Show password',
+  hidePassword: 'Hide password',
 } as const;
 
 /** Copy for words @hlabs/ui components render themselves. */

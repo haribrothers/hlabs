@@ -3,7 +3,7 @@ import { useRef, type KeyboardEvent, type MouseEvent, type PointerEvent, type Re
 import { cn } from '../lib/cn';
 import { useReduceMotion } from '../lib/motion';
 import { useUiStrings } from '../lib/strings';
-import type { AreaItem } from './areas';
+import { badgeText, type AreaItem } from './areas';
 
 export interface DockApp {
   id: string;
@@ -112,7 +112,7 @@ function DockItem({
         {children}
         {badge ? (
           <span className="hl-dock-badge" aria-hidden="true">
-            {badge}
+            {badgeText(badge)}
           </span>
         ) : null}
       </span>

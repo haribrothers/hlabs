@@ -1,5 +1,5 @@
 import * as RadixDialog from '@radix-ui/react-dialog';
-import { useId, useRef, type CSSProperties, type ReactNode } from 'react';
+import { useId, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { cn } from '../lib/cn';
 
 export interface DialogProps {
@@ -39,6 +39,12 @@ export interface ModalDialogProps extends Omit<DialogProps, 'className'> {
   onOpenChange: (open: boolean) => void;
   /** Keep the dialog open on Escape and outside clicks (e.g. while a job runs). */
   dismissible?: boolean;
+  /** What will happen; becomes the dialog's accessible description. Shown above `children`. */
+  description?: ReactNode;
+  /** Where focus goes when it opens; the first focusable element otherwise. */
+  initialFocus?: RefObject<HTMLElement | null>;
+  /** Below the md breakpoint, a bottom sheet with full-width buttons. */
+  sheetOnPhone?: boolean;
 }
 
 /** A modal dialog (Radix): scrim-strong behind, focus trapped, Escape closes, focus returns to the trigger. */
@@ -51,6 +57,9 @@ export function ModalDialog({
   actions,
   role = 'dialog',
   width,
+  description,
+  initialFocus,
+  sheetOnPhone = false,
 }: ModalDialogProps) {
   // Radix only restores focus to a Dialog.Trigger; remember whatever opened the dialog instead.
   const returnTo = useRef<HTMLElement | null>(null);
@@ -63,11 +72,17 @@ export function ModalDialog({
         <RadixDialog.Overlay className="hl-scrim hl-anim-fade" />
         <RadixDialog.Content
           role={role}
-          aria-describedby={undefined}
-          className="hl-dialog hl-dialog-modal hl-glass hl-glass-3 hl-anim-dialog"
+          {...(description ? {} : { 'aria-describedby': undefined })}
+          className={cn(
+            'hl-dialog hl-dialog-modal hl-glass hl-glass-3 hl-anim-dialog',
+            sheetOnPhone && 'hl-dialog-sheet',
+          )}
           style={width ? { width } : undefined}
-          onOpenAutoFocus={() => {
+          onOpenAutoFocus={(e) => {
             returnTo.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            if (!initialFocus?.current) return;
+            e.preventDefault();
+            initialFocus.current.focus();
           }}
           onCloseAutoFocus={(e) => {
             if (!returnTo.current?.isConnected) return;
@@ -79,6 +94,9 @@ export function ModalDialog({
           onInteractOutside={block}
         >
           <RadixDialog.Title className="hl-dialog-title">{title}</RadixDialog.Title>
+          {description ? (
+            <RadixDialog.Description className="hl-dialog-body">{description}</RadixDialog.Description>
+          ) : null}
           {children ? <div className="hl-dialog-body">{children}</div> : null}
           {actions ? <div className="hl-dialog-actions">{actions}</div> : null}
         </RadixDialog.Content>

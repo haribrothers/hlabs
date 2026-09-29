@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { areaLabels } from '../copy/shell';
-import { AreaWindow } from '../shell/area-window';
+import { SettingsLayout } from '../settings/settings-layout';
 
 export const Route = createFileRoute('/settings')({
-  component: () => <AreaWindow title={areaLabels.settings} />,
+  component: SettingsLayout,
 });

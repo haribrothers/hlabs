@@ -1,8 +1,8 @@
-import { Check, TriangleAlert, X } from '@hlabs/icons';
+import { CircleCheck, CircleX, Info, TriangleAlert, X } from '@hlabs/icons';
 import type { ReactNode } from 'react';
 import { useUiStrings } from '../lib/strings';
 
-export type ToastTone = 'success' | 'warning' | 'danger';
+export type ToastTone = 'neutral' | 'success' | 'warning' | 'danger';
 
 export interface ToastProps {
   tone?: ToastTone;
@@ -12,16 +12,22 @@ export interface ToastProps {
   action?: ReactNode;
   /** Shows a dismiss button. Danger toasts stay until dismissed. */
   onDismiss?: () => void;
+  /** Playing its exit (fades up; nothing with Reduce motion). */
+  leaving?: boolean;
 }
 
-const ICONS = { success: Check, warning: TriangleAlert, danger: X } as const;
+// An icon for every tone, so the colour is never the only signal.
+const ICONS = { neutral: Info, success: CircleCheck, warning: TriangleAlert, danger: CircleX } as const;
 
 /** A short notice on level-3 glass. Danger toasts are alerts; the rest are status messages. */
-export function Toast({ tone = 'success', title, children, action, onDismiss }: ToastProps) {
+export function Toast({ tone = 'success', title, children, action, onDismiss, leaving = false }: ToastProps) {
   const t = useUiStrings();
   const Icon = ICONS[tone];
   return (
-    <div role={tone === 'danger' ? 'alert' : 'status'} className={`hl-toast hl-toast-${tone}`}>
+    <div
+      role={tone === 'danger' ? 'alert' : 'status'}
+      className={`hl-toast hl-toast-${tone} ${leaving ? 'hl-anim-toast-out' : 'hl-anim-toast-in'}`}
+    >
       <span className="hl-toast-icon">
         <Icon size={22} strokeWidth={2} aria-hidden="true" />
       </span>

@@ -3,7 +3,7 @@
 hlabs holds a household's photos, passwords and documents. Security rules here are requirements, not guidance.
 
 ## 7.1 Principles
-1. **Nothing leaves the house unless the user turns it on.** No telemetry, no analytics, no crash reporting by default. The only outbound calls are: store index sync, image pulls, hlabs update checks, Tailscale (if enabled), backup destinations (if configured), and an ntfy server for push notifications (only if the admin configures one, D-033). Each is listed in Settings › Advanced › "What hlabs connects to".
+1. **Nothing leaves the house unless the user turns it on.** No telemetry, no analytics, no crash reporting by default. The only outbound calls are: store index sync, image pulls, hlabs update checks, Tailscale (if enabled), backup destinations (if configured), an ntfy server for push notifications (only if the admin configures one, D-033), and on macOS the container engine download when no engine is found (pinned and checksum-verified, D-057). Each is listed in Settings › Advanced › "What hlabs connects to".
 2. **The daemon is never directly exposed.** It binds to `127.0.0.1`; Caddy is the only listener on the network.
 3. **Least privilege.** The daemon runs as the logged-in user (macOS, Linux desktop) or a dedicated `hlabs` user (headless). Privileged operations (binding 80/443 on Linux, mounting SMB on Linux) go through a minimal helper with an allow-list of commands.
 4. **Public internet exposure is out of scope.** No port forwarding, no Tailscale Funnel, no dynamic DNS in v1.

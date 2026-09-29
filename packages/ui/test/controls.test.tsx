@@ -53,6 +53,16 @@ describe('Switch', () => {
   });
 });
 
+describe('Button busy', () => {
+  it('is disabled, announced as busy and shows a spinner', () => {
+    render(<Button busy>Log in</Button>);
+    const button = screen.getByRole('button', { name: 'Log in' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    expect(button.querySelector('.hl-spin')).not.toBeNull();
+  });
+});
+
 describe('TextField', () => {
   it('links its label and hint', () => {
     render(<TextField label="Username" hint="Lowercase letters and numbers" />);
@@ -67,6 +77,20 @@ describe('TextField', () => {
     expect(input).toHaveAttribute('aria-invalid', 'true');
     expect(input).toHaveAccessibleDescription('Use at least 12 characters');
     expect(screen.queryByText('12 characters')).toBeNull();
+  });
+
+  it('can announce an error politely instead of as an alert', () => {
+    render(<TextField label="Password" error="Username or password is incorrect." announce="polite" />);
+    const message = screen.getByText('Username or password is incorrect.');
+    expect(message).toHaveAttribute('aria-live', 'polite');
+    expect(message).not.toHaveAttribute('role');
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription('Username or password is incorrect.');
+  });
+
+  it('puts a control inside the input, keeping the label on the input', () => {
+    render(<TextField label="Password" type="password" trailing={<button type="button">Show password</button>} />);
+    expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'password');
+    expect(screen.getByRole('button', { name: 'Show password' }).parentElement).toHaveClass('hl-input-trailing');
   });
 });
 
