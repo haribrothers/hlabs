@@ -47,9 +47,6 @@ export function EngineRestartControl({ stopped }: { stopped: boolean }) {
       void queryClient.invalidateQueries({ queryKey: trpc.jobs.list.queryKey() });
       void queryClient.invalidateQueries({ queryKey: trpc.settings.engine.get.queryKey() });
     },
-    onError: () => {
-      showToast({ tone: 'danger', title: copy.restartFailed });
-    },
   });
 
   if (restarting) {

@@ -2,4 +2,6 @@
 // happens) and the verb on the confirm button; never "OK" or "Yes".
 export const confirmCopy = {
   cancel: 'Cancel',
+  /** When the action outlasts the dialog (30 s) and then succeeds. */
+  finished: (confirmLabel: string) => `${confirmLabel} finished`,
 };

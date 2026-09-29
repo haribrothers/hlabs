@@ -15,3 +15,5 @@ To back out, choose **Cancel**, press Escape, or click outside the question. Not
 With a keyboard, Tab moves between the two buttons only. For something that can't be undone, **Cancel** is selected first, so pressing Enter by mistake is safe.
 
 On a phone, the question slides up from the bottom of the screen, with the action above **Cancel**.
+
+Once you choose the action, the button shows that hlabs is working, and the question stays until it's done. If it doesn't work, the question stays open and says why and what to do next, so you can try again or cancel. Something that takes a while, such as a restart, carries on after the question closes, and hlabs tells you when it's finished. If an action takes longer than 30 seconds, the question closes anyway and the result appears as a notice.

@@ -1,12 +1,18 @@
-// The shared confirm dialog (US-STATE-11): `confirm({...})` asks, and resolves true once confirmed (after
+// The shared confirm dialog (US-STATE-11, 12): `confirm({...})` asks, and resolves true once confirmed (after
 // `onConfirm` settles) or false when dismissed. One at a time: a second call waits until the first closes.
-// <ConfirmHost /> in the root route shows them.
+// While the action runs the dialog is busy and can't be dismissed; if it fails the error shows inline and the
+// buttons come back; after 30 s the dialog closes and the result arrives as a toast. <ConfirmHost /> shows them.
 import { Button, ModalDialog } from '@hlabs/ui';
 import { useRef, useState, useSyncExternalStore } from 'react';
 import { confirmCopy } from '../copy/confirm';
+import { errorLine } from './error-copy';
+import { showToast } from './toasts';
 import { useIsDesktop } from './use-media';
 
 const copy = confirmCopy;
+
+/** How long the dialog waits for its action before handing the result to a toast. */
+export const CONFIRM_PENDING_MS = 30_000;
 
 export type ConfirmTone = 'default' | 'danger';
 
@@ -19,7 +25,8 @@ export interface ConfirmOptions {
   confirmLabel: string;
   /** 'danger' for destructive actions: the red button, and Cancel has focus first. */
   tone?: ConfirmTone;
-  /** The action; the dialog stays open, busy, until it settles. */
+  /** The action; the dialog stays open, busy, until it settles. Resolving (with `{ jobId }` for long work) closes
+   * it; rejecting keeps it open with the error inline. */
   onConfirm?: () => unknown;
 }
 
@@ -42,10 +49,13 @@ export function confirm(options: ConfirmOptions): Promise<boolean> {
   return new Promise((resolve) => publish([...queue, { id: nextId++, options, resolve }]));
 }
 
-function settle(id: number, confirmed: boolean) {
-  const request = queue.find((r) => r.id === id);
-  if (!request) return;
-  publish(queue.filter((r) => r.id !== id));
+/** Closes the dialog; the caller's promise waits for the action if it still runs. */
+function close(id: number) {
+  if (queue.some((r) => r.id === id)) publish(queue.filter((r) => r.id !== id));
+}
+
+function settle(request: Request, confirmed: boolean) {
+  close(request.id);
   request.resolve(confirmed);
 }
 
@@ -62,25 +72,42 @@ export function ConfirmHost() {
 }
 
 function ConfirmDialog({ request }: { request: Request }) {
-  const { id, options } = request;
+  const { options } = request;
   const danger = options.tone === 'danger';
   const isDesktop = useIsDesktop();
   const confirmRef = useRef<HTMLButtonElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const run = async () => {
     setPending(true);
+    setError(null);
+    // Never trap people: after 30 s the dialog goes and the outcome arrives as a toast.
+    let handedOff = false;
+    const handOff = setTimeout(() => {
+      handedOff = true;
+      close(request.id);
+    }, CONFIRM_PENDING_MS);
     try {
       await options.onConfirm?.();
-      settle(id, true);
-    } catch {
-      settle(id, false);
+      clearTimeout(handOff);
+      if (handedOff) showToast({ tone: 'success', title: copy.finished(options.confirmLabel) });
+      settle(request, true);
+    } catch (err) {
+      clearTimeout(handOff);
+      if (handedOff) {
+        showToast({ tone: 'danger', title: errorLine(err) });
+        settle(request, false);
+        return;
+      }
+      setPending(false);
+      setError(errorLine(err));
     }
   };
 
   const cancel = (
-    <Button key="cancel" ref={cancelRef} variant="secondary" onClick={() => settle(id, false)}>
+    <Button key="cancel" ref={cancelRef} variant="secondary" disabled={pending} onClick={() => settle(request, false)}>
       {copy.cancel}
     </Button>
   );
@@ -98,7 +125,8 @@ function ConfirmDialog({ request }: { request: Request }) {
   return (
     <ModalDialog
       open
-      onOpenChange={(open) => (open ? null : settle(id, false))}
+      onOpenChange={(open) => (open ? null : settle(request, false))}
+      dismissible={!pending}
       role="alertdialog"
       title={options.title}
       description={options.body}
@@ -106,6 +134,12 @@ function ConfirmDialog({ request }: { request: Request }) {
       sheetOnPhone
       // Desktop: Cancel then the verb on the right; phone: the verb above Cancel.
       actions={isDesktop ? [cancel, go] : [go, cancel]}
-    />
+    >
+      {error ? (
+        <p role="alert" className="m-0 text-body-sm text-danger">
+          {error}
+        </p>
+      ) : null}
+    </ModalDialog>
   );
 }
