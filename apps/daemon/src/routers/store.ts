@@ -19,6 +19,10 @@ export const store: AppHandlers<DaemonContext>['store'] = {
     browser(ctx);
     return ctx.services.store.listApps(input);
   },
+  getApp: (input, ctx) => {
+    browser(ctx);
+    return ctx.services.store.getApp(input.appId);
+  },
   listCategories: (_input, ctx) => {
     browser(ctx);
     return ctx.services.store.listCategories();

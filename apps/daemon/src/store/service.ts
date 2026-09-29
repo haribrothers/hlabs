@@ -3,9 +3,22 @@
 // On an arm64 computer, apps without an arm64 image come after compatible ones and are never featured.
 import { hlabsError, type StoreApp } from '@hlabs/api';
 import { AppManifest } from '@hlabs/app-manifest';
-import { apps, catalogApps, getSetting, type HlabsDb } from '@hlabs/db';
+import { apps, appSources, catalogApps, getSetting, type HlabsDb } from '@hlabs/db';
 import { categoryGroupOf, STORE_CATEGORY_GROUPS, type StoreCategoryGroup } from '@hlabs/shared';
+import { eq } from 'drizzle-orm';
 import { BUILTIN_SOURCE_ID, type CatalogService } from './catalog';
+
+const DATABASE_IMAGES = /(^|\/)(postgres|postgis|pgvecto-rs|mariadb|mysql|mongo)(:|@|$)/;
+const CACHE_IMAGES = /(^|\/)(redis|valkey|memcached)(:|@|$)/;
+
+/** "Runs as" roles (US-STORE-06): the web service is the server; well-known images are the database or cache. */
+export function serviceRole(name: string, image: string | undefined, webService: string) {
+  if (name === webService) return 'server' as const;
+  const repo = (image ?? '').split('@')[0]!.toLowerCase();
+  if (DATABASE_IMAGES.test(repo)) return 'database' as const;
+  if (CACHE_IMAGES.test(repo)) return 'cache' as const;
+  return null;
+}
 
 export interface StoreHost {
   os: 'macos' | 'linux';
@@ -142,6 +155,41 @@ export class StoreService {
       return [];
     });
     return scored.sort((a, b) => a.score - b.score).map((s) => s.e);
+  }
+
+  /** An app's details page (US-STORE-06). */
+  getApp(appId: string) {
+    const entry = this.entries().find((e) => e.app.id === appId);
+    if (!entry) throw hlabsError('NOT_FOUND');
+    const { app, manifest: m } = entry;
+    const source = this.db.select().from(appSources).where(eq(appSources.id, app.sourceId)).get();
+    const compose = this.catalog.get(appId, app.sourceId)?.compose;
+    return {
+      host: this.host,
+      app,
+      source: {
+        id: app.sourceId,
+        name: source?.name ?? app.sourceId,
+        official: app.sourceId === BUILTIN_SOURCE_ID,
+      },
+      version: m.version,
+      description: m.description,
+      readme: this.catalog.readme(app.sourceId, appId),
+      releaseNotes: m.releaseNotes ?? null,
+      screenshots: this.catalog.screenshots(app.sourceId, appId).map((f) => storeAssetUrl(app.sourceId, appId, f)),
+      services: Object.entries(compose?.services ?? {}).map(([name, svc]) => ({
+        name,
+        role: serviceRole(name, svc.image, m.web.service),
+      })),
+      address: `${appId}.${getSetting(this.db, 'hostname')}.local`,
+      folders: m.folders.map((f) => ({
+        key: f.key,
+        label: f.label,
+        description: f.description ?? null,
+        mode: f.mode,
+        required: f.required,
+      })),
+    };
   }
 
   /** Groups with at least one app, in their fixed order (US-STORE-02). */

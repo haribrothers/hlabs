@@ -31,6 +31,40 @@ export const storeAppSchema = z.object({
 });
 export type StoreApp = z.infer<typeof storeAppSchema>;
 
+/** A compose service as AppDetails' "Runs as" names it (US-STORE-06). */
+export const storeServiceSchema = z.object({
+  name: z.string(),
+  /** The web service is the server; postgres/mariadb/mysql/mongo images a database; redis/valkey/memcached a cache. */
+  role: z.enum(['server', 'database', 'cache']).nullable(),
+});
+
+/** Everything AppDetails shows (US-STORE-06, US-STORE-07). */
+export const storeAppDetailsSchema = z.object({
+  host: storeHostSchema,
+  app: storeAppSchema,
+  source: z.object({ id: idSchema, name: z.string(), official: z.boolean() }),
+  version: z.string(),
+  description: z.string(),
+  /** The app's README.md (markdown), shown instead of the description when present. */
+  readme: z.string().nullable(),
+  releaseNotes: z.string().nullable(),
+  /** Up to 5 screenshot URLs. */
+  screenshots: z.array(z.string()),
+  services: z.array(storeServiceSchema),
+  /** Where it will open, e.g. `immich.hlabs.local`. */
+  address: z.string(),
+  folders: z.array(
+    z.object({
+      key: z.string(),
+      label: z.string(),
+      description: z.string().nullable(),
+      mode: z.enum(['ro', 'rw']),
+      required: z.boolean(),
+    }),
+  ),
+});
+export type StoreAppDetails = z.infer<typeof storeAppDetailsSchema>;
+
 export const store = {
   getHome: io(
     empty,
@@ -60,7 +94,7 @@ export const store = {
       nextCursor: z.string().nullable(),
     }),
   ),
-  getApp: io(appRefSchema.extend({ source: idSchema.optional() }), pending),
+  getApp: io(appRefSchema.extend({ source: idSchema.optional() }), storeAppDetailsSchema),
   listCategories: io(
     empty,
     z.object({ categories: z.array(z.object({ id: storeCategoryGroupSchema, count: z.number().int().positive() })) }),

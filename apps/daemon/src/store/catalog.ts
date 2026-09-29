@@ -5,7 +5,7 @@ import { curationIssues, loadAppDir, listAppDirs, loadCuration, type LoadedApp }
 import type { AppManifest, ComposeFile, StoreCuration } from '@hlabs/app-manifest';
 import { appSources, catalogApps, type HlabsDb } from '@hlabs/db';
 import { and, eq, notInArray } from 'drizzle-orm';
-import { existsSync, realpathSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { extname, join, sep } from 'node:path';
 import type { Logger } from '../logger';
 
@@ -137,6 +137,25 @@ export class CatalogService {
     if (!existsSync(path)) return null;
     const real = realpathSync(path);
     return real.startsWith(realpathSync(dir) + sep) ? real : null;
+  }
+
+  /** Screenshot files (`screenshots/<name>`), sorted by name, at most 5 (06 §layout). */
+  screenshots(sourceId: string, appId: string): string[] {
+    if (sourceId !== BUILTIN_SOURCE_ID) return [];
+    const dir = join(this.storeDir, 'apps', appId, 'screenshots');
+    if (!existsSync(dir)) return [];
+    return readdirSync(dir)
+      .filter((f) => !f.startsWith('.') && ASSET_TYPES[extname(f).toLowerCase()])
+      .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
+      .slice(0, 5)
+      .map((f) => `screenshots/${f}`);
+  }
+
+  /** The app's README.md, if it has one. */
+  readme(sourceId: string, appId: string): string | null {
+    if (sourceId !== BUILTIN_SOURCE_ID) return null;
+    const file = join(this.storeDir, 'apps', appId, 'README.md');
+    return existsSync(file) ? readFileSync(file, 'utf8') : null;
   }
 
   /** Manifest and compose file to install from, validated again (the folder may have changed since sync). */
