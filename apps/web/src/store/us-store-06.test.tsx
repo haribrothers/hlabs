@@ -51,11 +51,11 @@ describe('US-STORE-06', () => {
     expect(within(list).getByText('Your Photos folder')).toBeInTheDocument();
     expect(
       runsAs([
-        { name: 'app', role: 'server' },
-        { name: 'worker', role: null },
+        { name: 'app', role: 'server', product: null },
+        { name: 'worker', role: null, product: null },
       ]),
     ).toBe('2 containers · server, worker');
-    expect(runsAs([{ name: 'app', role: 'server' }])).toBe('1 container · server');
+    expect(runsAs([{ name: 'app', role: 'server', product: null }])).toBe('1 container · server');
   });
 
   it('About is the description as paragraphs; with no screenshots there is no strip', async () => {

@@ -20,6 +20,7 @@ import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 import type { CatalogService } from './store/catalog';
 import type { StoreService } from './store/service';
+import type { InstallService } from './apps/install';
 import type { AppService } from './apps/service';
 import type { NetworkService } from './network/service';
 
@@ -36,6 +37,8 @@ export interface Services {
   mdns: MdnsPublisher;
   catalog: CatalogService;
   store: StoreService;
+  /** Installs apps (US-STORE-08…14). */
+  installer: InstallService;
   apps: AppService;
   /** Caddy and mDNS names (02 §2.6). */
   routing: NetworkService;

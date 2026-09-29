@@ -21,7 +21,8 @@ import { nodeInstallerHost } from './engine/installer-host';
 import { defaultCandidates, EngineService, type EngineServiceDeps } from './engine/service';
 import { EventBus } from './events/bus';
 import { CatalogService } from './store/catalog';
-import { StoreService } from './store/service';
+import { StoreService, type StoreHost } from './store/service';
+import { InstallService } from './apps/install';
 import { AppService } from './apps/service';
 import { CliComposeRunner, type ComposeRunner } from './apps/compose';
 import type { HealthProbes } from './apps/health';
@@ -67,6 +68,10 @@ export interface BootDeps {
   /** App stacks (compose CLI); tests pass a fake. */
   compose?: ComposeRunner;
   healthProbes?: HealthProbes;
+  /** Whether a loopback port is free (app ports); tests pass a fake. */
+  isPortFree?: (port: number) => Promise<boolean>;
+  /** This computer, for platform checks; tests pass one. */
+  storeHost?: StoreHost;
   /** Holds off sleep (US-SYS-20); tests pass a fake. */
   sleepBlocker?: SleepBlocker;
   /** The user's home (where ~/.colima lives). */
@@ -228,6 +233,28 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
 
   const sessions = new SessionService(db, bus);
   const totp = new TotpService(db, secrets);
+  const notifications = new NotificationService(db, bus);
+  const store = new StoreService(db, catalog, deps.storeHost, {
+    engineMemoryBytes: () => (engine.status.state === 'running' ? engine.status.info.memoryBytes : null),
+    appDataFreeBytes: () => probe.freeBytes(config.paths.appDataDir),
+  });
+  const installer = new InstallService({
+    db,
+    bus,
+    logger,
+    jobs,
+    catalog,
+    apps: appService,
+    engine,
+    network,
+    notifications,
+    host: store.host,
+    appDataDir: config.paths.appDataDir,
+    appDataFreeBytes: () => probe.freeBytes(config.paths.appDataDir),
+    isPortFree: deps.isPortFree,
+    probes: deps.healthProbes,
+  });
+  installer.register();
   const services: Services = {
     config,
     logger,
@@ -240,10 +267,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     proxy,
     mdns,
     catalog,
-    store: new StoreService(db, catalog, undefined, {
-      engineMemoryBytes: () => (engine.status.state === 'running' ? engine.status.info.memoryBytes : null),
-      appDataFreeBytes: () => probe.freeBytes(config.paths.appDataDir),
-    }),
+    store,
+    installer,
     routing: network,
     apps: appService,
     reconciled,
@@ -258,7 +283,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
         tailnet: getSetting(db, 'remote').tailnetName,
       }),
     ),
-    notifications: new NotificationService(db, bus),
+    notifications,
     drives: deps.drives ?? new NodeDriveProbe(),
     system: probe,
     keepAwake: new KeepAwake(deps.sleepBlocker ?? processSleepBlocker(), () => ({

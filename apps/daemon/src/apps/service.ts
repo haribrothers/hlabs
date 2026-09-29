@@ -101,6 +101,19 @@ export class AppService {
       .map((a) => ({ appId: a.id, hostname: a.hostname, port: a.portFallback!, auth: a.authMode }));
   }
 
+  /** `compose up` for an app, a taken port reported as APP_PORT_IN_USE. */
+  async composeUp(appId: string): Promise<void> {
+    try {
+      await this.deps.compose.up(this.project(appId));
+    } catch (error) {
+      throw this.appError(error, appId);
+    }
+  }
+
+  async composeDown(appId: string): Promise<void> {
+    await this.deps.compose.down(this.project(appId));
+  }
+
   /** stopped or error → starting → running (or error when it doesn't come up healthy). */
   async start(appId: string, signal?: AbortSignal): Promise<HealthResult> {
     this.transition(appId, 'starting');

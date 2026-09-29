@@ -19,6 +19,8 @@ export class FakeEngine implements ContainerEngine {
   readonly pullSizes = new Map<string, number>();
   /** Pulls that fail. */
   readonly pullErrors = new Map<string, Error>();
+  /** While set, pulls wait for it (to see a second install queue behind the first). */
+  pullGate: Promise<void> | null = null;
 
   constructor(
     public running = true,
@@ -47,6 +49,7 @@ export class FakeEngine implements ContainerEngine {
   async pullImage(ref: string, onProgress: (p: PullProgress) => void, signal?: AbortSignal) {
     this.assertRunning();
     this.pulls.push(ref);
+    if (this.pullGate) await this.pullGate;
     const error = this.pullErrors.get(ref);
     if (error) throw error;
     const total = this.pullSizes.get(ref) ?? 100;

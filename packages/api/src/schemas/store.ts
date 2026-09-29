@@ -34,6 +34,8 @@ export type StoreApp = z.infer<typeof storeAppSchema>;
 /** A compose service as AppDetails' "Runs as" names it (US-STORE-06). */
 export const storeServiceSchema = z.object({
   name: z.string(),
+  /** A well-known image's product name ("PostgreSQL", "Redis"), for the install sheet's "Includes" (US-STORE-09). */
+  product: z.string().nullable(),
   /** The web service is the server; postgres/mariadb/mysql/mongo images a database; redis/valkey/memcached a cache. */
   role: z.enum(['server', 'database', 'cache']).nullable(),
 });
@@ -60,6 +62,21 @@ export const storeAppDetailsSchema = z.object({
       description: z.string().nullable(),
       mode: z.enum(['ro', 'rw']),
       required: z.boolean(),
+      /** Where it goes unless changed (US-STORE-08), for the person asking; null without a default. */
+      default: z
+        .object({
+          /** Null for a folder in the app's own data. */
+          storageLocationId: z.string().nullable(),
+          subpath: z.string(),
+          place: z.object({
+            area: z.enum(['home', 'shared', 'appdata', 'location']),
+            locationName: z.string().nullable(),
+            path: z.string(),
+          }),
+          /** False when its location is offline. */
+          available: z.boolean(),
+        })
+        .nullable(),
     }),
   ),
   /** What it needs from this computer (US-STORE-07). Null where the manifest doesn't say or it can't be measured. */
@@ -80,6 +97,30 @@ export const storeAppDetailsSchema = z.object({
   }),
   /** Other apps it needs installed first. */
   dependsOn: z.array(z.object({ appId: z.string(), name: z.string(), installed: z.boolean() })),
+  /** What the install sheet needs (US-STORE-09, US-STORE-10). */
+  install: z.object({
+    /** `hlabs`: the hlabs login protects it; `none`: it opens without one. */
+    webAuth: z.enum(['hlabs', 'none']),
+    ownLogin: z.boolean(),
+    /** Addresses it can't take: reserved ones, the dashboard's name and other apps'. */
+    takenHostnames: z.array(z.string()),
+    /** The settings prompts people see (hidden and generated ones are left out). */
+    env: z.array(
+      z.object({
+        key: z.string(),
+        label: z.string(),
+        description: z.string().nullable(),
+        type: z.enum(['string', 'secret', 'number', 'boolean', 'select']),
+        options: z.array(z.string()).nullable(),
+        default: z.string().nullable(),
+        required: z.boolean(),
+      }),
+    ),
+    /** Docker access, raw ports or the GPU: needs "I understand" (US-STORE-10). */
+    risky: z.boolean(),
+    /** This person may install it (admins; members only with the rules in 07 §7.4). */
+    allowed: z.boolean(),
+  }),
 });
 export type StoreAppDetails = z.infer<typeof storeAppDetailsSchema>;
 

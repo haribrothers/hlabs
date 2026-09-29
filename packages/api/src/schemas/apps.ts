@@ -52,10 +52,28 @@ export const homeAppSchema = z.object({
   }),
 });
 
+/** One installed app (US-STORE-12…14, and AppSettings later): its state, why, where it opens and its install job. */
+export const appDetailSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  state: appStateSchema,
+  /** `apps.state_detail`: the hlabsCode and its values, e.g. `{ code: "APP_PORT_IN_USE", port: 12003, step: "start" }`. */
+  stateDetail: z.record(z.string(), z.unknown()).nullable(),
+  /** e.g. `immich.hlabs.local` */
+  address: z.string(),
+  /** The loopback port of its web service (D-049). */
+  webPort: z.number().int().nullable(),
+  /** Its latest install job, for the progress page. */
+  installJobId: z.string().nullable(),
+  /** After a failed install: the next free port in 12000–12999, for "Use a different port" (US-STORE-14). */
+  nextFreePort: z.number().int().nullable(),
+});
+export type AppDetail = z.infer<typeof appDetailSchema>;
+
 export const apps = {
   /** The apps this person can open, admins all, members those shared with them. */
   list: io(empty, z.object({ apps: z.array(homeAppSchema) })),
-  get: io(appRefSchema, pending),
+  get: io(appRefSchema, appDetailSchema),
   install: io(
     appRefSchema.extend({
       source: idSchema.optional(),

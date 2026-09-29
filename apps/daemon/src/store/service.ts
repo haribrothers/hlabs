@@ -6,7 +6,27 @@ import { AppManifest } from '@hlabs/app-manifest';
 import { apps, appSources, catalogApps, getSetting, type HlabsDb } from '@hlabs/db';
 import { categoryGroupOf, STORE_CATEGORY_GROUPS, type StoreCategoryGroup } from '@hlabs/shared';
 import { eq } from 'drizzle-orm';
+import { isRequired } from '../apps/env';
+import { defaultFolder } from '../apps/folders';
+import { takenHostnames } from '../apps/hostnames';
+import { hasRiskyPermissions } from '@hlabs/app-manifest';
 import { BUILTIN_SOURCE_ID, type CatalogService } from './catalog';
+
+const PRODUCTS: Array<[RegExp, string]> = [
+  [/(^|\/)(postgres|postgis|pgvecto-rs)(:|@|$)/, 'PostgreSQL'],
+  [/(^|\/)mariadb(:|@|$)/, 'MariaDB'],
+  [/(^|\/)mysql(:|@|$)/, 'MySQL'],
+  [/(^|\/)mongo(:|@|$)/, 'MongoDB'],
+  [/(^|\/)redis(:|@|$)/, 'Redis'],
+  [/(^|\/)valkey(:|@|$)/, 'Valkey'],
+  [/(^|\/)memcached(:|@|$)/, 'Memcached'],
+];
+
+/** A well-known image's product name, for "Includes" (US-STORE-09). */
+export function serviceProduct(image: string | undefined): string | null {
+  const repo = (image ?? '').split('@')[0]!.toLowerCase();
+  return PRODUCTS.find(([re]) => re.test(repo))?.[1] ?? null;
+}
 
 const DATABASE_IMAGES = /(^|\/)(postgres|postgis|pgvecto-rs|mariadb|mysql|mongo)(:|@|$)/;
 const CACHE_IMAGES = /(^|\/)(redis|valkey|memcached)(:|@|$)/;
@@ -185,8 +205,12 @@ export class StoreService {
     return scored.sort((a, b) => a.score - b.score).map((s) => s.e);
   }
 
-  /** An app's details page (US-STORE-06, US-STORE-07). */
-  async getApp(appId: string) {
+  /** An app's details page (US-STORE-06, US-STORE-07) and install sheet (US-STORE-08…10), for this person. */
+  async getApp(
+    appId: string,
+    viewer: { username: string; role: 'admin' | 'member' } = { username: '', role: 'admin' },
+  ) {
+    const username = viewer.username;
     const entries = this.entries();
     const entry = entries.find((e) => e.app.id === appId);
     if (!entry) throw hlabsError('NOT_FOUND');
@@ -209,6 +233,7 @@ export class StoreService {
       services: Object.entries(compose?.services ?? {}).map(([name, svc]) => ({
         name,
         role: serviceRole(name, svc.image, m.web.service),
+        product: serviceProduct(svc.image),
       })),
       address: `${appId}.${getSetting(this.db, 'hostname')}.local`,
       folders: m.folders.map((f) => ({
@@ -217,6 +242,7 @@ export class StoreService {
         description: f.description ?? null,
         mode: f.mode,
         required: f.required,
+        default: defaultFolder(this.db, f, username),
       })),
       requirements: {
         memoryBytes: m.requirements.memory ? m.requirements.memory * MB : null,
@@ -229,6 +255,28 @@ export class StoreService {
         ports: m.ports.map((p) => ({ label: p.label, host: p.host, protocol: p.protocol })),
         gpu: m.permissions.gpu,
         dockerSocket: m.permissions.dockerSocket,
+      },
+      install: {
+        webAuth: m.web.auth,
+        ownLogin: m.ownLogin,
+        takenHostnames: takenHostnames(this.db),
+        env: m.env
+          .filter((p) => !p.hidden && !p.generate)
+          .map((p) => ({
+            key: p.key,
+            label: p.label ?? p.key,
+            description: p.description ?? null,
+            type: p.type,
+            options: p.options ?? null,
+            default: p.default === undefined ? null : String(p.default),
+            required: isRequired(p),
+          })),
+        risky: hasRiskyPermissions(m),
+        allowed:
+          viewer.role === 'admin' ||
+          (getSetting(this.db, 'people').membersCanInstall &&
+            app.sourceId === BUILTIN_SOURCE_ID &&
+            !hasRiskyPermissions(m)),
       },
       dependsOn: m.dependsOn.map((id) => {
         const dep = entries.find((e) => e.app.id === id);

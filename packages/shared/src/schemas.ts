@@ -12,6 +12,12 @@ export const displayNameSchema = z.string().trim().min(1).max(40);
 export const HOSTNAME_PATTERN = /^[a-z0-9-]{1,40}$/;
 export const hostnameSchema = z.string().regex(HOSTNAME_PATTERN);
 
+/** App addresses that are never an app's (US-STORE-09), besides the dashboard's own name. */
+export const RESERVED_APP_HOSTNAMES = ['hlabs', 'www'] as const;
+
+/** The steps of an install, in order (US-STORE-11, US-STORE-12). */
+export const INSTALL_STEPS = ['check', 'pull', 'folders', 'start', 'network'] as const;
+
 /** App ids in manifests (docs/prd/06-app-manifest.md). */
 export const APP_ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,38}$/;
 export const appIdSchema = z.string().regex(APP_ID_PATTERN);

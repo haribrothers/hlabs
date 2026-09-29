@@ -116,8 +116,8 @@ Every installed app is a **compose project** named `hlabs-<appId>` in `<dataDir>
 ```mermaid
 stateDiagram-v2
   [*] --> installing: install requested
-  installing --> starting: images pulled, compose up
-  installing --> install_failed: pull/up error
+  installing --> starting: pulled, compose up, first health check passed (D-081)
+  installing --> install_failed: any install step failed
   install_failed --> installing: retry
   install_failed --> [*]: remove
   starting --> running: health check passes

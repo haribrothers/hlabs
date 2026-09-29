@@ -1,12 +1,23 @@
 import { notificationActionsSchema, onboardingStepSchema, severitySchema } from '@hlabs/api';
-import { APP_STATES, apps, appSources, catalogApps, getSetting, loginAttempts, setSetting, users } from '@hlabs/db';
+import {
+  APP_STATES,
+  apps,
+  appSources,
+  catalogApps,
+  getSetting,
+  loginAttempts,
+  setSetting,
+  storageLocations,
+  users,
+} from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { and, eq } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
+import { join } from 'node:path';
 import { generateSync } from 'otplib';
 import { hashPassword } from '../auth/passwords';
 import { createAdmin } from '../onboarding/create-admin';
-import { setStorageRoot } from '../onboarding/storage';
+import { prepareStorageRoot, setStorageRoot } from '../onboarding/storage';
 import { sessionCookie } from '../auth/sessions';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -92,6 +103,14 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
         .returning()
         .get();
     }
+    // A storage root as onboarding would choose, so installs have a Home to put folders in (US-STORE-08).
+    if (!db.select().from(storageLocations).where(eq(storageLocations.isRoot, true)).get()) {
+      const root = join(services.config.paths.dataDir, 'storage');
+      await prepareStorageRoot(root, admin.username);
+      db.insert(storageLocations)
+        .values({ id: ulid(), kind: 'local', name: 'This computer', path: root, isRoot: true, lastSeenAt: Date.now() })
+        .run();
+    }
     const session = services.sessions.create({
       userId: admin.id,
       remember: true,
@@ -120,11 +139,14 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     /** Any app state (default running); with `progress`, also an app.installProgress event. */
     state: z.enum(APP_STATES).default('running'),
     progress: z.number().min(0).max(100).optional(),
+    /** `apps.state_detail`, e.g. a failed install's `{ code, port, step }` (US-STORE-13 e2e). */
+    stateDetail: z.record(z.string(), z.unknown()).optional(),
   });
   app.post('/dev/fake-app', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
-    const { id, name, remove, state, progress } = fakeApp.parse(req.body);
+    const { id, name, remove, state, progress, stateDetail: detail } = fakeApp.parse(req.body);
+    const stateDetail = detail ? JSON.stringify(detail) : null;
     const { db, bus } = services;
     if (remove) {
       db.delete(apps).where(eq(apps.id, id)).run();
@@ -156,15 +178,31 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
         sourceId: 'dev',
         version: '0.0.0',
         state,
+        stateDetail,
         hostname: id,
         installedAt: Date.now(),
         updatedAt: Date.now(),
       })
-      .onConflictDoUpdate({ target: apps.id, set: { state, updatedAt: Date.now() } })
+      .onConflictDoUpdate({ target: apps.id, set: { state, stateDetail, updatedAt: Date.now() } })
       .run();
     bus.emit('app.stateChanged', { appId: id, state, detail: null }, { kind: 'all' });
     if (progress !== undefined) bus.emit('app.installProgress', { appId: id, jobId: 'dev', progress }, { kind: 'all' });
     return { added: id };
+  });
+
+  // Takes down and forgets an app a spec really installed (the US-STORE-11 smoke install), until uninstall arrives
+  // with US-APP-12: marked failed, then removed as "Remove partial install" does.
+  const removeApp = z.object({ id: z.string().regex(/^[a-z0-9-]{2,39}$/) });
+  app.post('/dev/remove-app', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { id } = removeApp.parse(req.body);
+    const { db } = services;
+    if (!db.select().from(apps).where(eq(apps.id, id)).get()) return { removed: null };
+    const admin = db.select().from(users).where(eq(users.role, 'admin')).get();
+    db.update(apps).set({ state: 'install_failed' }).where(eq(apps.id, id)).run();
+    await services.installer.removeFailed({ userId: admin?.id ?? 'dev', role: 'admin' }, id);
+    return { removed: id };
   });
 
   // A finished first run in one call, for e2e specs that aren't about onboarding: the admin (optionally with
