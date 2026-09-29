@@ -94,13 +94,13 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-STORE-03 · Search from the store home
 - [x] US-STORE-06 · See an app's details before installing
 - [x] US-STORE-07 · See requirements and what an app can access
-- [ ] US-STORE-08 · Choose folder access in the install sheet
-- [ ] US-STORE-09 · Review included services, address and login
-- [ ] US-STORE-10 · Fill in app settings and accept risky permissions
-- [ ] US-STORE-11 · Run an install as a job
-- [ ] US-STORE-12 · Watch install progress
-- [ ] US-STORE-13 · Understand why an install failed
-- [ ] US-STORE-14 · Retry or remove a failed install
+- [x] US-STORE-08 · Choose folder access in the install sheet
+- [x] US-STORE-09 · Review included services, address and login
+- [x] US-STORE-10 · Fill in app settings and accept risky permissions
+- [x] US-STORE-11 · Run an install as a job
+- [x] US-STORE-12 · Watch install progress
+- [x] US-STORE-13 · Understand why an install failed
+- [x] US-STORE-14 · Retry or remove a failed install
 - [ ] US-STORE-17 · Roll back an update that doesn't start
 - [ ] US-APP-01 · Open an app in a window
 - [ ] US-APP-02 · App window controls

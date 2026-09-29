@@ -1,7 +1,7 @@
 ---
 title: The App Store
 description: Find apps for your hlabs, see what each one does, and install it.
-features: [F-STORE-01, F-STORE-04]
+features: [F-STORE-01, F-STORE-04, F-STORE-05, F-STORE-06, F-STORE-07]
 ---
 
 For admins, and for members when an admin has turned on **Members can install apps**.
@@ -35,7 +35,7 @@ Every app has a page with its screenshots (select one to see it large, then use 
 - **Version**: the version you'd install.
 - **Runs as**: how many containers it uses and what they are, such as "3 containers · server, database, cache".
 - **Opens at**: the address it will have, such as `immich.hlabs.local`.
-- **Needs access to**: the folders it asks for. You choose where they are when you install.
+- **Needs access to**: the folders it asks for. You'll see where they go before you install.
 
 ## What an app can access
 
@@ -50,6 +50,40 @@ Before you install, an app's page lists what it can reach:
 If an app recommends more memory than hlabs has left, its page says so; you can still install it, but it may be slow. If there isn't enough disk space, or it needs another app installed first, **Install** is turned off and the page says what to do.
 
 **hlabs official** means the app comes from the store that ships with hlabs. **App Store** at the top takes you back to where you were, scrolled to the same place.
+
+## Install an app
+
+Choose **Install** on an app's page. Before anything happens, a sheet shows:
+
+- **Folder access**: where each folder the app asks for will be, such as **Home › Photos**, and whether the app can change what's in it or only look. A folder the app can do without has a switch, so you can leave it out. If a folder is on a network drive that's offline, **Install** stays off until the drive is back.
+- **Includes**: what runs, such as "Immich server · web app" and "PostgreSQL · database · private to this app".
+- **Address**: where the app will open, such as `https://immich.hlabs.local`. You can change the part before `.hlabs.local` (lowercase letters, numbers and dashes). **Login required** means people sign in with their hlabs account first; some apps also have their own login.
+- **Settings**: questions the app needs answered, such as an email address. Passwords the app needs for itself are made for you and never shown.
+- If the app asks for risky access (see above), a red box explains it and you tick **I understand** before you can install.
+
+Choose **Install**, and the app's install page opens. **Cancel** (or Escape) closes the sheet without changing anything.
+
+Members who may install apps can install apps from the built-in store that ask for nothing risky; for anything else they see "Ask an admin to install this app".
+
+## Watch an install
+
+The install page shows how far it has got ("Installing… 42%"), about how long is left once hlabs can tell, and each step: checking the app runs on this computer, downloading it, creating its folders, starting it and setting up its address. If another app is installing, this one waits its turn and says so.
+
+You can leave the page: the install carries on, and the app appears on your Home screen when it's ready, with a notification. Its tile on Home shows the progress; select it to come back to this page.
+
+## When an install fails
+
+The page says **Install failed** and "Nothing else was changed". The step that failed says why, in plain words, with a way to fix it:
+
+- **A port is already used** by another program on this computer: choose **Use a different port**. hlabs suggests a free one; choose **Try again**.
+- **No internet**, or **the app didn't start in time**: choose **Try again**. What was already downloaded isn't downloaded again.
+- **No Apple Silicon (or ARM64) version**: go **Back to App Store**.
+- **The container engine stopped**: **Open Engine settings**.
+- **Not enough free space**: free some space, then try again.
+
+**Remove partial install** deletes whatever the install created (its containers and its own data) after you confirm. Folders you chose, like your Photos, stay as they are. The app then shows **Install** in the store again.
+
+A failed install also sends a notification that brings you back to this page, and its Home tile shows **Error**.
 
 ## Apple Silicon and ARM64
 

@@ -4,7 +4,7 @@ import type { StoreAppDetails } from '@hlabs/api';
 import { ChevronLeft, ChevronRight, iconDefaults } from '@hlabs/icons';
 import { Badge, Button, GlassCard, ModalDialog, ScrollPane, tokens } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { categoryLabels, storeCopy } from '../copy/store';
 import { browser } from '../lib/browser';
@@ -15,6 +15,7 @@ import { StoreLogo } from './cards';
 import { AccessList, blockers, RequirementNotes } from './app-access';
 import { cardAction, storeTags } from './store-app';
 import { pageScroller, storeReturnHref } from './store-return';
+import { InstallSheet } from './install-sheet';
 import { useInstalls } from './use-installs';
 
 const copy = storeCopy;
@@ -47,9 +48,24 @@ export function runsAs(services: StoreAppDetails['services']): string {
 function PrimaryAction({ details, onInstall }: { details: StoreAppDetails; onInstall: () => void }) {
   const installs = useInstalls();
   const { app, host } = details;
-  const action = cardAction(app, installs.byId.get(app.id), installs.progress.get(app.id));
+  const installed = installs.byId.get(app.id);
+  const action = cardAction(app, installed, installs.progress.get(app.id));
   const noPlatform = host.arm64 && !app.arm64;
   const blocked = blockers(details).blocksInstall;
+  // An install that's running or failed has its own page (US-STORE-12, US-STORE-13).
+  if (installed?.state === 'installing' || installed?.state === 'install_failed') {
+    return (
+      <Link
+        to="/store/install/$appId"
+        params={{ appId: app.id }}
+        className="hl-btn hl-btn-primary hl-btn-lg hl-focus no-underline"
+      >
+        {installed.state === 'installing' && action.kind === 'installing'
+          ? copy.installing(action.percent)
+          : copy.installFailed}
+      </Link>
+    );
+  }
   switch (action.kind) {
     case 'open':
       return (
@@ -171,6 +187,7 @@ function Fact({ label, value }: { label: string; value: string }) {
 export function AppDetails({ appId }: { appId: string }) {
   const details = useAppDetails(appId);
   const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { install?: true };
   const desktop = useIsDesktop();
   // Details opens at its top, wherever the list was scrolled to.
   useLayoutEffect(() => {
@@ -211,6 +228,13 @@ export function AppDetails({ appId }: { appId: string }) {
       </div>
       <div className="flex flex-col items-start gap-2 md:items-end">
         <PrimaryAction details={d} onInstall={onInstall} />
+        <InstallSheet
+          details={d}
+          open={!!search.install}
+          onOpenChange={(open) => {
+            if (!open) void navigate({ to: '/store/app/$appId', params: { appId }, search: {}, replace: true });
+          }}
+        />
         {noPlatform ? <p className="m-0 max-w-xs text-body-sm text-ink-muted">{copy.noArm64[host.os]}</p> : null}
       </div>
     </header>

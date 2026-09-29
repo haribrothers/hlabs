@@ -20,6 +20,7 @@ export const storeCopy = {
   open: 'Open',
   installed: 'Installed',
   installing: (percent: number) => `Installing… ${percent}%`,
+  installFailed: 'See what went wrong',
   installApp: (name: string) => `Install ${name}`,
   openApp: (name: string) => `Open ${name}`,
   detailsOf: (name: string) => `${name} details`,
