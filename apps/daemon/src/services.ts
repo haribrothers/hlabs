@@ -19,6 +19,7 @@ import type { NetworkStorage } from './storage/network';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 import type { CatalogService } from './store/catalog';
+import type { StoreService } from './store/service';
 import type { AppService } from './apps/service';
 import type { NetworkService } from './network/service';
 
@@ -34,6 +35,7 @@ export interface Services {
   proxy: ProxyManager;
   mdns: MdnsPublisher;
   catalog: CatalogService;
+  store: StoreService;
   apps: AppService;
   /** Caddy and mDNS names (02 §2.6). */
   routing: NetworkService;

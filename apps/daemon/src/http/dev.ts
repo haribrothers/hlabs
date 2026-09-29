@@ -1,7 +1,7 @@
 import { notificationActionsSchema, onboardingStepSchema, severitySchema } from '@hlabs/api';
-import { apps, appSources, catalogApps, getSetting, loginAttempts, setSetting, users } from '@hlabs/db';
+import { APP_STATES, apps, appSources, catalogApps, getSetting, loginAttempts, setSetting, users } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import { generateSync } from 'otplib';
 import { hashPassword } from '../auth/passwords';
@@ -117,15 +117,21 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     id: z.string().regex(/^[a-z0-9-]{2,39}$/),
     name: z.string().optional(),
     remove: z.boolean().default(false),
+    /** Any app state (default running); with `progress`, also an app.installProgress event. */
+    state: z.enum(APP_STATES).default('running'),
+    progress: z.number().min(0).max(100).optional(),
   });
   app.post('/dev/fake-app', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
-    const { id, name, remove } = fakeApp.parse(req.body);
+    const { id, name, remove, state, progress } = fakeApp.parse(req.body);
     const { db, bus } = services;
     if (remove) {
       db.delete(apps).where(eq(apps.id, id)).run();
-      db.delete(catalogApps).where(eq(catalogApps.appId, id)).run();
+      // Only its own catalogue entry: a stand-in for a store app leaves the store's entry alone.
+      db.delete(catalogApps)
+        .where(and(eq(catalogApps.appId, id), eq(catalogApps.sourceId, 'dev')))
+        .run();
       bus.emit('app.stateChanged', { appId: id, state: 'uninstalling', detail: 'removed' }, { kind: 'all' });
       return { removed: id };
     }
@@ -149,14 +155,15 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
         id,
         sourceId: 'dev',
         version: '0.0.0',
-        state: 'running',
+        state,
         hostname: id,
         installedAt: Date.now(),
         updatedAt: Date.now(),
       })
-      .onConflictDoNothing()
+      .onConflictDoUpdate({ target: apps.id, set: { state, updatedAt: Date.now() } })
       .run();
-    bus.emit('app.stateChanged', { appId: id, state: 'running', detail: null }, { kind: 'all' });
+    bus.emit('app.stateChanged', { appId: id, state, detail: null }, { kind: 'all' });
+    if (progress !== undefined) bus.emit('app.installProgress', { appId: id, jobId: 'dev', progress }, { kind: 'all' });
     return { added: id };
   });
 

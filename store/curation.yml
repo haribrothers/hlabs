@@ -1,0 +1,9 @@
+# The store home (US-STORE-01): featured apps and rows, and the curated order used for "Popular" (US-STORE-04).
+# Every id must be an app in apps/; `pnpm store:lint` checks it. Apps without an arm64 image are never featured on
+# arm64 computers and come after compatible apps in every row.
+featured: [immich, vaultwarden]
+collections:
+  - id: popular
+    title: Popular with families
+    appIds: [immich, vaultwarden, uptime-kuma]
+rank: [immich, vaultwarden, uptime-kuma]

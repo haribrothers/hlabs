@@ -11,6 +11,7 @@ import { jobs } from './jobs';
 import { notifications } from './notifications';
 import { onboarding } from './onboarding';
 import { storage } from './storage';
+import { store } from './store';
 import { settings } from './settings';
 import { system } from './system';
 
@@ -21,6 +22,7 @@ export const handlers: AppHandlers<DaemonContext> = {
   onboarding,
   auth,
   storage,
+  store,
   home,
   apps,
   account,

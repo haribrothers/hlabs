@@ -21,6 +21,7 @@ import { nodeInstallerHost } from './engine/installer-host';
 import { defaultCandidates, EngineService, type EngineServiceDeps } from './engine/service';
 import { EventBus } from './events/bus';
 import { CatalogService } from './store/catalog';
+import { StoreService } from './store/service';
 import { AppService } from './apps/service';
 import { CliComposeRunner, type ComposeRunner } from './apps/compose';
 import type { HealthProbes } from './apps/health';
@@ -239,6 +240,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     proxy,
     mdns,
     catalog,
+    store: new StoreService(db, catalog),
     routing: network,
     apps: appService,
     reconciled,

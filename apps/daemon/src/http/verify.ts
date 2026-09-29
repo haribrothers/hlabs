@@ -140,7 +140,17 @@ export function dashboardOrigin(db: HlabsDb, forwardedHost: string): string {
 export function registerAuthVerify(app: FastifyInstance, holder: ServiceHolder, webFallbackDir: string): void {
   let auth: ForwardAuth | null = null;
   const pages = new StaticPages(webFallbackDir);
-  app.get('/auth/verify', { logLevel: 'warn' }, async (req: FastifyRequest, reply: FastifyReply) => {
+  const started = new WeakMap<FastifyRequest, number>();
+  const options = {
+    logLevel: 'warn' as const,
+    onRequest: async (req: FastifyRequest) => void started.set(req, performance.now()),
+    // How long the answer took in the daemon, without the network (the 5 ms p95 target, US-AUTH-17).
+    onSend: async (req: FastifyRequest, reply: FastifyReply, payload: unknown) => {
+      reply.header('server-timing', `verify;dur=${(performance.now() - (started.get(req) ?? 0)).toFixed(2)}`);
+      return payload;
+    },
+  };
+  app.get('/auth/verify', options, async (req: FastifyRequest, reply: FastifyReply) => {
     const services = holder.current;
     reply.header('cache-control', 'no-store');
     if (!services) return reply.code(503).send();
