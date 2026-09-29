@@ -1,7 +1,7 @@
 ---
 title: The App Store
 description: Find apps for your hlabs, see what each one does, and install it.
-features: [F-STORE-01]
+features: [F-STORE-01, F-STORE-04]
 ---
 
 For admins, and for members when an admin has turned on **Members can install apps**.
@@ -28,8 +28,19 @@ You can move through the list with the Tab key and open an entry with Enter.
 
 The search field at the top says how many apps you can search. Start typing: after a moment the results appear, matching app names first and then what the apps do. Press Enter to search straight away, and Escape (or clear the field) to go back to where you were. On a computer, press **/** anywhere in the App Store to jump to the search field.
 
+## An app's page
+
+Every app has a page with its screenshots (select one to see it large, then use the arrow keys to move between them), what it does, what's new in this version, and a few facts:
+
+- **Version**: the version you'd install.
+- **Runs as**: how many containers it uses and what they are, such as "3 containers · server, database, cache".
+- **Opens at**: the address it will have, such as `immich.hlabs.local`.
+- **Needs access to**: the folders it asks for. You choose where they are when you install.
+
+**hlabs official** means the app comes from the store that ships with hlabs. **App Store** at the top takes you back to where you were, scrolled to the same place.
+
 ## Apple Silicon and ARM64
 
-On a Mac with Apple Silicon, apps that have a version for it are tagged **Apple Silicon** (**ARM64** on an ARM Linux computer). Apps without one are listed after the others and are never featured.
+On a Mac with Apple Silicon, apps that have a version for it are tagged **Apple Silicon** (**ARM64** on an ARM Linux computer). Apps without one are listed after the others and are never featured, and their page says there's no version for your computer yet instead of offering to install.
 
 Choose **Back to Home** to close the App Store.

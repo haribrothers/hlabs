@@ -92,7 +92,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-STORE-01 · Browse the store home
 - [x] US-STORE-02 · Navigate with the categories sidebar
 - [x] US-STORE-03 · Search from the store home
-- [ ] US-STORE-06 · See an app's details before installing
+- [x] US-STORE-06 · See an app's details before installing
 - [ ] US-STORE-07 · See requirements and what an app can access
 - [ ] US-STORE-08 · Choose folder access in the install sheet
 - [ ] US-STORE-09 · Review included services, address and login

@@ -4,12 +4,13 @@
 // focus while typing moves between Discover and the results.
 import { ChevronLeft, iconDefaults } from '@hlabs/icons';
 import { GlassCard, ScrollPane } from '@hlabs/ui';
-import { Link, Outlet } from '@tanstack/react-router';
-import { createContext, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
+import { Link, Outlet, useRouterState } from '@tanstack/react-router';
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { storeCopy } from '../copy/store';
 import { useIsDesktop } from '../lib/use-media';
 import { StoreChips, StoreSidebar } from './categories';
 import { StoreSearchField } from './search';
+import { useStoreScrollMemory } from './store-return';
 
 const copy = storeCopy;
 
@@ -19,6 +20,9 @@ const TitleContext = createContext<(title: string) => void>(() => {});
 export function StoreLayout() {
   const desktop = useIsDesktop();
   const [title, setTitle] = useState('');
+  const href = useRouterState({ select: (s) => s.location.href });
+  const scroller = useRef<HTMLDivElement>(null);
+  useStoreScrollMemory(href, desktop ? scroller : null);
   useEffect(() => {
     document.title = copy.docTitle;
   }, []);
@@ -67,6 +71,7 @@ export function StoreLayout() {
       </div>
       <div className="flex min-h-0 min-w-0 flex-col">
         <ScrollPane
+          scrollRef={scroller}
           className="flex-1"
           headerClassName="px-8 pt-6 pb-4"
           scrollClassName="mr-2 mb-5"

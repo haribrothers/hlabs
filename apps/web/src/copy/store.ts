@@ -29,6 +29,30 @@ export const storeCopy = {
   searchPlaceholder: (n: number) => `Search ${n} ${n === 1 ? 'app' : 'apps'}`,
   resultsFor: (q: string) => `Results for “${q}”`,
   noResults: (q: string) => `No apps match “${q}”`,
+  // App details (US-STORE-06)
+  officialSource: 'hlabs official',
+  about: 'About',
+  whatsNew: "What's new",
+  more: 'More',
+  less: 'Less',
+  screenshots: 'Screenshots',
+  screenshotN: (n: number, of: number) => `Screenshot ${n} of ${of}`,
+  openScreenshot: (n: number) => `Open screenshot ${n}`,
+  previous: 'Previous',
+  next: 'Next',
+  close: 'Close',
+  facts: 'About this app',
+  version: 'Version',
+  runsAs: 'Runs as',
+  containers: (n: number, roles: string[]) =>
+    `${n} ${n === 1 ? 'container' : 'containers'}${roles.length ? ` · ${roles.join(', ')}` : ''}`,
+  roles: { server: 'server', database: 'database', cache: 'cache' },
+  opensAt: 'Opens at',
+  needsAccess: 'Needs access to',
+  noArm64: {
+    macos: "There's no Apple Silicon version of this app yet.",
+    linux: "There's no ARM64 version of this app yet.",
+  },
   /** The "platform" tag: an arm64 image on an arm64 computer. */
   arm64Tag: { macos: 'Apple Silicon', linux: 'ARM64' },
 } as const;

@@ -7,5 +7,8 @@ function DetailsPage() {
 }
 
 export const Route = createFileRoute('/store_/app/$appId')({
+  // `install` opens the install sheet (US-STORE-08).
+  validateSearch: (search: Record<string, unknown>): { install?: true } =>
+    search.install === true || search.install === 'true' ? { install: true } : {},
   component: DetailsPage,
 });

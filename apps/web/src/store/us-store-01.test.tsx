@@ -1,27 +1,13 @@
 // US-STORE-01 · Browse the store home.
-import type { StoreApp } from '@hlabs/api';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { browser } from '../lib/browser';
 import { renderScreen } from '../test/render';
+import { storeApp } from '../test/store';
 import { Discover } from './discover';
 import { cardAction, storeTags, type InstalledApp } from './store-app';
 
 afterEach(() => vi.restoreAllMocks());
-
-export const storeApp = (id: string, name: string, extra: Partial<StoreApp> = {}): StoreApp => ({
-  id,
-  sourceId: 'builtin',
-  name,
-  tagline: `${name} tagline`,
-  category: 'media',
-  group: 'media',
-  icon: { logoUrl: null, gradient: null, fallback: null },
-  tags: [],
-  arm64: true,
-  installed: false,
-  ...extra,
-});
 
 const installed = (id: string, state: InstalledApp['state']): InstalledApp => ({
   id,
