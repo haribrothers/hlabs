@@ -13,6 +13,7 @@
 | R-08 | **Scope.** 336 stories is a lot for one person. | Never ships. | Phases 0–6 are the MVP; 7 is 1.0; 8–9 only when wanted. |
 | R-09 | **Tailscale dependency** (account, app installed separately). | Remote access needs a third-party account. | Clearly optional; LAN works without it. |
 | R-10 | **SMB on macOS** needs port 445, which conflicts with macOS File Sharing (P3 FilesShare). | Feature may not work alongside built-in sharing. | Use macOS File Sharing itself on Mac (D-051). |
+| R-11 | **App data owned by container users** (www-data, postgres, root) on Linux. | Removing an app's data ("Remove partial install", US-APP-12's uninstall) can fail with EACCES when the hlabs user doesn't own the files. | US-APP-12 deletes app data through a short-lived container running as root on that folder only, and falls back to reporting what's left. |
 
 ## Open questions for Hari
 All answered on 27 Sep 2026:

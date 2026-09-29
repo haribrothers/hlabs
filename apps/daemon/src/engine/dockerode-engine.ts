@@ -80,7 +80,8 @@ export class DockerodeEngine implements ContainerEngine {
           image: inspect.Config.Image,
           imageId: inspect.Image,
           startedAt: inspect.State.Running && Number.isFinite(started) ? started : null,
-          exitCode: inspect.State.Running ? null : inspect.State.ExitCode,
+          // A crash-looping container is "restarting" (and Running) with the exit code of its last run.
+          exitCode: inspect.State.Running && !inspect.State.Restarting ? null : inspect.State.ExitCode,
         };
       }),
     );

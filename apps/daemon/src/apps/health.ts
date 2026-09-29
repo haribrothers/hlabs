@@ -80,7 +80,12 @@ export async function checkHealthOnce(
   const containers = await input.engine.projectContainers(input.project);
   if (containers.length === 0) return { ready: false };
 
-  const crashed = containers.find((c) => c.state === 'dead' || (c.state === 'exited' && c.exitCode !== 0));
+  // Dead, exited with an error, or crash-looping under its restart policy (D-075).
+  const crashed = containers.find(
+    (c) =>
+      c.state === 'dead' ||
+      ((c.state === 'exited' || c.state === 'restarting') && c.exitCode !== null && c.exitCode !== 0),
+  );
   if (crashed)
     return {
       ready: false,

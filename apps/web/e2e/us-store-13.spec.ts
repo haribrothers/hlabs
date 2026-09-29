@@ -37,6 +37,7 @@ test('US-STORE-14 "Remove partial install" asks, removes and the store offers In
   page,
   request,
 }) => {
+  test.setTimeout(6 * 60_000);
   await failWith(request, { code: 'APP_HEALTH_TIMEOUT', seconds: 120, step: 'start' });
   await page.goto('/store/install/immich');
   await expect(page.getByText("Immich didn't start within 120 seconds.")).toBeVisible();
@@ -44,6 +45,7 @@ test('US-STORE-14 "Remove partial install" asks, removes and the store offers In
   const confirm = page.getByRole('alertdialog');
   await expect(confirm).toContainText('Remove Immich?');
   await confirm.getByRole('button', { name: 'Remove' }).click();
-  await expect(page).toHaveURL(/\/store\/app\/immich$/);
+  // The removal is an app job: it waits its turn behind the smoke installs running in us-store-11 (D-082).
+  await expect(page).toHaveURL(/\/store\/app\/immich$/, { timeout: 5 * 60_000 });
   await expect(page.getByRole('button', { name: 'Install', exact: true })).toBeVisible();
 });

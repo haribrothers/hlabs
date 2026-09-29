@@ -277,6 +277,13 @@ describe('checkHealthOnce', () => {
     const failed = await check(base, [container('web'), container('init', { state: 'exited', exitCode: 3 })]);
     expect(failed.failed).toEqual({ ok: false, reason: 'exited', service: 'init', exitCode: 3 });
   });
+
+  it('a container crash-looping under its restart policy ends the wait at once', async () => {
+    const looping = await check(base, [container('web', { state: 'restarting', exitCode: 1 })]);
+    expect(looping.failed).toEqual({ ok: false, reason: 'exited', service: 'web', exitCode: 1 });
+    // Restarting after a clean exit (or before any) isn't a crash.
+    expect((await check(base, [container('web', { state: 'restarting', exitCode: 0 })])).failed).toBeUndefined();
+  });
 });
 
 describe('routes', () => {

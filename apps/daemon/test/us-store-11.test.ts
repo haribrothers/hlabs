@@ -4,6 +4,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { NoopProxyManager } from '../src/caddy/index';
+import { hostTimeZone } from '../src/platform/timezone';
 import { installDaemon } from './install-harness';
 
 const closers: Array<() => Promise<void>> = [];
@@ -154,5 +155,15 @@ describe('US-STORE-11', () => {
       state: 'install_failed',
       stateDetail: { code: 'INTERNAL', reason: 'restarted' },
     });
+  });
+
+  it("passes apps this computer's time zone by its current name", () => {
+    const none = () => null;
+    expect(hostTimeZone({ env: '', readLink: () => '/var/db/timezone/zoneinfo/Asia/Kolkata' })).toBe('Asia/Kolkata');
+    expect(hostTimeZone({ env: '', readLink: () => '/usr/share/zoneinfo/Europe/Berlin' })).toBe('Europe/Berlin');
+    // ICU's legacy ids become the current ones.
+    expect(hostTimeZone({ env: '', readLink: none, intl: () => 'Asia/Calcutta' })).toBe('Asia/Kolkata');
+    expect(hostTimeZone({ env: 'Europe/Kiev', readLink: none })).toBe('Europe/Kyiv');
+    expect(hostTimeZone({ env: '', readLink: none, intl: () => undefined })).toBe('UTC');
   });
 });

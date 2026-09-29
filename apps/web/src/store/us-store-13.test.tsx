@@ -64,5 +64,9 @@ describe('US-STORE-13', () => {
       'Something went wrong while installing.',
     );
     expect(failureReason({ reason: 'restarted' }, 'Immich', 'macos')).toBe('hlabs restarted during the install.');
+    // A container that stopped with an error while starting, rather than a slow start.
+    expect(failureReason({ code: 'APP_HEALTH_TIMEOUT', service: 'n8n', exitCode: 1 }, 'n8n', 'macos')).toBe(
+      'n8n stopped while starting.',
+    );
   });
 });

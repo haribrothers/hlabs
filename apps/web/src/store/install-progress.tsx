@@ -88,7 +88,9 @@ export function failureReason(detail: Record<string, unknown> | null, appName: s
     case 'APP_NETWORK_UNREACHABLE':
       return r.APP_NETWORK_UNREACHABLE;
     case 'APP_HEALTH_TIMEOUT':
-      return r.APP_HEALTH_TIMEOUT(appName, String(detail?.seconds ?? 120));
+      return detail?.exitCode !== undefined && detail?.seconds === undefined
+        ? r.crashed(appName)
+        : r.APP_HEALTH_TIMEOUT(appName, String(detail?.seconds ?? 120));
     case 'ENGINE_UNAVAILABLE':
       return r.ENGINE_UNAVAILABLE;
     default:
@@ -260,11 +262,12 @@ export function InstallProgressPage({ appId }: { appId: string }) {
       tone: 'danger',
       onConfirm: async () => {
         const { jobId: removal } = await client.apps.uninstall.mutate({ appId, keepData: false });
-        // Wait for the removal, then back to the app's page in the store (it reads "Install" again).
-        for (let i = 0; i < 60; i++) {
+        // Wait for the removal, which may queue behind another app's job (D-082), then back to the app's page in the
+        // store (it reads "Install" again).
+        for (;;) {
           const j = await client.jobs.get.query({ jobId: removal });
           if (j.state === 'succeeded') break;
-          if (j.state === 'failed') throw new Error('removal failed');
+          if (j.state === 'failed' || j.state === 'cancelled') throw new Error('removal failed');
           await new Promise((r) => setTimeout(r, 500));
         }
         await queryClient.invalidateQueries();

@@ -75,6 +75,7 @@ export const installCopy = {
     APP_DISK_FULL: (gb: string) => `Not enough free space. Needs ${gb} GB.`,
     APP_NETWORK_UNREACHABLE: "hlabs couldn't reach the internet to download the app.",
     APP_HEALTH_TIMEOUT: (app: string, seconds: number | string) => `${app} didn't start within ${seconds} seconds.`,
+    crashed: (app: string) => `${app} stopped while starting.`,
     ENGINE_UNAVAILABLE: 'The container engine stopped.',
     restarted: 'hlabs restarted during the install.',
     other: 'Something went wrong while installing.',

@@ -26,6 +26,7 @@ import { takenHostnames } from './hostnames';
 import { allocatePort, loopbackPortFree } from './ports';
 import type { AppService } from './service';
 import { stateDetail } from './state-machine';
+import { hostTimeZone } from '../platform/timezone';
 
 export interface InstallRequest {
   appId: string;
@@ -59,6 +60,8 @@ export interface InstallDeps {
   isPortFree?: (port: number) => Promise<boolean>;
   probes?: HealthProbes;
   now?: () => number;
+  /** This computer's time zone for apps; the system's by default. */
+  timeZone?: () => string;
 }
 
 /** The share of the bar each step fills: pulls take 0–80%, the rest share 80–100% (US-STORE-12). */
@@ -384,8 +387,12 @@ export class InstallService {
         probes: this.deps.probes,
       });
       if (!health.ok) {
-        const seconds = health.reason === 'timeout' ? health.seconds : undefined;
-        throw new StepFailure('start', hlabsError('APP_HEALTH_TIMEOUT', undefined, { seconds, app: manifest.name }));
+        // Too slow, or a container stopped with an error while starting.
+        const detail =
+          health.reason === 'timeout'
+            ? { seconds: health.seconds, app: manifest.name }
+            : { app: manifest.name, service: health.service, exitCode: health.exitCode };
+        throw new StepFailure('start', hlabsError('APP_HEALTH_TIMEOUT', undefined, detail));
       }
       report('start', 1);
 
@@ -493,7 +500,7 @@ export class InstallService {
       folders: folderPaths(manifest, mounts, appData),
       hostname: `${hostname}.${domain}`,
       url: `https://${hostname}.${domain}`,
-      tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+      tz: (this.deps.timeZone ?? hostTimeZone)(),
       puid: process.getuid?.() ?? 1000,
       pgid: process.getgid?.() ?? 1000,
       env,
@@ -538,8 +545,10 @@ export class InstallService {
         this.deps.logger.warn({ err, appId }, 'compose down failed while removing a partial install');
       });
     }
-    rmSync(project.dir, { recursive: true, force: true });
-    rmSync(join(this.deps.appDataDir, appId), { recursive: true, force: true });
+    // Retried: a stack that has just stopped can still be settling files (ENOTEMPTY, EBUSY).
+    const gone = { recursive: true, force: true, maxRetries: 5, retryDelay: 200 } as const;
+    rmSync(project.dir, gone);
+    rmSync(join(this.deps.appDataDir, appId), gone);
     db.transaction((tx) => {
       tx.delete(apps).where(eq(apps.id, appId)).run();
       tx.insert(auditLog)
