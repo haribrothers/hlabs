@@ -1,0 +1,32 @@
+schema: 1
+id: nextcloud
+name: Nextcloud
+version: '35.0.1'
+revision: 0
+tagline: Your files, calendars and contacts in one place
+description: |
+  Keep files, calendars and contacts on your own drives and sync them to every computer and phone.
+  Share folders with family, and add apps for notes, photos and more. The first visit asks you to
+  create Nextcloud's admin account.
+category: files
+developer: { name: Nextcloud, url: https://nextcloud.com }
+source: https://github.com/nextcloud/server
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#0082c9', '#00598a']
+  fallback: cloud
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 4096 }
+web: { service: nextcloud, port: 80 }
+health: { service: nextcloud, http: /status.php, timeout: 300 }
+env:
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [nextcloud, cron]
+  beforeUpdate: true
+permissions: { network: internet }

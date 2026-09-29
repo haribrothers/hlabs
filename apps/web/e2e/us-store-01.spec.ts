@@ -12,12 +12,12 @@ test('US-STORE-01 featured apps and rows; "See all" lists a row; a card opens it
   await page.goto('/store');
   const featured = page.getByRole('region', { name: 'Featured' });
   await expect(featured.getByRole('link', { name: 'Immich', exact: true })).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Popular with families' }).getByRole('listitem')).toHaveCount(3);
+  await expect(page.getByRole('list', { name: 'Popular with families' }).getByRole('listitem')).toHaveCount(6);
 
   await page.getByRole('link', { name: 'See all Popular with families' }).click();
   await expect(page).toHaveURL(/\/store\/collection\/popular$/);
   await expect(page.getByRole('heading', { name: 'Popular with families' })).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Popular with families' }).getByRole('listitem')).toHaveCount(3);
+  await expect(page.getByRole('list', { name: 'Popular with families' }).getByRole('listitem')).toHaveCount(6);
 
   await page
     .getByRole('list', { name: 'Popular with families' })

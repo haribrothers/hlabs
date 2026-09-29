@@ -1,0 +1,27 @@
+schema: 1
+id: home-assistant
+name: Home Assistant
+version: '2026.9.4'
+revision: 0
+tagline: Run your smart home from one place
+description: |
+  Connect lights, heating, sensors and speakers from thousands of brands, see them on one dashboard and
+  automate them. Everything runs in your home, not in someone's cloud. The first visit walks you through
+  creating your Home Assistant account.
+category: home
+developer: { name: Open Home Foundation, url: https://www.home-assistant.io }
+source: https://github.com/home-assistant/core
+license: Apache-2.0
+icon:
+  logo: logo.png
+  gradient: ['#18bcf2', '#0369a1']
+  fallback: house
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 2048 }
+web: { service: homeassistant, port: 8123 }
+health: { service: homeassistant, http: /manifest.json, timeout: 300 }
+ownLogin: true
+backup:
+  pause: [homeassistant]
+  beforeUpdate: true
+permissions: { network: lan }

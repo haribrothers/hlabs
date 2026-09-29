@@ -1,0 +1,32 @@
+schema: 1
+id: n8n
+name: n8n
+version: '2.41.3'
+revision: 0
+tagline: Automate tasks by connecting your apps
+description: |
+  Build workflows that move data between apps and services, on a schedule or when something happens,
+  by joining blocks together. Add AI steps where they help. The first visit asks you to create the
+  owner account.
+category: productivity
+developer: { name: n8n, url: https://n8n.io }
+source: https://github.com/n8n-io/n8n
+license: Sustainable Use License
+icon:
+  logo: logo.svg
+  gradient: ['#1f1f3a', '#0b0b1a']
+  fallback: workflow
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 1024 }
+web: { service: n8n, port: 5678 }
+health: { service: n8n, http: /healthz, timeout: 180 }
+env:
+  - key: N8N_ENCRYPTION_KEY
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [n8n]
+  beforeUpdate: true
+permissions: { network: internet }

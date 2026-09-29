@@ -1,4 +1,5 @@
 // The store home (US-STORE-01): "Featured" cards, then the curated rows, each with "See all".
+import type { StoreApp } from '@hlabs/api';
 import { Link } from '@tanstack/react-router';
 import { storeCopy, tagLabels } from '../copy/store';
 import { AppCard, FeaturedCard } from './cards';
@@ -7,6 +8,15 @@ import { useInstalls } from './use-installs';
 import { useStoreHome } from './use-store-home';
 
 const copy = storeCopy;
+
+/**
+ * The featured card's heading, as the AppStore screen draws it: the lead card says "Featured"; the others say their
+ * first tag ("Local AI"), which then isn't repeated as a chip.
+ */
+export function featuredEyebrow(app: StoreApp, index: number): { label: string; tag: string | null } {
+  const tag = index === 0 ? undefined : app.tags.find((t) => tagLabels[t]);
+  return tag ? { label: tagLabels[tag]!, tag } : { label: copy.featured, tag: null };
+}
 
 export function Discover() {
   const home = useStoreHome();
@@ -22,14 +32,9 @@ export function Discover() {
               {copy.featured}
             </h3>
             <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 lg:grid-cols-2">
-              {featured.map((app) => (
+              {featured.map((app, i) => (
                 <li key={app.id}>
-                  <FeaturedCard
-                    app={app}
-                    host={host}
-                    installs={installs}
-                    eyebrow={app.tags.map((t) => tagLabels[t]).find(Boolean) ?? copy.featured}
-                  />
+                  <FeaturedCard app={app} host={host} installs={installs} eyebrow={featuredEyebrow(app, i)} />
                 </li>
               ))}
             </ul>

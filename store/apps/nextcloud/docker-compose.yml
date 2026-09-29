@@ -1,0 +1,40 @@
+# From the nextcloud image's Postgres and Redis example, adapted to hlabs compose rules. Caddy ends TLS, so
+# Nextcloud is told it's served over https at the app's address.
+services:
+  nextcloud:
+    image: docker.io/library/nextcloud:35.0.1-apache@sha256:276547e033df451770dbf9c0065929e5ea179a613b1884bd3fa807ba1c2703e7
+    environment:
+      POSTGRES_HOST: database
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      NEXTCLOUD_TRUSTED_DOMAINS: ${HLABS_HOSTNAME} localhost 127.0.0.1
+      TRUSTED_PROXIES: 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 127.0.0.1
+      OVERWRITEPROTOCOL: https
+      OVERWRITEHOST: ${HLABS_HOSTNAME}
+    volumes:
+      - ${HLABS_APP_DATA}/html:/var/www/html
+    depends_on:
+      - database
+      - redis
+
+  cron:
+    image: docker.io/library/nextcloud:35.0.1-apache@sha256:276547e033df451770dbf9c0065929e5ea179a613b1884bd3fa807ba1c2703e7
+    entrypoint: /cron.sh
+    volumes:
+      - ${HLABS_APP_DATA}/html:/var/www/html
+    depends_on:
+      - nextcloud
+
+  redis:
+    image: docker.io/valkey/valkey:9@sha256:70739f85ad2ee01a726a965584a0f94895f01b0c60b3cc8b0aeef11eaa6888cf
+
+  database:
+    image: docker.io/library/postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ${HLABS_APP_DATA}/postgres:/var/lib/postgresql

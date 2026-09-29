@@ -1,0 +1,26 @@
+schema: 1
+id: gitea
+name: Gitea
+version: '1.27.3'
+revision: 0
+tagline: Host your own Git repositories
+description: |
+  A light home for your code, like GitHub on your own computer: repositories, pull requests, issues, a
+  wiki and releases. The first visit shows Gitea's setup page, where you create the admin account.
+category: developer
+developer: { name: Gitea, url: https://about.gitea.com }
+source: https://github.com/go-gitea/gitea
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#f0fdf4', '#d9f99d']
+  fallback: git-branch
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: gitea, port: 3000 }
+health: { service: gitea, http: /api/healthz, timeout: 120 }
+ownLogin: true
+backup:
+  pause: [gitea]
+  beforeUpdate: true
+permissions: { network: internet }

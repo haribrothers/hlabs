@@ -1,0 +1,29 @@
+schema: 1
+id: adguard-home
+name: AdGuard Home
+version: '0.107.79'
+revision: 0
+tagline: Block ads and trackers on every device at home
+description: |
+  A DNS server for your whole network that blocks ads, trackers and malicious sites before they load,
+  on phones, TVs and computers alike. Point your router's DNS at this computer to use it. The hlabs
+  login protects its settings.
+category: network
+developer: { name: AdGuard, url: https://adguard.com/adguard-home/overview.html }
+source: https://github.com/AdguardTeam/AdGuardHome
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#68bc71', '#2f7a3a']
+  fallback: shield-check
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: adguardhome, port: 3000 }
+health: { service: adguardhome, http: /, timeout: 120 }
+ports:
+  - { service: adguardhome, container: 53, protocol: udp, host: 53, label: DNS }
+  - { service: adguardhome, container: 53, protocol: tcp, host: 53, label: DNS over TCP }
+backup:
+  pause: [adguardhome]
+  beforeUpdate: true
+permissions: { network: internet }

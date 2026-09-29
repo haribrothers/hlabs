@@ -1,0 +1,36 @@
+schema: 1
+id: syncthing
+name: Syncthing
+version: '2.1.5'
+revision: 0
+tagline: Keep folders in sync between your devices
+description: |
+  Sync folders between this computer, laptops and phones directly, without a cloud in between. Files
+  move over your home network, and securely over the internet when you're away.
+category: files
+developer: { name: Syncthing Foundation, url: https://syncthing.net }
+source: https://github.com/syncthing/syncthing
+license: MPL-2.0
+icon:
+  logo: logo.svg
+  gradient: ['#0891b2', '#0e5a73']
+  fallback: refresh-cw
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: syncthing, port: 8384 }
+health: { service: syncthing, http: /rest/noauth/health, timeout: 120 }
+folders:
+  - key: sync
+    label: Sync folder
+    description: Where synced folders are kept
+    target: /var/syncthing/Sync
+    default: home:Sync
+    mode: rw
+    required: true
+ports:
+  - { service: syncthing, container: 22000, protocol: tcp, host: 22000, label: Sync }
+  - { service: syncthing, container: 22000, protocol: udp, host: 22000, label: Sync (QUIC) }
+backup:
+  pause: [syncthing]
+  beforeUpdate: true
+permissions: { network: internet }

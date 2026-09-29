@@ -20,7 +20,10 @@ const installed = (id: string, state: InstalledApp['state']): InstalledApp => ({
 
 const home = {
   host: { os: 'macos', arm64: true },
-  featured: [storeApp('immich', 'Immich', { tags: ['local-ai'] })],
+  featured: [
+    storeApp('immich', 'Immich', { tags: ['local-ai'] }),
+    storeApp('open-webui', 'Open WebUI', { tags: ['local-ai'], group: 'ai', category: 'ai' }),
+  ],
   collections: [
     {
       id: 'popular',
@@ -68,8 +71,13 @@ describe('US-STORE-01', () => {
       { path: '/store' },
     );
     const featured = await screen.findByRole('region', { name: 'Featured' });
-    expect(within(featured).getByText('Local AI', { selector: 'span.uppercase' })).toBeInTheDocument();
-    expect(within(featured).getByText('Apple Silicon')).toBeInTheDocument();
+    // The lead card says Featured; the next says its tag, which isn't repeated as a chip (the AppStore screen).
+    const [lead, next] = within(featured).getAllByRole('listitem');
+    expect(within(lead!).getByText('Featured', { selector: 'span.uppercase' })).toBeInTheDocument();
+    expect(within(lead!).getByText('Local AI')).toBeInTheDocument();
+    expect(within(next!).getByText('Local AI', { selector: 'span.uppercase' })).toBeInTheDocument();
+    expect(within(next!).getAllByText('Local AI')).toHaveLength(1);
+    expect(within(lead!).getByText('Apple Silicon')).toBeInTheDocument();
     const row = screen.getByRole('region', { name: 'Popular with families' });
     expect(screen.getByRole('link', { name: 'See all Popular with families' })).toHaveAttribute(
       'href',

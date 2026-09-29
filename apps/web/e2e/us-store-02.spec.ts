@@ -7,12 +7,26 @@ test('US-STORE-02 categories with apps, in order; keyboard moves through them; n
   test.skip(info.project.name === 'phone', 'The phone uses chips (next test)');
   await page.goto('/store');
   const nav = page.getByRole('navigation', { name: 'Categories' });
-  await expect(nav.getByRole('link')).toHaveText(['Discover', 'Files & photos', 'Security', 'Monitoring']);
+  await expect(nav.getByRole('link')).toHaveText([
+    'Discover',
+    'Media',
+    'Files & photos',
+    'Networking',
+    'Home automation',
+    'Developer',
+    'Local AI',
+    'Productivity',
+    'Security',
+    'Books',
+    'Monitoring',
+  ]);
   await expect(nav.getByRole('link', { name: 'Discover' })).toHaveAttribute('aria-current', 'page');
   await expect(page.getByRole('navigation', { name: 'Manage apps' })).toHaveCount(0);
 
   // Keyboard: each item takes focus with a visible ring, and Enter opens it.
   await nav.getByRole('link', { name: 'Discover' }).focus();
+  await page.keyboard.press('Tab');
+  await expect(nav.getByRole('link', { name: 'Media' })).toBeFocused();
   await page.keyboard.press('Tab');
   const files = nav.getByRole('link', { name: 'Files & photos' });
   await expect(files).toBeFocused();
@@ -22,7 +36,7 @@ test('US-STORE-02 categories with apps, in order; keyboard moves through them; n
   await expect(page).toHaveURL(/\/store\/category\/files$/);
   await expect(page.getByRole('heading', { name: 'Files & photos' })).toBeVisible();
   await expect(files).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByRole('list', { name: 'Files & photos' }).getByRole('listitem')).toHaveCount(1);
+  await expect(page.getByRole('list', { name: 'Files & photos' }).getByRole('listitem')).toHaveCount(3);
 });
 
 test('US-STORE-02 on a phone, categories are chips above the content', async ({ page }, info) => {

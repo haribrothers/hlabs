@@ -113,7 +113,12 @@ function Tags({ tags }: { tags: string[] }) {
 }
 
 /** A large card in "Featured", tinted with the app's colours. */
-export function FeaturedCard({ app, host, installs, eyebrow }: CardProps & { eyebrow: string }) {
+export function FeaturedCard({
+  app,
+  host,
+  installs,
+  eyebrow,
+}: CardProps & { eyebrow: { label: string; tag: string | null } }) {
   const [from, to] = app.icon.gradient ?? appTileLook(app.name, app.icon).colors;
   const tint = { '--card-from': from, '--card-to': to } as CSSProperties;
   return (
@@ -123,14 +128,16 @@ export function FeaturedCard({ app, host, installs, eyebrow }: CardProps & { eye
     >
       <StoreLogo app={app} size={FEATURED_LOGO} />
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <span className="text-caption font-bold uppercase tracking-widest text-ink-muted">{eyebrow}</span>
+        <span className="text-caption font-bold uppercase tracking-widest text-ink-muted">{eyebrow.label}</span>
         <h3 className="m-0 text-title-1 font-bold">
           <NameLink app={app} />
         </h3>
         <p className="m-0 text-body text-ink-muted">{app.tagline}</p>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <CardButton app={app} installs={installs} size="md" />
-          <Tags tags={storeTags(app, host)} />
+          <Tags
+            tags={storeTags(eyebrow.tag ? { ...app, tags: app.tags.filter((t) => t !== eyebrow.tag) } : app, host)}
+          />
         </div>
       </div>
     </div>

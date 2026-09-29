@@ -1,0 +1,42 @@
+schema: 1
+id: audiobookshelf
+name: Audiobookshelf
+version: '2.37.0'
+revision: 0
+tagline: Audiobooks and podcasts, with your place remembered
+description: |
+  Listen to your audiobooks and podcasts in the browser or the phone apps, with covers, chapters and
+  your progress kept in step on every device. It can download new podcast episodes for you.
+category: books
+developer: { name: advplyr, url: https://www.audiobookshelf.org }
+source: https://github.com/advplyr/audiobookshelf
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#fbbf24', '#b45309']
+  fallback: headphones
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: audiobookshelf, port: 80 }
+health: { service: audiobookshelf, http: /healthcheck, timeout: 120 }
+folders:
+  - key: audiobooks
+    label: Audiobooks
+    description: Your audiobook library
+    target: /audiobooks
+    default: shared:Audiobooks
+    mode: rw
+    required: true
+  - key: podcasts
+    label: Podcasts
+    description: Where podcast episodes are saved
+    target: /podcasts
+    default: shared:Podcasts
+    mode: rw
+    required: false
+ownLogin: true
+backup:
+  pause: [audiobookshelf]
+  exclude: [metadata/cache/]
+  beforeUpdate: true
+permissions: { network: internet }

@@ -42,6 +42,7 @@ describe('US-STORE-06', () => {
     expect(d.screenshots).toEqual([
       '/api/store/apps/builtin/immich/assets/screenshots/1.webp',
       '/api/store/apps/builtin/immich/assets/screenshots/2.webp',
+      '/api/store/apps/builtin/immich/assets/screenshots/3.webp',
     ]);
   });
 

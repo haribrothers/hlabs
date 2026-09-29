@@ -1,0 +1,35 @@
+schema: 1
+id: jellyfin
+name: Jellyfin
+version: '12.1'
+revision: 0
+tagline: Watch your movies, shows and music anywhere
+description: |
+  Your own streaming service for the films, series and music on your drives. Browse them with artwork
+  and play them in the browser, on phones and on TVs.
+category: media
+developer: { name: Jellyfin, url: https://jellyfin.org }
+source: https://github.com/jellyfin/jellyfin
+license: GPL-2.0
+icon:
+  logo: logo.svg
+  gradient: ['#1e1b4b', '#020617']
+  fallback: clapperboard
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 2048 }
+web: { service: jellyfin, port: 8096 }
+health: { service: jellyfin, http: /health, timeout: 180 }
+folders:
+  - key: media
+    label: Media library
+    description: Your movies, shows and music
+    target: /media
+    default: shared:Media
+    mode: ro
+    required: true
+ownLogin: true
+backup:
+  pause: [jellyfin]
+  exclude: [cache/]
+  beforeUpdate: true
+permissions: { network: internet }

@@ -1,0 +1,16 @@
+# AdGuard Home's first-run wizard moves its web page to a port you pick, which would break the app's address.
+# A first start writes a starting configuration instead (web page on 3000, DNS on 53, no AdGuard login: the
+# hlabs login protects the page), and AdGuard fills in the rest with its defaults. An existing file is left alone.
+services:
+  adguardhome:
+    image: docker.io/adguard/adguardhome:v0.107.79@sha256:aba9e3bf0613be3ba3755e1fc311b126e2c24bec25e18b6483894a88283074f0
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /opt/adguardhome/conf
+        [ -f /opt/adguardhome/conf/AdGuardHome.yaml ] || printf '%s\n' 'http:' '  address: 0.0.0.0:3000' 'users: []' 'dns:' '  bind_hosts:' '    - 0.0.0.0' '  port: 53' '  upstream_dns:' '    - https://dns10.quad9.net/dns-query' '  bootstrap_dns:' '    - 9.9.9.10' '    - 149.112.112.10' 'schema_version: 34' > /opt/adguardhome/conf/AdGuardHome.yaml
+        exec /opt/adguardhome/AdGuardHome --no-check-update -c /opt/adguardhome/conf/AdGuardHome.yaml -w /opt/adguardhome/work
+    volumes:
+      - ${HLABS_APP_DATA}/conf:/opt/adguardhome/conf
+      - ${HLABS_APP_DATA}/work:/opt/adguardhome/work
