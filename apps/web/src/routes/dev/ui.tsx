@@ -32,6 +32,7 @@ import { TRPCClientError } from '@trpc/client';
 import { useEffect, useState, type ReactNode } from 'react';
 import { devCopy } from '../../copy/dev';
 import { confirm } from '../../lib/confirm';
+import { showToast } from '../../lib/toasts';
 import { useEventStream } from '../../lib/use-event-stream';
 import { navigationAreas } from '../../shell/areas';
 
@@ -79,6 +80,25 @@ function ConfirmDemo() {
         Factory reset…
       </Button>
       <span data-testid="confirm-result">{result}</span>
+    </div>
+  );
+}
+
+/** The toasts from SysDialogs, one per tone (US-STATE-14). */
+function ToastDemo() {
+  const examples = [
+    { tone: 'success', title: 'Immich is ready', body: 'Open it from your Home screen.' },
+    { tone: 'neutral', title: 'Checking for updates', body: 'This takes a few seconds.' },
+    { tone: 'warning', title: 'Low disk space', body: '8 GB left on this computer. Some apps may stop working.' },
+    { tone: 'danger', title: "Uptime Kuma couldn't start", body: 'Port 3001 is already in use by another program.' },
+  ] as const;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {examples.map((t) => (
+        <Button key={t.tone} variant="secondary" size="sm" onClick={() => showToast(t)}>
+          {`Show ${t.tone} toast`}
+        </Button>
+      ))}
     </div>
   );
 }
@@ -238,6 +258,7 @@ function DevUi() {
           Focus is trapped here; Escape closes.
         </ModalDialog>
         <ConfirmDemo />
+        <ToastDemo />
         <Toast title="Backup finished" action={<Button variant="link">View log</Button>}>
           2.1 GB added
         </Toast>

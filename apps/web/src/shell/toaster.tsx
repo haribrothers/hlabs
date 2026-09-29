@@ -1,4 +1,5 @@
-// Where toasts show: bottom-right on a desktop, above the tab bar on a phone (US-STATE-14).
+// Where toasts show: bottom-right on a desktop, above the tab bar on a phone (US-STATE-14). Hovering or focusing
+// one holds it; it goes on once the pointer and focus have both left.
 import { Toast } from '@hlabs/ui';
 import { Link } from '@tanstack/react-router';
 import { dismissToast, pauseToast, resumeToast, useToasts } from '../lib/toasts';
@@ -12,14 +13,17 @@ export function Toaster() {
         <div
           key={t.id}
           className="pointer-events-auto w-full sm:w-auto"
-          onMouseEnter={() => pauseToast(t.id)}
-          onMouseLeave={() => resumeToast(t.id)}
-          onFocus={() => pauseToast(t.id)}
-          onBlur={() => resumeToast(t.id)}
+          onMouseEnter={() => pauseToast(t.id, 'hover')}
+          onMouseLeave={() => resumeToast(t.id, 'hover')}
+          onFocus={() => pauseToast(t.id, 'focus')}
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget)) resumeToast(t.id, 'focus');
+          }}
         >
           <Toast
             tone={t.tone}
             title={t.title}
+            leaving={t.leaving}
             onDismiss={() => dismissToast(t.id)}
             action={
               t.action ? (

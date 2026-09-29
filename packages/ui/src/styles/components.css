@@ -1536,6 +1536,18 @@
     transform: translate(-50%, calc(-50% + 8px)) scale(0.98);
   }
 }
+@keyframes hl-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@keyframes hl-toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
 @keyframes hl-sheet-in {
   from {
     opacity: 0;
@@ -1558,6 +1570,12 @@
   .hl-anim-dialog.hl-dialog-sheet {
     animation-name: hl-sheet-in;
   }
+}
+.hl-anim-toast-in {
+  animation: hl-toast-in var(--hl-dur) var(--hl-ease);
+}
+.hl-anim-toast-out {
+  animation: hl-toast-out var(--hl-dur-fast) var(--hl-ease-in) forwards;
 }
 .hl-anim-menu {
   transform-origin: var(--radix-dropdown-menu-content-transform-origin);

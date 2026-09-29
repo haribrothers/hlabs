@@ -41,6 +41,7 @@ export const engineKindSchema = z.enum(['orbstack', 'docker-desktop', 'colima', 
 export type EngineKind = z.infer<typeof engineKindSchema>;
 
 export const severitySchema = z.enum(['info', 'success', 'warning', 'critical']);
+export type Severity = z.infer<typeof severitySchema>;
 
 /** Exclusive job kinds (D-020): one at a time, and never alongside app jobs. */
 export { EXCLUSIVE_JOB_KINDS };

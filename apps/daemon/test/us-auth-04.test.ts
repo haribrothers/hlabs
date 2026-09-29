@@ -37,14 +37,16 @@ describe('US-AUTH-04', () => {
   it('an unknown username takes as long as a wrong password (a dummy Argon2id verify)', async () => {
     const d = await daemonWithAdmin(closers);
     await login(d.url, 'warm-up', 'x'); // first call also makes the dummy hash
-    // The fastest of a few tries each, so a busy machine doesn't decide the result.
-    const fastest = async (username: string) => {
-      const times: number[] = [];
-      for (let i = 0; i < 3; i++) times.push((await login(d.url, username, `wrong password ${i}`)).ms);
-      return Math.min(...times);
-    };
-    const wrong = await fastest('hari');
-    const unknown = await fastest('nobody-at-all');
+    // The fastest of a few tries each, taken in turns, so a busy machine slows both alike and doesn't decide it.
+    const wrongTimes: number[] = [];
+    const unknownTimes: number[] = [];
+    // 4 each: under the lockout (5 failures), which would skip the Argon2id check.
+    for (let i = 0; i < 4; i++) {
+      wrongTimes.push((await login(d.url, 'hari', `wrong password ${i}`)).ms);
+      unknownTimes.push((await login(d.url, 'nobody-at-all', `wrong password ${i}`)).ms);
+    }
+    const wrong = Math.min(...wrongTimes);
+    const unknown = Math.min(...unknownTimes);
     expect(unknown).toBeGreaterThan(wrong * 0.5);
   });
 
