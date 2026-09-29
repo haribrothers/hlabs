@@ -1,6 +1,6 @@
 // Phase gating (D-036): a control that needs a later phase is hidden until that phase ships.
 // Bump SHIPPED_PHASE when a phase's "Done when" list is true (docs/prd/10-phases.md).
-export const SHIPPED_PHASE = 0;
+export const SHIPPED_PHASE = 1;
 
 /** The phase that delivers each gated capability. */
 export const FEATURE_PHASE = {

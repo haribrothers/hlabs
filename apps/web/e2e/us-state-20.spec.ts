@@ -57,7 +57,13 @@ test('US-STATE-20 UNAUTHORIZED goes to log in with the page to come back to', as
       ? route.continue()
       : trpcError(route, 401, 'UNAUTHORIZED', 'AUTH_REQUIRED'),
   );
-  // Coming back to the window refetches who's signed in, which now answers 401.
-  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-  await expect(page).toHaveURL(/\/login\?next=(%2F|\/)settings(%2F|\/)engine/);
+  // Any call answering 401 does it. A mutation always reaches the daemon; a background refetch may get there
+  // first and take the page to log in before the click lands, which is the same outcome.
+  await page
+    .getByRole('switch', { name: /Keep this computer awake/ })
+    .click({ timeout: 3_000 })
+    .catch(() => {});
+  // The log-in page (or its username form, when the user list can't load either) with the page to come back to.
+  await expect(page).toHaveURL(/\/login(\/username)?\?next=(%2F|\/)settings(%2F|\/)engine/);
+  await expect(page.getByText("Couldn't save that. Try again.")).toHaveCount(0);
 });

@@ -58,14 +58,15 @@ export const pageQuery = { throwOnError: (err: unknown) => isForbidden(err) } as
  * nothing else changes; JOB_EXCLUSIVE_RUNNING a warning toast naming what's running. Mutations that show their
  * errors inline (`meta.inlineErrors`, such as confirm dialogs) are left to do that.
  */
-/** Errors every mutation already answers with a toast; a screen's own "couldn't save" toast steps aside. */
+/** Errors every mutation already answers (a toast, or going to log in); a screen's own "couldn't save" toast steps
+ * aside. */
 export const handledGlobally = (err: unknown) => {
   const code = errorCode(err);
-  return code === 'ACCESS_DENIED' || code === 'JOB_EXCLUSIVE_RUNNING';
+  return code === 'ACCESS_DENIED' || code === 'JOB_EXCLUSIVE_RUNNING' || code === 'AUTH_REQUIRED';
 };
 
 export function mutationErrorNotice(err: unknown, meta: Record<string, unknown> | undefined) {
-  if (meta?.inlineErrors || !handledGlobally(err)) return;
+  if (meta?.inlineErrors) return;
   const code = errorCode(err);
   if (code === 'ACCESS_DENIED') {
     showToast({ tone: 'danger', title: errorCopy.forbiddenToast, key: 'error:ACCESS_DENIED' });

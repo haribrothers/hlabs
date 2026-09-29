@@ -44,6 +44,8 @@ test('US-STATE-12 the dialog is busy while it works, and a failure shows inline 
   await page.mouse.click(2, 2);
   await expect(dialog).toBeVisible();
 
+  // The held call has reached Playwright (so `release` is the real one).
+  await expect.poll(() => calls).toBe(1);
   release();
   await expect(dialog.getByRole('alert')).toHaveText(
     'hlabs is busy. Wait for what it’s doing to finish, then try again.',
