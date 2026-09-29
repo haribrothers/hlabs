@@ -37,6 +37,8 @@ New questions found during the build go here with the next free id (Q-09 onward)
 | --- | --- | --- |
 | Q-09 | D-036 hides controls whose phase hasn't shipped. Phase 0's Dock and tab bar show all areas as placeholder windows so the "working Dock" can be checked. From phase 1, should areas whose features haven't shipped (App Store until phase 2, Usage 4, Backups and Files 5) be hidden, leaving Home and Settings? | Answered 27 Sep 2026: hide them (D-056) |
 | Q-10 | D-055 names Astro 5; the current releases are Astro 7 and Starlight 0.42. Phase 0 pins Astro 5.18 and Starlight 0.37.7, the last Starlight that supports Astro 5. Move to Astro 7 before the site is built in phase 6? | Open: before phase 6 |
+| Q-11 | How does the 14-app install matrix run in CI: all apps on every PR, nightly only, or nightly plus a smoke set on PRs? | Answered 29 Sep 2026: nightly full matrix plus a two-app smoke set on every PR (D-071) |
+| Q-12 | How does Caddy get onto dev machines: a script that downloads the pinned binary, a system package, or a container? | Answered 29 Sep 2026: a script downloads the pinned binary (D-072) |
 
 ## Design follow-ups (copy changes already decided)
 - `ForgotPassword`: remove "Have a recovery code?"; admin line reads "your admin can make a reset link for you from Settings › Users" (D-009).
