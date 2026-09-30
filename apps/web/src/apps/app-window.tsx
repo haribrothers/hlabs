@@ -2,12 +2,27 @@
 // address. Only one at a time (it's a route, /apps/:appId, so it survives a reload); closing it doesn't stop the app.
 // The frame is mounted only while the app is running, so no forward-auth or 502 pages show in it (US-APP-03).
 import type { AppDetail, AppState } from '@hlabs/api';
-import { AppLogo, appTileLook, House, iconDefaults, Loader2, Lock, X } from '@hlabs/icons';
+import {
+  AppLogo,
+  appTileLook,
+  ExternalLink,
+  House,
+  iconDefaults,
+  Loader2,
+  Lock,
+  RotateCw,
+  SlidersHorizontal,
+  TextAlignStart,
+  X,
+} from '@hlabs/icons';
 import { Button, GlassCard, IconButton, StatusDot, type Status } from '@hlabs/ui';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { appsCopy } from '../copy/apps';
 import { browser } from '../lib/browser';
+import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { useMe } from '../lib/use-me';
 import { appBaseUrl, useApp } from './use-app';
 
 const copy = appsCopy;
@@ -17,6 +32,9 @@ const HEADER_LOGO = 28;
 export const SPINNER_AFTER_MS = 1_000;
 /** …and a way out once it has taken this long (US-APP-01). */
 export const SLOW_AFTER_MS = 20_000;
+
+/** States on the way somewhere: the frame area shows a spinner and the app comes back by itself (US-APP-02, 03). */
+const BUSY = new Set<AppState>(['starting', 'restarting', 'stopping', 'updating', 'rolling_back', 'uninstalling']);
 
 /** The StatusDot for an app state: colour never alone, the label says it too. */
 export function statusDot(state: AppState): Status {
@@ -78,8 +96,20 @@ export function FramePanel({ children }: { children: ReactNode }) {
 export function AppWindow({ appId }: { appId: string }) {
   const navigate = useNavigate();
   const { data: app } = useApp(appId);
+  const isAdmin = useMe().data?.role === 'admin';
+  const trpc = useTRPC();
+  const client = useTRPCClient();
+  const queryClient = useQueryClient();
   const [reloadKey] = useState(0);
   const close = () => void navigate({ to: '/' });
+  // Restart (US-APP-02): the label says "Restarting…" at once; the frame comes back when it's running again.
+  const restart = useMutation({
+    mutationFn: () => client.apps.restart.mutate({ appId }),
+    onSuccess: () =>
+      queryClient.setQueryData(trpc.apps.get.queryKey({ appId }), (old) =>
+        old && old.state === 'running' ? { ...old, state: 'restarting' as const } : old,
+      ),
+  });
 
   // Esc closes it while focus is on the window, not inside the app's frame (which keeps its own keys).
   useEffect(() => {
@@ -111,6 +141,15 @@ export function AppWindow({ appId }: { appId: string }) {
           <Button onClick={() => browser.open(base)}>{copy.openInNewTab}</Button>
         </FramePanel>
       )
+    ) : BUSY.has(app.state) ? (
+      <FramePanel>
+        <Loader2
+          aria-hidden
+          {...iconDefaults}
+          className="size-8 animate-spin text-ink-muted motion-reduce:animate-none"
+        />
+        <StatusDot status={statusDot(app.state)}>{copy.status[app.state]}</StatusDot>
+      </FramePanel>
     ) : (
       <FramePanel>
         <StatusDot status={statusDot(app.state)}>{copy.status[app.state]}</StatusDot>
@@ -144,6 +183,33 @@ export function AppWindow({ appId }: { appId: string }) {
             </span>
           </div>
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
+            {/* Members get only the new tab and Close (US-APP-02). */}
+            {isAdmin ? (
+              <>
+                <IconButton
+                  label={copy.restartApp}
+                  disabled={app.state !== 'running' || restart.isPending}
+                  onClick={() => restart.mutate()}
+                >
+                  <RotateCw aria-hidden {...iconDefaults} className="size-4" />
+                </IconButton>
+                <IconButton
+                  label={copy.logs}
+                  onClick={() => void navigate({ to: '/apps/$appId/logs', params: { appId } })}
+                >
+                  <TextAlignStart aria-hidden {...iconDefaults} className="size-4" />
+                </IconButton>
+                <IconButton
+                  label={copy.appSettings}
+                  onClick={() => void navigate({ to: '/apps/$appId/settings', params: { appId } })}
+                >
+                  <SlidersHorizontal aria-hidden {...iconDefaults} className="size-4" />
+                </IconButton>
+              </>
+            ) : null}
+            <IconButton label={copy.openInNewTab} onClick={() => browser.open(app.embed ? src : base)}>
+              <ExternalLink aria-hidden {...iconDefaults} className="size-4" />
+            </IconButton>
             <span aria-hidden className="mx-1 h-6 w-px bg-hairline" />
             <IconButton label={copy.closeApp} onClick={close}>
               <X aria-hidden {...iconDefaults} className="size-4" />

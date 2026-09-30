@@ -27,4 +27,15 @@ export const appsCopy = {
   loading: (app: string) => `Loading ${app}`,
   slow: 'This app is taking a while to respond.',
   opensInTab: (app: string) => `${app} opens in its own tab.`,
+  restartApp: 'Restart app',
+  logs: 'Logs',
+  appSettings: 'App settings',
+
+  // App settings (US-APP-04…07)
+  settingsTitle: (app: string) => `${app} settings`,
+  close: 'Close',
+
+  // Logs (US-APP-08…10)
+  logsTitle: (app: string) => `${app} logs`,
+  backToSettings: 'Back to app settings',
 } as const;

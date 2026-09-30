@@ -9,6 +9,8 @@ import { AppWindow, SLOW_AFTER_MS, SPINNER_AFTER_MS } from './app-window';
 import { appBaseUrl } from './use-app';
 
 const never = () => new Promise(() => {});
+/** The button in the frame area (the header has its own "Open in a new tab", US-APP-02). */
+const panelButton = (name: string) => screen.getAllByRole('button', { name }).find((b) => !b.title)!;
 const jellyfin = appDetail({
   id: 'jellyfin',
   name: 'Jellyfin',
@@ -57,7 +59,7 @@ describe('US-APP-01', () => {
     expect(screen.getByRole('img', { name: 'Loading Jellyfin' })).toBeInTheDocument();
     await act(async () => vi.advanceTimersByTime(SLOW_AFTER_MS - SPINNER_AFTER_MS));
     expect(screen.getByText('This app is taking a while to respond.')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Open in a new tab' }));
+    fireEvent.click(panelButton('Open in a new tab'));
     expect(openTab).toHaveBeenCalledWith('https://jellyfin.hlabs.local/web/');
   });
 
@@ -86,7 +88,7 @@ describe('US-APP-01', () => {
     open({ ...jellyfin, embed: false });
     expect(await screen.findByText('Jellyfin opens in its own tab.')).toBeInTheDocument();
     expect(screen.queryByTitle('Jellyfin')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open in a new tab' }));
+    fireEvent.click(panelButton('Open in a new tab'));
     expect(openTab).toHaveBeenCalledWith('https://jellyfin.hlabs.local');
   });
 

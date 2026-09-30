@@ -14,6 +14,8 @@ export class FakeCompose implements ComposeRunner {
   /** Services that come up unhealthy or exit straight away (set before `up`). */
   readonly serviceState = new Map<string, Partial<ContainerState>>();
   private startedAt = 1_000;
+  /** While set, every operation waits for it (to see an app mid-restart). */
+  gate: Promise<void> | null = null;
 
   constructor(private readonly engine: FakeEngine) {}
 
@@ -23,6 +25,7 @@ export class FakeCompose implements ComposeRunner {
   }
 
   async up(project: ComposeProject) {
+    if (this.gate) await this.gate;
     this.record('up', project);
     const compose = parse(readFileSync(join(project.dir, COMPOSE_FILE), 'utf8')) as {
       services: Record<string, { image: string }>;
@@ -46,6 +49,7 @@ export class FakeCompose implements ComposeRunner {
   }
 
   async stop(project: ComposeProject) {
+    if (this.gate) await this.gate;
     this.record('stop', project);
     for (const c of this.engine.containers.get(project.name) ?? []) {
       Object.assign(c, { state: 'exited', startedAt: null, exitCode: 0, health: null });
@@ -53,6 +57,7 @@ export class FakeCompose implements ComposeRunner {
   }
 
   async restart(project: ComposeProject) {
+    if (this.gate) await this.gate;
     this.record('restart', project);
     for (const c of this.engine.containers.get(project.name) ?? []) {
       Object.assign(c, { state: 'running', startedAt: this.startedAt++, exitCode: null });
@@ -60,6 +65,7 @@ export class FakeCompose implements ComposeRunner {
   }
 
   async down(project: ComposeProject) {
+    if (this.gate) await this.gate;
     this.record('down', project);
     this.engine.containers.delete(project.name);
   }

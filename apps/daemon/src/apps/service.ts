@@ -132,6 +132,23 @@ export class AppService {
     await this.deps.compose.down(this.project(appId));
   }
 
+  /**
+   * Start, stop or restart from the dashboard (US-APP-02…04): refused at once with APP_BUSY when the state machine
+   * doesn't allow it (or ENGINE_UNAVAILABLE without an engine), otherwise run in the background; the outcome arrives
+   * as app.stateChanged, so a slow health check never holds the request.
+   */
+  command(appId: string, action: 'start' | 'stop' | 'restart'): void {
+    const app = this.get(appId);
+    if (!app) throw hlabsError('NOT_FOUND');
+    const to = ({ start: 'starting', stop: 'stopping', restart: 'restarting' } as const)[action];
+    if (!canTransition(app.state, to)) {
+      throw hlabsError('APP_BUSY', `${appId}: ${app.state} → ${to}`, { appId, state: app.state });
+    }
+    this.requireEngine();
+    const run = action === 'start' ? this.start(appId) : action === 'stop' ? this.stop(appId) : this.restart(appId);
+    void run.catch((err: unknown) => this.deps.logger.warn({ err, appId, action }, 'app command failed'));
+  }
+
   /** stopped or error → starting → running (or error when it doesn't come up healthy). */
   async start(appId: string, signal?: AbortSignal): Promise<HealthResult> {
     this.transition(appId, 'starting');

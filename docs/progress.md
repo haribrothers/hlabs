@@ -103,7 +103,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-STORE-14 · Retry or remove a failed install
 - [ ] US-STORE-17 · Roll back an update that doesn't start
 - [x] US-APP-01 · Open an app in a window
-- [ ] US-APP-02 · App window controls
+- [x] US-APP-02 · App window controls
 - [ ] US-APP-03 · Opening an app that isn't running
 - [ ] US-APP-04 · See an app's status and start, stop or restart it
 - [ ] US-APP-05 · App address and tailnet address

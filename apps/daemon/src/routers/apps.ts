@@ -30,6 +30,10 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
       mounts: (input.mounts ?? []).map((m) => ({ ...m, subpath: m.subpath ?? '', mode: m.mode ?? 'rw' })),
       acceptRisks: input.acceptRisks ?? false,
     }),
+  // Admins only (the router's access); the outcome arrives as app.stateChanged (US-APP-02…04).
+  start: (input, ctx) => (ctx.services.apps.command(input.appId, 'start'), { ok: true as const }),
+  stop: (input, ctx) => (ctx.services.apps.command(input.appId, 'stop'), { ok: true as const }),
+  restart: (input, ctx) => (ctx.services.apps.command(input.appId, 'restart'), { ok: true as const }),
   retryInstall: (input, ctx) => ctx.services.installer.retry(installer(ctx), input.appId, input.portOverrides?.web),
   uninstall: (input, ctx) => ctx.services.installer.uninstallFailed(installer(ctx), input.appId),
   /** Only the apps this person can open, enforced here, not in the UI (07 §7.4). */

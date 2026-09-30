@@ -24,6 +24,8 @@ Under the widgets are the apps you can open: every installed app for admins, and
 
 To leave the app window, choose **Back to Home** or **Close app**, or press Esc (when you're not typing in the app). Closing the window doesn't stop the app. If an app takes a while to load, the window offers **Open in a new tab**. The window stays open if you reload the page.
 
+Admins also get **Restart app**, **Logs** and **App settings** at the top of the window, and everyone gets **Open in a new tab**. While an app restarts, the window says "Restarting…" and shows the app again as soon as it's running.
+
 New apps appear on Home as soon as they're installed, and removed apps disappear, without reloading the page. With a keyboard, use Tab to reach the apps and the arrow keys to move between them.
 
 ## The Dock
