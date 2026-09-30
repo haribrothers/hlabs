@@ -1,6 +1,7 @@
 // Runs the bundled Caddy and loads config through its admin API (D-006). The admin API listens on an owner-only
 // unix socket in the data directory, not on localhost:2019, so other local users and a Caddy the person runs
 // themselves can't collide with it or change it (D-073). If Caddy exits, it is started again after a pause.
+import type { ChildRegistry } from '../platform/children';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { chmodSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -18,6 +19,8 @@ export interface CaddyProxyDeps {
   webFallbackDir: string;
   logger: Logger;
   restartDelayMs?: number;
+  /** Records the running Caddy, so a killed daemon's is ended at the next start. */
+  children?: ChildRegistry;
 }
 
 /** Unix socket paths are limited to about 104 bytes (macOS). A deep data directory gets a short socket in an
@@ -127,9 +130,11 @@ export class CaddyProxy implements ProxyManager {
       },
     });
     this.child = child;
+    this.deps.children?.add(child.pid, configFile);
     let stderr = '';
     child.stderr?.setEncoding('utf8').on('data', (chunk: string) => (stderr = (stderr + chunk).slice(-4_000)));
     child.once('exit', (code, signal) => {
+      this.deps.children?.remove(child.pid);
       if (this.stopping) return;
       this.deps.logger.error({ code, signal, stderr: stderr.slice(-1_000) }, 'caddy exited; starting it again');
       const timer = setTimeout(() => {

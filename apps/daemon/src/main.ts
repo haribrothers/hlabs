@@ -18,13 +18,17 @@ await app.listen({ host: config.host, port: config.port });
 
 const services = await boot({ config, logger, readiness, holder });
 
+/** How long the server gets to close before shutdown carries on without it. */
+const CLOSE_TIMEOUT_MS = 3_000;
 let stopping = false;
 async function stop(signal: string) {
   if (stopping) return;
   stopping = true;
   logger.info({ signal }, 'shutting down');
-  await app.close();
+  // Caddy and the mDNS publishers must be stopped whatever the server does, before anything can kill this process.
+  await Promise.race([app.close(), new Promise((resolve) => setTimeout(resolve, CLOSE_TIMEOUT_MS).unref())]);
   await shutdown(services);
+  logger.info('stopped');
   process.exit(0);
 }
 process.on('SIGINT', () => void stop('SIGINT'));

@@ -3,11 +3,14 @@
 // computer's LAN address for as long as the process lives, so withdrawing a name is stopping its process. A process
 // that dies is started again, and every name moves when the LAN address changes.
 import { spawn as nodeSpawn } from 'node:child_process';
+import type { ChildRegistry } from '../platform/children';
 import { networkInterfaces } from 'node:os';
 import type { Logger } from '../logger';
 import type { MdnsPublisher } from './index';
 
 export interface Child {
+  /** Undefined when it couldn't start. */
+  pid?: number;
   kill(signal?: NodeJS.Signals): boolean;
   once(event: 'exit', listener: (code: number | null) => void): unknown;
   once(event: 'error', listener: (err: Error) => void): unknown;
@@ -25,6 +28,8 @@ export interface ProcessMdnsDeps {
   restartDelayMs?: number;
   /** How often to look for a changed LAN address. */
   addressCheckMs?: number;
+  /** Records each publisher, so a killed daemon's are ended at the next start. */
+  children?: ChildRegistry;
 }
 
 /** macOS: a proxy registration, which adds the A record for `<name>` (the service itself is incidental). */
@@ -97,6 +102,7 @@ export class ProcessMdnsPublisher implements MdnsPublisher {
   private publish(name: string, address: string) {
     const { file, args } = this.deps.command(name, address);
     const child = (this.deps.spawn ?? defaultSpawn)(file, args);
+    this.deps.children?.add(child.pid, `${file} ${args.join(' ')}`.slice(0, 200));
     const entry = { child, address };
     this.held.set(name, entry);
     child.once('error', (err: Error & { code?: string }) => {
@@ -106,6 +112,7 @@ export class ProcessMdnsPublisher implements MdnsPublisher {
       }
     });
     child.once('exit', (code) => {
+      this.deps.children?.remove(child.pid);
       if (this.held.get(name) !== entry) return;
       this.held.delete(name);
       if (!this.wanted.has(name) || this.missingLogged) return;
@@ -125,9 +132,10 @@ export class ProcessMdnsPublisher implements MdnsPublisher {
 
 const defaultSpawn: Spawn = (file, args) => nodeSpawn(file, args, { stdio: 'ignore' });
 
-export function createMdnsPublisher(logger: Logger, httpsPort: () => number): MdnsPublisher {
+export function createMdnsPublisher(logger: Logger, httpsPort: () => number, children?: ChildRegistry): MdnsPublisher {
   return new ProcessMdnsPublisher({
     logger,
+    children,
     command: process.platform === 'darwin' ? dnsSdCommand(httpsPort) : avahiCommand,
   });
 }

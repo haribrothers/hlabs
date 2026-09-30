@@ -29,6 +29,7 @@ import type { HealthProbes } from './apps/health';
 import { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
+import { ChildRegistry } from './platform/children';
 import { createMdnsPublisher } from './mdns/publisher';
 import { SessionService } from './auth/sessions';
 import { TotpService } from './auth/totp';
@@ -145,6 +146,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     projectsDir: join(config.paths.dataDir, 'apps'),
     probes: deps.healthProbes,
   });
+  // Caddy and the mDNS publishers a killed daemon left running go first (they'd hold port 443 and the names).
+  const children = new ChildRegistry(join(config.paths.dataDir, 'run', 'children.json'));
+  const reaped = children.reapStale();
+  if (reaped) logger.warn({ reaped }, 'ended helper processes a previous daemon left running');
   const proxy =
     deps.proxy ??
     (config.proxy === 'caddy'
@@ -153,11 +158,14 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
           dir: join(config.paths.dataDir, 'caddy'),
           webFallbackDir: config.resources.webFallbackDir,
           logger,
+          children,
         })
       : new NoopProxyManager());
   const mdns =
     deps.mdns ??
-    (config.mdns ? createMdnsPublisher(logger, () => getSetting(db, 'network').ports.https) : new NoopMdnsPublisher());
+    (config.mdns
+      ? createMdnsPublisher(logger, () => getSetting(db, 'network').ports.https, children)
+      : new NoopMdnsPublisher());
   const network = new NetworkService({
     db,
     proxy,

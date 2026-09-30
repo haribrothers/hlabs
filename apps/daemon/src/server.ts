@@ -47,6 +47,8 @@ export async function buildServer({ config, logger, readiness, holder }: ServerD
     loggerInstance: logger as FastifyBaseLogger,
     routerOptions: { maxParamLength: 5_000 },
     trustProxy: '127.0.0.1',
+    // Closing ends open connections too (the dashboard's event streams), so shutdown never waits on them.
+    forceCloseConnections: true,
   });
 
   registerHealthz(app, readiness, config.version);

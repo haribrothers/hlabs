@@ -18,7 +18,7 @@ import { generateSync } from 'otplib';
 import { hashPassword } from '../auth/passwords';
 import { createAdmin } from '../onboarding/create-admin';
 import { prepareStorageRoot, setStorageRoot } from '../onboarding/storage';
-import { sessionCookie } from '../auth/sessions';
+import { cookieDomain, sessionCookie } from '../auth/sessions';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { ServiceHolder } from '../services';
@@ -117,7 +117,9 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
       ip: req.ip,
       userAgent: req.headers['user-agent'] ?? null,
     });
-    return reply.header('set-cookie', sessionCookie(session.raw, session)).redirect('/');
+    // The same Domain the real login uses, so apps behind forward auth see it (US-AUTH-14, US-APP-01).
+    const domain = cookieDomain(req.host ?? null, getSetting(db, 'hostname'));
+    return reply.header('set-cookie', sessionCookie(session.raw, { ...session, domain })).redirect('/');
   });
 
   // Ends every session of a user, as revoking from another device will (US-AUTH-15 e2e).
