@@ -139,13 +139,15 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     /** Any app state (default running); with `progress`, also an app.installProgress event. */
     state: z.enum(APP_STATES).default('running'),
     progress: z.number().min(0).max(100).optional(),
+    /** Manifest `web.embed`: it opens in the app window (US-APP-01 e2e). */
+    embed: z.boolean().default(false),
     /** `apps.state_detail`, e.g. a failed install's `{ code, port, step }` (US-STORE-13 e2e). */
     stateDetail: z.record(z.string(), z.unknown()).optional(),
   });
   app.post('/dev/fake-app', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
-    const { id, name, remove, state, progress, stateDetail: detail } = fakeApp.parse(req.body);
+    const { id, name, remove, state, progress, embed, stateDetail: detail } = fakeApp.parse(req.body);
     const stateDetail = detail ? JSON.stringify(detail) : null;
     const { db, bus } = services;
     if (remove) {
@@ -166,7 +168,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
         sourceId: 'dev',
         appId: id,
         version: '0.0.0',
-        manifestJson: { name: name ?? id },
+        manifestJson: { name: name ?? id, web: { embed } },
         updatedAt: Date.now(),
         firstSeenAt: Date.now(),
       })

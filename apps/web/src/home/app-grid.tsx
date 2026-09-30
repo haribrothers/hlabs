@@ -10,6 +10,7 @@ import type { inferRouterOutputs } from '@trpc/server';
 import type { KeyboardEvent } from 'react';
 import { homeCopy } from '../copy/home';
 import { browser } from '../lib/browser';
+import { useMedia } from '../lib/use-media';
 
 export type HomeApp = inferRouterOutputs<AppRouter>['apps']['list']['apps'][number];
 
@@ -49,6 +50,9 @@ export function tileState(state: HomeApp['state']): AppIconState {
   return 'running';
 }
 
+/** The app window opens on a desktop layout (US-APP-01); phones are covered by 12-phone.md. */
+export const APP_WINDOW_QUERY = '(min-width: 1024px)';
+
 export function AppGrid({
   apps,
   isAdmin,
@@ -59,6 +63,18 @@ export function AppGrid({
   progress?: ReadonlyMap<string, number>;
 }) {
   const navigate = useNavigate();
+  const wide = useMedia(APP_WINDOW_QUERY);
+  /**
+   * An install that's running or failed opens its page (US-STORE-12, US-STORE-14). A running app opens in the app
+   * window when it declares web.embed and the screen is wide enough, else in a new tab (US-APP-01, D-038); an app that
+   * isn't running opens the window, which says why it can't be shown (US-APP-03).
+   */
+  const openApp = (app: HomeApp) => {
+    if (app.state === 'installing' || app.state === 'install_failed')
+      void navigate({ to: '/store/install/$appId', params: { appId: app.id } });
+    else if (app.state === 'running' && !(app.embed && wide)) browser.open(appUrl(app));
+    else void navigate({ to: '/apps/$appId', params: { appId: app.id } });
+  };
   const showInstall = isAdmin && isFeatureEnabled('appStore');
   if (apps.length === 0 && !showInstall) return null;
   return (
@@ -79,13 +95,7 @@ export function AppGrid({
               state={tileState(app.state)}
               progress={progress?.get(app.id) ?? 0}
               ariaLabel={app.state === 'running' ? homeCopy.openApp(app.name) : undefined}
-              // AppWindow for embedded apps arrives with US-APP-01; until then every app opens in a new tab. An install
-              // that's running or failed opens its page (US-STORE-12, US-STORE-14).
-              onClick={() => {
-                if (app.state === 'running') browser.open(appUrl(app));
-                else if (app.state === 'installing' || app.state === 'install_failed')
-                  void navigate({ to: '/store/install/$appId', params: { appId: app.id } });
-              }}
+              onClick={() => openApp(app)}
             />
           </li>
         );

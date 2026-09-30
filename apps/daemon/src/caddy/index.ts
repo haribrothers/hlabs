@@ -13,6 +13,8 @@ export interface ProxyState {
   dashboardUpstream: string;
   /** The daemon itself, for forward auth. */
   daemon: string;
+  /** The dashboard's tailnet name (`hlabs.<tailnet>.ts.net`) when remote access is on, for app framing. */
+  tailnetHost: string | null;
   apps: AppRoute[];
 }
 

@@ -310,8 +310,8 @@ describe('routes', () => {
     t.install('vaultwarden', 'install_failed');
     t.install('immich', 'stopped', { authMode: 'none' });
     expect(t.service.routes()).toEqual([
-      { appId: 'uptime-kuma', hostname: 'uptime-kuma', port: 12000, auth: 'hlabs' },
-      { appId: 'immich', hostname: 'immich', port: 12002, auth: 'none' },
+      { appId: 'uptime-kuma', hostname: 'uptime-kuma', port: 12000, auth: 'hlabs', embed: true },
+      { appId: 'immich', hostname: 'immich', port: 12002, auth: 'none', embed: false },
     ]);
   });
 });

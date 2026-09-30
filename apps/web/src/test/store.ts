@@ -82,6 +82,11 @@ export const appDetail = (extra: Partial<AppDetail> = {}): AppDetail => ({
   webPort: 12000,
   installJobId: 'j1',
   nextFreePort: null,
+  icon: { logoUrl: null, gradient: null, fallback: null },
+  embed: false,
+  webPath: '/',
+  urls: { local: 'https://immich.hlabs.local', tailnet: null },
+  engineRunning: true,
   ...extra,
 });
 

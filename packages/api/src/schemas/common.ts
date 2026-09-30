@@ -44,6 +44,7 @@ export const appStateSchema = z.enum([
   'error',
   'uninstalling',
 ]);
+export type AppState = z.infer<typeof appStateSchema>;
 
 export const engineKindSchema = z.enum(['orbstack', 'docker-desktop', 'colima', 'docker-engine']);
 export type EngineKind = z.infer<typeof engineKindSchema>;

@@ -15,6 +15,7 @@ export * from './components/code-input';
 export * from './components/dialog';
 export * from './components/dock';
 export * from './components/glass-card';
+export * from './components/icon-button';
 export * from './components/list';
 export * from './components/menu';
 export * from './components/progress';

@@ -27,6 +27,22 @@ export function caRootDir(storageDir: string): string {
 
 const proxyTo = (dial: string) => ({ handler: 'reverse_proxy', upstreams: [{ dial }] });
 
+/**
+ * An app that declares `web.embed` (D-038) may be framed by the dashboard (US-APP-01): its X-Frame-Options is dropped
+ * and a `frame-ancestors` policy naming the dashboard's addresses is added. Added, not set, so the app's own policy
+ * still applies; an app that forbids framing itself stays unframeable.
+ */
+function framedBy(ancestors: string[]) {
+  return {
+    headers: {
+      response: {
+        delete: ['X-Frame-Options'],
+        add: { 'Content-Security-Policy': [`frame-ancestors ${ancestors.join(' ')}`] },
+      },
+    },
+  };
+}
+
 function forwardAuth(daemon: string) {
   return {
     handler: 'reverse_proxy',
@@ -61,13 +77,14 @@ function forwardAuth(daemon: string) {
   };
 }
 
-function appRoute(app: AppRoute, domain: string, daemon: string) {
+function appRoute(app: AppRoute, domain: string, daemon: string, ancestors: string[]) {
+  const proxy = proxyTo(`127.0.0.1:${loopbackPort(app.port)}`);
   return {
     match: [{ host: [`${app.hostname}.${domain}`] }],
     handle: [
       { handler: 'headers', request: { delete: IDENTITY_HEADERS } },
       ...(app.auth === 'hlabs' ? [forwardAuth(daemon)] : []),
-      proxyTo(`127.0.0.1:${loopbackPort(app.port)}`),
+      app.embed ? { ...proxy, ...framedBy(ancestors) } : proxy,
     ],
     terminal: true,
   };
@@ -77,6 +94,8 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths) {
   const domain = `${state.hostname}.local`;
   const hosts = [domain, ...state.apps.map((a) => `${a.hostname}.${domain}`)];
   const httpsPort = state.ports.https === 443 ? '' : `:${state.ports.https}`;
+  // Where the dashboard runs, the only pages that may frame an app.
+  const ancestors = [`https://${domain}${httpsPort}`, ...(state.tailnetHost ? [`https://${state.tailnetHost}`] : [])];
 
   const dashboard = {
     match: [{ host: [domain] }],
@@ -135,7 +154,7 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths) {
         servers: {
           https: {
             listen: [`:${state.ports.https}`],
-            routes: [dashboard, ...state.apps.map((a) => appRoute(a, domain, state.daemon))],
+            routes: [dashboard, ...state.apps.map((a) => appRoute(a, domain, state.daemon, ancestors))],
             // When the daemon doesn't answer, the dashboard gets the fallback page (US-STATE-04).
             errors: {
               routes: [

@@ -133,9 +133,10 @@ describe.skipIf(!existsSync(CADDY))('Caddy with the hlabs config', () => {
       onboardingComplete: false,
       dashboardUpstream: `127.0.0.1:${dashboardPort}`,
       daemon: `127.0.0.1:${daemonPort}`,
+      tailnetHost: null,
       apps: [
-        { appId: 'demo', hostname: 'demo', port: appPort - LOOPBACK_OFFSET, auth: 'hlabs' },
-        { appId: 'open', hostname: 'open', port: appPort - LOOPBACK_OFFSET, auth: 'none' },
+        { appId: 'demo', hostname: 'demo', port: appPort - LOOPBACK_OFFSET, auth: 'hlabs', embed: false },
+        { appId: 'open', hostname: 'open', port: appPort - LOOPBACK_OFFSET, auth: 'none', embed: false },
       ],
     };
     proxy = new CaddyProxy({

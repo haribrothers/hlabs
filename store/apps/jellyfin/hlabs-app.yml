@@ -2,7 +2,7 @@ schema: 1
 id: jellyfin
 name: Jellyfin
 version: '12.1'
-revision: 0
+revision: 1
 tagline: Watch your movies, shows and music anywhere
 description: |
   Your own streaming service for the films, series and music on your drives. Browse them with artwork
@@ -17,7 +17,7 @@ icon:
   fallback: clapperboard
 platforms: [linux/amd64, linux/arm64]
 requirements: { memory: 1024, disk: 2048 }
-web: { service: jellyfin, port: 8096 }
+web: { service: jellyfin, port: 8096, embed: true }
 health: { service: jellyfin, http: /health, timeout: 180 }
 folders:
   - key: media

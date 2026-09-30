@@ -2,7 +2,7 @@ schema: 1
 id: uptime-kuma
 name: Uptime Kuma
 version: '2.5.5'
-revision: 0
+revision: 1
 tagline: Know the moment a website or service goes down
 description: |
   Watch websites, servers and your own apps, see their uptime over time and get a message when
@@ -17,7 +17,7 @@ icon:
   fallback: activity
 platforms: [linux/amd64, linux/arm64]
 requirements: { memory: 256, disk: 1024 }
-web: { service: uptime-kuma, port: 3001 }
+web: { service: uptime-kuma, port: 3001, embed: true }
 health: { service: uptime-kuma, container: true, timeout: 120 }
 ownLogin: true
 backup:

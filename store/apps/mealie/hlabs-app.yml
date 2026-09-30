@@ -2,7 +2,7 @@ schema: 1
 id: mealie
 name: Mealie
 version: '3.28.0'
-revision: 0
+revision: 1
 tagline: Recipes, meal plans and shopping lists
 description: |
   Save recipes from any website in one click, plan the week's meals and turn them into a shopping list
@@ -18,7 +18,7 @@ icon:
   fallback: chef-hat
 platforms: [linux/amd64, linux/arm64]
 requirements: { memory: 512, disk: 1024 }
-web: { service: mealie, port: 9000 }
+web: { service: mealie, port: 9000, embed: true }
 health: { service: mealie, http: /api/app/about, timeout: 180 }
 ownLogin: true
 backup:

@@ -19,6 +19,12 @@ export interface NetworkServiceDeps {
   daemon: string;
 }
 
+/** `<hostname>.<tailnet>.ts.net` when remote access is set up (D-012). */
+function tailnetHost(db: HlabsDb): string | null {
+  const tailnet = getSetting(db, 'remote').tailnetName?.replace(/\.ts\.net$/, '');
+  return tailnet ? `${getSetting(db, 'hostname')}.${tailnet}.ts.net` : null;
+}
+
 export class NetworkService {
   private applied: string | null = null;
   private queue: Promise<void> = Promise.resolve();
@@ -33,6 +39,7 @@ export class NetworkService {
       onboardingComplete: getSetting(db, 'onboarding').completedAt !== null,
       dashboardUpstream: this.deps.dashboardUpstream,
       daemon: this.deps.daemon,
+      tailnetHost: tailnetHost(db),
       apps: this.deps.routes(),
     };
   }

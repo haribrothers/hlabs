@@ -23,6 +23,7 @@ import { isSecret, parseEnvFile, resolveEnv } from './env';
 import { folderPaths, resolveMounts, type MountRequest } from './folders';
 import { waitHealthy, type HealthProbes } from './health';
 import { takenHostnames } from './hostnames';
+import { appSummary } from './list';
 import { allocatePort, loopbackPort, loopbackPortFree } from './ports';
 import type { AppService } from './service';
 import { stateDetail } from './state-machine';
@@ -122,16 +123,19 @@ export class InstallService {
     return { jobId: this.deps.jobs.start('app_uninstall', { target: appId, payload: { appId, user } }) };
   }
 
-  /** An installed app for the progress and failure pages (`apps.get`). */
+  /** An installed app for the install pages and the app window (`apps.get`). */
   async detail(appId: string) {
     const { db } = this.deps;
     const app = db.select().from(apps).where(eq(apps.id, appId)).get();
     if (!app) throw hlabsError('NOT_FOUND');
-    let manifestName = app.id;
-    try {
-      manifestName = this.deps.apps.manifest(appId).name;
-    } catch {
-      // No project (a dev stand-in): the id will do.
+    const summary = appSummary(db, app);
+    let name = summary.name;
+    if (name === app.id) {
+      try {
+        name = this.deps.apps.manifest(appId).name;
+      } catch {
+        // No project (a dev stand-in): the id will do.
+      }
     }
     const job = db
       .select({ id: jobs.id })
@@ -140,15 +144,15 @@ export class InstallService {
       .orderBy(desc(jobs.createdAt))
       .get();
     return {
-      id: app.id,
-      name: manifestName,
-      state: app.state,
+      ...summary,
+      name,
       stateDetail: app.stateDetail ? (JSON.parse(app.stateDetail) as Record<string, unknown>) : null,
       address: `${app.hostname}.${getSetting(db, 'hostname')}.local`,
       webPort: app.portFallback,
       installJobId: job?.id ?? null,
       nextFreePort:
         app.state === 'install_failed' ? await this.freePort((app.portFallback ?? 11999) + 1).catch(() => null) : null,
+      engineRunning: this.deps.engine.client !== null,
     };
   }
 

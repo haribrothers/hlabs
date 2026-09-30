@@ -34,9 +34,11 @@ export interface AppRoute {
   appId: string;
   /** `<appId>` (the label before `.<hostname>.local`). */
   hostname: string;
-  /** Loopback port of the web service (D-049). */
+  /** The app's port (12000–12999); its web service is on the loopback port 1000 above it (D-049, D-086). */
   port: number;
   auth: 'hlabs' | 'none';
+  /** Manifest `web.embed` (D-038): the dashboard may show it in a frame (US-APP-01). */
+  embed: boolean;
 }
 
 export interface AppServiceDeps {
@@ -99,7 +101,22 @@ export class AppService {
       .from(apps)
       .all()
       .filter((a) => ROUTED.has(a.state) && a.portFallback !== null)
-      .map((a) => ({ appId: a.id, hostname: a.hostname, port: a.portFallback!, auth: a.authMode }));
+      .map((a) => ({
+        appId: a.id,
+        hostname: a.hostname,
+        port: a.portFallback!,
+        auth: a.authMode,
+        embed: this.embeds(a.id),
+      }));
+  }
+
+  /** Whether the app's manifest lets the dashboard frame it; false without a project (a dev stand-in). */
+  private embeds(appId: string): boolean {
+    try {
+      return this.manifest(appId).web?.embed ?? false;
+    } catch {
+      return false;
+    }
   }
 
   /** `compose up` for an app, a taken port reported as APP_PORT_IN_USE. */

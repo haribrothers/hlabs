@@ -118,7 +118,8 @@ describe('US-AUTH-17', () => {
         onboardingComplete: true,
         dashboardUpstream: '127.0.0.1:7474',
         daemon: '127.0.0.1:7474',
-        apps: [{ appId: 'vaultwarden', hostname: 'vaultwarden', port: 12001, auth: 'none' }],
+        tailnetHost: null,
+        apps: [{ appId: 'vaultwarden', hostname: 'vaultwarden', port: 12001, auth: 'none', embed: false }],
       },
       { storageDir: '/d', adminSocket: '/d/a.sock', logFile: '/d/l', webFallbackDir: '/f' },
     );

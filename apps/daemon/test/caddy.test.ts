@@ -25,9 +25,10 @@ function state(patch: Partial<ProxyState> = {}): ProxyState {
     onboardingComplete: true,
     dashboardUpstream: '127.0.0.1:7474',
     daemon: '127.0.0.1:7474',
+    tailnetHost: null,
     apps: [
-      { appId: 'immich', hostname: 'immich', port: 12000, auth: 'hlabs' },
-      { appId: 'vaultwarden', hostname: 'vaultwarden', port: 12001, auth: 'none' },
+      { appId: 'immich', hostname: 'immich', port: 12000, auth: 'hlabs', embed: false },
+      { appId: 'vaultwarden', hostname: 'vaultwarden', port: 12001, auth: 'none', embed: false },
     ],
     ...patch,
   };
@@ -141,7 +142,7 @@ describe('NetworkService', () => {
     const proxy = new NoopProxyManager();
     const t = setup(proxy);
     setSetting(t.db, 'network', { ports: { https: 8443, http: 8080 }, piholeDns: false });
-    t.setRoutes([{ appId: 'immich', hostname: 'immich', port: 12000, auth: 'hlabs' }]);
+    t.setRoutes([{ appId: 'immich', hostname: 'immich', port: 12000, auth: 'hlabs', embed: false }]);
     await t.network.sync();
     expect(proxy.last).toEqual({
       hostname: 'hlabs',
@@ -149,7 +150,8 @@ describe('NetworkService', () => {
       onboardingComplete: false,
       dashboardUpstream: '127.0.0.1:5173',
       daemon: '127.0.0.1:7474',
-      apps: [{ appId: 'immich', hostname: 'immich', port: 12000, auth: 'hlabs' }],
+      tailnetHost: null,
+      apps: [{ appId: 'immich', hostname: 'immich', port: 12000, auth: 'hlabs', embed: false }],
     });
     expect(t.mdns.names).toEqual(['hlabs.local', 'immich.hlabs.local']);
   });
@@ -162,7 +164,7 @@ describe('NetworkService', () => {
     await t.network.sync();
     await t.network.sync();
     expect(applies).toBe(1);
-    t.setRoutes([{ appId: 'gitea', hostname: 'gitea', port: 12004, auth: 'hlabs' }]);
+    t.setRoutes([{ appId: 'gitea', hostname: 'gitea', port: 12004, auth: 'hlabs', embed: false }]);
     bus.emit('app.stateChanged', { appId: 'gitea', state: 'running', detail: null });
     await t.network.sync();
     expect(applies).toBe(2);

@@ -11,6 +11,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const active = areaForPath(pathname);
+  // The app window has the screen to itself (US-APP-01): no Dock or tab bar under it.
+  const appWindow = pathname.startsWith('/apps/');
   const go = (id: string) => void navigate({ to: AREA_PATHS[id as AreaId] });
   const me = useMe().data;
   // The person's wallpaper and accent (US-HOME-01); signed out (development pages) it's the defaults.
@@ -41,12 +43,16 @@ export function Shell({ children }: { children: ReactNode }) {
         {children}
       </main>
       {/* Search, the + tile and pinned apps arrive with their phases (D-036). */}
-      <div className="hl-nav-desktop hidden md:flex" data-testid="dock-bar">
-        <Dock areas={areas} active={active} onSelect={go} badges={store ? { store } : {}} search={false} />
-      </div>
-      <div className="hl-nav-phone flex md:hidden" data-testid="tab-bar">
-        <TabBar items={tabs} active={active} onSelect={go} />
-      </div>
+      {appWindow ? null : (
+        <>
+          <div className="hl-nav-desktop hidden md:flex" data-testid="dock-bar">
+            <Dock areas={areas} active={active} onSelect={go} badges={store ? { store } : {}} search={false} />
+          </div>
+          <div className="hl-nav-phone flex md:hidden" data-testid="tab-bar">
+            <TabBar items={tabs} active={active} onSelect={go} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

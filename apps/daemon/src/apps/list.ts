@@ -15,7 +15,7 @@ const manifestBits = z.object({
       fallback: z.string().optional(),
     })
     .optional(),
-  web: z.object({ embed: z.boolean().optional() }).optional(),
+  web: z.object({ embed: z.boolean().optional(), path: z.string().optional() }).optional(),
 });
 
 /** A relative logo is served with the app's assets; https logos are used as they are. */
@@ -39,9 +39,31 @@ export function catalogManifest(db: HlabsDb, app: { id: string; sourceId: string
   return parsed.success ? parsed.data : {};
 }
 
-export function listApps(db: HlabsDb, user: { id: string; role: 'admin' | 'member' }) {
+/** An installed app as Home and the app window show it: name, icon, state and where it opens (D-012, D-038). */
+export function appSummary(db: HlabsDb, app: typeof apps.$inferSelect) {
   const hostname = getSetting(db, 'hostname');
   const tailnet = getSetting(db, 'remote').tailnetName?.replace(/\.ts\.net$/, '') ?? null;
+  const m = catalogManifest(db, app);
+  return {
+    id: app.id,
+    name: m.name ?? app.id,
+    state: app.state,
+    icon: {
+      logoUrl: logoUrl(app.id, m.icon?.logo),
+      gradient: m.icon?.gradient ?? null,
+      fallback: m.icon?.fallback ?? null,
+    },
+    embed: m.web?.embed ?? false,
+    webPath: m.web?.path ?? '/',
+    urls: {
+      local: `https://${app.hostname}.${hostname}.local`,
+      tailnet:
+        tailnet && app.portFallback !== null ? `https://${hostname}.${tailnet}.ts.net:${app.portFallback}` : null,
+    },
+  };
+}
+
+export function listApps(db: HlabsDb, user: { id: string; role: 'admin' | 'member' }) {
   const visible = new Set(visibleAppIds(db, user));
   return {
     apps: db
@@ -51,23 +73,8 @@ export function listApps(db: HlabsDb, user: { id: string; role: 'admin' | 'membe
       .all()
       .filter((app) => visible.has(app.id))
       .map((app) => {
-        const m = catalogManifest(db, app);
-        return {
-          id: app.id,
-          name: m.name ?? app.id,
-          state: app.state,
-          icon: {
-            logoUrl: logoUrl(app.id, m.icon?.logo),
-            gradient: m.icon?.gradient ?? null,
-            fallback: m.icon?.fallback ?? null,
-          },
-          embed: m.web?.embed ?? false,
-          urls: {
-            local: `https://${app.hostname}.${hostname}.local`,
-            tailnet:
-              tailnet && app.portFallback !== null ? `https://${hostname}.${tailnet}.ts.net:${app.portFallback}` : null,
-          },
-        };
+        const { webPath: _path, ...tile } = appSummary(db, app);
+        return tile;
       }),
   };
 }
