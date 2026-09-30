@@ -1,5 +1,6 @@
 // The real Caddy (from `pnpm fetch-binaries`) with the config hlabs builds: dashboard, forward auth, an app that
 // opted out, the CA certificate, the port 80 redirect and the fallback page. Skipped when .bin/caddy isn't there.
+import { LOOPBACK_OFFSET } from '../src/apps/ports';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import {
   createServer,
@@ -133,8 +134,8 @@ describe.skipIf(!existsSync(CADDY))('Caddy with the hlabs config', () => {
       dashboardUpstream: `127.0.0.1:${dashboardPort}`,
       daemon: `127.0.0.1:${daemonPort}`,
       apps: [
-        { appId: 'demo', hostname: 'demo', port: appPort, auth: 'hlabs' },
-        { appId: 'open', hostname: 'open', port: appPort, auth: 'none' },
+        { appId: 'demo', hostname: 'demo', port: appPort - LOOPBACK_OFFSET, auth: 'hlabs' },
+        { appId: 'open', hostname: 'open', port: appPort - LOOPBACK_OFFSET, auth: 'none' },
       ],
     };
     proxy = new CaddyProxy({

@@ -23,7 +23,7 @@ import { isSecret, parseEnvFile, resolveEnv } from './env';
 import { folderPaths, resolveMounts, type MountRequest } from './folders';
 import { waitHealthy, type HealthProbes } from './health';
 import { takenHostnames } from './hostnames';
-import { allocatePort, loopbackPortFree } from './ports';
+import { allocatePort, loopbackPort, loopbackPortFree } from './ports';
 import type { AppService } from './service';
 import { stateDetail } from './state-machine';
 import { hostTimeZone } from '../platform/timezone';
@@ -266,7 +266,7 @@ export class InstallService {
     let port = app.portFallback!;
     if (webPort !== undefined && webPort !== port) {
       const held = db.select({ id: apps.id, port: apps.portFallback }).from(apps).all();
-      const free = await (this.deps.isPortFree ?? loopbackPortFree)(webPort);
+      const free = await (this.deps.isPortFree ?? loopbackPortFree)(loopbackPort(webPort));
       if (webPort < 12000 || webPort > 12999 || held.some((h) => h.port === webPort && h.id !== appId) || !free) {
         throw hlabsError('APP_PORT_IN_USE', undefined, { port: webPort });
       }
@@ -382,7 +382,7 @@ export class InstallService {
         engine,
         project: this.deps.apps.project(appId).name,
         manifest,
-        webPort: app.portFallback!,
+        webPort: loopbackPort(app.portFallback!),
         signal: ctx.signal,
         probes: this.deps.probes,
       });
@@ -495,7 +495,7 @@ export class InstallService {
     const rendered = renderApp({
       manifest,
       compose,
-      webPort: port,
+      webPort: loopbackPort(port),
       appDataDir: appData,
       folders: folderPaths(manifest, mounts, appData),
       hostname: `${hostname}.${domain}`,

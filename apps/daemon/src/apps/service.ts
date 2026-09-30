@@ -12,6 +12,7 @@ import type { EventBus } from '../events/bus';
 import type { Logger } from '../logger';
 import { COMPOSE_FILE, ComposeError, ENV_FILE, type ComposeProject, type ComposeRunner } from './compose';
 import { checkHealthOnce, waitHealthy, type HealthProbes, type HealthResult } from './health';
+import { loopbackPort } from './ports';
 import { canTransition, stateDetail } from './state-machine';
 
 /** The copy of the manifest kept with the project, so an app runs from what it was installed with. */
@@ -184,7 +185,7 @@ export class AppService {
         engine: this.requireEngine(),
         project: this.project(app.id).name,
         manifest: this.manifest(app.id),
-        webPort: app.portFallback!,
+        webPort: loopbackPort(app.portFallback!),
         probes: this.deps.probes,
       }).catch(() => ({ ready: false }));
       if (check.ready) {
@@ -203,6 +204,7 @@ export class AppService {
   private async bringUp(appId: string, op: 'up' | 'restart', signal?: AbortSignal): Promise<HealthResult> {
     const app = this.get(appId)!;
     const project = this.project(appId);
+    this.moveToLoopbackRange(app);
     try {
       await (op === 'up' ? this.deps.compose.up(project) : this.deps.compose.restart(project));
     } catch (error) {
@@ -214,7 +216,7 @@ export class AppService {
       engine: this.requireEngine(),
       project: project.name,
       manifest: this.manifest(appId),
-      webPort: app.portFallback!,
+      webPort: loopbackPort(app.portFallback!),
       signal,
       probes: this.deps.probes,
     });
@@ -225,6 +227,21 @@ export class AppService {
       this.transition(appId, 'error', stateDetail('APP_HEALTH_TIMEOUT', { service: result.service, exited: true }));
     }
     return result;
+  }
+
+  /**
+   * A project written before D-086 publishes its web service on the app port itself; it moves to the loopback range
+   * on its next start, where Caddy now looks for it.
+   */
+  private moveToLoopbackRange(app: AppRow) {
+    if (app.portFallback === null) return;
+    const file = join(this.project(app.id).dir, COMPOSE_FILE);
+    if (!existsSync(file)) return;
+    const text = readFileSync(file, 'utf8');
+    const old = `127.0.0.1:${app.portFallback}:`;
+    if (!text.includes(old)) return;
+    writeFileSync(file, text.split(old).join(`127.0.0.1:${loopbackPort(app.portFallback)}:`));
+    this.deps.logger.info({ appId: app.id }, 'moved the app to the loopback port range');
   }
 
   /** Settles a state outside the normal edges (reconcile and failed stops only). */

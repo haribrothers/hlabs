@@ -61,7 +61,8 @@ export const appDetailSchema = z.object({
   stateDetail: z.record(z.string(), z.unknown()).nullable(),
   /** e.g. `immich.hlabs.local` */
   address: z.string(),
-  /** The loopback port of its web service (D-049). */
+  /** The app's port (12000–12999): its LAN fallback and tailnet port. Its web service listens on 127.0.0.1 at this + 1000
+   * (D-086). */
   webPort: z.number().int().nullable(),
   /** Its latest install job, for the progress page. */
   installJobId: z.string().nullable(),

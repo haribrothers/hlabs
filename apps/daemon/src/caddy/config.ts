@@ -3,6 +3,7 @@
 // or, until onboarding is done, serves the dashboard (07 §7.1). App routes go through forward auth unless the app
 // opted out (US-AUTH-17).
 import { join } from 'node:path';
+import { loopbackPort } from '../apps/ports';
 import type { AppRoute } from '../apps/service';
 import { fallbackErrorRoutes } from './fallback';
 import type { ProxyState } from './index';
@@ -66,7 +67,7 @@ function appRoute(app: AppRoute, domain: string, daemon: string) {
     handle: [
       { handler: 'headers', request: { delete: IDENTITY_HEADERS } },
       ...(app.auth === 'hlabs' ? [forwardAuth(daemon)] : []),
-      proxyTo(`127.0.0.1:${app.port}`),
+      proxyTo(`127.0.0.1:${loopbackPort(app.port)}`),
     ],
     terminal: true,
   };

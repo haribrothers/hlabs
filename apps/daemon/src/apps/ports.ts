@@ -1,10 +1,16 @@
-// Each app gets one port from 12000–12999: its web service is published on 127.0.0.1:<port> for Caddy (D-049), and
-// the same number is its tailnet port (D-012).
+// Each app gets one port from 12000–12999: its LAN fallback and tailnet port (D-012), which Caddy serves. Its web
+// service is published for Caddy on 127.0.0.1:<port + 1000>, in 13000–13999, so Caddy can listen on the app's own port
+// on every address (D-049, D-086).
 import { hlabsError } from '@hlabs/api';
 import { createServer } from 'node:net';
 
 export const APP_PORT_MIN = 12000;
 export const APP_PORT_MAX = 12999;
+/** How far the loopback range sits above the app ports (D-086). */
+export const LOOPBACK_OFFSET = 1000;
+
+/** Where an app's web service listens on this computer, for Caddy and health checks. */
+export const loopbackPort = (appPort: number) => appPort + LOOPBACK_OFFSET;
 
 /** True when nothing listens on 127.0.0.1:<port>. */
 export function loopbackPortFree(port: number): Promise<boolean> {
@@ -15,7 +21,7 @@ export function loopbackPortFree(port: number): Promise<boolean> {
   });
 }
 
-/** The lowest port from `from` up that no app holds and nothing else listens on. */
+/** The lowest app port from `from` up that no app holds and whose loopback port nothing listens on. */
 export async function allocatePort(
   taken: Iterable<number>,
   isFree: (port: number) => Promise<boolean> = loopbackPortFree,
@@ -23,7 +29,7 @@ export async function allocatePort(
 ): Promise<number> {
   const held = new Set(taken);
   for (let port = Math.max(from, APP_PORT_MIN); port <= APP_PORT_MAX; port++) {
-    if (!held.has(port) && (await isFree(port))) return port;
+    if (!held.has(port) && (await isFree(loopbackPort(port)))) return port;
   }
   throw hlabsError('APP_PORT_IN_USE', 'No free port in 12000–12999');
 }

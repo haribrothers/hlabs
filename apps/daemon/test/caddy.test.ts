@@ -65,9 +65,10 @@ describe('buildCaddyConfig', () => {
       upstreams: [{ dial: '127.0.0.1:7474' }],
       rewrite: { method: 'GET', uri: '/auth/verify' },
     });
-    expect(immich.handle[2]).toEqual({ handler: 'reverse_proxy', upstreams: [{ dial: '127.0.0.1:12000' }] });
+    // The app's web service on its loopback port, 1000 above the app port (D-086).
+    expect(immich.handle[2]).toEqual({ handler: 'reverse_proxy', upstreams: [{ dial: '127.0.0.1:13000' }] });
     expect(vaultwarden.handle.map((h: Json) => h.handler)).toEqual(['headers', 'reverse_proxy']);
-    expect(vaultwarden.handle[1].upstreams).toEqual([{ dial: '127.0.0.1:12001' }]);
+    expect(vaultwarden.handle[1].upstreams).toEqual([{ dial: '127.0.0.1:13001' }]);
   });
 
   it('drops identity headers a browser sends on the dashboard too', () => {

@@ -105,14 +105,14 @@ describe('PullLayers', () => {
 });
 
 describe('allocatePort', () => {
-  it('picks the lowest port no app holds and nothing listens on', async () => {
-    const busy = new Set([12001]);
+  it('picks the lowest port no app holds and whose loopback port (D-086) nothing listens on', async () => {
+    const busy = new Set([13001]);
     expect(await allocatePort([12000], async (p) => !busy.has(p))).toBe(12002);
     expect(await allocatePort([], async () => true, 12500)).toBe(12500);
   });
 
   it('fails with APP_PORT_IN_USE when the range is full', async () => {
-    await expect(allocatePort([], async (p) => p > APP_PORT_MAX)).rejects.toSatisfy(
+    await expect(allocatePort([], async (p) => p > APP_PORT_MAX + 1000)).rejects.toSatisfy(
       (e) => hlabsCodeOf(e) === 'APP_PORT_IN_USE',
     );
   });

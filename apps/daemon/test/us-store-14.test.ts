@@ -33,7 +33,8 @@ describe('US-STORE-14', () => {
   });
 
   it('"Use a different port" retries on the port chosen, which must be free and in 12000–12999', async () => {
-    const t = await installDaemon(closers, { busyPorts: [12001] });
+    // 12001's loopback port (D-086) is taken.
+    const t = await installDaemon(closers, { busyPorts: [13001] });
     await failedInstall(t);
     const busy = (await t.d.mutate('apps.retryInstall', {
       appId: 'uptime-kuma',

@@ -61,14 +61,20 @@ async function setup(options: { probes?: HealthProbes; engineRunning?: boolean }
   });
 
   /** An installed app: its row, project files and pulled images. */
-  function install(appId: string, state: AppState, patch: Partial<typeof apps.$inferInsert> = {}) {
+  function install(
+    appId: string,
+    state: AppState,
+    patch: Partial<typeof apps.$inferInsert> = {},
+    options: { beforeD086?: boolean } = {},
+  ) {
     const loaded = loadAppDir(join(STORE, 'apps', appId), { requireDigest: true });
     const manifest = loaded.manifest as AppManifest;
     const port = 12000 + db.select().from(apps).all().length;
     const rendered = renderApp({
       manifest,
       compose: loaded.compose!,
-      webPort: port,
+      // Published on the loopback range (D-086), or on the app port as projects written before it were.
+      webPort: options.beforeD086 ? port : port + 1000,
       appDataDir: join(dir, 'app-data', appId),
       folders: Object.fromEntries(manifest.folders.map((f) => [f.key, join(dir, 'storage', f.key)])),
       hostname: `${appId}.hlabs.local`,
@@ -142,9 +148,19 @@ describe('project files', () => {
     const t = await setup();
     const { project, port } = t.install('uptime-kuma', 'running');
     expect(project).toEqual({ name: 'hlabs-uptime-kuma', dir: join(t.dir, 'apps', 'uptime-kuma') });
-    expect(readFileSync(join(project.dir, 'docker-compose.yml'), 'utf8')).toContain(`127.0.0.1:${port}:3001`);
+    expect(readFileSync(join(project.dir, 'docker-compose.yml'), 'utf8')).toContain(`127.0.0.1:${port + 1000}:3001`);
     expect(statSync(join(project.dir, '.env')).mode & 0o777).toBe(0o600);
     expect(t.service.manifest('uptime-kuma').id).toBe('uptime-kuma');
+  });
+
+  it('moves a project written before D-086 to the loopback range on its next start', async () => {
+    const t = await setup();
+    const { project, port } = t.install('uptime-kuma', 'stopped', {}, { beforeD086: true });
+    const file = join(project.dir, 'docker-compose.yml');
+    expect(readFileSync(file, 'utf8')).toContain(`127.0.0.1:${port}:3001`);
+    await t.service.start('uptime-kuma');
+    expect(readFileSync(file, 'utf8')).toContain(`127.0.0.1:${port + 1000}:3001`);
+    expect(readFileSync(file, 'utf8')).not.toContain(`127.0.0.1:${port}:`);
   });
 });
 
@@ -219,7 +235,8 @@ describe('start, stop and restart', () => {
     const t = await setup({ probes: fakeProbes((url) => (seen.push(url), status)) });
     const { port } = t.install('vaultwarden', 'stopped');
     expect(await t.service.start('vaultwarden')).toEqual({ ok: false, reason: 'timeout', seconds: 60 });
-    expect(seen[0]).toBe(`http://127.0.0.1:${port}/alive`);
+    // The loopback port, 1000 above the app's port (D-086).
+    expect(seen[0]).toBe(`http://127.0.0.1:${port + 1000}/alive`);
     status = 200;
     await t.service.start('vaultwarden');
     expect(t.stateOf('vaultwarden')).toBe('running');
