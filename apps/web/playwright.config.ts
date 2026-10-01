@@ -13,9 +13,12 @@ import { E2E_STORE_DIR, MAIN_PORTS, MAIN_STORAGE_STATE, MAIN_URL } from './e2e/i
 //   those specs run in parallel, desktop and phone at the same time.
 const DATA_DIR = process.env.HLABS_E2E_DATA_DIR ?? '../../.e2e-data';
 const WORKERS = process.env.CI ? 2 : 4;
-// The main instance's own copy of the built-in store, fresh each run (no test app left from an earlier one).
-rmSync(E2E_STORE_DIR, { recursive: true, force: true });
-cpSync('../../store', E2E_STORE_DIR, { recursive: true });
+// The main instance's own copy of the built-in store, fresh each run (no test app left from an earlier one). Only in
+// Playwright's main process: every worker loads this file too, and must not wipe it while a spec is using it.
+if (process.env.TEST_WORKER_INDEX === undefined) {
+  rmSync(E2E_STORE_DIR, { recursive: true, force: true });
+  cpSync('../../store', E2E_STORE_DIR, { recursive: true });
+}
 // Specs that need a known admin they create themselves (all onboarding and log-in stories, and a few later ones).
 const FIRST_RUN_SPECS = /(d-098-server-name|us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-2])|us-sys-(1[89]|20))\.spec\.ts/;
 // Specs that change the main instance for everyone, run after the desktop and phone specs, one at a time: those that
