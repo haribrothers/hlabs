@@ -7,7 +7,7 @@
 //
 // CI has no mDNS, so "opens at" is checked by asking Caddy for the app's name directly (TLS SNI and Host
 // <app>.hlabs.local, checked against hlabs's own CA), which is what a browser that resolves the name gets.
-import { spawn, type ChildProcess } from 'node:child_process';
+import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { request } from 'node:https';
 import { join, resolve } from 'node:path';
@@ -126,10 +126,40 @@ interface StoreDetails {
   install: { env: Array<{ key: string; default: string | null; required: boolean; options: string[] | null }> };
 }
 
+/** What the app's containers said, for a failure in CI: the last lines of each, and how they ended. */
+function containerLogs(appId: string): string {
+  try {
+    const project = `hlabs-matrix-${appId}`;
+    const ids = execFileSync('docker', ['ps', '-aq', '--filter', `label=com.docker.compose.project=${project}`], {
+      encoding: 'utf8',
+    })
+      .split('\n')
+      .filter(Boolean);
+    return ids
+      .map((id) => {
+        const name = execFileSync(
+          'docker',
+          ['inspect', '-f', '{{.Name}} {{.State.Status}} exit={{.State.ExitCode}}', id],
+          {
+            encoding: 'utf8',
+          },
+        ).trim();
+        const logs = execFileSync('docker', ['logs', '--tail', '60', id], {
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+        });
+        return `--- ${name}\n${logs}`;
+      })
+      .join('\n');
+  } catch (err) {
+    return `(no container logs: ${err instanceof Error ? err.message : String(err)})`;
+  }
+}
+
 const openApp = (appId: string) => openHost(`${appId}.hlabs.local`);
 
 async function appState(appId: string) {
-  const res = await query<{ state: string; stateDetail: string | null }>('apps.get', { appId });
+  const res = await query<{ state: string; stateDetail: unknown }>('apps.get', { appId });
   return res.result?.data ?? null;
 }
 
@@ -155,7 +185,10 @@ async function run(appId: string): Promise<string | null> {
     const s = await appState(appId);
     return s && (s.state === 'running' || s.state === 'install_failed') ? s : undefined;
   });
-  if (installed.state !== 'running') return `install failed: ${installed.stateDetail}`;
+  if (installed.state !== 'running') {
+    say(containerLogs(appId));
+    return `install failed: ${JSON.stringify(installed.stateDetail)}`;
+  }
 
   log(appId, 'opening', `https://${appId}.hlabs.local:${PORTS.https}/`);
   const opened = await until(`${appId} answers`, SETTLE_MS, async () => {
@@ -177,7 +210,10 @@ async function run(appId: string): Promise<string | null> {
     const s = await appState(appId);
     return s && (s.state === 'running' || s.state === 'error') ? s : undefined;
   });
-  if (restarted.state !== 'running') return `restart failed: ${restarted.stateDetail}`;
+  if (restarted.state !== 'running') {
+    say(containerLogs(appId));
+    return `restart failed: ${JSON.stringify(restarted.stateDetail)}`;
+  }
 
   log(appId, 'uninstalling');
   const uninstall = await mutate('apps.uninstall', { appId, keepData: false });
