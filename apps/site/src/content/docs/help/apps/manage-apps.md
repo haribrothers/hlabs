@@ -16,6 +16,14 @@ Under **Access**, App settings shows the app's address, such as `https://vaultwa
 
 If hlabs can't announce the app's name on your network, the address is the hlabs address with the app's own port, such as `https://hlabs.local:12003`. It opens the same app.
 
+## Choose how an app behaves
+
+Under **Behaviour**:
+
+- **Start automatically**: the app starts when hlabs starts, for example after this computer restarts. Turn it off for apps you only use now and then; they stay stopped until you start them.
+
+Each switch saves as soon as you change it. If it can't be saved, it moves back and hlabs tells you why.
+
 ## Start, stop or restart an app
 
 - **Open** opens the app in a new tab.

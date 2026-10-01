@@ -67,6 +67,12 @@ export const appsCopy = {
   addressCopied: 'Address copied',
   copyFailed: "Couldn't copy the address. Select it and copy it yourself.",
   alsoOnTailnet: 'Also on your tailnet',
+  // Behaviour (US-APP-06)
+  behaviour: 'Behaviour',
+  startAutomatically: 'Start automatically',
+  includeInBackups: 'Include in backups',
+  updateAutomatically: 'Update automatically',
+  customNeverUpdates: 'Custom apps never update automatically',
 
   // Logs (US-APP-08…10)
   logsTitle: (app: string) => `${app} logs`,

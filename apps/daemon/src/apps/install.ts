@@ -154,6 +154,9 @@ export class InstallService {
         app.state === 'install_failed' ? await this.freePort((app.portFallback ?? 11999) + 1).catch(() => null) : null,
       engineRunning: this.deps.engine.client !== null,
       startedAt: app.state === 'running' ? await this.deps.apps.startedAt(appId) : null,
+      autostart: app.autostart,
+      autoUpdate: app.autoUpdate,
+      custom: app.custom,
     };
   }
 

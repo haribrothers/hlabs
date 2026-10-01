@@ -88,6 +88,9 @@ export const appDetail = (extra: Partial<AppDetail> = {}): AppDetail => ({
   urls: { local: 'https://immich.hlabs.local', tailnet: null },
   engineRunning: true,
   startedAt: null,
+  autostart: true,
+  autoUpdate: false,
+  custom: false,
   ...extra,
 });
 

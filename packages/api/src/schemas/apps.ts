@@ -71,6 +71,10 @@ export const appDetailSchema = homeAppSchema.extend({
   engineRunning: z.boolean(),
   /** When its web container started (ms since the epoch) while it runs, for "up 6 days" (US-APP-04); null otherwise. */
   startedAt: z.number().int().nullable(),
+  /** The behaviour switches (US-APP-06): starts with hlabs, updates itself; custom apps never update themselves. */
+  autostart: z.boolean(),
+  autoUpdate: z.boolean(),
+  custom: z.boolean(),
 });
 export type AppDetail = z.infer<typeof appDetailSchema>;
 

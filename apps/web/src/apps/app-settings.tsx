@@ -23,6 +23,7 @@ import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
 import { AccessDenied } from '../shell/access-denied';
 import { AppAccess } from './app-access';
+import { AppBehaviour } from './app-behaviour';
 import { statusDot } from './app-window';
 import { appBaseUrl, useApp } from './use-app';
 import { useAppCommands } from './use-app-commands';
@@ -105,6 +106,7 @@ function AppSettingsView({ appId }: { appId: string }) {
         <div role="tabpanel" aria-label={copy.tabs[tab]} className="flex flex-col gap-6">
           <Actions app={app} />
           <AppAccess app={app} />
+          <AppBehaviour app={app} />
         </div>
       </GlassCard>
     </section>

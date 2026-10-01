@@ -3,7 +3,8 @@
 // (US-STORE-11, US-STORE-17, US-APP-12) build on the pieces here.
 import { hlabsCodeOf, hlabsError } from '@hlabs/api';
 import { HLABS_NETWORK, type AppManifest, type RenderedApp } from '@hlabs/app-manifest';
-import { apps, getSetting, type AppState, type HlabsDb } from '@hlabs/db';
+import { apps, auditLog, getSetting, type AppState, type HlabsDb } from '@hlabs/db';
+import { ulid } from '@hlabs/shared';
 import { eq } from 'drizzle-orm';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -61,6 +62,43 @@ export class AppService {
 
   get(appId: string): AppRow | null {
     return this.deps.db.select().from(apps).where(eq(apps.id, appId)).get() ?? null;
+  }
+
+  /**
+   * "Start automatically" and "Update automatically" (US-APP-06): saved at once, with the old and new value in the
+   * audit log. Custom apps never update automatically.
+   */
+  setBehaviour(
+    appId: string,
+    setting: 'autostart' | 'autoUpdate',
+    enabled: boolean,
+    by: { userId: string; ip?: string | null },
+  ): void {
+    const app = this.get(appId);
+    if (!app) throw hlabsError('NOT_FOUND');
+    if (setting === 'autoUpdate' && enabled && app.custom) {
+      throw hlabsError('VALIDATION_FAILED', 'Custom apps never update automatically', { appId });
+    }
+    const from = app[setting];
+    if (from === enabled) return;
+    const at = Date.now();
+    this.deps.db.transaction((tx) => {
+      tx.update(apps)
+        .set({ [setting]: enabled, updatedAt: at })
+        .where(eq(apps.id, appId))
+        .run();
+      tx.insert(auditLog)
+        .values({
+          id: ulid(),
+          at,
+          userId: by.userId,
+          action: setting === 'autostart' ? 'app.setAutostart' : 'app.setAutoUpdate',
+          target: appId,
+          detailJson: { from, to: enabled },
+          ip: by.ip ?? null,
+        })
+        .run();
+    });
   }
 
   /** Moves an app along an edge of the state machine; refuses with APP_BUSY otherwise. */
