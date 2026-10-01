@@ -37,6 +37,25 @@ export class AppLogs {
       .slice(-opts.tail);
   }
 
+  /**
+   * Every line Docker kept (up to 30 MB per service: json-file, 3 files of 10 MB) for download (US-APP-10): one
+   * service's, or all of them merged by time. Streamed up to now, never held whole in memory.
+   */
+  async *everything(appId: string, opts: { service?: string }, signal?: AbortSignal): AsyncGenerator<LogLine> {
+    const engine = this.engine();
+    const until = Date.now();
+    const containers = await this.containers(engine, appId, opts.service);
+    yield* byTime(
+      containers.map((c) =>
+        (async function* () {
+          for await (const l of engine.containerLogs(c.id, { follow: true, until, signal })) {
+            yield { service: c.service, ...l };
+          }
+        })(),
+      ),
+    );
+  }
+
   /** New lines as they come, after `since` (ms) when given, until `signal` aborts. */
   async *watch(
     appId: string,
@@ -124,6 +143,23 @@ export class AppLogs {
   private async containers(engine: ContainerEngine, appId: string, service?: string): Promise<ContainerState[]> {
     const all = await engine.projectContainers(this.deps.project(appId));
     return service ? all.filter((c) => c.service === service) : all;
+  }
+}
+
+/** Several time-ordered streams as one, oldest line first, reading each only as far as needed. */
+async function* byTime(sources: AsyncGenerator<LogLine>[]): AsyncGenerator<LogLine> {
+  const heads = await Promise.all(sources.map((s) => s.next()));
+  for (;;) {
+    let next = -1;
+    for (const [i, head] of heads.entries()) {
+      if (head.done) continue;
+      const best = heads[next];
+      if (next < 0 || (best && !best.done && head.value.ts < best.value.ts)) next = i;
+    }
+    if (next < 0) return;
+    const head = heads[next]!;
+    if (!head.done) yield head.value;
+    heads[next] = await sources[next]!.next();
   }
 }
 

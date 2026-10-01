@@ -65,7 +65,7 @@ export class DockerodeEngine implements ContainerEngine {
 
   async *containerLogs(
     containerId: string,
-    opts: { tail?: number; since?: number; follow?: boolean; signal?: AbortSignal },
+    opts: { tail?: number; since?: number; until?: number; follow?: boolean; signal?: AbortSignal },
   ): AsyncGenerator<ContainerLogLine> {
     const container = this.docker.getContainer(containerId);
     const frames = new LogFrames((await container.inspect()).Config.Tty);
@@ -77,6 +77,7 @@ export class DockerodeEngine implements ContainerEngine {
       ...(opts.tail === undefined ? {} : { tail: opts.tail }),
       // Docker takes seconds, with a fraction.
       since: opts.since === undefined ? 0 : opts.since / 1000,
+      ...(opts.until === undefined ? {} : { until: opts.until / 1000 }),
     };
     if (!opts.follow) {
       const all = await container.logs({ ...options, follow: false });

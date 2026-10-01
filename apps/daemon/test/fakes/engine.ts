@@ -92,10 +92,16 @@ export class FakeEngine implements ContainerEngine {
 
   async *containerLogs(
     containerId: string,
-    opts: { tail?: number; since?: number; follow?: boolean; signal?: AbortSignal },
+    opts: { tail?: number; since?: number; until?: number; follow?: boolean; signal?: AbortSignal },
   ): AsyncGenerator<ContainerLogLine> {
     this.assertRunning();
-    let lines = (this.logLines.get(containerId) ?? []).filter((l) => opts.since === undefined || l.ts > opts.since);
+    let lines = (this.logLines.get(containerId) ?? []).filter(
+      (l) => (opts.since === undefined || l.ts > opts.since) && (opts.until === undefined || l.ts <= opts.until),
+    );
+    if (opts.until !== undefined) {
+      yield* lines;
+      return;
+    }
     if (opts.tail !== undefined) lines = opts.tail === 0 ? [] : lines.slice(-opts.tail);
     if (!opts.follow) {
       yield* lines;

@@ -30,6 +30,12 @@ export type ToastAction =
       feature?: Feature;
     }
   | {
+      /** Tries something in this page again (a download, US-APP-10); never from a notification. */
+      kind: 'retry';
+      label: string;
+      run: () => void;
+    }
+  | {
       kind: 'mutation';
       label: string;
       procedure: ToastMutation;

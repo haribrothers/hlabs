@@ -2,13 +2,14 @@
 // containers and new ones as they come. While "Following" is on the view stays at the newest line; scrolling up turns
 // it off, and pressing it jumps back down. Filters narrow it to some text, one container or errors (US-APP-09). A window over the wallpaper, as the AppLogs screen draws it.
 import type { LogLine } from '@hlabs/api';
-import { ChevronLeft, iconDefaults, Search } from '@hlabs/icons';
+import { ChevronLeft, Download, iconDefaults, Search } from '@hlabs/icons';
 import { Badge, Button, GlassCard, IconButton, Segmented } from '@hlabs/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useDeferredValue, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { appsCopy } from '../copy/apps';
 import { useNow } from '../lib/use-now';
 import { AdminOnly } from './admin-only';
+import { downloadLogs } from './download-logs';
 import { logLevel, type LogLevel } from './log-level';
 import { useApp } from './use-app';
 import { useAppLogs } from './use-app-logs';
@@ -50,6 +51,7 @@ function AppLogsView({ appId }: { appId: string }) {
   const [errorsOnly, setErrorsOnly] = useState(false);
   const { lines, loading, error } = useAppLogs(appId, service);
   const [following, setFollowing] = useState(true);
+  const [downloading, setDownloading] = useState(false);
   const list = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -116,6 +118,21 @@ function AppLogsView({ appId }: { appId: string }) {
             <span aria-hidden className={`size-2 rounded-pill ${following ? 'bg-success' : 'bg-ink-muted'}`} />
             {copy.following}
           </button>
+          <Button
+            size="sm"
+            variant="secondary"
+            busy={downloading}
+            disabled={downloading}
+            // The filters only change the view (US-APP-10).
+            title={query !== '' || errorsOnly ? copy.downloadIgnoresFilters : undefined}
+            onClick={() => {
+              setDownloading(true);
+              void downloadLogs(appId, service).finally(() => setDownloading(false));
+            }}
+          >
+            <Download aria-hidden {...iconDefaults} className="size-4" />
+            {copy.download}
+          </Button>
         </header>
         <div className="flex flex-wrap items-center gap-2">
           {several ? (

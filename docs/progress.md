@@ -111,7 +111,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-APP-07 · Storage, resources and version (the Update button and its progress come with the update job in US-STORE-17, "Uninstall…" with its dialog in US-APP-11; live CPU and memory in phase 4)
 - [x] US-APP-08 · Follow an app's logs live
 - [x] US-APP-09 · Filter logs
-- [ ] US-APP-10 · Download logs
+- [x] US-APP-10 · Download logs
 - [ ] US-APP-11 · Confirm uninstall and choose what happens to data
 - [ ] US-APP-12 · Uninstall runs and cleans up
 - [ ] US-STATE-08 · Grey out Home when the engine has stopped

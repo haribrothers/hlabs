@@ -33,7 +33,7 @@ export function actionsFromNotification(actions: readonly NotificationAction[] |
 }
 
 /** Every allow-listed mutation is admin-only. */
-export const needsAdmin = (a: ToastAction) => a.kind === 'mutation' || Boolean(a.admin);
+export const needsAdmin = (a: ToastAction) => a.kind === 'mutation' || (a.kind === 'navigate' && Boolean(a.admin));
 
 /** The buttons to show: at most two, none a member can't use, none from a phase that hasn't shipped. */
 export function visibleActions(

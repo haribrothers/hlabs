@@ -98,4 +98,9 @@ export const appsCopy = {
   errorsOnly: 'Errors only',
   noMatches: 'No lines match these filters.',
   clearFilters: 'Clear filters',
+  // Download (US-APP-10)
+  download: 'Download',
+  downloadIgnoresFilters: 'Downloads every line, not only the ones the filters show',
+  downloadFailed: "Couldn't download logs.",
+  tryAgain: 'Try again',
 } as const;

@@ -9,6 +9,7 @@ import { registerDevRoutes } from './http/dev';
 import { registerHealthz } from './http/healthz';
 import { registerAuthVerify } from './http/verify';
 import { registerAppAssets } from './http/app-assets';
+import { registerAppLogs } from './http/app-logs';
 import type { Logger } from './logger';
 import type { Readiness } from './readiness';
 import { dispatcher } from './routers/index';
@@ -54,6 +55,7 @@ export async function buildServer({ config, logger, readiness, holder }: ServerD
   registerHealthz(app, readiness, config.version);
   registerAuthVerify(app, holder, config.resources.webFallbackDir);
   registerAppAssets(app, holder, config.devAnonymousAdmin);
+  registerAppLogs(app, holder, config.devAnonymousAdmin);
   if (config.dev) registerDevRoutes(app, holder);
 
   await app.register(fastifyTRPCPlugin, {

@@ -41,7 +41,9 @@ The logs show the latest 500 lines, oldest first, with the time and, when the ap
 
 To find something, type in **Filter** to show only lines that contain it, choose **Errors only**, or, for an app made of several parts, pick one under its name (such as "server"). **All** mixes every part's lines in time order and starts each line with whose it is. If nothing matches, choose **Clear filters**.
 
-Logs can contain passwords and other private details, so only admins can see them.
+To keep a copy, for example to attach to a bug report, choose **Download**. The file has every line the app has kept (up to about 30 MB for each part), for the part you picked or for all of them, even while a filter hides some lines on screen.
+
+Logs can contain passwords and other private details, so only admins can see or download them.
 
 ## Start, stop or restart an app
 

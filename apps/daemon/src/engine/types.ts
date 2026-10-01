@@ -43,11 +43,12 @@ export interface ContainerEngine {
   projectContainers(project: string): Promise<ContainerState[]>;
   /**
    * A container's log lines, oldest first: the last `tail` (all without it), only those after `since` (ms) when
-   * given, and with `follow` the new ones as they come until the container stops or `signal` aborts.
+   * given, and with `follow` the new ones as they come until the container stops, `until` (ms) passes or `signal`
+   * aborts. Following with `until` streams everything Docker kept without holding it in memory.
    */
   containerLogs(
     containerId: string,
-    opts: { tail?: number; since?: number; follow?: boolean; signal?: AbortSignal },
+    opts: { tail?: number; since?: number; until?: number; follow?: boolean; signal?: AbortSignal },
   ): AsyncIterable<ContainerLogLine>;
   /** An image's size on disk (`sha256:…` or a reference), or null when it isn't here. */
   imageSize(image: string): Promise<number | null>;
