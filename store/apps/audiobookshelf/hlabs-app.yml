@@ -2,7 +2,7 @@ schema: 1
 id: audiobookshelf
 name: Audiobookshelf
 version: '2.37.0'
-revision: 0
+revision: 1
 tagline: Audiobooks and podcasts, with your place remembered
 description: |
   Listen to your audiobooks and podcasts in the browser or the phone apps, with covers, chapters and
@@ -17,7 +17,7 @@ icon:
   fallback: headphones
 platforms: [linux/amd64, linux/arm64]
 requirements: { memory: 512, disk: 1024 }
-web: { service: audiobookshelf, port: 80 }
+web: { service: audiobookshelf, port: 80, embed: true }
 health: { service: audiobookshelf, http: /healthcheck, timeout: 120 }
 folders:
   - key: audiobooks

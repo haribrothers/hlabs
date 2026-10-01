@@ -48,6 +48,12 @@ describe('US-APP-01', () => {
     expect(framed.headers.response).toEqual({
       delete: ['X-Frame-Options'],
       add: { 'Content-Security-Policy': ['frame-ancestors https://hlabs.local'] },
+      // An app's own frame-ancestors ('self' in Audiobookshelf, Nextcloud…) would still refuse the dashboard.
+      replace: {
+        'Content-Security-Policy': [
+          { search_regexp: 'frame-ancestors[^;]*', replace: 'frame-ancestors https://hlabs.local' },
+        ],
+      },
     });
     expect(routeFor(config, 'gitea.hlabs.local').handle.at(-1).headers).toBeUndefined();
   });

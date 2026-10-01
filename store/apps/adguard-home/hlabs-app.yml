@@ -2,7 +2,7 @@ schema: 1
 id: adguard-home
 name: AdGuard Home
 version: '0.107.79'
-revision: 0
+revision: 1
 tagline: Block ads and trackers on every device at home
 description: |
   A DNS server for your whole network that blocks ads, trackers and malicious sites before they load,
@@ -18,7 +18,7 @@ icon:
   fallback: shield-check
 platforms: [linux/amd64, linux/arm64]
 requirements: { memory: 256, disk: 512 }
-web: { service: adguardhome, port: 3000 }
+web: { service: adguardhome, port: 3000, embed: true }
 health: { service: adguardhome, http: /, timeout: 120 }
 ports:
   - { service: adguardhome, container: 53, protocol: udp, host: 53, label: DNS }

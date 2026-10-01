@@ -2,7 +2,7 @@ schema: 1
 id: paperless-ngx
 name: Paperless-ngx
 version: '3.2.1'
-revision: 0
+revision: 1
 tagline: Scan, find and keep every paper document
 description: |
   Turn letters, bills and receipts into searchable PDFs. Drop scans into a folder and Paperless reads
@@ -18,7 +18,7 @@ icon:
   fallback: file-text
 platforms: [linux/amd64, linux/arm64]
 requirements: { memory: 2048, disk: 4096 }
-web: { service: webserver, port: 8000 }
+web: { service: webserver, port: 8000, embed: true }
 health: { service: webserver, http: /accounts/login/, timeout: 300 }
 env:
   - key: DB_PASSWORD

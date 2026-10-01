@@ -2,7 +2,7 @@ schema: 1
 id: n8n
 name: n8n
 version: '2.41.3'
-revision: 0
+revision: 1
 tagline: Automate tasks by connecting your apps
 description: |
   Build workflows that move data between apps and services, on a schedule or when something happens,
@@ -18,7 +18,7 @@ icon:
   fallback: workflow
 platforms: [linux/amd64, linux/arm64]
 requirements: { memory: 1024, disk: 1024 }
-web: { service: n8n, port: 5678 }
+web: { service: n8n, port: 5678, embed: true }
 health: { service: n8n, http: /healthz, timeout: 180 }
 env:
   - key: N8N_ENCRYPTION_KEY

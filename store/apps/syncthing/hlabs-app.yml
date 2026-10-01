@@ -2,7 +2,7 @@ schema: 1
 id: syncthing
 name: Syncthing
 version: '2.1.5'
-revision: 0
+revision: 1
 tagline: Keep folders in sync between your devices
 description: |
   Sync folders between this computer, laptops and phones directly, without a cloud in between. Files
@@ -17,7 +17,7 @@ icon:
   fallback: refresh-cw
 platforms: [linux/amd64, linux/arm64]
 requirements: { memory: 256, disk: 512 }
-web: { service: syncthing, port: 8384 }
+web: { service: syncthing, port: 8384, embed: true }
 health: { service: syncthing, http: /rest/noauth/health, timeout: 120 }
 folders:
   - key: sync

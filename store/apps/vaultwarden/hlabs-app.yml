@@ -2,7 +2,7 @@ schema: 1
 id: vaultwarden
 name: Vaultwarden
 version: '1.37.3'
-revision: 0
+revision: 1
 tagline: Keep every password safe in one place
 description: |
   A light server for the Bitwarden apps and browser extensions. Store passwords, passkeys and
@@ -17,7 +17,7 @@ icon:
   fallback: key-round
 platforms: [linux/amd64, linux/arm64]
 requirements: { memory: 256, disk: 512 }
-web: { service: vaultwarden, port: 80 }
+web: { service: vaultwarden, port: 80, embed: true }
 health: { service: vaultwarden, http: /alive, timeout: 60 }
 env:
   - key: SIGNUPS_ALLOWED

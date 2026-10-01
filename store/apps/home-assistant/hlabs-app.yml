@@ -2,7 +2,7 @@ schema: 1
 id: home-assistant
 name: Home Assistant
 version: '2026.9.4'
-revision: 0
+revision: 1
 tagline: Run your smart home from one place
 description: |
   Connect lights, heating, sensors and speakers from thousands of brands, see them on one dashboard and
@@ -18,7 +18,7 @@ icon:
   fallback: house
 platforms: [linux/amd64, linux/arm64]
 requirements: { memory: 1024, disk: 2048 }
-web: { service: homeassistant, port: 8123 }
+web: { service: homeassistant, port: 8123, embed: true }
 health: { service: homeassistant, http: /manifest.json, timeout: 300 }
 ownLogin: true
 backup:

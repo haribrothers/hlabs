@@ -2,7 +2,7 @@ schema: 1
 id: gitea
 name: Gitea
 version: '1.27.3'
-revision: 0
+revision: 1
 tagline: Host your own Git repositories
 description: |
   A light home for your code, like GitHub on your own computer: repositories, pull requests, issues, a
@@ -17,7 +17,7 @@ icon:
   fallback: git-branch
 platforms: [linux/amd64, linux/arm64]
 requirements: { memory: 512, disk: 1024 }
-web: { service: gitea, port: 3000 }
+web: { service: gitea, port: 3000, embed: true }
 health: { service: gitea, http: /api/healthz, timeout: 120 }
 ownLogin: true
 backup:

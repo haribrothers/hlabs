@@ -2,7 +2,7 @@ schema: 1
 id: open-webui
 name: Open WebUI
 version: '0.11.4'
-revision: 0
+revision: 1
 tagline: Chat with AI models running on your own hardware
 description: |
   A chat app for AI models, like the big assistants but private. Use models from Ollama on this computer
@@ -19,7 +19,7 @@ icon:
 platforms: [linux/amd64, linux/arm64]
 tags: [local-ai]
 requirements: { memory: 2048, disk: 8192 }
-web: { service: open-webui, port: 8080 }
+web: { service: open-webui, port: 8080, embed: true }
 health: { service: open-webui, http: /health, timeout: 600 }
 env:
   - key: OLLAMA_BASE_URL

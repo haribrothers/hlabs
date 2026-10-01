@@ -28,16 +28,18 @@ export function caRootDir(storageDir: string): string {
 const proxyTo = (dial: string) => ({ handler: 'reverse_proxy', upstreams: [{ dial }] });
 
 /**
- * An app that declares `web.embed` (D-038) may be framed by the dashboard (US-APP-01): its X-Frame-Options is dropped
- * and a `frame-ancestors` policy naming the dashboard's addresses is added. Added, not set, so the app's own policy
- * still applies; an app that forbids framing itself stays unframeable.
+ * An app that declares `web.embed` (D-038) may be framed by the dashboard, and only by it (US-APP-01): its
+ * X-Frame-Options is dropped, a `frame-ancestors` in its own policy (often `'self'`) is rewritten to the dashboard's
+ * addresses, and a policy saying the same is added for apps that send none. The rest of the app's policy is kept.
  */
 function framedBy(ancestors: string[]) {
+  const directive = `frame-ancestors ${ancestors.join(' ')}`;
   return {
     headers: {
       response: {
         delete: ['X-Frame-Options'],
-        add: { 'Content-Security-Policy': [`frame-ancestors ${ancestors.join(' ')}`] },
+        add: { 'Content-Security-Policy': [directive] },
+        replace: { 'Content-Security-Policy': [{ search_regexp: 'frame-ancestors[^;]*', replace: directive }] },
       },
     },
   };

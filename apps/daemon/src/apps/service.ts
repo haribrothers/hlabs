@@ -12,6 +12,7 @@ import type { EventBus } from '../events/bus';
 import type { Logger } from '../logger';
 import { COMPOSE_FILE, ComposeError, ENV_FILE, type ComposeProject, type ComposeRunner } from './compose';
 import { checkHealthOnce, waitHealthy, type HealthProbes, type HealthResult } from './health';
+import { catalogManifest } from './list';
 import { loopbackPort } from './ports';
 import { canTransition, stateDetail } from './state-machine';
 
@@ -110,12 +111,19 @@ export class AppService {
       }));
   }
 
-  /** Whether the app's manifest lets the dashboard frame it; false without a project (a dev stand-in). */
+  /**
+   * Whether the dashboard may frame the app: its store listing's `web.embed`, the same one its Home tile reads, so an
+   * installed app follows a listing that starts to allow it; without a listing, its installed manifest's.
+   */
   private embeds(appId: string): boolean {
+    const app = this.get(appId);
+    if (!app) return false;
+    const listed = catalogManifest(this.deps.db, app).web?.embed;
+    if (listed !== undefined) return listed;
     try {
       return this.manifest(appId).web?.embed ?? false;
     } catch {
-      return false;
+      return false; // no project: a dev stand-in
     }
   }
 
