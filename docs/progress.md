@@ -84,7 +84,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [ ] US-ONB-19 · Pick starter apps
 - [ ] US-ONB-20 · Skip starter apps
 - [x] US-HOME-06 · Recognise each app's state on its tile (the "Update" badge appears with the updates list in phase 7, D-036)
-- [ ] US-HOME-07 · Act on an app from its menu
+- [x] US-HOME-07 · Act on an app from its menu ("Edit Home" joins the menu with edit mode in phase 7, D-036)
 - [ ] US-HOME-08 · Recover a stopped or broken app from its tile
 - [ ] US-HOME-09 · Open search from anywhere
 - [ ] US-HOME-10 · Find apps, actions, files, settings and store apps in one list

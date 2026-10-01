@@ -54,6 +54,11 @@ export function DropdownMenuCheckboxItem({ className, children, ...props }: Comp
   );
 }
 
+/** A heading at the top of a menu: the app a tile's menu is for (US-HOME-07). */
+export function DropdownMenuLabel({ className, ...props }: ComponentProps<typeof Radix.Label>) {
+  return <Radix.Label className={cn('hl-menu-header', className)} {...props} />;
+}
+
 export function DropdownMenuSeparator({ className, ...props }: ComponentProps<typeof Radix.Separator>) {
   return <Radix.Separator className={cn('hl-menu-sep', className)} {...props} />;
 }

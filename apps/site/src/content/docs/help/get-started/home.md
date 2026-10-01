@@ -45,6 +45,8 @@ Each tile shows how its app is doing:
 
 Screen readers hear the state with the name, such as "Nextcloud, installing, 64%".
 
+Right-click a tile (or press and hold it on a touch screen, or press Shift+F10 or the Menu key) for its menu. Admins can **Open** the app, go to its **Settings**, **View logs**, **Restart** or **Stop** it (**Start** when it's stopped), or **Uninstall…** it. The tile changes at once, and hlabs tells you when the app has restarted, started or stopped. While an app is installing, updating or being removed, only **View logs** is available. Members get **Open**. Press Esc to close the menu.
+
 New apps appear on Home as soon as they're installed, and removed apps disappear, without reloading the page. With a keyboard, use Tab to reach the apps and the arrow keys to move between them.
 
 ## The Dock

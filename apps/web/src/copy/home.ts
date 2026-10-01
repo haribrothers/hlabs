@@ -19,6 +19,19 @@ export const homeCopy = {
     rollingBack: 'Rolling back…',
     removing: 'Removing…',
   },
+  /** A tile's menu (US-HOME-07). */
+  menu: {
+    open: 'Open',
+    settings: 'Settings',
+    logs: 'View logs',
+    restart: 'Restart',
+    stop: 'Stop',
+    start: 'Start',
+    uninstall: 'Uninstall…',
+    restarted: (app: string) => `${app} restarted`,
+    started: (app: string) => `${app} started`,
+    stopped: (app: string) => `${app} stopped`,
+  },
   greeting: {
     morning: (name: string) => `Good morning, ${name}`,
     afternoon: (name: string) => `Good afternoon, ${name}`,
