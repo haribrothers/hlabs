@@ -5,7 +5,9 @@ import { MAIN_URL } from './instances';
 
 const ID = 'controls-demo';
 
-test.afterEach(async ({ request }) => {
+// A skipped run (the phone project) must leave the stand-in alone: the desktop run may be using it.
+test.afterEach(async ({ request }, info) => {
+  if (info.status === 'skipped') return;
   await request.post(`${MAIN_URL}/dev/fake-app`, { data: { id: ID, remove: true } });
 });
 
@@ -26,8 +28,10 @@ test('US-APP-02 the window header has the admin controls; Logs and App settings 
   await page.goBack();
   await page.getByRole('region', { name: 'App window' }).getByRole('button', { name: 'App settings' }).click();
   await expect(page).toHaveURL(new RegExp(`/apps/${ID}/settings$`));
-  await expect(page.getByRole('heading', { name: 'Controls demo' })).toBeVisible();
+  // The settings view itself (its code may still be loading while the window shows).
+  const settings = page.getByRole('region', { name: 'App settings' });
+  await expect(settings.getByRole('heading', { name: 'Controls demo', exact: true })).toBeVisible();
   // Close goes back to the window it came from.
-  await page.getByRole('button', { name: 'Close' }).click();
+  await settings.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/apps/${ID}$`));
 });

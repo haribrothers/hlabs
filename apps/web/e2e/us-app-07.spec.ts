@@ -5,7 +5,9 @@ import { MAIN_URL } from './instances';
 
 const ID = 'storage-demo';
 
-test.afterEach(async ({ request }) => {
+// A skipped run (the phone project) must leave the stand-in alone: the desktop run may be using it.
+test.afterEach(async ({ request }, info) => {
+  if (info.status === 'skipped') return;
   await request.post(`${MAIN_URL}/dev/fake-app`, { data: { id: ID, remove: true } });
 });
 

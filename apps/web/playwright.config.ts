@@ -1,11 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
-import { MAIN_STORAGE_STATE } from './e2e/instances';
+import { MAIN_PORTS, MAIN_STORAGE_STATE, MAIN_URL } from './e2e/instances';
 
 // E2E specs are named by user story id (us-<code>-<nn>.spec.ts); phase checks by phase.
-// Locally they reuse a running `pnpm dev`; in CI Playwright starts the daemons and Vite itself.
+// Playwright starts the daemons and Vite itself, on ports of their own, so a running `pnpm dev` (and its data) is
+// never touched; locally it reuses an e2e instance that's still up from a previous run.
 //
 // Instances:
-// - main (daemon 7474, Vite 5173): onboarding is completed by e2e/global.setup.ts so specs reach the dashboard.
+// - main (daemon 7574, Vite 5273): onboarding is completed by e2e/global.setup.ts so specs reach the dashboard.
 // - first run, one per worker (daemon 7480+i, Vite 5180+i, started by e2e/first-run-servers.ts): a fresh data dir on
 //   every run, for specs that set hlabs up themselves (import FIRST_RUN_URL from e2e/instances.ts). With one each,
 //   those specs run in parallel, desktop and phone at the same time.
@@ -13,9 +14,9 @@ const DATA_DIR = process.env.HLABS_E2E_DATA_DIR ?? '../../.e2e-data';
 const WORKERS = process.env.CI ? 2 : 4;
 // Specs that need a known admin they create themselves (all onboarding and log-in stories, and a few later ones).
 const FIRST_RUN_SPECS = /(us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-2])|us-sys-(1[89]|20))\.spec\.ts/;
-// Specs that really install store apps (the D-071 smoke set) or leave failed installs: after the desktop and phone
+// Specs that really install store apps (the D-071 smoke set, and uninstalling one) or leave failed installs: after the desktop and phone
 // specs, one at a time, so no other spec sees these apps change under it.
-const INSTALL_SPECS = /us-store-1[1-4]\.spec\.ts/;
+const INSTALL_SPECS = /(us-store-1[1-4]|us-app-12)\.spec\.ts/;
 
 // HLABS_DEV_NO_ENGINE_INSTALL: a run on a machine with no engine must never download Colima (11: tests don't
 // reach the internet).
@@ -25,6 +26,8 @@ const daemonEnv = {
   HLABS_DEV_NO_ENGINE_CONTROL: '1',
   HLABS_DEV_ANONYMOUS_ADMIN: '1',
   HLABS_LOG_LEVEL: 'warn',
+  // Its own compose projects, never a dev instance's apps (D-090).
+  HLABS_COMPOSE_PREFIX: 'hlabs-e2e',
 };
 
 export default defineConfig({
@@ -35,7 +38,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
-  use: { baseURL: 'http://127.0.0.1:5173', trace: 'retain-on-failure' },
+  use: { baseURL: MAIN_URL, trace: 'retain-on-failure' },
   projects: [
     { name: 'setup', testMatch: /global\.setup\.ts/ },
     {
@@ -72,15 +75,21 @@ export default defineConfig({
   webServer: [
     {
       command: `pnpm --filter @hlabs/daemon exec tsx src/main.ts`,
-      url: 'http://127.0.0.1:7474/healthz',
+      url: `http://127.0.0.1:${MAIN_PORTS.daemon}/healthz`,
       reuseExistingServer: !process.env.CI,
-      env: { ...daemonEnv, HLABS_DATA_DIR: DATA_DIR, HLABS_DASHBOARD_URL: 'http://127.0.0.1:5173' },
+      env: {
+        ...daemonEnv,
+        HLABS_PORT: String(MAIN_PORTS.daemon),
+        HLABS_DATA_DIR: DATA_DIR,
+        HLABS_DASHBOARD_URL: MAIN_URL,
+      },
       timeout: 60_000,
     },
     {
-      command: 'pnpm exec vite --port 5173',
-      url: 'http://127.0.0.1:5173',
+      command: `pnpm exec vite --port ${MAIN_PORTS.web} --strictPort`,
+      url: MAIN_URL,
       reuseExistingServer: !process.env.CI,
+      env: { HLABS_DAEMON_URL: `http://127.0.0.1:${MAIN_PORTS.daemon}` },
       timeout: 60_000,
     },
   ],

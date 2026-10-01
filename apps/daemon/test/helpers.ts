@@ -31,6 +31,7 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
     proxy: 'none',
     mdns: false,
     dashboardUpstream: '127.0.0.1:0',
+    composePrefix: 'hlabs',
     headless: false,
     netmountHelper: '/nonexistent/hlabs-netmount',
     privHelper: '/nonexistent/hlabs-priv',

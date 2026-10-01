@@ -146,6 +146,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
         socketPath: () => (engine.status.state === 'running' ? engine.status.candidate.socketPath : null),
       }),
     projectsDir: join(config.paths.dataDir, 'apps'),
+    projectPrefix: config.composePrefix,
     probes: deps.healthProbes,
   });
   // Caddy and the mDNS publishers a killed daemon left running go first (they'd hold port 443 and the names).

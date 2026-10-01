@@ -32,6 +32,11 @@ const envSchema = z.object({
   HLABS_PROXY: z.enum(['caddy', 'none']).optional(),
   HLABS_MDNS: z.enum(['0', '1', 'true', 'false']).optional(),
   HLABS_DASHBOARD_UPSTREAM: z.string().optional(),
+  /** Compose project names are `<prefix>-<appId>`; e2e uses its own so it never touches a dev instance's apps (D-090). */
+  HLABS_COMPOSE_PREFIX: z
+    .string()
+    .regex(/^[a-z0-9][a-z0-9-]*$/)
+    .default('hlabs'),
 });
 
 declare const __HLABS_BUNDLE__: boolean | undefined;
@@ -63,6 +68,8 @@ function defaultResources(): ResourcePaths {
 }
 
 export interface DaemonConfig {
+  /** Compose project names are `<composePrefix>-<appId>` (`hlabs`; e2e's own, D-090). */
+  composePrefix: string;
   version: string;
   env: 'development' | 'test' | 'production';
   dev: boolean;
@@ -139,6 +146,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
     proxy: e.HLABS_PROXY ?? (production ? 'caddy' : 'none'),
     mdns: e.HLABS_MDNS === undefined ? production : e.HLABS_MDNS === '1' || e.HLABS_MDNS === 'true',
     dashboardUpstream: e.HLABS_DASHBOARD_UPSTREAM ?? `127.0.0.1:${e.HLABS_PORT}`,
+    composePrefix: e.HLABS_COMPOSE_PREFIX,
     headless: e.HLABS_HEADLESS,
     netmountHelper: e.HLABS_NETMOUNT_BIN ?? fileURLToPath(new URL('../native/.build/hlabs-netmount', import.meta.url)),
     privHelper: e.HLABS_PRIV_HELPER ?? '/usr/lib/hlabs/hlabs-priv',

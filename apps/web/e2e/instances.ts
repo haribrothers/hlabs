@@ -1,7 +1,12 @@
 // The e2e instances (see playwright.config.ts).
 import { expect, type APIRequestContext } from '@playwright/test';
 
-export const MAIN_URL = 'http://127.0.0.1:5173';
+/**
+ * The main instance has ports of its own, never `pnpm dev`'s (7474 and 5173): specs add and remove apps, so they must
+ * only ever reach the e2e data dir, even while a dev instance with real apps is running.
+ */
+export const MAIN_PORTS = { daemon: 7574, web: 5273 } as const;
+export const MAIN_URL = `http://127.0.0.1:${MAIN_PORTS.web}`;
 /** The main instance's signed-in browser state, written by global.setup.ts. */
 export const MAIN_STORAGE_STATE = 'e2e/.auth/main.json';
 

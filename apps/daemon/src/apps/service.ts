@@ -52,6 +52,8 @@ export interface AppServiceDeps {
   compose: ComposeRunner;
   /** `<dataDir>/apps`: one compose project folder per app. */
   projectsDir: string;
+  /** Compose project names are `<projectPrefix>-<appId>` (default `hlabs`, D-090). */
+  projectPrefix?: string;
   probes?: HealthProbes;
   now?: () => number;
 }
@@ -117,7 +119,7 @@ export class AppService {
   }
 
   project(appId: string): ComposeProject {
-    return { name: `hlabs-${appId}`, dir: join(this.deps.projectsDir, appId) };
+    return { name: `${this.deps.projectPrefix ?? 'hlabs'}-${appId}`, dir: join(this.deps.projectsDir, appId) };
   }
 
   /** Writes the rendered compose file, the .env (owner-only: it holds generated secrets) and the manifest copy. */
