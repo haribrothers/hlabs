@@ -94,6 +94,7 @@ export const appDetail = (extra: Partial<AppDetail> = {}): AppDetail => ({
   latestVersion: null,
   services: ['app'],
   dependents: [],
+  rolledBack: null,
   autostart: true,
   autoUpdate: false,
   custom: false,

@@ -19,6 +19,7 @@ import { cardAction, storeTags } from './store-app';
 import { pageScroller, storeReturnHref } from './store-return';
 import { InstallSheet } from './install-sheet';
 import { useInstalls } from './use-installs';
+import { DetailsRolledBack } from '../apps/app-update';
 
 const copy = storeCopy;
 const Readme = lazy(() => import('./readme'));
@@ -195,6 +196,7 @@ function Fact({ label, value }: { label: string; value: string }) {
 
 export function AppDetails({ appId }: { appId: string }) {
   const details = useAppDetails(appId);
+  const installs = useInstalls();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { install?: true };
   const desktop = useIsDesktop();
@@ -273,6 +275,7 @@ export function AppDetails({ appId }: { appId: string }) {
       >
         <div className="flex flex-col gap-6">
           {desktop ? null : appHeader}
+          <DetailsRolledBack appId={appId} installed={installs.byId.has(appId)} />
           <RequirementNotes d={d} />
           <Screenshots urls={d.screenshots} name={app.name} />
           <div className="grid gap-8 lg:grid-cols-[1fr_23rem]">

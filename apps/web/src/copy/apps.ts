@@ -82,6 +82,16 @@ export const appsCopy = {
   countingDisk: 'Counting disk use…',
   upToDate: (version: string) => `Version ${version} · up to date`,
   updateAvailable: (version: string, next: string) => `Version ${version} · ${next} available`,
+  // Updating, and an update that rolled back (US-APP-07, US-STORE-17)
+  update: 'Update',
+  updating: (percent: number) => `Updating… ${percent}%`,
+  rolledBackTitle: (app: string) => `${app}'s update didn't start, so hlabs rolled it back`,
+  rolledBackBody: (version: string) => `It's running ${version} again.`,
+  restoreFailedTitle: (app: string) => `${app} couldn't be restored`,
+  restoreFailedBody: (from: string, to: string) =>
+    `Its update to ${to} didn't start, and ${from} didn't start again either. Check its logs.`,
+  viewLog: 'View log',
+  dismiss: 'Dismiss',
   // Uninstall (US-APP-11, US-APP-12)
   uninstallEllipsis: 'Uninstall…',
   uninstallTitle: (app: string) => `Uninstall ${app}?`,

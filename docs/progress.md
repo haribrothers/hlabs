@@ -101,14 +101,14 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-STORE-12 · Watch install progress
 - [x] US-STORE-13 · Understand why an install failed
 - [x] US-STORE-14 · Retry or remove a failed install
-- [ ] US-STORE-17 · Roll back an update that doesn't start
+- [x] US-STORE-17 · Roll back an update that doesn't start (the banner shows on the app's details page until the Updates page in phase 7; data restore from the pre-update backup and "Restore from backup" wait for backups in phase 5)
 - [x] US-APP-01 · Open an app in a window
 - [x] US-APP-02 · App window controls
 - [x] US-APP-03 · Opening an app that isn't running
 - [x] US-APP-04 · See an app's status and start, stop or restart it
 - [x] US-APP-05 · App address and tailnet address
 - [x] US-APP-06 · Behaviour switches ("Include in backups" is wired to the backup plan with backups in phase 5, where it appears; "Update automatically" appears in phase 7)
-- [x] US-APP-07 · Storage, resources and version (the Update button and its progress come with the update job in US-STORE-17, "Uninstall…" with its dialog in US-APP-11; live CPU and memory in phase 4)
+- [x] US-APP-07 · Storage, resources and version ("Uninstall…" with its dialog in US-APP-11; live CPU and memory in phase 4)
 - [x] US-APP-08 · Follow an app's logs live
 - [x] US-APP-09 · Filter logs
 - [x] US-APP-10 · Download logs

@@ -33,6 +33,18 @@ Under **Storage and resources**:
 
 At the bottom, the version says whether it's up to date, or which newer version the App Store has.
 
+## Update an app
+
+When the App Store has a newer version, choose **Update** beside it. The app restarts while it updates, and the top of App settings says how far it has got, such as "Updating… 40%". Your settings and data stay as they are.
+
+If the new version doesn't start, hlabs puts the previous version back and starts it again, so an update never leaves an app broken. Admins get a notification, and the app's page in the App Store says "<App>'s update didn't start, so hlabs rolled it back". From there:
+
+- **View log** opens the app's logs at the moment the update failed, so you can see why.
+- **Try again** runs the update again, for example after the app's makers publish a fix.
+- **×** dismisses the message. It doesn't come back for that update.
+
+In the rare case the previous version doesn't start again either, the app shows an error and the message says it couldn't be restored. Check its logs.
+
 ## Read an app's logs
 
 Logs are what an app writes about what it's doing. They help when something goes wrong, for example when an app won't start. Choose **Logs** in App settings or at the top of the app window.

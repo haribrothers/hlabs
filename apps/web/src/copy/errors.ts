@@ -166,6 +166,14 @@ export const errorCopy = {
       title: `${str(d, 'app', 'The app')} is busy`,
       body: 'Wait for it to finish what it’s doing, then try again.',
     }),
+    APP_UPDATE_ROLLED_BACK: (d) => ({
+      title: "The update didn't start",
+      body: `hlabs went back to ${str(d, 'fromVersion', 'the previous version')}. Nothing was lost.`,
+    }),
+    APP_ROLLBACK_FAILED: () => ({
+      title: "The app couldn't be restored",
+      body: "Neither the new version nor the previous one started. Check the app's logs.",
+    }),
     HOSTNAME_TAKEN: () => ({ title: 'That address is taken', body: 'Choose another name.' }),
     // Storage, files and network
     STORAGE_NOT_WRITABLE: () => ({

@@ -35,6 +35,7 @@ import { ChildRegistry } from './platform/children';
 import { createMdnsPublisher } from './mdns/publisher';
 import { AppDiskUsage } from './apps/disk';
 import { AppLogs } from './apps/logs';
+import { UpdateService } from './apps/update';
 import { SessionService } from './auth/sessions';
 import { TotpService } from './auth/totp';
 import { LoginService } from './auth/login';
@@ -289,6 +290,18 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     probes: deps.healthProbes,
   });
   installer.register();
+  const updates = new UpdateService({
+    db,
+    logger,
+    jobs,
+    catalog,
+    apps: appService,
+    installer,
+    engine,
+    notifications,
+    probes: deps.healthProbes,
+  });
+  updates.register();
   const services: Services = {
     config,
     logger,
@@ -303,6 +316,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     catalog,
     store,
     installer,
+    updates,
     logs: new AppLogs({ engine, project: (appId) => appService.project(appId).name }),
     routing: network,
     apps: appService,

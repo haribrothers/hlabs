@@ -38,6 +38,7 @@ export default defineConfig(({ command }) => ({
       '/dev/fake-app': DAEMON,
       '/dev/engine': DAEMON,
       '/dev/remove-app': DAEMON,
+      '/dev/rolled-back': DAEMON,
       '/dev/seed': DAEMON,
       '/dev/notify': DAEMON,
     },

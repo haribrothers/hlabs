@@ -5,6 +5,7 @@ import {
   appSources,
   catalogApps,
   getSetting,
+  jobs,
   loginAttempts,
   setSetting,
   settingsSchemas,
@@ -205,6 +206,37 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     bus.emit('app.stateChanged', { appId: id, state, detail: null }, { kind: 'all' });
     if (progress !== undefined) bus.emit('app.installProgress', { appId: id, jobId: 'dev', progress }, { kind: 'all' });
     return { added: id };
+  });
+
+  // An update that rolled back (US-STORE-17 e2e): its failed job and the admins' notification, as the job leaves them,
+  // for a stand-in app; a real failing update needs an image that doesn't start.
+  const rolledBackBody = z.object({
+    id: z.string().regex(/^[a-z0-9-]{2,39}$/),
+    name: z.string(),
+    fromVersion: z.string(),
+    toVersion: z.string(),
+    restored: z.boolean().default(true),
+  });
+  app.post('/dev/rolled-back', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { id, name, fromVersion, toVersion, restored } = rolledBackBody.parse(req.body);
+    const now = Date.now();
+    services.db
+      .insert(jobs)
+      .values({
+        id: ulid(),
+        kind: 'app_update',
+        target: id,
+        state: 'failed',
+        progress: 100,
+        errorCode: restored ? 'APP_UPDATE_ROLLED_BACK' : 'APP_ROLLBACK_FAILED',
+        payloadJson: { appId: id, userId: 'dev', fromVersion, toVersion },
+        createdAt: now,
+        finishedAt: now,
+      })
+      .run();
+    return { notificationId: services.updates.notifyRolledBack({ appId: id, name, fromVersion, toVersion, restored }) };
   });
 
   // Takes down and forgets an app a spec really installed (the US-STORE-11 smoke install), until uninstall arrives

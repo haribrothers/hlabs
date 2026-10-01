@@ -84,6 +84,20 @@ export const appDetailSchema = homeAppSchema.extend({
   dependents: z.array(z.string()),
   /** Its compose services, for the Logs view's Container choice (US-APP-09). */
   services: z.array(z.string()),
+  /**
+   * An update that didn't start and that an admin hasn't dismissed (US-STORE-17): `restored` when the previous version
+   * runs again. Null for members and when there's none.
+   */
+  rolledBack: z
+    .object({
+      notificationId: z.string(),
+      restored: z.boolean(),
+      fromVersion: z.string(),
+      toVersion: z.string(),
+      jobId: z.string().nullable(),
+      at: z.number(),
+    })
+    .nullable(),
   /** The behaviour switches (US-APP-06): starts with hlabs, updates itself; custom apps never update themselves. */
   autostart: z.boolean(),
   autoUpdate: z.boolean(),

@@ -24,6 +24,7 @@ import type { InstallService } from './apps/install';
 import type { AppService } from './apps/service';
 import type { NetworkService } from './network/service';
 import type { AppLogs } from './apps/logs';
+import type { UpdateService } from './apps/update';
 
 export interface Services {
   config: DaemonConfig;
@@ -40,6 +41,8 @@ export interface Services {
   store: StoreService;
   /** Installs apps (US-STORE-08…14). */
   installer: InstallService;
+  /** Updates and their rollback (US-STORE-17). */
+  updates: UpdateService;
   apps: AppService;
   /** Apps' container logs (US-APP-08…10). */
   logs: AppLogs;

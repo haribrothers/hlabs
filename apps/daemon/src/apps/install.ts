@@ -491,7 +491,7 @@ export class InstallService {
   }
 
   /** Pulls what's missing; reports bytes across images, never going backwards, with an ETA after 5 s. */
-  private async pullAll(
+  async pullAll(
     ctx: JobContext<unknown>,
     images: string[],
     report: (within: number, detail: InstallStepDetail, etaSeconds: number | null) => void,
@@ -545,7 +545,7 @@ export class InstallService {
     }
   }
 
-  private writeProject(
+  writeProject(
     manifest: AppManifest,
     compose: ComposeFile,
     hostname: string,
@@ -572,17 +572,17 @@ export class InstallService {
   }
 
   /** Values kept from an earlier install of this app (its .env stays with kept data, US-APP-12). */
-  private keptEnv(appId: string): Record<string, string> {
+  keptEnv(appId: string): Record<string, string> {
     const file = join(this.deps.apps.project(appId).dir, ENV_FILE);
     return existsSync(file) ? parseEnvFile(readFileSync(file, 'utf8')) : {};
   }
 
-  private storedEnv(appId: string): Record<string, string> {
+  storedEnv(appId: string): Record<string, string> {
     const rows = this.deps.db.select().from(appEnv).where(eq(appEnv.appId, appId)).all();
     return Object.fromEntries(rows.flatMap((r) => (r.value === null ? [] : [[r.key, r.value]])));
   }
 
-  private storedMounts(appId: string): Array<{ target: string; hostPath: string }> {
+  storedMounts(appId: string): Array<{ target: string; hostPath: string }> {
     return this.deps.db
       .select({ target: appMounts.target, subpath: appMounts.subpath, path: storageLocations.path })
       .from(appMounts)

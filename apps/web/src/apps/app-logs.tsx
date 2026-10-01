@@ -36,15 +36,15 @@ const timeFormat = new Intl.DateTimeFormat(undefined, {
 /** Local time, `HH:mm:ss`. */
 export const logTime = (ts: number) => timeFormat.format(ts);
 
-export function AppLogs({ appId }: { appId: string }) {
+export function AppLogs({ appId, at }: { appId: string; at?: number }) {
   return (
     <AdminOnly>
-      <AppLogsView appId={appId} />
+      <AppLogsView appId={appId} at={at} />
     </AdminOnly>
   );
 }
 
-function AppLogsView({ appId }: { appId: string }) {
+function AppLogsView({ appId, at }: { appId: string; at?: number }) {
   const { data: app } = useApp(appId);
   const trpc = useTRPC();
   // Only an image without this computer's platform reads differently on macOS and Linux.
@@ -57,13 +57,21 @@ function AppLogsView({ appId }: { appId: string }) {
   const [service, setService] = useState<string | undefined>(undefined);
   const [errorsOnly, setErrorsOnly] = useState(false);
   const { lines, loading, error } = useAppLogs(appId, service);
-  const [following, setFollowing] = useState(true);
+  // Opened at a moment (US-STORE-17): not following, and that moment in view once the lines are in.
+  const [following, setFollowing] = useState(at === undefined);
   const [downloading, setDownloading] = useState(false);
   const list = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (app) document.title = copy.docTitle(copy.logsTitle(app.name));
   }, [app]);
+  const shownAt = useRef(false);
+  useLayoutEffect(() => {
+    if (at === undefined || shownAt.current || lines.length === 0) return;
+    shownAt.current = true;
+    const rows = [...(list.current?.querySelectorAll<HTMLElement>('[data-ts]') ?? [])];
+    (rows.find((row) => Number(row.dataset.ts) >= at) ?? rows.at(-1))?.scrollIntoView?.({ block: 'start' });
+  }, [at, lines]);
   // Following: keep the newest line in view as lines arrive.
   useLayoutEffect(() => {
     const el = list.current;
@@ -211,7 +219,10 @@ function Row({ line, query, withService }: { line: LogLine; query: string; withS
   }
   const level = logLevel(line.line);
   return (
-    <div className="flex gap-4 py-0.5 [contain-intrinsic-size:auto_1.75rem] [content-visibility:auto]">
+    <div
+      data-ts={line.ts}
+      className="flex gap-4 py-0.5 [contain-intrinsic-size:auto_1.75rem] [content-visibility:auto]"
+    >
       <span className="shrink-0 text-ink-muted">{logTime(line.ts)}</span>
       <span className="w-16 shrink-0">{level ? <Badge tone={LEVEL_TONE[level]}>{level}</Badge> : null}</span>
       <span className="min-w-0 whitespace-pre-wrap break-words text-ink">

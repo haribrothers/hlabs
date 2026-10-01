@@ -15,13 +15,14 @@ const copy = engineCopy;
 const EXCLUSIVE = new Set<string>(EXCLUSIVE_JOB_KINDS);
 
 /** Active jobs, kept current by job events. An engine restart that fails says so (the engine is then stopped). */
-export function useActiveJobs() {
+export function useActiveJobs(enabled = true) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   useSubscription(
     trpc.events.stream.subscriptionOptions(
       { types: ['job.progress', 'job.finished'] },
       {
+        enabled,
         onData: ({ data: event }) => {
           void queryClient.invalidateQueries({ queryKey: trpc.jobs.list.queryKey() });
           if (event.type === 'job.finished' && event.data.kind === 'engine_restart' && event.data.state === 'failed') {
@@ -42,7 +43,7 @@ export function useActiveJobs() {
       },
     ),
   );
-  return useQuery({ ...trpc.jobs.list.queryOptions(), retry: false });
+  return useQuery({ ...trpc.jobs.list.queryOptions(), enabled, retry: false });
 }
 
 /** The trailing control of the active engine's row. */

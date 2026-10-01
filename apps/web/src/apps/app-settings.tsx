@@ -24,6 +24,7 @@ import { AdminOnly } from './admin-only';
 import { AppAccess } from './app-access';
 import { AppBehaviour } from './app-behaviour';
 import { AppStorage, AppVersion } from './app-storage';
+import { UpdateButton, useAppUpdate } from './app-update';
 import { statusDot } from './app-window';
 import { appBaseUrl, useApp } from './use-app';
 import { UninstallDialog } from './uninstall-dialog';
@@ -111,7 +112,10 @@ function AppSettingsView({ appId }: { appId: string }) {
           <AppBehaviour app={app} />
           <AppStorage app={app} />
           <footer className="flex items-center justify-between gap-4">
-            <AppVersion app={app} />
+            <div className="flex flex-wrap items-center gap-3">
+              <AppVersion app={app} />
+              <UpdateButton app={app} />
+            </div>
             <Button variant="link" className="text-danger" onClick={() => setUninstalling(true)}>
               {copy.uninstallEllipsis}
             </Button>
@@ -126,6 +130,9 @@ function AppSettingsView({ appId }: { appId: string }) {
 /** "Running · up 6 days", from when its web container started; the state alone otherwise. */
 function StatusLine({ app }: { app: AppDetail }) {
   const now = useNow();
+  const { progress } = useAppUpdate(app.id, app.state === 'updating');
+  // An update says how far it has got (US-APP-07).
+  if (app.state === 'updating' && progress !== null) return copy.updating(progress);
   const label = copy.status[app.state];
   if (app.state !== 'running' || app.startedAt === null) return label;
   return `${label} · ${copy.upFor(now.getTime() - app.startedAt)}`;

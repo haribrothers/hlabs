@@ -13,7 +13,7 @@ function installer(ctx: DaemonContext) {
 
 export const apps: AppHandlers<DaemonContext>['apps'] = {
   /** Members get only the apps they can open (07 §7.4). */
-  get: (input, ctx) => {
+  get: async (input, ctx) => {
     const user = installer(ctx);
     if (
       user.role !== 'admin' &&
@@ -21,7 +21,9 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
     ) {
       throw hlabsError('ACCESS_DENIED');
     }
-    return ctx.services.installer.detail(input.appId);
+    const detail = await ctx.services.installer.detail(input.appId);
+    // An update that rolled back, for the admins' banner (US-STORE-17).
+    return { ...detail, rolledBack: user.role === 'admin' ? ctx.services.updates.rolledBack(input.appId) : null };
   },
   install: (input, ctx) =>
     ctx.services.installer.begin(installer(ctx), {
@@ -53,6 +55,7 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
   }),
   watchLogs: (input, ctx, signal) =>
     ctx.services.logs.watch(input.appId, { service: input.service, since: input.since }, signal),
+  update: (input, ctx) => ctx.services.updates.update(installer(ctx), input.appId),
   retryInstall: (input, ctx) => ctx.services.installer.retry(installer(ctx), input.appId, input.portOverrides?.web),
   uninstall: (input, ctx) => ctx.services.installer.uninstall(installer(ctx), input.appId, input.keepData),
   /** Only the apps this person can open, enforced here, not in the UI (07 §7.4). */
