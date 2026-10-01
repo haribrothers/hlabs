@@ -45,6 +45,8 @@ function moveFocus(e: KeyboardEvent<HTMLElement>) {
 /** The tile's state: installing shows its ring, a failed install or a crash an error badge (US-STORE-14). */
 export function tileState(state: HomeApp['state']): AppIconState {
   if (state === 'installing') return 'installing';
+  // Until the uninstall job is done (US-APP-12).
+  if (state === 'uninstalling') return 'removing';
   if (state === 'install_failed' || state === 'error') return 'error';
   if (state === 'stopped') return 'stopped';
   return 'running';

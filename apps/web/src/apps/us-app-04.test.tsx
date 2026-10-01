@@ -149,6 +149,21 @@ describe('US-APP-04', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/apps/vaultwarden/logs'));
   });
 
+  it('with no step back to take, Close goes to where the settings were opened from', async () => {
+    const { router } = open('running');
+    await screen.findByRole('button', { name: 'Close' });
+    await act(() =>
+      router.navigate({
+        to: '/apps/vaultwarden/settings' as never,
+        replace: true,
+        state: { from: '/apps/vaultwarden' },
+      }),
+    );
+    expect(router.history.canGoBack()).toBe(false);
+    fireEvent.click(await screen.findByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/apps/vaultwarden'));
+  });
+
   it('members get "You don\'t have access to this" and never load the app', async () => {
     const { calls } = open('running', {}, { role: 'member' });
     expect(await screen.findByRole('heading', { name: "You don't have access to this" })).toBeInTheDocument();

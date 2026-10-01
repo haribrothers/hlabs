@@ -54,7 +54,7 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
   watchLogs: (input, ctx, signal) =>
     ctx.services.logs.watch(input.appId, { service: input.service, since: input.since }, signal),
   retryInstall: (input, ctx) => ctx.services.installer.retry(installer(ctx), input.appId, input.portOverrides?.web),
-  uninstall: (input, ctx) => ctx.services.installer.uninstallFailed(installer(ctx), input.appId),
+  uninstall: (input, ctx) => ctx.services.installer.uninstall(installer(ctx), input.appId, input.keepData),
   /** Only the apps this person can open, enforced here, not in the UI (07 §7.4). */
   list: (_input, ctx) => {
     const id = ctx.identity;

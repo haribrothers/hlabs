@@ -115,7 +115,7 @@ describe('state machine', () => {
   it('matches 02 §2.5', () => {
     expect(APP_TRANSITIONS.install_failed).toEqual(['installing']);
     expect(APP_TRANSITIONS.updating).toEqual(['running', 'rolling_back']);
-    expect(APP_TRANSITIONS.uninstalling).toEqual([]);
+    expect(APP_TRANSITIONS.uninstalling).toEqual(['error']);
     expect(APP_TRANSITIONS.stopped).toEqual(['starting', 'uninstalling']);
   });
 

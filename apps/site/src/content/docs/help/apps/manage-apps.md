@@ -54,6 +54,8 @@ At the bottom of App settings, choose **Uninstall…**. hlabs asks what happens 
 
 If another app needs this one (Immich needing a database app, for example), hlabs says so, and you uninstall that app first.
 
+After you choose **Uninstall**, you're back on Home, where the app shows "Removing…" until it's gone and hlabs says it was uninstalled. It also leaves everyone's Home screen and Dock, and the apps shared with members. Backups made earlier are kept. If something goes wrong, the app shows an error and hlabs offers **Try again**.
+
 ## Start, stop or restart an app
 
 - **Open** opens the app in a new tab.

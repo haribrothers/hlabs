@@ -96,6 +96,7 @@ export const appsCopy = {
   uninstallAndDelete: 'Uninstall and delete data',
   needsIt: (other: string, app: string) => `${other} needs ${app}. Uninstall it first.`,
   cancel: 'Cancel',
+  appRemoved: 'This app was removed.',
 
   // Logs (US-APP-08…10)
   logsTitle: (app: string) => `${app} logs`,

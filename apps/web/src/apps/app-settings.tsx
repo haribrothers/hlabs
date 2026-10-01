@@ -15,7 +15,7 @@ import {
   X,
 } from '@hlabs/icons';
 import { Button, GlassCard, IconButton, SectionTabs, StatusDot } from '@hlabs/ui';
-import { useNavigate, useRouter } from '@tanstack/react-router';
+import { useLocation, useNavigate, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { appsCopy } from '../copy/apps';
 import { browser } from '../lib/browser';
@@ -44,11 +44,15 @@ const TABS: Array<{ id: Tab; feature?: Feature }> = [
   { id: 'usage', feature: 'appUsage' },
 ];
 
-/** Back to where it was opened from (the app window or Home), or Home when opened directly. */
+/**
+ * Back to where it was opened from (the app window or Home): a step back in history, or, when there's none to take,
+ * the place recorded when it was opened (`state.from`), else Home.
+ */
 export function useGoBack() {
   const router = useRouter();
   const navigate = useNavigate();
-  return () => (router.history.canGoBack() ? router.history.back() : void navigate({ to: '/' }));
+  const from = useLocation({ select: (l) => l.state.from });
+  return () => (router.history.canGoBack() ? router.history.back() : void navigate({ to: from ?? '/' }));
 }
 
 export function AppSettings({ appId }: { appId: string }) {
@@ -81,6 +85,7 @@ function AppSettingsView({ appId }: { appId: string }) {
       <GlassCard level={2} className="flex w-full max-w-[600px] flex-col gap-6 p-7">
         <header className="flex items-center gap-4">
           <AppLogo
+            decorative
             name={app.name}
             src={app.icon.logoUrl}
             colors={look.colors}

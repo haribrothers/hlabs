@@ -57,6 +57,8 @@ export function runToastMutation(
       return client.apps.start.mutate(input as Parameters<typeof client.apps.start.mutate>[0]);
     case 'apps.restart':
       return client.apps.restart.mutate(input as Parameters<typeof client.apps.restart.mutate>[0]);
+    case 'apps.uninstall':
+      return client.apps.uninstall.mutate(input as Parameters<typeof client.apps.uninstall.mutate>[0]);
     case 'backups.runNow':
       return client.backups.runNow.mutate(input as Parameters<typeof client.backups.runNow.mutate>[0]);
     case 'settings.updates.check':

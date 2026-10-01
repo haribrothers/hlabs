@@ -13,7 +13,8 @@ export const APP_TRANSITIONS: Record<AppState, readonly AppState[]> = {
   updating: ['running', 'rolling_back'],
   rolling_back: ['running', 'error'],
   error: ['starting', 'uninstalling'],
-  uninstalling: [],
+  // A failed uninstall leaves the app in error with the step that failed, to try again (US-APP-12).
+  uninstalling: ['error'],
 };
 
 export function canTransition(from: AppState, to: AppState): boolean {

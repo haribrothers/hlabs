@@ -113,7 +113,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-APP-09 · Filter logs
 - [x] US-APP-10 · Download logs
 - [x] US-APP-11 · Confirm uninstall and choose what happens to data
-- [ ] US-APP-12 · Uninstall runs and cleans up
+- [x] US-APP-12 · Uninstall runs and cleans up
 - [ ] US-STATE-08 · Grey out Home when the engine has stopped
 - [ ] US-STATE-09 · Start the engine from the banner
 - [ ] US-STATE-10 · Recover automatically when the engine comes back

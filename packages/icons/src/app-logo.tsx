@@ -36,13 +36,25 @@ export interface AppLogoProps {
   radius?: number;
   className?: string;
   style?: CSSProperties;
+  /** The name is written beside it (a Home tile, a window title): the logo is then hidden from screen readers. */
+  decorative?: boolean;
 }
 
 /**
  * An app's tile: its own logo when there is one, otherwise a gradient with a white icon.
  * The gradient also shows behind the logo while it loads.
  */
-export function AppLogo({ name, src, colors, fallbackIcon, size = 76, radius, className, style }: AppLogoProps) {
+export function AppLogo({
+  name,
+  src,
+  colors,
+  fallbackIcon,
+  size = 76,
+  radius,
+  className,
+  style,
+  decorative = false,
+}: AppLogoProps) {
   // Remember which src failed, so a new src gets a fresh attempt without an effect.
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const failed = failedSrc !== null && failedSrc === src;
@@ -70,7 +82,7 @@ export function AppLogo({ name, src, colors, fallbackIcon, size = 76, radius, cl
       {showImg ? (
         <img
           src={src ?? undefined}
-          alt={name}
+          alt={decorative ? '' : name}
           width={size}
           height={size}
           loading="lazy"

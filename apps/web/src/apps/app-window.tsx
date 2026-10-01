@@ -32,6 +32,8 @@ const HEADER_LOGO = 28;
 export const SPINNER_AFTER_MS = 1_000;
 /** …and a way out once it has taken this long (US-APP-01). */
 export const SLOW_AFTER_MS = 20_000;
+/** How long "This app was removed." shows before the window closes to Home (US-APP-12). */
+export const REMOVED_CLOSE_MS = 2_500;
 
 /** States on the way somewhere: the frame area shows a spinner and the app comes back by itself (US-APP-02, 03). */
 const BUSY = new Set<AppState>(['starting', 'restarting', 'stopping', 'updating', 'rolling_back', 'uninstalling']);
@@ -95,7 +97,9 @@ export function FramePanel({ children }: { children: ReactNode }) {
 
 export function AppWindow({ appId }: { appId: string }) {
   const navigate = useNavigate();
-  const { data: app } = useApp(appId);
+  const { data: app, lastChange } = useApp(appId);
+  // Uninstalled while open (US-APP-12): say so, then go Home.
+  const removed = lastChange?.detail === 'removed';
   const isAdmin = useMe().data?.role === 'admin';
   const [reloadKey] = useState(0);
   const close = () => void navigate({ to: '/' });
@@ -119,13 +123,23 @@ export function AppWindow({ appId }: { appId: string }) {
   useEffect(() => {
     if (app) document.title = copy.docTitle(app.name);
   }, [app]);
+  useEffect(() => {
+    if (!removed) return;
+    const timer = setTimeout(close, REMOVED_CLOSE_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- close only navigates
+  }, [removed]);
 
   if (!app) return null;
   const look = appTileLook(app.name, app.icon, HEADER_LOGO);
   const base = appBaseUrl(app);
   const src = `${base}${app.webPath === '/' ? '' : app.webPath}`;
   const canRestart = (app.state === 'running' || app.state === 'error') && app.engineRunning;
-  const body = !app.engineRunning ? (
+  const body = removed ? (
+    <FramePanel>
+      <p className="m-0 text-body text-ink">{copy.appRemoved}</p>
+    </FramePanel>
+  ) : !app.engineRunning ? (
     // The engine-stopped message (US-STATE-08) whatever the app's last state was (US-APP-03).
     <FramePanel>
       <p className="m-0 text-body font-bold text-ink">{engineCopy.stoppedTitle}</p>
@@ -191,6 +205,7 @@ export function AppWindow({ appId }: { appId: string }) {
             <House aria-hidden {...iconDefaults} className="size-4" />
           </IconButton>
           <AppLogo
+            decorative
             name={app.name}
             src={app.icon.logoUrl}
             colors={look.colors}
@@ -224,7 +239,9 @@ export function AppWindow({ appId }: { appId: string }) {
                 </IconButton>
                 <IconButton
                   label={copy.appSettings}
-                  onClick={() => void navigate({ to: '/apps/$appId/settings', params: { appId } })}
+                  onClick={() =>
+                    void navigate({ to: '/apps/$appId/settings', params: { appId }, state: { from: `/apps/${appId}` } })
+                  }
                 >
                   <SlidersHorizontal aria-hidden {...iconDefaults} className="size-4" />
                 </IconButton>

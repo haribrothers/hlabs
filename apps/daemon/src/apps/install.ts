@@ -5,10 +5,22 @@
 // failure is `install_failed` (D-081). A failure leaves nothing else changed and can be retried or removed.
 import { hlabsCodeOf, hlabsError, type HlabsCode, type InstallStep, type InstallStepDetail } from '@hlabs/api';
 import { hasRiskyPermissions, renderApp, type AppManifest, type ComposeFile } from '@hlabs/app-manifest';
-import { appEnv, appMounts, apps, auditLog, getSetting, jobs, storageLocations, type HlabsDb } from '@hlabs/db';
+import {
+  appAccess,
+  appEnv,
+  appMounts,
+  apps,
+  auditLog,
+  backupPlan,
+  getSetting,
+  homeLayout,
+  jobs,
+  storageLocations,
+  type HlabsDb,
+} from '@hlabs/db';
 import { HOSTNAME_PATTERN, ulid } from '@hlabs/shared';
 import { and, desc, eq } from 'drizzle-orm';
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { EngineService } from '../engine/service';
@@ -25,10 +37,10 @@ import { folderPaths, resolveMounts, type MountRequest } from './folders';
 import { waitHealthy, type HealthProbes } from './health';
 import { takenHostnames } from './hostnames';
 import type { AppDiskUsage } from './disk';
-import { appSummary, catalogRow } from './list';
+import { appSummary, catalogManifest, catalogRow } from './list';
 import { allocatePort, loopbackPort, loopbackPortFree } from './ports';
 import type { AppService } from './service';
-import { stateDetail } from './state-machine';
+import { canTransition, stateDetail } from './state-machine';
 import { hostTimeZone } from '../platform/timezone';
 
 export interface InstallRequest {
@@ -110,17 +122,21 @@ export class InstallService {
     this.deps.jobs.register<{ appId: string }>('app_install', {
       run: (ctx) => this.run(ctx),
     });
-    // Removing a failed install (US-STORE-14); uninstalling a working app joins with US-APP-12.
-    this.deps.jobs.register<{ appId: string; user: Installer }>('app_uninstall', {
+    // Removing a failed install (US-STORE-14), or uninstalling an app (US-APP-12, with `keepData`).
+    this.deps.jobs.register<{ appId: string; user: Installer; keepData?: boolean }>('app_uninstall', {
       run: async ({ payload, report }) => {
         report(10);
-        await this.removeFailed(payload.user, payload.appId);
+        if (payload.keepData === undefined) await this.removeFailed(payload.user, payload.appId);
+        else await this.removeApp(payload.user, payload.appId, payload.keepData, report);
       },
     });
   }
 
-  /** `apps.uninstall` for a failed install: its removal as a job. */
-  uninstallFailed(user: Installer, appId: string): { jobId: string } {
+  /**
+   * `apps.uninstall` (US-APP-11, US-APP-12): a failed install is removed; a working app goes to `uninstalling` at
+   * once (Home shows it) and is uninstalled as a job, keeping its data or not.
+   */
+  uninstall(user: Installer, appId: string, keepData: boolean): { jobId: string } {
     const app = this.deps.db.select().from(apps).where(eq(apps.id, appId)).get();
     if (!app) throw hlabsError('NOT_FOUND');
     // Never out from under an app that needs it (US-APP-11).
@@ -128,8 +144,15 @@ export class InstallService {
     if (dependents.length) {
       throw hlabsError('APP_HAS_DEPENDENTS', `${dependents.join(', ')} need ${appId}`, { appId, dependents });
     }
-    if (app.state !== 'install_failed') throw hlabsError('NOT_IMPLEMENTED', 'Uninstalling arrives with US-APP-12');
-    return { jobId: this.deps.jobs.start('app_uninstall', { target: appId, payload: { appId, user } }) };
+    if (app.state === 'install_failed') {
+      return { jobId: this.deps.jobs.start('app_uninstall', { target: appId, payload: { appId, user } }) };
+    }
+    if (!canTransition(app.state, 'uninstalling')) {
+      throw hlabsError('APP_BUSY', `${appId}: ${app.state} → uninstalling`, { appId, state: app.state });
+    }
+    const jobId = this.deps.jobs.start('app_uninstall', { target: appId, payload: { appId, user, keepData } });
+    this.deps.apps.transition(appId, 'uninstalling');
+    return { jobId };
   }
 
   /** The names of installed apps whose manifest lists this one in `dependsOn` (US-APP-11). */
@@ -573,6 +596,105 @@ export class InstallService {
    * "Remove partial install" (US-STORE-14): from `install_failed`, takes down whatever started, deletes the project
    * and `app-data/<appId>` and forgets the app. Folders people chose (Home › Photos) are never touched.
    */
+  /**
+   * Uninstalls an app (US-APP-12): compose down, its route and name go, it leaves every Home, Dock, share and backup
+   * plan, then its data is kept (with its .env, so a reinstall picks up the same data and passwords) or deleted. A
+   * step that fails leaves it in error saying which, with a notification to try again.
+   */
+  async removeApp(user: Installer, appId: string, keepData: boolean, report: (progress: number) => void) {
+    const { db } = this.deps;
+    const app = db.select().from(apps).where(eq(apps.id, appId)).get();
+    if (!app) throw hlabsError('NOT_FOUND');
+    const name = catalogManifestName(db, app) ?? this.manifestName(appId) ?? appId;
+    const project = this.deps.apps.project(appId);
+    let step: 'stop' | 'route' | 'records' | 'data' = 'stop';
+    try {
+      if (existsSync(join(project.dir, 'docker-compose.yml'))) {
+        if (!this.deps.engine.client) throw hlabsError('ENGINE_UNAVAILABLE');
+        await this.deps.apps.composeDown(appId);
+      }
+      report(40);
+      step = 'route';
+      await this.deps.network.sync();
+      report(60);
+      step = 'records';
+      db.transaction((tx) => {
+        for (const layout of tx.select().from(homeLayout).all()) {
+          tx.update(homeLayout)
+            .set({
+              itemsJson: layout.itemsJson.filter((i) => !(i.kind === 'app' && i.id === appId)),
+              dockJson: layout.dockJson.filter((id) => id !== appId),
+            })
+            .where(eq(homeLayout.userId, layout.userId))
+            .run();
+        }
+        tx.delete(appAccess).where(eq(appAccess.appId, appId)).run();
+        const plan = tx.select().from(backupPlan).get();
+        if (plan && Array.isArray(plan.includeJson.apps)) {
+          tx.update(backupPlan)
+            .set({ includeJson: { ...plan.includeJson, apps: plan.includeJson.apps.filter((id) => id !== appId) } })
+            .run();
+        }
+      });
+      report(80);
+      step = 'data';
+      // Retried: a stack that has just stopped can still be settling files (ENOTEMPTY, EBUSY).
+      const gone = { recursive: true, force: true, maxRetries: 5, retryDelay: 200 } as const;
+      if (keepData) {
+        for (const entry of existsSync(project.dir) ? readdirSync(project.dir) : []) {
+          if (entry !== ENV_FILE) rmSync(join(project.dir, entry), gone);
+        }
+      } else {
+        rmSync(project.dir, gone);
+        rmSync(join(this.deps.appDataDir, appId), gone);
+      }
+      this.deps.disk?.forget(appId);
+    } catch (error) {
+      const code = hlabsCodeOf(error);
+      this.deps.logger.error({ err: error, appId, step }, 'uninstall failed');
+      this.deps.apps.transition(appId, 'error', stateDetail(code, { step, uninstall: true }));
+      this.deps.notifications.create({
+        userId: user.userId,
+        kind: 'app.uninstall_failed',
+        target: appId,
+        severity: 'critical',
+        title: `${name} couldn't be uninstalled`,
+        actions: [{ kind: 'mutation', procedure: 'apps.uninstall', input: { appId, keepData }, label: 'Try again' }],
+      });
+      throw error;
+    }
+    db.transaction((tx) => {
+      tx.delete(apps).where(eq(apps.id, appId)).run();
+      tx.insert(auditLog)
+        .values({
+          id: ulid(),
+          at: Date.now(),
+          userId: user.userId,
+          action: 'app.uninstall',
+          target: appId,
+          detailJson: { keepData },
+          ip: user.ip ?? null,
+        })
+        .run();
+    });
+    this.deps.bus.emit('app.stateChanged', { appId, state: 'uninstalling', detail: 'removed' });
+    this.deps.notifications.create({
+      userId: user.userId,
+      kind: 'app.uninstalled',
+      target: appId,
+      severity: 'success',
+      title: `${name} was uninstalled`,
+    });
+  }
+
+  private manifestName(appId: string): string | null {
+    try {
+      return this.deps.apps.manifest(appId).name;
+    } catch {
+      return null;
+    }
+  }
+
   async removeFailed(user: Installer, appId: string): Promise<void> {
     const { db } = this.deps;
     const app = db.select().from(apps).where(eq(apps.id, appId)).get();
@@ -624,4 +746,9 @@ export function tildePath(path: string, home = homedir()): string {
 /** The store's version when it isn't the installed one (US-APP-07); null when up to date or not listed. */
 function latestVersion(installed: string, listed: string | undefined): string | null {
   return listed && listed !== installed ? listed : null;
+}
+
+/** The app's name from its store listing, when it has one. */
+function catalogManifestName(db: HlabsDb, app: { id: string; sourceId: string | null }): string | undefined {
+  return catalogManifest(db, app).name;
 }

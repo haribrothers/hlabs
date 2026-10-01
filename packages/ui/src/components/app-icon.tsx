@@ -4,7 +4,7 @@ import { cn } from '../lib/cn';
 import { useUiStrings } from '../lib/strings';
 import { SIZE_APP_ICON } from '../lib/tokens';
 
-export type AppIconState = 'running' | 'installing' | 'stopped' | 'update' | 'error';
+export type AppIconState = 'running' | 'installing' | 'removing' | 'stopped' | 'update' | 'error';
 
 export interface AppIconProps {
   name: string;
@@ -43,7 +43,7 @@ export function AppIcon({
   const t = useUiStrings();
   const pct = Math.max(0, Math.min(100, Math.round(progress)));
   const badge = state === 'update' || state === 'error' || state === 'stopped' ? t.appState[state] : null;
-  const label = state === 'installing' ? t.installing(pct) : name;
+  const label = state === 'installing' ? t.installing(pct) : state === 'removing' ? t.removing : name;
   const ariaLabel = ariaLabelOverride ?? (state === 'running' ? name : `${name}, ${(badge ?? label).toLowerCase()}`);
   const content = (
     <>
@@ -55,7 +55,9 @@ export function AppIcon({
           colors={colors}
           fallbackIcon={icon}
           size={SIZE_APP_ICON}
-          className={cn(state === 'installing' && 'hl-app-dim')}
+          // The tile already says the name.
+          decorative
+          className={cn((state === 'installing' || state === 'removing') && 'hl-app-dim')}
         />
         {state === 'installing' ? (
           <span className="hl-app-overlay">

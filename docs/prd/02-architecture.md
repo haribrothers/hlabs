@@ -137,6 +137,7 @@ stateDiagram-v2
   stopped --> uninstalling: uninstall
   error --> uninstalling: uninstall
   uninstalling --> [*]
+  uninstalling --> error: a step failed (US-APP-12)
 ```
 
 Rules:

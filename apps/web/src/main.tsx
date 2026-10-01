@@ -35,6 +35,10 @@ declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router;
   }
+  interface HistoryState {
+    /** Where a view such as App settings was opened from, for its Close (US-APP-04). */
+    from?: string;
+  }
 }
 
 createRoot(document.getElementById('root')!).render(
