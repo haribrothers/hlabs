@@ -191,7 +191,13 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
         servers: {
           https: {
             listen: [`:${state.ports.https}`],
-            routes: [dashboard, ...state.apps.map((a) => appRoute(a, domain, state.daemon, ancestors))],
+            // The CA certificate on the dashboard over HTTPS too, so "Trust hlabs on this device" can download it
+            // from the page it's on (a plain-HTTP download from an HTTPS page is blocked; D-097).
+            routes: [
+              { ...caCert, match: [{ host: [domain], path: ['/ca.crt'] }] },
+              dashboard,
+              ...state.apps.map((a) => appRoute(a, domain, state.daemon, ancestors)),
+            ],
             // When the daemon doesn't answer, the dashboard gets the fallback page (US-STATE-04).
             errors: {
               routes: [

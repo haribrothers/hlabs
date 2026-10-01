@@ -15,6 +15,7 @@ import { Route as FilesRouteImport } from './routes/files'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as StoreRouteImport } from './routes/store'
+import { Route as TrustRouteImport } from './routes/trust'
 import { Route as UsageRouteImport } from './routes/usage'
 import { Route as AppsAppIdRouteImport } from './routes/apps.$appId'
 import { Route as DevUiRouteImport } from './routes/dev/ui'
@@ -66,6 +67,11 @@ const SetupRoute = SetupRouteImport.update({
 const StoreRoute = StoreRouteImport.update({
   id: '/store',
   path: '/store',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrustRoute = TrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UsageRoute = UsageRouteImport.update({
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRouteWithChildren
   '/setup': typeof SetupRouteWithChildren
   '/store': typeof StoreRouteWithChildren
+  '/trust': typeof TrustRoute
   '/usage': typeof UsageRoute
   '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
@@ -215,6 +222,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
+  '/trust': typeof TrustRoute
   '/usage': typeof UsageRoute
   '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRouteWithChildren
   '/setup': typeof SetupRouteWithChildren
   '/store': typeof StoreRouteWithChildren
+  '/trust': typeof TrustRoute
   '/usage': typeof UsageRoute
   '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
@@ -278,6 +287,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/store'
+    | '/trust'
     | '/usage'
     | '/apps/$appId'
     | '/dev/ui'
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/'
     | '/backups'
     | '/files'
+    | '/trust'
     | '/usage'
     | '/apps/$appId'
     | '/dev/ui'
@@ -335,6 +346,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/store'
+    | '/trust'
     | '/usage'
     | '/apps/$appId'
     | '/dev/ui'
@@ -366,6 +378,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRouteWithChildren
   SetupRoute: typeof SetupRouteWithChildren
   StoreRoute: typeof StoreRouteWithChildren
+  TrustRoute: typeof TrustRoute
   UsageRoute: typeof UsageRoute
   AppsAppIdRoute: typeof AppsAppIdRoute
   DevUiRoute: typeof DevUiRoute
@@ -423,6 +436,13 @@ declare module '@tanstack/react-router' {
       path: '/store'
       fullPath: '/store'
       preLoaderRoute: typeof StoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trust': {
+      id: '/trust'
+      path: '/trust'
+      fullPath: '/trust'
+      preLoaderRoute: typeof TrustRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/usage': {
@@ -633,6 +653,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRouteWithChildren,
   SetupRoute: SetupRouteWithChildren,
   StoreRoute: StoreRouteWithChildren,
+  TrustRoute: TrustRoute,
   UsageRoute: UsageRoute,
   AppsAppIdRoute: AppsAppIdRoute,
   DevUiRoute: DevUiRoute,

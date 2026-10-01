@@ -43,7 +43,9 @@ describe('buildCaddyConfig', () => {
 
   it('serves the dashboard and each app by host name over HTTPS from the internal CA', () => {
     expect(https.listen).toEqual([':443']);
+    // The CA certificate, then the dashboard, then each app.
     expect(https.routes.map((r: Json) => r.match[0].host[0])).toEqual([
+      'hlabs.local',
       'hlabs.local',
       'immich.hlabs.local',
       'vaultwarden.hlabs.local',
@@ -59,7 +61,7 @@ describe('buildCaddyConfig', () => {
   });
 
   it('sends app traffic to the loopback port (D-049), through forward auth unless the app opted out', () => {
-    const [, immich, vaultwarden] = https.routes;
+    const [, , immich, vaultwarden] = https.routes;
     expect(immich.handle[0]).toEqual({ handler: 'headers', request: { delete: IDENTITY_HEADERS } });
     expect(immich.handle[1]).toMatchObject({
       handler: 'reverse_proxy',
@@ -73,7 +75,7 @@ describe('buildCaddyConfig', () => {
   });
 
   it('drops identity headers a browser sends on the dashboard too', () => {
-    expect(https.routes[0].handle[0]).toEqual({ handler: 'headers', request: { delete: IDENTITY_HEADERS } });
+    expect(https.routes[1].handle[0]).toEqual({ handler: 'headers', request: { delete: IDENTITY_HEADERS } });
   });
 
   it('answers a down daemon with the fallback page on the dashboard only (US-STATE-04)', () => {
@@ -88,6 +90,12 @@ describe('buildCaddyConfig', () => {
       status_code: 308,
       headers: { Location: ['https://{http.request.host}{http.request.uri}'] },
     });
+  });
+
+  it('the dashboard also serves /ca.crt over HTTPS, for the trust guide to download (D-097)', () => {
+    const route = https.routes[0];
+    expect(route.match).toEqual([{ host: ['hlabs.local'], path: ['/ca.crt'] }]);
+    expect(JSON.stringify(route.handle)).toContain('hlabs-ca.crt');
   });
 
   it('during onboarding, port 80 serves the dashboard under any name', () => {

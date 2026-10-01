@@ -150,7 +150,7 @@ These were added while writing user stories and are **part of the API contract**
 
 - `network.setPorts` (admin mutation): `{ http: number, https: number }`.
 - `network.setPiholeDns` (admin mutation): `{ enabled: boolean }`.
-- `GET /ca.crt` (non-tRPC, unauthenticated, port 80 only): Caddy internal CA root certificate.
+- `GET /ca.crt` (non-tRPC, unauthenticated): Caddy internal CA root certificate, on port 80 and on the dashboard's name over HTTPS (D-097), as `hlabs-ca.crt`.
 - `storage.summary` output adds `backupCacheBytes`, `hlabsBytes`, `reclaimableImageBytes`.
 - `storage.pruneImages` (admin mutation → job).
 - `storage.moveAllPlan` (admin query): destination → sizes, free space, estimate, blockers.

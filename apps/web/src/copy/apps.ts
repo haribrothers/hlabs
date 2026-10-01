@@ -30,6 +30,11 @@ export const appsCopy = {
   frameTitle: (app: string) => `${app}`,
   loading: (app: string) => `Loading ${app}`,
   slow: 'This app is taking a while to respond.',
+  // An address this browser doesn't trust (D-097)
+  untrustedTitle: (app: string) => `Your browser doesn't trust ${app}'s address yet`,
+  untrustedBody:
+    'hlabs uses its own certificate on your home network. Open the app in a new tab and accept it there, or trust hlabs on this device once so every app opens here.',
+  trustDevice: 'Trust hlabs on this device',
   opensInTab: (app: string) => `${app} opens in its own tab.`,
   restartApp: 'Restart app',
   logs: 'Logs',

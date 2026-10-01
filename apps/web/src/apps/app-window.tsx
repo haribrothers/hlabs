@@ -13,12 +13,14 @@ import {
   Loader2,
   Lock,
   RotateCw,
+  ShieldAlert,
   SlidersHorizontal,
   TextAlignStart,
   X,
 } from '@hlabs/icons';
 import { Button, GlassCard, IconButton, StatusDot } from '@hlabs/ui';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { addressReachable, shouldCheckAddress } from './address-check';
 import { useEffect, useState, type ReactNode } from 'react';
 import { appsCopy } from '../copy/apps';
 import { engineCopy } from '../copy/engine';
@@ -44,6 +46,60 @@ export const REMOVED_CLOSE_MS = 2_500;
 
 /** States on the way somewhere: the frame area shows a spinner and the app comes back by itself (US-APP-02, 03). */
 const BUSY = new Set<AppState>(['starting', 'restarting', 'stopping', 'updating', 'rolling_back', 'uninstalling']);
+
+/**
+ * The app's frame, once this browser can open its address (D-097): an address it doesn't trust says so, with a new
+ * tab to accept it there and the way to trust hlabs on this device, instead of a frame that never loads.
+ */
+function CheckedFrame({ app, src }: { app: AppDetail; src: string }) {
+  const [check, setCheck] = useState<'checking' | 'ok' | 'untrusted'>(() => (shouldCheckAddress() ? 'checking' : 'ok'));
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!shouldCheckAddress()) return;
+    let current = true;
+    void addressReachable(src).then((ok) => {
+      if (current) setCheck(ok ? 'ok' : 'untrusted');
+    });
+    return () => {
+      current = false;
+    };
+  }, [src, attempt]);
+  if (check === 'ok') return <AppFrame app={app} src={src} />;
+  if (check === 'checking') {
+    return (
+      <FramePanel>
+        <Loader2
+          role="img"
+          aria-label={copy.loading(app.name)}
+          {...iconDefaults}
+          className="size-8 animate-spin text-ink-muted motion-reduce:animate-none"
+        />
+      </FramePanel>
+    );
+  }
+  return (
+    <FramePanel>
+      <ShieldAlert aria-hidden {...iconDefaults} className="size-8 text-warning" />
+      <p className="m-0 max-w-md text-body font-bold text-ink">{copy.untrustedTitle(app.name)}</p>
+      <p className="m-0 max-w-md text-body text-ink-muted">{copy.untrustedBody}</p>
+      <div className="flex flex-wrap justify-center gap-3">
+        <Button onClick={() => browser.open(src)}>{copy.openInNewTab}</Button>
+        <Link to="/trust" className="hl-btn hl-btn-secondary hl-btn-md hl-focus no-underline">
+          {copy.trustDevice}
+        </Link>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setCheck('checking');
+            setAttempt((n) => n + 1);
+          }}
+        >
+          {copy.tryAgain}
+        </Button>
+      </div>
+    </FramePanel>
+  );
+}
 
 /** The app's frame: a spinner after 1 s without `load`, and "taking a while" with a new-tab way out after 20 s. */
 function AppFrame({ app, src }: { app: AppDetail; src: string }) {
@@ -175,7 +231,7 @@ export function AppWindow({ appId }: { appId: string }) {
     </FramePanel>
   ) : app.state === 'running' ? (
     app.embed ? (
-      <AppFrame key={`${src}#${reloadKey}`} app={app} src={src} />
+      <CheckedFrame key={`${src}#${reloadKey}`} app={app} src={src} />
     ) : (
       <FramePanel>
         <p className="m-0 text-body text-ink">{copy.opensInTab(app.name)}</p>
