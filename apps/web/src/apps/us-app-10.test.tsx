@@ -42,9 +42,10 @@ describe('US-APP-10', () => {
     const save = vi.spyOn(browser, 'save').mockImplementation(() => {});
     open();
     fireEvent.click(await screen.findByRole('button', { name: 'Download' }));
-    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.any(Blob), 'immich-logs-20261001-1702.log'), {
-      timeout: 5_000,
-    });
+    // The file's content, not its class: Node 22 hands back its own Blob, not the test environment's.
+    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.anything(), 'immich-logs-20261001-1702.log'));
+    const saved = save.mock.calls[0]![0] as Blob;
+    expect(await saved.text()).toBe('server 2026-01-02T17:02:11.000Z hello\n');
     expect(fetch).toHaveBeenCalledWith('/api/apps/immich/logs/download', { credentials: 'same-origin' });
   });
 

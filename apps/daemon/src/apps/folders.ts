@@ -3,7 +3,7 @@
 // folder, `appdata:<dir>` a folder in the app's own data (always on this computer, D-011). Paths are jailed to their
 // location: `..` and absolute subpaths are refused, and a folder can't get more access than the manifest asks for.
 import { hlabsError } from '@hlabs/api';
-import type { AppManifest } from '@hlabs/app-manifest';
+import { parseShortVolume, type AppManifest, type ComposeFile } from '@hlabs/app-manifest';
 import { storageLocations, type HlabsDb } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
 import { join, normalize, posix } from 'node:path';
@@ -122,4 +122,23 @@ export function folderPaths(
     else if (f.default?.startsWith('appdata:')) paths[f.key] = join(appDataDir, safeSubpath(f.default.slice(8)));
   }
   return paths;
+}
+
+const APP_DATA_VAR = /^\$\{HLABS_APP_DATA\}(?:\/(.*))?$/;
+
+/**
+ * The folders inside the app's data that its compose file mounts (`${HLABS_APP_DATA}/data:/home/node/.n8n`), as paths
+ * on this computer. hlabs creates them before the app starts: left to Docker, Linux creates a missing one as root, and
+ * an app that runs as the hlabs user (n8n) can't write to it.
+ */
+export function appDataBindDirs(compose: ComposeFile, appDataDir: string): string[] {
+  const dirs = new Set<string>();
+  for (const service of Object.values(compose.services)) {
+    for (const volume of service.volumes ?? []) {
+      const source = typeof volume === 'string' ? parseShortVolume(volume).source : (volume.source ?? null);
+      const match = source ? APP_DATA_VAR.exec(source) : null;
+      if (match) dirs.add(match[1] ? join(appDataDir, safeSubpath(match[1])) : appDataDir);
+    }
+  }
+  return [...dirs];
 }

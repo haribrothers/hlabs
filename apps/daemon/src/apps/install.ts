@@ -33,7 +33,7 @@ import type { CatalogService } from '../store/catalog';
 import type { StoreHost } from '../store/service';
 import { ComposeError, ENV_FILE } from './compose';
 import { isSecret, parseEnvFile, resolveEnv } from './env';
-import { folderPaths, resolveMounts, type MountRequest } from './folders';
+import { appDataBindDirs, folderPaths, resolveMounts, type MountRequest } from './folders';
 import { waitHealthy, type HealthProbes } from './health';
 import { takenHostnames } from './hostnames';
 import type { AppDiskUsage } from './disk';
@@ -421,10 +421,8 @@ export class InstallService {
       // 3. Data folders: app data, and chosen folders that don't exist yet (a new Home › Photos).
       report('folders', 0);
       try {
-        mkdirSync(join(this.deps.appDataDir, appId), { recursive: true });
-        for (const path of Object.values(
-          folderPaths(manifest, this.storedMounts(appId), join(this.deps.appDataDir, appId)),
-        )) {
+        const appData = this.prepareAppData(appId, compose);
+        for (const path of Object.values(folderPaths(manifest, this.storedMounts(appId), appData))) {
           mkdirSync(path, { recursive: true });
         }
       } catch (error) {
@@ -572,6 +570,18 @@ export class InstallService {
   }
 
   /** Values kept from an earlier install of this app (its .env stays with kept data, US-APP-12). */
+  /**
+   * The app's data folder and the folders in it its compose file mounts, made by hlabs before the app starts: left to
+   * Docker, Linux creates a missing one as root and an app running as the hlabs user (n8n) can't write to it. Returns
+   * the app's data folder.
+   */
+  prepareAppData(appId: string, compose: ComposeFile): string {
+    const appData = join(this.deps.appDataDir, appId);
+    mkdirSync(appData, { recursive: true });
+    for (const dir of appDataBindDirs(compose, appData)) mkdirSync(dir, { recursive: true });
+    return appData;
+  }
+
   keptEnv(appId: string): Record<string, string> {
     const file = join(this.deps.apps.project(appId).dir, ENV_FILE);
     return existsSync(file) ? parseEnvFile(readFileSync(file, 'utf8')) : {};

@@ -41,7 +41,10 @@ export interface UpdateDeps {
   jobs: JobRunner;
   catalog: CatalogService;
   apps: AppService;
-  installer: Pick<InstallService, 'pullAll' | 'writeProject' | 'keptEnv' | 'storedEnv' | 'storedMounts'>;
+  installer: Pick<
+    InstallService,
+    'pullAll' | 'writeProject' | 'keptEnv' | 'storedEnv' | 'storedMounts' | 'prepareAppData'
+  >;
   engine: Pick<EngineService, 'client'>;
   notifications: Pick<NotificationService, 'create'>;
   probes?: HealthProbes;
@@ -155,6 +158,8 @@ export class UpdateService {
       await installer.pullAll(ctx, images, (within) =>
         ctx.report(10 + Math.round(within * 50), 'Downloading the new version'),
       );
+      // A folder the new version mounts that the old one didn't, made by hlabs (not root-owned on Linux).
+      installer.prepareAppData(appId, entry.compose);
       ctx.report(65, 'Starting the new version');
       await this.deps.apps.composeUp(appId);
       const health = await waitHealthy({
