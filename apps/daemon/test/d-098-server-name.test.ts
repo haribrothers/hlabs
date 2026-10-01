@@ -87,3 +87,65 @@ describe('D-098 · ports held by hlabs itself', () => {
     });
   });
 });
+
+describe('D-098 · the dashboard addresses follow the name', () => {
+  it('session mutations are accepted from the new name, its ports, and the tailnet address', async () => {
+    const { dashboardOrigins } = await import('../src/http/dashboard-origins');
+    const { setSetting } = await import('@hlabs/db');
+    const d = await atSystemStep();
+    const db = d.services!.db;
+    expect(dashboardOrigins('https://hlabs.local', db)).toEqual(['https://hlabs.local', 'http://hlabs.local']);
+    await d.call('confirmSystem', { startAtLogin: true, hostname: 'harilabs' });
+    setSetting(db, 'network', { ...getSetting(db, 'network'), ports: { https: 8443, http: 8080 } });
+    expect(dashboardOrigins('https://hlabs.local', db)).toEqual([
+      'https://hlabs.local',
+      'https://harilabs.local:8443',
+      'http://harilabs.local:8080',
+    ]);
+    // After setup, not over plain HTTP; with remote access, the tailnet address too.
+    setSetting(db, 'onboarding', { ...getSetting(db, 'onboarding'), completedAt: Date.now() });
+    setSetting(db, 'remote', { ...getSetting(db, 'remote'), tailnetName: 'tail1234.ts.net' });
+    expect(dashboardOrigins('http://127.0.0.1:7474', db)).toEqual([
+      'http://127.0.0.1:7474',
+      'https://harilabs.local:8443',
+      'https://harilabs.tail1234.ts.net',
+    ]);
+  });
+
+  it('a signed-in mutation from the new name gets through (the QR code step after a rename)', async () => {
+    const { daemonWithAdmin } = await import('./admin-session');
+    const closers2: Array<() => Promise<void>> = [];
+    try {
+      const d = await daemonWithAdmin(closers2, { dashboardUrl: 'https://hlabs.local' });
+      const { setSetting } = await import('@hlabs/db');
+      setSetting(d.services!.db, 'hostname', 'harilabs');
+      const res = await fetch(`${d.url}/trpc/onboarding.setupTotp?batch=1`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          cookie: d.cookie,
+          'x-hlabs-csrf': d.csrf,
+          'x-hlabs-setup': d.token,
+          origin: 'https://harilabs.local',
+        },
+        body: '{}',
+      });
+      expect(res.status).toBe(200);
+      // And another site is still refused.
+      const other = await fetch(`${d.url}/trpc/onboarding.setupTotp?batch=1`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          cookie: d.cookie,
+          'x-hlabs-csrf': d.csrf,
+          'x-hlabs-setup': d.token,
+          origin: 'https://evil.example',
+        },
+        body: '{}',
+      });
+      expect(other.status).toBe(403);
+    } finally {
+      for (const close of closers2) await close();
+    }
+  });
+});

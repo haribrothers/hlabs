@@ -1,0 +1,24 @@
+// The web addresses the dashboard is served from, which session mutations must come from (07 §7.3). They follow the
+// name on the network and the web ports as they are now, so renaming hlabs during setup (D-098) or moving ports doesn't
+// leave the dashboard refused as a cross-site request.
+import { getSetting, type HlabsDb } from '@hlabs/db';
+import { tailnetHost } from '../network/service';
+
+const withPort = (scheme: 'https' | 'http', host: string, port: number) =>
+  `${scheme}://${host}${port === (scheme === 'https' ? 443 : 80) ? '' : `:${port}`}`;
+
+/**
+ * `configured` (HLABS_DASHBOARD_URL: the tray's loopback address, or Vite in development), hlabs's own name over HTTPS,
+ * over plain HTTP while setup runs (D-013), and the tailnet address once remote access is on.
+ */
+export function dashboardOrigins(configured: string, db: HlabsDb | null): string[] {
+  const origins = [new URL(configured).origin];
+  if (!db) return origins;
+  const host = `${getSetting(db, 'hostname')}.local`;
+  const { http, https } = getSetting(db, 'network').ports;
+  origins.push(withPort('https', host, https));
+  if (getSetting(db, 'onboarding').completedAt === null) origins.push(withPort('http', host, http));
+  const tailnet = tailnetHost(db);
+  if (tailnet) origins.push(`https://${tailnet}`);
+  return [...new Set(origins)];
+}

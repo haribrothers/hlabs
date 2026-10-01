@@ -215,6 +215,13 @@ export class OnboardingService {
   }
 
   private urlFor(token: string) {
-    return `${this.dashboardUrl}/setup?token=${token}`;
+    // hlabs's own `.local` address follows the name and HTTPS port chosen in setup (D-098).
+    const url = new URL(this.dashboardUrl);
+    if (url.hostname.endsWith('.local')) {
+      url.hostname = `${getSetting(this.db, 'hostname')}.local`;
+      const { https } = getSetting(this.db, 'network').ports;
+      url.port = url.protocol === 'https:' && https !== 443 ? String(https) : '';
+    }
+    return `${url.origin}/setup?token=${token}`;
   }
 }

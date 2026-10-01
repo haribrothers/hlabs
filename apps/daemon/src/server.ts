@@ -5,6 +5,7 @@ import Fastify, { type FastifyBaseLogger, type FastifyInstance, type FastifyRequ
 import type { DaemonConfig } from './config';
 import { readCookie, SESSION_COOKIE } from './auth/sessions';
 import { DaemonContext, type Identity } from './context';
+import { dashboardOrigins } from './http/dashboard-origins';
 import { registerDevRoutes } from './http/dev';
 import { registerHealthz } from './http/healthz';
 import { registerAuthVerify } from './http/verify';
@@ -72,7 +73,7 @@ export async function buildServer({ config, logger, readiness, holder }: ServerD
           csrfToken: headerValue(req.headers['x-hlabs-csrf']),
           origin: headerValue(req.headers.origin),
           host: headerValue(req.headers['x-forwarded-host']) ?? headerValue(req.headers.host),
-          allowedOrigins: [new URL(config.dashboardUrl).origin],
+          allowedOrigins: dashboardOrigins(config.dashboardUrl, holder.current?.db ?? null),
           setCookie: (cookie) => void res.header('set-cookie', cookie),
         }),
       onError: ({ path, error }) => {

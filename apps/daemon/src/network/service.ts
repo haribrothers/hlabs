@@ -20,7 +20,7 @@ export interface NetworkServiceDeps {
 }
 
 /** `<hostname>.<tailnet>.ts.net` when remote access is set up (D-012). */
-function tailnetHost(db: HlabsDb): string | null {
+export function tailnetHost(db: HlabsDb): string | null {
   const tailnet = getSetting(db, 'remote').tailnetName?.replace(/\.ts\.net$/, '');
   return tailnet ? `${getSetting(db, 'hostname')}.${tailnet}.ts.net` : null;
 }
