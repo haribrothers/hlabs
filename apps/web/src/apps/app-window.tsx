@@ -16,15 +16,14 @@ import {
   X,
 } from '@hlabs/icons';
 import { Button, GlassCard, IconButton, StatusDot, type Status } from '@hlabs/ui';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { appsCopy } from '../copy/apps';
 import { engineCopy } from '../copy/engine';
 import { browser } from '../lib/browser';
-import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
 import { appBaseUrl, useApp } from './use-app';
+import { useAppCommands } from './use-app-commands';
 
 const copy = appsCopy;
 /** The logo beside the name in the window header. */
@@ -98,28 +97,12 @@ export function AppWindow({ appId }: { appId: string }) {
   const navigate = useNavigate();
   const { data: app } = useApp(appId);
   const isAdmin = useMe().data?.role === 'admin';
-  const trpc = useTRPC();
-  const client = useTRPCClient();
-  const queryClient = useQueryClient();
   const [reloadKey] = useState(0);
   const close = () => void navigate({ to: '/' });
   const openLogs = () => void navigate({ to: '/apps/$appId/logs', params: { appId } });
-  /** Shows the state a command moves the app to at once; app.stateChanged then takes over. */
-  const moving = (moves: Partial<Record<AppState, AppState>>) => () =>
-    queryClient.setQueryData(trpc.apps.get.queryKey({ appId }), (old) => {
-      const next = old && moves[old.state];
-      return old && next ? { ...old, state: next } : old;
-    });
   // Restart (US-APP-02): the label says "Restarting…" at once; the frame comes back when it's running again. An app
   // that isn't responding is started again (US-APP-03).
-  const restart = useMutation({
-    mutationFn: () => client.apps.restart.mutate({ appId }),
-    onSuccess: moving({ running: 'restarting', error: 'starting' }),
-  });
-  const start = useMutation({
-    mutationFn: () => client.apps.start.mutate({ appId }),
-    onSuccess: moving({ stopped: 'starting' }),
-  });
+  const { start, restart } = useAppCommands(app, appId);
 
   // Esc closes it while focus is on the window, not inside the app's frame (which keeps its own keys).
   useEffect(() => {

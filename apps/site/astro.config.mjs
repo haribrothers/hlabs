@@ -25,7 +25,10 @@ export default defineConfig({
         },
         {
           label: 'Apps',
-          items: [{ label: 'The App Store', link: '/help/apps/app-store/' }],
+          items: [
+            { label: 'The App Store', link: '/help/apps/app-store/' },
+            { label: 'Manage an app', link: '/help/apps/manage-apps/' },
+          ],
         },
       ],
     }),

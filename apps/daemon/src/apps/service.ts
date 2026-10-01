@@ -127,6 +127,19 @@ export class AppService {
     }
   }
 
+  /** When the app's web container started (US-APP-04's uptime); null when it isn't running or can't be asked. */
+  async startedAt(appId: string): Promise<number | null> {
+    const engine = this.deps.engine.client;
+    if (!engine) return null;
+    try {
+      const service = this.manifest(appId).web?.service;
+      const containers = await engine.projectContainers(this.project(appId).name);
+      return containers.find((c) => c.service === service && c.state === 'running')?.startedAt ?? null;
+    } catch {
+      return null; // no project (a dev stand-in), or the engine went away
+    }
+  }
+
   /** `compose up` for an app, a taken port reported as APP_PORT_IN_USE. */
   async composeUp(appId: string): Promise<void> {
     try {

@@ -1,6 +1,10 @@
 // Using installed apps: the app window, app settings, logs and uninstall (06-apps.md). Sentence case, plain words.
 import type { AppState } from '@hlabs/api';
 
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+
 export const appsCopy = {
   /** The status label by app state (US-APP-02). */
   status: {
@@ -39,6 +43,23 @@ export const appsCopy = {
   // App settings (US-APP-04…07)
   settingsTitle: (app: string) => `${app} settings`,
   close: 'Close',
+  /** "up 3 minutes", "up 5 hours", "up 6 days": how long its web container has run. */
+  upFor: (ms: number) => {
+    const [n, unit] =
+      ms >= DAY
+        ? [Math.floor(ms / DAY), 'day']
+        : ms >= HOUR
+          ? [Math.floor(ms / HOUR), 'hour']
+          : [Math.max(1, Math.floor(ms / MINUTE)), 'minute'];
+    return `up ${n} ${unit}${n === 1 ? '' : 's'}`;
+  },
+  sections: 'App sections',
+  tabs: { overview: 'Overview', configuration: 'Configuration', permissions: 'Permissions', usage: 'Usage' },
+  open: 'Open',
+  restart: 'Restart',
+  stop: 'Stop',
+  didntStart: (app: string) => `${app} didn't start. Check the logs.`,
+  engineFirst: 'Start the container engine first',
 
   // Logs (US-APP-08…10)
   logsTitle: (app: string) => `${app} logs`,

@@ -386,7 +386,8 @@
     font: 500 13px/1 var(--hl-font-sans);
     cursor: pointer;
   }
-  .hl-seg-opt[aria-checked='true'] {
+  .hl-seg-opt[aria-checked='true'],
+  .hl-seg-opt[aria-selected='true'] {
     color: var(--ink-on-light);
     font-weight: 600;
   }

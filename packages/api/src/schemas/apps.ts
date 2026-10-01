@@ -69,6 +69,8 @@ export const appDetailSchema = homeAppSchema.extend({
   webPath: z.string(),
   /** False while the container engine is stopped: the window says so instead of loading (US-APP-03). */
   engineRunning: z.boolean(),
+  /** When its web container started (ms since the epoch) while it runs, for "up 6 days" (US-APP-04); null otherwise. */
+  startedAt: z.number().int().nullable(),
 });
 export type AppDetail = z.infer<typeof appDetailSchema>;
 

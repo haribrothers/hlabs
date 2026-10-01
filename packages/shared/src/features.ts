@@ -38,6 +38,10 @@ export const FEATURE_PHASE = {
   renameServer: 9,
   moveAllData: 9,
   engineSwitch: 9,
+  /** App settings tabs (US-APP-04): Configuration, Permissions and Usage (F-APP-05…07). */
+  appConfig: 7,
+  appPermissions: 7,
+  appUsage: 7,
   /** Settings sections (US-ACCT-01): Storage and Advanced (phase 7), About (8), Notification preferences (9). */
   storageSettings: 7,
   advancedSettings: 7,

@@ -87,6 +87,7 @@ export const appDetail = (extra: Partial<AppDetail> = {}): AppDetail => ({
   webPath: '/',
   urls: { local: 'https://immich.hlabs.local', tailnet: null },
   engineRunning: true,
+  startedAt: null,
   ...extra,
 });
 
