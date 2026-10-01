@@ -23,6 +23,7 @@ import { engineCopy } from '../copy/engine';
 import { browser } from '../lib/browser';
 import { useMe } from '../lib/use-me';
 import { appBaseUrl, useApp } from './use-app';
+import { closeWindow, openWindow } from './open-windows';
 import { useAppCommands } from './use-app-commands';
 
 const copy = appsCopy;
@@ -102,7 +103,12 @@ export function AppWindow({ appId }: { appId: string }) {
   const removed = lastChange?.detail === 'removed';
   const isAdmin = useMe().data?.role === 'admin';
   const [reloadKey] = useState(0);
-  const close = () => void navigate({ to: '/' });
+  // Back to Home leaves the window open behind Home, in the Dock; Close app, Esc and an uninstall close it (US-HOME-23).
+  const home = () => void navigate({ to: '/' });
+  const close = () => {
+    closeWindow(appId);
+    home();
+  };
   const openLogs = () => void navigate({ to: '/apps/$appId/logs', params: { appId } });
   // Restart (US-APP-02): the label says "Restarting…" at once; the frame comes back when it's running again. An app
   // that isn't responding is started again (US-APP-03).
@@ -123,6 +129,11 @@ export function AppWindow({ appId }: { appId: string }) {
   useEffect(() => {
     if (app) document.title = copy.docTitle(app.name);
   }, [app]);
+  // Open once it's shown: a member the app isn't shared with never gets a Dock tile for it.
+  const shown = app !== undefined;
+  useEffect(() => {
+    if (shown) openWindow(appId);
+  }, [shown, appId]);
   useEffect(() => {
     if (!removed) return;
     const timer = setTimeout(close, REMOVED_CLOSE_MS);
@@ -201,7 +212,7 @@ export function AppWindow({ appId }: { appId: string }) {
     <section aria-label={copy.window} className="fixed inset-0 z-50 flex p-3 md:p-5">
       <GlassCard level={2} className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-window p-0">
         <header className="flex items-center gap-3 px-3 py-2.5 md:px-3.5">
-          <IconButton label={copy.backToHome} onClick={close}>
+          <IconButton label={copy.backToHome} onClick={home}>
             <House aria-hidden {...iconDefaults} className="size-4" />
           </IconButton>
           <AppLogo

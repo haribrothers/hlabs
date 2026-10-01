@@ -1,13 +1,13 @@
 // US-HOME-06 · Recognise each app's state on its tile (main instance, desktop and phone). Dev-only stand-ins in
-// several states; each project uses its own, since both run side by side.
+// several states; each project uses its own, and names no other spec uses, since specs run side by side.
 import { expect, test } from '@playwright/test';
 import { MAIN_URL } from './instances';
 
 const STATES = [
-  { state: 'stopped', name: 'Stopped', says: 'stopped', text: 'Stopped' },
-  { state: 'error', name: 'Broken', says: 'error', text: 'Error' },
-  { state: 'starting', name: 'Starting', says: 'starting', text: 'Starting…' },
-  { state: 'installing', name: 'Install', says: 'installing, 0%', text: 'Installing… 0%' },
+  { state: 'stopped', name: 'Tile stopped', says: 'stopped', text: 'Stopped' },
+  { state: 'error', name: 'Tile broken', says: 'error', text: 'Error' },
+  { state: 'starting', name: 'Tile starting', says: 'starting', text: 'Starting…' },
+  { state: 'installing', name: 'Tile install', says: 'installing, 0%', text: 'Installing… 0%' },
 ] as const;
 const id = (state: string, project: string) => `tile-${state}-${project}`;
 

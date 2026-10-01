@@ -1,9 +1,13 @@
 // The Home shell: wallpaper, the current area, and navigation. Dock at ≥ 768px, tab bar on phones (D-054).
-import { Dock, TabBar, type AreaId } from '@hlabs/ui';
+import { appTileLook } from '@hlabs/icons';
+import { Dock, TabBar, type AreaId, type DockApp } from '@hlabs/ui';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { shellCopy } from '../copy/shell';
 import { useAppearance, wallpaperClass } from '../lib/appearance';
+import { useOpenWindows } from '../apps/open-windows';
+import { useTRPC } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
 import { AREA_PATHS, areaForPath, navigationAreas, phoneAreas, storeBadge, type NavAccess } from './areas';
 
@@ -25,6 +29,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const store = storeBadge(0, { access });
   const areas = navigationAreas({ access });
   const tabs = phoneAreas({ access }).map((a) => (a.id === 'store' && store ? { ...a, badge: store } : a));
+  const openApps = useOpenApps(Boolean(me));
 
   return (
     // Exactly the viewport: pages scroll inside main, and windows (Settings) can fill it without the page scrolling.
@@ -46,7 +51,15 @@ export function Shell({ children }: { children: ReactNode }) {
       {appWindow ? null : (
         <>
           <div className="hl-nav-desktop hidden md:flex" data-testid="dock-bar">
-            <Dock areas={areas} active={active} onSelect={go} badges={store ? { store } : {}} search={false} />
+            <Dock
+              areas={areas}
+              active={active}
+              onSelect={go}
+              badges={store ? { store } : {}}
+              search={false}
+              apps={openApps}
+              onOpenApp={(appId) => void navigate({ to: '/apps/$appId', params: { appId } })}
+            />
           </div>
           <div className="hl-nav-phone flex md:hidden" data-testid="tab-bar">
             <TabBar items={tabs} active={active} onSelect={go} />
@@ -55,4 +68,21 @@ export function Shell({ children }: { children: ReactNode }) {
       )}
     </div>
   );
+}
+
+/**
+ * Apps whose window is open behind Home (US-HOME-23), each with the dot: after the pinned apps, which arrive with
+ * pinning in phase 7. An app that's gone (uninstalled, no longer shared) has no tile.
+ */
+function useOpenApps(signedIn: boolean): DockApp[] {
+  const trpc = useTRPC();
+  const open = useOpenWindows();
+  const list = useQuery({ ...trpc.apps.list.queryOptions(), enabled: signedIn && open.length > 0, retry: false });
+  const byId = new Map((list.data?.apps ?? []).map((a) => [a.id, a]));
+  return open.flatMap((id) => {
+    const app = byId.get(id);
+    if (!app) return [];
+    const look = appTileLook(app.name, app.icon);
+    return [{ id, name: app.name, logo: app.icon.logoUrl, colors: look.colors, icon: look.fallbackIcon, open: true }];
+  });
 }

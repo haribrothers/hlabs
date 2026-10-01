@@ -22,7 +22,7 @@ More widgets (live usage, remote access and backups) appear as those parts of hl
 
 Under the widgets are the apps you can open: every installed app for admins, and the apps an admin shared with you for everyone else. Select an app to open it. On a computer, the apps from the hlabs App Store open in an app window over Home, with the app's name, whether it's running and its address at the top. On a phone or a narrow window, and for apps from other sources that don't support the window, they open in a new browser tab. On your tailnet, apps open on their own port of the hlabs address.
 
-To leave the app window, choose **Back to Home** or **Close app**, or press Esc (when you're not typing in the app). Closing the window doesn't stop the app. If an app takes a while to load, the window offers **Open in a new tab**. The window stays open if you reload the page.
+To leave the app window, choose **Back to Home** or **Close app**, or press Esc (when you're not typing in the app). **Back to Home** keeps the window open: its app stays in the Dock with a dot under it, and selecting it there brings the window back. **Close app** and Esc close the window. Neither stops the app. If an app takes a while to load, the window offers **Open in a new tab**. The window stays open if you reload the page.
 
 Admins also get **Restart app**, **Logs** and **App settings** at the top of the window, and everyone gets **Open in a new tab**. While an app restarts, the window says "Restarting…" and shows the app again as soon as it's running.
 
