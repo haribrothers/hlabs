@@ -134,6 +134,31 @@ export class FakeEngine implements ContainerEngine {
   /** Image id → size on disk. */
   readonly imageSizes = new Map<string, number>();
 
+  /** Folders cleared as root, and images that can't (no shell). */
+  public cleared: Array<{ image: string; hostPath: string }> = [];
+  public noShell = new Set<string>();
+
+  async clearFolder(image: string, hostPath: string) {
+    this.assertRunning();
+    if (this.noShell.has(image)) throw new Error(`${image} has no shell`);
+    this.cleared.push({ image, hostPath });
+    const { chmodSync, readdirSync, rmSync, statSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    // As root would: whatever the permissions, all the way down.
+    const unlock = (dir: string) => {
+      chmodSync(dir, 0o700);
+      for (const entry of readdirSync(dir)) {
+        const path = join(dir, entry);
+        if (statSync(path).isDirectory()) unlock(path);
+      }
+    };
+    for (const entry of readdirSync(hostPath)) {
+      const path = join(hostPath, entry);
+      if (statSync(path).isDirectory()) unlock(path);
+      rmSync(path, { recursive: true, force: true });
+    }
+  }
+
   async imageSize(image: string) {
     this.assertRunning();
     return this.imageSizes.get(image) ?? null;

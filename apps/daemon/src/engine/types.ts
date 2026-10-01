@@ -52,6 +52,12 @@ export interface ContainerEngine {
   ): AsyncIterable<ContainerLogLine>;
   /** An image's size on disk (`sha256:…` or a reference), or null when it isn't here. */
   imageSize(image: string): Promise<number | null>;
+  /**
+   * Empties a folder on this computer from inside a throwaway container of `image`, run as root: for an app's data
+   * that the app wrote as root or another user, which hlabs can't delete itself on Linux. Throws when the image can't
+   * do it (no shell) or the container fails.
+   */
+  clearFolder(image: string, hostPath: string): Promise<void>;
 }
 
 export interface EngineCandidate {

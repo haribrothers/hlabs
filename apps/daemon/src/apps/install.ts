@@ -21,6 +21,7 @@ import {
 import { HOSTNAME_PATTERN, ulid } from '@hlabs/shared';
 import { and, desc, eq } from 'drizzle-orm';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { parse as parseYaml } from 'yaml';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { EngineService } from '../engine/service';
@@ -655,8 +656,8 @@ export class InstallService {
           if (entry !== ENV_FILE) rmSync(join(project.dir, entry), gone);
         }
       } else {
+        await this.removeAppData(app, project.dir);
         rmSync(project.dir, gone);
-        rmSync(join(this.deps.appDataDir, appId), gone);
       }
       this.deps.disk?.forget(appId);
     } catch (error) {
@@ -697,6 +698,51 @@ export class InstallService {
     });
   }
 
+  /**
+   * Deletes the app's data folder. Files the app wrote as root or another user can't be deleted by hlabs on Linux, so
+   * then they're removed from inside a container of one of the app's own images, run as root, and the rest after.
+   */
+  private async removeAppData(app: { id: string; sourceId: string | null }, projectDir: string): Promise<void> {
+    const appData = join(this.deps.appDataDir, app.id);
+    const gone = { recursive: true, force: true, maxRetries: 5, retryDelay: 200 } as const;
+    try {
+      rmSync(appData, gone);
+      return;
+    } catch (error) {
+      // Linux says EACCES or EPERM; macOS, ENOTEMPTY (it couldn't empty a folder it can't write to).
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== 'EACCES' && code !== 'EPERM' && code !== 'ENOTEMPTY') throw error;
+      this.deps.logger.warn({ appId: app.id, code }, "some app data isn't hlabs's to delete; clearing it as root");
+    }
+    const engine = this.deps.engine.client;
+    if (!engine) throw hlabsError('ENGINE_UNAVAILABLE');
+    let lastError: unknown = null;
+    for (const image of this.appImages(app, projectDir)) {
+      try {
+        await engine.clearFolder(image, appData);
+        rmSync(appData, gone);
+        return;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError ?? hlabsError('STORAGE_NOT_WRITABLE', `couldn't remove ${appData}`);
+  }
+
+  /** The images the app runs: from its catalogue entry, else its own compose file. */
+  private appImages(app: { id: string; sourceId: string | null }, projectDir: string): string[] {
+    const compose =
+      this.deps.catalog.get(app.id, app.sourceId ?? undefined)?.compose ??
+      (() => {
+        try {
+          return parseYaml(readFileSync(join(projectDir, 'docker-compose.yml'), 'utf8')) as ComposeFile;
+        } catch {
+          return null;
+        }
+      })();
+    return [...new Set(Object.values(compose?.services ?? {}).flatMap((s) => (s.image ? [s.image] : [])))];
+  }
+
   private manifestName(appId: string): string | null {
     try {
       return this.deps.apps.manifest(appId).name;
@@ -719,8 +765,8 @@ export class InstallService {
     }
     // Retried: a stack that has just stopped can still be settling files (ENOTEMPTY, EBUSY).
     const gone = { recursive: true, force: true, maxRetries: 5, retryDelay: 200 } as const;
+    await this.removeAppData(app, project.dir);
     rmSync(project.dir, gone);
-    rmSync(join(this.deps.appDataDir, appId), gone);
     db.transaction((tx) => {
       tx.delete(apps).where(eq(apps.id, appId)).run();
       tx.insert(auditLog)

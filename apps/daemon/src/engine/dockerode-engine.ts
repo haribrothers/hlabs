@@ -103,6 +103,24 @@ export class DockerodeEngine implements ContainerEngine {
     }
   }
 
+  async clearFolder(image: string, hostPath: string): Promise<void> {
+    const container = await this.slow.createContainer({
+      Image: image,
+      User: '0:0',
+      Entrypoint: ['/bin/sh', '-c', 'rm -rf /hlabs-clear/* /hlabs-clear/.[!.]* /hlabs-clear/..?*'],
+      Cmd: [],
+      Labels: { 'dev.hlabs.clear': 'true' },
+      HostConfig: { Binds: [`${hostPath}:/hlabs-clear`], NetworkMode: 'none' },
+    });
+    try {
+      await container.start();
+      const { StatusCode } = (await container.wait()) as { StatusCode: number };
+      if (StatusCode !== 0) throw new Error(`clearing ${hostPath} with ${image} exited ${StatusCode}`);
+    } finally {
+      await container.remove({ force: true }).catch(() => undefined);
+    }
+  }
+
   async imageSize(image: string): Promise<number | null> {
     try {
       return (await this.docker.getImage(image).inspect()).Size;
