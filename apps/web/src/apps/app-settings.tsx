@@ -19,9 +19,8 @@ import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { appsCopy } from '../copy/apps';
 import { browser } from '../lib/browser';
-import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
-import { AccessDenied } from '../shell/access-denied';
+import { AdminOnly } from './admin-only';
 import { AppAccess } from './app-access';
 import { AppBehaviour } from './app-behaviour';
 import { AppStorage, AppVersion } from './app-storage';
@@ -52,16 +51,11 @@ export function useGoBack() {
 }
 
 export function AppSettings({ appId }: { appId: string }) {
-  const me = useMe().data;
-  if (!me) return null;
-  if (me.role !== 'admin') {
-    return (
-      <section className="flex min-h-full items-center p-4">
-        <AccessDenied />
-      </section>
-    );
-  }
-  return <AppSettingsView appId={appId} />;
+  return (
+    <AdminOnly>
+      <AppSettingsView appId={appId} />
+    </AdminOnly>
+  );
 }
 
 function AppSettingsView({ appId }: { appId: string }) {

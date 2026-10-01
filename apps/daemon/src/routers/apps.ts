@@ -43,6 +43,16 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
     ctx.services.apps.setBehaviour(input.appId, 'autoUpdate', input.enabled, installer(ctx));
     return { ok: true as const };
   },
+  // Admins only: logs can hold secrets (07 §7.6).
+  logs: async (input, ctx) => ({
+    lines: await ctx.services.logs.recent(input.appId, {
+      service: input.service,
+      tail: input.tail ?? 500,
+      since: input.since,
+    }),
+  }),
+  watchLogs: (input, ctx, signal) =>
+    ctx.services.logs.watch(input.appId, { service: input.service, since: input.since }, signal),
   retryInstall: (input, ctx) => ctx.services.installer.retry(installer(ctx), input.appId, input.portOverrides?.web),
   uninstall: (input, ctx) => ctx.services.installer.uninstallFailed(installer(ctx), input.appId),
   /** Only the apps this person can open, enforced here, not in the UI (07 §7.4). */

@@ -1,3 +1,4 @@
+import type { ContainerLogLine } from './log-frames';
 import type { EngineKind } from '@hlabs/api';
 
 export interface EngineInfo {
@@ -40,6 +41,14 @@ export interface ContainerEngine {
   pullImage(ref: string, onProgress: (progress: PullProgress) => void, signal?: AbortSignal): Promise<void>;
   /** Containers labelled with the compose project, running or not. */
   projectContainers(project: string): Promise<ContainerState[]>;
+  /**
+   * A container's log lines, oldest first: the last `tail` (all without it), only those after `since` (ms) when
+   * given, and with `follow` the new ones as they come until the container stops or `signal` aborts.
+   */
+  containerLogs(
+    containerId: string,
+    opts: { tail?: number; since?: number; follow?: boolean; signal?: AbortSignal },
+  ): AsyncIterable<ContainerLogLine>;
   /** An image's size on disk (`sha256:…` or a reference), or null when it isn't here. */
   imageSize(image: string): Promise<number | null>;
 }

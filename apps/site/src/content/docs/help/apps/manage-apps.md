@@ -33,6 +33,14 @@ Under **Storage and resources**:
 
 At the bottom, the version says whether it's up to date, or which newer version the App Store has.
 
+## Read an app's logs
+
+Logs are what an app writes about what it's doing. They help when something goes wrong, for example when an app won't start. Choose **Logs** in App settings or at the top of the app window.
+
+The logs show the latest 500 lines, oldest first, with the time and, when the app says, how serious each line is: INFO, WARN, ERROR or DEBUG. New lines appear as the app writes them while **Following** is on. Scroll up to read earlier lines and following stops; choose **Following** again to jump back to the newest line. If the app restarts while you watch, a "Container restarted" line marks where.
+
+Logs can contain passwords and other private details, so only admins can see them.
+
 ## Start, stop or restart an app
 
 - **Open** opens the app in a new tab.

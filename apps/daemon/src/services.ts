@@ -23,6 +23,7 @@ import type { StoreService } from './store/service';
 import type { InstallService } from './apps/install';
 import type { AppService } from './apps/service';
 import type { NetworkService } from './network/service';
+import type { AppLogs } from './apps/logs';
 
 export interface Services {
   config: DaemonConfig;
@@ -40,6 +41,8 @@ export interface Services {
   /** Installs apps (US-STORE-08…14). */
   installer: InstallService;
   apps: AppService;
+  /** Apps' container logs (US-APP-08…10). */
+  logs: AppLogs;
   /** Caddy and mDNS names (02 §2.6). */
   routing: NetworkService;
   /** Settles when the start-up reconcile has finished (tests). */

@@ -1,3 +1,5 @@
+import { EventEmitter } from 'node:events';
+import type { ContainerLogLine } from '../../src/engine/log-frames';
 import type {
   ContainerEngine,
   ContainerState,
@@ -62,6 +64,65 @@ export class FakeEngine implements ContainerEngine {
   async projectContainers(project: string) {
     this.assertRunning();
     return structuredClone(this.containers.get(project) ?? []);
+  }
+
+  /** Container id → its log lines; `addLog` appends one (and followers see it), `endLogs` ends followers. */
+  readonly logLines = new Map<string, ContainerLogLine[]>();
+  private readonly logEvents = new EventEmitter();
+
+  addLog(containerId: string, line: ContainerLogLine) {
+    const lines = this.logLines.get(containerId) ?? [];
+    lines.push(line);
+    this.logLines.set(containerId, lines);
+    this.logEvents.emit(`line:${containerId}`, line);
+  }
+
+  /** How many streams follow a container's logs right now. */
+  following(containerId: string): number {
+    return this.logEvents.listenerCount(`line:${containerId}`);
+  }
+
+  /** How many times its logs have been followed so far. */
+  readonly followCount = new Map<string, number>();
+
+  /** The container stopped: its followed log streams end. */
+  endLogs(containerId: string) {
+    this.logEvents.emit(`end:${containerId}`);
+  }
+
+  async *containerLogs(
+    containerId: string,
+    opts: { tail?: number; since?: number; follow?: boolean; signal?: AbortSignal },
+  ): AsyncGenerator<ContainerLogLine> {
+    this.assertRunning();
+    let lines = (this.logLines.get(containerId) ?? []).filter((l) => opts.since === undefined || l.ts > opts.since);
+    if (opts.tail !== undefined) lines = opts.tail === 0 ? [] : lines.slice(-opts.tail);
+    if (!opts.follow) {
+      yield* lines;
+      return;
+    }
+    this.followCount.set(containerId, (this.followCount.get(containerId) ?? 0) + 1);
+    const queue = [...lines];
+    let ended = false;
+    let wake: (() => void) | null = null;
+    const onLine = (line: ContainerLogLine) => (queue.push(line), wake?.());
+    const onEnd = () => ((ended = true), wake?.());
+    const onAbort = () => onEnd();
+    this.logEvents.on(`line:${containerId}`, onLine);
+    this.logEvents.on(`end:${containerId}`, onEnd);
+    opts.signal?.addEventListener('abort', onAbort);
+    try {
+      for (;;) {
+        while (queue.length) yield queue.shift()!;
+        if (ended || opts.signal?.aborted) return;
+        await new Promise<void>((r) => (wake = r));
+        wake = null;
+      }
+    } finally {
+      this.logEvents.off(`line:${containerId}`, onLine);
+      this.logEvents.off(`end:${containerId}`, onEnd);
+      opts.signal?.removeEventListener('abort', onAbort);
+    }
   }
 
   /** Image id → size on disk. */

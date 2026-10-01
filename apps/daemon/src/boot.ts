@@ -32,6 +32,7 @@ import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
 import { ChildRegistry } from './platform/children';
 import { createMdnsPublisher } from './mdns/publisher';
 import { AppDiskUsage } from './apps/disk';
+import { AppLogs } from './apps/logs';
 import { SessionService } from './auth/sessions';
 import { TotpService } from './auth/totp';
 import { LoginService } from './auth/login';
@@ -284,6 +285,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     catalog,
     store,
     installer,
+    logs: new AppLogs({ engine, project: (appId) => appService.project(appId).name }),
     routing: network,
     apps: appService,
     reconciled,

@@ -1,4 +1,5 @@
 import Docker from 'dockerode';
+import { LogFrames, type ContainerLogLine } from './log-frames';
 import type { ContainerEngine, ContainerState, EngineInfo, PullProgress } from './types';
 
 /** The real engine, over its unix socket (D-003: dockerode for everything but compose up/down). */
@@ -60,6 +61,45 @@ export class DockerodeEngine implements ContainerEngine {
         },
       );
     });
+  }
+
+  async *containerLogs(
+    containerId: string,
+    opts: { tail?: number; since?: number; follow?: boolean; signal?: AbortSignal },
+  ): AsyncGenerator<ContainerLogLine> {
+    const container = this.docker.getContainer(containerId);
+    const frames = new LogFrames((await container.inspect()).Config.Tty);
+    const options = {
+      stdout: true,
+      stderr: true,
+      timestamps: true,
+      // Without a tail, every line Docker kept.
+      ...(opts.tail === undefined ? {} : { tail: opts.tail }),
+      // Docker takes seconds, with a fraction.
+      since: opts.since === undefined ? 0 : opts.since / 1000,
+    };
+    if (!opts.follow) {
+      const all = await container.logs({ ...options, follow: false });
+      yield* frames.push(all);
+      yield* frames.flush();
+      return;
+    }
+    // A followed stream can be quiet for a long time: the client without the timeout.
+    const followed = this.slow.getContainer(containerId);
+    const stream = (await followed.logs({ ...options, follow: true })) as NodeJS.ReadableStream & {
+      destroy?: () => void;
+    };
+    const stop = () => stream.destroy?.();
+    opts.signal?.addEventListener('abort', stop);
+    try {
+      for await (const chunk of stream) yield* frames.push(chunk as Buffer);
+      yield* frames.flush();
+    } catch (err) {
+      if (!opts.signal?.aborted) throw err;
+    } finally {
+      opts.signal?.removeEventListener('abort', stop);
+      stop();
+    }
   }
 
   async imageSize(image: string): Promise<number | null> {

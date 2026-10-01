@@ -26,6 +26,8 @@ export const logLineSchema = z.object({
   stream: z.enum(['stdout', 'stderr']),
   ts: z.number(),
   line: z.string(),
+  /** Not a line: the service's container restarted while followed, so the view shows a divider (US-APP-08). */
+  restarted: z.boolean().optional(),
 });
 export type LogLine = z.infer<typeof logLineSchema>;
 
@@ -135,7 +137,8 @@ export const apps = {
     }),
     z.object({ lines: z.array(logLineSchema) }),
   ),
-  watchLogsInput: appRefSchema.extend({ service: z.string().optional() }),
+  /** `since` (ms): carry on after the last line of the initial `apps.logs` load. */
+  watchLogsInput: appRefSchema.extend({ service: z.string().optional(), since: z.number().optional() }),
   moveData: io(appRefSchema.extend({ storageLocationId: idSchema }), jobRefSchema),
   deployCustom: io(
     z.object({
