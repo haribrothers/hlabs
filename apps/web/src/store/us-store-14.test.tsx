@@ -111,7 +111,7 @@ describe('US-STORE-14', () => {
       () => <AppGrid apps={[tile]} isAdmin={false} progress={new Map([['immich', 42]])} />,
       {},
     );
-    fireEvent.click(await screen.findByRole('button', { name: /Immich, installing… 42%/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Immich, installing, 42%/i }));
     await vi.waitFor(() => expect(router.state.location.pathname).toBe('/store/install/immich'));
   });
 });
