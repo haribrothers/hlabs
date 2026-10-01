@@ -1,6 +1,6 @@
 // US-STORE-11 · Run an install as a job, and US-STORE-12 · watch it (main instance, admin, real engine). The PR smoke
 // set of D-071: Uptime Kuma and Vaultwarden really install from the sheet, show their steps and end "ready" with
-// Open and a Home tile. Runs in the store-install project, after the other specs, one at a time. Uninstalling arrives
+// Open and a Home tile. Runs in the serial project, after the other specs, one at a time. Uninstalling arrives
 // with US-APP-12, so a dev-only route takes each app down afterwards.
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { MAIN_URL } from './instances';

@@ -8,6 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { appsCopy } from '../copy/apps';
+import { engineCopy } from '../copy/engine';
 import { homeCopy } from '../copy/home';
 import { handledGlobally, showErrorToast } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
@@ -68,10 +69,13 @@ export function AppGrid({
   apps,
   isAdmin,
   progress,
+  offline = false,
 }: {
   apps: readonly HomeApp[];
   isAdmin: boolean;
   progress?: ReadonlyMap<string, number>;
+  /** The container engine has stopped: every app is offline and its tile can't be used (US-STATE-08). */
+  offline?: boolean;
 }) {
   const openApp = useOpenApp(isAdmin);
   const command = useTileCommands(apps);
@@ -90,6 +94,7 @@ export function AppGrid({
             <TileMenu
               app={app}
               isAdmin={isAdmin}
+              disabled={offline}
               onOpen={() => openApp(app)}
               onCommand={(action) => command(app, action)}
             >
@@ -101,7 +106,8 @@ export function AppGrid({
                 state={TILE[app.state].state}
                 status={TILE[app.state].status}
                 progress={progress?.get(app.id) ?? (app.state === 'installing' ? 0 : undefined)}
-                ariaLabel={app.state === 'running' ? homeCopy.openApp(app.name) : undefined}
+                ariaLabel={app.state === 'running' && !offline ? homeCopy.openApp(app.name) : undefined}
+                offline={offline ? engineCopy.offline : undefined}
                 onClick={() => openApp(app)}
               />
             </TileMenu>
@@ -110,12 +116,22 @@ export function AppGrid({
       })}
       {showInstall ? (
         <li className="flex justify-center">
-          <Link to="/store" className="hl-app" aria-label={homeCopy.installApp}>
-            <span className="hl-app-icon grid place-items-center rounded-icon border border-dashed border-border-glass">
-              <Plus aria-hidden {...iconDefaults} />
+          {offline ? (
+            // Nothing can be installed without the engine (US-STATE-08).
+            <span className="hl-app hl-app-offline" role="link" aria-disabled="true" title={engineCopy.startFirst}>
+              <span className="hl-app-icon grid place-items-center rounded-icon border border-dashed border-border-glass">
+                <Plus aria-hidden {...iconDefaults} />
+              </span>
+              <span className="hl-app-name">{homeCopy.installApp}</span>
             </span>
-            <span className="hl-app-name">{homeCopy.installApp}</span>
-          </Link>
+          ) : (
+            <Link to="/store" className="hl-app" aria-label={homeCopy.installApp}>
+              <span className="hl-app-icon grid place-items-center rounded-icon border border-dashed border-border-glass">
+                <Plus aria-hidden {...iconDefaults} />
+              </span>
+              <span className="hl-app-name">{homeCopy.installApp}</span>
+            </Link>
+          )}
         </li>
       ) : null}
     </ul>

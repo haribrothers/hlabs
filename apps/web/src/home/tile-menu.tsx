@@ -53,10 +53,13 @@ export function TileMenu({
   isAdmin,
   onOpen,
   onCommand,
+  disabled = false,
   children,
 }: {
   app: HomeApp;
   isAdmin: boolean;
+  /** No menu while the tile can't be used (the engine has stopped, US-STATE-08). */
+  disabled?: boolean;
   onOpen: () => void;
   onCommand: (command: TileCommand) => void;
   children: ReactNode;
@@ -144,6 +147,7 @@ export function TileMenu({
   }
   // "Edit Home" (US-HOME-16) joins the end of this menu in phase 7 (D-036).
 
+  if (disabled) return children;
   return (
     <div
       ref={holder}

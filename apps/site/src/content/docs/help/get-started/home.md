@@ -64,6 +64,12 @@ As you type, results come in groups:
 
 Search doesn't mind capitals or accents. Members see only the apps shared with them, and the App Store only when members can install apps. If nothing matches, Search says so and still offers the App Store.
 
+## When the container engine stops
+
+hlabs runs apps in a container engine, such as OrbStack, Docker or Colima. If the engine stops, Home says "The container engine has stopped": all apps are offline, but their data is safe. App tiles are greyed out and can't be opened, and installing waits until the engine runs again. Everything else, including the Dock, search and settings, keeps working. Choose **Details** to see the engine in Settings › Engine & startup. Admins also get a notification.
+
+Opening an app's address while the engine is stopped shows the same message, with the way back Home.
+
 ## The Dock
 
 The Dock at the bottom of the screen takes you to each part of hlabs; a dot marks where you are. Point at a tile to see its name. With a keyboard, Tab to the Dock, use the left and right arrow keys (Home and End jump to the ends) and press Enter. On a phone, the tab bar does the same job.

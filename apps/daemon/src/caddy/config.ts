@@ -93,6 +93,25 @@ function appRoute(app: AppRoute, domain: string, daemon: string, ancestors: stri
 }
 
 /**
+ * An app that doesn't answer (502–504): the daemon says why, the engine-stopped page while the engine is down
+ * (US-STATE-08), or lets the error stand.
+ */
+function appUnavailable(daemon: string, hosts?: string[]) {
+  return {
+    match: [{ ...(hosts ? { host: hosts } : {}), expression: '{http.error.status_code} in [502, 503, 504]' }],
+    handle: [
+      {
+        handler: 'reverse_proxy',
+        upstreams: [{ dial: daemon }],
+        rewrite: { method: 'GET', uri: '/auth/unavailable' },
+        headers: { request: { set: { 'X-Forwarded-Host': ['{http.request.hostport}'] } } },
+      },
+    ],
+    terminal: true,
+  };
+}
+
+/**
  * An app on its own port, under any name (D-086): `https://hlabs.local:<port>` when its name can't be published
  * (US-APP-05), and its tailnet address. TLS with the dashboard's certificate.
  */
@@ -101,6 +120,7 @@ function appPortServer(app: AppRoute, domain: string, daemon: string, ancestors:
   return {
     listen: [`:${app.port}`],
     routes: [route],
+    errors: { routes: [appUnavailable(daemon)] },
     tls_connection_policies: [{ default_sni: domain }],
     automatic_https: { disable_redirects: true },
   };
@@ -180,6 +200,14 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
                   handle: [{ handler: 'subroute', ...fallbackErrorRoutes(paths.webFallbackDir) }],
                   terminal: true,
                 },
+                ...(state.apps.length
+                  ? [
+                      appUnavailable(
+                        state.daemon,
+                        state.apps.map((a) => `${a.hostname}.${domain}`),
+                      ),
+                    ]
+                  : []),
               ],
             },
             automatic_https: { disable_redirects: true },

@@ -6,7 +6,9 @@ import { Badge, Button, GlassCard, ModalDialog, ScrollPane, tokens } from '@hlab
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { engineCopy } from '../copy/engine';
 import { categoryLabels, storeCopy } from '../copy/store';
+import { useEngineRunning } from '../lib/engine-state';
 import { browser } from '../lib/browser';
 import { pageQuery } from '../lib/error-copy';
 import { useTRPC } from '../lib/trpc';
@@ -52,6 +54,8 @@ function PrimaryAction({ details, onInstall }: { details: StoreAppDetails; onIns
   const action = cardAction(app, installed, installs.progress.get(app.id));
   const noPlatform = host.arm64 && !app.arm64;
   const blocked = blockers(details).blocksInstall;
+  // Nothing installs without the engine (US-STATE-08).
+  const engineDown = useEngineRunning() === false;
   // An install that's running or failed has its own page (US-STORE-12, US-STORE-13).
   if (installed?.state === 'installing' || installed?.state === 'install_failed') {
     return (
@@ -83,7 +87,12 @@ function PrimaryAction({ details, onInstall }: { details: StoreAppDetails; onIns
       return <Badge tone="success">{copy.installed}</Badge>;
     case 'install':
       return (
-        <Button size="lg" disabled={noPlatform || blocked} onClick={onInstall}>
+        <Button
+          size="lg"
+          disabled={noPlatform || blocked || engineDown}
+          title={engineDown ? engineCopy.startFirst : undefined}
+          onClick={onInstall}
+        >
           {copy.install}
         </Button>
       );

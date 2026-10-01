@@ -2,9 +2,10 @@
 // are built into the fallback bundle (pages.html) and read their data from the JSON the daemon adds, so they make no
 // requests. "Search" on the 404 screen needs the dashboard, so it isn't here. The "no access" page matches the dashboard's
 // (AccessDenied) with the app and who to ask.
-import { Lock, iconDefaults } from '@hlabs/icons';
+import { Lock, TriangleAlert, iconDefaults } from '@hlabs/icons';
 import { Avatar, avatarColorFor, GlassCard } from '@hlabs/ui';
 import { useEffect } from 'react';
+import { engineCopy } from '../copy/engine';
 import { accessCopy, appPageCopy } from '../copy/settings';
 
 export interface NoAccessData {
@@ -19,7 +20,8 @@ export interface NoAccessData {
 }
 
 /** What the daemon puts in `<script id="hlabs-page">` (apps/daemon/src/http/static-page.ts). */
-export type AppPageData = { kind: 'notFound'; homeUrl: string } | NoAccessData;
+export type AppPageData =
+  { kind: 'notFound'; homeUrl: string } | { kind: 'engineStopped'; homeUrl: string } | NoAccessData;
 
 export function readAppPageData(doc: Document = document): AppPageData | null {
   try {
@@ -55,6 +57,25 @@ export function AppNotFound({ homeUrl }: { homeUrl: string }) {
   );
 }
 
+/** An app's address while the container engine is stopped (US-STATE-08): what happened, and the way Home. */
+export function AppEngineStopped({ homeUrl }: { homeUrl: string }) {
+  useEffect(() => {
+    document.title = appPageCopy.engineStoppedDocTitle;
+  }, []);
+  return (
+    <main className="hl-wall flex min-h-full items-center justify-center px-4 py-10">
+      <GlassCard level={2} className="flex w-full max-w-xl flex-col items-center gap-4 p-7 text-center">
+        <span className="grid size-16 place-items-center rounded-pill bg-surface-control">
+          <TriangleAlert aria-hidden {...iconDefaults} className="text-danger" />
+        </span>
+        <h1 className="m-0 text-title-1">{engineCopy.stoppedTitle}</h1>
+        <p className="m-0 text-body text-ink-muted">{engineCopy.stoppedBody}</p>
+        <HomeLink href={homeUrl} />
+      </GlassCard>
+    </main>
+  );
+}
+
 /** "You don't have access to this" for an app that isn't shared with a member (US-AUTH-19, US-STATE-20). */
 export function AppNoAccess({ data }: { data: NoAccessData }) {
   useEffect(() => {
@@ -86,5 +107,6 @@ export function AppPage({ data }: { data: AppPageData | null }) {
   // Without data (opened directly), send people Home on this host's dashboard.
   if (!data) return <AppNotFound homeUrl="/" />;
   if (data.kind === 'noAccess') return <AppNoAccess data={data} />;
+  if (data.kind === 'engineStopped') return <AppEngineStopped homeUrl={data.homeUrl} />;
   return <AppNotFound homeUrl={data.homeUrl} />;
 }

@@ -114,7 +114,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-APP-10 · Download logs
 - [x] US-APP-11 · Confirm uninstall and choose what happens to data
 - [x] US-APP-12 · Uninstall runs and cleans up
-- [ ] US-STATE-08 · Grey out Home when the engine has stopped
+- [x] US-STATE-08 · Grey out Home when the engine has stopped ("Start engine" in the banner is US-STATE-09; the host widgets other than Storage arrive with their phases)
 - [ ] US-STATE-09 · Start the engine from the banner
 - [ ] US-STATE-10 · Recover automatically when the engine comes back
 - [x] US-AUTH-17 · Protect every app with forward auth

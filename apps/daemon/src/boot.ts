@@ -5,6 +5,7 @@ import { noEngineControl, nodeEngineControl, type EngineControl } from './engine
 import { KeepAwake, processSleepBlocker, type SleepBlocker } from './platform/keep-awake';
 import { eq } from 'drizzle-orm';
 import { registerEngineRestart } from './engine/restart-job';
+import { watchEngine } from './engine/watch';
 import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
 import { nextOrigins } from '@hlabs/shared';
 import { mkdirSync } from 'node:fs';
@@ -188,6 +189,12 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   logger.info({ apps: synced.length, skipped: skipped.length }, 'built-in store loaded');
   // Health waits take up to minutes, so apps come up in the background; /healthz doesn't wait for them.
   const reconciled = appService.reconcile().catch((err: unknown) => logger.error({ err }, 'reconciling apps failed'));
+  // Later reconciles (the engine came back, US-STATE-09, US-STATE-10) run one after another, after this one.
+  let reconciling: Promise<void> = reconciled;
+  const appsBack = () =>
+    (reconciling = reconciling
+      .then(() => appService.reconcile())
+      .catch((err: unknown) => logger.error({ err }, 'reconciling apps failed')));
 
   // 5. Scheduler: backups, update checks, health probes, usage sampling (added by their phases).
   readiness.step(4);
@@ -245,6 +252,13 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   const sessions = new SessionService(db, bus);
   const totp = new TotpService(db, secrets);
   const notifications = new NotificationService(db, bus);
+  watchEngine({
+    bus,
+    engine,
+    notifications,
+    appsBack,
+    setUp: () => getSetting(db, 'onboarding').completedAt !== null,
+  });
   const store = new StoreService(db, catalog, deps.storeHost, {
     engineMemoryBytes: () => (engine.status.state === 'running' ? engine.status.info.memoryBytes : null),
     appDataFreeBytes: () => probe.freeBytes(config.paths.appDataDir),

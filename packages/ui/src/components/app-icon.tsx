@@ -1,5 +1,5 @@
 import { AppLogo } from '@hlabs/icons';
-import type { MouseEvent, ReactNode } from 'react';
+import { useId, type MouseEvent, type ReactNode } from 'react';
 import { cn } from '../lib/cn';
 import { useUiStrings } from '../lib/strings';
 import { SIZE_APP_ICON } from '../lib/tokens';
@@ -27,6 +27,8 @@ export interface AppIconProps {
   href?: string;
   /** Replaces the accessible name, e.g. "Open Jellyfin" on Home. */
   ariaLabel?: string;
+  /** Why the tile can't be used ("Offline: the container engine has stopped"): greyed out, aria-disabled, inert. */
+  offline?: string;
   onClick?: (e: MouseEvent<HTMLElement>) => void;
   onContextMenu?: (e: MouseEvent<HTMLElement>) => void;
 }
@@ -45,10 +47,12 @@ export function AppIcon({
   status,
   href,
   ariaLabel: ariaLabelOverride,
+  offline,
   onClick,
   onContextMenu,
 }: AppIconProps) {
   const t = useUiStrings();
+  const offlineId = useId();
   const pct = Math.max(0, Math.min(100, Math.round(progress ?? 0)));
   const ring = state === 'installing' || state === 'updating';
   const badge = state === 'update' || state === 'error' || state === 'stopped' ? t.appState[state] : null;
@@ -113,16 +117,29 @@ export function AppIcon({
           </span>
         ) : null}
       </span>
+      {offline ? (
+        <span id={offlineId} className="sr-only">
+          {offline}
+        </span>
+      ) : null}
       <span className={cn('hl-app-name', label !== name && 'hl-app-status')}>{label}</span>
     </>
   );
-  const className = cn('hl-app', state === 'stopped' && 'hl-app-stopped');
+  const className = cn('hl-app', state === 'stopped' && 'hl-app-stopped', offline && 'hl-app-offline');
+  const inert = offline
+    ? {
+        'aria-disabled': true,
+        'aria-describedby': offlineId,
+        onClick: (e: MouseEvent<HTMLElement>) => e.preventDefault(),
+        onContextMenu: undefined,
+      }
+    : { onClick, onContextMenu };
   return href ? (
-    <a href={href} className={className} aria-label={ariaLabel} onClick={onClick} onContextMenu={onContextMenu}>
+    <a href={href} className={className} aria-label={ariaLabel} {...inert}>
       {content}
     </a>
   ) : (
-    <button type="button" className={className} aria-label={ariaLabel} onClick={onClick} onContextMenu={onContextMenu}>
+    <button type="button" className={className} aria-label={ariaLabel} {...inert}>
       {content}
     </button>
   );

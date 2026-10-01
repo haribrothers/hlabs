@@ -14,6 +14,8 @@ import { useNow } from '../lib/use-now';
 import { AppGrid, orderApps } from './app-grid';
 import { greetingFor } from './greeting';
 import { WidgetsRow } from './widgets';
+import { EngineBanner } from './engine-banner';
+import { useEngineRunning } from '../lib/engine-state';
 
 export function HomeView() {
   const trpc = useTRPC();
@@ -40,6 +42,8 @@ export function HomeView() {
     ),
   );
   const now = useNow();
+  // The engine stopped (US-STATE-08): apps are offline, the rest of Home stays live.
+  const engineDown = useEngineRunning(Boolean(me.data)) === false;
   useEffect(() => {
     document.title = homeCopy.title;
   }, []);
@@ -69,8 +73,10 @@ export function HomeView() {
           )}
           isAdmin={me.data?.role === 'admin'}
           progress={progress}
+          offline={engineDown}
         />
       ) : null}
+      <EngineBanner down={engineDown} />
     </div>
   );
 }

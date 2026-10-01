@@ -9,7 +9,9 @@ import { Button, List, ListRow, ModalDialog, Segmented, Switch, TextField, token
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useRef, useState } from 'react';
+import { engineCopy } from '../copy/engine';
 import { installCopy } from '../copy/install';
+import { useEngineRunning } from '../lib/engine-state';
 import { errorCode, errorData } from '../lib/error-copy';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { StoreLogo } from './cards';
@@ -159,7 +161,9 @@ export function InstallSheet({
     ],
     [details.access],
   );
-  const blocked = !!hostnameError || !!offline || !!missing || (install.risky && !accepted);
+  // Nothing installs without the engine (US-STATE-08).
+  const engineDown = useEngineRunning() === false;
+  const blocked = !!hostnameError || !!offline || !!missing || (install.risky && !accepted) || engineDown;
 
   const start = useMutation({
     mutationFn: () =>
@@ -231,7 +235,12 @@ export function InstallSheet({
             {copy.cancel}
           </Button>
           {install.allowed ? (
-            <Button disabled={blocked} busy={start.isPending} onClick={submit}>
+            <Button
+              disabled={blocked}
+              busy={start.isPending}
+              title={engineDown ? engineCopy.startFirst : undefined}
+              onClick={submit}
+            >
               {copy.install}
             </Button>
           ) : (

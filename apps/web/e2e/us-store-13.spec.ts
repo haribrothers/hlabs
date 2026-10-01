@@ -1,6 +1,6 @@
 // US-STORE-13 · Understand why an install failed, and US-STORE-14 · retry or remove it (main instance, admin). A
 // dev-only stand-in puts Immich in install_failed with a reason, as a failed job leaves it; the real removal runs.
-// In the store-install project, after the other specs.
+// In the serial project, after the other specs.
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { MAIN_URL } from './instances';
 

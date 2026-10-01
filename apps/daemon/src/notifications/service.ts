@@ -113,6 +113,28 @@ export class NotificationService {
   }
 
   /** Marks these read (only ones the reader can see) and tells their other sessions, so the toasts go. */
+  /** hlabs itself marks the admins' notifications of a kind read once they no longer apply (US-STATE-10). */
+  markKindRead(kind: string, now = Date.now()): void {
+    const rows = this.db
+      .update(notifications)
+      .set({ readAt: now })
+      .where(and(eq(notifications.kind, kind), isNull(notifications.userId), isNull(notifications.readAt)))
+      .returning({ id: notifications.id })
+      .all();
+    if (rows.length) this.bus.emit('notification.read', { ids: rows.map((r) => r.id) }, audienceOf(null));
+  }
+
+  /** Whether the admins have an unread notification of this kind. */
+  hasUnread(kind: string): boolean {
+    return (
+      this.db
+        .select({ id: notifications.id })
+        .from(notifications)
+        .where(and(eq(notifications.kind, kind), isNull(notifications.userId), isNull(notifications.readAt)))
+        .get() !== undefined
+    );
+  }
+
   markRead(reader: Reader, ids: readonly string[], now = Date.now()): void {
     const rows = this.db
       .update(notifications)

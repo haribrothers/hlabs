@@ -37,6 +37,7 @@ export const appPageCopy = {
   notFoundTitle: 'This page doesn’t exist',
   notFoundBody: 'If you followed a link to an app, it may have been uninstalled or renamed.',
   notFoundDocTitle: 'Page not found · hlabs',
+  engineStoppedDocTitle: 'Engine stopped · hlabs',
   noAccessBody: (app: string, admin: string | null) =>
     `${app} hasn’t been shared with you. Ask ${admin ?? 'an admin'} to share it with you.`,
   member: 'Member',

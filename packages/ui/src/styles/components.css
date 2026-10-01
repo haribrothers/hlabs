@@ -615,6 +615,17 @@
   .hl-app-dim {
     opacity: 0.4;
   }
+  /* The container engine has stopped (US-STATE-08): every app is offline. */
+  .hl-app-offline {
+    cursor: default;
+  }
+  .hl-app-offline .hl-app-icon {
+    filter: grayscale(1);
+    opacity: 0.45;
+  }
+  .hl-app-offline .hl-app-name {
+    color: var(--ink-muted);
+  }
   .hl-app-stopped .hl-app-icon {
     filter: grayscale(1);
     opacity: 0.5;

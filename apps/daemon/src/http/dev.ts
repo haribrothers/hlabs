@@ -149,6 +149,16 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     /** `apps.state_detail`, e.g. a failed install's `{ code, port, step }` (US-STORE-13 e2e). */
     stateDetail: z.record(z.string(), z.unknown()).optional(),
   });
+  // The engine as stopped (or back), without touching the real one: e2e for the engine-stopped states (US-STATE-08…10).
+  const engineBody = z.object({ running: z.boolean() });
+  app.post('/dev/engine', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { running } = engineBody.parse(req.body);
+    const status = await services.engine.simulateStop(!running);
+    return { state: status.state };
+  });
+
   app.post('/dev/fake-app', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });

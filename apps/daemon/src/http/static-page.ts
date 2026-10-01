@@ -18,7 +18,8 @@ export interface NoAccessPage {
   accent: string;
 }
 
-export type StaticPageData = { kind: 'notFound'; homeUrl: string } | NoAccessPage;
+export type StaticPageData =
+  { kind: 'notFound'; homeUrl: string } | { kind: 'engineStopped'; homeUrl: string } | NoAccessPage;
 
 export const PAGES_FILE = 'pages.html';
 
@@ -38,7 +39,12 @@ export class StaticPages {
     const json = `<script id="hlabs-page" type="application/json">${scriptJson(data)}</script>`;
     if (template) return template.replace('</head>', () => `${json}\n</head>`);
     // Plain version: the bundle isn't built here.
-    const title = data.kind === 'notFound' ? 'Page not found' : "You don't have access to this";
+    const title =
+      data.kind === 'notFound'
+        ? 'Page not found'
+        : data.kind === 'engineStopped'
+          ? 'The container engine has stopped'
+          : "You don't have access to this";
     return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title>${json}</head><body><h1>${title}</h1><p><a href="${escapeHtml(data.homeUrl)}">Go to Home</a></p></body></html>`;
   }
 

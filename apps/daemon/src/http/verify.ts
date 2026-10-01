@@ -201,4 +201,19 @@ export function registerAuthVerify(app: FastifyInstance, holder: ServiceHolder, 
         return reply.code(verdict.status).send();
     }
   });
+
+  // An app route's upstream didn't answer (Caddy hands its 502–504 here). While the engine is stopped, browsers get
+  // the engine-stopped page with the way Home (US-STATE-08); otherwise the error stands.
+  app.get('/auth/unavailable', options, async (req: FastifyRequest, reply: FastifyReply) => {
+    const services = holder.current;
+    reply.header('cache-control', 'no-store');
+    if (!services) return reply.code(503).send();
+    const navigation = (header(req, 'accept') ?? '').includes('text/html');
+    if (services.engine.client !== null || !navigation) return reply.code(502).send();
+    const homeUrl = `${dashboardOrigin(services.db, header(req, 'x-forwarded-host') ?? '')}/`;
+    return reply
+      .code(503)
+      .type('text/html; charset=utf-8')
+      .send(pages.render({ kind: 'engineStopped', homeUrl }));
+  });
 }

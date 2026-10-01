@@ -1,6 +1,6 @@
 // US-APP-12 · Uninstall runs and cleans up (main instance, admin, real engine). Gitea really installs, then is
 // uninstalled from App settings keeping its data: Home shows it going, then it's gone, and a toast says so. Runs in
-// the store-install project; Gitea is used by no other spec there, since their files run side by side.
+// the serial project; Gitea is used by no other spec there, since their files run side by side.
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { MAIN_URL } from './instances';
 

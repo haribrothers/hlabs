@@ -8,6 +8,7 @@ import { shellCopy } from '../copy/shell';
 import { useAppearance, wallpaperClass } from '../lib/appearance';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { useOpenWindows } from '../apps/open-windows';
+import { EngineWatch } from '../lib/engine-state';
 import { openSearch } from '../search/search-state';
 import { Spotlight, useSearchShortcut } from '../search/spotlight';
 import { useTRPC } from '../lib/trpc';
@@ -54,6 +55,7 @@ export function Shell({ children }: { children: ReactNode }) {
         {children}
       </main>
       {search ? <Spotlight /> : null}
+      {me ? <EngineWatch /> : null}
       {/* The + tile and pinned apps arrive with their phases (D-036). */}
       {appWindow ? null : (
         <>
