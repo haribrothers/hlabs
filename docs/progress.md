@@ -106,7 +106,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-APP-02 · App window controls
 - [x] US-APP-03 · Opening an app that isn't running
 - [x] US-APP-04 · See an app's status and start, stop or restart it
-- [ ] US-APP-05 · App address and tailnet address
+- [x] US-APP-05 · App address and tailnet address
 - [ ] US-APP-06 · Behaviour switches
 - [ ] US-APP-07 · Storage, resources and version
 - [ ] US-APP-08 · Follow an app's logs live

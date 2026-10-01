@@ -92,7 +92,22 @@ function appRoute(app: AppRoute, domain: string, daemon: string, ancestors: stri
   };
 }
 
-export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths) {
+/**
+ * An app on its own port, under any name (D-086): `https://hlabs.local:<port>` when its name can't be published
+ * (US-APP-05), and its tailnet address. TLS with the dashboard's certificate.
+ */
+function appPortServer(app: AppRoute, domain: string, daemon: string, ancestors: string[]) {
+  const { match: _host, ...route } = appRoute(app, domain, daemon, ancestors);
+  return {
+    listen: [`:${app.port}`],
+    routes: [route],
+    tls_connection_policies: [{ default_sni: domain }],
+    automatic_https: { disable_redirects: true },
+  };
+}
+
+/** `appPorts: false` leaves out the apps' own ports, for when another program holds one of them. */
+export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { appPorts?: boolean } = {}) {
   const domain = `${state.hostname}.local`;
   const hosts = [domain, ...state.apps.map((a) => `${a.hostname}.${domain}`)];
   const httpsPort = state.ports.https === 443 ? '' : `:${state.ports.https}`;
@@ -174,6 +189,11 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths) {
             routes: httpRoutes,
             automatic_https: { disable: true },
           },
+          ...(opts.appPorts === false
+            ? {}
+            : Object.fromEntries(
+                state.apps.map((a) => [`app-${a.appId}`, appPortServer(a, domain, state.daemon, ancestors)]),
+              )),
         },
       },
       tls: {

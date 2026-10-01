@@ -10,6 +10,12 @@ For admins. Members can open the apps an admin shared with them, but not change 
 
 Open an app and choose **App settings** at the top of its window. The settings show the app's name, whether it's running and how long it has been up, such as "Running · up 6 days". Choose **Close** to go back to where you were.
 
+## The app's address
+
+Under **Access**, App settings shows the app's address, such as `https://vaultwarden.hlabs.local`. Select it to open the app in a new tab, or choose **Copy** to copy it for another device or a bookmark.
+
+If hlabs can't announce the app's name on your network, the address is the hlabs address with the app's own port, such as `https://hlabs.local:12003`. It opens the same app.
+
 ## Start, stop or restart an app
 
 - **Open** opens the app in a new tab.

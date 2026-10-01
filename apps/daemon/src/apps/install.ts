@@ -128,7 +128,7 @@ export class InstallService {
     const { db } = this.deps;
     const app = db.select().from(apps).where(eq(apps.id, appId)).get();
     if (!app) throw hlabsError('NOT_FOUND');
-    const summary = appSummary(db, app);
+    const summary = appSummary(db, app, (name) => this.deps.network.isPublished(name));
     let name = summary.name;
     if (name === app.id) {
       try {

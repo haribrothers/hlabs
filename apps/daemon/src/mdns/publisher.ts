@@ -28,6 +28,9 @@ export interface ProcessMdnsDeps {
   restartDelayMs?: number;
   /** How often to look for a changed LAN address. */
   addressCheckMs?: number;
+  /** A publisher that stops sooner than this after starting failed (a name taken on the LAN, a refusal). */
+  stableMs?: number;
+  now?: () => number;
   /** Records each publisher, so a killed daemon's are ended at the next start. */
   children?: ChildRegistry;
 }
@@ -60,11 +63,16 @@ export function lanAddress(interfaces = networkInterfaces()): string | null {
   return candidates[0]?.address ?? null;
 }
 
+/** How long a publisher must run before its name counts as published again. */
+const STABLE_MS = 10_000;
+
 export class ProcessMdnsPublisher implements MdnsPublisher {
-  private readonly held = new Map<string, { child: Child; address: string }>();
+  private readonly held = new Map<string, { child: Child; address: string; startedAt: number }>();
   private wanted = new Set<string>();
   private timer: NodeJS.Timeout | null = null;
   private missingLogged = false;
+  /** Names whose last publisher stopped soon after it started. */
+  private readonly failing = new Set<string>();
 
   constructor(private readonly deps: ProcessMdnsDeps) {}
 
@@ -90,6 +98,10 @@ export class ProcessMdnsPublisher implements MdnsPublisher {
     for (const name of [...this.held.keys()]) this.withdraw(name);
   }
 
+  isPublished(name: string): boolean {
+    return !this.missingLogged && this.address() !== null && this.held.has(name) && !this.failing.has(name);
+  }
+
   /** Names held right now (tests, diagnostics). */
   get published(): string[] {
     return [...this.held.keys()];
@@ -103,8 +115,14 @@ export class ProcessMdnsPublisher implements MdnsPublisher {
     const { file, args } = this.deps.command(name, address);
     const child = (this.deps.spawn ?? defaultSpawn)(file, args);
     this.deps.children?.add(child.pid, `${file} ${args.join(' ')}`.slice(0, 200));
-    const entry = { child, address };
+    const now = this.deps.now ?? Date.now;
+    const entry = { child, address, startedAt: now() };
     this.held.set(name, entry);
+    // Still up after a while: the name is published again.
+    const stable = setTimeout(() => {
+      if (this.held.get(name) === entry) this.failing.delete(name);
+    }, this.deps.stableMs ?? STABLE_MS);
+    stable.unref?.();
     child.once('error', (err: Error & { code?: string }) => {
       if (err.code === 'ENOENT' && !this.missingLogged) {
         this.missingLogged = true;
@@ -115,6 +133,7 @@ export class ProcessMdnsPublisher implements MdnsPublisher {
       this.deps.children?.remove(child.pid);
       if (this.held.get(name) !== entry) return;
       this.held.delete(name);
+      if (now() - entry.startedAt < (this.deps.stableMs ?? STABLE_MS)) this.failing.add(name);
       if (!this.wanted.has(name) || this.missingLogged) return;
       this.deps.logger.warn({ name, code }, 'mDNS publisher stopped; publishing again');
       const timer = setTimeout(() => void this.sync([...this.wanted]), this.deps.restartDelayMs ?? 5_000);
@@ -126,6 +145,7 @@ export class ProcessMdnsPublisher implements MdnsPublisher {
   private withdraw(name: string) {
     const entry = this.held.get(name);
     this.held.delete(name);
+    this.failing.delete(name);
     entry?.child.kill('SIGTERM');
   }
 }

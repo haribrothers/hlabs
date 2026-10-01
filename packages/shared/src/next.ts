@@ -45,6 +45,8 @@ export function nextOrigins(opts: {
     // Not a URL: nothing to add.
   }
   for (const app of opts.apps) origins.add(`https://${app.hostname}.${local}`);
+  // Its own port, the address it falls back to when its name isn't published (US-APP-05, D-086).
+  for (const app of opts.apps) if (app.port !== null) origins.add(`https://${local}:${app.port}`);
   if (opts.tailnet) {
     const tailnetHost = `${opts.hostname}.${opts.tailnet.replace(/\.ts\.net$/, '')}.ts.net`;
     origins.add(`https://${tailnetHost}`);

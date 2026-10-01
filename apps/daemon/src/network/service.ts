@@ -57,6 +57,11 @@ export class NetworkService {
     return next;
   }
 
+  /** Whether a name (`immich.hlabs.local`) is published on the LAN; apps whose names aren't use their own port. */
+  isPublished(name: string): boolean {
+    return this.deps.mdns.isPublished(name);
+  }
+
   /** Follows app state changes: a route appears when an app is installed and goes when it's uninstalled. */
   watch(bus: EventBus): void {
     bus.on(({ event }) => {

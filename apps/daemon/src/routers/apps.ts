@@ -40,6 +40,8 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
   list: (_input, ctx) => {
     const id = ctx.identity;
     if (id.kind !== 'user') throw hlabsError('AUTH_REQUIRED');
-    return listApps(ctx.services.db, { id: id.userId, role: id.role });
+    return listApps(ctx.services.db, { id: id.userId, role: id.role }, (name) =>
+      ctx.services.routing.isPublished(name),
+    );
   },
 };

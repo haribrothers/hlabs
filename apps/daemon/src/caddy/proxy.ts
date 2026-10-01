@@ -68,6 +68,8 @@ export class CaddyProxy implements ProxyManager {
   private child: ChildProcess | null = null;
   private stopping = false;
   private last: ProxyState | null = null;
+  /** The app ports that couldn't be served last time (`12000,12003`), or null. */
+  private blockedPorts: string | null = null;
   private queue: Promise<void> = Promise.resolve();
   readonly paths: CaddyPaths;
 
@@ -100,8 +102,26 @@ export class CaddyProxy implements ProxyManager {
     });
   }
 
+  /**
+   * Loads the config. When it can't be (most often another program holds one of the apps' own ports), the apps are
+   * served on their hostnames only, and their ports are tried again once they change.
+   */
   private async applyNow(state: ProxyState): Promise<void> {
-    const config = buildCaddyConfig(state, this.paths);
+    const ports = state.apps.map((a) => a.port).join(',');
+    if (this.blockedPorts !== ports) {
+      try {
+        await this.load(buildCaddyConfig(state, this.paths));
+        return;
+      } catch (err) {
+        if (!state.apps.length) throw err;
+        this.blockedPorts = ports;
+        this.deps.logger.warn({ err, ports }, "couldn't serve apps on their own ports; serving their hostnames only");
+      }
+    }
+    await this.load(buildCaddyConfig(state, this.paths, { appPorts: false }));
+  }
+
+  private async load(config: unknown): Promise<void> {
     if (!this.child || this.child.exitCode !== null) {
       await this.spawn(config);
       return;

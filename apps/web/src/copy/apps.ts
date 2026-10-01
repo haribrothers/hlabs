@@ -60,6 +60,13 @@ export const appsCopy = {
   stop: 'Stop',
   didntStart: (app: string) => `${app} didn't start. Check the logs.`,
   engineFirst: 'Start the container engine first',
+  // Access (US-APP-05)
+  access: 'Access',
+  copy: 'Copy',
+  copyAddress: (url: string) => `Copy ${url}`,
+  addressCopied: 'Address copied',
+  copyFailed: "Couldn't copy the address. Select it and copy it yourself.",
+  alsoOnTailnet: 'Also on your tailnet',
 
   // Logs (US-APP-08…10)
   logsTitle: (app: string) => `${app} logs`,

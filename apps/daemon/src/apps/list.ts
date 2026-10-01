@@ -39,8 +39,15 @@ export function catalogManifest(db: HlabsDb, app: { id: string; sourceId: string
   return parsed.success ? parsed.data : {};
 }
 
-/** An installed app as Home and the app window show it: name, icon, state and where it opens (D-012, D-038). */
-export function appSummary(db: HlabsDb, app: typeof apps.$inferSelect) {
+/**
+ * An installed app as Home and the app window show it: name, icon, state and where it opens (D-012, D-038). On the
+ * LAN that's its name, or `https://hlabs.local:<port>` while its name can't be published (US-APP-05, D-086).
+ */
+export function appSummary(
+  db: HlabsDb,
+  app: typeof apps.$inferSelect,
+  isPublished: (name: string) => boolean = () => true,
+) {
   const hostname = getSetting(db, 'hostname');
   const tailnet = getSetting(db, 'remote').tailnetName?.replace(/\.ts\.net$/, '') ?? null;
   const m = catalogManifest(db, app);
@@ -56,14 +63,21 @@ export function appSummary(db: HlabsDb, app: typeof apps.$inferSelect) {
     embed: m.web?.embed ?? false,
     webPath: m.web?.path ?? '/',
     urls: {
-      local: `https://${app.hostname}.${hostname}.local`,
+      local:
+        isPublished(`${app.hostname}.${hostname}.local`) || app.portFallback === null
+          ? `https://${app.hostname}.${hostname}.local`
+          : `https://${hostname}.local:${app.portFallback}`,
       tailnet:
         tailnet && app.portFallback !== null ? `https://${hostname}.${tailnet}.ts.net:${app.portFallback}` : null,
     },
   };
 }
 
-export function listApps(db: HlabsDb, user: { id: string; role: 'admin' | 'member' }) {
+export function listApps(
+  db: HlabsDb,
+  user: { id: string; role: 'admin' | 'member' },
+  isPublished?: (name: string) => boolean,
+) {
   const visible = new Set(visibleAppIds(db, user));
   return {
     apps: db
@@ -73,7 +87,7 @@ export function listApps(db: HlabsDb, user: { id: string; role: 'admin' | 'membe
       .all()
       .filter((app) => visible.has(app.id))
       .map((app) => {
-        const { webPath: _path, ...tile } = appSummary(db, app);
+        const { webPath: _path, ...tile } = appSummary(db, app, isPublished);
         return tile;
       }),
   };

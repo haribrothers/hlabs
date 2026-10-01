@@ -9,6 +9,7 @@
 import { appAccess, apps, getSetting, getUserSetting, users, type HlabsDb } from '@hlabs/db';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { catalogManifest } from '../apps/list';
+import { APP_PORT_MAX, APP_PORT_MIN } from '../apps/ports';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { readCookie, SESSION_COOKIE } from '../auth/sessions';
 import type { ServiceHolder, Services } from '../services';
@@ -121,19 +122,36 @@ export class ForwardAuth {
   }
 }
 
-/** The installed app a forwarded host names: `<app>.<hostname>.local`, in a state that has a route. */
+/** An app's own port (12000–12999, D-086) in a forwarded host, or null. */
+function appPortIn(forwardedHost: string): number | null {
+  const port = Number(/:(\d+)$/.exec(forwardedHost)?.[1]);
+  return port >= APP_PORT_MIN && port <= APP_PORT_MAX ? port : null;
+}
+
+/**
+ * The installed app a forwarded host names, in a state that has a route: `<app>.<hostname>.local`, or any name on
+ * the app's own port (`hlabs.local:12003` when its name isn't published, US-APP-05; its tailnet address).
+ */
 export function appForHost(db: HlabsDb, forwardedHost: string) {
   const host = forwardedHost.replace(/:\d+$/, '').toLowerCase();
   const suffix = `.${getSetting(db, 'hostname')}.local`;
-  if (!host.endsWith(suffix)) return null;
-  const label = host.slice(0, -suffix.length);
-  const app = db.select().from(apps).where(eq(apps.hostname, label)).get();
+  const port = appPortIn(forwardedHost);
+  const app = host.endsWith(suffix)
+    ? db
+        .select()
+        .from(apps)
+        .where(eq(apps.hostname, host.slice(0, -suffix.length)))
+        .get()
+    : port !== null
+      ? db.select().from(apps).where(eq(apps.portFallback, port)).get()
+      : undefined;
   return app && LIVE.has(app.state) ? app : null;
 }
 
-/** The dashboard on the same port the app was reached on (8443 when 443 was taken, D-016). */
+/** The dashboard on the port the app was reached on (8443 when 443 was taken, D-016), its own port from an app's. */
 export function dashboardOrigin(db: HlabsDb, forwardedHost: string): string {
-  const port = /:(\d+)$/.exec(forwardedHost)?.[1];
+  const reached = /:(\d+)$/.exec(forwardedHost)?.[1];
+  const port = appPortIn(forwardedHost) !== null ? String(getSetting(db, 'network').ports.https) : reached;
   return `https://${getSetting(db, 'hostname')}.local${port && port !== '443' ? `:${port}` : ''}`;
 }
 

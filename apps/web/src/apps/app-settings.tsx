@@ -22,6 +22,7 @@ import { browser } from '../lib/browser';
 import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
 import { AccessDenied } from '../shell/access-denied';
+import { AppAccess } from './app-access';
 import { statusDot } from './app-window';
 import { appBaseUrl, useApp } from './use-app';
 import { useAppCommands } from './use-app-commands';
@@ -103,6 +104,7 @@ function AppSettingsView({ appId }: { appId: string }) {
         <SectionTabs aria-label={copy.sections} tabs={tabs} active={tab} onSelect={(id) => setTab(id as Tab)} />
         <div role="tabpanel" aria-label={copy.tabs[tab]} className="flex flex-col gap-6">
           <Actions app={app} />
+          <AppAccess app={app} />
         </div>
       </GlassCard>
     </section>
