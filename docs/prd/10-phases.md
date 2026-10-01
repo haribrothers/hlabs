@@ -156,7 +156,7 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 
 **Done when**
 - [ ] Each seeded app installs, opens at `https://<app>.hlabs.local`, restarts and uninstalls in the CI matrix (Linux).
-- [ ] A deliberately broken update rolls back automatically.
+- [x] A deliberately broken update rolls back automatically (`e2e/us-store-17-rollback.spec.ts`: a test app's 1.1.0 never passes its health check and hlabs goes back to 1.0.0, with the real engine).
 
 **Stories**
 

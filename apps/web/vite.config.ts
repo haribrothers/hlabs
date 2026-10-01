@@ -39,6 +39,7 @@ export default defineConfig(({ command }) => ({
       '/dev/engine': DAEMON,
       '/dev/remove-app': DAEMON,
       '/dev/rolled-back': DAEMON,
+      '/dev/sync-store': DAEMON,
       '/dev/seed': DAEMON,
       '/dev/notify': DAEMON,
     },

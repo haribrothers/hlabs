@@ -241,6 +241,14 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     return { notificationId: services.updates.notifyRolledBack({ appId: id, name, fromVersion, toVersion, restored }) };
   });
 
+  // The built-in store read again from its folder (US-STORE-17 e2e): a spec adds a test app, or a newer version of it,
+  // to the e2e instance's own copy of the store.
+  app.post('/dev/sync-store', async (_req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    return services.catalog.syncBuiltin();
+  });
+
   // Takes down and forgets an app a spec really installed (the US-STORE-11 smoke install), until uninstall arrives
   // with US-APP-12: marked failed, then removed as "Remove partial install" does.
   const removeApp = z.object({ id: z.string().regex(/^[a-z0-9-]{2,39}$/) });

@@ -1,4 +1,5 @@
 // The e2e instances (see playwright.config.ts).
+import { resolve } from 'node:path';
 import { expect, type APIRequestContext } from '@playwright/test';
 
 /**
@@ -31,3 +32,9 @@ export async function resetOnboarding(request: APIRequestContext, step: Step = '
   expect(url).toMatch(/\?token=[A-Za-z0-9_-]{43}$/);
   return url;
 }
+
+/**
+ * The main instance's store: a copy of the built-in store made when Playwright starts, so a spec can add a test app
+ * to it (the US-STORE-17 rollback) without touching store/ or other instances.
+ */
+export const E2E_STORE_DIR = resolve(process.env.HLABS_E2E_DATA_DIR ?? '../../.e2e-data', 'store');
