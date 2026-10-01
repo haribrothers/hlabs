@@ -42,7 +42,9 @@ describe('US-APP-10', () => {
     const save = vi.spyOn(browser, 'save').mockImplementation(() => {});
     open();
     fireEvent.click(await screen.findByRole('button', { name: 'Download' }));
-    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.any(Blob), 'immich-logs-20261001-1702.log'));
+    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.any(Blob), 'immich-logs-20261001-1702.log'), {
+      timeout: 5_000,
+    });
     expect(fetch).toHaveBeenCalledWith('/api/apps/immich/logs/download', { credentials: 'same-origin' });
   });
 

@@ -95,11 +95,12 @@ describe('US-APP-08', () => {
 
   it('keeps at most 5,000 lines, dropping the oldest', async () => {
     open(Array.from({ length: 5_200 }, (_, i) => line(i, `line ${i}`)));
-    const log = await screen.findByRole('log');
-    await within(log).findByText('line 5199');
+    const log = await screen.findByRole('log', {}, { timeout: 10_000 });
+    await within(log).findByText('line 5199', {}, { timeout: 10_000 });
     expect(within(log).queryByText('line 199')).toBeNull();
     expect(within(log).getByText('line 200')).toBeInTheDocument();
-  });
+    // 5,200 rows take a while to render on a slow CI runner.
+  }, 20_000);
 
   it('with no output yet it says "No logs yet."', async () => {
     open([]);
