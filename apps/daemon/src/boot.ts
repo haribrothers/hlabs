@@ -5,6 +5,7 @@ import { noEngineControl, nodeEngineControl, type EngineControl } from './engine
 import { KeepAwake, processSleepBlocker, type SleepBlocker } from './platform/keep-awake';
 import { eq } from 'drizzle-orm';
 import { registerEngineRestart } from './engine/restart-job';
+import { registerEngineStart } from './engine/start-job';
 import { watchEngine } from './engine/watch';
 import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
 import { nextOrigins } from '@hlabs/shared';
@@ -214,17 +215,19 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
         engineDownload: { lastContactAt: Date.now() },
       }),
   });
+  const engineControl =
+    deps.engineControl ??
+    (config.devNoEngineControl
+      ? noEngineControl({ onStart: () => engine.simulateStop(false) })
+      : nodeEngineControl({ engineDir: engineDir(config.paths.dataDir), privHelper: config.privHelper }));
   registerEngineRestart({
     jobs,
     engine,
     db,
-    control:
-      deps.engineControl ??
-      (config.devNoEngineControl
-        ? noEngineControl()
-        : nodeEngineControl({ engineDir: engineDir(config.paths.dataDir), privHelper: config.privHelper })),
+    control: engineControl,
     onResources: (resources) => setSetting(db, 'engine', { ...getSetting(db, 'engine'), resources }),
   });
+  registerEngineStart({ jobs, engine, db, control: engineControl, appsBack });
   const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);
   const onboarding = new OnboardingService({
     db,

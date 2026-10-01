@@ -14,7 +14,7 @@ import { useNow } from '../lib/use-now';
 import { AppGrid, orderApps } from './app-grid';
 import { greetingFor } from './greeting';
 import { WidgetsRow } from './widgets';
-import { EngineBanner } from './engine-banner';
+import { EngineBanner, StartEngineButton } from './engine-banner';
 import { useEngineRunning } from '../lib/engine-state';
 
 export function HomeView() {
@@ -76,7 +76,7 @@ export function HomeView() {
           offline={engineDown}
         />
       ) : null}
-      <EngineBanner down={engineDown} />
+      <EngineBanner down={engineDown} actions={me.data?.role === 'admin' ? <StartEngineButton /> : null} />
     </div>
   );
 }

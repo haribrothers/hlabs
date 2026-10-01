@@ -54,6 +54,8 @@ export const engineCopy = {
   details: 'Details',
   offline: 'Offline: the container engine has stopped',
   startFirst: 'Start the container engine first',
+  startingEngine: 'Starting…',
+  waitForTask: 'Wait for the current task to finish',
   waitFor: (job: string) => `Wait for ${job} to finish`,
   jobs: {
     system_update: 'the hlabs update',

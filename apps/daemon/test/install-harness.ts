@@ -4,6 +4,7 @@ import { storageLocations } from '@hlabs/db';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { HealthProbes } from '../src/apps/health';
+import type { EngineControl } from '../src/engine/control';
 import type { StoreHost } from '../src/store/service';
 import { daemonWithAdmin } from './admin-session';
 import { FakeCompose } from './fakes/compose';
@@ -32,6 +33,8 @@ export async function installDaemon(
     probes?: HealthProbes;
     busyPorts?: number[];
     storeDir?: string;
+    /** Records engine starts and restarts (US-STATE-09); a quiet fake otherwise. */
+    engineControl?: EngineControl;
   } = {},
 ) {
   const engine = new FakeEngine();
@@ -52,6 +55,7 @@ export async function installDaemon(
       isPortFree: async (p) => !busy.has(p),
       storeHost: opts.host ?? { os: 'linux', arm64: false },
       system: new FakeSystemProbe(opts.freeSpace),
+      ...(opts.engineControl ? { engineControl: opts.engineControl } : {}),
     },
     engine,
   );

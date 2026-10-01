@@ -1,9 +1,15 @@
 // "The container engine has stopped" (US-STATE-08): over Home, above the Dock as SysEngineStopped draws it, while the
 // engine is down. Details opens Settings › Engine & startup. Short blips don't flash it: it waits a moment first.
 import { iconDefaults, TriangleAlert } from '@hlabs/icons';
+import { EXCLUSIVE_JOB_KINDS } from '@hlabs/shared';
+import { Button } from '@hlabs/ui';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { engineCopy } from '../copy/engine';
+import { handledGlobally, showErrorToast } from '../lib/error-copy';
+import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { useActiveJobs } from '../settings/engine-restart';
 
 /** How long the engine has to stay down before the banner shows (inside the 2 s the story allows). */
 export const BANNER_DELAY_MS = 1_500;
@@ -40,5 +46,37 @@ export function EngineBanner({ down, actions }: { down: boolean; actions?: React
         {actions}
       </div>
     </div>
+  );
+}
+
+const EXCLUSIVE = new Set<string>(EXCLUSIVE_JOB_KINDS);
+
+/**
+ * Start engine (US-STATE-09), for admins: "Starting…" until the engine_start job ends; a second press can't start a
+ * second job. Waits while a task that runs alone is going (D-020).
+ */
+export function StartEngineButton() {
+  const client = useTRPCClient();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const jobs = useActiveJobs();
+  const exclusive = jobs.data?.items.find((j) => EXCLUSIVE.has(j.kind));
+  const starting = jobs.data?.items.some((j) => j.kind === 'engine_start');
+  const start = useMutation({
+    mutationFn: () => client.settings.engine.start.mutate(),
+    meta: { inlineErrors: true },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: trpc.jobs.list.queryKey() }),
+    onError: (err) => {
+      if (!handledGlobally(err)) showErrorToast(err);
+    },
+  });
+  const busy = start.isPending || Boolean(starting);
+  const wait = exclusive ? engineCopy.waitForTask : undefined;
+  return (
+    <span title={wait}>
+      <Button busy={busy} disabled={busy || Boolean(exclusive)} aria-description={wait} onClick={() => start.mutate()}>
+        {busy ? engineCopy.startingEngine : engineCopy.start}
+      </Button>
+    </span>
   );
 }

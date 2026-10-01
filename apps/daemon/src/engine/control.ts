@@ -16,6 +16,8 @@ export interface ColimaResources {
 export interface EngineControl {
   /** Restarts the engine; resolves when its restart command has finished (it may not answer yet). */
   restart(candidate: EngineCandidate, signal: AbortSignal): Promise<void>;
+  /** Starts a stopped engine (US-STATE-09); resolves when its start command has finished (it may not answer yet). */
+  start(candidate: EngineCandidate, signal: AbortSignal): Promise<void>;
   /** hlabs's Colima only: stop, then start with these resources (applied on start; disk can only grow). */
   restartColimaWith(resources: ColimaResources, signal: AbortSignal): Promise<void>;
 }
@@ -56,6 +58,22 @@ export function nodeEngineControl(opts: { engineDir: string; privHelper: string 
           return run('sudo', ['-n', opts.privHelper, 'restart-docker'], { signal });
       }
     },
+    async start(candidate, signal) {
+      switch (candidate.kind) {
+        case 'colima': {
+          if (candidate.managedByHlabs) {
+            return run(colima, ['start', HLABS_COLIMA_PROFILE], { env: colimaEnv(opts.engineDir), signal });
+          }
+          return run('colima', ['start', candidate.socketPath.split('/').at(-2) ?? HLABS_COLIMA_PROFILE], { signal });
+        }
+        case 'orbstack':
+          return run('open', ['-a', 'OrbStack'], { signal });
+        case 'docker-desktop':
+          return run('open', ['-a', 'Docker'], { signal });
+        case 'docker-engine':
+          return run('sudo', ['-n', opts.privHelper, 'start-docker'], { signal });
+      }
+    },
     async restartColimaWith(resources, signal) {
       const env = colimaEnv(opts.engineDir);
       await run(colima, ['stop', HLABS_COLIMA_PROFILE], { env, signal });
@@ -77,10 +95,15 @@ export function nodeEngineControl(opts: { engineDir: string; privHelper: string 
   };
 }
 
-/** Development and e2e: pretend. The engine keeps running as it was. */
-export function noEngineControl(): EngineControl {
+/**
+ * Development and e2e: pretend. The engine keeps running as it was; starting ends a simulated stop (/dev/engine).
+ */
+export function noEngineControl(opts: { onStart?: () => Promise<unknown> } = {}): EngineControl {
   return {
     async restart() {},
+    async start() {
+      await opts.onStart?.();
+    },
     async restartColimaWith() {},
   };
 }
