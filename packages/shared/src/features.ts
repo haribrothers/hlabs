@@ -1,6 +1,20 @@
 // Phase gating (D-036): a control that needs a later phase is hidden until that phase ships.
-// Bump SHIPPED_PHASE when a phase's "Done when" list is true (docs/prd/10-phases.md).
+// Bump SHIPPED_PHASE when a phase's "Done when" list is true (docs/prd/10-phases.md), and BUILDING_PHASE with it.
 export const SHIPPED_PHASE = 1;
+/** The phase being built: the dashboard's dev server (pnpm dev, e2e) previews it (D-092). */
+export const BUILDING_PHASE = 2;
+
+/** Set by the dashboard's Vite dev server only (HLABS_PREVIEW_PHASE, else BUILDING_PHASE); never in a build. */
+declare const __HLABS_PREVIEW_PHASE__: number | null | undefined;
+
+/**
+ * The phase whose controls show: SHIPPED_PHASE in builds, unit tests and the daemon; the previewed phase on the
+ * dashboard's dev server, so a phase's work can be used and tested before it ships (D-092).
+ */
+export const VISIBLE_PHASE: number =
+  typeof __HLABS_PREVIEW_PHASE__ === 'undefined' || __HLABS_PREVIEW_PHASE__ === null
+    ? SHIPPED_PHASE
+    : Math.max(SHIPPED_PHASE, __HLABS_PREVIEW_PHASE__);
 
 /** The phase that delivers each gated capability. */
 export const FEATURE_PHASE = {
@@ -51,6 +65,6 @@ export const FEATURE_PHASE = {
 
 export type Feature = keyof typeof FEATURE_PHASE;
 
-export function isFeatureEnabled(feature: Feature, shippedPhase: number = SHIPPED_PHASE): boolean {
+export function isFeatureEnabled(feature: Feature, shippedPhase: number = VISIBLE_PHASE): boolean {
   return FEATURE_PHASE[feature] <= shippedPhase;
 }

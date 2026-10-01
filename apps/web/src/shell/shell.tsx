@@ -6,7 +6,10 @@ import { useNavigate, useRouterState } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { shellCopy } from '../copy/shell';
 import { useAppearance, wallpaperClass } from '../lib/appearance';
+import { isFeatureEnabled } from '@hlabs/shared';
 import { useOpenWindows } from '../apps/open-windows';
+import { openSearch } from '../search/search-state';
+import { Spotlight, useSearchShortcut } from '../search/spotlight';
 import { useTRPC } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
 import { AREA_PATHS, areaForPath, navigationAreas, phoneAreas, storeBadge, type NavAccess } from './areas';
@@ -30,6 +33,9 @@ export function Shell({ children }: { children: ReactNode }) {
   const areas = navigationAreas({ access });
   const tabs = phoneAreas({ access }).map((a) => (a.id === 'store' && store ? { ...a, badge: store } : a));
   const openApps = useOpenApps(Boolean(me));
+  // Search from anywhere, once signed in (US-HOME-09).
+  const search = Boolean(me) && isFeatureEnabled('search');
+  useSearchShortcut(search);
 
   return (
     // Exactly the viewport: pages scroll inside main, and windows (Settings) can fill it without the page scrolling.
@@ -47,7 +53,8 @@ export function Shell({ children }: { children: ReactNode }) {
       >
         {children}
       </main>
-      {/* Search, the + tile and pinned apps arrive with their phases (D-036). */}
+      {search ? <Spotlight /> : null}
+      {/* The + tile and pinned apps arrive with their phases (D-036). */}
       {appWindow ? null : (
         <>
           <div className="hl-nav-desktop hidden md:flex" data-testid="dock-bar">
@@ -56,7 +63,8 @@ export function Shell({ children }: { children: ReactNode }) {
               active={active}
               onSelect={go}
               badges={store ? { store } : {}}
-              search={false}
+              search={search}
+              onSearch={openSearch}
               apps={openApps}
               onOpenApp={(appId) => void navigate({ to: '/apps/$appId', params: { appId } })}
             />

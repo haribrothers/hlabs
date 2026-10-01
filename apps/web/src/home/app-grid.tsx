@@ -4,25 +4,20 @@
 import { appTileLook, Plus, iconDefaults } from '@hlabs/icons';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { AppIcon, type AppIconState } from '@hlabs/ui';
-import { Link, useNavigate } from '@tanstack/react-router';
-import type { HomeApp } from './home-app';
-import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
+import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { appsCopy } from '../copy/apps';
+import { homeCopy } from '../copy/home';
 import { handledGlobally, showErrorToast } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
+import type { HomeApp } from './home-app';
 import { TileMenu, type TileCommand } from './tile-menu';
-import { homeCopy } from '../copy/home';
-import { browser } from '../lib/browser';
-import { useMedia } from '../lib/use-media';
+import { useOpenApp } from './use-open-app';
 
+export { APP_WINDOW_QUERY, appUrl } from './use-open-app';
 export type { HomeApp };
-
-/** On the tailnet name, apps open on their port there (D-012); otherwise on their .local hostname. */
-export function appUrl(app: HomeApp, location: Pick<Location, 'hostname'> = window.location): string {
-  return location.hostname.endsWith('.ts.net') && app.urls.tailnet ? app.urls.tailnet : app.urls.local;
-}
 
 /** The apps in layout order; apps missing from the layout go at the end. */
 export function orderApps(apps: readonly HomeApp[], layoutIds: readonly string[]): HomeApp[] {
@@ -69,9 +64,6 @@ export function tileState(state: HomeApp['state']): AppIconState {
   return TILE[state].state;
 }
 
-/** The app window opens on a desktop layout (US-APP-01); phones are covered by 12-phone.md. */
-export const APP_WINDOW_QUERY = '(min-width: 1024px)';
-
 export function AppGrid({
   apps,
   isAdmin,
@@ -81,53 +73,7 @@ export function AppGrid({
   isAdmin: boolean;
   progress?: ReadonlyMap<string, number>;
 }) {
-  const navigate = useNavigate();
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const wide = useMedia(APP_WINDOW_QUERY);
-  /**
-   * An install that's running or failed opens its page (US-STORE-12, US-STORE-14). A running app opens in the app
-   * window when it declares web.embed and the screen is wide enough, else in a new tab (US-APP-01, D-038); an app that
-   * isn't running opens the window, which says why it can't be shown (US-APP-03).
-   */
-  const openApp = (app: HomeApp) => {
-    if (app.state === 'installing' || app.state === 'install_failed')
-      void navigate({ to: '/store/install/$appId', params: { appId: app.id } });
-    else if (app.state === 'stopped' || app.state === 'error') void recover(app);
-    else if (app.state === 'running' && !(app.embed && wide)) browser.open(appUrl(app));
-    else void navigate({ to: '/apps/$appId', params: { appId: app.id } });
-  };
-  /**
-   * A stopped or broken app isn't opened onto a dead page (US-HOME-08): a stopped one offers Start in a toast, a
-   * broken one opens its logs with the reason; members are told whom to ask.
-   */
-  const recover = async (app: HomeApp) => {
-    if (!isAdmin) {
-      const account = await queryClient.fetchQuery(trpc.account.get.queryOptions()).catch(() => null);
-      showToast({
-        tone: 'neutral',
-        title: homeCopy.recover.askAdmin(app.name, account?.adminName ?? null),
-        key: `recover:${app.id}`,
-      });
-    } else if (app.state === 'stopped') {
-      showToast({
-        tone: 'neutral',
-        title: homeCopy.recover.stopped(app.name),
-        key: `recover:${app.id}`,
-        actions: [
-          {
-            kind: 'mutation',
-            label: homeCopy.recover.start,
-            procedure: 'apps.start',
-            input: { appId: app.id },
-            done: homeCopy.recover.starting(app.name),
-          },
-        ],
-      });
-    } else {
-      void navigate({ to: '/apps/$appId/logs', params: { appId: app.id } });
-    }
-  };
+  const openApp = useOpenApp(isAdmin);
   const command = useTileCommands(apps);
   const showInstall = isAdmin && isFeatureEnabled('appStore');
   if (apps.length === 0 && !showInstall) return null;

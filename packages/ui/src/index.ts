@@ -11,6 +11,7 @@ export * from './components/avatar';
 export * from './components/badge';
 export * from './components/button';
 export * from './components/choice-list';
+export * from './components/command-panel';
 export * from './components/code-input';
 export * from './components/dialog';
 export * from './components/dock';

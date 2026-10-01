@@ -1,5 +1,5 @@
 // OnbSystem (US-ONB-04): check this computer, then Continue to the account step or go Back to welcome.
-import { isFeatureEnabled, SHIPPED_PHASE } from '@hlabs/shared';
+import { isFeatureEnabled, VISIBLE_PHASE } from '@hlabs/shared';
 import { Button, List, ListRow, Progress, StatusDot, Switch } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -19,7 +19,7 @@ function continueError(err: unknown): string {
   return code === 'ENGINE_UNAVAILABLE' || code === 'DISK_FULL' ? copy.continueFailed[code] : copy.continueFailed.other;
 }
 
-export function SystemStep({ shippedPhase = SHIPPED_PHASE }: { shippedPhase?: number }) {
+export function SystemStep({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: number }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const navigate = useNavigate();

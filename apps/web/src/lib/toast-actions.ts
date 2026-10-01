@@ -2,7 +2,7 @@
 // get their label and gates from where they go, mutations run only from the allow-list, and members never see an
 // action that needs an admin.
 import type { AppRouter, NotificationAction } from '@hlabs/api';
-import { isFeatureEnabled, SHIPPED_PHASE, TOAST_MUTATIONS, type ToastMutation } from '@hlabs/shared';
+import { isFeatureEnabled, VISIBLE_PHASE, TOAST_MUTATIONS, type ToastMutation } from '@hlabs/shared';
 import type { TRPCClient } from '@trpc/client';
 import { toastCopy } from '../copy/toasts';
 import type { ToastAction } from './toasts';
@@ -38,7 +38,7 @@ export const needsAdmin = (a: ToastAction) => a.kind === 'mutation' || (a.kind =
 /** The buttons to show: at most two, none a member can't use, none from a phase that hasn't shipped. */
 export function visibleActions(
   actions: readonly ToastAction[] | undefined,
-  { isAdmin, shippedPhase = SHIPPED_PHASE }: { isAdmin: boolean; shippedPhase?: number },
+  { isAdmin, shippedPhase = VISIBLE_PHASE }: { isAdmin: boolean; shippedPhase?: number },
 ): ToastAction[] {
   return (actions ?? [])
     .filter((a) => isAdmin || !needsAdmin(a))

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { io } from '../trpc';
+import { homeAppSchema } from './apps';
 import { appIdSchema, empty, pending } from './common';
+import { storeAppSchema } from './store';
 
 const layoutItemSchema = z.object({ kind: z.enum(['app', 'widget']), id: z.string() });
 
@@ -20,5 +22,26 @@ export const home = {
       }),
     ),
   ),
-  searchEverything: io(z.object({ query: z.string().max(200) }), pending),
+  /**
+   * Search (US-HOME-09, US-HOME-10): groups in display order, filtered for this person. An empty query gives the
+   * installed apps (up to 8, in layout order) and nothing else.
+   */
+  searchEverything: io(
+    z.object({ query: z.string().max(200), limitPerGroup: z.number().int().min(1).max(20).default(5) }),
+    z.object({
+      installed: z.array(homeAppSchema),
+      /** Admins only: an app's settings, restarting it, its logs. */
+      actions: z.array(
+        z.object({ kind: z.enum(['settings', 'restart', 'logs']), appId: appIdSchema, appName: z.string() }),
+      ),
+      /** At most 3 apps not installed yet; null when this person can't install apps (no App Store group). */
+      store: z.array(storeAppSchema).nullable(),
+      /** Every App Store match, for "See all App Store results". */
+      storeTotal: z.number().int().nonnegative(),
+      /** This person's files; null until Files ships (phase 5, D-036). */
+      files: z.array(z.object({ path: z.string(), name: z.string(), breadcrumb: z.array(z.string()) })).nullable(),
+      /** Settings pages this person can open. */
+      settings: z.array(z.object({ section: z.string(), title: z.string() })),
+    }),
+  ),
 };

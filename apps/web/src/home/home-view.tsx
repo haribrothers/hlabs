@@ -1,10 +1,13 @@
 // Main (US-HOME-01…05): the greeting over the wallpaper, the widgets row and the app grid.
-import { LogoMark } from '@hlabs/icons';
+import { iconDefaults, LogoMark, Search } from '@hlabs/icons';
+import { isFeatureEnabled } from '@hlabs/shared';
 import { GlassCard } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from '@trpc/tanstack-react-query';
 import { useEffect, useState } from 'react';
 import { homeCopy } from '../copy/home';
+import { searchCopy } from '../copy/search';
+import { isMac, openSearch } from '../search/search-state';
 import { useTRPC } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
@@ -53,6 +56,7 @@ export function HomeView() {
         <h1 className={showGreeting && name ? 'm-0 text-display-xl' : 'sr-only'}>
           {name ? homeCopy.greeting[greetingFor(now)](name) : homeCopy.title}
         </h1>
+        {isFeatureEnabled('search') ? <SearchPill /> : null}
       </header>
       {me.data?.appearance.showWidgets !== false && layout.data ? (
         <WidgetsRow ids={layout.data.items.filter((i) => i.kind === 'widget').map((i) => i.id)} />
@@ -68,5 +72,22 @@ export function HomeView() {
         />
       ) : null}
     </div>
+  );
+}
+
+/** "Search apps, files, settings" under the greeting, with the shortcut (US-HOME-09). */
+export function SearchPill() {
+  return (
+    <button
+      type="button"
+      onClick={openSearch}
+      className="hl-focus hl-glass hl-glass-1 flex min-h-11 w-full max-w-sm items-center gap-3 rounded-pill px-5 py-2.5 text-body text-ink-muted"
+    >
+      <Search aria-hidden {...iconDefaults} className="size-4 shrink-0" />
+      <span className="flex-1 text-left">{searchCopy.pill}</span>
+      <kbd aria-hidden className="rounded-xs bg-surface-control px-1.5 py-0.5 font-sans text-caption">
+        {searchCopy.shortcut(isMac())}
+      </kbd>
+    </button>
   );
 }

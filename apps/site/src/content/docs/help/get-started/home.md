@@ -51,6 +51,10 @@ Right-click a tile (or press and hold it on a touch screen, or press Shift+F10 o
 
 New apps appear on Home as soon as they're installed, and removed apps disappear, without reloading the page. With a keyboard, use Tab to reach the apps and the arrow keys to move between them.
 
+## Search
+
+Press ⌘K on a Mac (Ctrl+K on other computers) from anywhere in hlabs, or select **Search apps, files, settings** on Home or **Search** in the Dock. Before you type, Search lists your apps. Use ↑ and ↓ to move and ↵ to open. Press the shortcut again or Esc to close it.
+
 ## The Dock
 
 The Dock at the bottom of the screen takes you to each part of hlabs; a dot marks where you are. Point at a tile to see its name. With a keyboard, Tab to the Dock, use the left and right arrow keys (Home and End jump to the ends) and press Enter. On a phone, the tab bar does the same job.

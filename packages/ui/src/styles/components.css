@@ -1061,6 +1061,23 @@
     left: 50%;
     transform: translate(-50%, -50%);
   }
+  /* The search panel (Spotlight): centred near the top, its list scrolling inside. */
+  .hl-command {
+    position: fixed;
+    z-index: 60;
+    top: 16vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 640px;
+    max-width: calc(100vw - 2 * var(--space-4));
+    max-height: 68vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: var(--radius-window);
+    color: var(--ink);
+    font-family: var(--hl-font-sans);
+  }
   .hl-dialog-title {
     margin: 0;
     font: 700 22px/28px var(--hl-font-sans);
@@ -1617,6 +1634,15 @@
 }
 .hl-anim-dialog {
   animation: hl-dialog-in var(--hl-dur) var(--hl-ease);
+}
+@keyframes hl-command-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.98);
+  }
+}
+.hl-anim-command {
+  animation: hl-command-in var(--hl-dur) var(--hl-ease);
 }
 @media (max-width: 767px) {
   .hl-anim-dialog.hl-dialog-sheet {
