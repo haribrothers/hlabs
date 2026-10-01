@@ -77,7 +77,8 @@ describe('US-ONB-16', () => {
     ]);
     // App data stays on this computer (D-011).
     expect(d.config.paths.appDataDir.startsWith(mountPoint)).toBe(false);
-    expect(getSetting(db, 'onboarding').step).toBe('done');
+    // Phase 2: on to the starter apps.
+    expect(getSetting(db, 'onboarding').step).toBe('apps');
   });
 
   it('switching from this computer to the NAS leaves exactly one root', async () => {

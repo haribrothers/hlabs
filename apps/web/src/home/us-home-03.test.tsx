@@ -69,8 +69,14 @@ describe('US-HOME-03', () => {
     expect(alpha).toHaveFocus();
   });
 
-  it('"Install app" is hidden until the App Store ships (phase 2)', async () => {
+  it('admins get "Install app" now the App Store has shipped (phase 2)', async () => {
     renderScreen(() => <AppGrid apps={[app('a', 'Alpha')]} isAdmin />, {});
+    await screen.findByRole('button', { name: 'Open Alpha' });
+    expect(screen.getByRole('link', { name: 'Install app' })).toBeInTheDocument();
+  });
+
+  it('members never get "Install app"', async () => {
+    renderScreen(() => <AppGrid apps={[app('a', 'Alpha')]} isAdmin={false} />, {});
     await screen.findByRole('button', { name: 'Open Alpha' });
     expect(screen.queryByRole('link', { name: 'Install app' })).toBeNull();
   });

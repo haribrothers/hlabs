@@ -47,7 +47,8 @@ describe('US-ONB-15', () => {
       expect.objectContaining({ kind: 'external', name: 'Samsung_T5', path: root, isRoot: true }),
     ]);
     expect(d.config.paths.appDataDir.startsWith(t5.path)).toBe(false);
-    expect(getSetting(db, 'onboarding').step).toBe('done');
+    // Phase 2: on to the starter apps.
+    expect(getSetting(db, 'onboarding').step).toBe('apps');
   });
 
   it('refuses a drive that was ejected or cannot be written', async () => {
