@@ -246,6 +246,12 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       probe,
       storageRoot: config.paths.storageRootDefault,
       headless: config.headless,
+      // Caddy holds the saved web ports while it runs.
+      ownPorts: () => {
+        if (config.proxy !== 'caddy') return [];
+        const { http, https } = getSetting(db, 'network').ports;
+        return [http, https];
+      },
     },
   });
   const setupUrl = await onboarding.prepareSetupToken();

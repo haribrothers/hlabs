@@ -67,3 +67,23 @@ describe('D-098', () => {
     );
   });
 });
+
+describe('D-098 · ports held by hlabs itself', () => {
+  it("the system check doesn't count the ports hlabs's own proxy holds as in use", async () => {
+    const { runSystemCheck } = await import('../src/onboarding/system-check');
+    const engine = {
+      check: async () => ({ state: 'running', candidate: { kind: 'orbstack' }, info: { version: '1' } }),
+    } as never;
+    const probe = new FakeSystemProbe(142e9, new Set([80, 443]));
+    const base = { engine, probe, storageRoot: '/tmp', headless: false };
+    // Another program on 80 and 443: hlabs moves to 8080 and 8443.
+    expect((await runSystemCheck(base)).ports).toMatchObject({ http: { use: 8080 }, https: { use: 8443 } });
+    // hlabs's own Caddy on them (setup run again): they stay.
+    const own = await runSystemCheck({ ...base, ownPorts: () => [80, 443] });
+    expect(own.ports).toEqual({
+      http: { port: 80, inUse: false, use: 80 },
+      https: { port: 443, inUse: false, use: 443 },
+      level: 'ok',
+    });
+  });
+});

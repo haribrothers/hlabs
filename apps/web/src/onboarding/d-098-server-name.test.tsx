@@ -61,3 +61,43 @@ describe('D-098', () => {
     expect(await screen.findByText('An app already uses this name. Pick another.')).toBeInTheDocument();
   });
 });
+
+describe('D-098 · carrying on at the new name', () => {
+  const ports = {
+    http: { port: 80, inUse: false, use: 80 },
+    https: { port: 443, inUse: false, use: 443 },
+    level: 'ok',
+  };
+  const at = (hostname: string, protocol = 'https:', port = '') => ({ hostname, protocol, port });
+
+  it('from the old name, Continue goes to the new one with the setup token', async () => {
+    const { newSetupAddress } = await import('./system-step');
+    expect(newSetupAddress(at('hlabs.local'), { hostname: 'hlabs', ports } as never, 'harilabs', 'tok')).toBe(
+      'https://harilabs.local/setup?token=tok',
+    );
+    // On the fallback ports, the address has the port.
+    const fallback = { ...ports, https: { port: 443, inUse: true, use: 8443 } };
+    expect(newSetupAddress(at('hlabs.local'), { hostname: 'hlabs', ports: fallback } as never, 'home', 't')).toBe(
+      'https://home.local:8443/setup?token=t',
+    );
+  });
+
+  it('stays when the name is the same, or setup was opened another way (127.0.0.1 from the tray)', async () => {
+    const { newSetupAddress } = await import('./system-step');
+    expect(newSetupAddress(at('hlabs.local'), { hostname: 'hlabs', ports } as never, 'hlabs', 't')).toBeNull();
+    expect(newSetupAddress(at('127.0.0.1', 'http:'), { hostname: 'hlabs', ports } as never, 'home', 't')).toBeNull();
+    expect(newSetupAddress(at('hlabs.local'), { hostname: 'hlabs', ports } as never, undefined, 't')).toBeNull();
+  });
+
+  it('a port that moved (back to 443 from 8443) moves it too', async () => {
+    const { newSetupAddress } = await import('./system-step');
+    expect(
+      newSetupAddress(
+        at('harilabs.local', 'https:', '8443'),
+        { hostname: 'harilabs', ports } as never,
+        'harilabs',
+        't',
+      ),
+    ).toBe('https://harilabs.local/setup?token=t');
+  });
+});

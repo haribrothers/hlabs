@@ -10,7 +10,15 @@ import { useTRPC } from '../lib/trpc';
 import { CopyButton } from './copy-button';
 import { LogDialog } from './log-dialog';
 import { StepFrame } from './step-frame';
-import { installFailed, isInstalling, shouldInstallEngine, systemRows, type SystemRow } from './system-rows';
+import { readSetupToken, SETUP_PATH } from '../lib/setup-token';
+import {
+  installFailed,
+  isInstalling,
+  shouldInstallEngine,
+  systemRows,
+  type SystemCheck,
+  type SystemRow,
+} from './system-rows';
 
 const copy = onboardingCopy.system;
 
@@ -20,6 +28,28 @@ const errorCode = (err: unknown) =>
 function continueError(err: unknown): string {
   const code = errorCode(err);
   return code === 'ENGINE_UNAVAILABLE' || code === 'DISK_FULL' ? copy.continueFailed[code] : copy.continueFailed.other;
+}
+
+/**
+ * Where setup carries on after Continue, when this page is on hlabs's own `.local` address and Continue moved it: a new
+ * name, or the web ports just saved (both stop the old address answering at once). The setup token goes along, since
+ * it's kept per address. Null to stay (nothing moved, or setup was opened another way, such as 127.0.0.1 from the tray).
+ */
+export function newSetupAddress(
+  location: Pick<Location, 'protocol' | 'hostname' | 'port'>,
+  check: Pick<SystemCheck, 'hostname' | 'ports'>,
+  hostname: string | undefined,
+  token = readSetupToken(),
+): string | null {
+  if (location.hostname !== `${check.hostname}.local`) return null;
+  const https = location.protocol === 'https:';
+  const standard = https ? 443 : 80;
+  const port = https ? check.ports.https.use : check.ports.http.use;
+  const name = hostname ?? check.hostname;
+  if (name === check.hostname && port === Number(location.port || standard)) return null;
+  const shown = port === standard ? '' : `:${port}`;
+  const query = token ? `?token=${encodeURIComponent(token)}` : '';
+  return `${location.protocol}//${name}.local${shown}${SETUP_PATH}${query}`;
 }
 
 /** As it's typed: lowercase, spaces become dashes. */
@@ -44,7 +74,13 @@ export function SystemStep({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: nu
   }, [check.data, install]);
   const confirm = useMutation(
     trpc.onboarding.confirmSystem.mutationOptions({
-      onSuccess: async () => {
+      onSuccess: async (_data, input) => {
+        // A new name: the old address stops answering at once, so carry on at the new one (D-098).
+        const moved = check.data ? newSetupAddress(window.location, check.data, input.hostname) : null;
+        if (moved) {
+          window.location.assign(moved);
+          return;
+        }
         await queryClient.invalidateQueries({ queryKey: trpc.onboarding.status.queryKey() });
         await navigate({ to: '/setup/$step', params: { step: 'account' } });
       },
