@@ -44,9 +44,12 @@ export function CardButton({ app, installs, size = 'sm' }: Omit<CardProps, 'host
   const place = 'relative z-10 shrink-0';
   switch (action.kind) {
     case 'install':
+      // The details page with the install sheet open: what it can access is right behind the sheet. A failed install
+      // opens the page alone, where it offers its own retry (US-STORE-13).
       return (
         <Link
           {...detailsPath(app.id)}
+          search={installs.byId.has(app.id) ? {} : { install: true }}
           className={cn('hl-btn hl-btn-primary hl-focus no-underline', `hl-btn-${size}`, place)}
           aria-label={storeCopy.installApp(app.name)}
         >

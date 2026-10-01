@@ -33,7 +33,7 @@ The App Store is where people find self-hosted apps, see what each one needs and
 - **Given** a row, **when** I select "See all", **then** I land on a list view (the `StoreCategory` layout) filtered to that row's apps.
 - **Given** an app card, **when** the app is not installed, **then** its button reads "Install"; **when** installed and running it reads "Open"; **when** an install is in progress it reads "Installing…" with the percent, and it updates live from events without a reload.
 - **Given** the host is arm64, **when** an app's manifest `platforms` includes `linux/arm64`, **then** the card shows the "Apple Silicon" tag (macOS) or "ARM64" (Linux); apps without an arm64 image are shown after compatible ones in every row and never featured.
-- **Given** I click a card body (not its button), **when** the click lands, **then** `AppDetails` opens for that app; "Install" on a card also goes to `AppDetails` first so I always see access before installing.
+- **Given** I click a card body (not its button), **when** the click lands, **then** `AppDetails` opens for that app; "Install" on a card opens `AppDetails` with the install sheet already open, so what the app can access is right behind it (a failed install opens `AppDetails` alone, US-STORE-13).
 - **Given** I press "Back to Home", **when** on the desktop layout, **then** the store window closes and Home is shown.
 - **Given** I am a member, **when** "Members can install apps" is off, **then** the App Store tab is not shown and opening any store URL shows the "You don't have access to this" page (US-STATE-20); when it is on, I can browse the store (07 §7.4). This rule applies to US-STORE-01 to US-STORE-06.
 

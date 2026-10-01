@@ -26,14 +26,14 @@ test('US-STORE-01 featured apps and rows; "See all" lists a row; a card opens it
   await expect(page).toHaveURL(/\/store\/app\/vaultwarden$/);
 });
 
-test('US-STORE-01 Install goes to the details first; the button follows install state live', async ({
+test('US-STORE-01 Install opens the details with the install sheet; the button follows install state live', async ({
   page,
   request,
 }, info) => {
   const { id, name } = appFor(info.project.name);
   await page.goto('/store');
   const row = page.getByRole('region', { name: 'Popular with families' });
-  await expect(row.getByRole('link', { name: `Install ${name}` })).toHaveAttribute('href', `/store/app/${id}`);
+  await expect(row.getByRole('link', { name: `Install ${name}` })).toBeVisible();
 
   try {
     await request.post(`${MAIN_URL}/dev/fake-app`, { data: { id, state: 'installing', progress: 42 } });
@@ -43,6 +43,11 @@ test('US-STORE-01 Install goes to the details first; the button follows install 
   } finally {
     await request.post(`${MAIN_URL}/dev/fake-app`, { data: { id, remove: true } });
   }
+
+  // Install: the details page with the install sheet open.
+  await row.getByRole('link', { name: `Install ${name}` }).click();
+  await expect(page).toHaveURL(new RegExp(`/store/app/${id}\\?install=true$`));
+  await expect(page.getByRole('dialog')).toBeVisible();
 });
 
 test('US-STORE-01 "Back to Home" closes the store on desktop', async ({ page }, info) => {

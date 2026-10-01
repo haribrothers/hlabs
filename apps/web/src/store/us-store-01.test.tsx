@@ -83,7 +83,11 @@ describe('US-STORE-01', () => {
       'href',
       '/store/collection/popular',
     );
-    expect(within(row).getByRole('link', { name: 'Install Gitea' })).toHaveAttribute('href', '/store/app/gitea');
+    // Install opens the details page with the install sheet open.
+    expect(within(row).getByRole('link', { name: 'Install Gitea' })).toHaveAttribute(
+      'href',
+      '/store/app/gitea?install=true',
+    );
     expect(within(row).getByRole('link', { name: 'Gitea' })).toHaveAttribute('href', '/store/app/gitea');
     fireEvent.click(within(row).getByRole('button', { name: 'Open Uptime Kuma' }));
     expect(open).toHaveBeenCalledWith('https://uptime-kuma.hlabs.local');
