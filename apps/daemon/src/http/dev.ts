@@ -272,6 +272,8 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     displayName: z.string(),
     password: z.string(),
     twoFactor: z.boolean().default(false),
+    /** The web ports Caddy uses (the store matrix runs next to a dev instance on 80/443). */
+    ports: z.object({ https: z.number().int(), http: z.number().int() }).optional(),
   });
   app.post('/dev/seed', async (req, reply) => {
     const services = holder.current;
@@ -283,6 +285,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     setSetting(db, 'onboarding', { ...getSetting(db, 'onboarding'), completedAt: null, step: 'account' });
     // As a fresh install: setup leaves the startup switches on (US-SYS-20), whatever an earlier run changed.
     setSetting(db, 'startup', settingsSchemas.startup.parse(undefined));
+    if (input.ports) setSetting(db, 'network', { ...getSetting(db, 'network'), ports: input.ports });
     const userId = await createAdmin(db, { ...input, ip: null, phase: config.phase });
     let secret: string | null = null;
     let recoveryCodes: string[] = [];
