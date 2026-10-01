@@ -1,12 +1,26 @@
 // Search (US-HOME-09, US-HOME-10): ⌘K (Ctrl+K off a Mac), the Home pill or the Dock's Search opens one panel over
 // the whole dashboard; the shortcut again or Escape closes it and focus goes back where it was. With nothing typed it
 // lists the installed apps. ↑ ↓ move across every result, ↵ opens the highlighted one.
-import { AppLogo, appTileLook, iconDefaults, Search } from '@hlabs/icons';
+import type { StoreApp } from '@hlabs/api';
+import {
+  AppLogo,
+  appTileLook,
+  Folder,
+  iconDefaults,
+  RotateCw,
+  Search,
+  Settings,
+  SlidersHorizontal,
+  TextAlignStart,
+} from '@hlabs/icons';
 import { CommandPanel } from '@hlabs/ui';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { searchCopy } from '../copy/search';
-import { useTRPC } from '../lib/trpc';
+import { handledGlobally, showErrorToast } from '../lib/error-copy';
+import { showToast } from '../lib/toasts';
+import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
 import type { HomeApp } from '../home/home-app';
 import { useOpenApp } from '../home/use-open-app';
@@ -40,7 +54,7 @@ export interface SearchItem {
   id: string;
   group: keyof typeof copy.groups;
   label: string;
-  leading: ReactNode;
+  leading?: ReactNode;
   /** Shown on the right; the highlighted row also shows what ↵ does. */
   trailing?: ReactNode;
   enterHint?: string;
@@ -87,11 +101,48 @@ function SearchBody({ input }: { input: React.RefObject<HTMLInputElement | null>
   const listId = useId();
   const mac = isMac();
 
+  const navigate = useNavigate();
+  const client = useTRPCClient();
+  const restart = useMutation({
+    mutationFn: (app: { id: string; name: string }) => client.apps.restart.mutate({ appId: app.id }),
+    // Not destructive, so no confirming first (US-HOME-10).
+    onSuccess: (_ok, app) => showToast({ tone: 'success', title: copy.restarting(app.name) }),
+    onError: (err) => {
+      if (!handledGlobally(err)) showErrorToast(err);
+    },
+  });
+  const from = useLocation({ select: (l) => l.pathname });
   const run = (item: SearchItem) => {
     closeSearch();
     item.run();
   };
-  const items: SearchItem[] = (results.data?.installed ?? []).map((app) => appItem(app, () => openApp(app)));
+  const data = results.data;
+  const items: SearchItem[] = [
+    ...(data?.installed ?? []).map((app) => appItem(app, () => openApp(app))),
+    ...(data?.actions ?? []).map((a) =>
+      actionItem(
+        a,
+        {
+          settings: () => void navigate({ to: '/apps/$appId/settings', params: { appId: a.appId }, state: { from } }),
+          restart: () => restart.mutate({ id: a.appId, name: a.appName }),
+          logs: () => void navigate({ to: '/apps/$appId/logs', params: { appId: a.appId } }),
+        }[a.kind],
+      ),
+    ),
+    ...(data?.store ?? []).map((app) =>
+      storeItem(app, () => void navigate({ to: '/store/app/$appId', params: { appId: app.id } })),
+    ),
+    // The App Store group ends with all its results, also when nothing else matched.
+    ...(data?.store && settled
+      ? [seeAllItem(() => void navigate({ to: '/store/search', search: { q: settled } }))]
+      : []),
+    ...(data?.files ?? []).map((f) => fileItem(f, () => void navigate({ to: '/files' }))),
+    ...(data?.settings ?? []).map((s) =>
+      settingItem(s, () => void navigate({ to: '/settings/$section', params: { section: s.section } })),
+    ),
+  ];
+  const nothing =
+    Boolean(settled) && data !== undefined && !results.isPlaceholderData && items.every((i) => i.id === SEE_ALL);
   const at = items.length ? Math.min(active, items.length - 1) : -1;
 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -141,15 +192,27 @@ function SearchBody({ input }: { input: React.RefObject<HTMLInputElement | null>
           {copy.esc}
         </kbd>
       </div>
+      {results.isError ? (
+        <p role="status" className="m-0 px-5 pt-4 text-body text-ink-muted">
+          {copy.unavailable}
+        </p>
+      ) : nothing ? (
+        <p role="status" className="m-0 px-5 pt-4 text-body text-ink-muted">
+          {copy.noResults(settled)}
+        </p>
+      ) : null}
       <div id={listId} role="listbox" aria-label={copy.results} className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
         {groups.map(({ group, entries }) => (
           <div key={group} role="group" aria-labelledby={`${listId}-${group}`} className="pb-1">
-            <div
-              id={`${listId}-${group}`}
-              className="px-3 pt-2 pb-1 text-caption font-bold tracking-wide text-ink-muted uppercase"
-            >
-              {copy.groups[group]}
-            </div>
+            {/* "See all App Store results" alone (nothing matched) has no heading over it. */}
+            {entries.some((e) => e.item.id !== SEE_ALL) ? (
+              <div
+                id={`${listId}-${group}`}
+                className="px-3 pt-2 pb-1 text-caption font-bold tracking-wide text-ink-muted uppercase"
+              >
+                {copy.groups[group]}
+              </div>
+            ) : null}
             {entries.map(({ item, index }) => (
               <div
                 key={item.id}
@@ -160,10 +223,12 @@ function SearchBody({ input }: { input: React.RefObject<HTMLInputElement | null>
                 onClick={() => run(item)}
                 className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-md px-3 py-2 ${
                   index === at ? 'bg-accent-wash' : ''
-                }`}
+                } ${item.id === SEE_ALL ? 'justify-center text-accent-link' : ''}`}
               >
                 {item.leading}
-                <span className="min-w-0 flex-1 truncate text-body">{item.label}</span>
+                <span className={`min-w-0 truncate text-body ${item.id === SEE_ALL ? '' : 'flex-1'}`}>
+                  {item.label}
+                </span>
                 {index === at && item.enterHint ? (
                   <span className="shrink-0 text-body-sm text-ink-muted">{item.enterHint} ↵</span>
                 ) : item.trailing ? (
@@ -216,4 +281,67 @@ function appItem(app: HomeApp, open: () => void): SearchItem {
     enterHint: copy.open,
     run: open,
   };
+}
+
+const SEE_ALL = 'store:all';
+
+/** A small tile with an icon, for actions and settings pages. */
+function IconTile({ icon: Glyph }: { icon: typeof Search }) {
+  return (
+    <span className="grid size-8 shrink-0 place-items-center rounded-sm bg-surface-control">
+      <Glyph aria-hidden {...iconDefaults} className="size-4 text-ink" />
+    </span>
+  );
+}
+
+function actionItem(a: { kind: 'settings' | 'restart' | 'logs'; appId: string; appName: string }, run: () => void) {
+  const icon = { settings: SlidersHorizontal, restart: RotateCw, logs: TextAlignStart }[a.kind];
+  return {
+    id: `action:${a.kind}:${a.appId}`,
+    group: 'actions',
+    label: copy.action[a.kind](a.appName),
+    leading: <IconTile icon={icon} />,
+    run,
+  } satisfies SearchItem;
+}
+
+function storeItem(app: StoreApp, run: () => void): SearchItem {
+  const look = appTileLook(app.name, app.icon, ROW_LOGO);
+  return {
+    id: `store:${app.sourceId}:${app.id}`,
+    group: 'store',
+    label: app.name,
+    leading: (
+      <AppLogo
+        decorative
+        name={app.name}
+        src={app.icon.logoUrl}
+        colors={look.colors}
+        fallbackIcon={look.fallbackIcon}
+        size={ROW_LOGO}
+        radius={8}
+      />
+    ),
+    trailing: `${app.tagline} · ${copy.install}`,
+    run,
+  };
+}
+
+function seeAllItem(run: () => void): SearchItem {
+  return { id: SEE_ALL, group: 'store', label: copy.seeAllStore, run };
+}
+
+function fileItem(f: { path: string; name: string; breadcrumb: string[] }, run: () => void): SearchItem {
+  return {
+    id: `file:${f.path}`,
+    group: 'files',
+    label: f.name,
+    leading: <IconTile icon={Folder} />,
+    trailing: f.breadcrumb.join(' › '),
+    run,
+  };
+}
+
+function settingItem(s: { section: string; title: string }, run: () => void): SearchItem {
+  return { id: `setting:${s.section}`, group: 'settings', label: s.title, leading: <IconTile icon={Settings} />, run };
 }

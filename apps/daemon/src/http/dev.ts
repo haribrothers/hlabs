@@ -7,6 +7,7 @@ import {
   getSetting,
   loginAttempts,
   setSetting,
+  settingsSchemas,
   storageLocations,
   users,
 } from '@hlabs/db';
@@ -72,6 +73,8 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     services.db.delete(users).run();
     services.db.delete(loginAttempts).run();
     setSetting(services.db, 'onboarding', { ...getSetting(services.db, 'onboarding'), completedAt: null, step });
+    // As a fresh install: setup leaves the startup switches on (US-SYS-20), whatever an earlier run changed.
+    setSetting(services.db, 'startup', settingsSchemas.startup.parse(undefined));
     return { url: await services.onboarding.prepareSetupToken() };
   });
 
@@ -226,6 +229,8 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     db.delete(users).run();
     db.delete(loginAttempts).run();
     setSetting(db, 'onboarding', { ...getSetting(db, 'onboarding'), completedAt: null, step: 'account' });
+    // As a fresh install: setup leaves the startup switches on (US-SYS-20), whatever an earlier run changed.
+    setSetting(db, 'startup', settingsSchemas.startup.parse(undefined));
     const userId = await createAdmin(db, { ...input, ip: null });
     let secret: string | null = null;
     let recoveryCodes: string[] = [];

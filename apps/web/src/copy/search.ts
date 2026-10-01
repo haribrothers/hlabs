@@ -14,6 +14,16 @@ export const searchCopy = {
     settings: 'Settings',
   },
   open: 'Open',
+  action: {
+    settings: (app: string) => `${app} settings`,
+    restart: (app: string) => `Restart ${app}`,
+    logs: (app: string) => `View ${app} logs`,
+  },
+  restarting: (app: string) => `Restarting ${app}…`,
+  install: 'Install',
+  seeAllStore: 'See all App Store results',
+  noResults: (query: string) => `No results for “${query}”`,
+  unavailable: "Search isn't available right now",
   hints: { move: 'to move', open: 'to open', close: 'to close' },
   closeKeys: (mac: boolean) => (mac ? ['⌘', 'K'] : ['Ctrl', 'K']),
 } as const;

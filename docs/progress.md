@@ -87,7 +87,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-HOME-07 · Act on an app from its menu ("Edit Home" joins the menu with edit mode in phase 7, D-036)
 - [x] US-HOME-08 · Recover a stopped or broken app from its tile (the "Update" badge comes with the updates list in phase 7, D-036)
 - [x] US-HOME-09 · Open search from anywhere
-- [ ] US-HOME-10 · Find apps, actions, files, settings and store apps in one list
+- [x] US-HOME-10 · Find apps, actions, files, settings and store apps in one list (the Files group joins with Files in phase 5, D-036)
 - [x] US-HOME-23 · See which apps are open in the Dock
 - [x] US-STORE-01 · Browse the store home
 - [x] US-STORE-02 · Navigate with the categories sidebar
