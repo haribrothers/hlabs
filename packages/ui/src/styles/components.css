@@ -1372,6 +1372,10 @@
   }
 
   /* Menu */
+  /* A dropdown menu's layer: above the Dock and tab bar (40), app windows (30) and dialogs (60). */
+  .hl-menu-layer {
+    z-index: 70;
+  }
   .hl-menu {
     padding: 6px;
     border-radius: 14px;
