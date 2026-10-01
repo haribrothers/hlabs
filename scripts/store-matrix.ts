@@ -29,7 +29,8 @@ type Reply<T = Record<string, unknown>> = {
 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const log = (...parts: unknown[]) => console.log(new Date().toISOString().slice(11, 19), ...parts);
+const say = (line: string) => void process.stdout.write(`${line}\n`);
+const log = (...parts: unknown[]) => say([new Date().toISOString().slice(11, 19), ...parts].join(' '));
 
 /** The seeded admin's session, as a browser holds it: the cookie, and the CSRF token mutations carry. */
 const session = { cookie: '', csrf: '' };
@@ -236,8 +237,8 @@ async function main() {
   } finally {
     stop();
   }
-  console.log('\nStore matrix');
-  for (const [id, problem] of results) console.log(`  ${problem ? '✗' : '✓'} ${id}${problem ? ` — ${problem}` : ''}`);
+  say('\nStore matrix');
+  for (const [id, problem] of results) say(`  ${problem ? '✗' : '✓'} ${id}${problem ? ` — ${problem}` : ''}`);
   if (results.some(([, problem]) => problem)) process.exit(1);
 }
 
