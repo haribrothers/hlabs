@@ -35,6 +35,16 @@ If an app isn't running, the window tells you instead of showing a blank page:
 
 If an admin hasn't shared an app with you, its address shows "You don't have access to this". Ask an admin if you need it.
 
+Each tile shows how its app is doing:
+
+- **Just the logo and name**: the app is running.
+- **A ring and "Installing… 64%"** or **"Updating…"**: the app is being installed or updated.
+- **"Starting…", "Restarting…", "Stopping…", "Rolling back…" or "Removing…"**: the app is on its way somewhere; the tile catches up by itself.
+- **Greyed out with "Stopped"**: the app is stopped.
+- **"Error"**: the app isn't responding, or its install failed.
+
+Screen readers hear the state with the name, such as "Nextcloud, installing, 64%".
+
 New apps appear on Home as soon as they're installed, and removed apps disappear, without reloading the page. With a keyboard, use Tab to reach the apps and the arrow keys to move between them.
 
 ## The Dock

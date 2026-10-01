@@ -32,9 +32,9 @@ describe('US-APP-12', () => {
   });
 
   it('on Home, an app being uninstalled shows "Removing…"', () => {
-    expect(tileState('uninstalling')).toBe('removing');
-    render(<AppIcon name="Vaultwarden" state="removing" />);
-    expect(screen.getByRole('button', { name: 'Vaultwarden, removing…' })).toHaveTextContent('Removing…');
+    expect(tileState('uninstalling')).toBe('busy');
+    render(<AppIcon name="Vaultwarden" state="busy" status="Removing…" />);
+    expect(screen.getByRole('button', { name: 'Vaultwarden, removing' })).toHaveTextContent('Removing…');
   });
 
   it('someone with the app open sees "This app was removed." and the window closes to Home', async () => {

@@ -51,8 +51,15 @@ describe('AppIcon', () => {
     expect(screen.getByRole('button', { name: 'Jellyfin, stopped' })).toHaveClass('hl-app-stopped');
     expect(screen.getByText('Stopped')).toHaveClass('hl-app-badge-stopped');
     rerender(<AppIcon name="Jellyfin" state="installing" progress={62} />);
-    expect(screen.getByRole('button', { name: 'Jellyfin, installing… 62%' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Jellyfin, installing, 62%' })).toBeInTheDocument();
     expect(screen.getByText('Installing… 62%')).toBeInTheDocument();
+    rerender(<AppIcon name="Jellyfin" state="busy" status="Restarting…" />);
+    expect(screen.getByRole('button', { name: 'Jellyfin, restarting' })).toHaveTextContent('Restarting…');
+    rerender(<AppIcon name="Jellyfin" state="updating" />);
+    expect(screen.getByRole('button', { name: 'Jellyfin, updating' })).toHaveTextContent('Updating…');
+    expect(document.querySelector('.hl-app-ring-turning')).not.toBeNull();
+    rerender(<AppIcon name="Jellyfin" state="error" />);
+    expect(screen.getByRole('button', { name: 'Jellyfin, error' })).toBeInTheDocument();
     rerender(<AppIcon name="Jellyfin" href="https://jellyfin.hlabs.local" />);
     expect(screen.getByRole('link', { name: 'Jellyfin' })).toBeInTheDocument();
   });

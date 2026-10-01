@@ -42,14 +42,26 @@ function moveFocus(e: KeyboardEvent<HTMLElement>) {
   }
 }
 
-/** The tile's state: installing shows its ring, a failed install or a crash an error badge (US-STORE-14). */
+/**
+ * Every app state as exactly one tile (US-HOME-06): installs and updates fill a ring, moves in between say what's
+ * happening, a stopped app is greyed out, a failed install or a crash shows Error (US-STORE-14).
+ */
+export const TILE: Record<HomeApp['state'], { state: AppIconState; status?: string }> = {
+  running: { state: 'running' },
+  installing: { state: 'installing' },
+  install_failed: { state: 'error' },
+  starting: { state: 'busy', status: homeCopy.tileStatus.starting },
+  restarting: { state: 'busy', status: homeCopy.tileStatus.restarting },
+  stopping: { state: 'busy', status: homeCopy.tileStatus.stopping },
+  stopped: { state: 'stopped' },
+  updating: { state: 'updating' },
+  rolling_back: { state: 'busy', status: homeCopy.tileStatus.rollingBack },
+  error: { state: 'error' },
+  uninstalling: { state: 'busy', status: homeCopy.tileStatus.removing },
+};
+
 export function tileState(state: HomeApp['state']): AppIconState {
-  if (state === 'installing') return 'installing';
-  // Until the uninstall job is done (US-APP-12).
-  if (state === 'uninstalling') return 'removing';
-  if (state === 'install_failed' || state === 'error') return 'error';
-  if (state === 'stopped') return 'stopped';
-  return 'running';
+  return TILE[state].state;
 }
 
 /** The app window opens on a desktop layout (US-APP-01); phones are covered by 12-phone.md. */
@@ -94,8 +106,9 @@ export function AppGrid({
               src={app.icon.logoUrl}
               colors={look.colors}
               icon={look.fallbackIcon}
-              state={tileState(app.state)}
-              progress={progress?.get(app.id) ?? 0}
+              state={TILE[app.state].state}
+              status={TILE[app.state].status}
+              progress={progress?.get(app.id) ?? (app.state === 'installing' ? 0 : undefined)}
               ariaLabel={app.state === 'running' ? homeCopy.openApp(app.name) : undefined}
               onClick={() => openApp(app)}
             />

@@ -608,11 +608,16 @@
     font: 500 13px/16px var(--hl-font-sans);
     text-align: center;
   }
+  /* "Installing… 64%" stays on one line, as HomeStates draws it; names still wrap. */
+  .hl-app-status {
+    white-space: nowrap;
+  }
   .hl-app-dim {
     opacity: 0.4;
   }
   .hl-app-stopped .hl-app-icon {
-    filter: grayscale(1) brightness(0.8);
+    filter: grayscale(1);
+    opacity: 0.5;
   }
   .hl-app-stopped .hl-app-name {
     color: var(--ink-muted);
@@ -627,6 +632,17 @@
   }
   .hl-app-ring {
     transform: rotate(-90deg);
+  }
+  .hl-app-ring-turning {
+    animation: hl-spin 1.2s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hl-app-ring-turning {
+      animation: none;
+    }
+  }
+  [data-reduce-motion='true'] .hl-app-ring-turning {
+    animation: none;
   }
   .hl-app-ring-track {
     stroke: rgba(255, 255, 255, 0.25);

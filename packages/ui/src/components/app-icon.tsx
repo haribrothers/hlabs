@@ -4,7 +4,12 @@ import { cn } from '../lib/cn';
 import { useUiStrings } from '../lib/strings';
 import { SIZE_APP_ICON } from '../lib/tokens';
 
-export type AppIconState = 'running' | 'installing' | 'removing' | 'stopped' | 'update' | 'error';
+/**
+ * How a tile looks (US-HOME-06): `running` is the logo and name; `installing` and `updating` a ring over the dimmed
+ * logo; `busy` (starting, restarting, stopping, rolling back, removing) the dimmed logo with `status` for its name;
+ * `stopped` desaturated at half opacity; `update` and `error` a badge.
+ */
+export type AppIconState = 'running' | 'installing' | 'updating' | 'busy' | 'stopped' | 'update' | 'error';
 
 export interface AppIconProps {
   name: string;
@@ -15,8 +20,10 @@ export interface AppIconProps {
   /** White fallback icon on the gradient (a Lucide icon from @hlabs/icons). */
   icon?: ReactNode;
   state?: AppIconState;
-  /** 0–100, shown as a ring while installing. */
+  /** 0–100, shown as a ring while installing or updating; without it an update's ring turns. */
   progress?: number;
+  /** What a `busy` tile says in place of its name: "Starting…", "Removing…". */
+  status?: string;
   href?: string;
   /** Replaces the accessible name, e.g. "Open Jellyfin" on Home. */
   ariaLabel?: string;
@@ -34,17 +41,36 @@ export function AppIcon({
   colors,
   icon,
   state = 'running',
-  progress = 0,
+  progress,
+  status,
   href,
   ariaLabel: ariaLabelOverride,
   onClick,
   onContextMenu,
 }: AppIconProps) {
   const t = useUiStrings();
-  const pct = Math.max(0, Math.min(100, Math.round(progress)));
+  const pct = Math.max(0, Math.min(100, Math.round(progress ?? 0)));
+  const ring = state === 'installing' || state === 'updating';
   const badge = state === 'update' || state === 'error' || state === 'stopped' ? t.appState[state] : null;
-  const label = state === 'installing' ? t.installing(pct) : state === 'removing' ? t.removing : name;
-  const ariaLabel = ariaLabelOverride ?? (state === 'running' ? name : `${name}, ${(badge ?? label).toLowerCase()}`);
+  const label =
+    state === 'installing'
+      ? t.installing(pct)
+      : state === 'updating'
+        ? t.updating
+        : state === 'busy'
+          ? (status ?? name)
+          : name;
+  // "Nextcloud, installing, 64%", "Pi-hole, stopped", "Vaultwarden, restarting".
+  const said = (text: string) => text.replace(/…/g, '').toLowerCase();
+  const stateWords =
+    state === 'installing'
+      ? `${said(t.installing(pct).replace(/\s*\d+%$/, ''))}, ${pct}%`
+      : badge
+        ? said(badge)
+        : state === 'running'
+          ? null
+          : said(label);
+  const ariaLabel = ariaLabelOverride ?? (stateWords ? `${name}, ${stateWords}` : name);
   const content = (
     <>
       {badge ? <span className={`hl-app-badge hl-app-badge-${state}`}>{badge}</span> : null}
@@ -57,11 +83,17 @@ export function AppIcon({
           size={SIZE_APP_ICON}
           // The tile already says the name.
           decorative
-          className={cn((state === 'installing' || state === 'removing') && 'hl-app-dim')}
+          className={cn((ring || state === 'busy') && 'hl-app-dim')}
         />
-        {state === 'installing' ? (
+        {ring ? (
           <span className="hl-app-overlay">
-            <svg width="46" height="46" viewBox="0 0 46 46" className="hl-app-ring" aria-hidden="true">
+            <svg
+              width="46"
+              height="46"
+              viewBox="0 0 46 46"
+              className={cn('hl-app-ring', progress === undefined && state === 'updating' && 'hl-app-ring-turning')}
+              aria-hidden="true"
+            >
               <circle cx="23" cy="23" r={RING_R} fill="none" strokeWidth="4" className="hl-app-ring-track" />
               <circle
                 cx="23"
@@ -71,13 +103,17 @@ export function AppIcon({
                 strokeWidth="4"
                 strokeLinecap="round"
                 className="hl-app-ring-fill"
-                strokeDasharray={`${((RING_C * pct) / 100).toFixed(1)} ${RING_C.toFixed(1)}`}
+                strokeDasharray={
+                  progress === undefined && state === 'updating'
+                    ? `${(RING_C / 4).toFixed(1)} ${RING_C.toFixed(1)}`
+                    : `${((RING_C * pct) / 100).toFixed(1)} ${RING_C.toFixed(1)}`
+                }
               />
             </svg>
           </span>
         ) : null}
       </span>
-      <span className="hl-app-name">{label}</span>
+      <span className={cn('hl-app-name', label !== name && 'hl-app-status')}>{label}</span>
     </>
   );
   const className = cn('hl-app', state === 'stopped' && 'hl-app-stopped');

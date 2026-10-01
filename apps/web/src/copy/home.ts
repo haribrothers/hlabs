@@ -11,6 +11,14 @@ export const homeCopy = {
   system: 'System',
   couldntLoad: "Couldn't load",
   retry: 'Try again',
+  /** What a tile says while its app is between states (US-HOME-06). */
+  tileStatus: {
+    starting: 'Starting…',
+    restarting: 'Restarting…',
+    stopping: 'Stopping…',
+    rollingBack: 'Rolling back…',
+    removing: 'Removing…',
+  },
   greeting: {
     morning: (name: string) => `Good morning, ${name}`,
     afternoon: (name: string) => `Good afternoon, ${name}`,
