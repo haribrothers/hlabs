@@ -21,6 +21,12 @@ export function gradientFor(name: string): readonly [string, string] {
   return FALLBACK_GRADIENTS[h % FALLBACK_GRADIENTS.length]!;
 }
 
+/**
+ * A manifest logo is drawn at this share of its tile, centred on the app's gradient, so it has room inside the box
+ * as the designs' glyphs do (the fallback glyph is 0.44 of the tile).
+ */
+export const LOGO_SCALE = 0.62;
+
 export interface AppLogoProps {
   /** App name; used for the alt text and to pick a fallback gradient. */
   name: string;
@@ -41,8 +47,7 @@ export interface AppLogoProps {
 }
 
 /**
- * An app's tile: its own logo when there is one, otherwise a gradient with a white icon.
- * The gradient also shows behind the logo while it loads.
+ * An app's tile: the app's gradient with its own logo inset on it, or a white icon when it has no logo (or it fails).
  */
 export function AppLogo({
   name,
@@ -89,7 +94,7 @@ export function AppLogo({
           decoding="async"
           draggable={false}
           onError={() => setFailedSrc(src ?? null)}
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+          style={{ width: `${LOGO_SCALE * 100}%`, height: `${LOGO_SCALE * 100}%`, objectFit: 'contain' }}
         />
       ) : (
         <span

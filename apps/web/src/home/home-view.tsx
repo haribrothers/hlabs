@@ -1,7 +1,7 @@
 // Main (US-HOME-01…05): the greeting over the wallpaper, the widgets row and the app grid.
-import { iconDefaults, LogoMark, Search } from '@hlabs/icons';
+import { iconDefaults, LOGO_SCALE, LogoMark, Search } from '@hlabs/icons';
 import { isFeatureEnabled } from '@hlabs/shared';
-import { GlassCard } from '@hlabs/ui';
+import { GlassCard, tokens } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from '@trpc/tanstack-react-query';
 import { useEffect, useState } from 'react';
@@ -54,8 +54,12 @@ export function HomeView() {
   return (
     <div className="mx-auto flex w-full max-w-window flex-col items-center gap-8">
       <header className="flex flex-col items-center gap-4 text-center">
-        <GlassCard className="grid size-12 place-items-center rounded-lg p-0" aria-hidden="true">
-          <LogoMark size={28} title="" />
+        {/* The size of a Home app icon, with the mark inset as app logos are. */}
+        <GlassCard
+          className="grid size-(--size-app-icon) place-items-center rounded-(--radius-icon) p-0"
+          aria-hidden="true"
+        >
+          <LogoMark size={Math.round(tokens.SIZE_APP_ICON * LOGO_SCALE)} title="" />
         </GlassCard>
         <h1 className={showGreeting && name ? 'm-0 text-display-xl' : 'sr-only'}>
           {name ? homeCopy.greeting[greetingFor(now)](name) : homeCopy.title}

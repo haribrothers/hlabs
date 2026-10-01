@@ -843,10 +843,7 @@
     overflow: hidden;
   }
   .hl-dock-logo {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: inherit;
+    object-fit: contain;
   }
   .hl-dock-item:hover {
     margin: 0 13px;
