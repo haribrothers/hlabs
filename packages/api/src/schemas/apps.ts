@@ -71,6 +71,13 @@ export const appDetailSchema = homeAppSchema.extend({
   engineRunning: z.boolean(),
   /** When its web container started (ms since the epoch) while it runs, for "up 6 days" (US-APP-04); null otherwise. */
   startedAt: z.number().int().nullable(),
+  /** Where its data lives, as people know it (`~/hlabs/app-data/vaultwarden`, US-APP-07). */
+  dataFolder: z.string(),
+  /** Its data folder and images on disk (counted every 10 minutes); null while the first count is still going. */
+  disk: z.object({ dataBytes: z.number().int(), imageBytes: z.number().int() }).nullable(),
+  /** The installed version, and the store's when it's a different one (null when up to date, US-APP-07). */
+  version: z.string(),
+  latestVersion: z.string().nullable(),
   /** The behaviour switches (US-APP-06): starts with hlabs, updates itself; custom apps never update themselves. */
   autostart: z.boolean(),
   autoUpdate: z.boolean(),

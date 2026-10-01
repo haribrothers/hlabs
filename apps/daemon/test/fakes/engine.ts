@@ -64,6 +64,14 @@ export class FakeEngine implements ContainerEngine {
     return structuredClone(this.containers.get(project) ?? []);
   }
 
+  /** Image id → size on disk. */
+  readonly imageSizes = new Map<string, number>();
+
+  async imageSize(image: string) {
+    this.assertRunning();
+    return this.imageSizes.get(image) ?? null;
+  }
+
   /** Changes one service's containers (a crash, a healthcheck turning unhealthy). */
   setService(project: string, service: string, patch: Partial<ContainerState>) {
     for (const c of this.containers.get(project) ?? []) if (c.service === service) Object.assign(c, patch);

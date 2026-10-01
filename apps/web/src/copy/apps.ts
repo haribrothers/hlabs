@@ -73,6 +73,15 @@ export const appsCopy = {
   includeInBackups: 'Include in backups',
   updateAutomatically: 'Update automatically',
   customNeverUpdates: 'Custom apps never update automatically',
+  // Storage and resources, version (US-APP-07)
+  storage: 'Storage and resources',
+  dataFolder: 'Data folder',
+  usingNow: 'Using now',
+  disk: (size: string) => `Disk ${size}`,
+  stoppedDisk: (size: string) => `Stopped · Disk ${size}`,
+  countingDisk: 'Counting disk use…',
+  upToDate: (version: string) => `Version ${version} · up to date`,
+  updateAvailable: (version: string, next: string) => `Version ${version} · ${next} available`,
 
   // Logs (US-APP-08…10)
   logsTitle: (app: string) => `${app} logs`,

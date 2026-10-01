@@ -26,15 +26,21 @@ export function logoUrl(appId: string, logo: string | undefined): string | null 
 }
 
 /** The name, icon and web bits of an installed app's catalog manifest (its own source first). */
-export function catalogManifest(db: HlabsDb, app: { id: string; sourceId: string | null }) {
-  const row =
+/** The app's listing in its source's catalogue (or any source's, for an app whose source is gone). */
+export function catalogRow(db: HlabsDb, app: { id: string; sourceId: string | null }) {
+  return (
     (app.sourceId
       ? db
           .select()
           .from(catalogApps)
           .where(and(eq(catalogApps.sourceId, app.sourceId), eq(catalogApps.appId, app.id)))
           .get()
-      : undefined) ?? db.select().from(catalogApps).where(eq(catalogApps.appId, app.id)).get();
+      : undefined) ?? db.select().from(catalogApps).where(eq(catalogApps.appId, app.id)).get()
+  );
+}
+
+export function catalogManifest(db: HlabsDb, app: { id: string; sourceId: string | null }) {
+  const row = catalogRow(db, app);
   const parsed = manifestBits.safeParse(row?.manifestJson);
   return parsed.success ? parsed.data : {};
 }

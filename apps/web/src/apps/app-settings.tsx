@@ -24,6 +24,7 @@ import { useNow } from '../lib/use-now';
 import { AccessDenied } from '../shell/access-denied';
 import { AppAccess } from './app-access';
 import { AppBehaviour } from './app-behaviour';
+import { AppStorage, AppVersion } from './app-storage';
 import { statusDot } from './app-window';
 import { appBaseUrl, useApp } from './use-app';
 import { useAppCommands } from './use-app-commands';
@@ -107,6 +108,10 @@ function AppSettingsView({ appId }: { appId: string }) {
           <Actions app={app} />
           <AppAccess app={app} />
           <AppBehaviour app={app} />
+          <AppStorage app={app} />
+          <footer className="flex items-center justify-between gap-4">
+            <AppVersion app={app} />
+          </footer>
         </div>
       </GlassCard>
     </section>

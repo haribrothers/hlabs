@@ -24,6 +24,15 @@ Under **Behaviour**:
 
 Each switch saves as soon as you change it. If it can't be saved, it moves back and hlabs tells you why.
 
+## Storage and version
+
+Under **Storage and resources**:
+
+- **Data folder** is where the app keeps its data, such as `~/hlabs/app-data/vaultwarden`.
+- **Using now** is how much disk the app takes, its data and its software together, such as "Disk 210 MB". It's counted every few minutes, so it may lag a little behind.
+
+At the bottom, the version says whether it's up to date, or which newer version the App Store has.
+
 ## Start, stop or restart an app
 
 - **Open** opens the app in a new tab.

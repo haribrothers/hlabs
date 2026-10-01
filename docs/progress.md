@@ -108,7 +108,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-APP-04 · See an app's status and start, stop or restart it
 - [x] US-APP-05 · App address and tailnet address
 - [x] US-APP-06 · Behaviour switches ("Include in backups" is wired to the backup plan with backups in phase 5, where it appears; "Update automatically" appears in phase 7)
-- [ ] US-APP-07 · Storage, resources and version
+- [x] US-APP-07 · Storage, resources and version (the Update button and its progress come with the update job in US-STORE-17, "Uninstall…" with its dialog in US-APP-11; live CPU and memory in phase 4)
 - [ ] US-APP-08 · Follow an app's logs live
 - [ ] US-APP-09 · Filter logs
 - [ ] US-APP-10 · Download logs

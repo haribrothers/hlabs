@@ -62,6 +62,14 @@ export class DockerodeEngine implements ContainerEngine {
     });
   }
 
+  async imageSize(image: string): Promise<number | null> {
+    try {
+      return (await this.docker.getImage(image).inspect()).Size;
+    } catch {
+      return null;
+    }
+  }
+
   async projectContainers(project: string): Promise<ContainerState[]> {
     const list = await this.docker.listContainers({
       all: true,

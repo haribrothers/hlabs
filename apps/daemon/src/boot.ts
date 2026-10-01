@@ -31,6 +31,7 @@ import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
 import { ChildRegistry } from './platform/children';
 import { createMdnsPublisher } from './mdns/publisher';
+import { AppDiskUsage } from './apps/disk';
 import { SessionService } from './auth/sessions';
 import { TotpService } from './auth/totp';
 import { LoginService } from './auth/login';
@@ -246,7 +247,13 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     engineMemoryBytes: () => (engine.status.state === 'running' ? engine.status.info.memoryBytes : null),
     appDataFreeBytes: () => probe.freeBytes(config.paths.appDataDir),
   });
+  const disk = new AppDiskUsage({
+    appDataDir: config.paths.appDataDir,
+    engine,
+    project: (appId) => appService.project(appId).name,
+  });
   const installer = new InstallService({
+    disk,
     db,
     bus,
     logger,

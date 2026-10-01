@@ -40,6 +40,8 @@ export interface ContainerEngine {
   pullImage(ref: string, onProgress: (progress: PullProgress) => void, signal?: AbortSignal): Promise<void>;
   /** Containers labelled with the compose project, running or not. */
   projectContainers(project: string): Promise<ContainerState[]>;
+  /** An image's size on disk (`sha256:…` or a reference), or null when it isn't here. */
+  imageSize(image: string): Promise<number | null>;
 }
 
 export interface EngineCandidate {

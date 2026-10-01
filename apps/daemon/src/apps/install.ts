@@ -9,6 +9,7 @@ import { appEnv, appMounts, apps, auditLog, getSetting, jobs, storageLocations, 
 import { HOSTNAME_PATTERN, ulid } from '@hlabs/shared';
 import { and, desc, eq } from 'drizzle-orm';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { EngineService } from '../engine/service';
 import type { EventBus } from '../events/bus';
@@ -23,7 +24,8 @@ import { isSecret, parseEnvFile, resolveEnv } from './env';
 import { folderPaths, resolveMounts, type MountRequest } from './folders';
 import { waitHealthy, type HealthProbes } from './health';
 import { takenHostnames } from './hostnames';
-import { appSummary } from './list';
+import type { AppDiskUsage } from './disk';
+import { appSummary, catalogRow } from './list';
 import { allocatePort, loopbackPort, loopbackPortFree } from './ports';
 import type { AppService } from './service';
 import { stateDetail } from './state-machine';
@@ -63,6 +65,8 @@ export interface InstallDeps {
   now?: () => number;
   /** This computer's time zone for apps; the system's by default. */
   timeZone?: () => string;
+  /** How much disk each app uses (US-APP-07). */
+  disk?: AppDiskUsage;
 }
 
 /** The share of the bar each step fills: pulls take 0–80%, the rest share 80–100% (US-STORE-12). */
@@ -154,6 +158,10 @@ export class InstallService {
         app.state === 'install_failed' ? await this.freePort((app.portFallback ?? 11999) + 1).catch(() => null) : null,
       engineRunning: this.deps.engine.client !== null,
       startedAt: app.state === 'running' ? await this.deps.apps.startedAt(appId) : null,
+      dataFolder: tildePath(join(this.deps.appDataDir, appId)),
+      disk: (await this.deps.disk?.get(appId)) ?? null,
+      version: app.version,
+      latestVersion: latestVersion(app.version, catalogRow(db, app)?.version),
       autostart: app.autostart,
       autoUpdate: app.autoUpdate,
       custom: app.custom,
@@ -582,4 +590,14 @@ export function riskList(m: AppManifest): string[] {
     ...(m.permissions.gpu ? ['gpu'] : []),
     ...m.ports.map((p) => `port:${p.host}/${p.protocol}`),
   ];
+}
+
+/** `/Users/hari/hlabs/app-data/immich` → `~/hlabs/app-data/immich`, the way people know their home folder. */
+export function tildePath(path: string, home = homedir()): string {
+  return path === home || path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path;
+}
+
+/** The store's version when it isn't the installed one (US-APP-07); null when up to date or not listed. */
+function latestVersion(installed: string, listed: string | undefined): string | null {
+  return listed && listed !== installed ? listed : null;
 }
