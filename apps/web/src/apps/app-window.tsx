@@ -20,6 +20,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { appsCopy } from '../copy/apps';
+import { engineCopy } from '../copy/engine';
 import { browser } from '../lib/browser';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
@@ -102,13 +103,22 @@ export function AppWindow({ appId }: { appId: string }) {
   const queryClient = useQueryClient();
   const [reloadKey] = useState(0);
   const close = () => void navigate({ to: '/' });
-  // Restart (US-APP-02): the label says "Restarting…" at once; the frame comes back when it's running again.
+  const openLogs = () => void navigate({ to: '/apps/$appId/logs', params: { appId } });
+  /** Shows the state a command moves the app to at once; app.stateChanged then takes over. */
+  const moving = (moves: Partial<Record<AppState, AppState>>) => () =>
+    queryClient.setQueryData(trpc.apps.get.queryKey({ appId }), (old) => {
+      const next = old && moves[old.state];
+      return old && next ? { ...old, state: next } : old;
+    });
+  // Restart (US-APP-02): the label says "Restarting…" at once; the frame comes back when it's running again. An app
+  // that isn't responding is started again (US-APP-03).
   const restart = useMutation({
     mutationFn: () => client.apps.restart.mutate({ appId }),
-    onSuccess: () =>
-      queryClient.setQueryData(trpc.apps.get.queryKey({ appId }), (old) =>
-        old && old.state === 'running' ? { ...old, state: 'restarting' as const } : old,
-      ),
+    onSuccess: moving({ running: 'restarting', error: 'starting' }),
+  });
+  const start = useMutation({
+    mutationFn: () => client.apps.start.mutate({ appId }),
+    onSuccess: moving({ stopped: 'starting' }),
   });
 
   // Esc closes it while focus is on the window, not inside the app's frame (which keeps its own keys).
@@ -131,30 +141,63 @@ export function AppWindow({ appId }: { appId: string }) {
   const look = appTileLook(app.name, app.icon, HEADER_LOGO);
   const base = appBaseUrl(app);
   const src = `${base}${app.webPath === '/' ? '' : app.webPath}`;
-  const body =
-    app.state === 'running' ? (
-      app.embed ? (
-        <AppFrame key={`${src}#${reloadKey}`} app={app} src={src} />
-      ) : (
-        <FramePanel>
-          <p className="m-0 text-body text-ink">{copy.opensInTab(app.name)}</p>
-          <Button onClick={() => browser.open(base)}>{copy.openInNewTab}</Button>
-        </FramePanel>
-      )
-    ) : BUSY.has(app.state) ? (
-      <FramePanel>
-        <Loader2
-          aria-hidden
-          {...iconDefaults}
-          className="size-8 animate-spin text-ink-muted motion-reduce:animate-none"
-        />
-        <StatusDot status={statusDot(app.state)}>{copy.status[app.state]}</StatusDot>
-      </FramePanel>
+  const canRestart = (app.state === 'running' || app.state === 'error') && app.engineRunning;
+  const body = !app.engineRunning ? (
+    // The engine-stopped message (US-STATE-08) whatever the app's last state was (US-APP-03).
+    <FramePanel>
+      <p className="m-0 text-body font-bold text-ink">{engineCopy.stoppedTitle}</p>
+      <p className="m-0 text-body text-ink-muted">{engineCopy.stoppedBody}</p>
+    </FramePanel>
+  ) : app.state === 'running' ? (
+    app.embed ? (
+      <AppFrame key={`${src}#${reloadKey}`} app={app} src={src} />
     ) : (
       <FramePanel>
-        <StatusDot status={statusDot(app.state)}>{copy.status[app.state]}</StatusDot>
+        <p className="m-0 text-body text-ink">{copy.opensInTab(app.name)}</p>
+        <Button onClick={() => browser.open(base)}>{copy.openInNewTab}</Button>
       </FramePanel>
-    );
+    )
+  ) : BUSY.has(app.state) ? (
+    <FramePanel>
+      <Loader2
+        aria-hidden
+        {...iconDefaults}
+        className="size-8 animate-spin text-ink-muted motion-reduce:animate-none"
+      />
+      <StatusDot status={statusDot(app.state)}>{copy.status[app.state]}</StatusDot>
+    </FramePanel>
+  ) : app.state === 'stopped' ? (
+    <FramePanel>
+      <p className="m-0 text-body text-ink">{copy.isStopped(app.name)}</p>
+      {isAdmin ? (
+        <Button disabled={start.isPending} onClick={() => start.mutate()}>
+          {copy.start}
+        </Button>
+      ) : (
+        <p className="m-0 text-body text-ink-muted">{copy.askToStart}</p>
+      )}
+    </FramePanel>
+  ) : app.state === 'error' ? (
+    <FramePanel>
+      <p className="m-0 text-body text-ink">{copy.notResponding(app.name)}</p>
+      {isAdmin ? (
+        <div className="flex flex-wrap justify-center gap-3">
+          <Button disabled={restart.isPending} onClick={() => restart.mutate()}>
+            {copy.restartApp}
+          </Button>
+          <Button variant="secondary" onClick={openLogs}>
+            {copy.logs}
+          </Button>
+        </div>
+      ) : (
+        <p className="m-0 text-body text-ink-muted">{copy.askToRestart}</p>
+      )}
+    </FramePanel>
+  ) : (
+    <FramePanel>
+      <StatusDot status={statusDot(app.state)}>{copy.status[app.state]}</StatusDot>
+    </FramePanel>
+  );
 
   return (
     // Above the Dock (z-40): the window has the screen to itself, as the AppWindow design draws it.
@@ -188,15 +231,12 @@ export function AppWindow({ appId }: { appId: string }) {
               <>
                 <IconButton
                   label={copy.restartApp}
-                  disabled={app.state !== 'running' || restart.isPending}
+                  disabled={!canRestart || restart.isPending}
                   onClick={() => restart.mutate()}
                 >
                   <RotateCw aria-hidden {...iconDefaults} className="size-4" />
                 </IconButton>
-                <IconButton
-                  label={copy.logs}
-                  onClick={() => void navigate({ to: '/apps/$appId/logs', params: { appId } })}
-                >
+                <IconButton label={copy.logs} onClick={openLogs}>
                   <TextAlignStart aria-hidden {...iconDefaults} className="size-4" />
                 </IconButton>
                 <IconButton

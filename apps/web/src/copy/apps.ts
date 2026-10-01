@@ -30,6 +30,11 @@ export const appsCopy = {
   restartApp: 'Restart app',
   logs: 'Logs',
   appSettings: 'App settings',
+  isStopped: (app: string) => `${app} is stopped.`,
+  start: 'Start',
+  askToStart: 'Ask an admin to start it.',
+  notResponding: (app: string) => `${app} isn't responding.`,
+  askToRestart: 'Ask an admin to restart it.',
 
   // App settings (US-APP-04…07)
   settingsTitle: (app: string) => `${app} settings`,

@@ -26,6 +26,15 @@ To leave the app window, choose **Back to Home** or **Close app**, or press Esc 
 
 Admins also get **Restart app**, **Logs** and **App settings** at the top of the window, and everyone gets **Open in a new tab**. While an app restarts, the window says "Restarting…" and shows the app again as soon as it's running.
 
+If an app isn't running, the window tells you instead of showing a blank page:
+
+- **Stopped**: admins can choose **Start**. Members can ask an admin to start it.
+- **Not responding**: admins can choose **Restart app**, or **Logs** to see what went wrong.
+- **Starting, restarting or updating**: the window shows a spinner and opens the app as soon as it's ready.
+- **The container engine has stopped**: all apps are offline until the engine is running again. Your data is safe.
+
+If an admin hasn't shared an app with you, its address shows "You don't have access to this". Ask an admin if you need it.
+
 New apps appear on Home as soon as they're installed, and removed apps disappear, without reloading the page. With a keyboard, use Tab to reach the apps and the arrow keys to move between them.
 
 ## The Dock

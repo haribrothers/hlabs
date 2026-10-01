@@ -1,5 +1,6 @@
 // One installed app (apps.get) kept current: its state follows app.stateChanged at once (US-APP-02: within 1 s), and
-// the rest is refetched. Opens the "no access" page for a member the app isn't shared with (US-APP-03, D-070).
+// the rest is refetched; whether the engine runs follows engine.status. Opens the "no access" page for a member the
+// app isn't shared with (US-APP-03, D-070).
 import type { AppDetail, AppState } from '@hlabs/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from '@trpc/tanstack-react-query';
@@ -16,9 +17,16 @@ export function useApp(appId: string) {
   const [lastChange, setLastChange] = useState<{ state: AppState; detail: string | null } | null>(null);
   useSubscription(
     trpc.events.stream.subscriptionOptions(
-      { types: ['app.stateChanged'] },
+      { types: ['app.stateChanged', 'engine.status'] },
       {
         onData: ({ data: event }) => {
+          // The engine stopping or coming back changes what every app window shows (US-APP-03).
+          if (event.type === 'engine.status') {
+            const engineRunning = event.data.running;
+            queryClient.setQueryData<AppDetail>(key, (old) => (old ? { ...old, engineRunning } : old));
+            void queryClient.invalidateQueries({ queryKey: key });
+            return;
+          }
           if (event.type !== 'app.stateChanged' || event.data.appId !== appId) return;
           setLastChange({ state: event.data.state, detail: event.data.detail ?? null });
           queryClient.setQueryData<AppDetail>(key, (old) => (old ? { ...old, state: event.data.state } : old));

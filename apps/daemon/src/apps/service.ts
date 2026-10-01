@@ -145,9 +145,11 @@ export class AppService {
    * doesn't allow it (or ENGINE_UNAVAILABLE without an engine), otherwise run in the background; the outcome arrives
    * as app.stateChanged, so a slow health check never holds the request.
    */
-  command(appId: string, action: 'start' | 'stop' | 'restart'): void {
+  command(appId: string, requested: 'start' | 'stop' | 'restart'): void {
     const app = this.get(appId);
     if (!app) throw hlabsError('NOT_FOUND');
+    // Restarting an app that isn't responding starts it again: error has no edge to restarting (US-APP-03).
+    const action = requested === 'restart' && app.state === 'error' ? 'start' : requested;
     const to = ({ start: 'starting', stop: 'stopping', restart: 'restarting' } as const)[action];
     if (!canTransition(app.state, to)) {
       throw hlabsError('APP_BUSY', `${appId}: ${app.state} → ${to}`, { appId, state: app.state });

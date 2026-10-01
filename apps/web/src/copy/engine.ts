@@ -48,6 +48,9 @@ export const engineCopy = {
   restartConfirm: 'Restart',
   restarting: 'Restarting the engine',
   notBack: "The engine didn't come back. Start it again, or restart this computer.",
+  // The engine has stopped (US-STATE-08; the app window too, US-APP-03).
+  stoppedTitle: 'The container engine has stopped',
+  stoppedBody: 'All apps are offline. Your data is safe.',
   waitFor: (job: string) => `Wait for ${job} to finish`,
   jobs: {
     system_update: 'the hlabs update',
