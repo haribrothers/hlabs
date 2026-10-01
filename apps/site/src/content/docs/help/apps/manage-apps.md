@@ -45,6 +45,15 @@ To keep a copy, for example to attach to a bug report, choose **Download**. The 
 
 Logs can contain passwords and other private details, so only admins can see or download them.
 
+## Uninstall an app
+
+At the bottom of App settings, choose **Uninstall…**. hlabs asks what happens to the app's data:
+
+- **Keep its data** (the default): the app is removed, but its data stays on this computer. Install it again later and it picks up where you left off, with the same passwords.
+- **Delete its data too**: its data is removed as well, and hlabs says how much. This can't be undone.
+
+If another app needs this one (Immich needing a database app, for example), hlabs says so, and you uninstall that app first.
+
 ## Start, stop or restart an app
 
 - **Open** opens the app in a new tab.

@@ -82,6 +82,20 @@ export const appsCopy = {
   countingDisk: 'Counting disk use…',
   upToDate: (version: string) => `Version ${version} · up to date`,
   updateAvailable: (version: string, next: string) => `Version ${version} · ${next} available`,
+  // Uninstall (US-APP-11, US-APP-12)
+  uninstallEllipsis: 'Uninstall…',
+  uninstallTitle: (app: string) => `Uninstall ${app}?`,
+  uninstallBody: 'The app stops and is removed from your Home screen.',
+  dataQuestion: 'What happens to its data',
+  keepData: 'Keep its data',
+  keepDataNote: 'Reinstalling later picks up where you left off.',
+  deleteData: 'Delete its data too',
+  deleteDataNote: (size: string | null) =>
+    size ? `Removes ${size}. This can't be undone.` : "Removes everything it saved. This can't be undone.",
+  uninstall: 'Uninstall',
+  uninstallAndDelete: 'Uninstall and delete data',
+  needsIt: (other: string, app: string) => `${other} needs ${app}. Uninstall it first.`,
+  cancel: 'Cancel',
 
   // Logs (US-APP-08…10)
   logsTitle: (app: string) => `${app} logs`,

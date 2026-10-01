@@ -123,8 +123,30 @@ export class InstallService {
   uninstallFailed(user: Installer, appId: string): { jobId: string } {
     const app = this.deps.db.select().from(apps).where(eq(apps.id, appId)).get();
     if (!app) throw hlabsError('NOT_FOUND');
+    // Never out from under an app that needs it (US-APP-11).
+    const dependents = this.dependents(appId);
+    if (dependents.length) {
+      throw hlabsError('APP_HAS_DEPENDENTS', `${dependents.join(', ')} need ${appId}`, { appId, dependents });
+    }
     if (app.state !== 'install_failed') throw hlabsError('NOT_IMPLEMENTED', 'Uninstalling arrives with US-APP-12');
     return { jobId: this.deps.jobs.start('app_uninstall', { target: appId, payload: { appId, user } }) };
+  }
+
+  /** The names of installed apps whose manifest lists this one in `dependsOn` (US-APP-11). */
+  dependents(appId: string): string[] {
+    return this.deps.db
+      .select()
+      .from(apps)
+      .all()
+      .filter((other) => other.id !== appId && other.state !== 'uninstalling')
+      .flatMap((other) => {
+        try {
+          const manifest = this.deps.apps.manifest(other.id);
+          return manifest.dependsOn?.includes(appId) ? [manifest.name] : [];
+        } catch {
+          return []; // no project (a dev stand-in)
+        }
+      });
   }
 
   /** An installed app for the install pages and the app window (`apps.get`). */
@@ -163,6 +185,7 @@ export class InstallService {
       version: app.version,
       latestVersion: latestVersion(app.version, catalogRow(db, app)?.version),
       services: this.deps.apps.services(appId),
+      dependents: this.dependents(appId),
       autostart: app.autostart,
       autoUpdate: app.autoUpdate,
       custom: app.custom,

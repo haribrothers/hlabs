@@ -26,6 +26,7 @@ import { AppBehaviour } from './app-behaviour';
 import { AppStorage, AppVersion } from './app-storage';
 import { statusDot } from './app-window';
 import { appBaseUrl, useApp } from './use-app';
+import { UninstallDialog } from './uninstall-dialog';
 import { useAppCommands } from './use-app-commands';
 
 const copy = appsCopy;
@@ -62,6 +63,7 @@ function AppSettingsView({ appId }: { appId: string }) {
   const { data: app } = useApp(appId);
   const back = useGoBack();
   const [tab, setTab] = useState<Tab>('overview');
+  const [uninstalling, setUninstalling] = useState(false);
   useEffect(() => {
     if (app) document.title = copy.docTitle(copy.settingsTitle(app.name));
   }, [app]);
@@ -105,7 +107,11 @@ function AppSettingsView({ appId }: { appId: string }) {
           <AppStorage app={app} />
           <footer className="flex items-center justify-between gap-4">
             <AppVersion app={app} />
+            <Button variant="link" className="text-danger" onClick={() => setUninstalling(true)}>
+              {copy.uninstallEllipsis}
+            </Button>
           </footer>
+          <UninstallDialog app={app} open={uninstalling} onOpenChange={setUninstalling} />
         </div>
       </GlassCard>
     </section>
