@@ -8,6 +8,9 @@ import { useNavigate } from '@tanstack/react-router';
 import { useDeferredValue, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { appsCopy } from '../copy/apps';
 import { useNow } from '../lib/use-now';
+import { failureReason } from '../store/install-progress';
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from '../lib/trpc';
 import { AdminOnly } from './admin-only';
 import { downloadLogs } from './download-logs';
 import { logLevel, type LogLevel } from './log-level';
@@ -43,6 +46,10 @@ export function AppLogs({ appId }: { appId: string }) {
 
 function AppLogsView({ appId }: { appId: string }) {
   const { data: app } = useApp(appId);
+  const trpc = useTRPC();
+  // Only an image without this computer's platform reads differently on macOS and Linux.
+  const info = useQuery({ ...trpc.system.info.queryOptions(), retry: false, enabled: app?.state === 'error' });
+  const os = info.data?.os.platform === 'linux' ? 'linux' : 'macos';
   const navigate = useNavigate();
   // Filters (US-APP-09): text and level on the loaded lines, the container on the server.
   const [text, setText] = useState('');
@@ -134,6 +141,13 @@ function AppLogsView({ appId }: { appId: string }) {
             {copy.download}
           </Button>
         </header>
+        {app.state === 'error' ? (
+          // Why it isn't running, for an app opened from its broken tile (US-HOME-08).
+          <div role="status" className="rounded-md border border-danger/40 bg-surface-control px-4 py-3">
+            <p className="m-0 text-body font-bold text-ink">{copy.notResponding(app.name)}</p>
+            <p className="m-0 text-body-sm text-ink-muted">{failureReason(app.stateDetail, app.name, os)}</p>
+          </div>
+        ) : null}
         <div className="flex flex-wrap items-center gap-2">
           {several ? (
             <Segmented

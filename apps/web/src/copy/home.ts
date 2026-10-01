@@ -19,6 +19,14 @@ export const homeCopy = {
     rollingBack: 'Rolling back…',
     removing: 'Removing…',
   },
+  /** A stopped or broken app's tile (US-HOME-08). */
+  recover: {
+    stopped: (app: string) => `${app} is stopped`,
+    start: 'Start',
+    starting: (app: string) => `Starting ${app}…`,
+    askAdmin: (app: string, admin: string | null) =>
+      `${app} isn't running right now. Ask ${admin ?? 'an admin'} to start it.`,
+  },
   /** A tile's menu (US-HOME-07). */
   menu: {
     open: 'Open',

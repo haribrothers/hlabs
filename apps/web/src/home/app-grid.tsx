@@ -82,6 +82,8 @@ export function AppGrid({
   progress?: ReadonlyMap<string, number>;
 }) {
   const navigate = useNavigate();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const wide = useMedia(APP_WINDOW_QUERY);
   /**
    * An install that's running or failed opens its page (US-STORE-12, US-STORE-14). A running app opens in the app
@@ -91,8 +93,40 @@ export function AppGrid({
   const openApp = (app: HomeApp) => {
     if (app.state === 'installing' || app.state === 'install_failed')
       void navigate({ to: '/store/install/$appId', params: { appId: app.id } });
+    else if (app.state === 'stopped' || app.state === 'error') void recover(app);
     else if (app.state === 'running' && !(app.embed && wide)) browser.open(appUrl(app));
     else void navigate({ to: '/apps/$appId', params: { appId: app.id } });
+  };
+  /**
+   * A stopped or broken app isn't opened onto a dead page (US-HOME-08): a stopped one offers Start in a toast, a
+   * broken one opens its logs with the reason; members are told whom to ask.
+   */
+  const recover = async (app: HomeApp) => {
+    if (!isAdmin) {
+      const account = await queryClient.fetchQuery(trpc.account.get.queryOptions()).catch(() => null);
+      showToast({
+        tone: 'neutral',
+        title: homeCopy.recover.askAdmin(app.name, account?.adminName ?? null),
+        key: `recover:${app.id}`,
+      });
+    } else if (app.state === 'stopped') {
+      showToast({
+        tone: 'neutral',
+        title: homeCopy.recover.stopped(app.name),
+        key: `recover:${app.id}`,
+        actions: [
+          {
+            kind: 'mutation',
+            label: homeCopy.recover.start,
+            procedure: 'apps.start',
+            input: { appId: app.id },
+            done: homeCopy.recover.starting(app.name),
+          },
+        ],
+      });
+    } else {
+      void navigate({ to: '/apps/$appId/logs', params: { appId: app.id } });
+    }
   };
   const command = useTileCommands(apps);
   const showInstall = isAdmin && isFeatureEnabled('appStore');
