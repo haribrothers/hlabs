@@ -57,6 +57,8 @@ export default defineConfig({
     {
       name: 'serial',
       testMatch: SERIAL_SPECS,
+      // One at a time across files too: they install apps or stop the engine for everyone.
+      workers: 1,
       fullyParallel: false,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, storageState: MAIN_STORAGE_STATE },
       dependencies: ['desktop', 'phone'],

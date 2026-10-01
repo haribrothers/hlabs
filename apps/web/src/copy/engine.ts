@@ -55,6 +55,7 @@ export const engineCopy = {
   offline: 'Offline: the container engine has stopped',
   startFirst: 'Start the container engine first',
   startingEngine: 'Starting…',
+  backTitle: 'The container engine is running',
   waitForTask: 'Wait for the current task to finish',
   waitFor: (job: string) => `Wait for ${job} to finish`,
   jobs: {

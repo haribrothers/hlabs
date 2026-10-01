@@ -116,7 +116,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-APP-12 · Uninstall runs and cleans up
 - [x] US-STATE-08 · Grey out Home when the engine has stopped (the host widgets other than Storage arrive with their phases)
 - [x] US-STATE-09 · Start the engine from the banner
-- [ ] US-STATE-10 · Recover automatically when the engine comes back
+- [x] US-STATE-10 · Recover automatically when the engine comes back
 - [x] US-AUTH-17 · Protect every app with forward auth
 - [x] US-AUTH-19 · See a "no access" page for apps not shared with me
 

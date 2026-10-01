@@ -68,6 +68,8 @@ Search doesn't mind capitals or accents. Members see only the apps shared with t
 
 hlabs runs apps in a container engine, such as OrbStack, Docker or Colima. If the engine stops, Home says "The container engine has stopped": all apps are offline, but their data is safe. App tiles are greyed out and can't be opened, and installing waits until the engine runs again. Everything else, including the Dock, search and settings, keeps working. Choose **Details** to see the engine in Settings › Engine & startup. Admins also get a notification, and can choose **Start engine**: hlabs starts it (it opens OrbStack or Docker Desktop, or starts Colima or Docker), waits up to two minutes for it, then starts the apps set to start automatically. If it doesn't start, hlabs says so, with **Details**.
 
+If you start the engine yourself, for example by opening OrbStack, hlabs notices within about ten seconds: the message goes, hlabs says "The container engine is running", and apps set to start automatically come back.
+
 Opening an app's address while the engine is stopped shows the same message, with the way back Home.
 
 ## The Dock
