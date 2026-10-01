@@ -44,3 +44,15 @@ export function nextOnboardingStep(step: OnboardingStep, shippedPhase: number = 
  * (Continue after it's on, US-ONB-12, or Skip for now, US-ONB-13). Others join as their stories ship.
  */
 export const SKIPPABLE_ONBOARDING_STEPS: readonly OnboardingStep[] = ['welcome', 'twoFactor'];
+
+/** The starter apps OnbApps offers, in its order (US-ONB-19): built-in store app ids. */
+export const STARTER_APP_IDS = [
+  'jellyfin',
+  'immich',
+  'nextcloud',
+  'home-assistant',
+  'vaultwarden',
+  'paperless-ngx',
+  'uptime-kuma',
+  'open-webui',
+] as const;

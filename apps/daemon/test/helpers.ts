@@ -1,3 +1,4 @@
+import { SHIPPED_PHASE } from '@hlabs/shared';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -22,6 +23,7 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
   return {
     version: '0.0.0-test',
     env: 'test',
+    phase: SHIPPED_PHASE,
     dev: true,
     host: '127.0.0.1',
     port: 0,

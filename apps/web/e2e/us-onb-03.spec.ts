@@ -11,7 +11,7 @@ test.describe('US-ONB-03', () => {
     await page.goto(await resetOnboarding(request, 'storage'));
     await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/storage`);
     const progress = page.getByRole('navigation', { name: 'Setup progress' });
-    await expect(progress).toContainText('Step 4 of 4');
+    await expect(progress).toContainText('Step 4 of 5');
     const heading = page.getByRole('heading', { level: 1, name: 'Where should your data live?' });
     await expect(heading).toBeFocused();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
@@ -31,7 +31,7 @@ test.describe('US-ONB-03', () => {
 
     await page.goto('/setup/system');
     await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/system`);
-    await expect(page.getByRole('navigation', { name: 'Setup progress' })).toContainText('Step 1 of 4');
+    await expect(page.getByRole('navigation', { name: 'Setup progress' })).toContainText('Step 1 of 5');
     await expect(page.getByRole('heading', { level: 1, name: 'Checking this computer' })).toBeFocused();
 
     // Steps that haven't shipped (remote access, phase 3) aren't reachable.

@@ -9,7 +9,7 @@ test.describe('US-ONB-08', () => {
   test('creates the admin, signs in and opens two-factor', async ({ page, request, context }) => {
     await page.goto(await resetOnboarding(request, 'account'));
     await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/account`);
-    await expect(page.getByRole('navigation', { name: 'Setup progress' })).toContainText('Step 2 of 4');
+    await expect(page.getByRole('navigation', { name: 'Setup progress' })).toContainText('Step 2 of 5');
     await expect(page.getByRole('heading', { level: 1, name: 'Create your admin account' })).toBeVisible();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 

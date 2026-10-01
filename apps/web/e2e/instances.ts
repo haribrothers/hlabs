@@ -20,7 +20,7 @@ const workerIndex = Number(process.env.TEST_PARALLEL_INDEX ?? 0);
 /** This worker's hlabs that has not been set up. */
 export const FIRST_RUN_URL = `http://127.0.0.1:${firstRunPorts(workerIndex).web}`;
 
-type Step = 'welcome' | 'system' | 'account' | 'twoFactor' | 'storage' | 'done';
+type Step = 'welcome' | 'system' | 'account' | 'twoFactor' | 'storage' | 'apps' | 'done';
 
 /** Puts this worker's first-run instance back at `step` (not completed) and returns its setup URL. */
 export async function resetOnboarding(request: APIRequestContext, step: Step = 'welcome'): Promise<string> {

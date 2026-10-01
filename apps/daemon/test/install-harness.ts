@@ -35,6 +35,8 @@ export async function installDaemon(
     storeDir?: string;
     /** Records engine starts and restarts (US-STATE-09); a quiet fake otherwise. */
     engineControl?: EngineControl;
+    /** The phase whose onboarding steps run (DaemonConfig.phase). */
+    phase?: number;
   } = {},
 ) {
   const engine = new FakeEngine();
@@ -48,6 +50,7 @@ export async function installDaemon(
         binDir: '/none',
         webFallbackDir: '/none',
       },
+      ...(opts.phase === undefined ? {} : { phase: opts.phase }),
     } as never,
     {
       compose,

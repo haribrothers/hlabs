@@ -2,7 +2,7 @@
 // clean data dir → onboarding → Home). Needs a running container engine for the system check.
 import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL, resetOnboarding } from './instances';
-import { ADMIN, turnOnTwoFactor } from './onboarding';
+import { ADMIN, storageThenSkipApps, turnOnTwoFactor } from './onboarding';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
@@ -19,7 +19,7 @@ test('US-ONB-22 a fresh install onboards end to end and opens Home, signed in', 
   test.skip(!(await cont.isEnabled()), 'no container engine running on this machine');
   await cont.click();
 
-  // Admin account → two-factor → recovery codes → storage.
+  // Admin account → two-factor → recovery codes → storage → starter apps (skipped).
   await page.getByLabel('Your name').fill(ADMIN.name);
   await page.getByLabel('Password', { exact: true }).fill(ADMIN.password);
   await page.getByLabel('Confirm password').fill(ADMIN.password);
@@ -27,11 +27,9 @@ test('US-ONB-22 a fresh install onboards end to end and opens Home, signed in', 
   await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/twoFactor`);
   await turnOnTwoFactor(page);
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/storage`);
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await storageThenSkipApps(page);
 
   // Finish → Home, still signed in.
-  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/done`);
   await expect(page.getByRole('heading', { level: 1, name: "You're all set, Hari" })).toBeVisible();
   await page.getByRole('button', { name: 'Open dashboard' }).click();
   await expect(page).toHaveURL(`${FIRST_RUN_URL}/`);

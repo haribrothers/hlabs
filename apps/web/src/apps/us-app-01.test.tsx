@@ -1,5 +1,5 @@
 // US-APP-01 · Open an app in a window.
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppGrid, type HomeApp } from '../home/app-grid';
 import { browser } from '../lib/browser';
@@ -40,7 +40,10 @@ describe('US-APP-01', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Jellyfin' })).toBeInTheDocument();
     expect(screen.getByText('Running')).toBeInTheDocument();
     expect(screen.getByText('jellyfin.hlabs.local')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Jellyfin' })).toBeInTheDocument();
+    // Its icon is drawn beside the name, so screen readers hear the name once.
+    const banner = screen.getByRole('banner');
+    expect(banner.querySelector('[data-state="fallback"]')).not.toBeNull();
+    expect(within(banner).queryByRole('img', { name: 'Jellyfin' })).toBeNull();
     expect(screen.getByTitle('Jellyfin')).toHaveAttribute('src', 'https://jellyfin.hlabs.local/web/');
   });
 

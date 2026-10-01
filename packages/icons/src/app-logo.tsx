@@ -92,7 +92,10 @@ export function AppLogo({
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
         />
       ) : (
-        <span role="img" aria-label={name} style={{ display: 'flex' }}>
+        <span
+          {...(decorative ? { 'aria-hidden': true } : { role: 'img', 'aria-label': name })}
+          style={{ display: 'flex' }}
+        >
           {fallbackIcon ?? <Box size={Math.round(size * 0.44)} strokeWidth={2} aria-hidden />}
         </span>
       )}

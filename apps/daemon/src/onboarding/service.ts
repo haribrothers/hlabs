@@ -40,6 +40,8 @@ export class OnboardingService {
       /** False in e2e (HLABS_DEV_NO_ENGINE_INSTALL). */
       engineInstallAllowed?: boolean;
       systemCheck: SystemCheckDeps;
+      /** Which onboarding steps run (DaemonConfig.phase); SHIPPED_PHASE when not given. */
+      phase?: number;
       /** Onboarding finished: port 80 stops serving the dashboard (07 §7.1). */
       onCompleted?: () => void;
     },
@@ -67,7 +69,7 @@ export class OnboardingService {
   setStep(step: OnboardingStep): void {
     const current = this.status().step;
     if (step === current) return;
-    if (!SKIPPABLE_ONBOARDING_STEPS.includes(current) || nextOnboardingStep(current) !== step) {
+    if (!SKIPPABLE_ONBOARDING_STEPS.includes(current) || nextOnboardingStep(current, this.deps.phase) !== step) {
       throw hlabsError('ONBOARDING_STEP_INVALID');
     }
     setSetting(this.db, 'onboarding', { ...getSetting(this.db, 'onboarding'), step });
@@ -126,8 +128,8 @@ export class OnboardingService {
       ...getSetting(this.db, 'network'),
       ports: { http: check.ports.http.use, https: check.ports.https.use },
     });
-    const steps = enabledOnboardingSteps();
-    const next = nextOnboardingStep('system');
+    const steps = enabledOnboardingSteps(this.deps.phase);
+    const next = nextOnboardingStep('system', this.deps.phase);
     if (steps.indexOf(saved) < steps.indexOf(next)) {
       setSetting(this.db, 'onboarding', { ...getSetting(this.db, 'onboarding'), step: next });
     }

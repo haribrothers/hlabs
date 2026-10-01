@@ -95,11 +95,21 @@ Choose **Network storage (NAS)**, pick **SMB** or **NFS**, and enter the address
 
 On a Mac, the share appears in Finder while hlabs uses it.
 
-App databases always stay on this computer for speed, wherever your files go. Once you continue, setup is finished.
+App databases always stay on this computer for speed, wherever your files go.
+
+## Pick a few apps to start
+
+hlabs offers eight popular apps to install right away: Jellyfin, Immich, Nextcloud, Home Assistant, Vaultwarden, Paperless-ngx, Uptime Kuma and Open WebUI. None are picked to start. Select the ones you want (select one again to unpick it), then choose **Install and finish**. The button shows how many you picked.
+
+They install in the background with their usual settings, so setup finishes straight away. Each app's folders go where it suggests, such as Immich's photo library in your Home folder's Photos, and you can change them later in the app's settings. If an app can't be installed, for example because it couldn't be downloaded, it shows on Home as not installed with a way to try again.
+
+An app marked **Needs more memory** recommends more memory than the container engine has free. You can still pick it, but it may be slow or stop. You can give the engine more memory in its own settings.
+
+To install nothing now, choose **Skip**. Hundreds more apps are in the App Store whenever you want them.
 
 ## When setup is done
 
-hlabs shows a summary of what was set up: your admin account (and whether two-factor login is on) and where your data lives. hlabs keeps running from the menu bar (in the background on a Linux server). Choose **Open dashboard** to go to Home; you're already signed in. Setup doesn't open again after this.
+hlabs shows a summary of what was set up: your admin account (and whether two-factor login is on), where your data lives and, if you picked any, the apps installing. hlabs keeps running from the menu bar (in the background on a Linux server). Choose **Open dashboard** to go to Home; you're already signed in. Setup doesn't open again after this.
 
 ## "Finish setup on the computer running hlabs."
 

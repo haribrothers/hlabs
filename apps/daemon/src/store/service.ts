@@ -102,6 +102,26 @@ export class StoreService {
     return Math.max(0, total - promised);
   }
 
+  /**
+   * OnbApps' tiles (US-ONB-19): these apps in this order, with the memory each recommends and whether that's more
+   * than the engine has free (D-080).
+   */
+  starterApps(ids: readonly string[]) {
+    const entries = this.entries();
+    const byId = new Map(entries.map((e) => [e.app.id, e]));
+    const free = this.memoryFree(entries);
+    return {
+      apps: ids.flatMap((id) => {
+        const e = byId.get(id);
+        if (!e) return [];
+        const memoryBytes = e.manifest.requirements.memory ? e.manifest.requirements.memory * MB : null;
+        return [
+          { app: e.app, memoryBytes, needsMoreMemory: memoryBytes !== null && free !== null && memoryBytes > free },
+        ];
+      }),
+    };
+  }
+
   /** Members browse the store only while "Members can install apps" is on (07 §7.4, US-STORE-01). */
   assertCanBrowse(user: { role: 'admin' | 'member' }): void {
     if (user.role !== 'admin' && !getSetting(this.db, 'people').membersCanInstall) throw hlabsError('ACCESS_DENIED');

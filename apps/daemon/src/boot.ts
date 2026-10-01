@@ -238,6 +238,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     bus,
     dataDir: config.paths.dataDir,
     engineInstallAllowed: !config.devNoEngineInstall,
+    phase: config.phase,
     onCompleted: () => void network.sync(),
     systemCheck: {
       engine,

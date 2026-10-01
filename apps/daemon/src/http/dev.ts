@@ -273,7 +273,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     setSetting(db, 'onboarding', { ...getSetting(db, 'onboarding'), completedAt: null, step: 'account' });
     // As a fresh install: setup leaves the startup switches on (US-SYS-20), whatever an earlier run changed.
     setSetting(db, 'startup', settingsSchemas.startup.parse(undefined));
-    const userId = await createAdmin(db, { ...input, ip: null });
+    const userId = await createAdmin(db, { ...input, ip: null, phase: config.phase });
     let secret: string | null = null;
     let recoveryCodes: string[] = [];
     if (input.twoFactor) {
@@ -281,7 +281,13 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
       recoveryCodes = await totp.confirm(userId, generateSync({ secret }), { ip: null });
     }
     onboarding.setStep('storage');
-    await setStorageRoot(db, { userId, kind: 'local', name: 'This computer', path: config.paths.storageRootDefault });
+    await setStorageRoot(db, {
+      userId,
+      kind: 'local',
+      name: 'This computer',
+      path: config.paths.storageRootDefault,
+      phase: config.phase,
+    });
     await onboarding.complete({ userId, ip: null });
     return { userId, secret, recoveryCodes };
   });

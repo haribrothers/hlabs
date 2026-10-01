@@ -67,6 +67,10 @@ describe('AppLogo', () => {
     fireEvent.error(container.querySelector('img')!);
     expect(container.firstElementChild!.getAttribute('data-state')).toBe('fallback');
   });
+  it('decorative hides it from screen readers, the fallback tile too (its name is written beside it)', () => {
+    render(<AppLogo decorative name="Jellyfin" />);
+    expect(screen.queryByRole('img', { name: 'Jellyfin' })).toBeNull();
+  });
   it('picks the same fallback gradient for the same name', () => {
     expect(gradientFor('Immich')).toEqual(gradientFor('Immich'));
   });

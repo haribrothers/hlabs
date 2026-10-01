@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { z } from 'zod';
 import { defaultPaths, type PlatformPaths } from './platform/paths';
 import { defaultSecretStoreKind, type SecretStoreKind } from './platform/secrets';
+import { BUILDING_PHASE, SHIPPED_PHASE } from '@hlabs/shared';
 import { VERSION } from './version';
 
 const flag = z
@@ -18,6 +19,8 @@ const envSchema = z.object({
   HLABS_PORT: z.coerce.number().int().min(0).max(65535).default(7474),
   HLABS_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
   HLABS_HEADLESS: flag,
+  /** Development only: the phase to preview (D-092), as the dashboard's dev server does. */
+  HLABS_PREVIEW_PHASE: z.coerce.number().int().min(0).optional(),
   HLABS_DEV_ANONYMOUS_ADMIN: flag,
   HLABS_DEV_IGNORE_ENGINES: flag,
   HLABS_DEV_NO_ENGINE_INSTALL: flag,
@@ -72,6 +75,11 @@ export interface DaemonConfig {
   composePrefix: string;
   version: string;
   env: 'development' | 'test' | 'production';
+  /**
+   * The phase whose onboarding steps run (D-036, D-092): SHIPPED_PHASE, or in development the phase being previewed
+   * (HLABS_PREVIEW_PHASE, else BUILDING_PHASE), matching the dashboard's dev server.
+   */
+  phase: number;
   dev: boolean;
   /** Always loopback: everything external goes through Caddy (02 §2.2). */
   host: '127.0.0.1';
@@ -134,6 +142,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
   return {
     version: VERSION,
     env: e.NODE_ENV,
+    phase: dev ? Math.max(SHIPPED_PHASE, e.HLABS_PREVIEW_PHASE ?? BUILDING_PHASE) : SHIPPED_PHASE,
     dev,
     host: '127.0.0.1',
     port: e.HLABS_PORT,

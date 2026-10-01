@@ -27,9 +27,9 @@ export async function prepareStorageRoot(root: string, username: string): Promis
  */
 export async function setStorageRoot(
   db: HlabsDb,
-  opts: { userId: string; kind: 'local' | 'external'; name: string; path: string; now?: number },
+  opts: { userId: string; kind: 'local' | 'external'; name: string; path: string; now?: number; phase?: number },
 ) {
-  const steps = enabledOnboardingSteps() as string[];
+  const steps = enabledOnboardingSteps(opts.phase) as string[];
   if (steps.indexOf(getSetting(db, 'onboarding').step) < steps.indexOf('storage')) {
     throw hlabsError('ONBOARDING_STEP_INVALID');
   }
@@ -45,12 +45,19 @@ export async function setStorageRoot(
       .values({ id: ulid(), kind: opts.kind, name: opts.name, path: opts.path, isRoot: true, lastSeenAt: now })
       .run();
     const inTx = tx as unknown as HlabsDb;
-    setSetting(inTx, 'onboarding', { ...getSetting(inTx, 'onboarding'), step: nextOnboardingStep('storage') });
+    setSetting(inTx, 'onboarding', {
+      ...getSetting(inTx, 'onboarding'),
+      step: nextOnboardingStep('storage', opts.phase),
+    });
   });
 }
 
 /** An external drive (US-ONB-15): `<drive>/hlabs` becomes the root; app data stays on this computer (D-011). */
-export async function setExternalStorage(db: HlabsDb, drives: DriveProbe, opts: { userId: string; path: string }) {
+export async function setExternalStorage(
+  db: HlabsDb,
+  drives: DriveProbe,
+  opts: { userId: string; path: string; phase?: number },
+) {
   const drive = (await drives.externalDrives()).find((d) => d.path === opts.path && d.writable);
   if (!drive) throw hlabsError('NOT_FOUND', 'That drive is no longer connected');
   await setStorageRoot(db, {
@@ -58,6 +65,7 @@ export async function setExternalStorage(db: HlabsDb, drives: DriveProbe, opts: 
     kind: 'external',
     name: drive.name,
     path: join(drive.path, 'hlabs'),
+    phase: opts.phase,
   });
 }
 
@@ -65,8 +73,11 @@ export async function setExternalStorage(db: HlabsDb, drives: DriveProbe, opts: 
  * A network share added with storage.locations.addNetwork (US-ONB-16) becomes the root: the share itself holds
  * Home folders, Shared and media. App data stays on this computer (D-011).
  */
-export async function setNetworkStorage(db: HlabsDb, opts: { userId: string; locationId: string; now?: number }) {
-  const steps = enabledOnboardingSteps() as string[];
+export async function setNetworkStorage(
+  db: HlabsDb,
+  opts: { userId: string; locationId: string; now?: number; phase?: number },
+) {
+  const steps = enabledOnboardingSteps(opts.phase) as string[];
   if (steps.indexOf(getSetting(db, 'onboarding').step) < steps.indexOf('storage')) {
     throw hlabsError('ONBOARDING_STEP_INVALID');
   }
@@ -84,6 +95,9 @@ export async function setNetworkStorage(db: HlabsDb, opts: { userId: string; loc
     tx.update(storageLocations).set({ isRoot: false }).where(ne(storageLocations.id, location.id)).run();
     tx.update(storageLocations).set({ isRoot: true }).where(eq(storageLocations.id, location.id)).run();
     const inTx = tx as unknown as HlabsDb;
-    setSetting(inTx, 'onboarding', { ...getSetting(inTx, 'onboarding'), step: nextOnboardingStep('storage') });
+    setSetting(inTx, 'onboarding', {
+      ...getSetting(inTx, 'onboarding'),
+      step: nextOnboardingStep('storage', opts.phase),
+    });
   });
 }
