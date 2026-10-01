@@ -117,6 +117,22 @@ describe('US-STORE-17', () => {
     });
   });
 
+  it('the banner is there by the time the app is running again (its notification comes first)', async () => {
+    const t = await withUpdate((n) => n !== 2);
+    let seenAtRunning: number | null = null;
+    t.s.bus.on(({ event }) => {
+      if (event.type === 'app.stateChanged' && event.data.state === 'running' && t.states.includes('rolling_back')) {
+        seenAtRunning = t.s.db
+          .select()
+          .from(notifications)
+          .where(eq(notifications.kind, ROLLED_BACK_KIND))
+          .all().length;
+      }
+    });
+    await t.update();
+    expect(seenAtRunning).toBe(1);
+  });
+
   it('"Try again" is just another update; dismissing the banner (the notification read) hides it for good', async () => {
     const t = await withUpdate((n) => n !== 2);
     await t.update();

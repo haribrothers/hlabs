@@ -234,18 +234,20 @@ export class UpdateService {
       if (!health.ok) throw hlabsError('APP_HEALTH_TIMEOUT', `${fromVersion} didn't come back healthy`);
     } catch (error) {
       this.deps.logger.error({ err: error, appId }, 'rolling back failed');
-      this.deps.apps.transition(appId, 'error', stateDetail('APP_ROLLBACK_FAILED', { fromVersion, toVersion }));
+      // Told before the state changes, so whoever sees the new state also finds the banner.
       this.audit(userId, 'app.update.restore_failed', appId, { fromVersion, toVersion });
       this.notifyRolledBack({ appId, name, fromVersion, toVersion, restored: false });
+      this.deps.apps.transition(appId, 'error', stateDetail('APP_ROLLBACK_FAILED', { fromVersion, toVersion }));
       throw hlabsError('APP_ROLLBACK_FAILED', `${appId}: ${toVersion} and ${fromVersion} didn't start`, {
         appId,
         fromVersion,
         toVersion,
       });
     }
-    this.deps.apps.transition(appId, 'running');
+    // Told before it's running again, so whoever sees it running also finds the banner (its page reads it then).
     this.audit(userId, 'app.update.rolled_back', appId, { fromVersion, toVersion });
     this.notifyRolledBack({ appId, name, fromVersion, toVersion, restored: true });
+    this.deps.apps.transition(appId, 'running');
     throw hlabsError('APP_UPDATE_ROLLED_BACK', `${appId}: ${toVersion} didn't start; back on ${fromVersion}`, {
       appId,
       fromVersion,
