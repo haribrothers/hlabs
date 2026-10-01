@@ -57,10 +57,16 @@ describe('App window address check (D-097)', () => {
     expect(router.state.location.pathname).toBe('/apps/jellyfin');
   });
 
-  it('Trust hlabs on this device goes to the guide', async () => {
+  it('Trust hlabs on this device opens the guide as a dialog over the window; Close goes back to it', async () => {
     reachable.mockResolvedValue(false);
     const { router } = open();
-    fireEvent.click(await screen.findByRole('link', { name: 'Trust hlabs on this device' }));
-    await waitFor(() => expect(router.state.location.pathname).toBe('/trust'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Trust hlabs on this device' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Trust hlabs on this device' });
+    expect(within(dialog).getByRole('link', { name: 'Download certificate' })).toHaveAttribute('href', '/ca.crt');
+    expect(within(dialog).getByRole('radiogroup', { name: 'Your device' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/apps/jellyfin');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(screen.getByText("Your browser doesn't trust Jellyfin's address yet")).toBeInTheDocument();
   });
 });

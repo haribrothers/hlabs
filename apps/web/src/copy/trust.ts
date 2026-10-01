@@ -39,4 +39,5 @@ export const trustCopy = {
     ],
   } satisfies Record<DeviceOs, string[]>,
   after: 'Then reload this page. You only do this once on each device.',
+  close: 'Close',
 } as const;

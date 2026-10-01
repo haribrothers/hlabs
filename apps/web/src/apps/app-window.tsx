@@ -19,7 +19,8 @@ import {
   X,
 } from '@hlabs/icons';
 import { Button, GlassCard, IconButton, StatusDot } from '@hlabs/ui';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { TrustDeviceDialog } from '../shell/trust-device';
 import { addressReachable, shouldCheckAddress } from './address-check';
 import { useEffect, useState, type ReactNode } from 'react';
 import { appsCopy } from '../copy/apps';
@@ -54,6 +55,8 @@ const BUSY = new Set<AppState>(['starting', 'restarting', 'stopping', 'updating'
 function CheckedFrame({ app, src }: { app: AppDetail; src: string }) {
   const [check, setCheck] = useState<'checking' | 'ok' | 'untrusted'>(() => (shouldCheckAddress() ? 'checking' : 'ok'));
   const [attempt, setAttempt] = useState(0);
+  // Trust hlabs on this device: a dialog over the window.
+  const [guide, setGuide] = useState(false);
   useEffect(() => {
     if (!shouldCheckAddress()) return;
     let current = true;
@@ -84,9 +87,9 @@ function CheckedFrame({ app, src }: { app: AppDetail; src: string }) {
       <p className="m-0 max-w-md text-body text-ink-muted">{copy.untrustedBody}</p>
       <div className="flex flex-wrap justify-center gap-3">
         <Button onClick={() => browser.open(src)}>{copy.openInNewTab}</Button>
-        <Link to="/trust" className="hl-btn hl-btn-secondary hl-btn-md hl-focus no-underline">
+        <Button variant="secondary" onClick={() => setGuide(true)}>
           {copy.trustDevice}
-        </Link>
+        </Button>
         <Button
           variant="secondary"
           onClick={() => {
@@ -97,6 +100,7 @@ function CheckedFrame({ app, src }: { app: AppDetail; src: string }) {
           {copy.tryAgain}
         </Button>
       </div>
+      <TrustDeviceDialog open={guide} onOpenChange={setGuide} />
     </FramePanel>
   );
 }

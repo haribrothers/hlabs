@@ -15,7 +15,7 @@ When that happens, the app window says **"Your browser doesn't trust <app>'s add
 
 ## Trust hlabs on this device
 
-Choose **Trust hlabs on this device** (or open `/trust` on your hlabs address), then **Download certificate**. hlabs picks the steps for the device you're on; choose another device if it guessed wrong.
+Choose **Trust hlabs on this device** in the app window (or open `/trust` on your hlabs address), then **Download certificate**. hlabs picks the steps for the device you're on; choose another device if it guessed wrong.
 
 - **Mac**: open `hlabs-ca.crt`; in Keychain Access, double-click **hlabs Local CA**, open **Trust** and set **When using this certificate** to **Always Trust**.
 - **Windows**: open `hlabs-ca.crt`, choose **Install Certificate**, **Current User**, and put it in **Trusted Root Certification Authorities**.
