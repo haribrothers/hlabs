@@ -14,6 +14,7 @@ const check = (engine: Partial<SystemCheck['engine']>, platform: 'darwin' | 'lin
     level: 'ok',
   },
   canContinue: engine.state === 'running',
+  hostname: 'hlabs',
 });
 
 const install = (over: Partial<Install>): Install => ({

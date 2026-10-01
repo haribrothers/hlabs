@@ -240,6 +240,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     engineInstallAllowed: !config.devNoEngineInstall,
     phase: config.phase,
     onCompleted: () => void network.sync(),
+    onNetworkChanged: () => void network.sync(),
     systemCheck: {
       engine,
       probe,

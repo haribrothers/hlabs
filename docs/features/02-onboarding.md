@@ -86,7 +86,7 @@ The first-run flow that turns a fresh hlabs install into a working home cloud: i
 - **Given** OrbStack, Docker Desktop, a Colima socket or a Docker Engine socket is found (order from 02 §2.4), **when** the check finishes, **then** "Container runtime" shows the engine name and version and passes.
 - **Given** free space at the default storage root is below 10 GB, **then** the disk row is an error and Continue is disabled; between 10 and 30 GB it is a warning and Continue stays enabled.
 - **Given** port 443 (or 80) is in use by another process, **then** the row reads "Port 443 · In use · will use 8443" as a warning (not blocking) and the chosen fallback port is saved for Caddy.
-- **Given** all blocking checks pass, **when** the user presses "Continue", **then** `onboarding.confirmSystem` saves the start-at-login choice and step `account`, and `OnbAccount` opens; "Back" returns to `OnbWelcome`.
+- **Given** all blocking checks pass, **when** the user presses "Continue", **then** `onboarding.confirmSystem` saves the start-at-login choice, the name on the network ("Name on your network", `<name>.local`, prefilled `hlabs`, D-098) and step `account`, and `OnbAccount` opens; "Back" returns to `OnbWelcome`.
 
 **Implementation notes**
 - API: `onboarding.checkSystem` (setupProcedure, needs `x-hlabs-setup`; returns `{ cpu, os, engine: { kind, version, state, install? }, disk: { freeBytes, path }, ports: { http, https } }`), new `onboarding.confirmSystem({ startAtLogin })`.

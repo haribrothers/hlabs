@@ -46,6 +46,11 @@ export const onboardingCopy = {
     copyCommand: 'Copy command',
     startAtLogin: 'Start hlabs when I log in',
     startAtLoginHint: 'Keeps your apps running in the background from the menu bar',
+    // The name on the network (D-098)
+    nameLabel: 'Name on your network',
+    nameHint: (name: string) => `Phones and computers open hlabs at ${name}.local. You can't change it later yet.`,
+    nameInvalid: 'Use lowercase letters, numbers and dashes, starting and ending with a letter or number.',
+    nameTaken: 'An app already uses this name. Pick another.',
     disk: 'Free disk space',
     diskError: 'hlabs needs at least 10 GB free. Free up some space, then check again.',
     diskWarning: 'Less than 30 GB free. Apps and files can fill this quickly.',

@@ -13,7 +13,7 @@ import { MAIN_PORTS, MAIN_STORAGE_STATE, MAIN_URL } from './e2e/instances';
 const DATA_DIR = process.env.HLABS_E2E_DATA_DIR ?? '../../.e2e-data';
 const WORKERS = process.env.CI ? 2 : 4;
 // Specs that need a known admin they create themselves (all onboarding and log-in stories, and a few later ones).
-const FIRST_RUN_SPECS = /(us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-2])|us-sys-(1[89]|20))\.spec\.ts/;
+const FIRST_RUN_SPECS = /(d-098-server-name|us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-2])|us-sys-(1[89]|20))\.spec\.ts/;
 // Specs that change the main instance for everyone, run after the desktop and phone specs, one at a time: those that
 // really install store apps (the D-071 smoke set, and uninstalling one) or leave failed installs, and those that report
 // the engine as stopped (US-STATE-08…10).

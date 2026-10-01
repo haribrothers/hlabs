@@ -41,7 +41,12 @@ async function engineState(
   return { kind: null, version: null, state: 'missing', level: 'error' };
 }
 
-export async function runSystemCheck({ engine, probe, storageRoot, headless }: SystemCheckDeps): Promise<SystemCheck> {
+export async function runSystemCheck({
+  engine,
+  probe,
+  storageRoot,
+  headless,
+}: SystemCheckDeps): Promise<Omit<SystemCheck, 'hostname'>> {
   const [status, os, freeBytes, httpInUse, httpsInUse] = await Promise.all([
     engine.check(),
     probe.os(),

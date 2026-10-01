@@ -18,6 +18,7 @@ const check = (
     level: 'ok',
   },
   canContinue: engine.state === 'running',
+  hostname: 'hlabs',
 });
 
 const running = { kind: 'docker-engine', version: '29.0.1', state: 'running', level: 'ok' } as const;
@@ -85,7 +86,7 @@ describe('US-ONB-07', () => {
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute('aria-checked', 'false');
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    await waitFor(() => expect(confirmSystem).toHaveBeenCalledWith({ startAtLogin: false }));
+    await waitFor(() => expect(confirmSystem).toHaveBeenCalledWith({ startAtLogin: false, hostname: 'hlabs' }));
   });
 
   it('never shows the switch on headless Linux', async () => {

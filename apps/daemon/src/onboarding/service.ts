@@ -7,7 +7,7 @@ import {
   ulid,
   type OnboardingStep,
 } from '@hlabs/shared';
-import { auditLog, getSetting, setSetting, storageLocations, users, type HlabsDb } from '@hlabs/db';
+import { apps, auditLog, getSetting, setSetting, storageLocations, users, type HlabsDb } from '@hlabs/db';
 import { count, eq } from 'drizzle-orm';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { SecretStore } from '../platform/secrets';
@@ -42,6 +42,8 @@ export class OnboardingService {
       systemCheck: SystemCheckDeps;
       /** Which onboarding steps run (DaemonConfig.phase); SHIPPED_PHASE when not given. */
       phase?: number;
+      /** The name on the network changed during setup: Caddy and mDNS follow it (D-098). */
+      onNetworkChanged?: () => void;
       /** Onboarding finished: port 80 stops serving the dashboard (07 §7.1). */
       onCompleted?: () => void;
     },
@@ -77,7 +79,7 @@ export class OnboardingService {
 
   /** The system check (US-ONB-04). Read-only; the engine is detected again each time. */
   async checkSystem(opts: { includeLog?: boolean } = {}): Promise<SystemCheck> {
-    const check = await runSystemCheck(this.deps.systemCheck);
+    const check = { ...(await runSystemCheck(this.deps.systemCheck)), hostname: getSetting(this.db, 'hostname') };
     const job = this.deps.jobs.latest('engine_install');
     if (!job) return check;
     const install = {
@@ -110,10 +112,10 @@ export class OnboardingService {
   }
 
   /**
-   * Continue on the system check: blocking checks must pass; saves start at login and the web ports Caddy
-   * will use, and moves on to the account step (a later saved step is kept).
+   * Continue on the system check: blocking checks must pass; saves start at login, the web ports Caddy will use
+   * and the name on the network, and moves on to the account step (a later saved step is kept).
    */
-  async confirmSystem(startAtLogin: boolean): Promise<void> {
+  async confirmSystem(startAtLogin: boolean, hostname?: string): Promise<void> {
     const saved = this.status().step;
     if (saved === 'welcome') throw hlabsError('ONBOARDING_STEP_INVALID');
     const check = await this.checkSystem();
@@ -128,6 +130,14 @@ export class OnboardingService {
       ...getSetting(this.db, 'network'),
       ports: { http: check.ports.http.use, https: check.ports.https.use },
     });
+    // The name on the network (D-098): chosen before anything is published under it, so nothing has to move.
+    if (hostname !== undefined && hostname !== getSetting(this.db, 'hostname')) {
+      if (this.db.select({ id: apps.id }).from(apps).where(eq(apps.hostname, hostname)).get()) {
+        throw hlabsError('HOSTNAME_TAKEN', `An app already uses ${hostname}`);
+      }
+      setSetting(this.db, 'hostname', hostname);
+      this.deps.onNetworkChanged?.();
+    }
     const steps = enabledOnboardingSteps(this.deps.phase);
     const next = nextOnboardingStep('system', this.deps.phase);
     if (steps.indexOf(saved) < steps.indexOf(next)) {

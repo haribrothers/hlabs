@@ -17,8 +17,8 @@ export const onboarding: AppHandlers<DaemonContext>['onboarding'] = {
   status: (_input, ctx) => ctx.services.onboarding.status(),
   checkSystem: (input, ctx) => ctx.services.onboarding.checkSystem({ includeLog: input?.includeLog }),
   installEngine: async (_input, ctx) => ({ jobId: await ctx.services.onboarding.installEngine() }),
-  confirmSystem: async ({ startAtLogin }, ctx) => {
-    await ctx.services.onboarding.confirmSystem(startAtLogin);
+  confirmSystem: async ({ startAtLogin, hostname }, ctx) => {
+    await ctx.services.onboarding.confirmSystem(startAtLogin, hostname);
     return { ok: true };
   },
   /** Creates the admin and signs them in on this browser (not "remember me"). */

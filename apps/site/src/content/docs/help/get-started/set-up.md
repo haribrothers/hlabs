@@ -39,6 +39,10 @@ You'll see **Something needs attention**. hlabs removes anything it had set up, 
 - **Retry** looks for a container runtime again first. If you've installed OrbStack or Docker Desktop in the meantime, hlabs uses it; otherwise it sets up Colima again.
 - **View full log** shows everything the setup did, with a **Copy** button for sharing it when you ask for help.
 
+### Name on your network
+
+Under the checks, **Name on your network** is the name phones and computers use to reach hlabs, followed by `.local`. It starts as `hlabs`, so hlabs opens at `hlabs.local` and each app at a name like `jellyfin.hlabs.local`. Use lowercase letters, numbers and dashes, starting and ending with a letter or number; capitals become lowercase and spaces become dashes as you type. Choose it now: it can't be changed after setup yet.
+
 ## Create your admin account
 
 The admin manages apps, people and settings; you can add family members later.

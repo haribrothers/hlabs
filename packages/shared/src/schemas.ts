@@ -11,6 +11,9 @@ export const displayNameSchema = z.string().trim().min(1).max(40);
 /** App hostnames and the dashboard name: lowercase letters, numbers and dashes (D-014, 04 invariant 3). */
 export const HOSTNAME_PATTERN = /^[a-z0-9-]{1,40}$/;
 export const hostnameSchema = z.string().regex(HOSTNAME_PATTERN);
+/** The server's name on the network (`<name>.local`): letters, numbers and dashes, not starting or ending with one. */
+export const SERVER_NAME_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
+export const serverNameSchema = z.string().regex(SERVER_NAME_PATTERN);
 
 /** App addresses that are never an app's (US-STORE-09), besides the dashboard's own name. */
 export const RESERVED_APP_HOSTNAMES = ['hlabs', 'www'] as const;

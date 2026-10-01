@@ -73,7 +73,7 @@ These were added while writing user stories and are **part of the API contract**
 ### From [02 · Onboarding](../features/02-onboarding.md)
 
 - `tray.setupUrl` (trayProcedure query): returns the onboarding URL including the one-time setup token; null when onboarding is complete.
-- `onboarding.confirmSystem({ startAtLogin })`: saves the start-at-login choice and advances the step to `account` once blocking checks pass.
+- `onboarding.confirmSystem({ startAtLogin, hostname? })`: saves the start-at-login choice and, when given, the name on the network (`settings.hostname`, `^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$`, `HOSTNAME_TAKEN` when an installed app's address uses it; Caddy and mDNS follow, D-098), and advances the step to `account` once blocking checks pass. `onboarding.checkSystem` also returns `hostname`.
 - `onboarding.installEngine` → `{ jobId }`: installs and starts hlabs-managed Colima (macOS only); progress is exposed through `onboarding.checkSystem`.
 - `onboarding.checkSystem` input `{ includeLog?: boolean }` and output `engine.install { state, progress, lastLogLine, log? }` (shape addition to an existing procedure).
 - `onboarding.setStep({ step })`: advances past an optional step without action (skip two-factor, skip remote access); only the next step is accepted.

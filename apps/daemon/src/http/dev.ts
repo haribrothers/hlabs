@@ -76,6 +76,8 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     setSetting(services.db, 'onboarding', { ...getSetting(services.db, 'onboarding'), completedAt: null, step });
     // As a fresh install: setup leaves the startup switches on (US-SYS-20), whatever an earlier run changed.
     setSetting(services.db, 'startup', settingsSchemas.startup.parse(undefined));
+    // And the default name on the network (D-098).
+    setSetting(services.db, 'hostname', settingsSchemas.hostname.parse(undefined));
     return { url: await services.onboarding.prepareSetupToken() };
   });
 
