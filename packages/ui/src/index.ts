@@ -14,6 +14,7 @@ export * from './components/choice-list';
 export * from './components/command-panel';
 export * from './components/code-input';
 export * from './components/dialog';
+export * from './components/modal-panel';
 export * from './components/dock';
 export * from './components/glass-card';
 export * from './components/icon-button';

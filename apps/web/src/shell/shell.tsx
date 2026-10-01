@@ -19,8 +19,9 @@ export function Shell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const active = areaForPath(pathname);
-  // The app window has the screen to itself (US-APP-01): no Dock or tab bar under it.
-  const appWindow = pathname.startsWith('/apps/');
+  // App pages (window, settings, logs): the Dock stays on desktop so open apps can be switched (US-HOME-23, D-096);
+  // a phone has no app windows, and its tab bar stays off those pages.
+  const appPage = pathname.startsWith('/apps/');
   const go = (id: string) => void navigate({ to: AREA_PATHS[id as AreaId] });
   const me = useMe().data;
   // The person's wallpaper and accent (US-HOME-01); signed out (development pages) it's the defaults.
@@ -57,25 +58,25 @@ export function Shell({ children }: { children: ReactNode }) {
       {search ? <Spotlight /> : null}
       {me ? <EngineWatch /> : null}
       {/* The + tile and pinned apps arrive with their phases (D-036). */}
-      {appWindow ? null : (
-        <>
-          <div className="hl-nav-desktop hidden md:flex" data-testid="dock-bar">
-            <Dock
-              areas={areas}
-              active={active}
-              onSelect={go}
-              badges={store ? { store } : {}}
-              search={search}
-              onSearch={openSearch}
-              apps={openApps}
-              onOpenApp={(appId) => void navigate({ to: '/apps/$appId', params: { appId } })}
-            />
-          </div>
+      <>
+        <div className="hl-nav-desktop hidden md:flex" data-testid="dock-bar">
+          <Dock
+            areas={areas}
+            active={active}
+            onSelect={go}
+            badges={store ? { store } : {}}
+            search={search}
+            onSearch={openSearch}
+            apps={openApps}
+            onOpenApp={(appId) => void navigate({ to: '/apps/$appId', params: { appId } })}
+          />
+        </div>
+        {appPage ? null : (
           <div className="hl-nav-phone flex md:hidden" data-testid="tab-bar">
             <TabBar items={tabs} active={active} onSelect={go} />
           </div>
-        </>
-      )}
+        )}
+      </>
     </div>
   );
 }

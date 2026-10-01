@@ -33,5 +33,5 @@ test("US-APP-03 a stopped app says so with Start, and one that isn't responding 
   await expect(win.getByText("Sleepy demo isn't responding.")).toBeVisible();
   await expect(win.getByRole('button', { name: 'Restart app' })).toHaveCount(2);
   await win.getByRole('button', { name: 'Logs', exact: true }).last().click();
-  await expect(page).toHaveURL(new RegExp(`/apps/${ID}/logs$`));
+  await expect(page.getByRole('dialog', { name: 'Sleepy demo logs' })).toBeVisible();
 });

@@ -14,7 +14,7 @@ import {
   TextAlignStart,
   X,
 } from '@hlabs/icons';
-import { Button, GlassCard, IconButton, SectionTabs, StatusDot } from '@hlabs/ui';
+import { Button, GlassCard, IconButton, ModalPanel, SectionTabs, StatusDot } from '@hlabs/ui';
 import { useLocation, useNavigate, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { appsCopy } from '../copy/apps';
@@ -25,7 +25,7 @@ import { AppAccess } from './app-access';
 import { AppBehaviour } from './app-behaviour';
 import { AppStorage, AppVersion } from './app-storage';
 import { UpdateButton, useAppUpdate } from './app-update';
-import { statusDot } from './app-window';
+import { statusDot } from './status-dot';
 import { appBaseUrl, useApp } from './use-app';
 import { UninstallDialog } from './uninstall-dialog';
 import { useAppCommands } from './use-app-commands';
@@ -56,17 +56,25 @@ export function useGoBack() {
   return () => (router.history.canGoBack() ? router.history.back() : void navigate({ to: from ?? '/' }));
 }
 
-export function AppSettings({ appId }: { appId: string }) {
+interface SettingsProps {
+  appId: string;
+  /** Opened over the app window: a dialog, and Close and Logs stay in the window (phase 2 feedback, D-096). */
+  onClose?: () => void;
+  onOpenLogs?: () => void;
+}
+
+export function AppSettings(props: SettingsProps) {
   return (
     <AdminOnly>
-      <AppSettingsView appId={appId} />
+      <AppSettingsView {...props} />
     </AdminOnly>
   );
 }
 
-function AppSettingsView({ appId }: { appId: string }) {
+function AppSettingsView({ appId, onClose, onOpenLogs }: SettingsProps) {
   const { data: app } = useApp(appId);
-  const back = useGoBack();
+  const goBack = useGoBack();
+  const back = onClose ?? goBack;
   const [tab, setTab] = useState<Tab>('overview');
   const [uninstalling, setUninstalling] = useState(false);
   useEffect(() => {
@@ -78,51 +86,63 @@ function AppSettingsView({ appId }: { appId: string }) {
     id: t.id,
     label: copy.tabs[t.id],
   }));
+  const card = (
+    <GlassCard level={2} className="flex w-full max-w-[600px] flex-col gap-6 p-7">
+      <header className="flex items-center gap-4">
+        <AppLogo
+          decorative
+          name={app.name}
+          src={app.icon.logoUrl}
+          colors={look.colors}
+          fallbackIcon={look.fallbackIcon}
+          size={SETTINGS_LOGO}
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <h1 className="m-0 truncate text-title-2 font-bold">{app.name}</h1>
+          <span className="text-body-sm">
+            <StatusDot status={statusDot(app.state)}>
+              <StatusLine app={app} />
+            </StatusDot>
+          </span>
+        </div>
+        <IconButton label={copy.close} onClick={back} className="rounded-pill">
+          <X aria-hidden {...iconDefaults} className="size-4" />
+        </IconButton>
+      </header>
+      <SectionTabs aria-label={copy.sections} tabs={tabs} active={tab} onSelect={(id) => setTab(id as Tab)} />
+      <div role="tabpanel" aria-label={copy.tabs[tab]} className="flex flex-col gap-6">
+        <Actions app={app} onOpenLogs={onOpenLogs} />
+        <AppAccess app={app} />
+        <AppBehaviour app={app} />
+        <AppStorage app={app} />
+        <footer className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <AppVersion app={app} />
+            <UpdateButton app={app} />
+          </div>
+          <Button variant="link" className="text-danger" onClick={() => setUninstalling(true)}>
+            {copy.uninstallEllipsis}
+          </Button>
+        </footer>
+        <UninstallDialog app={app} open={uninstalling} onOpenChange={setUninstalling} />
+      </div>
+    </GlassCard>
+  );
+  if (onClose) {
+    return (
+      <ModalPanel label={copy.appSettings} onClose={onClose}>
+        <section aria-label={copy.appSettings} className="flex w-full items-start justify-center p-3 md:p-12">
+          {card}
+        </section>
+      </ModalPanel>
+    );
+  }
   return (
     <section
       aria-label={copy.appSettings}
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-3 md:p-12"
     >
-      <GlassCard level={2} className="flex w-full max-w-[600px] flex-col gap-6 p-7">
-        <header className="flex items-center gap-4">
-          <AppLogo
-            decorative
-            name={app.name}
-            src={app.icon.logoUrl}
-            colors={look.colors}
-            fallbackIcon={look.fallbackIcon}
-            size={SETTINGS_LOGO}
-          />
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <h1 className="m-0 truncate text-title-2 font-bold">{app.name}</h1>
-            <span className="text-body-sm">
-              <StatusDot status={statusDot(app.state)}>
-                <StatusLine app={app} />
-              </StatusDot>
-            </span>
-          </div>
-          <IconButton label={copy.close} onClick={back} className="rounded-pill">
-            <X aria-hidden {...iconDefaults} className="size-4" />
-          </IconButton>
-        </header>
-        <SectionTabs aria-label={copy.sections} tabs={tabs} active={tab} onSelect={(id) => setTab(id as Tab)} />
-        <div role="tabpanel" aria-label={copy.tabs[tab]} className="flex flex-col gap-6">
-          <Actions app={app} />
-          <AppAccess app={app} />
-          <AppBehaviour app={app} />
-          <AppStorage app={app} />
-          <footer className="flex items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <AppVersion app={app} />
-              <UpdateButton app={app} />
-            </div>
-            <Button variant="link" className="text-danger" onClick={() => setUninstalling(true)}>
-              {copy.uninstallEllipsis}
-            </Button>
-          </footer>
-          <UninstallDialog app={app} open={uninstalling} onOpenChange={setUninstalling} />
-        </div>
-      </GlassCard>
+      {card}
     </section>
   );
 }
@@ -139,7 +159,7 @@ function StatusLine({ app }: { app: AppDetail }) {
 }
 
 /** Open, Restart, Stop (Start when stopped) and Logs (US-APP-04). */
-function Actions({ app }: { app: AppDetail }) {
+function Actions({ app, onOpenLogs }: { app: AppDetail; onOpenLogs?: () => void }) {
   const navigate = useNavigate();
   const { start, stop, restart, pending } = useAppCommands(app, app.id);
   // Until the command settles (app.stateChanged), all three wait; without the engine none can run (US-STATE-08).
@@ -167,7 +187,10 @@ function Actions({ app }: { app: AppDetail }) {
           {copy.stop}
         </Button>
       )}
-      <Button variant="secondary" onClick={() => void navigate({ to: '/apps/$appId/logs', params: { appId: app.id } })}>
+      <Button
+        variant="secondary"
+        onClick={onOpenLogs ?? (() => void navigate({ to: '/apps/$appId/logs', params: { appId: app.id } }))}
+      >
         <TextAlignStart aria-hidden {...iconDefaults} className={icon} />
         {copy.logs}
       </Button>

@@ -3,7 +3,7 @@
 // it off, and pressing it jumps back down. Filters narrow it to some text, one container or errors (US-APP-09). A window over the wallpaper, as the AppLogs screen draws it.
 import type { LogLine } from '@hlabs/api';
 import { ChevronLeft, Download, iconDefaults, Search } from '@hlabs/icons';
-import { Badge, Button, GlassCard, IconButton, Segmented } from '@hlabs/ui';
+import { Badge, Button, GlassCard, IconButton, ModalPanel, Segmented } from '@hlabs/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useDeferredValue, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { appsCopy } from '../copy/apps';
@@ -36,15 +36,27 @@ const timeFormat = new Intl.DateTimeFormat(undefined, {
 /** Local time, `HH:mm:ss`. */
 export const logTime = (ts: number) => timeFormat.format(ts);
 
-export function AppLogs({ appId, at }: { appId: string; at?: number }) {
+interface LogsProps {
+  appId: string;
+  /** Open the logs at this moment, not following (US-STORE-17). */
+  at?: number;
+  /**
+   * Opened over the app window: a dialog, and Back goes to where it was opened from there, App settings or the
+   * window itself (phase 2 feedback, D-096).
+   */
+  onBack?: () => void;
+  backTo?: 'settings' | 'app';
+}
+
+export function AppLogs(props: LogsProps) {
   return (
     <AdminOnly>
-      <AppLogsView appId={appId} at={at} />
+      <AppLogsView {...props} />
     </AdminOnly>
   );
 }
 
-function AppLogsView({ appId, at }: { appId: string; at?: number }) {
+function AppLogsView({ appId, at, onBack, backTo = 'settings' }: LogsProps) {
   const { data: app } = useApp(appId);
   const trpc = useTRPC();
   // Only an image without this computer's platform reads differently on macOS and Linux.
@@ -96,113 +108,125 @@ function AppLogsView({ appId, at }: { appId: string; at?: number }) {
     if (!el || !following) return;
     if (el.scrollHeight - el.scrollTop - el.clientHeight > AT_END_PX) setFollowing(false);
   };
+  const card = (
+    <GlassCard level={2} className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden p-7">
+      <header className="flex items-center gap-4">
+        <IconButton
+          label={backTo === 'app' ? copy.backToApp(app.name) : copy.backToSettings}
+          className="rounded-pill"
+          onClick={onBack ?? (() => void navigate({ to: '/apps/$appId/settings', params: { appId } }))}
+        >
+          <ChevronLeft aria-hidden {...iconDefaults} className="size-4" />
+        </IconButton>
+        <h1 className="m-0 min-w-0 flex-1 truncate text-title-2 font-bold">{copy.logsTitle(app.name)}</h1>
+        <div role="search" className="relative w-40 md:w-64">
+          <Search
+            aria-hidden
+            {...iconDefaults}
+            className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-muted"
+          />
+          <input
+            type="search"
+            className="hl-input w-full rounded-pill pl-10"
+            aria-label={copy.filterLogs}
+            placeholder={copy.filter}
+            autoComplete="off"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+        </div>
+        <button
+          type="button"
+          aria-pressed={following}
+          onClick={() => setFollowing(!following)}
+          className={`hl-btn hl-btn-sm hl-focus ${following ? 'hl-btn-secondary text-success' : 'hl-btn-secondary'}`}
+        >
+          <span aria-hidden className={`size-2 rounded-pill ${following ? 'bg-success' : 'bg-ink-muted'}`} />
+          {copy.following}
+        </button>
+        <Button
+          size="sm"
+          variant="secondary"
+          busy={downloading}
+          disabled={downloading}
+          // The filters only change the view (US-APP-10).
+          title={query !== '' || errorsOnly ? copy.downloadIgnoresFilters : undefined}
+          onClick={() => {
+            setDownloading(true);
+            void downloadLogs(appId, service).finally(() => setDownloading(false));
+          }}
+        >
+          <Download aria-hidden {...iconDefaults} className="size-4" />
+          {copy.download}
+        </Button>
+      </header>
+      {app.state === 'error' ? (
+        // Why it isn't running, for an app opened from its broken tile (US-HOME-08).
+        <div role="status" className="rounded-md border border-danger/40 bg-surface-control px-4 py-3">
+          <p className="m-0 text-body font-bold text-ink">{copy.notResponding(app.name)}</p>
+          <p className="m-0 text-body-sm text-ink-muted">{failureReason(app.stateDetail, app.name, os)}</p>
+        </div>
+      ) : null}
+      <div className="flex flex-wrap items-center gap-2">
+        {several ? (
+          <Segmented
+            aria-label={copy.container}
+            options={[{ value: '', label: copy.allContainers }, ...app.services.map((s) => ({ value: s, label: s }))]}
+            value={service ?? ''}
+            onChange={(v) => setService(v || undefined)}
+          />
+        ) : null}
+        <button
+          type="button"
+          aria-pressed={errorsOnly}
+          onClick={() => setErrorsOnly(!errorsOnly)}
+          className={`hl-btn hl-btn-sm hl-focus ${errorsOnly ? 'bg-fill-primary text-ink-on-light' : 'hl-btn-secondary'}`}
+        >
+          {copy.errorsOnly}
+        </button>
+      </div>
+      <div
+        ref={list}
+        role="log"
+        aria-label={copy.logsTitle(app.name)}
+        // While following, new lines would flood a screen reader; it reads them once following is off.
+        aria-live={following ? 'off' : 'polite'}
+        tabIndex={0}
+        onScroll={onScroll}
+        className="hl-focus min-h-0 flex-1 overflow-y-auto rounded-xl bg-[color-mix(in_srgb,var(--wall-base)_94%,black)] px-5 py-4 font-mono text-body-sm"
+      >
+        {loading ? null : error ? (
+          <p className="m-0 text-ink-muted">{copy.logsFailed}</p>
+        ) : lines.length === 0 && !filtering ? (
+          <p className="m-0 text-ink-muted">{copy.noLogs}</p>
+        ) : shown.length === 0 ? (
+          <div className="flex flex-col items-start gap-3 font-sans">
+            <p className="m-0 text-ink-muted">{copy.noMatches}</p>
+            <Button size="sm" variant="secondary" onClick={clearFilters}>
+              {copy.clearFilters}
+            </Button>
+          </div>
+        ) : (
+          shown.map((line, i) => (
+            <Row key={`${line.ts}-${i}`} line={line} query={query} withService={several && !service} />
+          ))
+        )}
+        {following && !loading && !error ? <Cursor /> : null}
+      </div>
+    </GlassCard>
+  );
+  if (onBack) {
+    return (
+      <ModalPanel label={copy.logsTitle(app.name)} onClose={onBack}>
+        <section aria-label={copy.logs} className="flex h-full w-full p-3 md:p-10">
+          {card}
+        </section>
+      </ModalPanel>
+    );
+  }
   return (
     <section aria-label={copy.logs} className="fixed inset-0 z-50 flex p-3 md:p-10">
-      <GlassCard level={2} className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden p-7">
-        <header className="flex items-center gap-4">
-          <IconButton
-            label={copy.backToSettings}
-            className="rounded-pill"
-            onClick={() => void navigate({ to: '/apps/$appId/settings', params: { appId } })}
-          >
-            <ChevronLeft aria-hidden {...iconDefaults} className="size-4" />
-          </IconButton>
-          <h1 className="m-0 min-w-0 flex-1 truncate text-title-2 font-bold">{copy.logsTitle(app.name)}</h1>
-          <div role="search" className="relative w-40 md:w-64">
-            <Search
-              aria-hidden
-              {...iconDefaults}
-              className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-muted"
-            />
-            <input
-              type="search"
-              className="hl-input w-full rounded-pill pl-10"
-              aria-label={copy.filterLogs}
-              placeholder={copy.filter}
-              autoComplete="off"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
-          </div>
-          <button
-            type="button"
-            aria-pressed={following}
-            onClick={() => setFollowing(!following)}
-            className={`hl-btn hl-btn-sm hl-focus ${following ? 'hl-btn-secondary text-success' : 'hl-btn-secondary'}`}
-          >
-            <span aria-hidden className={`size-2 rounded-pill ${following ? 'bg-success' : 'bg-ink-muted'}`} />
-            {copy.following}
-          </button>
-          <Button
-            size="sm"
-            variant="secondary"
-            busy={downloading}
-            disabled={downloading}
-            // The filters only change the view (US-APP-10).
-            title={query !== '' || errorsOnly ? copy.downloadIgnoresFilters : undefined}
-            onClick={() => {
-              setDownloading(true);
-              void downloadLogs(appId, service).finally(() => setDownloading(false));
-            }}
-          >
-            <Download aria-hidden {...iconDefaults} className="size-4" />
-            {copy.download}
-          </Button>
-        </header>
-        {app.state === 'error' ? (
-          // Why it isn't running, for an app opened from its broken tile (US-HOME-08).
-          <div role="status" className="rounded-md border border-danger/40 bg-surface-control px-4 py-3">
-            <p className="m-0 text-body font-bold text-ink">{copy.notResponding(app.name)}</p>
-            <p className="m-0 text-body-sm text-ink-muted">{failureReason(app.stateDetail, app.name, os)}</p>
-          </div>
-        ) : null}
-        <div className="flex flex-wrap items-center gap-2">
-          {several ? (
-            <Segmented
-              aria-label={copy.container}
-              options={[{ value: '', label: copy.allContainers }, ...app.services.map((s) => ({ value: s, label: s }))]}
-              value={service ?? ''}
-              onChange={(v) => setService(v || undefined)}
-            />
-          ) : null}
-          <button
-            type="button"
-            aria-pressed={errorsOnly}
-            onClick={() => setErrorsOnly(!errorsOnly)}
-            className={`hl-btn hl-btn-sm hl-focus ${errorsOnly ? 'bg-fill-primary text-ink-on-light' : 'hl-btn-secondary'}`}
-          >
-            {copy.errorsOnly}
-          </button>
-        </div>
-        <div
-          ref={list}
-          role="log"
-          aria-label={copy.logsTitle(app.name)}
-          // While following, new lines would flood a screen reader; it reads them once following is off.
-          aria-live={following ? 'off' : 'polite'}
-          tabIndex={0}
-          onScroll={onScroll}
-          className="hl-focus min-h-0 flex-1 overflow-y-auto rounded-xl bg-[color-mix(in_srgb,var(--wall-base)_94%,black)] px-5 py-4 font-mono text-body-sm"
-        >
-          {loading ? null : error ? (
-            <p className="m-0 text-ink-muted">{copy.logsFailed}</p>
-          ) : lines.length === 0 && !filtering ? (
-            <p className="m-0 text-ink-muted">{copy.noLogs}</p>
-          ) : shown.length === 0 ? (
-            <div className="flex flex-col items-start gap-3 font-sans">
-              <p className="m-0 text-ink-muted">{copy.noMatches}</p>
-              <Button size="sm" variant="secondary" onClick={clearFilters}>
-                {copy.clearFilters}
-              </Button>
-            </div>
-          ) : (
-            shown.map((line, i) => (
-              <Row key={`${line.ts}-${i}`} line={line} query={query} withService={several && !service} />
-            ))
-          )}
-          {following && !loading && !error ? <Cursor /> : null}
-        </div>
-      </GlassCard>
+      {card}
     </section>
   );
 }

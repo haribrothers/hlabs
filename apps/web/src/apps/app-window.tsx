@@ -1,6 +1,8 @@
 // The app window (US-APP-01): an app's own web interface in a frame over the wallpaper, with its name, status and
 // address. Only one at a time (it's a route, /apps/:appId, so it survives a reload); closing it doesn't stop the app.
 // The frame is mounted only while the app is running, so no forward-auth or 502 pages show in it (US-APP-03).
+// It ends above the Dock, which stays usable (US-HOME-23); App settings and Logs open over it as dialogs and close
+// back to it, so the app keeps its place (D-096).
 import type { AppDetail, AppState } from '@hlabs/api';
 import {
   AppLogo,
@@ -15,8 +17,8 @@ import {
   TextAlignStart,
   X,
 } from '@hlabs/icons';
-import { Button, GlassCard, IconButton, StatusDot, type Status } from '@hlabs/ui';
-import { useNavigate } from '@tanstack/react-router';
+import { Button, GlassCard, IconButton, StatusDot } from '@hlabs/ui';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { appsCopy } from '../copy/apps';
 import { engineCopy } from '../copy/engine';
@@ -24,6 +26,10 @@ import { browser } from '../lib/browser';
 import { useMe } from '../lib/use-me';
 import { appBaseUrl, useApp } from './use-app';
 import { closeWindow, openWindow } from './open-windows';
+import { AppLogs } from './app-logs';
+import { AppSettings } from './app-settings';
+import { PanelBoundary } from './panel-boundary';
+import { statusDot } from './status-dot';
 import { useAppCommands } from './use-app-commands';
 
 const copy = appsCopy;
@@ -38,14 +44,6 @@ export const REMOVED_CLOSE_MS = 2_500;
 
 /** States on the way somewhere: the frame area shows a spinner and the app comes back by itself (US-APP-02, 03). */
 const BUSY = new Set<AppState>(['starting', 'restarting', 'stopping', 'updating', 'rolling_back', 'uninstalling']);
-
-/** The StatusDot for an app state: colour never alone, the label says it too. */
-export function statusDot(state: AppState): Status {
-  if (state === 'running') return 'running';
-  if (state === 'stopped') return 'stopped';
-  if (state === 'error' || state === 'install_failed') return 'failed';
-  return 'working';
-}
 
 /** The app's frame: a spinner after 1 s without `load`, and "taking a while" with a new-tab way out after 20 s. */
 function AppFrame({ app, src }: { app: AppDetail; src: string }) {
@@ -96,7 +94,19 @@ export function FramePanel({ children }: { children: ReactNode }) {
   );
 }
 
+export type WindowPanel = 'settings' | 'logs';
+
+/** The dialog open over the window, from the address (`?panel=settings|logs&from=settings&at=…`). */
+export function windowPanel(search: Record<string, unknown>): { panel?: WindowPanel; from?: 'settings'; at?: number } {
+  return {
+    ...(search.panel === 'settings' || search.panel === 'logs' ? { panel: search.panel } : {}),
+    ...(search.from === 'settings' ? { from: 'settings' as const } : {}),
+    ...(typeof search.at === 'number' ? { at: search.at } : {}),
+  };
+}
+
 export function AppWindow({ appId }: { appId: string }) {
+  const { panel, from, at } = windowPanel(useSearch({ strict: false }) as Record<string, unknown>);
   const navigate = useNavigate();
   const { data: app, lastChange } = useApp(appId);
   // Uninstalled while open (US-APP-12): say so, then go Home.
@@ -109,7 +119,12 @@ export function AppWindow({ appId }: { appId: string }) {
     closeWindow(appId);
     home();
   };
-  const openLogs = () => void navigate({ to: '/apps/$appId/logs', params: { appId } });
+  // Dialogs over the window: in the address, so Back in the browser closes them, and the window stays mounted.
+  const showPanel = (next: { panel?: WindowPanel; from?: 'settings' }) =>
+    void navigate({ to: '/apps/$appId', params: { appId }, search: next });
+  const openLogs = () => showPanel({ panel: 'logs' });
+  const openSettings = () => showPanel({ panel: 'settings' });
+  const closePanel = () => showPanel({});
   // Restart (US-APP-02): the label says "Restarting…" at once; the frame comes back when it's running again. An app
   // that isn't responding is started again (US-APP-03).
   const { start, restart } = useAppCommands(app, appId);
@@ -119,6 +134,8 @@ export function AppWindow({ appId }: { appId: string }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented) return;
       if (document.activeElement?.tagName === 'IFRAME') return;
+      // A dialog over the window takes Escape itself.
+      if (document.querySelector('[role="dialog"]')) return;
       close();
     };
     document.addEventListener('keydown', onKey);
@@ -208,8 +225,8 @@ export function AppWindow({ appId }: { appId: string }) {
   );
 
   return (
-    // Above the Dock (z-40): the window has the screen to itself, as the AppWindow design draws it.
-    <section aria-label={copy.window} className="fixed inset-0 z-50 flex p-3 md:p-5">
+    // Ends above the Dock, which stays usable for switching apps (US-HOME-23, D-096).
+    <section aria-label={copy.window} className="hl-window-layer">
       <GlassCard level={2} className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-window p-0">
         <header className="flex items-center gap-3 px-3 py-2.5 md:px-3.5">
           <IconButton label={copy.backToHome} onClick={home}>
@@ -248,12 +265,7 @@ export function AppWindow({ appId }: { appId: string }) {
                 <IconButton label={copy.logs} onClick={openLogs}>
                   <TextAlignStart aria-hidden {...iconDefaults} className="size-4" />
                 </IconButton>
-                <IconButton
-                  label={copy.appSettings}
-                  onClick={() =>
-                    void navigate({ to: '/apps/$appId/settings', params: { appId }, state: { from: `/apps/${appId}` } })
-                  }
-                >
+                <IconButton label={copy.appSettings} onClick={openSettings}>
                   <SlidersHorizontal aria-hidden {...iconDefaults} className="size-4" />
                 </IconButton>
               </>
@@ -271,6 +283,23 @@ export function AppWindow({ appId }: { appId: string }) {
           {body}
         </div>
       </GlassCard>
+      <PanelBoundary key={panel ?? ''} onClose={closePanel}>
+        {isAdmin && panel === 'settings' ? (
+          <AppSettings
+            appId={appId}
+            onClose={closePanel}
+            onOpenLogs={() => showPanel({ panel: 'logs', from: 'settings' })}
+          />
+        ) : null}
+        {isAdmin && panel === 'logs' ? (
+          <AppLogs
+            appId={appId}
+            at={at}
+            backTo={from === 'settings' ? 'settings' : 'app'}
+            onBack={from === 'settings' ? openSettings : closePanel}
+          />
+        ) : null}
+      </PanelBoundary>
     </section>
   );
 }

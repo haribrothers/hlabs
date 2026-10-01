@@ -79,16 +79,18 @@ describe('US-APP-02', () => {
     expect(await screen.findAllByText('Stopping…')).not.toHaveLength(0);
   });
 
-  it('Logs and App settings open those views; Open in a new tab keeps the window', async () => {
+  it('Logs and App settings open over the window (D-096); Open in a new tab keeps the window', async () => {
     const openTab = vi.spyOn(browser, 'open').mockImplementation(() => {});
-    const { router } = open();
+    const { router } = open({ 'apps.logs': () => ({ lines: [] }), 'apps.watchLogs': never });
     fireEvent.click(await screen.findByRole('button', { name: 'Open in a new tab' }));
     expect(openTab).toHaveBeenCalledWith('https://jellyfin.hlabs.local');
     expect(router.state.location.pathname).toBe('/apps/jellyfin');
     fireEvent.click(screen.getByRole('button', { name: 'Logs' }));
-    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/apps/jellyfin/logs'));
+    expect(await screen.findByRole('dialog', { name: 'Jellyfin logs' })).toBeInTheDocument();
+    expect(router.state.location.search).toEqual({ panel: 'logs' });
     await act(async () => router.history.back());
     fireEvent.click(await screen.findByRole('button', { name: 'App settings' }));
-    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/apps/jellyfin/settings'));
+    expect(await screen.findByRole('dialog', { name: 'App settings' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/apps/jellyfin');
   });
 });

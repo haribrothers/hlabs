@@ -11,7 +11,7 @@ test.afterEach(async ({ request }, info) => {
   await request.post(`${MAIN_URL}/dev/fake-app`, { data: { id: ID, remove: true } });
 });
 
-test('US-APP-02 the window header has the admin controls; Logs and App settings open their views', async ({
+test('US-APP-02 the window header has the admin controls; Logs and App settings open over the window', async ({
   page,
   request,
 }, info) => {
@@ -22,16 +22,26 @@ test('US-APP-02 the window header has the admin controls; Logs and App settings 
   for (const name of ['Restart app', 'Logs', 'App settings', 'Open in a new tab', 'Close app']) {
     await expect(win.getByRole('button', { name })).toHaveAttribute('title', name);
   }
+  // Dialogs over the window (D-096): the window stays behind them, and the Dock stays below it.
   await win.getByRole('button', { name: 'Logs' }).click();
-  await expect(page).toHaveURL(new RegExp(`/apps/${ID}/logs$`));
-  await expect(page.getByRole('heading', { name: 'Controls demo logs' })).toBeVisible();
-  await page.goBack();
-  await page.getByRole('region', { name: 'App window' }).getByRole('button', { name: 'App settings' }).click();
-  await expect(page).toHaveURL(new RegExp(`/apps/${ID}/settings$`));
-  // The settings view itself (its code may still be loading while the window shows).
-  const settings = page.getByRole('region', { name: 'App settings' });
-  await expect(settings.getByRole('heading', { name: 'Controls demo', exact: true })).toBeVisible();
-  // Close goes back to the window it came from.
-  await settings.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/apps/${ID}\\?panel=logs$`));
+  const logs = page.getByRole('dialog', { name: 'Controls demo logs' });
+  await expect(logs.getByRole('heading', { name: 'Controls demo logs' })).toBeVisible();
+  await logs.getByRole('button', { name: 'Back to Controls demo' }).click();
+  await expect(logs).toHaveCount(0);
   await expect(page).toHaveURL(new RegExp(`/apps/${ID}$`));
+
+  await win.getByRole('button', { name: 'App settings' }).click();
+  const settings = page.getByRole('dialog', { name: 'App settings' });
+  await expect(settings.getByRole('heading', { name: 'Controls demo', exact: true })).toBeVisible();
+  // Logs from App settings: Back returns to App settings.
+  await settings.getByRole('button', { name: 'Logs', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Controls demo logs' })
+    .getByRole('button', { name: 'Back to app settings' })
+    .click();
+  await settings.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(settings).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/apps/${ID}$`));
+  await expect(page.getByTestId('dock-bar').getByRole('button', { name: 'Controls demo, open' })).toBeVisible();
 });

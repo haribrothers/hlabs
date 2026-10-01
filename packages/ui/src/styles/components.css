@@ -967,6 +967,22 @@
   }
 
   /* Where the navigation floats: the Dock 14px and the tab bar 22px above the bottom edge. */
+  /*
+   * An app window: the screen less a margin and, on desktop, the Dock's room (shelf 79px + 14px off the edge, plus a
+   * 12px gap), so the Dock stays usable below it.
+   */
+  .hl-window-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    padding: 12px;
+  }
+  @media (min-width: 768px) {
+    .hl-window-layer {
+      padding: 20px 20px 105px;
+    }
+  }
   .hl-nav-desktop {
     position: fixed;
     inset-inline: 0;
@@ -1050,6 +1066,18 @@
     background: var(--scrim-strong);
     /* Everything behind a dialog or sheet is dimmed and blurred (FactoryReset); solid theme: dimmed only. */
     backdrop-filter: blur(var(--blur-scrim));
+  }
+  .hl-scrim-light {
+    background: var(--scrim);
+  }
+  /* ModalPanel: fills the screen above the scrim; the panel inside is centred and the area scrolls. */
+  .hl-modal-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    overflow-y: auto;
+    outline: none;
   }
   .hl-dialog {
     width: 520px;

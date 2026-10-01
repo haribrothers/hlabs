@@ -111,6 +111,7 @@ export const appsCopy = {
   // Logs (US-APP-08…10)
   logsTitle: (app: string) => `${app} logs`,
   backToSettings: 'Back to app settings',
+  backToApp: (app: string) => `Back to ${app}`,
   following: 'Following',
   noLogs: 'No logs yet.',
   containerRestarted: 'Container restarted',

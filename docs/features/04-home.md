@@ -420,7 +420,7 @@ Home is the first screen every signed-in person sees: a greeting over the wallpa
 
 **Acceptance criteria**
 - **Given** I open an app in a window (US-APP-01), **when** the Dock renders, **then** that app's tile shows the white dot and its accessible name ends with ", open"; if the app isn't pinned, it appears after the pinned apps (without being pinned) until its window closes.
-- **Given** an open app's window is behind another window or minimised, **when** I click its Dock tile, **then** its window comes to the front.
+- **Given** an open app's window is behind another window or minimised, **when** I click its Dock tile, **then** its window comes to the front. The Dock stays visible below an app window on desktop (D-096).
 - **Given** I close the window, **when** the Dock renders, **then** the dot disappears within 300 ms (and an unpinned app leaves the Dock).
 - **Given** apps opened in a new browser tab, **then** they don't get a dot (hlabs can't see other tabs).
 

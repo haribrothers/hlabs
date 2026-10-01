@@ -8,7 +8,7 @@ For admins. Members can open the apps an admin shared with them, but not change 
 
 ## Open App settings
 
-Open an app and choose **App settings** at the top of its window. The settings show the app's name, whether it's running and how long it has been up, such as "Running · up 6 days". Choose **Close** to go back to where you were.
+Open an app and choose **App settings** at the top of its window; the settings open over the window, which stays as it was. The settings show the app's name, whether it's running and how long it has been up, such as "Running · up 6 days". Choose **Close** to go back to where you were.
 
 ## The app's address
 
@@ -47,7 +47,7 @@ In the rare case the previous version doesn't start again either, the app shows 
 
 ## Read an app's logs
 
-Logs are what an app writes about what it's doing. They help when something goes wrong, for example when an app won't start. Choose **Logs** in App settings or at the top of the app window.
+Logs are what an app writes about what it's doing. They help when something goes wrong, for example when an app won't start. Choose **Logs** in App settings or at the top of the app window. The back button at the top returns to where you opened them: App settings, or the app.
 
 The logs show the latest 500 lines, oldest first, with the time and, when the app says, how serious each line is: INFO, WARN, ERROR or DEBUG. New lines appear as the app writes them while **Following** is on. Scroll up to read earlier lines and following stops; choose **Following** again to jump back to the newest line. If the app restarts while you watch, a "Container restarted" line marks where.
 

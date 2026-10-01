@@ -85,7 +85,7 @@ Everything that happens after an app is installed: opening it, checking that it 
 - **Given** I press Stop, Start or Restart, **then** all three buttons are disabled until `app.stateChanged` reports a settled state (`running`, `stopped` or `error`), and the header status updates live.
 - **Given** a start or restart ends in `error`, **then** a Toast shows "<App> didn't start. Check the logs." with a "Logs" action.
 - **Given** I am a member, **when** I navigate to `/apps/:appId/settings`, **then** I see the "You don't have access to this" page (US-STATE-20) and every `apps.*` mutation returns FORBIDDEN.
-- **Given** I press "Close", **then** I return to where I came from (app window or Home).
+- **Given** I press "Close", **then** I return to where I came from (app window or Home). Opened from the app window, App settings is a dialog over the window, which stays open with its frame as it was (D-096).
 
 **Implementation notes**
 - API: `apps.get`, `apps.start`, `apps.stop`, `apps.restart`, `events.stream`.
@@ -149,7 +149,7 @@ Everything that happens after an app is installed: opening it, checking that it 
 **As** an admin, **I want** to watch an app's logs as they happen, **so that** I can see why it misbehaves.
 
 **Acceptance criteria**
-- **Given** I open Logs from `AppWindow` or `AppSettings`, **then** the view is titled "<App> logs" with a "Back to app settings" button, and shows the last 500 lines across all containers, oldest first, each with local time (`HH:mm:ss`), a level Badge (INFO, WARN, ERROR, DEBUG when detected) and the message.
+- **Given** I open Logs from `AppWindow` or `AppSettings`, **then** the view is titled "<App> logs" with a back button to where it was opened from ("Back to app settings", or "Back to <App>" from the window, where Logs is a dialog over it, D-096), and shows the last 500 lines across all containers, oldest first, each with local time (`HH:mm:ss`), a level Badge (INFO, WARN, ERROR, DEBUG when detected) and the message.
 - **Given** "Following" is on (default), **when** new lines arrive, **then** they append within 1 s and the list stays scrolled to the bottom, ending with a blinking cursor line.
 - **Given** I scroll up, **then** "Following" switches off and new lines stop auto-scrolling; **when** I press "Following" again, **then** it jumps to the newest line and resumes.
 - **Given** more than 5,000 lines are loaded, **then** the oldest are dropped from the view (download still gets everything).

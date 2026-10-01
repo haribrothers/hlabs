@@ -65,7 +65,7 @@ describe('US-APP-03', () => {
   it("Logs in the frame area opens the app's logs", async () => {
     const { router } = open('error');
     fireEvent.click(await within(await frameArea()).findByRole('button', { name: 'Logs' }));
-    await waitFor(() => expect(router.state.location.pathname).toBe('/apps/jellyfin/logs'));
+    await waitFor(() => expect(router.state.location.search).toEqual({ panel: 'logs' }));
   });
 
   it("members see that it isn't responding, without the admin buttons", async () => {
