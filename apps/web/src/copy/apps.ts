@@ -90,4 +90,12 @@ export const appsCopy = {
   noLogs: 'No logs yet.',
   containerRestarted: 'Container restarted',
   logsFailed: "Couldn't load the logs. Check that the container engine is running, then try again.",
+  // Filters (US-APP-09)
+  filterLogs: 'Filter logs',
+  filter: 'Filter',
+  container: 'Container',
+  allContainers: 'All',
+  errorsOnly: 'Errors only',
+  noMatches: 'No lines match these filters.',
+  clearFilters: 'Clear filters',
 } as const;

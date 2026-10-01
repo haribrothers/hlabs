@@ -80,6 +80,8 @@ export const appDetailSchema = homeAppSchema.extend({
   /** The installed version, and the store's when it's a different one (null when up to date, US-APP-07). */
   version: z.string(),
   latestVersion: z.string().nullable(),
+  /** Its compose services, for the Logs view's Container choice (US-APP-09). */
+  services: z.array(z.string()),
   /** The behaviour switches (US-APP-06): starts with hlabs, updates itself; custom apps never update themselves. */
   autostart: z.boolean(),
   autoUpdate: z.boolean(),

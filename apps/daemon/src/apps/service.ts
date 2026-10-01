@@ -8,6 +8,7 @@ import { ulid } from '@hlabs/shared';
 import { eq } from 'drizzle-orm';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { parse as parseYaml } from 'yaml';
 import type { EngineService } from '../engine/service';
 import type { EventBus } from '../events/bus';
 import type { Logger } from '../logger';
@@ -132,6 +133,18 @@ export class AppService {
   /** The manifest the app was installed with. */
   manifest(appId: string): AppManifest {
     return JSON.parse(readFileSync(join(this.project(appId).dir, MANIFEST_COPY), 'utf8')) as AppManifest;
+  }
+
+  /** The app's compose services, in file order (`server`, `database`…, US-APP-09); none without a project. */
+  services(appId: string): string[] {
+    try {
+      const compose = parseYaml(readFileSync(join(this.project(appId).dir, COMPOSE_FILE), 'utf8')) as {
+        services?: Record<string, unknown>;
+      };
+      return Object.keys(compose.services ?? {});
+    } catch {
+      return [];
+    }
   }
 
   routes(): AppRoute[] {

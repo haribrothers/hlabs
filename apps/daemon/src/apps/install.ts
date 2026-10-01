@@ -162,6 +162,7 @@ export class InstallService {
       disk: (await this.deps.disk?.get(appId)) ?? null,
       version: app.version,
       latestVersion: latestVersion(app.version, catalogRow(db, app)?.version),
+      services: this.deps.apps.services(appId),
       autostart: app.autostart,
       autoUpdate: app.autoUpdate,
       custom: app.custom,

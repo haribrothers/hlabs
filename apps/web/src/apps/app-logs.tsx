@@ -1,11 +1,11 @@
 // An app's logs (US-APP-08…10): "<App> logs" with a way back to its settings, the last 500 lines across its
 // containers and new ones as they come. While "Following" is on the view stays at the newest line; scrolling up turns
-// it off, and pressing it jumps back down. A window over the wallpaper, as the AppLogs screen draws it.
+// it off, and pressing it jumps back down. Filters narrow it to some text, one container or errors (US-APP-09). A window over the wallpaper, as the AppLogs screen draws it.
 import type { LogLine } from '@hlabs/api';
-import { ChevronLeft, iconDefaults } from '@hlabs/icons';
-import { Badge, GlassCard, IconButton } from '@hlabs/ui';
+import { ChevronLeft, iconDefaults, Search } from '@hlabs/icons';
+import { Badge, Button, GlassCard, IconButton, Segmented } from '@hlabs/ui';
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { appsCopy } from '../copy/apps';
 import { useNow } from '../lib/use-now';
 import { AdminOnly } from './admin-only';
@@ -43,7 +43,12 @@ export function AppLogs({ appId }: { appId: string }) {
 function AppLogsView({ appId }: { appId: string }) {
   const { data: app } = useApp(appId);
   const navigate = useNavigate();
-  const { lines, loading, error } = useAppLogs(appId);
+  // Filters (US-APP-09): text and level on the loaded lines, the container on the server.
+  const [text, setText] = useState('');
+  const query = useDeferredValue(text.trim().toLowerCase());
+  const [service, setService] = useState<string | undefined>(undefined);
+  const [errorsOnly, setErrorsOnly] = useState(false);
+  const { lines, loading, error } = useAppLogs(appId, service);
   const [following, setFollowing] = useState(true);
   const list = useRef<HTMLDivElement>(null);
 
@@ -57,6 +62,18 @@ function AppLogsView({ appId }: { appId: string }) {
   }, [following, lines.length]);
 
   if (!app) return null;
+  const several = app.services.length > 1;
+  const shown = lines.filter(
+    (l) =>
+      l.restarted ||
+      ((!query || l.line.toLowerCase().includes(query)) && (!errorsOnly || logLevel(l.line) === 'ERROR')),
+  );
+  const filtering = query !== '' || errorsOnly || service !== undefined;
+  const clearFilters = () => {
+    setText('');
+    setService(undefined);
+    setErrorsOnly(false);
+  };
   const onScroll = () => {
     const el = list.current;
     if (!el || !following) return;
@@ -74,6 +91,22 @@ function AppLogsView({ appId }: { appId: string }) {
             <ChevronLeft aria-hidden {...iconDefaults} className="size-4" />
           </IconButton>
           <h1 className="m-0 min-w-0 flex-1 truncate text-title-2 font-bold">{copy.logsTitle(app.name)}</h1>
+          <div role="search" className="relative w-40 md:w-64">
+            <Search
+              aria-hidden
+              {...iconDefaults}
+              className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-muted"
+            />
+            <input
+              type="search"
+              className="hl-input w-full rounded-pill pl-10"
+              aria-label={copy.filterLogs}
+              placeholder={copy.filter}
+              autoComplete="off"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+          </div>
           <button
             type="button"
             aria-pressed={following}
@@ -84,6 +117,24 @@ function AppLogsView({ appId }: { appId: string }) {
             {copy.following}
           </button>
         </header>
+        <div className="flex flex-wrap items-center gap-2">
+          {several ? (
+            <Segmented
+              aria-label={copy.container}
+              options={[{ value: '', label: copy.allContainers }, ...app.services.map((s) => ({ value: s, label: s }))]}
+              value={service ?? ''}
+              onChange={(v) => setService(v || undefined)}
+            />
+          ) : null}
+          <button
+            type="button"
+            aria-pressed={errorsOnly}
+            onClick={() => setErrorsOnly(!errorsOnly)}
+            className={`hl-btn hl-btn-sm hl-focus ${errorsOnly ? 'bg-fill-primary text-ink-on-light' : 'hl-btn-secondary'}`}
+          >
+            {copy.errorsOnly}
+          </button>
+        </div>
         <div
           ref={list}
           role="log"
@@ -96,10 +147,19 @@ function AppLogsView({ appId }: { appId: string }) {
         >
           {loading ? null : error ? (
             <p className="m-0 text-ink-muted">{copy.logsFailed}</p>
-          ) : lines.length === 0 ? (
+          ) : lines.length === 0 && !filtering ? (
             <p className="m-0 text-ink-muted">{copy.noLogs}</p>
+          ) : shown.length === 0 ? (
+            <div className="flex flex-col items-start gap-3 font-sans">
+              <p className="m-0 text-ink-muted">{copy.noMatches}</p>
+              <Button size="sm" variant="secondary" onClick={clearFilters}>
+                {copy.clearFilters}
+              </Button>
+            </div>
           ) : (
-            lines.map((line, i) => <Row key={`${line.ts}-${i}`} line={line} />)
+            shown.map((line, i) => (
+              <Row key={`${line.ts}-${i}`} line={line} query={query} withService={several && !service} />
+            ))
           )}
           {following && !loading && !error ? <Cursor /> : null}
         </div>
@@ -108,7 +168,7 @@ function AppLogsView({ appId }: { appId: string }) {
   );
 }
 
-function Row({ line }: { line: LogLine }) {
+function Row({ line, query, withService }: { line: LogLine; query: string; withService: boolean }) {
   if (line.restarted) {
     return (
       <div className="my-2 flex items-center gap-3 text-ink-muted [contain-intrinsic-size:auto_1.75rem] [content-visibility:auto]">
@@ -123,7 +183,11 @@ function Row({ line }: { line: LogLine }) {
     <div className="flex gap-4 py-0.5 [contain-intrinsic-size:auto_1.75rem] [content-visibility:auto]">
       <span className="shrink-0 text-ink-muted">{logTime(line.ts)}</span>
       <span className="w-16 shrink-0">{level ? <Badge tone={LEVEL_TONE[level]}>{level}</Badge> : null}</span>
-      <span className="min-w-0 whitespace-pre-wrap break-words text-ink">{line.line}</span>
+      <span className="min-w-0 whitespace-pre-wrap break-words text-ink">
+        {/* "All" interleaves the containers, so each line says whose it is. */}
+        {withService ? <span className="mr-2 text-ink-muted">{line.service}</span> : null}
+        <Highlighted text={line.line} query={query} />
+      </span>
     </div>
   );
 }
@@ -137,4 +201,23 @@ function Cursor() {
       <span className="h-4 w-1.5 animate-pulse bg-ink-muted motion-reduce:animate-none" />
     </div>
   );
+}
+
+/** The line with each match of the filter marked (case-insensitive). */
+function Highlighted({ text, query }: { text: string; query: string }) {
+  if (!query) return text;
+  const lower = text.toLowerCase();
+  const parts: ReactNode[] = [];
+  let from = 0;
+  for (let at = lower.indexOf(query); at !== -1; at = lower.indexOf(query, from)) {
+    if (at > from) parts.push(text.slice(from, at));
+    parts.push(
+      <mark key={at} className="rounded-sm bg-accent-wash text-ink">
+        {text.slice(at, at + query.length)}
+      </mark>,
+    );
+    from = at + query.length;
+  }
+  parts.push(text.slice(from));
+  return parts;
 }

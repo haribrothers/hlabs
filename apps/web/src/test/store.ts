@@ -92,6 +92,7 @@ export const appDetail = (extra: Partial<AppDetail> = {}): AppDetail => ({
   disk: { dataBytes: 210_000_000, imageBytes: 0 },
   version: '1.0.0',
   latestVersion: null,
+  services: ['app'],
   autostart: true,
   autoUpdate: false,
   custom: false,

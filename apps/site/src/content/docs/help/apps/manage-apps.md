@@ -39,6 +39,8 @@ Logs are what an app writes about what it's doing. They help when something goes
 
 The logs show the latest 500 lines, oldest first, with the time and, when the app says, how serious each line is: INFO, WARN, ERROR or DEBUG. New lines appear as the app writes them while **Following** is on. Scroll up to read earlier lines and following stops; choose **Following** again to jump back to the newest line. If the app restarts while you watch, a "Container restarted" line marks where.
 
+To find something, type in **Filter** to show only lines that contain it, choose **Errors only**, or, for an app made of several parts, pick one under its name (such as "server"). **All** mixes every part's lines in time order and starts each line with whose it is. If nothing matches, choose **Clear filters**.
+
 Logs can contain passwords and other private details, so only admins can see them.
 
 ## Start, stop or restart an app
