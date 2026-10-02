@@ -1,7 +1,7 @@
 ---
 title: Log in
 description: Choose your account or type your username, then enter your password.
-features: [F-AUTH-01, F-AUTH-02, F-AUTH-03, F-AUTH-04, F-AUTH-07]
+features: [F-AUTH-01, F-AUTH-02, F-AUTH-03, F-AUTH-04, F-AUTH-07, F-AUTH-09]
 ---
 
 For everyone who uses hlabs.
@@ -70,3 +70,12 @@ Choose **Log out** in **Settings**. hlabs signs out this device only; your other
 - **"Username or password is incorrect."**: check both and try again. hlabs doesn't say which one is wrong, so nobody can find out which accounts exist.
 - **Too many attempts**: after 5 wrong passwords or codes in 15 minutes, logging in as that user from this device is paused for 15 minutes. The page counts down, and **Try again** takes you back to the password when the time is up. Trying again before then doesn't make the wait longer. Other people, and the same person on another device, can still log in. Choose **Use another account** to log in as someone else. Your admin gets a notification saying which username was paused and from which address, so they can check it wasn't someone trying to get in.
 - **"Can't reach hlabs right now."**: the computer running hlabs may be off, restarting or updating. Try again in a moment; what you typed is kept.
+
+## Join from an invite link
+
+For everyone.
+
+If someone who runs hlabs invites you, they send you a link. Open it to see who invited you and what you'll get: your own Home screen, a private Files folder, and the apps they've shared with you. A link works once and only for 7 days. If it has been used, cancelled or has expired, the page says so: ask the person who invited you for a new one.
+
+If you open the link while you're logged in to hlabs as someone else, choose **Log out and continue** first.
+

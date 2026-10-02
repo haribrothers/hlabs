@@ -1,9 +1,9 @@
 // Invite links (09-account-people.md F-ACCT-07, 03-sign-in.md F-AUTH-09). The token is looked up by its hash; the
 // token itself sits in the secret store so an admin can copy the same link again while it's pending (US-ACCT-17).
 import { hlabsError, type PendingInvite, type Role } from '@hlabs/api';
-import { auditLog, inviteAppAccess, invites, type HlabsDb } from '@hlabs/db';
+import { apps, auditLog, inviteAppAccess, invites, users, type HlabsDb } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
-import { and, desc, eq, gt, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, gt, isNull } from 'drizzle-orm';
 import { createHash, randomBytes } from 'node:crypto';
 import { lanDashboardOrigin } from '../http/dashboard-origins';
 import type { SecretStore } from '../platform/secrets';
@@ -142,4 +142,57 @@ export async function listPendingInvites(
       };
     }),
   );
+}
+
+export type InviteStatus = 'valid' | 'expired' | 'used' | 'revoked';
+
+/** Why a link no longer works, or `valid`. */
+export function inviteStatus(row: typeof invites.$inferSelect, now: number): InviteStatus {
+  if (row.usedAt !== null) return 'used';
+  if (row.revokedAt !== null) return 'revoked';
+  return row.expiresAt <= now ? 'expired' : 'valid';
+}
+
+/**
+ * What the invite page shows before anyone signs up (US-AUTH-23, preview US-ACCT-23): never marks the invite used.
+ * An unknown token looks like an expired one with no inviter, so it says nothing about which links exist.
+ */
+export function inspectInvite(db: HlabsDb, token: string, now = Date.now()) {
+  const row = db
+    .select()
+    .from(invites)
+    .where(eq(invites.tokenHash, inviteTokenHash(token)))
+    .get();
+  if (!row)
+    return {
+      status: 'expired' as const,
+      inviterName: null,
+      inviterAvatarColor: null,
+      displayName: null,
+      role: null,
+      appCount: 0,
+    };
+  const inviter = row.createdBy
+    ? db
+        .select({ displayName: users.displayName, avatarColor: users.avatarColor, username: users.username })
+        .from(users)
+        .where(eq(users.id, row.createdBy))
+        .get()
+    : undefined;
+  // Apps still installed; an app uninstalled since doesn't count.
+  const shared = db
+    .select({ n: count() })
+    .from(inviteAppAccess)
+    .innerJoin(apps, eq(apps.id, inviteAppAccess.appId))
+    .where(eq(inviteAppAccess.inviteId, row.id))
+    .get();
+  const status = inviteStatus(row, now);
+  return {
+    status,
+    inviterName: inviter?.displayName ?? null,
+    inviterAvatarColor: inviter ? (inviter.avatarColor ?? null) : null,
+    displayName: status === 'valid' ? row.displayName : null,
+    role: status === 'valid' ? row.role : null,
+    appCount: status === 'valid' && row.role === 'member' ? (shared?.n ?? 0) : 0,
+  };
 }

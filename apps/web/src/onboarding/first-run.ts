@@ -29,6 +29,9 @@ export const isSetupPath = (pathname: string) => pathname === SETUP_PATH || path
 /** `/login` and its views. */
 export const isLoginPath = (pathname: string) => pathname === '/login' || pathname.startsWith('/login/');
 
+/** Pages anyone may open without the Dock or a session: the log-in screens and invite links (US-AUTH-23). */
+export const isPlainPath = (pathname: string) => isLoginPath(pathname) || pathname.startsWith('/invite/');
+
 export function firstRunView(opts: {
   pathname: string;
   status: OnboardingStatus | undefined;
@@ -56,18 +59,18 @@ export function firstRunView(opts: {
     if (pathname === `${SETUP_PATH}/done` && !opts.entry) return { kind: 'setup' };
     if (isSetupPath(pathname)) return { kind: 'redirect', to: '/' };
     // Everything but two-factor setup (and the log-in screens) waits until it's done, then goes on to where it was.
-    if (opts.mustSetupTotp && pathname !== TWO_FACTOR_MANAGE_PATH && !isLoginPath(pathname)) {
+    if (opts.mustSetupTotp && pathname !== TWO_FACTOR_MANAGE_PATH && !isPlainPath(pathname)) {
       return {
         kind: 'redirect',
         to: TWO_FACTOR_MANAGE_PATH,
         ...(pathname === '/' ? {} : { search: { next: pathname } }),
       };
     }
-    return isLoginPath(pathname) ? { kind: 'plain' } : { kind: 'app' };
+    return isPlainPath(pathname) ? { kind: 'plain' } : { kind: 'app' };
   }
   if (status.hasUsers) {
     // An admin exists: log in first (the log-in pages stay reachable), then back to the saved step (US-ONB-03).
-    if (isLoginPath(pathname)) return { kind: 'plain' };
+    if (isPlainPath(pathname)) return { kind: 'plain' };
     if (opts.session === 'pending') return { kind: 'loading' };
     if (opts.session === 'none') {
       const saved = resumePath({ pathname, saved: status.step, entry: true, shippedPhase: opts.shippedPhase });

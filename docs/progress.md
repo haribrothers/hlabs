@@ -124,7 +124,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 
 - [ ] US-ONB-17 · Connect Tailscale for remote access
 - [ ] US-ONB-18 · Set up remote access later
-- [ ] US-AUTH-23 · Open an invite link
+- [x] US-AUTH-23 · Open an invite link
 - [ ] US-AUTH-24 · Create my account from an invite
 - [ ] US-HOME-11 · See only my shared apps on a member Home
 - [ ] US-HOME-12 · See my files and shared-apps summary

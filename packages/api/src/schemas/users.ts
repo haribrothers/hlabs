@@ -36,6 +36,20 @@ export const pendingInviteSchema = z.object({
 });
 export type PendingInvite = z.infer<typeof pendingInviteSchema>;
 
+/** The public invite page (US-AUTH-23, US-ACCT-23): nothing about the invite beyond what it shows. */
+export const inviteInspectSchema = z.object({
+  status: z.enum(['valid', 'expired', 'used', 'revoked']),
+  /** Who made the invite; null for an unknown link or when that admin is gone. */
+  inviterName: z.string().nullable(),
+  inviterAvatarColor: z.string().nullable(),
+  /** "Their name", pre-filling the form; only while the invite is valid. */
+  displayName: z.string().nullable(),
+  role: roleSchema.nullable(),
+  /** Installed apps shared with a member invite. */
+  appCount: z.number().int().nonnegative(),
+});
+export type InviteInspect = z.infer<typeof inviteInspectSchema>;
+
 export const users = {
   list: io(empty, z.object({ users: z.array(userSummarySchema) })),
   get: io(userRef, pending),
@@ -77,7 +91,7 @@ export const invites = {
     ok,
   ),
   revoke: io(z.object({ inviteId: idSchema }), ok),
-  inspect: io(z.object({ token: z.string().min(1) }), pending),
+  inspect: io(z.object({ token: z.string().min(1).max(128) }), inviteInspectSchema),
   accept: io(
     z.object({ token: z.string().min(1), username: z.string(), displayName: displayNameSchema, password: z.string() }),
     z.object({ redirectTo: z.string() }),

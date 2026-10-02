@@ -1,6 +1,6 @@
 import { hlabsError, type AppHandlers } from '@hlabs/api';
 import type { DaemonContext } from '../context';
-import { createInvite, listPendingInvites, revokeInvite, updateInvite } from '../invites/invites';
+import { createInvite, inspectInvite, listPendingInvites, revokeInvite, updateInvite } from '../invites/invites';
 
 /** The signed-in admin, for `created_by` and the audit log. */
 const who = (ctx: DaemonContext) => {
@@ -10,6 +10,7 @@ const who = (ctx: DaemonContext) => {
 };
 
 export const invites: AppHandlers<DaemonContext>['invites'] = {
+  inspect: ({ token }, ctx) => inspectInvite(ctx.services.db, token),
   list: async (_input, ctx) => ({ invites: await listPendingInvites(ctx.services.db, ctx.services.secrets) }),
   create: (input, ctx) => createInvite(ctx.services.db, ctx.services.secrets, input, who(ctx)),
   update: (input, ctx) => {

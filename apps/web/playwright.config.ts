@@ -20,7 +20,9 @@ if (process.env.TEST_WORKER_INDEX === undefined) {
   cpSync('../../store', E2E_STORE_DIR, { recursive: true });
 }
 // Specs that need a known admin they create themselves (all onboarding and log-in stories, and a few later ones).
-const FIRST_RUN_SPECS = /(d-098-server-name|us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-2])|us-sys-(1[89]|20))\.spec\.ts/;
+// The invite stories (US-AUTH-23/24) use the main instance's admin to make their invites.
+const FIRST_RUN_SPECS =
+  /(d-098-server-name|us-onb-\d+|us-auth-(0\d|1\d|2[0-2])|us-acct-(0[3-9]|1[0-2])|us-sys-(1[89]|20))\.spec\.ts/;
 // Specs that change the main instance for everyone, run after the desktop and phone specs, one at a time: those that
 // really install store apps (the D-071 smoke set, and uninstalling one) or leave failed installs, and those that report
 // the engine as stopped (US-STATE-08…10).
