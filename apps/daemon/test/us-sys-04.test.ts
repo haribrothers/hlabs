@@ -2,9 +2,10 @@
 // connected, and Serve follows installs and uninstalls.
 import { apps, getSetting, setSetting } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
-import { afterEach, describe, expect, it } from 'vitest';
-import type { FakeTailscale } from '../src/tailscale/fake';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { FakeTailscale } from '../src/tailscale/fake';
 import { daemonWithAdmin } from './admin-session';
+import { startDaemon, tempDir, testConfig } from './helpers';
 
 const closers: Array<() => Promise<void>> = [];
 afterEach(async () => {
@@ -127,5 +128,47 @@ describe('US-SYS-04', () => {
     await d.services!.remote.reconcile();
     expect(Object.keys(ts.config.TCP!).sort()).toEqual(['14001', '443']);
     expect(getSetting(d.services!.db, 'remote').serve.sort()).toEqual([14001, 443]);
+  });
+
+  it('brings Serve up to date when hlabs starts, while connected (D-110)', async () => {
+    const ts = new FakeTailscale();
+    ts.current = {
+      kind: 'running',
+      tailnet: 'tail9.ts.net',
+      nodeName: 'hari-home',
+      httpsEnabled: true,
+      keyExpiry: null,
+    };
+    const dataDir = tempDir();
+    const first = await startDaemon({ config: { paths: { ...testConfig().paths, dataDir } }, boot: { tailscale: ts } });
+    const { db } = first.services!;
+    db.insert(apps)
+      .values({
+        id: 'immich',
+        version: '1',
+        state: 'running',
+        hostname: 'immich',
+        portFallback: 12001,
+        installedAt: 1,
+        updatedAt: 1,
+      })
+      .run();
+    setSetting(db, 'remote', {
+      ...getSetting(db, 'remote'),
+      mode: 'tailscale',
+      state: 'connected',
+      tailnetName: 'tail9.ts.net',
+      nodeName: 'hari-home',
+      serve: [443, 12001],
+    });
+    ts.config = { TCP: { '443': { HTTPS: true }, '12001': { HTTPS: true } } };
+    await first.close();
+
+    const second = await startDaemon({
+      config: { paths: { ...testConfig().paths, dataDir } },
+      boot: { tailscale: ts },
+    });
+    closers.push(second.close);
+    await vi.waitFor(() => expect(Object.keys(ts.config.TCP!).sort()).toEqual(['14001', '443']));
   });
 });

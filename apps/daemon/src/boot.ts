@@ -214,6 +214,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     void remote.reconcile();
     void dns.sync();
   });
+  // At start too: a tailnet that changed while hlabs was off, or Serve entries from before D-110, are brought up to date.
+  void remote.reconcile();
   // A DNS server that didn't answer, or a LAN address that changed, is caught up with regularly.
   const dnsTimer = setInterval(() => void dns.sync(), DNS_RETRY_MS);
   dnsTimer.unref();
