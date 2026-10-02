@@ -5,6 +5,8 @@ import { eq } from 'drizzle-orm';
 
 /** A new admin's widgets, in order (US-HOME-02). */
 export const DEFAULT_ADMIN_WIDGETS = ['live-usage', 'storage', 'remote-access', 'backups'] as const;
+/** A new member's widgets (US-HOME-11, US-HOME-12); live usage only shows while it's allowed. */
+export const DEFAULT_MEMBER_WIDGETS = ['my-files', 'shared-apps', 'live-usage'] as const;
 /** The widgets about running the server, never on a member's Home (US-HOME-11). */
 export const ADMIN_ONLY_WIDGETS: ReadonlySet<string> = new Set(['storage', 'remote-access', 'backups']);
 
@@ -48,7 +50,7 @@ export function getLayout(db: HlabsDb, user: { id: string; role: 'admin' | 'memb
     ? saved.itemsJson
     : user.role === 'admin'
       ? DEFAULT_ADMIN_WIDGETS.map((id) => ({ kind: 'widget' as const, id }))
-      : [{ kind: 'widget' as const, id: 'live-usage' }];
+      : DEFAULT_MEMBER_WIDGETS.map((id) => ({ kind: 'widget' as const, id }));
   const widgetAllowed = user.role === 'admin' ? () => true : memberWidget(db, user.id);
   const items = base.filter((i) => (i.kind === 'widget' ? widgetAllowed(i.id) : canOpen.has(i.id)));
   const placed = new Set(items.filter((i) => i.kind === 'app').map((i) => i.id));

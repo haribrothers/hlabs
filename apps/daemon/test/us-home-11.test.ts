@@ -33,7 +33,7 @@ describe('US-HOME-11', () => {
       ((await anu.query('home.getLayout')).result!.data.items as Array<{ kind: string; id: string }>)
         .filter((i) => i.kind === 'widget')
         .map((i) => i.id);
-    expect(await widgets()).toEqual([]);
+    expect(await widgets()).toEqual(['my-files', 'shared-apps']);
     // Saved while they were an admin, say.
     db.insert(homeLayout)
       .values({
@@ -43,9 +43,10 @@ describe('US-HOME-11', () => {
       })
       .run();
     expect(await widgets()).toEqual([]);
+    db.delete(homeLayout).run();
     setSetting(db, 'people', { ...getSetting(db, 'people'), membersCanSeeUsage: true });
     await d.mutate('users.setAppAccess', { userId: anu.userId, appIds: ['jellyfin'], canSeeUsage: true });
-    expect(await widgets()).toEqual(['live-usage']);
+    expect(await widgets()).toEqual(['my-files', 'shared-apps', 'live-usage']);
   });
 
   it('a newly shared app is appended to their grid; one taken away drops out', async () => {
