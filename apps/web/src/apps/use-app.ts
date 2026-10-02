@@ -7,6 +7,7 @@ import { useSubscription } from '@trpc/tanstack-react-query';
 import { useState } from 'react';
 import { pageQuery } from '../lib/error-copy';
 import { useTRPC } from '../lib/trpc';
+import { appAddress } from '../lib/app-address';
 
 export function useApp(appId: string) {
   const trpc = useTRPC();
@@ -40,5 +41,5 @@ export function useApp(appId: string) {
 
 /** The app's address for this browser: its tailnet port on the tailnet name (D-012), its .local name otherwise. */
 export function appBaseUrl(app: Pick<AppDetail, 'urls'>, location: Pick<Location, 'hostname'> = window.location) {
-  return location.hostname.endsWith('.ts.net') && app.urls.tailnet ? app.urls.tailnet : app.urls.local;
+  return appAddress(app.urls, location);
 }

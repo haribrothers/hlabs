@@ -138,14 +138,14 @@ export class SessionService {
 }
 
 /**
- * The cookie's Domain (US-AUTH-14): `.<hostname>.local` when the dashboard is reached on its mDNS name, so app
- * hostnames under it share the session; otherwise none, so it stays on the host it was set on (tailnet name, an IP or
- * a fallback port).
+ * The cookie's Domain (US-AUTH-14): `.<hostname>.local` or `.<hostname>.home.arpa` (D-105) when the dashboard is
+ * reached on that name, so app hostnames under it share the session; otherwise none, so it stays on the host it was
+ * set on (tailnet name, an IP or a fallback port).
  */
 export function cookieDomain(host: string | null, hostname: string): string | undefined {
   const name = host?.replace(/:\d+$/, '').toLowerCase();
-  const local = `${hostname.toLowerCase()}.local`;
-  return name === local ? `.${local}` : undefined;
+  const home = [`${hostname.toLowerCase()}.local`, `${hostname.toLowerCase()}.home.arpa`];
+  return name && home.includes(name) ? `.${name}` : undefined;
 }
 
 /** `hlabs_session` cookie: HttpOnly, Secure, SameSite=Lax, Path=/; persistent only with "Remember me". */
