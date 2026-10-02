@@ -1,5 +1,6 @@
 import { hlabsError, type AppHandlers } from '@hlabs/api';
 import type { DaemonContext } from '../context';
+import { createResetLink } from '../users/reset-link';
 import { deleteUser, disableUser, enableUser, getUser, listUsers, setAppAccess, updateRole } from '../users/users';
 
 /** The signed-in admin, for the audit log. */
@@ -24,6 +25,7 @@ export const users: AppHandlers<DaemonContext>['users'] = {
     enableUser(ctx.services.db, userId, who(ctx));
     return { ok: true as const };
   },
+  resetPasswordLink: ({ userId }, ctx) => createResetLink(ctx.services.db, userId, who(ctx)),
   delete: ({ userId, deleteHomeFolder }, ctx) =>
     deleteUser(ctx.services, { userId, deleteHomeFolder: deleteHomeFolder ?? false }, who(ctx)),
   setAppAccess: (input, ctx) => {

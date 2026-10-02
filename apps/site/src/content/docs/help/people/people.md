@@ -68,3 +68,7 @@ Choose **•••** › **Delete…** next to someone who no longer uses hlabs.
 
 Their Home folder is kept unless you tick **Also delete their Home folder**. Kept, it stays in `users/<username>`, where admins can see it in Files. Ticked, it goes to the trash and is emptied after 30 days. You can't delete the last admin.
 
+## Help someone who forgot their password
+
+hlabs doesn't use email, so you give them a link instead. In **Settings › Users**, choose **Reset password** next to them and send them the link. It works once, for 15 minutes; making a new one stops the old one. When they choose a new password with it, they're logged out on every device and log in again with the new one.
+

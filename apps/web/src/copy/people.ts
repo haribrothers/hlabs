@@ -39,6 +39,12 @@ export const peopleCopy = {
   trashedHomeFolder: 'Their Home folder goes to the trash and is emptied after 30 days.',
   deleteConfirm: (name: string) => `Delete ${name}`,
   deleted: (name: string) => `${name} was deleted`,
+  resetTitle: (name: string) => `Reset ${name}'s password`,
+  resetLead: (name: string) =>
+    `Give ${name} this link. They choose a new password, and they're logged out on every device.`,
+  resetLink: 'Reset link',
+  resetNote: 'Works once · expires in 15 minutes',
+  resetFailed: "Couldn't make a reset link. Try again.",
   actionFailed: "Couldn't make that change. Try again.",
   invitePending: 'Invite pending',
   inviteLine: (created: string, days: number, role: string) =>

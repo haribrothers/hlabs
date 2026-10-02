@@ -6,8 +6,14 @@ import { asc, eq, isNull } from 'drizzle-orm';
 import { csrfTokenFor } from '../auth/sessions';
 import { clearSessionCookie, setSessionCookie } from './session-cookie';
 import type { DaemonContext } from '../context';
+import { resetPassword } from '../users/reset-link';
 
 export const auth: AppHandlers<DaemonContext>['auth'] = {
+  /** A new password from an admin's one-time link (US-ACCT-14; its page is US-AUTH-22). Signs them out everywhere. */
+  resetPassword: async (input, ctx) => {
+    await resetPassword(ctx.services, input, ctx.request.ip);
+    return { ok: true as const };
+  },
   /**
    * Sign out one of my devices (US-ACCT-05): only my own sessions; already ended ones are fine (idempotent). The
    * device hears `session.revoked` and goes to log in.

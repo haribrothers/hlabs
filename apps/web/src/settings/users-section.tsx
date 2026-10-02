@@ -28,6 +28,7 @@ import { useNow } from '../lib/use-now';
 import { AppsAccessDialog } from './apps-access-dialog';
 import { DeleteUserDialog } from './delete-user-dialog';
 import { InviteDialog } from './invite-dialog';
+import { ResetLinkDialog } from './reset-link-dialog';
 
 const DAY = 86_400_000;
 
@@ -126,6 +127,7 @@ function UserRow({
   now,
   desktop,
   onAppsAccess,
+  onResetPassword,
   onDelete,
 }: {
   user: UserSummary;
@@ -133,6 +135,7 @@ function UserRow({
   now: number;
   desktop: boolean;
   onAppsAccess: () => void;
+  onResetPassword: () => void;
   onDelete: () => void;
 }) {
   const size = desktop ? 'sm' : 'md';
@@ -145,7 +148,7 @@ function UserRow({
           <Button variant="secondary" size={size} onClick={onAppsAccess}>
             {copy.appsAccess}
           </Button>
-          <Button variant="secondary" size={size}>
+          <Button variant="secondary" size={size} onClick={onResetPassword}>
             {copy.resetPassword}
           </Button>
         </>
@@ -266,6 +269,7 @@ export function UsersSection() {
   const desktop = useIsDesktop();
   const [accessFor, setAccessFor] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<UserSummary | null>(null);
+  const [resetting, setResetting] = useState<UserSummary | null>(null);
   const people = useQuery({ ...trpc.users.list.queryOptions(), retry: false });
   const invites = useQuery({ ...trpc.invites.list.queryOptions(), retry: false });
 
@@ -311,6 +315,7 @@ export function UsersSection() {
             now={now}
             desktop={desktop}
             onAppsAccess={() => setAccessFor(u.id)}
+            onResetPassword={() => setResetting(u)}
             onDelete={() => setDeleting(u)}
           />
         ))}
@@ -320,6 +325,9 @@ export function UsersSection() {
       </List>
       {accessFor ? <AppsAccessDialog userId={accessFor} onClose={() => setAccessFor(null)} /> : null}
       {deleting ? <DeleteUserDialog user={deleting} onClose={() => setDeleting(null)} /> : null}
+      {resetting ? (
+        <ResetLinkDialog userId={resetting.id} name={resetting.displayName} onClose={() => setResetting(null)} />
+      ) : null}
     </div>
   );
 }
