@@ -34,8 +34,7 @@ export const peopleCopy = {
     `${name} is logged out and their account, two-factor login and app access are removed. Their apps keep running for everyone else.`,
   deleteHomeFolder: (size: string) => `Also delete their Home folder (${size})`,
   deleteHomeFolderCounting: 'Also delete their Home folder (counting…)',
-  keptHomeFolder: (username: string) =>
-    `Their Home folder stays in users/${username}, where admins can see it in Files.`,
+  keptHomeFolder: (folder: string) => `Their Home folder is kept as users/${folder}, where admins can see it in Files.`,
   trashedHomeFolder: 'Their Home folder goes to the trash and is emptied after 30 days.',
   deleteConfirm: (name: string) => `Delete ${name}`,
   deleted: (name: string) => `${name} was deleted`,

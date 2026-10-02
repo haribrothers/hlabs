@@ -11,3 +11,4 @@ export * from './jobs';
 export * from './notifications';
 export * from './store';
 export * from './search';
+export * from './people';

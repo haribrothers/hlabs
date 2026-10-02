@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { keptHomeFolderName } from '@hlabs/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { daemonError, renderScreen } from '../test/render';
 import { DeleteUserDialog } from './delete-user-dialog';
@@ -38,7 +39,9 @@ describe('US-ACCT-16', () => {
     const box = await within(dialog).findByRole('checkbox', { name: 'Also delete their Home folder (4.2 GB)' });
     expect(box).not.toBeChecked();
     expect(
-      within(dialog).getByText('Their Home folder stays in users/anu, where admins can see it in Files.'),
+      within(dialog).getByText(
+        `Their Home folder is kept as users/${keptHomeFolderName('anu', Date.now())}, where admins can see it in Files.`,
+      ),
     ).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'Delete Anu' })).toHaveClass('hl-btn-destructive');
   });

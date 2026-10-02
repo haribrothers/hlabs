@@ -269,7 +269,7 @@ The Settings window, the pages everyone uses to look after their own account (pr
 
 **Acceptance criteria**
 - **Given** I choose "Delete…", **when** the Dialog opens, **then** it names the person, has a "Also delete their Home folder (<size>)" checkbox, unchecked by default, and a destructive "Delete <name>" button.
-- **Given** I confirm with the checkbox off, **when** it succeeds, **then** the user, their sessions, 2FA, recovery codes and app access are removed, and their Home folder stays at `users/<username>/` visible to admins in Files.
+- **Given** I confirm with the checkbox off, **when** it succeeds, **then** the user, their sessions, 2FA, recovery codes and app access are removed, and their Home folder is kept, renamed `users/<username>-deleted-<yyyy-mm-dd>/` (D-101), visible to admins in Files.
 - **Given** I confirm with the checkbox on, **when** it succeeds, **then** their Home folder is moved to the trash (30-day auto-empty) as a job.
 - **Given** the user is the last enabled admin, **when** I try, **then** it is refused with "hlabs needs at least one admin."
 - **Given** a deleted username, **when** someone later accepts an invite, **then** that username can be reused.

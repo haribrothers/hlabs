@@ -1,7 +1,7 @@
 // Delete someone (US-ACCT-16): names them, says what goes and what stays, and offers to send their Home folder to the
 // trash too (off by default). The last enabled admin can't be deleted; that shows inline.
 import type { UserSummary } from '@hlabs/api';
-import { formatBytes } from '@hlabs/shared';
+import { formatBytes, keptHomeFolderName } from '@hlabs/shared';
 import { Button, ModalDialog } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -64,7 +64,7 @@ export function DeleteUserDialog({ user, onClose }: { user: UserSummary; onClose
           {bytes === null ? copy.deleteHomeFolderCounting : copy.deleteHomeFolder(formatBytes(bytes))}
         </label>
         <p className="m-0 text-body-sm text-ink-muted">
-          {withFolder ? copy.trashedHomeFolder : copy.keptHomeFolder(user.username)}
+          {withFolder ? copy.trashedHomeFolder : copy.keptHomeFolder(keptHomeFolderName(user.username, Date.now()))}
         </p>
         {remove.isError ? (
           <p role="alert" className="m-0 text-body-sm text-danger">

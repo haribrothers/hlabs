@@ -12,7 +12,7 @@ import {
   users,
   userTotp,
 } from '@hlabs/db';
-import { ulid } from '@hlabs/shared';
+import { keptHomeFolderName, ulid } from '@hlabs/shared';
 import { eq } from 'drizzle-orm';
 import { existsSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -49,14 +49,16 @@ async function setup() {
 }
 
 describe('US-ACCT-16', () => {
-  it('without the checkbox: everything of theirs goes but the Home folder, which stays for admins', async () => {
+  it('without the checkbox: everything of theirs goes but the Home folder, kept for admins under a new name', async () => {
     const { d, db, root, anu } = await setup();
     const res = await d.mutate('users.delete', { userId: anu.userId });
     expect(res.result?.data).toEqual({ jobId: null });
     expect(db.select().from(users).where(eq(users.id, anu.userId)).get()).toBeUndefined();
     for (const table of [sessions, userTotp, recoveryCodes, appAccess, homeLayout])
       expect(db.select().from(table).where(eq(table.userId, anu.userId)).all()).toEqual([]);
-    expect(existsSync(join(root, 'users', 'anu', 'notes.txt'))).toBe(true);
+    // Renamed out of the way (D-101), so the username can be used again with an empty Home.
+    expect(existsSync(join(root, 'users', 'anu'))).toBe(false);
+    expect(existsSync(join(root, 'users', keptHomeFolderName('anu', Date.now()), 'notes.txt'))).toBe(true);
     expect(db.select().from(auditLog).where(eq(auditLog.action, 'users.delete')).get()).toMatchObject({
       userId: d.userId,
       target: anu.userId,
@@ -85,10 +87,22 @@ describe('US-ACCT-16', () => {
     expect((await d.mutate('users.delete', { userId: d.userId })).error?.data.hlabsCode).toBe('LAST_ADMIN');
   });
 
-  it('the username can be used again by a later invite', async () => {
-    const { d, anu } = await setup();
+  it('the username can be used again by a later invite, and that person starts with an empty Home', async () => {
+    const { d, root, anu } = await setup();
     await d.mutate('users.delete', { userId: anu.userId });
     const again = await memberSession(d, { username: 'anu' });
     expect(again.userId).not.toBe(anu.userId);
+    expect(readdirSync(join(root, 'users', 'anu'))).toEqual([]);
+  });
+
+  it('a second deletion on the same day gets its own folder', async () => {
+    const { d, root, anu } = await setup();
+    await d.mutate('users.delete', { userId: anu.userId });
+    const again = await memberSession(d, { username: 'anu' });
+    writeFileSync(join(root, 'users', 'anu', 'second.txt'), 'x');
+    await d.mutate('users.delete', { userId: again.userId });
+    const kept = keptHomeFolderName('anu', Date.now());
+    expect(existsSync(join(root, 'users', kept, 'notes.txt'))).toBe(true);
+    expect(existsSync(join(root, 'users', `${kept}-2`, 'second.txt'))).toBe(true);
   });
 });

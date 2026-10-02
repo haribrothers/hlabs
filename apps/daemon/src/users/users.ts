@@ -1,7 +1,7 @@
 // The people who use hlabs (09-account-people.md, F-ACCT-05): what an admin sees and changes in Settings › Users.
 import { hlabsError, type UserSummary } from '@hlabs/api';
 import { appAccess, apps, auditLog, getSetting, sessions, setSetting, users, userTotp, type HlabsDb } from '@hlabs/db';
-import { ulid } from '@hlabs/shared';
+import { keptHomeFolderName, ulid } from '@hlabs/shared';
 import { and, asc, count, eq, inArray, isNotNull, isNull, max, ne } from 'drizzle-orm';
 import type { SessionService } from '../auth/sessions';
 import { totpSecretRef } from '../auth/totp';
@@ -9,6 +9,9 @@ import type { JobRunner } from '../jobs/runner';
 import type { SecretStore } from '../platform/secrets';
 import { homeFolderBytes, homeFolderPath } from '../storage/home-folder';
 import type { EventBus } from '../events/bus';
+import type { Logger } from '../logger';
+import { access, rename } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 
 /**
  * Everyone, admins first, then by when they joined (US-ACCT-13). Last active is the later of the last log-in and the
@@ -207,10 +210,11 @@ export function enableUser(db: HlabsDb, userId: string, who: Who, now = Date.now
 /**
  * Delete someone (US-ACCT-16): their sessions end, then the account goes with its two-factor, recovery codes, app
  * access and Home layout (foreign keys cascade) and their two-factor secret leaves the secret store. Their Home
- * folder stays at `users/<username>/` unless asked; then it goes to the trash as a job. Never the last enabled admin.
+ * folder is kept, renamed `users/<username>-deleted-<date>/` so a later person with that username starts empty (D-101),
+ * unless asked to go to the trash, as a job. Never the last enabled admin.
  */
 export async function deleteUser(
-  deps: { db: HlabsDb; sessions: SessionService; secrets: SecretStore; jobs: JobRunner },
+  deps: { db: HlabsDb; sessions: SessionService; secrets: SecretStore; jobs: JobRunner; logger: Logger },
   input: { userId: string; deleteHomeFolder: boolean },
   who: Who,
   now = Date.now(),
@@ -229,7 +233,13 @@ export async function deleteUser(
     audit(tx, who, 'users.delete', user.id, { username: user.username, deleteHomeFolder: input.deleteHomeFolder }, now);
   });
   await deps.secrets.delete(totpSecretRef(user.id)).catch(() => undefined);
-  if (!input.deleteHomeFolder || !homePath) return { jobId: null };
+  if (!homePath) return { jobId: null };
+  if (!input.deleteHomeFolder) {
+    await keepHomeFolder(homePath, user.username, now).catch((err: unknown) =>
+      deps.logger.warn({ err, username: user.username }, "couldn't rename a deleted person's Home folder"),
+    );
+    return { jobId: null };
+  }
   return {
     jobId: deps.jobs.start('home_folder_trash', {
       target: user.username,
@@ -270,4 +280,19 @@ export function updatePolicy(
   for (const m of db.select({ id: users.id }).from(users).where(eq(users.role, 'member')).all())
     deps.bus.emit('access.changed', { userId: m.id }, { kind: 'user', userId: m.id });
   return getPolicy(db);
+}
+
+const exists = (path: string) =>
+  access(path).then(
+    () => true,
+    () => false,
+  );
+
+/** Renames a deleted person's kept Home folder out of the way; `-2`, `-3`… if that name is taken. */
+async function keepHomeFolder(path: string, username: string, now: number) {
+  if (!(await exists(path))) return;
+  const base = join(dirname(path), keptHomeFolderName(username, now));
+  let target = base;
+  for (let n = 2; await exists(target); n++) target = `${base}-${n}`;
+  await rename(path, target);
 }
