@@ -5,6 +5,7 @@ import { isFeatureEnabled } from '@hlabs/shared';
 import { TrayMenu, TraySetup, type MenuItem } from '@hlabs/ui';
 import { useAccess, type Access } from './access';
 import { useBoot, type BootState } from './boot';
+import { useDashboardActions } from './dashboard';
 import { appsLine, formatCpu, formatFree, formatMemory } from './format';
 import { useOpenSetup, useSetupPending } from './setup';
 import { useMenuOpen, useTrayStatus } from './status';
@@ -52,15 +53,22 @@ export function FirstLaunch({ boot, onOpenSetup }: { boot: BootState; onOpenSetu
   );
 }
 
+export interface RunningActions {
+  openDashboard?: () => void;
+  copyAddress?: () => void;
+  /** "Copy dashboard address" reads "Copied" for 1.5 s. */
+  copied?: boolean;
+}
+
 /**
  * The running menu, in the design's order (TrayMenu): what the actions do arrives with their stories (US-INST-05…10,
  * US-INST-17, US-INST-19); "Back up now" waits for backups (phase 5) and "Uninstall hlabs…" for phase 6 (D-036).
  */
-export function runningItems(): MenuItem[] {
+export function runningItems(actions: RunningActions = {}): MenuItem[] {
   return [
     { separator: true },
-    { label: t.openDashboard, shortcut: '⌘D' },
-    { label: t.copyAddress },
+    { label: t.openDashboard, shortcut: '⌘D', onSelect: actions.openDashboard },
+    { label: actions.copied ? t.copied : t.copyAddress, onSelect: actions.copyAddress },
     ...(isFeatureEnabled('backups') ? [{ label: t.backUpNow }] : []),
     { separator: true },
     { label: t.startAtLogin, checked: true },
@@ -93,6 +101,7 @@ export function Menu() {
 
 /** TrayMenu (US-INST-05): "Running · N apps" and CPU, memory and free space; dashes until tray.status answers. */
 export function RunningMenu({ status }: { status: TrayStatus | null }) {
+  const dashboard = useDashboardActions();
   const cpu = formatCpu(status?.cpuPercent);
   const memory = formatMemory(status?.memoryUsedBytes);
   const free = formatFree(status?.freeBytes);
@@ -106,7 +115,11 @@ export function RunningMenu({ status }: { status: TrayStatus | null }) {
         { label: t.memory, value: memory, spoken: t.memorySpoken(memory) },
         { label: t.free, value: free, spoken: t.freeSpoken(free) },
       ]}
-      items={runningItems()}
+      items={runningItems({
+        openDashboard: () => void dashboard.open(),
+        copyAddress: () => void dashboard.copy(),
+        copied: dashboard.copied,
+      })}
     />
   );
 }

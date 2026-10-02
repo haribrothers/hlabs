@@ -31,7 +31,7 @@ One tRPC v11 router tree in `packages/api`, implemented in `apps/daemon`. Every 
 | `notifications` | `list`, `markRead`, `markAllRead`, `dismiss` | |
 | `jobs` | `get`, `list` (active), `cancel` (where supported) | |
 | `ai` (P3) | `get`, `setEnabled`, `tokens.create` / `list` / `revoke` | |
-| `tray` | `status` (state, CPU, memory, free space, app count, last backup), `quickAction` (openDashboard, copyAddress, backupNow, pauseAll, resumeAll), `resetPassword` (username) | trayProcedure only. |
+| `tray` | `status` (state, CPU, memory, free space, app count, last backup), `quickAction` (openDashboard, copyAddress → `{ url }`, the dashboard's current address, which the tray opens or copies; backupNow, pauseAll, resumeAll → `{ jobId }`), `resetPassword` (username) | trayProcedure only. |
 | `events` | `stream` (subscription, SSE) | Filtered per user. |
 
 ## Non-tRPC HTTP

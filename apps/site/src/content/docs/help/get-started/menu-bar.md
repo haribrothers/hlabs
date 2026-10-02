@@ -19,3 +19,7 @@ The top of the menu says whether hlabs is running and how many of your apps are 
 The numbers refresh every few seconds while the menu is open. Until hlabs answers, the tiles show a dash instead of a number.
 
 If the menu says **Container engine stopped**, the program that runs your apps (such as OrbStack, Docker Desktop or Colima) isn't running, so your apps are offline.
+
+## Open the dashboard
+
+Choose **Open Dashboard** (or press ⌘D while the menu is open) to open hlabs in your browser. **Copy dashboard address** copies the address so you can paste it into a message to someone at home; the item says **Copied** for a moment. Both always use hlabs's current address, so they keep working after you rename this computer in hlabs. If setup isn't finished yet, the address opens setup.

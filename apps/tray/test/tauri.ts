@@ -27,6 +27,9 @@ export function answer(a: Answers) {
         return a.boot ?? null;
       case 'open_setup':
         return true;
+      case 'open_dashboard':
+      case 'copy_dashboard_address':
+        return null;
       case 'daemon_call':
         if (args?.path === 'tray.setupUrl') return { url: a.setupUrl ?? null, lanUrls: [] };
         if (args?.path === 'tray.status') return a.status ?? null;

@@ -105,6 +105,48 @@ async fn started(app: &AppHandle) {
     }
 }
 
+/// The dashboard's current address from `tray.quickAction` (US-INST-06); only a web address.
+async fn dashboard_url(app: &AppHandle, action: &str) -> Result<String, DaemonError> {
+    let token = app
+        .state::<Daemon>()
+        .lock()
+        .token()
+        .map(str::to_owned)
+        .ok_or(DaemonError::NoAccess)?;
+    let data = DaemonClient::new(DEFAULT_BASE_URL, token)
+        .call(
+            CallKind::Mutation,
+            "tray.quickAction",
+            &serde_json::json!({ "action": action }),
+        )
+        .await?;
+    daemon::web_url(&data).ok_or(DaemonError::Protocol)
+}
+
+/// "Open Dashboard" (⌘D): opens the dashboard in the default browser and closes the menu.
+#[tauri::command]
+async fn open_dashboard(app: AppHandle) -> Result<(), DaemonError> {
+    use tauri_plugin_opener::OpenerExt;
+    let url = dashboard_url(&app, "openDashboard").await?;
+    app.opener()
+        .open_url(&url, None::<&str>)
+        .map_err(|_| DaemonError::Protocol)?;
+    if let Some(menu) = app.get_webview_window(window::MENU_WINDOW) {
+        let _ = menu.hide();
+    }
+    Ok(())
+}
+
+/// "Copy dashboard address": puts the address on the clipboard; the window says "Copied", then closes.
+#[tauri::command]
+async fn copy_dashboard_address(app: AppHandle) -> Result<(), DaemonError> {
+    use tauri_plugin_clipboard_manager::ClipboardExt;
+    let url = dashboard_url(&app, "copyAddress").await?;
+    app.clipboard()
+        .write_text(url)
+        .map_err(|_| DaemonError::Protocol)
+}
+
 /// "Open setup": fetches `tray.setupUrl` again and opens it (US-INST-02).
 #[tauri::command]
 async fn open_setup(app: AppHandle) -> Result<bool, DaemonError> {
@@ -220,12 +262,15 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(tauri::generate_handler![
             daemon_call,
             tray_access,
             retry_access,
             boot_state,
-            open_setup
+            open_setup,
+            open_dashboard,
+            copy_dashboard_address
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]

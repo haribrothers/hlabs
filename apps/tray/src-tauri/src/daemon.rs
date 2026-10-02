@@ -140,6 +140,14 @@ pub fn setup_url(data: &Value) -> Result<Option<String>, DaemonError> {
     }
 }
 
+/// A web address in `{ url }` (`tray.quickAction`), or `None`.
+pub fn web_url(data: &Value) -> Option<String> {
+    data.get("url")
+        .and_then(Value::as_str)
+        .filter(|u| u.starts_with("http://") || u.starts_with("https://"))
+        .map(str::to_owned)
+}
+
 fn parse(status: u16, body: &str) -> Result<Value, DaemonError> {
     let envelope: Envelope = serde_json::from_str(body).map_err(|_| DaemonError::Protocol)?;
     if let Some(error) = envelope.error {
@@ -266,6 +274,17 @@ mod tests {
         );
         assert!(setup_url(&serde_json::json!({ "url": "file:///etc/passwd" })).is_err());
         assert!(setup_url(&serde_json::json!({ "url": 3 })).is_err());
+    }
+
+    #[test]
+    fn us_inst_06_only_a_web_dashboard_address_is_used() {
+        let ok = serde_json::json!({ "url": "https://hlabs.local" });
+        assert_eq!(web_url(&ok).as_deref(), Some("https://hlabs.local"));
+        assert_eq!(
+            web_url(&serde_json::json!({ "url": "javascript:alert(1)" })),
+            None
+        );
+        assert_eq!(web_url(&serde_json::json!({ "ok": true })), None);
     }
 
     #[test]

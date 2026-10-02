@@ -12,6 +12,7 @@ export const trayCopy = {
   free: 'Free',
   openDashboard: 'Open Dashboard',
   copyAddress: 'Copy dashboard address',
+  copied: 'Copied',
   backUpNow: 'Back up now',
   startAtLogin: 'Start at login',
   pauseAll: 'Pause all apps',
