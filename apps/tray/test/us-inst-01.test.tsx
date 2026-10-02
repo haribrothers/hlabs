@@ -1,31 +1,16 @@
 // US-INST-01 · First launch installs the background service: what the window shows while it starts.
 import { act, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const invoke = vi.hoisted(() => vi.fn());
-const listeners = vi.hoisted(() => new Map<string, (e: { payload: unknown }) => void>());
-vi.mock('@tauri-apps/api/core', () => ({ invoke }));
-vi.mock('@tauri-apps/api/event', () => ({
-  listen: (name: string, cb: (e: { payload: unknown }) => void) => {
-    listeners.set(name, cb);
-    return Promise.resolve(() => listeners.delete(name));
-  },
-}));
-
+import { beforeEach, describe, expect, it } from 'vitest';
 import { Menu } from '../src/menu';
+import { answer, emit, reset } from './tauri';
 
-function answer(boot: unknown) {
-  invoke.mockImplementation(async (cmd: string) => (cmd === 'boot_state' ? boot : 'ready'));
-}
+const boot = (step: string, firstLaunch = true) => ({ firstLaunch, step, reason: null, setupOpened: false });
 
 describe('US-INST-01 · First launch installs the background service', () => {
-  beforeEach(() => {
-    invoke.mockReset();
-    listeners.clear();
-  });
+  beforeEach(reset);
 
   it('shows "Setting up hlabs" with the checklist while the background service starts', async () => {
-    answer({ firstLaunch: true, step: 'starting', reason: null });
+    answer({ boot: boot('starting') });
     render(<Menu />);
     const card = await screen.findByRole('region', { name: 'Setting up hlabs' });
     expect(card).toHaveTextContent('This happens once');
@@ -35,24 +20,24 @@ describe('US-INST-01 · First launch installs the background service', () => {
   });
 
   it('checks off "Starting background service" once /healthz answers', async () => {
-    answer({ firstLaunch: true, step: 'starting', reason: null });
+    answer({ boot: boot('starting'), setupUrl: 'http://127.0.0.1:7474/setup?token=x' });
     render(<Menu />);
     await screen.findByRole('region', { name: 'Setting up hlabs' });
-    act(() => listeners.get('boot-changed')!({ payload: { firstLaunch: true, step: 'started', reason: null } }));
+    act(() => emit('boot-changed', boot('started')));
     expect(screen.getAllByRole('listitem')[0]).toHaveTextContent('Starting background service (done)');
   });
 
   it('switches to "Can\'t reach hlabs" when the daemon doesn\'t answer within 60 s', async () => {
-    answer({ firstLaunch: true, step: 'starting', reason: null });
+    answer({ boot: boot('starting') });
     render(<Menu />);
     await screen.findByRole('region', { name: 'Setting up hlabs' });
-    act(() => listeners.get('boot-changed')!({ payload: { firstLaunch: true, step: 'failed', reason: null } }));
+    act(() => emit('boot-changed', boot('failed')));
     expect(screen.getByRole('menu', { name: 'hlabs' })).toHaveTextContent("Can't reach hlabs");
     expect(screen.queryByRole('region', { name: 'Setting up hlabs' })).not.toBeInTheDocument();
   });
 
-  it('shows no first-launch window when hlabs has run before', async () => {
-    answer({ firstLaunch: false, step: 'started', reason: null });
+  it('shows no first-launch window when hlabs has run before and is set up', async () => {
+    answer({ boot: boot('started', false), setupUrl: null });
     render(<Menu />);
     expect(await screen.findByText('Open Dashboard')).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Setting up hlabs' })).not.toBeInTheDocument();

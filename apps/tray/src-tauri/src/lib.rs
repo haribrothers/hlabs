@@ -42,19 +42,72 @@ struct BootState {
     step: BootStep,
     /// Why it failed, from `/healthz` (e.g. `migration_failed`); none for a timeout.
     reason: Option<String>,
+    /// Setup was opened in the browser during this launch (US-INST-02: at most once by itself).
+    setup_opened: bool,
 }
 
 struct Boot(Mutex<BootState>);
 
-fn set_boot(app: &AppHandle, step: BootStep, reason: Option<String>) {
+fn update_boot(app: &AppHandle, change: impl FnOnce(&mut BootState)) {
     let state = {
         let boot = app.state::<Boot>();
         let mut state = boot.0.lock().expect("boot state poisoned");
-        state.step = step;
-        state.reason = reason;
+        change(&mut state);
         state.clone()
     };
     let _ = app.emit(BOOT_EVENT, state);
+}
+
+fn set_boot(app: &AppHandle, step: BootStep, reason: Option<String>) {
+    update_boot(app, |state| {
+        state.step = step;
+        state.reason = reason;
+    });
+}
+
+/// Opens the tokenised setup URL from `tray.setupUrl` in the default browser (US-INST-02). `false`
+/// when onboarding is already complete (the URL is null).
+async fn open_setup_url(app: &AppHandle) -> Result<bool, DaemonError> {
+    use tauri_plugin_opener::OpenerExt;
+    let token = app
+        .state::<Daemon>()
+        .lock()
+        .token()
+        .map(str::to_owned)
+        .ok_or(DaemonError::NoAccess)?;
+    let data = DaemonClient::new(DEFAULT_BASE_URL, token)
+        .call(CallKind::Query, "tray.setupUrl", &Value::Null)
+        .await?;
+    let Some(url) = daemon::setup_url(&data)? else {
+        return Ok(false);
+    };
+    app.opener()
+        .open_url(&url, None::<&str>)
+        .map_err(|_| DaemonError::Protocol)?;
+    update_boot(app, |state| state.setup_opened = true);
+    Ok(true)
+}
+
+/// Once the daemon answers: open setup by itself, once per launch, while onboarding is incomplete.
+async fn started(app: &AppHandle) {
+    set_boot(app, BootStep::Started, None);
+    let already = app
+        .state::<Boot>()
+        .0
+        .lock()
+        .expect("boot state poisoned")
+        .setup_opened;
+    if !already {
+        if let Err(err) = open_setup_url(app).await {
+            eprintln!("hlabs tray: couldn't open setup: {err}");
+        }
+    }
+}
+
+/// "Open setup": fetches `tray.setupUrl` again and opens it (US-INST-02).
+#[tauri::command]
+async fn open_setup(app: AppHandle) -> Result<bool, DaemonError> {
+    open_setup_url(&app).await
 }
 
 /// The background service's start, for the window.
@@ -130,6 +183,15 @@ fn retry_access(app: AppHandle, daemon: State<'_, Daemon>) -> Access {
     after
 }
 
+/// Waits for `/healthz` (60 s), then reports started (and opens setup) or failed.
+async fn wait_until_started(app: &AppHandle) {
+    match bootstrap::wait_for_health(DEFAULT_BASE_URL, bootstrap::HEALTH_TIMEOUT).await {
+        Waited::Ready => started(app).await,
+        Waited::TimedOut => set_boot(app, BootStep::Failed, None),
+        Waited::Failed(reason) => set_boot(app, BootStep::Failed, Some(reason)),
+    }
+}
+
 /// The bootstrap for a macOS release build that has the daemon bundled; `None` otherwise.
 fn bundled_bootstrap(
     daemon_dir: std::path::PathBuf,
@@ -156,11 +218,13 @@ fn bundled_bootstrap(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
+        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             daemon_call,
             tray_access,
             retry_access,
-            boot_state
+            boot_state,
+            open_setup
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]
@@ -170,59 +234,41 @@ pub fn run() {
                 token::default_store(&paths::data_dir()),
                 launchd::default_service(),
             );
-            let daemon_dir = app.path().resource_dir()?.join("daemon");
-            let first_launch = match bundled_bootstrap(daemon_dir) {
-                // A release build with the daemon bundled: install and start the background service.
-                Some(boot) => {
-                    let first = boot.is_first_launch(guard.has_stored_token());
-                    if let Err(err) = boot.prepare() {
-                        eprintln!("hlabs tray: {err}");
-                    }
-                    // The token exists before the LaunchAgent starts the daemon that reads it.
-                    guard.start();
-                    let handle = app.handle().clone();
-                    tauri::async_runtime::spawn(async move {
-                        let installed =
-                            tauri::async_runtime::spawn_blocking(move || boot.install(first)).await;
-                        match installed {
-                            Ok(Ok(_)) => {}
-                            Ok(Err(err)) => {
-                                eprintln!("hlabs tray: {err}");
-                                return set_boot(&handle, BootStep::Failed, None);
-                            }
-                            Err(_) => return set_boot(&handle, BootStep::Failed, None),
-                        }
-                        match bootstrap::wait_for_health(
-                            DEFAULT_BASE_URL,
-                            bootstrap::HEALTH_TIMEOUT,
-                        )
-                        .await
-                        {
-                            Waited::Ready => set_boot(&handle, BootStep::Started, None),
-                            Waited::TimedOut => set_boot(&handle, BootStep::Failed, None),
-                            Waited::Failed(reason) => {
-                                set_boot(&handle, BootStep::Failed, Some(reason))
-                            }
-                        }
-                    });
-                    first
+            let boot = bundled_bootstrap(app.path().resource_dir()?.join("daemon"));
+            let first_launch = boot
+                .as_ref()
+                .is_some_and(|b| b.is_first_launch(guard.has_stored_token()));
+            if let Some(b) = &boot {
+                if let Err(err) = b.prepare() {
+                    eprintln!("hlabs tray: {err}");
                 }
-                // Development (`pnpm dev:tray`): the daemon runs under `pnpm dev`.
-                None => {
-                    guard.start();
-                    false
-                }
-            };
+            }
+            // The token exists before the LaunchAgent starts the daemon that reads it.
+            guard.start();
             app.manage(Daemon(Mutex::new(guard)));
             app.manage(Boot(Mutex::new(BootState {
                 first_launch,
-                step: if first_launch || cfg!(not(debug_assertions)) {
-                    BootStep::Starting
-                } else {
-                    BootStep::Started
-                },
+                step: BootStep::Starting,
                 reason: None,
+                setup_opened: false,
             })));
+
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                // A release build with the daemon bundled installs and starts the background service;
+                // in development (`pnpm dev:tray`) the daemon runs under `pnpm dev`.
+                if let Some(b) = boot {
+                    let installed =
+                        tauri::async_runtime::spawn_blocking(move || b.install(first_launch)).await;
+                    if !matches!(installed, Ok(Ok(_))) {
+                        if let Ok(Err(err)) = installed {
+                            eprintln!("hlabs tray: {err}");
+                        }
+                        return set_boot(&handle, BootStep::Failed, None);
+                    }
+                }
+                wait_until_started(&handle).await;
+            });
 
             let icon =
                 tauri::image::Image::from_bytes(include_bytes!("../icons/hlabsTemplate@2x.png"))?;

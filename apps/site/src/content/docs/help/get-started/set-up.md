@@ -16,7 +16,7 @@ If the background service doesn't start within a minute, the window says **Can't
 
 The first time hlabs starts, it makes a one-time setup address. Open it in a browser on the computer running hlabs to begin.
 
-- **Menu-bar app (Mac and Linux desktop):** it opens setup in your browser by itself. If you close the tab, choose **Open setup** from the menu.
+- **Menu-bar app (Mac and Linux desktop):** once its background service is running, it opens setup in your browser by itself. If you close the tab, click the hlabs icon in the menu bar and choose **Open setup**. It keeps offering **Open setup** until setup is finished, and then shows its usual menu.
 - **Linux server:** the installer prints the address at the end. Run `hlabs setup-url` to see it again.
 
 Setup opens on a welcome screen. It takes about five minutes: press **Get started** to check this computer, then follow the steps.

@@ -2,7 +2,8 @@
 // (US-INST-05…).
 import { TrayMenu, TraySetup } from '@hlabs/ui';
 import { useAccess, type Access } from './access';
-import { useBoot } from './boot';
+import { useBoot, type BootState } from './boot';
+import { useOpenSetup, useSetupPending } from './setup';
 import { trayCopy as t } from './copy';
 
 export function AccessProblem({ access, onRetry }: { access: Exclude<Access, 'ready'>; onRetry: () => void }) {
@@ -27,8 +28,12 @@ export function AccessProblem({ access, onRetry }: { access: Exclude<Access, 're
   );
 }
 
-/** TrayStates "First launch" (US-INST-01). Opening setup in the browser is US-INST-02. */
-export function FirstLaunch({ started }: { started: boolean }) {
+/**
+ * TrayStates "First launch" (US-INST-01, US-INST-02): starting the background service, then opening setup in the
+ * browser; "Open setup" stays available until onboarding is complete.
+ */
+export function FirstLaunch({ boot, onOpenSetup }: { boot: BootState; onOpenSetup: () => void }) {
+  const started = boot.step === 'started';
   return (
     <TraySetup
       title={t.setupTitle}
@@ -36,8 +41,9 @@ export function FirstLaunch({ started }: { started: boolean }) {
       stateLabels={t.stepStates}
       steps={[
         { label: t.stepService, state: started ? 'done' : 'working' },
-        { label: t.stepBrowser, state: 'pending' },
+        { label: t.stepBrowser, state: boot.setupOpened ? 'done' : started ? 'working' : 'pending' },
       ]}
+      action={started ? { label: t.openSetup, onSelect: onOpenSetup } : undefined}
     />
   );
 }
@@ -45,10 +51,16 @@ export function FirstLaunch({ started }: { started: boolean }) {
 export function Menu() {
   const { access, retry } = useAccess();
   const boot = useBoot();
+  const setupPending = useSetupPending(boot?.step === 'started' && access === 'ready');
+  const openSetup = useOpenSetup();
+  // Nothing until the Rust side has said where things stand, so no state flashes by.
+  if (boot === null || access === null) return null;
   // The daemon didn't answer within 60 s: "Can't reach hlabs", and nothing is opened in the browser.
-  if (boot?.step === 'failed') return <AccessProblem access="unreachable" onRetry={() => void retry()} />;
-  if (access !== null && access !== 'ready') return <AccessProblem access={access} onRetry={() => void retry()} />;
-  if (boot?.firstLaunch) return <FirstLaunch started={boot.step === 'started'} />;
+  if (boot.step === 'failed') return <AccessProblem access="unreachable" onRetry={() => void retry()} />;
+  if (access !== 'ready') return <AccessProblem access={access} onRetry={() => void retry()} />;
+  // Until onboarding is complete (also when hlabs restarts before it is, or the window was closed).
+  const inSetup = setupPending === true || (boot.firstLaunch && setupPending === null);
+  if (inSetup) return <FirstLaunch boot={boot} onOpenSetup={() => void openSetup()} />;
   return (
     <TrayMenu
       statusText={t.running}

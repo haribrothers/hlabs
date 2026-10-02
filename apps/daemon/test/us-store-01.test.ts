@@ -104,7 +104,7 @@ describe('US-STORE-01 · store home', () => {
 describe('US-STORE-01 · access and logos', () => {
   async function daemon() {
     const d = await daemonWithAdmin(closers, {
-      resources: { storeDir: storeFixture(), binDir: '/none', webFallbackDir: '/none' },
+      resources: { storeDir: storeFixture(), binDir: '/none', webFallbackDir: '/none', webDir: '/none' },
     } as never);
     const member = ulid();
     d.services!.db.insert(users)

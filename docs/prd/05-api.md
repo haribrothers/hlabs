@@ -43,6 +43,7 @@ One tRPC v11 router tree in `packages/api`, implemented in `apps/daemon`. Every 
 | `GET /api/files/download?path=` | Range support, zip for folders (streamed). |
 | `GET /api/files/preview/:token` | Short-lived signed preview URLs (images, video, PDF, text). |
 | `POST /mcp` | MCP streamable HTTP (P3, token auth, off by default). |
+| `GET /*` (anything else) | The dashboard's build (`web/` beside the daemon bundle): a file as it is (`/assets/*` cached for good), any other path without an extension is `index.html`; `/trpc`, `/auth`, `/api` and `/healthz` paths never are. Only when the build is there (`pnpm dev` uses Vite). So the tray can open setup at `http://127.0.0.1:7474/setup?token=…` (US-INST-02). |
 
 ## Canonical names (use exactly these)
 - Error when an exclusive job blocks another: `JOB_EXCLUSIVE_RUNNING` (not `JOB_CONFLICT` or `SYSTEM_BUSY`). Common password: `PASSWORD_TOO_COMMON`. Username taken: `USERNAME_TAKEN`.
@@ -72,7 +73,7 @@ These were added while writing user stories and are **part of the API contract**
 
 ### From [02 · Onboarding](../features/02-onboarding.md)
 
-- `tray.setupUrl` (trayProcedure query): returns the onboarding URL including the one-time setup token; null when onboarding is complete.
+- `tray.setupUrl` (trayProcedure query): `{ url, lanUrls }`: the onboarding URL including the one-time setup token (null when onboarding is complete) and, with Caddy, the same at `https://<LAN IP>[:port]` for each LAN address (empty without Caddy or once complete). The tray checks it every 5 s while it shows the first-launch state and leaves that state when `url` is null (US-INST-02).
 - `onboarding.confirmSystem({ startAtLogin, hostname? })`: saves the start-at-login choice and, when given, the name on the network (`settings.hostname`, `^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$`, `HOSTNAME_TAKEN` when an installed app's address uses it; Caddy and mDNS follow, D-098), and advances the step to `account` once blocking checks pass. `onboarding.checkSystem` also returns `hostname`.
 - `onboarding.installEngine` → `{ jobId }`: installs and starts hlabs-managed Colima (macOS only); progress is exposed through `onboarding.checkSystem`.
 - `onboarding.checkSystem` input `{ includeLog?: boolean }` and output `engine.install { state, progress, lastLogLine, log? }` (shape addition to an existing procedure).

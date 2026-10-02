@@ -8,6 +8,8 @@ export interface BootState {
   firstLaunch: boolean;
   step: 'starting' | 'started' | 'failed';
   reason: string | null;
+  /** Setup was opened in the browser during this launch (US-INST-02). */
+  setupOpened: boolean;
 }
 
 export function useBoot(): BootState | null {

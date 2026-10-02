@@ -20,4 +20,6 @@ export const trayCopy = {
   stepService: 'Starting background service',
   stepBrowser: 'Opening setup in your browser…',
   stepStates: { done: 'done', working: 'in progress', pending: 'not started' },
+  /** US-INST-02. */
+  openSetup: 'Open setup',
 } as const;

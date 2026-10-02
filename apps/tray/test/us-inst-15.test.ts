@@ -1,10 +1,9 @@
 // US-INST-15 · Tray authenticates to the daemon with a local token: the window's side of the calls.
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const invoke = vi.hoisted(() => vi.fn());
-vi.mock('@tauri-apps/api/core', () => ({ invoke }));
-
+import { beforeEach, describe, expect, it } from 'vitest';
 import { daemon, DaemonCallError } from '../src/daemon';
+import { tauri } from './tauri';
+
+const invoke = tauri.invoke;
 
 describe('US-INST-15 · Tray authenticates to the daemon with a local token', () => {
   beforeEach(() => invoke.mockReset());

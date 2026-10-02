@@ -128,6 +128,18 @@ impl DaemonClient {
     }
 }
 
+/// The setup URL from `tray.setupUrl`'s answer: `None` once onboarding is complete. Only a web address
+/// is ever opened (US-INST-02).
+pub fn setup_url(data: &Value) -> Result<Option<String>, DaemonError> {
+    match data.get("url") {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(url)) if url.starts_with("http://") || url.starts_with("https://") => {
+            Ok(Some(url.clone()))
+        }
+        Some(_) => Err(DaemonError::Protocol),
+    }
+}
+
 fn parse(status: u16, body: &str) -> Result<Value, DaemonError> {
     let envelope: Envelope = serde_json::from_str(body).map_err(|_| DaemonError::Protocol)?;
     if let Some(error) = envelope.error {
@@ -238,6 +250,22 @@ mod tests {
             .await
             .unwrap_err();
         assert!(matches!(err, DaemonError::Unreachable));
+    }
+
+    #[test]
+    fn us_inst_02_only_a_web_setup_url_is_opened() {
+        let ok =
+            serde_json::json!({ "url": "http://127.0.0.1:7474/setup?token=abc", "lanUrls": [] });
+        assert_eq!(
+            setup_url(&ok).unwrap().as_deref(),
+            Some("http://127.0.0.1:7474/setup?token=abc")
+        );
+        assert_eq!(
+            setup_url(&serde_json::json!({ "url": null })).unwrap(),
+            None
+        );
+        assert!(setup_url(&serde_json::json!({ "url": "file:///etc/passwd" })).is_err());
+        assert!(setup_url(&serde_json::json!({ "url": 3 })).is_err());
     }
 
     #[test]

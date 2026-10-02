@@ -81,7 +81,7 @@ describe('US-STORE-06', () => {
 
   it('is served as store.getApp, with the store’s member rule', async () => {
     const d = await daemonWithAdmin(closers, {
-      resources: { storeDir: storeFixture(), binDir: '/none', webFallbackDir: '/none' },
+      resources: { storeDir: storeFixture(), binDir: '/none', webFallbackDir: '/none', webDir: '/none' },
     } as never);
     const res = await fetch(
       `${d.url}/trpc/store.getApp?input=${encodeURIComponent(JSON.stringify({ appId: 'immich' }))}`,

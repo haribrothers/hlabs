@@ -7,6 +7,7 @@ import { readCookie, SESSION_COOKIE } from './auth/sessions';
 import { bearerToken, isLoopback, trayTokenSource, TrayTokens } from './auth/tray-token';
 import { DaemonContext, type Identity } from './context';
 import { dashboardOrigins } from './http/dashboard-origins';
+import { registerDashboard } from './http/dashboard';
 import { registerDevRoutes } from './http/dev';
 import { registerHealthz } from './http/healthz';
 import { registerAuthVerify } from './http/verify';
@@ -84,6 +85,7 @@ export async function buildServer({
   registerAppAssets(app, holder, config.devAnonymousAdmin);
   registerAppLogs(app, holder, config.devAnonymousAdmin);
   if (config.dev) registerDevRoutes(app, holder);
+  registerDashboard(app, config.resources.webDir);
 
   await app.register(fastifyTRPCPlugin, {
     prefix: '/trpc',

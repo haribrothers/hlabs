@@ -166,12 +166,28 @@ export class OnboardingService {
     return this.urlFor(token);
   }
 
-  /** The setup URL rebuilt from the secret store (dev route now; tray.setupUrl and `hlabs setup-url` later). */
+  /** The setup URL rebuilt from the secret store (tray.setupUrl, the dev route; `hlabs setup-url`). */
   async setupUrl(): Promise<string | null> {
+    const token = await this.setupToken();
+    return token ? this.urlFor(token) : null;
+  }
+
+  /**
+   * The setup URL at each of this computer's LAN addresses, through Caddy's HTTPS port (D-035: what the Linux installer
+   * prints; the dashboard answers at https://<LAN IP>, US-SYS-41). Empty once onboarding is complete.
+   */
+  async lanSetupUrls(addresses: readonly string[]): Promise<string[]> {
+    const token = await this.setupToken();
+    if (!token) return [];
+    const { https } = getSetting(this.db, 'network').ports;
+    const port = https === 443 ? '' : `:${https}`;
+    return addresses.map((address) => `https://${address}${port}/setup?token=${token}`);
+  }
+
+  private async setupToken(): Promise<string | null> {
     const { completedAt, setupTokenRef } = getSetting(this.db, 'onboarding');
     if (completedAt !== null || !setupTokenRef) return null;
-    const token = await this.secrets.get(setupTokenRef);
-    return token ? this.urlFor(token) : null;
+    return this.secrets.get(setupTokenRef);
   }
 
   /** Constant-time check of the `x-hlabs-setup` header; always false once onboarding is complete. */
