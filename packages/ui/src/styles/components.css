@@ -1515,6 +1515,41 @@
     font-size: 13px;
     color: var(--ink);
   }
+  .hl-tray-logo-danger {
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger-fill) 30%, transparent);
+  }
+  .hl-tray-status-danger {
+    color: var(--danger);
+    font-size: 13px;
+  }
+  .hl-tray-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: 0 0 var(--space-2);
+  }
+  .hl-tray-note {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px var(--space-3);
+    border-radius: 10px;
+    background: var(--surface-row);
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+  .hl-tray-note b {
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .hl-tray-note-danger {
+    color: var(--ink);
+    background: color-mix(in srgb, var(--danger-fill) 22%, transparent);
+  }
+  .hl-tray-action {
+    width: 100%;
+  }
 
   /* File item */
   .hl-file {

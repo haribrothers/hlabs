@@ -169,7 +169,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [ ] US-INST-13 · Can't reach hlabs
 - [ ] US-INST-14 · Menu-bar icon reflects state
 - [x] US-INST-15 · Tray authenticates to the daemon with a local token (where the token lives per platform and how the daemon picks up a new one: D-112; the `audit_log` rows with `via: "tray"` are written and tested by each tray action as it's built: pause/resume US-INST-08, start engine US-INST-12, reset password US-INST-18, backup in phase 5, uninstall in phase 6)
-- [ ] US-INST-16 · Recover from a missing or mismatched tray token
+- [x] US-INST-16 · Recover from a missing or mismatched tray token (the daemon also reads a regenerated token by itself within 5 s, D-112, so the restart is belt and braces; in development there is no LaunchAgent to restart. The tray's own diagnostics redact Bearer values: the tray client never prints its token and the daemon's log redacts `Authorization`; "Copy diagnostics" itself is US-INST-12)
 - [ ] US-INST-17 · Choose an account and a new password
 - [ ] US-INST-18 · Confirm with the OS and apply the reset
 - [ ] US-INST-19 · Check for hlabs updates

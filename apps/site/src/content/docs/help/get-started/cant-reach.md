@@ -1,7 +1,7 @@
 ---
 title: Can't reach hlabs
 description: What the "Can't reach hlabs" page means and what to check.
-features: [F-STATE-02]
+features: [F-STATE-02, F-INST-05]
 ---
 
 For everyone who uses hlabs.
@@ -19,3 +19,9 @@ While you wait, check that:
 ## "You're offline" and "Reconnecting…"
 
 If your device loses its connection, a small **You're offline** strip appears at the top of the screen. What you were looking at stays there, but changes can't be made until you're connected again: hlabs says "You're offline. Try again when you're connected." straight away instead of trying. If your device is online but hlabs's live updates have stopped for a few seconds, the strip says **Reconnecting…** while hlabs picks them up again. When the connection is back, the strip goes and everything on screen refreshes.
+
+## "hlabs needs Keychain access to work"
+
+On a Mac, the hlabs menu-bar app keeps a private key in your Keychain so it can talk to hlabs without you logging in. If macOS asks whether hlabs may use it and you choose **Deny**, the menu says **hlabs needs Keychain access to work**. Choose **Try again**, then **Allow** (or **Always Allow**) when macOS asks.
+
+If the key goes missing, for example after you reset your Keychain, the menu-bar app makes a new one and restarts hlabs's background service by itself. Your apps and data aren't affected. If the menu still says **Can't reach hlabs** afterwards, quit hlabs and open it again.

@@ -32,16 +32,6 @@ pub fn new_token() -> String {
     URL_SAFE_NO_PAD.encode(bytes)
 }
 
-/// The stored token, or a new one stored now. `true` when it was created.
-pub fn ensure_token(store: &dyn TokenStore) -> Result<(String, bool), TokenError> {
-    if let Some(token) = store.get()? {
-        return Ok((token, false));
-    }
-    let token = new_token();
-    store.set(&token)?;
-    Ok((token, true))
-}
-
 /// macOS Keychain / Linux Secret Service.
 pub struct KeychainStore;
 
@@ -168,28 +158,6 @@ pub mod tests {
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
         assert_ne!(new_token(), token);
-    }
-
-    #[test]
-    fn us_inst_15_ensure_token_creates_once_then_reuses() {
-        let store = MemoryStore::default();
-        let (first, created) = ensure_token(&store).unwrap();
-        assert!(created);
-        let (again, created) = ensure_token(&store).unwrap();
-        assert!(!created);
-        assert_eq!(first, again);
-    }
-
-    #[test]
-    fn us_inst_15_ensure_token_reports_denied_access() {
-        let store = MemoryStore {
-            denied: true,
-            ..Default::default()
-        };
-        assert!(matches!(
-            ensure_token(&store),
-            Err(TokenError::AccessDenied)
-        ));
     }
 
     #[cfg(unix)]

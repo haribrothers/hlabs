@@ -17,6 +17,9 @@ pub enum DaemonError {
     /// The daemon refused the tray token (TRAY_TOKEN_REJECTED; US-INST-16 repairs it).
     #[error("the tray token was rejected")]
     TokenRejected,
+    /// The tray has no usable token (keychain refused, or gave up after a repair; US-INST-16).
+    #[error("the tray has no access to hlabs")]
+    NoAccess,
     /// Any other tRPC error, with its hlabsCode for the UI's copy.
     #[error("{hlabs_code}")]
     Api {

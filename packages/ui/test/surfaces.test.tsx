@@ -203,6 +203,23 @@ describe('TrayMenu and Stepper', () => {
     expect(screen.getAllByRole('menuitem')).toHaveLength(2);
   });
 
+  it('error states: the status in words, a note announced as an alert and one primary button', () => {
+    const onSelect = vi.fn();
+    render(
+      <TrayMenu
+        tone="danger"
+        statusText="Needs Keychain access"
+        note={{ body: 'hlabs needs Keychain access to work.' }}
+        action={{ label: 'Try again', onSelect }}
+        items={[{ label: 'Quit hlabs' }]}
+      />,
+    );
+    expect(screen.getByRole('menu', { name: 'hlabs' })).toHaveTextContent('Needs Keychain access');
+    expect(screen.getByRole('alert')).toHaveTextContent('hlabs needs Keychain access to work.');
+    screen.getByRole('button', { name: 'Try again' }).click();
+    expect(onSelect).toHaveBeenCalledOnce();
+  });
+
   it('says which step of how many, with the current step marked', () => {
     render(<Stepper steps={['Welcome', 'System check', 'Account']} current={1} />);
     expect(screen.getByRole('navigation', { name: 'Setup progress' })).toHaveTextContent('Step 2 of 3 · System check');

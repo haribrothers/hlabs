@@ -1,27 +1,44 @@
 //! hlabs tray (Tauri 2): a menu-bar icon that toggles the glass dropdown window, and the tray's own
-//! access to the daemon with the local token (US-INST-15). Bootstrap (LaunchAgent), states, actions
-//! and updates arrive with their phase 4 stories.
+//! access to the daemon with the local token (US-INST-15, US-INST-16). Bootstrap (LaunchAgent),
+//! states, actions and updates arrive with their phase 4 stories.
 
+mod access;
 mod daemon;
+mod launchd;
 mod paths;
 mod token;
 
+use access::{Access, TokenGuard};
 use daemon::{CallKind, DaemonClient, DaemonError, DEFAULT_BASE_URL};
 use serde_json::Value;
 use std::sync::Mutex;
 use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager, State,
+    AppHandle, Emitter, Manager, State,
 };
 
-/// The tray's connection to the daemon; `None` while the token can't be read (US-INST-16).
-#[derive(Default)]
-struct Daemon(Mutex<Option<DaemonClient>>);
+/// The event the window listens to when the tray's access changes.
+const ACCESS_EVENT: &str = "access-changed";
 
-/// Calls a `tray.*` procedure for the webview. The token stays here; other procedures are refused
-/// before anything is sent (the daemon refuses them too).
+struct Daemon(Mutex<TokenGuard>);
+
+impl Daemon {
+    fn lock(&self) -> std::sync::MutexGuard<'_, TokenGuard> {
+        self.0.lock().expect("token guard poisoned")
+    }
+}
+
+fn announce(app: &AppHandle, before: Access, after: Access) {
+    if before != after {
+        let _ = app.emit(ACCESS_EVENT, after);
+    }
+}
+
+/// Calls a `tray.*` procedure for the window. The token stays here; other procedures are refused
+/// before anything is sent (the daemon refuses them too). A rejected token is repaired (US-INST-16).
 #[tauri::command]
 async fn daemon_call(
+    app: AppHandle,
     daemon: State<'_, Daemon>,
     kind: CallKind,
     path: String,
@@ -33,38 +50,61 @@ async fn daemon_call(
             status: 403,
         });
     }
-    let client = daemon
-        .0
+    let token = daemon
         .lock()
-        .expect("daemon state poisoned")
-        .clone()
-        .ok_or(DaemonError::TokenRejected)?;
-    client
+        .token()
+        .map(str::to_owned)
+        .ok_or(DaemonError::NoAccess)?;
+    let result = DaemonClient::new(DEFAULT_BASE_URL, token)
         .call(kind, &path, &input.unwrap_or(Value::Null))
-        .await
+        .await;
+    let mut guard = daemon.lock();
+    match &result {
+        Ok(_) => guard.succeeded(),
+        Err(DaemonError::TokenRejected) => {
+            let before = guard.access();
+            let after = guard.rejected();
+            announce(&app, before, after);
+        }
+        Err(_) => {}
+    }
+    result
+}
+
+/// The tray's own access: `ready`, `keychainDenied` or `unreachable`.
+#[tauri::command]
+fn tray_access(daemon: State<'_, Daemon>) -> Access {
+    daemon.lock().access()
+}
+
+/// "Try again": reads the token again (macOS asks for keychain access again).
+#[tauri::command]
+fn retry_access(app: AppHandle, daemon: State<'_, Daemon>) -> Access {
+    let mut guard = daemon.lock();
+    let before = guard.access();
+    let after = guard.start();
+    announce(&app, before, after);
+    after
 }
 
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
-        .manage(Daemon::default())
-        .invoke_handler(tauri::generate_handler![daemon_call])
+        .invoke_handler(tauri::generate_handler![
+            daemon_call,
+            tray_access,
+            retry_access
+        ])
         .setup(|app| {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
-            let store = token::default_store(&paths::data_dir());
-            match token::ensure_token(store.as_ref()) {
-                Ok((token, _created)) => {
-                    *app.state::<Daemon>()
-                        .0
-                        .lock()
-                        .expect("daemon state poisoned") =
-                        Some(DaemonClient::new(DEFAULT_BASE_URL, token));
-                }
-                // Never log the token; only that it couldn't be read.
-                Err(err) => eprintln!("hlabs tray: {err}"),
-            }
+            let mut guard = TokenGuard::new(
+                token::default_store(&paths::data_dir()),
+                launchd::default_service(),
+            );
+            guard.start();
+            app.manage(Daemon(Mutex::new(guard)));
 
             let icon =
                 tauri::image::Image::from_bytes(include_bytes!("../icons/hlabsTemplate@2x.png"))?;
