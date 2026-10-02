@@ -1,6 +1,8 @@
-// OnbDone (US-ONB-21): what was set up. Laid out like the welcome screen, with no Stepper. The remote access and
-// installing-apps rows wait for phases 3 and 2 (D-036). "Open dashboard" goes Home (US-ONB-22).
-import { ArrowRight, Check, iconDefaults } from '@hlabs/icons';
+// OnbDone (US-ONB-21): what was set up. Laid out like the welcome screen, with no Stepper. "Installing N apps" lists
+// the starter apps picked (US-ONB-19; none after Skip, US-ONB-20); the remote access row waits for phase 3 (D-036).
+// "Open dashboard" goes Home (US-ONB-22).
+import { isFeatureEnabled, VISIBLE_PHASE } from '@hlabs/shared';
+import { ArrowRight, Check, iconDefaults, Loader2 } from '@hlabs/icons';
 import { Button, List, ListRow } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -26,7 +28,7 @@ function Done() {
   );
 }
 
-export function DoneStep() {
+export function DoneStep({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: number }) {
   const trpc = useTRPC();
   const navigate = useNavigate();
   // Always fresh: the summary must match what was just set up.
@@ -37,8 +39,11 @@ export function DoneStep() {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
 
-  // Starter apps arrive with phase 2 (US-ONB-19); until then none are picked and there is no Installing row.
-  const appsPicked = false;
+  // The starter apps picked: on a new hlabs they're the only apps there are (phase 2, US-ONB-19).
+  const starterApps = isFeatureEnabled('starterApps', shippedPhase);
+  const installed = useQuery({ ...trpc.apps.list.queryOptions(), enabled: starterApps, retry: false, staleTime: 0 });
+  const picked = installed.data?.apps ?? [];
+  const appsPicked = picked.length > 0;
 
   const row = (title: string, value: string | undefined) => (
     <ListRow
@@ -61,6 +66,19 @@ export function DoneStep() {
         <List label={<span className="sr-only">{copy.summary}</span>}>
           {row(copy.admin, me.data ? copy.adminDetail(me.data.username, me.data.totpEnabled) : undefined)}
           {row(copy.storage, root?.name)}
+          {appsPicked ? (
+            <ListRow
+              title={copy.installing(picked.length)}
+              leading={
+                <Loader2
+                  aria-hidden
+                  {...iconDefaults}
+                  className="size-4 animate-spin text-warning motion-reduce:animate-none"
+                />
+              }
+              trailing={<span className="text-body-sm text-ink-muted">{picked.map((a) => a.name).join(', ')}</span>}
+            />
+          ) : null}
         </List>
       </div>
       {/* Onboarding is complete by now; Home opens with the admin still signed in (US-ONB-22). */}

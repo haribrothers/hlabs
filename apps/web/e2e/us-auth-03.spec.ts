@@ -1,7 +1,7 @@
 // US-AUTH-03 · Log in with username and password (first-run instance, after onboarding).
 import { expect, test, type Page } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
-import { ADMIN, createAdminInUi, finishOnboarding, turnOnTwoFactor } from './onboarding';
+import { ADMIN, createAdminInUi, finishOnboarding, storageThenSkipApps, turnOnTwoFactor } from './onboarding';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
@@ -46,7 +46,7 @@ test.describe('US-AUTH-03', () => {
     await createAdminInUi(page, request);
     await turnOnTwoFactor(page);
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await storageThenSkipApps(page);
     await page.getByRole('button', { name: 'Open dashboard' }).click();
 
     const other = await (await browser.newContext({ baseURL: FIRST_RUN_URL })).newPage();

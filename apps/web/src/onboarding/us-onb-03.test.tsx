@@ -83,9 +83,9 @@ describe('US-ONB-03', () => {
     it('reads "Step N of M" over the enabled steps and names it as setup progress', () => {
       render(<StepFrame step="storage" title="Where should your data live?" />);
       const progress = screen.getByRole('navigation', { name: 'Setup progress' });
-      // Phase 1 has four counted steps: system, account, two-factor, storage (D-041).
-      expect(progress).toHaveTextContent(/^Step 4 of 4/);
-      expect(progress).not.toHaveTextContent('Step 4 of 4 ·');
+      // Phase 2 counts five: system, account, two-factor, storage, starter apps (D-041; remote access is phase 3).
+      expect(progress).toHaveTextContent(/^Step 4 of 5/);
+      expect(progress).not.toHaveTextContent('Step 4 of 5 ·');
       expect(screen.getAllByRole('listitem')[3]).toHaveAttribute('aria-current', 'step');
     });
 

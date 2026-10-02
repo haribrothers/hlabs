@@ -2,7 +2,7 @@ schema: 1
 id: immich
 name: Immich
 version: '3.2.2'
-revision: 0
+revision: 1
 tagline: Back up every photo from your phone
 description: |
   Self-hosted photo and video backup with albums, sharing, faces and search. The phone apps back up
@@ -18,7 +18,7 @@ icon:
 platforms: [linux/amd64, linux/arm64]
 tags: [local-ai]
 requirements: { memory: 4096, disk: 10240 }
-web: { service: immich-server, port: 2283 }
+web: { service: immich-server, port: 2283, embed: true }
 health: { service: immich-server, http: /api/server/ping, timeout: 180 }
 env:
   - key: DB_PASSWORD

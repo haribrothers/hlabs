@@ -5,6 +5,8 @@ import { noEngineControl, nodeEngineControl, type EngineControl } from './engine
 import { KeepAwake, processSleepBlocker, type SleepBlocker } from './platform/keep-awake';
 import { eq } from 'drizzle-orm';
 import { registerEngineRestart } from './engine/restart-job';
+import { registerEngineStart } from './engine/start-job';
+import { watchEngine } from './engine/watch';
 import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
 import { nextOrigins } from '@hlabs/shared';
 import { mkdirSync } from 'node:fs';
@@ -12,15 +14,28 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NoopProxyManager, type ProxyManager } from './caddy/index';
+import { CaddyProxy } from './caddy/proxy';
+import { NetworkService } from './network/service';
 import type { DaemonConfig } from './config';
 import type { InstallerHost } from './engine/colima-installer';
 import { engineDir, registerEngineInstall } from './engine/install-job';
 import { nodeInstallerHost } from './engine/installer-host';
 import { defaultCandidates, EngineService, type EngineServiceDeps } from './engine/service';
 import { EventBus } from './events/bus';
+import { CatalogService } from './store/catalog';
+import { StoreService, type StoreHost } from './store/service';
+import { InstallService } from './apps/install';
+import { AppService } from './apps/service';
+import { CliComposeRunner, type ComposeRunner } from './apps/compose';
+import type { HealthProbes } from './apps/health';
 import { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
+import { ChildRegistry } from './platform/children';
+import { createMdnsPublisher } from './mdns/publisher';
+import { AppDiskUsage } from './apps/disk';
+import { AppLogs } from './apps/logs';
+import { UpdateService } from './apps/update';
 import { SessionService } from './auth/sessions';
 import { TotpService } from './auth/totp';
 import { LoginService } from './auth/login';
@@ -56,6 +71,13 @@ export interface BootDeps {
   installer?: InstallerHost;
   /** Restarts the engine (US-SYS-18); tests pass a fake. */
   engineControl?: EngineControl;
+  /** App stacks (compose CLI); tests pass a fake. */
+  compose?: ComposeRunner;
+  healthProbes?: HealthProbes;
+  /** Whether a loopback port is free (app ports); tests pass a fake. */
+  isPortFree?: (port: number) => Promise<boolean>;
+  /** This computer, for platform checks; tests pass one. */
+  storeHost?: StoreHost;
   /** Holds off sleep (US-SYS-20); tests pass a fake. */
   sleepBlocker?: SleepBlocker;
   /** The user's home (where ~/.colima lives). */
@@ -113,15 +135,68 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   const engineStatus = await engine.start();
   logger.info({ engine: engineStatus.state }, 'container engine checked');
 
-  // 3. Caddy base config and mDNS names (real implementations arrive in phase 2).
+  // 3. Caddy and mDNS names, from the database (D-006).
   readiness.step(2);
-  const proxy = deps.proxy ?? new NoopProxyManager();
-  const mdns = deps.mdns ?? new NoopMdnsPublisher();
-  await proxy.start();
-  await mdns.publish(getSetting(db, 'hostname'));
+  const appService = new AppService({
+    db,
+    bus,
+    logger,
+    engine,
+    compose:
+      deps.compose ??
+      new CliComposeRunner({
+        binDir: config.resources.binDir,
+        socketPath: () => (engine.status.state === 'running' ? engine.status.candidate.socketPath : null),
+      }),
+    projectsDir: join(config.paths.dataDir, 'apps'),
+    projectPrefix: config.composePrefix,
+    probes: deps.healthProbes,
+  });
+  // Caddy and the mDNS publishers a killed daemon left running go first (they'd hold port 443 and the names).
+  const children = new ChildRegistry(join(config.paths.dataDir, 'run', 'children.json'));
+  const reaped = children.reapStale();
+  if (reaped) logger.warn({ reaped }, 'ended helper processes a previous daemon left running');
+  const proxy =
+    deps.proxy ??
+    (config.proxy === 'caddy'
+      ? new CaddyProxy({
+          binary: join(config.resources.binDir, 'caddy'),
+          dir: join(config.paths.dataDir, 'caddy'),
+          webFallbackDir: config.resources.webFallbackDir,
+          logger,
+          children,
+        })
+      : new NoopProxyManager());
+  const mdns =
+    deps.mdns ??
+    (config.mdns
+      ? createMdnsPublisher(logger, () => getSetting(db, 'network').ports.https, children)
+      : new NoopMdnsPublisher());
+  const network = new NetworkService({
+    db,
+    proxy,
+    mdns,
+    logger,
+    routes: () => appService.routes(),
+    dashboardUpstream: config.dashboardUpstream,
+    daemon: `127.0.0.1:${config.port}`,
+  });
+  await network.sync();
+  network.watch(bus);
 
-  // 4. Reconcile installed apps with the engine (phase 2: AppService).
+  // 4. The built-in store, then reconcile installed apps with the engine.
   readiness.step(3);
+  const catalog = new CatalogService(db, config.resources.storeDir, logger);
+  const { synced, skipped } = catalog.syncBuiltin();
+  logger.info({ apps: synced.length, skipped: skipped.length }, 'built-in store loaded');
+  // Health waits take up to minutes, so apps come up in the background; /healthz doesn't wait for them.
+  const reconciled = appService.reconcile().catch((err: unknown) => logger.error({ err }, 'reconciling apps failed'));
+  // Later reconciles (the engine came back, US-STATE-09, US-STATE-10) run one after another, after this one.
+  let reconciling: Promise<void> = reconciled;
+  const appsBack = () =>
+    (reconciling = reconciling
+      .then(() => appService.reconcile())
+      .catch((err: unknown) => logger.error({ err }, 'reconciling apps failed')));
 
   // 5. Scheduler: backups, update checks, health probes, usage sampling (added by their phases).
   readiness.step(4);
@@ -141,17 +216,19 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
         engineDownload: { lastContactAt: Date.now() },
       }),
   });
+  const engineControl =
+    deps.engineControl ??
+    (config.devNoEngineControl
+      ? noEngineControl({ onStart: () => engine.simulateStop(false) })
+      : nodeEngineControl({ engineDir: engineDir(config.paths.dataDir), privHelper: config.privHelper }));
   registerEngineRestart({
     jobs,
     engine,
     db,
-    control:
-      deps.engineControl ??
-      (config.devNoEngineControl
-        ? noEngineControl()
-        : nodeEngineControl({ engineDir: engineDir(config.paths.dataDir), privHelper: config.privHelper })),
+    control: engineControl,
     onResources: (resources) => setSetting(db, 'engine', { ...getSetting(db, 'engine'), resources }),
   });
+  registerEngineStart({ jobs, engine, db, control: engineControl, appsBack });
   const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);
   const onboarding = new OnboardingService({
     db,
@@ -161,11 +238,20 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     bus,
     dataDir: config.paths.dataDir,
     engineInstallAllowed: !config.devNoEngineInstall,
+    phase: config.phase,
+    onCompleted: () => void network.sync(),
+    onNetworkChanged: () => void network.sync(),
     systemCheck: {
       engine,
       probe,
       storageRoot: config.paths.storageRootDefault,
       headless: config.headless,
+      // Caddy holds the saved web ports while it runs.
+      ownPorts: () => {
+        if (config.proxy !== 'caddy') return [];
+        const { http, https } = getSetting(db, 'network').ports;
+        return [http, https];
+      },
     },
   });
   const setupUrl = await onboarding.prepareSetupToken();
@@ -177,6 +263,53 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
 
   const sessions = new SessionService(db, bus);
   const totp = new TotpService(db, secrets);
+  const notifications = new NotificationService(db, bus);
+  watchEngine({
+    bus,
+    engine,
+    notifications,
+    appsBack,
+    setUp: () => getSetting(db, 'onboarding').completedAt !== null,
+  });
+  const store = new StoreService(db, catalog, deps.storeHost, {
+    engineMemoryBytes: () => (engine.status.state === 'running' ? engine.status.info.memoryBytes : null),
+    appDataFreeBytes: () => probe.freeBytes(config.paths.appDataDir),
+  });
+  const disk = new AppDiskUsage({
+    appDataDir: config.paths.appDataDir,
+    engine,
+    project: (appId) => appService.project(appId).name,
+  });
+  const installer = new InstallService({
+    disk,
+    db,
+    bus,
+    logger,
+    jobs,
+    catalog,
+    apps: appService,
+    engine,
+    network,
+    notifications,
+    host: store.host,
+    appDataDir: config.paths.appDataDir,
+    appDataFreeBytes: () => probe.freeBytes(config.paths.appDataDir),
+    isPortFree: deps.isPortFree,
+    probes: deps.healthProbes,
+  });
+  installer.register();
+  const updates = new UpdateService({
+    db,
+    logger,
+    jobs,
+    catalog,
+    apps: appService,
+    installer,
+    engine,
+    notifications,
+    probes: deps.healthProbes,
+  });
+  updates.register();
   const services: Services = {
     config,
     logger,
@@ -188,6 +321,14 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     secrets,
     proxy,
     mdns,
+    catalog,
+    store,
+    installer,
+    updates,
+    logs: new AppLogs({ engine, project: (appId) => appService.project(appId).name }),
+    routing: network,
+    apps: appService,
+    reconciled,
     onboarding,
     sessions,
     totp,
@@ -199,7 +340,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
         tailnet: getSetting(db, 'remote').tailnetName,
       }),
     ),
-    notifications: new NotificationService(db, bus),
+    notifications,
     drives: deps.drives ?? new NodeDriveProbe(),
     system: probe,
     keepAwake: new KeepAwake(deps.sleepBlocker ?? processSleepBlocker(), () => ({

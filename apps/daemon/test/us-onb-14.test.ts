@@ -33,7 +33,8 @@ describe('US-ONB-14', () => {
       expect.objectContaining({ kind: 'local', name: 'This computer', path: root, isRoot: true }),
     ]);
     // Phase 1: remote access and starter apps aren't enabled, so the next step is done (D-041).
-    expect(getSetting(db, 'onboarding').step).toBe('done');
+    // Phase 2: on to the starter apps.
+    expect(getSetting(db, 'onboarding').step).toBe('apps');
   });
 
   it('choosing again reuses the folder and never deletes what is in it', async () => {

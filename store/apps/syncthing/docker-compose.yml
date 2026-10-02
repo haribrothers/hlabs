@@ -1,0 +1,28 @@
+# A first start makes Syncthing's config as the app's user and adjusts three things for life behind hlabs: the
+# hlabs login guards the web page (so Syncthing's "no password" warning is acknowledged), usage reporting is off
+# (hlabs sends nothing about you, 07 §7.1) and the "set a password" notice is dismissed. Later starts leave the
+# config alone. New folders go in the Sync folder you chose, and the device is called "hlabs" on your other devices.
+services:
+  syncthing:
+    image: docker.io/syncthing/syncthing:2.1.5@sha256:397aa00b92b48d65540ea3ae3cbf271b87bdccbe07a0b7bd7d2debc3a7b29138
+    hostname: hlabs
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        CONF=/var/syncthing/config/config.xml
+        if [ ! -f "$$CONF" ]; then
+          mkdir -p /var/syncthing/config && chown "$$PUID:$$PGID" /var/syncthing /var/syncthing/config
+          su-exec "$$PUID:$$PGID" env HOME=/var/syncthing syncthing generate --home=/var/syncthing/config >/dev/null
+          sed -i -e 's#<urAccepted>0</urAccepted>#<urAccepted>-1</urAccepted>#' \
+            -e '/<unackedNotificationID>authenticationUserAndPassword<\/unackedNotificationID>/d' \
+            -e 's#</gui>#    <insecureAdminAccess>true</insecureAdminAccess>\n    </gui>#' \
+            -e 's#<folder id="" label="" path=""#<folder id="" label="" path="/var/syncthing/Sync"#' "$$CONF"
+        fi
+        exec /bin/entrypoint.sh /bin/syncthing
+    volumes:
+      - ${HLABS_APP_DATA}/syncthing:/var/syncthing
+      - ${HLABS_FOLDER_SYNC}:/var/syncthing/Sync

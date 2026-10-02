@@ -3,8 +3,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-// Areas whose phase hasn't shipped are hidden (D-036, US-HOME-04): in phase 1, Home and Settings.
-const AREAS = ['Home', 'Settings'];
+// Areas whose phase hasn't shipped are hidden (D-036, US-HOME-04). The e2e dev server previews the phase being
+// built (D-092): in phase 2, Home, App Store and Settings, then Search in the Dock.
+const AREAS = ['Home', 'App Store', 'Settings'];
+// The phone tab bar's shorter names (D-054).
+const TABS = ['Home', 'Apps', 'Settings'];
 
 test('GET /healthz returns 200 when the daemon is ready', async ({ request }) => {
   const res = await request.get('/healthz');
@@ -20,7 +23,8 @@ test.describe('desktop', () => {
     const dock = page.getByRole('navigation', { name: 'Dock' });
     await expect(dock).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Tab bar' })).toBeHidden();
-    await expect(dock.getByRole('button')).toHaveCount(AREAS.length);
+    await expect(dock.getByRole('button')).toHaveCount(AREAS.length + 1);
+    await expect(dock.getByRole('button', { name: 'Search' })).toBeVisible();
     for (const area of AREAS) await expect(dock.getByRole('button', { name: area })).toBeVisible();
     await expect(dock.getByRole('button', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
 
@@ -36,6 +40,8 @@ test.describe('desktop', () => {
     const dock = page.getByRole('navigation', { name: 'Dock' });
     await dock.getByRole('button', { name: 'Home' }).focus();
     await page.keyboard.press('End');
+    await expect(dock.getByRole('button', { name: 'Search' })).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
     await expect(dock.getByRole('button', { name: 'Settings' })).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/settings\/account$/);
@@ -59,7 +65,7 @@ test.describe('phone', () => {
     const tabs = page.getByRole('navigation', { name: 'Tab bar' });
     await expect(tabs).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Dock' })).toBeHidden();
-    await expect(tabs.getByRole('button')).toHaveText(AREAS);
+    await expect(tabs.getByRole('button')).toHaveText(TABS);
     const bar = (await tabs.boundingBox())!;
     const viewport = page.viewportSize()!;
     expect(bar.x).toBeGreaterThanOrEqual(0);

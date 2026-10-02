@@ -1,8 +1,9 @@
-/* The fallback page's styles (US-STATE-04): Tailwind, hlabs tokens and components, Latin fonts; all inlined. */
+/* The fallback page's styles (US-STATE-04), shared with the app-hostname pages (US-AUTH-17, US-AUTH-19): Tailwind, hlabs tokens and components, Latin fonts; all inlined. */
 @import 'tailwindcss';
 @import '@hlabs/ui/fonts-latin.css';
 @import '@hlabs/ui/base.css';
 @source '../src/health';
+@source '../src/shell/app-pages.tsx';
 
 @layer base {
   html,

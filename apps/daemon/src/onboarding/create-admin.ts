@@ -11,11 +11,13 @@ export interface CreateAdminInput {
   displayName: string;
   password: string;
   ip: string | null;
+  /** Which steps run (DaemonConfig.phase); SHIPPED_PHASE when not given. */
+  phase?: number;
 }
 
 export async function createAdmin(db: HlabsDb, input: CreateAdminInput, now = Date.now()): Promise<string> {
   const saved = getSetting(db, 'onboarding').step;
-  const steps = enabledOnboardingSteps() as string[];
+  const steps = enabledOnboardingSteps(input.phase) as string[];
   if (steps.indexOf(saved) < steps.indexOf('account')) throw hlabsError('ONBOARDING_STEP_INVALID');
 
   const username = input.username.trim().toLowerCase();
@@ -56,7 +58,7 @@ export async function createAdmin(db: HlabsDb, input: CreateAdminInput, now = Da
     const inTx = tx as unknown as HlabsDb;
     setSetting(inTx, 'onboarding', {
       ...getSetting(inTx, 'onboarding'),
-      step: nextOnboardingStep('account'),
+      step: nextOnboardingStep('account', input.phase),
     });
   });
   return userId;

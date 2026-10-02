@@ -1,7 +1,10 @@
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
-import { buildStoreIndex, lintStore, loadAppDir } from '../src/node';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { buildStoreIndex, curationIssues, lintStore, loadAppDir, loadCuration } from '../src/node';
 import { renderApp, serializeEnvFile } from '../src/render';
 
 const STORE = fileURLToPath(new URL('../../../store', import.meta.url));
@@ -25,6 +28,15 @@ describe('built-in store', () => {
       logoUrl: 'apps/immich/logo.svg',
     });
     expect(immich?.digest).toMatch(/^sha256:[a-f0-9]{64}$/);
+  });
+
+  it('writes the curation into the index: featured apps, rows and rank (US-STORE-01)', () => {
+    const index = buildStoreIndex(STORE, { id: 'builtin', name: 'hlabs' });
+    const curation = loadCuration(STORE);
+    expect(index.featured).toEqual(curation.featured);
+    expect(index.collections).toEqual(curation.collections);
+    expect(index.apps.find((a) => a.id === curation.rank[0])?.rank).toBe(0);
+    expect(curationIssues(curation, new Set(apps.map((a) => a.manifest!.id)))).toEqual([]);
   });
 
   describe.each(SAMPLE_APPS)('rendering %s', (id) => {
@@ -71,5 +83,23 @@ describe('built-in store', () => {
 describe('serializeEnvFile', () => {
   it('quotes values so compose reads them literally', () => {
     expect(serializeEnvFile({ A: "it's $HOME", B: '' })).toBe("A='it'\\''s $HOME'\nB=''\n");
+  });
+});
+
+describe('curation.yml', () => {
+  it('is optional, and names only apps in the store', () => {
+    const dir = join(tmpdir(), `curation-${process.pid}`);
+    mkdirSync(dir, { recursive: true });
+    expect(loadCuration(dir)).toEqual({ featured: [], collections: [], rank: [] });
+    writeFileSync(
+      join(dir, 'curation.yml'),
+      'featured: [immich, ghost]\ncollections:\n  - { id: best, title: Best, appIds: [ghost] }\n',
+    );
+    expect(curationIssues(loadCuration(dir), new Set(['immich'])).map((i) => i.path)).toEqual([
+      'featured[1]',
+      'collections[0].appIds[0]',
+    ]);
+    writeFileSync(join(dir, 'curation.yml'), 'featured: [Not An Id]\n');
+    expect(() => loadCuration(dir)).toThrow();
   });
 });

@@ -6,6 +6,12 @@ export class FakeEngineControl implements EngineControl {
   restarts: EngineCandidate[] = [];
   applied: ColimaResources[] = [];
   onRestart: () => void | Promise<void> = () => {};
+  starts: EngineCandidate[] = [];
+  onStart: () => void | Promise<void> = () => {};
+  async start(candidate: EngineCandidate) {
+    this.starts.push(candidate);
+    await this.onStart();
+  }
   async restart(candidate: EngineCandidate) {
     this.restarts.push(candidate);
     await this.onRestart();

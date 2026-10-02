@@ -12,6 +12,7 @@ const check = (over: Partial<SystemCheck> = {}): SystemCheck => ({
     level: 'ok',
   },
   canContinue: true,
+  hostname: 'hlabs',
   ...over,
 });
 

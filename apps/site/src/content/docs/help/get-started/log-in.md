@@ -1,7 +1,7 @@
 ---
 title: Log in
 description: Choose your account or type your username, then enter your password.
-features: [F-AUTH-01, F-AUTH-02, F-AUTH-03, F-AUTH-04]
+features: [F-AUTH-01, F-AUTH-02, F-AUTH-03, F-AUTH-04, F-AUTH-07]
 ---
 
 For everyone who uses hlabs.
@@ -50,6 +50,16 @@ Each code works once. After you use one, hlabs tells you how many are left and a
 ## Back to where you were going
 
 If you opened a bookmark or a link to hlabs, or to one of your apps, while logged out, hlabs takes you there once you've logged in, including after the two-factor code. Links to other websites are ignored and you land on Home.
+
+## Your apps use the same login
+
+Each app has its own address, like `https://immich.hlabs.local`, and hlabs checks your login before the app opens. If you're logged in to hlabs you go straight in; if not, you get the hlabs log-in screen and land back in the app afterwards. Logging out of hlabs, or being signed out from another device, also closes your way into its apps.
+
+A few apps that have their own login skip this check.
+
+If your admin hasn't shared an app with you, its address shows **You don't have access to this** with the name of the admin to ask. Once they share it, reload the page; it opens within a few seconds.
+
+If an app's address shows **This page doesn't exist**, that app isn't installed (it may have been uninstalled or renamed). **Go to Home** takes you back to hlabs.
 
 ## Log out
 

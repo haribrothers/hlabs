@@ -1,7 +1,13 @@
 // The e2e instances (see playwright.config.ts).
+import { resolve } from 'node:path';
 import { expect, type APIRequestContext } from '@playwright/test';
 
-export const MAIN_URL = 'http://127.0.0.1:5173';
+/**
+ * The main instance has ports of its own, never `pnpm dev`'s (7474 and 5173): specs add and remove apps, so they must
+ * only ever reach the e2e data dir, even while a dev instance with real apps is running.
+ */
+export const MAIN_PORTS = { daemon: 7574, web: 5273 } as const;
+export const MAIN_URL = `http://127.0.0.1:${MAIN_PORTS.web}`;
 /** The main instance's signed-in browser state, written by global.setup.ts. */
 export const MAIN_STORAGE_STATE = 'e2e/.auth/main.json';
 
@@ -15,7 +21,7 @@ const workerIndex = Number(process.env.TEST_PARALLEL_INDEX ?? 0);
 /** This worker's hlabs that has not been set up. */
 export const FIRST_RUN_URL = `http://127.0.0.1:${firstRunPorts(workerIndex).web}`;
 
-type Step = 'welcome' | 'system' | 'account' | 'twoFactor' | 'storage' | 'done';
+type Step = 'welcome' | 'system' | 'account' | 'twoFactor' | 'storage' | 'apps' | 'done';
 
 /** Puts this worker's first-run instance back at `step` (not completed) and returns its setup URL. */
 export async function resetOnboarding(request: APIRequestContext, step: Step = 'welcome'): Promise<string> {
@@ -26,3 +32,9 @@ export async function resetOnboarding(request: APIRequestContext, step: Step = '
   expect(url).toMatch(/\?token=[A-Za-z0-9_-]{43}$/);
   return url;
 }
+
+/**
+ * The main instance's store: a copy of the built-in store made when Playwright starts, so a spec can add a test app
+ * to it (the US-STORE-17 rollback) without touching store/ or other instances.
+ */
+export const E2E_STORE_DIR = resolve(process.env.HLABS_E2E_DATA_DIR ?? '../../.e2e-data', 'store');

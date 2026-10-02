@@ -1,12 +1,26 @@
-# Built-in store. Phase 0: validate every app. The nightly install matrix and index signing
-# (11 §CI, 06 §Store index) arrive with the store in phase 2.
+# Built-in store: validate every app, and the install matrix (D-071, phase 2 "Done when"): each seeded app installs,
+# opens at https://<app>.hlabs.local, restarts and uninstalls on Linux with the real engine and Caddy
+# (scripts/store-matrix.ts). Nightly, on demand, and on pull requests that touch the store or the install path.
+# Index signing (06 §Store index) arrives with app sources.
 name: store
 
 on:
   pull_request:
-    paths: ['store/**', 'packages/app-manifest/**', '.github/workflows/store.yml']
+    paths:
+      - 'store/**'
+      - 'packages/app-manifest/**'
+      - 'apps/daemon/src/apps/**'
+      - 'apps/daemon/src/caddy/**'
+      - 'apps/daemon/src/engine/**'
+      - 'scripts/store-matrix.ts'
+      - '.github/workflows/store.yml'
   schedule:
     - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      apps:
+        description: 'App ids to check, comma-separated (empty: every app)'
+        required: false
 
 permissions:
   contents: read
@@ -25,3 +39,55 @@ jobs:
       - run: pnpm --filter @hlabs/icons build
       - run: pnpm store:lint
       - run: pnpm store:build
+
+  apps:
+    name: list apps
+    runs-on: ubuntu-latest
+    outputs:
+      ids: ${{ steps.list.outputs.ids }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: list
+        env:
+          WANTED: ${{ inputs.apps }}
+        run: |
+          if [ -n "$WANTED" ]; then
+            ids=$(echo "$WANTED" | tr ',' '\n' | sed 's/ //g' | grep -v '^$' | jq -R . | jq -sc .)
+          else
+            ids=$(ls store/apps | jq -R . | jq -sc .)
+          fi
+          echo "ids=$ids" >> "$GITHUB_OUTPUT"
+
+  matrix:
+    name: install ${{ matrix.app }}
+    needs: [lint, apps]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJson(needs.apps.outputs.ids) }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm fetch-binaries
+      - run: pnpm --filter @hlabs/icons build
+      # AdGuard Home serves DNS on port 53, which Ubuntu's resolver stub holds: free it, keeping DNS working.
+      - name: Free port 53
+        if: matrix.app == 'adguard-home'
+        run: |
+          sudo mkdir -p /etc/systemd/resolved.conf.d
+          printf '[Resolve]\nDNSStubListener=no\n' | sudo tee /etc/systemd/resolved.conf.d/no-stub.conf
+          sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+          sudo systemctl restart systemd-resolved
+      - run: node scripts/store-matrix.ts ${{ matrix.app }}
+      - name: Daemon and Caddy logs
+        if: failure()
+        run: |
+          tail -n 200 .matrix-data/logs/*.log || true
+          tail -n 100 .matrix-data/caddy/caddy.log || true

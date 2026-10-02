@@ -11,7 +11,7 @@ interface ErrorData {
 }
 
 /** What the daemon sent, or null when nothing answered. */
-function errorData(err: unknown): ErrorData | null {
+export function errorData(err: unknown): ErrorData | null {
   return err instanceof TRPCClientError ? ((err.data as ErrorData | undefined) ?? null) : null;
 }
 

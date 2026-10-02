@@ -16,6 +16,11 @@ export interface SystemCheckDeps {
   probe: SystemProbe;
   storageRoot: string;
   headless: boolean;
+  /**
+   * The web ports hlabs's own proxy listens on: those aren't "in use by another program". Without this, running setup
+   * again with Caddy up moved it to 8080/8443 and its address stopped answering.
+   */
+  ownPorts?: () => readonly number[];
 }
 
 type EngineCheck = Pick<SystemCheck['engine'], 'kind' | 'version' | 'state' | 'level'>;
@@ -41,13 +46,21 @@ async function engineState(
   return { kind: null, version: null, state: 'missing', level: 'error' };
 }
 
-export async function runSystemCheck({ engine, probe, storageRoot, headless }: SystemCheckDeps): Promise<SystemCheck> {
+export async function runSystemCheck({
+  engine,
+  probe,
+  storageRoot,
+  headless,
+  ownPorts,
+}: SystemCheckDeps): Promise<Omit<SystemCheck, 'hostname'>> {
+  const own = new Set(ownPorts?.() ?? []);
+  const taken = async (port: number) => !own.has(port) && (await probe.portInUse(port));
   const [status, os, freeBytes, httpInUse, httpsInUse] = await Promise.all([
     engine.check(),
     probe.os(),
     probe.freeBytes(storageRoot),
-    probe.portInUse(80),
-    probe.portInUse(443),
+    taken(80),
+    taken(443),
   ]);
 
   const disk = {

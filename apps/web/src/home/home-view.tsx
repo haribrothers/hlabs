@@ -1,16 +1,21 @@
 // Main (US-HOME-01…05): the greeting over the wallpaper, the widgets row and the app grid.
-import { LogoMark } from '@hlabs/icons';
-import { GlassCard } from '@hlabs/ui';
+import { iconDefaults, LOGO_SCALE, LogoMark, Search } from '@hlabs/icons';
+import { isFeatureEnabled } from '@hlabs/shared';
+import { GlassCard, tokens } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from '@trpc/tanstack-react-query';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { homeCopy } from '../copy/home';
+import { searchCopy } from '../copy/search';
+import { isMac, openSearch } from '../search/search-state';
 import { useTRPC } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
 import { AppGrid, orderApps } from './app-grid';
 import { greetingFor } from './greeting';
 import { WidgetsRow } from './widgets';
+import { EngineBanner, StartEngineButton } from './engine-banner';
+import { useEngineRunning } from '../lib/engine-state';
 
 export function HomeView() {
   const trpc = useTRPC();
@@ -18,12 +23,18 @@ export function HomeView() {
   const queryClient = useQueryClient();
   const layout = useQuery({ ...trpc.home.getLayout.queryOptions(), retry: false });
   const apps = useQuery({ ...trpc.apps.list.queryOptions(), retry: false });
-  // Installed, removed or changed apps show up without a reload (US-HOME-03).
+  const [progress, setProgress] = useState(() => new Map<string, number>());
+  // Installed, removed or changed apps show up without a reload (US-HOME-03); installs fill their ring (US-STORE-12).
   useSubscription(
     trpc.events.stream.subscriptionOptions(
-      { types: ['app.stateChanged'] },
+      { types: ['app.stateChanged', 'app.installProgress'] },
       {
-        onData: () => {
+        onData: ({ data: event }) => {
+          if (event.type === 'app.installProgress') {
+            const { appId, progress: pct } = event.data;
+            setProgress((m) => (m.get(appId) === pct ? m : new Map(m).set(appId, pct)));
+            return;
+          }
           void queryClient.invalidateQueries({ queryKey: trpc.apps.list.queryKey() });
           void queryClient.invalidateQueries({ queryKey: trpc.home.getLayout.queryKey() });
         },
@@ -31,6 +42,8 @@ export function HomeView() {
     ),
   );
   const now = useNow();
+  // The engine stopped (US-STATE-08): apps are offline, the rest of Home stays live.
+  const engineDown = useEngineRunning(Boolean(me.data)) === false;
   useEffect(() => {
     document.title = homeCopy.title;
   }, []);
@@ -41,12 +54,17 @@ export function HomeView() {
   return (
     <div className="mx-auto flex w-full max-w-window flex-col items-center gap-8">
       <header className="flex flex-col items-center gap-4 text-center">
-        <GlassCard className="grid size-12 place-items-center rounded-lg p-0" aria-hidden="true">
-          <LogoMark size={28} title="" />
+        {/* The size of a Home app icon, with the mark inset as app logos are. */}
+        <GlassCard
+          className="grid size-(--size-app-icon) place-items-center rounded-(--radius-icon) p-0"
+          aria-hidden="true"
+        >
+          <LogoMark size={Math.round(tokens.SIZE_APP_ICON * LOGO_SCALE)} title="" />
         </GlassCard>
         <h1 className={showGreeting && name ? 'm-0 text-display-xl' : 'sr-only'}>
           {name ? homeCopy.greeting[greetingFor(now)](name) : homeCopy.title}
         </h1>
+        {isFeatureEnabled('search') ? <SearchPill /> : null}
       </header>
       {me.data?.appearance.showWidgets !== false && layout.data ? (
         <WidgetsRow ids={layout.data.items.filter((i) => i.kind === 'widget').map((i) => i.id)} />
@@ -58,8 +76,28 @@ export function HomeView() {
             (layout.data?.items ?? []).filter((i) => i.kind === 'app').map((i) => i.id),
           )}
           isAdmin={me.data?.role === 'admin'}
+          progress={progress}
+          offline={engineDown}
         />
       ) : null}
+      <EngineBanner down={engineDown} actions={me.data?.role === 'admin' ? <StartEngineButton /> : null} />
     </div>
+  );
+}
+
+/** "Search apps, files, settings" under the greeting, with the shortcut (US-HOME-09). */
+export function SearchPill() {
+  return (
+    <button
+      type="button"
+      onClick={openSearch}
+      className="hl-focus hl-glass hl-glass-1 flex min-h-11 w-full max-w-sm items-center gap-3 rounded-pill px-5 py-2.5 text-body text-ink-muted"
+    >
+      <Search aria-hidden {...iconDefaults} className="size-4 shrink-0" />
+      <span className="flex-1 text-left">{searchCopy.pill}</span>
+      <kbd aria-hidden className="rounded-xs bg-surface-control px-1.5 py-0.5 font-sans text-caption">
+        {searchCopy.shortcut(isMac())}
+      </kbd>
+    </button>
   );
 }

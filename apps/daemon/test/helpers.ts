@@ -1,3 +1,4 @@
+import { SHIPPED_PHASE } from '@hlabs/shared';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -22,10 +23,17 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
   return {
     version: '0.0.0-test',
     env: 'test',
+    phase: SHIPPED_PHASE,
     dev: true,
     host: '127.0.0.1',
     port: 0,
     paths: { dataDir, appDataDir: join(dataDir, 'app-data'), storageRootDefault: join(dataDir, 'storage') },
+    // An empty store unless a test points it at one (store/ in the repo, or a fixture).
+    resources: { storeDir: join(dataDir, 'store'), binDir: join(dataDir, 'bin'), webFallbackDir: join(dataDir, 'web') },
+    proxy: 'none',
+    mdns: false,
+    dashboardUpstream: '127.0.0.1:0',
+    composePrefix: 'hlabs',
     headless: false,
     netmountHelper: '/nonexistent/hlabs-netmount',
     privHelper: '/nonexistent/hlabs-priv',

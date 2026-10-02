@@ -7,6 +7,7 @@
   "scripts": {
     "predev": "node native/build.mjs",
     "dev": "HLABS_DATA_DIR=../../.dev-data HLABS_DASHBOARD_URL=http://127.0.0.1:5173 HLABS_DEV_ANONYMOUS_ADMIN=1 NODE_ENV=development tsx watch --clear-screen=false src/main.ts",
+    "dev:full": "node native/build.mjs && HLABS_PROXY=caddy HLABS_MDNS=1 HLABS_DASHBOARD_UPSTREAM=127.0.0.1:5173 HLABS_DASHBOARD_URL=https://hlabs.local HLABS_DATA_DIR=../../.dev-data HLABS_DEV_ANONYMOUS_ADMIN=1 NODE_ENV=development tsx watch --clear-screen=false src/main.ts",
     "build": "node build.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -14,6 +15,7 @@
   },
   "dependencies": {
     "@hlabs/api": "workspace:*",
+    "@hlabs/app-manifest": "workspace:*",
     "@hlabs/db": "workspace:*",
     "@hlabs/shared": "workspace:*",
     "@napi-rs/keyring": "^2.1.0",
@@ -38,6 +40,7 @@
     "tsx": "^4.23.15",
     "typescript": "~5.9.3",
     "vite": "^8.3.1",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.2",
+    "yaml": "^2.8.1"
   }
 }

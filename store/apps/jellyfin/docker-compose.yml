@@ -1,0 +1,11 @@
+services:
+  jellyfin:
+    # Jellyfin names the server after the host, which would otherwise be the container's random id.
+    hostname: jellyfin
+    image: docker.io/jellyfin/jellyfin:12.1@sha256:78d3ea1207d1322471fcac39a614f004f2ccf7e878f95ab2977d752f07e4dd7e
+    environment:
+      JELLYFIN_PublishedServerUrl: ${HLABS_URL}
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config
+      - ${HLABS_APP_DATA}/cache:/cache
+      - ${HLABS_FOLDER_MEDIA}:/media

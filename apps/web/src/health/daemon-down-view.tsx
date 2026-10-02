@@ -53,7 +53,7 @@ export function DaemonDownView({
 
   return (
     <main className="hl-wall flex min-h-full flex-col items-center justify-center gap-5 px-4 py-10 text-center">
-      <span className="grid size-20 place-items-center rounded-pill border border-glass bg-surface-control text-warning">
+      <span className="grid size-20 place-items-center rounded-pill border border-border-glass bg-surface-control text-warning">
         <WifiOff aria-hidden {...iconDefaults} />
       </span>
       <div className="flex flex-col gap-2">

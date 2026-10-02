@@ -1,6 +1,7 @@
 // A daemon at the given onboarding step with the admin created and signed in (for stories after US-ONB-08).
 import type { BootDeps } from '../src/boot';
 import type { DaemonConfig } from '../src/config';
+import type { FakeEngine } from './fakes/engine';
 import { startDaemon } from './helpers';
 
 export type Reply = {
@@ -12,11 +13,13 @@ export async function daemonWithAdmin(
   closers: Array<() => Promise<void>>,
   config: Partial<DaemonConfig> = {},
   boot: Partial<BootDeps> = {},
+  engine?: FakeEngine,
 ) {
   const printed: string[] = [];
   const d = await startDaemon({
     config: { devAnonymousAdmin: false, ...config },
     boot: { print: (l) => printed.push(l), ...boot },
+    engine,
   });
   closers.push(d.close);
   const token = new URL(printed.join('').match(/open (\S+)/)![1]!).searchParams.get('token')!;

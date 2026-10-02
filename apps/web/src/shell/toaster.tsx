@@ -62,6 +62,18 @@ function ToastActions({ toast, actions }: { toast: ToastItem; actions: ToastActi
           >
             {a.label}
           </Link>
+        ) : a.kind === 'retry' ? (
+          <Button
+            key={a.label}
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              handled(toast);
+              a.run();
+            }}
+          >
+            {a.label}
+          </Button>
         ) : (
           <Button
             key={a.label}

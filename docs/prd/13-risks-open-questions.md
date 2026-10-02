@@ -13,6 +13,7 @@
 | R-08 | **Scope.** 336 stories is a lot for one person. | Never ships. | Phases 0–6 are the MVP; 7 is 1.0; 8–9 only when wanted. |
 | R-09 | **Tailscale dependency** (account, app installed separately). | Remote access needs a third-party account. | Clearly optional; LAN works without it. |
 | R-10 | **SMB on macOS** needs port 445, which conflicts with macOS File Sharing (P3 FilesShare). | Feature may not work alongside built-in sharing. | Use macOS File Sharing itself on Mac (D-051). |
+| R-11 | **App data owned by container users** (www-data, postgres, root) on Linux. | Removing an app's data ("Remove partial install", US-APP-12's uninstall) can fail with EACCES when the hlabs user doesn't own the files. | US-APP-12 deletes app data through a short-lived container running as root on that folder only, and falls back to reporting what's left. |
 
 ## Open questions for Hari
 All answered on 27 Sep 2026:
@@ -37,6 +38,9 @@ New questions found during the build go here with the next free id (Q-09 onward)
 | --- | --- | --- |
 | Q-09 | D-036 hides controls whose phase hasn't shipped. Phase 0's Dock and tab bar show all areas as placeholder windows so the "working Dock" can be checked. From phase 1, should areas whose features haven't shipped (App Store until phase 2, Usage 4, Backups and Files 5) be hidden, leaving Home and Settings? | Answered 27 Sep 2026: hide them (D-056) |
 | Q-10 | D-055 names Astro 5; the current releases are Astro 7 and Starlight 0.42. Phase 0 pins Astro 5.18 and Starlight 0.37.7, the last Starlight that supports Astro 5. Move to Astro 7 before the site is built in phase 6? | Open: before phase 6 |
+| Q-11 | How does the 14-app install matrix run in CI: all apps on every PR, nightly only, or nightly plus a smoke set on PRs? | Answered 29 Sep 2026: nightly full matrix plus a two-app smoke set on every PR (D-071) |
+| Q-12 | How does Caddy get onto dev machines: a script that downloads the pinned binary, a system package, or a container? | Answered 29 Sep 2026: a script downloads the pinned binary (D-072) |
+| Q-13 | 02 §2.6 and US-APP-05 give each app a LAN fallback address `https://hlabs.local:<port>` (used when its mDNS name can't be published) on its 12000–12999 port. D-049 already publishes the app's web service on `127.0.0.1:<that port>`, and on Linux Caddy can't listen on `0.0.0.0:<port>` while Docker holds `127.0.0.1:<port>`. Options: (a) publish containers on a second loopback range (13000–13999) and keep 12000–12999 for the fallback and tailnet ports; (b) have Caddy listen on the LAN address itself (`<lan-ip>:<port>`), reloaded when the address changes; (c) drop the per-app fallback and show `https://<lan-ip>` addresses instead. | Answered (Hari, 30 Sep 2026): (a), a second loopback range. D-086. |
 
 ## Design follow-ups (copy changes already decided)
 - `ForgotPassword`: remove "Have a recovery code?"; admin line reads "your admin can make a reset link for you from Settings › Users" (D-009).

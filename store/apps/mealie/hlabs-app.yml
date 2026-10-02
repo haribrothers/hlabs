@@ -1,0 +1,27 @@
+schema: 1
+id: mealie
+name: Mealie
+version: '3.28.0'
+revision: 1
+tagline: Recipes, meal plans and shopping lists
+description: |
+  Save recipes from any website in one click, plan the week's meals and turn them into a shopping list
+  the whole family can tick off. Sign in the first time as changeme@example.com with the password
+  MyPassword; Mealie then asks you to set up your own account.
+category: productivity
+developer: { name: Mealie, url: https://mealie.io }
+source: https://github.com/mealie-recipes/mealie
+license: AGPL-3.0
+icon:
+  logo: logo.png
+  gradient: ['#e58325', '#c2410c']
+  fallback: chef-hat
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: mealie, port: 9000, embed: true }
+health: { service: mealie, http: /api/app/about, timeout: 180 }
+ownLogin: true
+backup:
+  pause: [mealie]
+  beforeUpdate: true
+permissions: { network: internet }

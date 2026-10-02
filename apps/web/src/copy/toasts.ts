@@ -9,6 +9,7 @@ export const toastCopy = {
   done: {
     'apps.start': 'App started',
     'apps.restart': 'App restarted',
+    'apps.uninstall': 'Uninstalling the app',
     'backups.runNow': 'Backup started',
     'settings.updates.check': 'Checked for updates',
   } satisfies Record<ToastMutation, string>,

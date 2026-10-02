@@ -18,7 +18,8 @@ const EXPECTED: Row[] = [
   ['onboarding.status', 'q', 'public'], ['onboarding.checkSystem', 'q', 'setup'], ['onboarding.confirmSystem', 'm', 'setup'],
   ['onboarding.installEngine', 'm', 'setup'], ['onboarding.setStep', 'm', 'setup'], ['onboarding.createAdmin', 'm', 'setup'],
   ['onboarding.setupTotp', 'm', 'setup'], ['onboarding.confirmTotp', 'm', 'setup'], ['onboarding.setStorage', 'm', 'setup'],
-  ['onboarding.connectRemote', 'm', 'setup'], ['onboarding.installStarterApps', 'm', 'setup'],
+  ['onboarding.connectRemote', 'm', 'setup'], ['onboarding.starterApps', 'q', 'setup'],
+  ['onboarding.installStarterApps', 'm', 'setup'],
   ['onboarding.findBackups', 'q', 'setup'], ['onboarding.listRestorePoints', 'q', 'setup'],
   ['onboarding.restoreFromBackup', 'm', 'setup'], ['onboarding.complete', 'm', 'setup'],
 

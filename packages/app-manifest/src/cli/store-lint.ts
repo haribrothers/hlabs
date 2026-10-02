@@ -1,6 +1,6 @@
-// `pnpm store:lint`: validate every app in store/ (manifest, compose rules, pinned images, logo).
+// `pnpm store:lint`: validate every app in store/ (manifest, compose rules, pinned images, logo) and curation.yml.
 import { relative, resolve } from 'node:path';
-import { lintStore } from '../node';
+import { curationIssues, lintStore, loadCuration } from '../node';
 
 const storeDir = resolve(process.argv[2] ?? 'store');
 const apps = lintStore(storeDir);
@@ -10,6 +10,16 @@ for (const app of apps) {
     problems++;
     console.error(`${relative(process.cwd(), app.dir)}/${issue.file} ${issue.path}: ${issue.code} ${issue.message}`);
   }
+}
+try {
+  const ids = new Set(apps.flatMap((a) => (a.manifest ? [a.manifest.id] : [])));
+  for (const issue of curationIssues(loadCuration(storeDir), ids)) {
+    problems++;
+    console.error(`curation.yml ${issue.path}: ${issue.code} ${issue.message}`);
+  }
+} catch (error) {
+  problems++;
+  console.error(`curation.yml: CURATION_INVALID ${(error as Error).message}`);
 }
 if (apps.length === 0) {
   console.error(`No apps found in ${storeDir}/apps`);

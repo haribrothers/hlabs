@@ -30,3 +30,15 @@ export const accessCopy = {
   notFoundBody: 'This page doesn’t exist.',
   goHome: 'Go to Home',
 } as const;
+
+/** The pages the daemon answers with on app hostnames (US-AUTH-17, US-AUTH-19), outside the dashboard. */
+export const appPageCopy = {
+  notFoundCode: '404',
+  notFoundTitle: 'This page doesn’t exist',
+  notFoundBody: 'If you followed a link to an app, it may have been uninstalled or renamed.',
+  notFoundDocTitle: 'Page not found · hlabs',
+  engineStoppedDocTitle: 'Engine stopped · hlabs',
+  noAccessBody: (app: string, admin: string | null) =>
+    `${app} hasn’t been shared with you. Ask ${admin ?? 'an admin'} to share it with you.`,
+  member: 'Member',
+} as const;

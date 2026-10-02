@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react';
 import { cn } from '../lib/cn';
 
 export interface ScrollPaneProps {
@@ -14,6 +14,8 @@ export interface ScrollPaneProps {
   bodyClassName?: string;
   /** Put on the scrolling element (tests, styling hooks). */
   'data-testid'?: string;
+  /** The scrolling element, e.g. to remember and restore its position. */
+  scrollRef?: Ref<HTMLDivElement>;
 }
 
 /**
@@ -27,6 +29,7 @@ export function ScrollPane({
   headerClassName,
   scrollClassName,
   bodyClassName,
+  scrollRef,
   ...rest
 }: ScrollPaneProps) {
   const bar = useRef<HTMLDivElement>(null);
@@ -46,7 +49,11 @@ export function ScrollPane({
       className={cn('hl-scroll-pane', className)}
       style={{ '--hl-scroll-header': `${headerHeight}px` } as CSSProperties}
     >
-      <div className={cn('hl-scroll hl-scroll-pane-scroller', scrollClassName)} data-testid={rest['data-testid']}>
+      <div
+        ref={scrollRef}
+        className={cn('hl-scroll hl-scroll-pane-scroller', scrollClassName)}
+        data-testid={rest['data-testid']}
+      >
         <div className={cn('hl-scroll-pane-body', bodyClassName)}>{children}</div>
       </div>
       <div ref={bar} className={cn('hl-scroll-pane-header', headerClassName)}>

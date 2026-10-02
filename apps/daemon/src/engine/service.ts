@@ -25,6 +25,10 @@ export interface EngineServiceDeps {
 export class EngineService {
   private current: EngineStatus = { state: 'missing' };
   private engine: ContainerEngine | null = null;
+  /** The engine last seen, running or stopped: one that quit can take its socket with it and look missing. */
+  private known: EngineCandidate | null = null;
+  /** Development only (/dev/engine): report the engine stopped without touching it, for e2e (US-STATE-08…10). */
+  private simulatedStop = false;
   private timer: NodeJS.Timeout | null = null;
   private checking: Promise<EngineStatus> | null = null;
 
@@ -32,6 +36,11 @@ export class EngineService {
 
   get status(): EngineStatus {
     return this.current;
+  }
+
+  /** The engine this computer uses (from the last time it was seen), or null when none was ever found. */
+  get lastCandidate(): EngineCandidate | null {
+    return this.known;
   }
 
   /** The running engine, or null in engine-stopped mode. */
@@ -57,15 +66,31 @@ export class EngineService {
     return this.checking;
   }
 
+  /** Development only: report the engine stopped (or not) as if it were, without touching it. */
+  simulateStop(stopped: boolean): Promise<EngineStatus> {
+    this.simulatedStop = stopped;
+    return this.check();
+  }
+
   private async runCheck(): Promise<EngineStatus> {
     // While running, a ping is enough; only re-detect when it stops answering.
-    if (this.current.state === 'running' && this.engine && (await this.engine.ping())) return this.current;
+    if (!this.simulatedStop && this.current.state === 'running' && this.engine && (await this.engine.ping())) {
+      return this.current;
+    }
 
-    const candidates = await (this.deps.candidates ?? (() => defaultCandidates(this.deps.preferred?.() ?? 'auto')))();
-    const { status, engine } = await detectEngine(candidates, this.deps.detect ?? realDetectDeps);
+    const { status, engine } = this.simulatedStop
+      ? {
+          status: this.known ? ({ state: 'stopped', candidate: this.known } as const) : ({ state: 'missing' } as const),
+          engine: null,
+        }
+      : await detectEngine(
+          await (this.deps.candidates ?? (() => defaultCandidates(this.deps.preferred?.() ?? 'auto')))(),
+          this.deps.detect ?? realDetectDeps,
+        );
     const changed = describe(status) !== describe(this.current);
     this.current = status;
     this.engine = engine;
+    if (status.state !== 'missing') this.known = status.candidate;
     if (changed) {
       this.deps.logger.info({ engine: describe(status) }, 'container engine status changed');
       const candidate = status.state === 'missing' ? null : status.candidate;

@@ -29,6 +29,7 @@ export const appRouter = router({
     confirmTotp: m(p.setup, s.onboarding.confirmTotp),
     setStorage: m(p.setup, s.onboarding.setStorage),
     connectRemote: m(p.setup, s.onboarding.connectRemote),
+    starterApps: q(p.setup, s.onboarding.starterApps),
     installStarterApps: m(p.setup, s.onboarding.installStarterApps),
     findBackups: q(p.setup, s.onboarding.findBackups),
     listRestorePoints: q(p.setup, s.onboarding.listRestorePoints),

@@ -2,7 +2,7 @@
 // get their label and gates from where they go, mutations run only from the allow-list, and members never see an
 // action that needs an admin.
 import type { AppRouter, NotificationAction } from '@hlabs/api';
-import { isFeatureEnabled, SHIPPED_PHASE, TOAST_MUTATIONS, type ToastMutation } from '@hlabs/shared';
+import { isFeatureEnabled, VISIBLE_PHASE, TOAST_MUTATIONS, type ToastMutation } from '@hlabs/shared';
 import type { TRPCClient } from '@trpc/client';
 import { toastCopy } from '../copy/toasts';
 import type { ToastAction } from './toasts';
@@ -33,12 +33,12 @@ export function actionsFromNotification(actions: readonly NotificationAction[] |
 }
 
 /** Every allow-listed mutation is admin-only. */
-export const needsAdmin = (a: ToastAction) => a.kind === 'mutation' || Boolean(a.admin);
+export const needsAdmin = (a: ToastAction) => a.kind === 'mutation' || (a.kind === 'navigate' && Boolean(a.admin));
 
 /** The buttons to show: at most two, none a member can't use, none from a phase that hasn't shipped. */
 export function visibleActions(
   actions: readonly ToastAction[] | undefined,
-  { isAdmin, shippedPhase = SHIPPED_PHASE }: { isAdmin: boolean; shippedPhase?: number },
+  { isAdmin, shippedPhase = VISIBLE_PHASE }: { isAdmin: boolean; shippedPhase?: number },
 ): ToastAction[] {
   return (actions ?? [])
     .filter((a) => isAdmin || !needsAdmin(a))
@@ -57,6 +57,8 @@ export function runToastMutation(
       return client.apps.start.mutate(input as Parameters<typeof client.apps.start.mutate>[0]);
     case 'apps.restart':
       return client.apps.restart.mutate(input as Parameters<typeof client.apps.restart.mutate>[0]);
+    case 'apps.uninstall':
+      return client.apps.uninstall.mutate(input as Parameters<typeof client.apps.uninstall.mutate>[0]);
     case 'backups.runNow':
       return client.backups.runNow.mutate(input as Parameters<typeof client.backups.runNow.mutate>[0]);
     case 'settings.updates.check':

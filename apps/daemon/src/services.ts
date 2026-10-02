@@ -18,6 +18,13 @@ import type { NotificationService } from './notifications/service';
 import type { NetworkStorage } from './storage/network';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
+import type { CatalogService } from './store/catalog';
+import type { StoreService } from './store/service';
+import type { InstallService } from './apps/install';
+import type { AppService } from './apps/service';
+import type { NetworkService } from './network/service';
+import type { AppLogs } from './apps/logs';
+import type { UpdateService } from './apps/update';
 
 export interface Services {
   config: DaemonConfig;
@@ -30,6 +37,19 @@ export interface Services {
   secrets: SecretStore;
   proxy: ProxyManager;
   mdns: MdnsPublisher;
+  catalog: CatalogService;
+  store: StoreService;
+  /** Installs apps (US-STORE-08…14). */
+  installer: InstallService;
+  /** Updates and their rollback (US-STORE-17). */
+  updates: UpdateService;
+  apps: AppService;
+  /** Apps' container logs (US-APP-08…10). */
+  logs: AppLogs;
+  /** Caddy and mDNS names (02 §2.6). */
+  routing: NetworkService;
+  /** Settles when the start-up reconcile has finished (tests). */
+  reconciled: Promise<void>;
   onboarding: OnboardingService;
   sessions: SessionService;
   totp: TotpService;

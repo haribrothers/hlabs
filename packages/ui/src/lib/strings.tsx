@@ -12,6 +12,7 @@ export interface UiStrings {
   badgeNew: (n: number) => string;
   open: string;
   installing: (percent: number) => string;
+  updating: string;
   appState: { update: string; error: string; stopped: string };
   dismiss: string;
   step: (current: number, total: number) => string;
@@ -39,6 +40,7 @@ export const defaultStrings: UiStrings = {
   badgeNew: (n) => `${n} new`,
   open: 'open',
   installing: (p) => `Installing… ${p}%`,
+  updating: 'Updating…',
   appState: { update: 'Update', error: 'Error', stopped: 'Stopped' },
   dismiss: 'Dismiss',
   step: (c, t) => `Step ${c} of ${t}`,

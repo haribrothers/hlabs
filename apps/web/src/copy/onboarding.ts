@@ -46,6 +46,11 @@ export const onboardingCopy = {
     copyCommand: 'Copy command',
     startAtLogin: 'Start hlabs when I log in',
     startAtLoginHint: 'Keeps your apps running in the background from the menu bar',
+    // The name on the network (D-098)
+    nameLabel: 'Name on your network',
+    nameHint: (name: string) => `Phones and computers open hlabs at ${name}.local. You can't change it later yet.`,
+    nameInvalid: 'Use lowercase letters, numbers and dashes, starting and ending with a letter or number.',
+    nameTaken: 'An app already uses this name. Pick another.',
     disk: 'Free disk space',
     diskError: 'hlabs needs at least 10 GB free. Free up some space, then check again.',
     diskWarning: 'Less than 30 GB free. Apps and files can fill this quickly.',
@@ -168,6 +173,15 @@ export const onboardingCopy = {
     notWritable: (path: string) => `hlabs can't write to ${path}. Check the folder's permissions, then try again.`,
     failed: "Couldn't save where your data lives. Try again.",
   },
+  apps: {
+    lead: "They'll install in the background. Hundreds more are in the App Store.",
+    label: 'Starter apps',
+    selected: (n: number) => (n === 1 ? '1 app selected' : `${n} apps selected`),
+    needsMemory: 'Needs more memory',
+    skip: 'Skip',
+    installAndFinish: 'Install and finish',
+    failed: "Couldn't start installing these apps. Try again, or skip and install them from the App Store.",
+  },
   done: {
     title: (firstName: string) => (firstName ? `You're all set, ${firstName}` : "You're all set"),
     appsInstalling: 'Your apps are installing.',
@@ -177,6 +191,7 @@ export const onboardingCopy = {
     admin: 'Admin account',
     adminDetail: (username: string, totp: boolean) => `${username} · 2FA ${totp ? 'on' : 'off'}`,
     storage: 'Storage',
+    installing: (n: number) => (n === 1 ? 'Installing 1 app' : `Installing ${n} apps`),
     openDashboard: 'Open dashboard',
   },
   stepNames: {
@@ -192,6 +207,7 @@ export const onboardingCopy = {
     account: 'Create your admin account',
     twoFactor: 'Add two-factor login',
     storage: 'Where should your data live?',
+    apps: 'Pick a few apps to start',
     done: "You're all set",
   },
   finishOnHost: 'Finish setup on the computer running hlabs.',

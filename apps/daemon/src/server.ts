@@ -5,8 +5,12 @@ import Fastify, { type FastifyBaseLogger, type FastifyInstance, type FastifyRequ
 import type { DaemonConfig } from './config';
 import { readCookie, SESSION_COOKIE } from './auth/sessions';
 import { DaemonContext, type Identity } from './context';
+import { dashboardOrigins } from './http/dashboard-origins';
 import { registerDevRoutes } from './http/dev';
 import { registerHealthz } from './http/healthz';
+import { registerAuthVerify } from './http/verify';
+import { registerAppAssets } from './http/app-assets';
+import { registerAppLogs } from './http/app-logs';
 import type { Logger } from './logger';
 import type { Readiness } from './readiness';
 import { dispatcher } from './routers/index';
@@ -45,9 +49,14 @@ export async function buildServer({ config, logger, readiness, holder }: ServerD
     loggerInstance: logger as FastifyBaseLogger,
     routerOptions: { maxParamLength: 5_000 },
     trustProxy: '127.0.0.1',
+    // Closing ends open connections too (the dashboard's event streams), so shutdown never waits on them.
+    forceCloseConnections: true,
   });
 
   registerHealthz(app, readiness, config.version);
+  registerAuthVerify(app, holder, config.resources.webFallbackDir);
+  registerAppAssets(app, holder, config.devAnonymousAdmin);
+  registerAppLogs(app, holder, config.devAnonymousAdmin);
   if (config.dev) registerDevRoutes(app, holder);
 
   await app.register(fastifyTRPCPlugin, {
@@ -64,7 +73,7 @@ export async function buildServer({ config, logger, readiness, holder }: ServerD
           csrfToken: headerValue(req.headers['x-hlabs-csrf']),
           origin: headerValue(req.headers.origin),
           host: headerValue(req.headers['x-forwarded-host']) ?? headerValue(req.headers.host),
-          allowedOrigins: [new URL(config.dashboardUrl).origin],
+          allowedOrigins: dashboardOrigins(config.dashboardUrl, holder.current?.db ?? null),
           setCookie: (cookie) => void res.header('set-cookie', cookie),
         }),
       onError: ({ path, error }) => {

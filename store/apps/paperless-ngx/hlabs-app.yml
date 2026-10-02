@@ -1,0 +1,44 @@
+schema: 1
+id: paperless-ngx
+name: Paperless-ngx
+version: '3.2.1'
+revision: 1
+tagline: Scan, find and keep every paper document
+description: |
+  Turn letters, bills and receipts into searchable PDFs. Drop scans into a folder and Paperless reads
+  them, files them with tags and correspondents, and finds any of them in seconds. The first visit asks
+  you to create Paperless's admin account.
+category: productivity
+developer: { name: Paperless-ngx, url: https://docs.paperless-ngx.com }
+source: https://github.com/paperless-ngx/paperless-ngx
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#17541f', '#0b3d12']
+  fallback: file-text
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 2048, disk: 4096 }
+web: { service: webserver, port: 8000, embed: true }
+health: { service: webserver, http: /accounts/login/, timeout: 300 }
+env:
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+  - key: SECRET_KEY
+    type: secret
+    generate: true
+    hidden: true
+folders:
+  - key: consume
+    label: Scans to import
+    description: Documents put here are read, filed and then removed from the folder
+    target: /usr/src/paperless/consume
+    default: home:Scans
+    mode: rw
+    required: false
+ownLogin: true
+backup:
+  pause: [webserver]
+  beforeUpdate: true
+permissions: { network: internet }

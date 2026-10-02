@@ -20,13 +20,13 @@ hlabs holds a household's photos, passwords and documents. Security rules here a
 ## 7.2a First run (before any user exists)
 - While onboarding is incomplete, the daemon generates a one-time **setup token** (32 bytes, base64url). The tray opens the browser at `http://127.0.0.1:7474/setup?token=…`; on headless Linux the install script prints the setup URL with the token.
 - Every `onboarding.*` procedure except `status` requires that token (header `x-hlabs-setup`), so another device on the LAN can't create the first admin. `onboarding.status` stays public.
-- During onboarding only, Caddy also serves the dashboard over plain HTTP on the LAN (the local CA isn't trusted yet). Once onboarding completes, port 80 only redirects to HTTPS and serves `GET /ca.crt` (see CertGuide). Decision D-013.
+- During onboarding only, Caddy also serves the dashboard over plain HTTP on the LAN (the local CA isn't trusted yet). Once onboarding completes, port 80 only redirects to HTTPS and serves `GET /ca.crt` (see CertGuide); the dashboard also serves `GET /ca.crt` over HTTPS (D-097). The CA certificate is public; its key never leaves Caddy's storage. Decision D-013.
 
 ## 7.3 Sessions
 - Session id: 32 random bytes, stored as SHA-256 hash. Cookie `hlabs_session`: `HttpOnly`, `Secure`, `SameSite=Lax`, `Domain=.hlabs.local` (plus the tailnet host), `Path=/`.
 - Idle timeout 12 h; "Remember me on this device" extends to 30 days sliding.
 - Changing a password or disabling 2FA revokes all other sessions. Admins can revoke any session.
-- CSRF: tRPC mutations require the `x-hlabs-csrf` header (double-submit token from `auth.me`) and `Origin` must be the dashboard host.
+- CSRF: tRPC mutations require the `x-hlabs-csrf` header (double-submit token from `auth.me`) and `Origin` must be the dashboard: `HLABS_DASHBOARD_URL`, `https://<hostname>.local[:port]` as the name and ports are now (also `http://` while setup runs) or the tailnet address (D-098).
 
 ## 7.4 Authorization
 | Capability | Admin | Member |

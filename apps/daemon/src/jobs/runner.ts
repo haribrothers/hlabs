@@ -23,10 +23,20 @@ export interface JobDefinition<P = unknown> {
 
 const ACTIVE = ['queued', 'running'] as const;
 const EXCLUSIVE = new Set<string>(EXCLUSIVE_JOB_KINDS);
+/** App jobs run one at a time; the rest wait in `queued` (US-STORE-11: "Waiting for another app to finish…"). */
+export const SERIAL_JOB_KINDS = new Set<string>([
+  'app_install',
+  'app_update',
+  'app_uninstall',
+  'app_move_data',
+  'app_deploy_custom',
+]);
 
 export class JobRunner {
   private readonly definitions = new Map<JobKind, JobDefinition<never>>();
   private readonly running = new Map<string, { controller: AbortController; done: Promise<void> }>();
+  /** The end of the app-job queue. */
+  private serialTail: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly db: HlabsDb,
@@ -47,6 +57,19 @@ export class JobRunner {
       .run();
     if (result.changes > 0) this.logger.warn({ count: result.changes }, 'marked interrupted jobs as failed');
     return result.changes;
+  }
+
+  /** Throws JOB_EXCLUSIVE_RUNNING when D-020 wouldn't let a job of this kind start now (check before other work). */
+  assertCanStart(kind: JobKind): void {
+    const active = this.db
+      .select({ kind: jobs.kind })
+      .from(jobs)
+      .where(inArray(jobs.state, [...ACTIVE]))
+      .all();
+    const exclusiveActive = active.find((j) => EXCLUSIVE.has(j.kind));
+    if (exclusiveActive || (EXCLUSIVE.has(kind) && active.length > 0)) {
+      throw hlabsError('JOB_EXCLUSIVE_RUNNING', undefined, { runningKind: (exclusiveActive ?? active[0]!).kind });
+    }
   }
 
   /** Queue a job and start it. Throws JOB_EXCLUSIVE_RUNNING when D-020 forbids it. */
@@ -82,7 +105,14 @@ export class JobRunner {
     });
 
     const controller = new AbortController();
-    const done = this.execute(id, kind, target, options.payload as never, definition, controller);
+    const run = () => this.execute(id, kind, target, options.payload as never, definition, controller);
+    let done: Promise<void>;
+    if (SERIAL_JOB_KINDS.has(kind)) {
+      done = this.serialTail.then(run);
+      this.serialTail = done.catch(() => undefined);
+    } else {
+      done = run();
+    }
     this.running.set(id, { controller, done });
     void done.finally(() => this.running.delete(id));
     return id;

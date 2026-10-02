@@ -1,0 +1,13 @@
+# Git over SSH isn't offered (no raw port): clone and push over https at the app's address.
+services:
+  gitea:
+    image: docker.io/gitea/gitea:1.27.3@sha256:87a67ee09d3ae0d1df5fda5dcda3e2a1f9236a45b0a59025d6e00e46adc43bef
+    environment:
+      USER_UID: ${PUID}
+      USER_GID: ${PGID}
+      GITEA__database__DB_TYPE: sqlite3
+      GITEA__server__DOMAIN: ${HLABS_HOSTNAME}
+      GITEA__server__ROOT_URL: ${HLABS_URL}/
+      GITEA__server__DISABLE_SSH: 'true'
+    volumes:
+      - ${HLABS_APP_DATA}/data:/data

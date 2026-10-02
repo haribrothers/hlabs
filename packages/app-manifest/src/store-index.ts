@@ -24,7 +24,32 @@ export const StoreIndex = z
         .strict(),
     ),
     featured: z.array(appId).optional(),
-    collections: z.array(z.object({ title: z.string(), appIds: z.array(appId) }).strict()).optional(),
+    collections: z.array(StoreCollection()).optional(),
   })
   .strict();
 export type StoreIndex = z.output<typeof StoreIndex>;
+
+function StoreCollection() {
+  return z
+    .object({
+      /** For links ("See all"): lowercase letters, numbers and dashes. */
+      id: z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/),
+      title: z.string().min(1).max(60),
+      appIds: z.array(appId).min(1),
+    })
+    .strict();
+}
+
+/**
+ * `store/curation.yml`: the built-in store's featured apps and rows on the store home (US-STORE-01) and the curated
+ * order for "Popular" (US-STORE-04). Written into index.json by `pnpm store:build`.
+ */
+export const StoreCuration = z
+  .object({
+    featured: z.array(appId).default([]),
+    collections: z.array(StoreCollection()).default([]),
+    /** Curated order, most popular first; apps not listed follow A–Z (hlabs collects no usage data). */
+    rank: z.array(appId).default([]),
+  })
+  .strict();
+export type StoreCuration = z.output<typeof StoreCuration>;

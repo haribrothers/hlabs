@@ -5,10 +5,11 @@ import { join } from 'node:path';
 import { parse } from 'yaml';
 import { validateCompose, type ComposeFile, type ComposeIssue } from './compose';
 import { AppManifest } from './manifest';
-import { StoreIndex } from './store-index';
+import { StoreCuration, StoreIndex } from './store-index';
 
 export const MANIFEST_FILE = 'hlabs-app.yml';
 export const COMPOSE_FILE = 'docker-compose.yml';
+export const CURATION_FILE = 'curation.yml';
 
 export interface AppIssue {
   file: string;
@@ -107,13 +108,46 @@ export function lintStore(storeDir: string, options = { requireDigest: true }): 
   return listAppDirs(storeDir).map((dir) => loadAppDir(dir, options));
 }
 
+/** The store's curation (featured apps, rows, rank), or an empty one. Throws when the file is invalid. */
+export function loadCuration(storeDir: string): StoreCuration {
+  const file = join(storeDir, CURATION_FILE);
+  return StoreCuration.parse(existsSync(file) ? (parse(readFileSync(file, 'utf8')) ?? {}) : {});
+}
+
+/** Curation entries naming apps that aren't in the store. */
+export function curationIssues(curation: StoreCuration, appIds: ReadonlySet<string>): AppIssue[] {
+  const issues: AppIssue[] = [];
+  const check = (ids: string[], path: string) =>
+    ids.forEach((id, i) => {
+      if (!appIds.has(id)) {
+        issues.push({
+          file: CURATION_FILE,
+          path: `${path}[${i}]`,
+          code: 'UNKNOWN_APP',
+          message: `No app "${id}" in the store`,
+        });
+      }
+    });
+  check(curation.featured, 'featured');
+  curation.collections.forEach((c, i) => check(c.appIds, `collections[${i}].appIds`));
+  check(curation.rank, 'rank');
+  return issues;
+}
+
 export function buildStoreIndex(storeDir: string, source: { id: string; name: string }): StoreIndex {
   const apps = lintStore(storeDir);
   const broken = apps.filter((a) => a.issues.length > 0);
   if (broken.length) throw new Error(`Fix store:lint issues first (${broken.length} app(s))`);
+  const curation = loadCuration(storeDir);
+  if (curationIssues(curation, new Set(apps.map((a) => a.manifest!.id))).length) {
+    throw new Error('Fix store:lint issues in curation.yml first');
+  }
+  const rank = new Map(curation.rank.map((id, i) => [id, i]));
   return StoreIndex.parse({
     schema: 1,
     source,
+    ...(curation.featured.length ? { featured: curation.featured } : {}),
+    ...(curation.collections.length ? { collections: curation.collections } : {}),
     apps: apps.map(({ dir, manifest }) => {
       const id = manifest!.id;
       const hash = createHash('sha256');
@@ -128,6 +162,7 @@ export function buildStoreIndex(storeDir: string, source: { id: string; name: st
         composeUrl: `apps/${id}/${COMPOSE_FILE}`,
         logoUrl: logo ? (/^https:\/\//.test(logo) ? logo : `apps/${id}/${logo}`) : null,
         digest: `sha256:${hash.digest('hex')}`,
+        ...(rank.has(id) ? { rank: rank.get(id) } : {}),
       };
     }),
   });

@@ -1,0 +1,157 @@
+{
+  "schema": 1,
+  "source": {
+    "id": "builtin",
+    "name": "hlabs"
+  },
+  "apps": [
+    {
+      "id": "adguard-home",
+      "version": "0.107.79",
+      "revision": 0,
+      "manifestUrl": "apps/adguard-home/hlabs-app.yml",
+      "composeUrl": "apps/adguard-home/docker-compose.yml",
+      "logoUrl": "apps/adguard-home/logo.svg",
+      "digest": "sha256:3d5faa06aed60975f61b4b5b20f709f3d26b78a4bc26b2af056ee29f6ceeb978",
+      "rank": 5
+    },
+    {
+      "id": "audiobookshelf",
+      "version": "2.37.0",
+      "revision": 0,
+      "manifestUrl": "apps/audiobookshelf/hlabs-app.yml",
+      "composeUrl": "apps/audiobookshelf/docker-compose.yml",
+      "logoUrl": "apps/audiobookshelf/logo.svg",
+      "digest": "sha256:ea398746119734050e5fd02f1a05ed58a6742af9b3f05d8075e443119d22fe0e",
+      "rank": 8
+    },
+    {
+      "id": "gitea",
+      "version": "1.27.3",
+      "revision": 0,
+      "manifestUrl": "apps/gitea/hlabs-app.yml",
+      "composeUrl": "apps/gitea/docker-compose.yml",
+      "logoUrl": "apps/gitea/logo.svg",
+      "digest": "sha256:512222661e530d6b3bfaa19b75d517e3fa762489bf954e31290a7e5e9aeeaaf2",
+      "rank": 13
+    },
+    {
+      "id": "home-assistant",
+      "version": "2026.9.4",
+      "revision": 0,
+      "manifestUrl": "apps/home-assistant/hlabs-app.yml",
+      "composeUrl": "apps/home-assistant/docker-compose.yml",
+      "logoUrl": "apps/home-assistant/logo.png",
+      "digest": "sha256:d3b21d2060bb52b886a6f361e5da8a247a8fb8146a8aa326dd5e3317c26a40f4",
+      "rank": 3
+    },
+    {
+      "id": "immich",
+      "version": "3.2.2",
+      "revision": 0,
+      "manifestUrl": "apps/immich/hlabs-app.yml",
+      "composeUrl": "apps/immich/docker-compose.yml",
+      "logoUrl": "apps/immich/logo.svg",
+      "digest": "sha256:f204494152993af44314d0402b3f2022b13ba172c754524e2ccf0757b84cfca6",
+      "rank": 0
+    },
+    {
+      "id": "jellyfin",
+      "version": "12.1",
+      "revision": 0,
+      "manifestUrl": "apps/jellyfin/hlabs-app.yml",
+      "composeUrl": "apps/jellyfin/docker-compose.yml",
+      "logoUrl": "apps/jellyfin/logo.svg",
+      "digest": "sha256:8a9d6477cc8a60d057fc3845d1daf2ce9eee36e24fa1c1f0f466941fb0ce8618",
+      "rank": 1
+    },
+    {
+      "id": "mealie",
+      "version": "3.28.0",
+      "revision": 0,
+      "manifestUrl": "apps/mealie/hlabs-app.yml",
+      "composeUrl": "apps/mealie/docker-compose.yml",
+      "logoUrl": "apps/mealie/logo.png",
+      "digest": "sha256:f244acf1e7f30be420070d55706a4c3c187e09e25a05a1551eff0609783f95db",
+      "rank": 10
+    },
+    {
+      "id": "n8n",
+      "version": "2.41.3",
+      "revision": 0,
+      "manifestUrl": "apps/n8n/hlabs-app.yml",
+      "composeUrl": "apps/n8n/docker-compose.yml",
+      "logoUrl": "apps/n8n/logo.svg",
+      "digest": "sha256:b3ecec8939e78060fac1266a5100b9167cd23a08bfd13238667bfe15f489bc6f",
+      "rank": 12
+    },
+    {
+      "id": "nextcloud",
+      "version": "35.0.1",
+      "revision": 0,
+      "manifestUrl": "apps/nextcloud/hlabs-app.yml",
+      "composeUrl": "apps/nextcloud/docker-compose.yml",
+      "logoUrl": "apps/nextcloud/logo.svg",
+      "digest": "sha256:5c2290f22f1277ff04633e67b82a4089777ac2b5a9082610b90b3e0351a8b8cb",
+      "rank": 2
+    },
+    {
+      "id": "open-webui",
+      "version": "0.11.4",
+      "revision": 0,
+      "manifestUrl": "apps/open-webui/hlabs-app.yml",
+      "composeUrl": "apps/open-webui/docker-compose.yml",
+      "logoUrl": "apps/open-webui/logo.svg",
+      "digest": "sha256:e9c724428b1b308d9bf3bd0ec372072ff4dbeb6a51a9db6d80f1928233009289",
+      "rank": 6
+    },
+    {
+      "id": "paperless-ngx",
+      "version": "3.2.1",
+      "revision": 0,
+      "manifestUrl": "apps/paperless-ngx/hlabs-app.yml",
+      "composeUrl": "apps/paperless-ngx/docker-compose.yml",
+      "logoUrl": "apps/paperless-ngx/logo.svg",
+      "digest": "sha256:55e658a564c2fc9be433c0c30e41680256d1445d4202e7576587ea1ea295650c",
+      "rank": 7
+    },
+    {
+      "id": "syncthing",
+      "version": "2.1.5",
+      "revision": 0,
+      "manifestUrl": "apps/syncthing/hlabs-app.yml",
+      "composeUrl": "apps/syncthing/docker-compose.yml",
+      "logoUrl": "apps/syncthing/logo.svg",
+      "digest": "sha256:4d53b3219e0e764073e4031e52dedfcafbb7690339c818b08b61501aa2db6d85",
+      "rank": 11
+    },
+    {
+      "id": "uptime-kuma",
+      "version": "2.5.5",
+      "revision": 0,
+      "manifestUrl": "apps/uptime-kuma/hlabs-app.yml",
+      "composeUrl": "apps/uptime-kuma/docker-compose.yml",
+      "logoUrl": "apps/uptime-kuma/logo.svg",
+      "digest": "sha256:7c2c02b903b83a05e5c1fdf67af2721a64b55c4b4cf7601a563aed8e3173b6ad",
+      "rank": 9
+    },
+    {
+      "id": "vaultwarden",
+      "version": "1.37.3",
+      "revision": 0,
+      "manifestUrl": "apps/vaultwarden/hlabs-app.yml",
+      "composeUrl": "apps/vaultwarden/docker-compose.yml",
+      "logoUrl": "apps/vaultwarden/logo.svg",
+      "digest": "sha256:ef27383f2b9732d5f3b750c8216f57dd02bc8e80e4caf2eea568968c644b53f8",
+      "rank": 4
+    }
+  ],
+  "featured": ["immich", "open-webui"],
+  "collections": [
+    {
+      "id": "popular",
+      "title": "Popular with families",
+      "appIds": ["audiobookshelf", "mealie", "adguard-home", "uptime-kuma", "jellyfin", "vaultwarden"]
+    }
+  ]
+}

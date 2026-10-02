@@ -1,7 +1,15 @@
 // Typed events on the daemon's bus, forwarded through `events.stream` (docs/prd/02-architecture.md §2.12).
 import { z } from 'zod';
 import { hlabsCodeSchema } from './schemas/common';
-import { appStateSchema, engineKindSchema, jobKindSchema, jobStateSchema, notificationSchema } from './schemas/common';
+import {
+  appStateSchema,
+  engineKindSchema,
+  installStepDetailSchema,
+  installStepSchema,
+  jobKindSchema,
+  jobStateSchema,
+  notificationSchema,
+} from './schemas/common';
 
 export const eventSchemas = {
   'system.status': z.object({ state: z.enum(['ready', 'updating']) }),
@@ -19,11 +27,14 @@ export const eventSchemas = {
   'update.applyRequested': z.object({ jobId: z.string(), version: z.string() }),
   'startup.changeRequested': z.object({ startAtLogin: z.boolean() }),
   'app.stateChanged': z.object({ appId: z.string(), state: appStateSchema, detail: z.string().nullable() }),
+  /** An install's progress (US-STORE-12): the step it's on, that step's detail and the time left once known. */
   'app.installProgress': z.object({
     appId: z.string(),
     jobId: z.string(),
     progress: z.number().min(0).max(100),
-    step: z.string().optional(),
+    step: installStepSchema.optional(),
+    stepDetail: installStepDetailSchema.optional(),
+    etaSeconds: z.number().int().nonnegative().nullable().optional(),
   }),
   'app.log': z.object({
     appId: z.string(),

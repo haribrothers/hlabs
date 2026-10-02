@@ -1,0 +1,10 @@
+services:
+  mealie:
+    image: ghcr.io/mealie-recipes/mealie:v3.28.0@sha256:8b02290f4d1806f02acac6f25f6d48a3c965612fda1f8e914d5af533276f8688
+    environment:
+      ALLOW_SIGNUP: 'false'
+      BASE_URL: ${HLABS_URL}
+      PUID: ${PUID}
+      PGID: ${PGID}
+    volumes:
+      - ${HLABS_APP_DATA}/data:/app/data

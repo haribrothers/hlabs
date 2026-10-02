@@ -1,13 +1,26 @@
 import { notificationActionsSchema, onboardingStepSchema, severitySchema } from '@hlabs/api';
-import { apps, appSources, catalogApps, getSetting, loginAttempts, setSetting, users } from '@hlabs/db';
+import {
+  APP_STATES,
+  apps,
+  appSources,
+  catalogApps,
+  getSetting,
+  jobs,
+  loginAttempts,
+  setSetting,
+  settingsSchemas,
+  storageLocations,
+  users,
+} from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
+import { join } from 'node:path';
 import { generateSync } from 'otplib';
 import { hashPassword } from '../auth/passwords';
 import { createAdmin } from '../onboarding/create-admin';
-import { setStorageRoot } from '../onboarding/storage';
-import { sessionCookie } from '../auth/sessions';
+import { prepareStorageRoot, setStorageRoot } from '../onboarding/storage';
+import { cookieDomain, sessionCookie } from '../auth/sessions';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { ServiceHolder } from '../services';
@@ -61,6 +74,10 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     services.db.delete(users).run();
     services.db.delete(loginAttempts).run();
     setSetting(services.db, 'onboarding', { ...getSetting(services.db, 'onboarding'), completedAt: null, step });
+    // As a fresh install: setup leaves the startup switches on (US-SYS-20), whatever an earlier run changed.
+    setSetting(services.db, 'startup', settingsSchemas.startup.parse(undefined));
+    // And the default name on the network (D-098).
+    setSetting(services.db, 'hostname', settingsSchemas.hostname.parse(undefined));
     return { url: await services.onboarding.prepareSetupToken() };
   });
 
@@ -92,13 +109,23 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
         .returning()
         .get();
     }
+    // A storage root as onboarding would choose, so installs have a Home to put folders in (US-STORE-08).
+    if (!db.select().from(storageLocations).where(eq(storageLocations.isRoot, true)).get()) {
+      const root = join(services.config.paths.dataDir, 'storage');
+      await prepareStorageRoot(root, admin.username);
+      db.insert(storageLocations)
+        .values({ id: ulid(), kind: 'local', name: 'This computer', path: root, isRoot: true, lastSeenAt: Date.now() })
+        .run();
+    }
     const session = services.sessions.create({
       userId: admin.id,
       remember: true,
       ip: req.ip,
       userAgent: req.headers['user-agent'] ?? null,
     });
-    return reply.header('set-cookie', sessionCookie(session.raw, session)).redirect('/');
+    // The same Domain the real login uses, so apps behind forward auth see it (US-AUTH-14, US-APP-01).
+    const domain = cookieDomain(req.host ?? null, getSetting(db, 'hostname'));
+    return reply.header('set-cookie', sessionCookie(session.raw, { ...session, domain })).redirect('/');
   });
 
   // Ends every session of a user, as revoking from another device will (US-AUTH-15 e2e).
@@ -117,15 +144,36 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     id: z.string().regex(/^[a-z0-9-]{2,39}$/),
     name: z.string().optional(),
     remove: z.boolean().default(false),
+    /** Any app state (default running); with `progress`, also an app.installProgress event. */
+    state: z.enum(APP_STATES).default('running'),
+    progress: z.number().min(0).max(100).optional(),
+    /** Manifest `web.embed`: it opens in the app window (US-APP-01 e2e). */
+    embed: z.boolean().default(false),
+    /** `apps.state_detail`, e.g. a failed install's `{ code, port, step }` (US-STORE-13 e2e). */
+    stateDetail: z.record(z.string(), z.unknown()).optional(),
   });
+  // The engine as stopped (or back), without touching the real one: e2e for the engine-stopped states (US-STATE-08…10).
+  const engineBody = z.object({ running: z.boolean() });
+  app.post('/dev/engine', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { running } = engineBody.parse(req.body);
+    const status = await services.engine.simulateStop(!running);
+    return { state: status.state };
+  });
+
   app.post('/dev/fake-app', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
-    const { id, name, remove } = fakeApp.parse(req.body);
+    const { id, name, remove, state, progress, embed, stateDetail: detail } = fakeApp.parse(req.body);
+    const stateDetail = detail ? JSON.stringify(detail) : null;
     const { db, bus } = services;
     if (remove) {
       db.delete(apps).where(eq(apps.id, id)).run();
-      db.delete(catalogApps).where(eq(catalogApps.appId, id)).run();
+      // Only its own catalogue entry: a stand-in for a store app leaves the store's entry alone.
+      db.delete(catalogApps)
+        .where(and(eq(catalogApps.appId, id), eq(catalogApps.sourceId, 'dev')))
+        .run();
       bus.emit('app.stateChanged', { appId: id, state: 'uninstalling', detail: 'removed' }, { kind: 'all' });
       return { removed: id };
     }
@@ -138,7 +186,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
         sourceId: 'dev',
         appId: id,
         version: '0.0.0',
-        manifestJson: { name: name ?? id },
+        manifestJson: { name: name ?? id, web: { embed } },
         updatedAt: Date.now(),
         firstSeenAt: Date.now(),
       })
@@ -149,15 +197,71 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
         id,
         sourceId: 'dev',
         version: '0.0.0',
-        state: 'running',
+        state,
+        stateDetail,
         hostname: id,
         installedAt: Date.now(),
         updatedAt: Date.now(),
       })
-      .onConflictDoNothing()
+      .onConflictDoUpdate({ target: apps.id, set: { state, stateDetail, updatedAt: Date.now() } })
       .run();
-    bus.emit('app.stateChanged', { appId: id, state: 'running', detail: null }, { kind: 'all' });
+    bus.emit('app.stateChanged', { appId: id, state, detail: null }, { kind: 'all' });
+    if (progress !== undefined) bus.emit('app.installProgress', { appId: id, jobId: 'dev', progress }, { kind: 'all' });
     return { added: id };
+  });
+
+  // An update that rolled back (US-STORE-17 e2e): its failed job and the admins' notification, as the job leaves them,
+  // for a stand-in app; a real failing update needs an image that doesn't start.
+  const rolledBackBody = z.object({
+    id: z.string().regex(/^[a-z0-9-]{2,39}$/),
+    name: z.string(),
+    fromVersion: z.string(),
+    toVersion: z.string(),
+    restored: z.boolean().default(true),
+  });
+  app.post('/dev/rolled-back', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { id, name, fromVersion, toVersion, restored } = rolledBackBody.parse(req.body);
+    const now = Date.now();
+    services.db
+      .insert(jobs)
+      .values({
+        id: ulid(),
+        kind: 'app_update',
+        target: id,
+        state: 'failed',
+        progress: 100,
+        errorCode: restored ? 'APP_UPDATE_ROLLED_BACK' : 'APP_ROLLBACK_FAILED',
+        payloadJson: { appId: id, userId: 'dev', fromVersion, toVersion },
+        createdAt: now,
+        finishedAt: now,
+      })
+      .run();
+    return { notificationId: services.updates.notifyRolledBack({ appId: id, name, fromVersion, toVersion, restored }) };
+  });
+
+  // The built-in store read again from its folder (US-STORE-17 e2e): a spec adds a test app, or a newer version of it,
+  // to the e2e instance's own copy of the store.
+  app.post('/dev/sync-store', async (_req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    return services.catalog.syncBuiltin();
+  });
+
+  // Takes down and forgets an app a spec really installed (the US-STORE-11 smoke install), until uninstall arrives
+  // with US-APP-12: marked failed, then removed as "Remove partial install" does.
+  const removeApp = z.object({ id: z.string().regex(/^[a-z0-9-]{2,39}$/) });
+  app.post('/dev/remove-app', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { id } = removeApp.parse(req.body);
+    const { db } = services;
+    if (!db.select().from(apps).where(eq(apps.id, id)).get()) return { removed: null };
+    const admin = db.select().from(users).where(eq(users.role, 'admin')).get();
+    db.update(apps).set({ state: 'install_failed' }).where(eq(apps.id, id)).run();
+    await services.installer.removeFailed({ userId: admin?.id ?? 'dev', role: 'admin' }, id);
+    return { removed: id };
   });
 
   // A finished first run in one call, for e2e specs that aren't about onboarding: the admin (optionally with
@@ -168,6 +272,8 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     displayName: z.string(),
     password: z.string(),
     twoFactor: z.boolean().default(false),
+    /** The web ports Caddy uses (the store matrix runs next to a dev instance on 80/443). */
+    ports: z.object({ https: z.number().int(), http: z.number().int() }).optional(),
   });
   app.post('/dev/seed', async (req, reply) => {
     const services = holder.current;
@@ -177,7 +283,10 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     db.delete(users).run();
     db.delete(loginAttempts).run();
     setSetting(db, 'onboarding', { ...getSetting(db, 'onboarding'), completedAt: null, step: 'account' });
-    const userId = await createAdmin(db, { ...input, ip: null });
+    // As a fresh install: setup leaves the startup switches on (US-SYS-20), whatever an earlier run changed.
+    setSetting(db, 'startup', settingsSchemas.startup.parse(undefined));
+    if (input.ports) setSetting(db, 'network', { ...getSetting(db, 'network'), ports: input.ports });
+    const userId = await createAdmin(db, { ...input, ip: null, phase: config.phase });
     let secret: string | null = null;
     let recoveryCodes: string[] = [];
     if (input.twoFactor) {
@@ -185,7 +294,13 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
       recoveryCodes = await totp.confirm(userId, generateSync({ secret }), { ip: null });
     }
     onboarding.setStep('storage');
-    await setStorageRoot(db, { userId, kind: 'local', name: 'This computer', path: config.paths.storageRootDefault });
+    await setStorageRoot(db, {
+      userId,
+      kind: 'local',
+      name: 'This computer',
+      path: config.paths.storageRootDefault,
+      phase: config.phase,
+    });
     await onboarding.complete({ userId, ip: null });
     return { userId, secret, recoveryCodes };
   });

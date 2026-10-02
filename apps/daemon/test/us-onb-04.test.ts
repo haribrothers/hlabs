@@ -48,6 +48,7 @@ describe('US-ONB-04', () => {
         level: 'ok',
       },
       canContinue: true,
+      hostname: 'hlabs',
     });
   });
 

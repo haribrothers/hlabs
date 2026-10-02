@@ -26,6 +26,8 @@ export const logLineSchema = z.object({
   stream: z.enum(['stdout', 'stderr']),
   ts: z.number(),
   line: z.string(),
+  /** Not a line: the service's container restarted while followed, so the view shows a divider (US-APP-08). */
+  restarted: z.boolean().optional(),
 });
 export type LogLine = z.infer<typeof logLineSchema>;
 
@@ -52,10 +54,61 @@ export const homeAppSchema = z.object({
   }),
 });
 
+/** One installed app (US-STORE-12…14, AppWindow US-APP-01…03): its tile, state, why, where it opens, its install job. */
+export const appDetailSchema = homeAppSchema.extend({
+  /** `apps.state_detail`: the hlabsCode and its values, e.g. `{ code: "APP_PORT_IN_USE", port: 12003, step: "start" }`. */
+  stateDetail: z.record(z.string(), z.unknown()).nullable(),
+  /** e.g. `immich.hlabs.local` */
+  address: z.string(),
+  /** The app's port (12000–12999): its LAN fallback and tailnet port. Its web service listens on 127.0.0.1 at this + 1000
+   * (D-086). */
+  webPort: z.number().int().nullable(),
+  /** Its latest install job, for the progress page. */
+  installJobId: z.string().nullable(),
+  /** After a failed install: the next free port in 12000–12999, for "Use a different port" (US-STORE-14). */
+  nextFreePort: z.number().int().nullable(),
+  /** Manifest `web.path`: where the app window's frame opens (US-APP-01). */
+  webPath: z.string(),
+  /** False while the container engine is stopped: the window says so instead of loading (US-APP-03). */
+  engineRunning: z.boolean(),
+  /** When its web container started (ms since the epoch) while it runs, for "up 6 days" (US-APP-04); null otherwise. */
+  startedAt: z.number().int().nullable(),
+  /** Where its data lives, as people know it (`~/hlabs/app-data/vaultwarden`, US-APP-07). */
+  dataFolder: z.string(),
+  /** Its data folder and images on disk (counted every 10 minutes); null while the first count is still going. */
+  disk: z.object({ dataBytes: z.number().int(), imageBytes: z.number().int() }).nullable(),
+  /** The installed version, and the store's when it's a different one (null when up to date, US-APP-07). */
+  version: z.string(),
+  latestVersion: z.string().nullable(),
+  /** The names of installed apps that need this one (`dependsOn`): it can't be uninstalled first (US-APP-11). */
+  dependents: z.array(z.string()),
+  /** Its compose services, for the Logs view's Container choice (US-APP-09). */
+  services: z.array(z.string()),
+  /**
+   * An update that didn't start and that an admin hasn't dismissed (US-STORE-17): `restored` when the previous version
+   * runs again. Null for members and when there's none.
+   */
+  rolledBack: z
+    .object({
+      notificationId: z.string(),
+      restored: z.boolean(),
+      fromVersion: z.string(),
+      toVersion: z.string(),
+      jobId: z.string().nullable(),
+      at: z.number(),
+    })
+    .nullable(),
+  /** The behaviour switches (US-APP-06): starts with hlabs, updates itself; custom apps never update themselves. */
+  autostart: z.boolean(),
+  autoUpdate: z.boolean(),
+  custom: z.boolean(),
+});
+export type AppDetail = z.infer<typeof appDetailSchema>;
+
 export const apps = {
   /** The apps this person can open, admins all, members those shared with them. */
   list: io(empty, z.object({ apps: z.array(homeAppSchema) })),
-  get: io(appRefSchema, pending),
+  get: io(appRefSchema, appDetailSchema),
   install: io(
     appRefSchema.extend({
       source: idSchema.optional(),
@@ -102,7 +155,8 @@ export const apps = {
     }),
     z.object({ lines: z.array(logLineSchema) }),
   ),
-  watchLogsInput: appRefSchema.extend({ service: z.string().optional() }),
+  /** `since` (ms): carry on after the last line of the initial `apps.logs` load. */
+  watchLogsInput: appRefSchema.extend({ service: z.string().optional(), since: z.number().optional() }),
   moveData: io(appRefSchema.extend({ storageLocationId: idSchema }), jobRefSchema),
   deployCustom: io(
     z.object({

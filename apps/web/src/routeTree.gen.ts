@@ -15,7 +15,9 @@ import { Route as FilesRouteImport } from './routes/files'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as StoreRouteImport } from './routes/store'
+import { Route as TrustRouteImport } from './routes/trust'
 import { Route as UsageRouteImport } from './routes/usage'
+import { Route as AppsAppIdRouteImport } from './routes/apps.$appId'
 import { Route as DevUiRouteImport } from './routes/dev/ui'
 import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as LoginCodeRouteImport } from './routes/login.code'
@@ -27,7 +29,15 @@ import { Route as SettingsIndexRouteImport } from './routes/settings.index'
 import { Route as SettingsSectionRouteImport } from './routes/settings.$section'
 import { Route as SetupIndexRouteImport } from './routes/setup.index'
 import { Route as SetupStepRouteImport } from './routes/setup.$step'
+import { Route as StoreIndexRouteImport } from './routes/store.index'
+import { Route as StoreSearchRouteImport } from './routes/store.search'
+import { Route as AppsAppIdLogsRouteImport } from './routes/apps_.$appId.logs'
+import { Route as AppsAppIdSettingsRouteImport } from './routes/apps_.$appId.settings'
 import { Route as SettingsAccountTwoFactorRouteImport } from './routes/settings.account.two-factor'
+import { Route as StoreCategoryCategoryRouteImport } from './routes/store.category.$category'
+import { Route as StoreCollectionCollectionIdRouteImport } from './routes/store.collection.$collectionId'
+import { Route as StoreAppAppIdRouteImport } from './routes/store_.app.$appId'
+import { Route as StoreInstallAppIdRouteImport } from './routes/store_.install.$appId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -59,9 +69,19 @@ const StoreRoute = StoreRouteImport.update({
   path: '/store',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrustRoute = TrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UsageRoute = UsageRouteImport.update({
   id: '/usage',
   path: '/usage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppsAppIdRoute = AppsAppIdRouteImport.update({
+  id: '/apps/$appId',
+  path: '/apps/$appId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevUiRoute = DevUiRouteImport.update({
@@ -119,12 +139,53 @@ const SetupStepRoute = SetupStepRouteImport.update({
   path: '/$step',
   getParentRoute: () => SetupRoute,
 } as any)
+const StoreIndexRoute = StoreIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StoreRoute,
+} as any)
+const StoreSearchRoute = StoreSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => StoreRoute,
+} as any)
+const AppsAppIdLogsRoute = AppsAppIdLogsRouteImport.update({
+  id: '/apps_/$appId/logs',
+  path: '/apps/$appId/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppsAppIdSettingsRoute = AppsAppIdSettingsRouteImport.update({
+  id: '/apps_/$appId/settings',
+  path: '/apps/$appId/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsAccountTwoFactorRoute =
   SettingsAccountTwoFactorRouteImport.update({
     id: '/account/two-factor',
     path: '/account/two-factor',
     getParentRoute: () => SettingsRoute,
   } as any)
+const StoreCategoryCategoryRoute = StoreCategoryCategoryRouteImport.update({
+  id: '/category/$category',
+  path: '/category/$category',
+  getParentRoute: () => StoreRoute,
+} as any)
+const StoreCollectionCollectionIdRoute =
+  StoreCollectionCollectionIdRouteImport.update({
+    id: '/collection/$collectionId',
+    path: '/collection/$collectionId',
+    getParentRoute: () => StoreRoute,
+  } as any)
+const StoreAppAppIdRoute = StoreAppAppIdRouteImport.update({
+  id: '/store_/app/$appId',
+  path: '/store/app/$appId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreInstallAppIdRoute = StoreInstallAppIdRouteImport.update({
+  id: '/store_/install/$appId',
+  path: '/store/install/$appId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -132,8 +193,10 @@ export interface FileRoutesByFullPath {
   '/files': typeof FilesRoute
   '/settings': typeof SettingsRouteWithChildren
   '/setup': typeof SetupRouteWithChildren
-  '/store': typeof StoreRoute
+  '/store': typeof StoreRouteWithChildren
+  '/trust': typeof TrustRoute
   '/usage': typeof UsageRoute
+  '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
   '/login/code': typeof LoginCodeRoute
   '/login/locked': typeof LoginLockedRoute
@@ -142,17 +205,26 @@ export interface FileRoutesByFullPath {
   '/login/users': typeof LoginUsersRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
+  '/store/search': typeof StoreSearchRoute
   '/login/': typeof LoginIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/setup/': typeof SetupIndexRoute
+  '/store/': typeof StoreIndexRoute
+  '/apps/$appId/logs': typeof AppsAppIdLogsRoute
+  '/apps/$appId/settings': typeof AppsAppIdSettingsRoute
   '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
+  '/store/category/$category': typeof StoreCategoryCategoryRoute
+  '/store/collection/$collectionId': typeof StoreCollectionCollectionIdRoute
+  '/store/app/$appId': typeof StoreAppAppIdRoute
+  '/store/install/$appId': typeof StoreInstallAppIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/backups': typeof BackupsRoute
   '/files': typeof FilesRoute
-  '/store': typeof StoreRoute
+  '/trust': typeof TrustRoute
   '/usage': typeof UsageRoute
+  '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
   '/login/code': typeof LoginCodeRoute
   '/login/locked': typeof LoginLockedRoute
@@ -161,10 +233,18 @@ export interface FileRoutesByTo {
   '/login/users': typeof LoginUsersRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
+  '/store/search': typeof StoreSearchRoute
   '/login': typeof LoginIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/setup': typeof SetupIndexRoute
+  '/store': typeof StoreIndexRoute
+  '/apps/$appId/logs': typeof AppsAppIdLogsRoute
+  '/apps/$appId/settings': typeof AppsAppIdSettingsRoute
   '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
+  '/store/category/$category': typeof StoreCategoryCategoryRoute
+  '/store/collection/$collectionId': typeof StoreCollectionCollectionIdRoute
+  '/store/app/$appId': typeof StoreAppAppIdRoute
+  '/store/install/$appId': typeof StoreInstallAppIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -173,8 +253,10 @@ export interface FileRoutesById {
   '/files': typeof FilesRoute
   '/settings': typeof SettingsRouteWithChildren
   '/setup': typeof SetupRouteWithChildren
-  '/store': typeof StoreRoute
+  '/store': typeof StoreRouteWithChildren
+  '/trust': typeof TrustRoute
   '/usage': typeof UsageRoute
+  '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
   '/login/code': typeof LoginCodeRoute
   '/login/locked': typeof LoginLockedRoute
@@ -183,10 +265,18 @@ export interface FileRoutesById {
   '/login/users': typeof LoginUsersRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
+  '/store/search': typeof StoreSearchRoute
   '/login/': typeof LoginIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/setup/': typeof SetupIndexRoute
+  '/store/': typeof StoreIndexRoute
+  '/apps_/$appId/logs': typeof AppsAppIdLogsRoute
+  '/apps_/$appId/settings': typeof AppsAppIdSettingsRoute
   '/settings/account/two-factor': typeof SettingsAccountTwoFactorRoute
+  '/store/category/$category': typeof StoreCategoryCategoryRoute
+  '/store/collection/$collectionId': typeof StoreCollectionCollectionIdRoute
+  '/store_/app/$appId': typeof StoreAppAppIdRoute
+  '/store_/install/$appId': typeof StoreInstallAppIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -197,7 +287,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/store'
+    | '/trust'
     | '/usage'
+    | '/apps/$appId'
     | '/dev/ui'
     | '/login/code'
     | '/login/locked'
@@ -206,17 +298,26 @@ export interface FileRouteTypes {
     | '/login/users'
     | '/settings/$section'
     | '/setup/$step'
+    | '/store/search'
     | '/login/'
     | '/settings/'
     | '/setup/'
+    | '/store/'
+    | '/apps/$appId/logs'
+    | '/apps/$appId/settings'
     | '/settings/account/two-factor'
+    | '/store/category/$category'
+    | '/store/collection/$collectionId'
+    | '/store/app/$appId'
+    | '/store/install/$appId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/backups'
     | '/files'
-    | '/store'
+    | '/trust'
     | '/usage'
+    | '/apps/$appId'
     | '/dev/ui'
     | '/login/code'
     | '/login/locked'
@@ -225,10 +326,18 @@ export interface FileRouteTypes {
     | '/login/users'
     | '/settings/$section'
     | '/setup/$step'
+    | '/store/search'
     | '/login'
     | '/settings'
     | '/setup'
+    | '/store'
+    | '/apps/$appId/logs'
+    | '/apps/$appId/settings'
     | '/settings/account/two-factor'
+    | '/store/category/$category'
+    | '/store/collection/$collectionId'
+    | '/store/app/$appId'
+    | '/store/install/$appId'
   id:
     | '__root__'
     | '/'
@@ -237,7 +346,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/store'
+    | '/trust'
     | '/usage'
+    | '/apps/$appId'
     | '/dev/ui'
     | '/login/code'
     | '/login/locked'
@@ -246,10 +357,18 @@ export interface FileRouteTypes {
     | '/login/users'
     | '/settings/$section'
     | '/setup/$step'
+    | '/store/search'
     | '/login/'
     | '/settings/'
     | '/setup/'
+    | '/store/'
+    | '/apps_/$appId/logs'
+    | '/apps_/$appId/settings'
     | '/settings/account/two-factor'
+    | '/store/category/$category'
+    | '/store/collection/$collectionId'
+    | '/store_/app/$appId'
+    | '/store_/install/$appId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -258,8 +377,10 @@ export interface RootRouteChildren {
   FilesRoute: typeof FilesRoute
   SettingsRoute: typeof SettingsRouteWithChildren
   SetupRoute: typeof SetupRouteWithChildren
-  StoreRoute: typeof StoreRoute
+  StoreRoute: typeof StoreRouteWithChildren
+  TrustRoute: typeof TrustRoute
   UsageRoute: typeof UsageRoute
+  AppsAppIdRoute: typeof AppsAppIdRoute
   DevUiRoute: typeof DevUiRoute
   LoginCodeRoute: typeof LoginCodeRoute
   LoginLockedRoute: typeof LoginLockedRoute
@@ -267,6 +388,10 @@ export interface RootRouteChildren {
   LoginUsernameRoute: typeof LoginUsernameRoute
   LoginUsersRoute: typeof LoginUsersRoute
   LoginIndexRoute: typeof LoginIndexRoute
+  AppsAppIdLogsRoute: typeof AppsAppIdLogsRoute
+  AppsAppIdSettingsRoute: typeof AppsAppIdSettingsRoute
+  StoreAppAppIdRoute: typeof StoreAppAppIdRoute
+  StoreInstallAppIdRoute: typeof StoreInstallAppIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -313,11 +438,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trust': {
+      id: '/trust'
+      path: '/trust'
+      fullPath: '/trust'
+      preLoaderRoute: typeof TrustRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/usage': {
       id: '/usage'
       path: '/usage'
       fullPath: '/usage'
       preLoaderRoute: typeof UsageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apps/$appId': {
+      id: '/apps/$appId'
+      path: '/apps/$appId'
+      fullPath: '/apps/$appId'
+      preLoaderRoute: typeof AppsAppIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dev/ui': {
@@ -397,12 +536,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupStepRouteImport
       parentRoute: typeof SetupRoute
     }
+    '/store/': {
+      id: '/store/'
+      path: '/'
+      fullPath: '/store/'
+      preLoaderRoute: typeof StoreIndexRouteImport
+      parentRoute: typeof StoreRoute
+    }
+    '/store/search': {
+      id: '/store/search'
+      path: '/search'
+      fullPath: '/store/search'
+      preLoaderRoute: typeof StoreSearchRouteImport
+      parentRoute: typeof StoreRoute
+    }
+    '/apps_/$appId/logs': {
+      id: '/apps_/$appId/logs'
+      path: '/apps/$appId/logs'
+      fullPath: '/apps/$appId/logs'
+      preLoaderRoute: typeof AppsAppIdLogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apps_/$appId/settings': {
+      id: '/apps_/$appId/settings'
+      path: '/apps/$appId/settings'
+      fullPath: '/apps/$appId/settings'
+      preLoaderRoute: typeof AppsAppIdSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/account/two-factor': {
       id: '/settings/account/two-factor'
       path: '/account/two-factor'
       fullPath: '/settings/account/two-factor'
       preLoaderRoute: typeof SettingsAccountTwoFactorRouteImport
       parentRoute: typeof SettingsRoute
+    }
+    '/store/category/$category': {
+      id: '/store/category/$category'
+      path: '/category/$category'
+      fullPath: '/store/category/$category'
+      preLoaderRoute: typeof StoreCategoryCategoryRouteImport
+      parentRoute: typeof StoreRoute
+    }
+    '/store/collection/$collectionId': {
+      id: '/store/collection/$collectionId'
+      path: '/collection/$collectionId'
+      fullPath: '/store/collection/$collectionId'
+      preLoaderRoute: typeof StoreCollectionCollectionIdRouteImport
+      parentRoute: typeof StoreRoute
+    }
+    '/store_/app/$appId': {
+      id: '/store_/app/$appId'
+      path: '/store/app/$appId'
+      fullPath: '/store/app/$appId'
+      preLoaderRoute: typeof StoreAppAppIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store_/install/$appId': {
+      id: '/store_/install/$appId'
+      path: '/store/install/$appId'
+      fullPath: '/store/install/$appId'
+      preLoaderRoute: typeof StoreInstallAppIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -435,14 +630,32 @@ const SetupRouteChildren: SetupRouteChildren = {
 
 const SetupRouteWithChildren = SetupRoute._addFileChildren(SetupRouteChildren)
 
+interface StoreRouteChildren {
+  StoreSearchRoute: typeof StoreSearchRoute
+  StoreIndexRoute: typeof StoreIndexRoute
+  StoreCategoryCategoryRoute: typeof StoreCategoryCategoryRoute
+  StoreCollectionCollectionIdRoute: typeof StoreCollectionCollectionIdRoute
+}
+
+const StoreRouteChildren: StoreRouteChildren = {
+  StoreSearchRoute: StoreSearchRoute,
+  StoreIndexRoute: StoreIndexRoute,
+  StoreCategoryCategoryRoute: StoreCategoryCategoryRoute,
+  StoreCollectionCollectionIdRoute: StoreCollectionCollectionIdRoute,
+}
+
+const StoreRouteWithChildren = StoreRoute._addFileChildren(StoreRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BackupsRoute: BackupsRoute,
   FilesRoute: FilesRoute,
   SettingsRoute: SettingsRouteWithChildren,
   SetupRoute: SetupRouteWithChildren,
-  StoreRoute: StoreRoute,
+  StoreRoute: StoreRouteWithChildren,
+  TrustRoute: TrustRoute,
   UsageRoute: UsageRoute,
+  AppsAppIdRoute: AppsAppIdRoute,
   DevUiRoute: DevUiRoute,
   LoginCodeRoute: LoginCodeRoute,
   LoginLockedRoute: LoginLockedRoute,
@@ -450,6 +663,10 @@ const rootRouteChildren: RootRouteChildren = {
   LoginUsernameRoute: LoginUsernameRoute,
   LoginUsersRoute: LoginUsersRoute,
   LoginIndexRoute: LoginIndexRoute,
+  AppsAppIdLogsRoute: AppsAppIdLogsRoute,
+  AppsAppIdSettingsRoute: AppsAppIdSettingsRoute,
+  StoreAppAppIdRoute: StoreAppAppIdRoute,
+  StoreInstallAppIdRoute: StoreInstallAppIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

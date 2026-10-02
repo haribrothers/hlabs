@@ -1,6 +1,6 @@
 // OnbSystem (US-ONB-04): check this computer, then Continue to the account step or go Back to welcome.
-import { isFeatureEnabled, SHIPPED_PHASE } from '@hlabs/shared';
-import { Button, List, ListRow, Progress, StatusDot, Switch } from '@hlabs/ui';
+import { isFeatureEnabled, SERVER_NAME_PATTERN, VISIBLE_PHASE } from '@hlabs/shared';
+import { Button, List, ListRow, Progress, StatusDot, Switch, TextField } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { TRPCClientError } from '@trpc/client';
@@ -10,16 +10,52 @@ import { useTRPC } from '../lib/trpc';
 import { CopyButton } from './copy-button';
 import { LogDialog } from './log-dialog';
 import { StepFrame } from './step-frame';
-import { installFailed, isInstalling, shouldInstallEngine, systemRows, type SystemRow } from './system-rows';
+import { readSetupToken, SETUP_PATH } from '../lib/setup-token';
+import {
+  installFailed,
+  isInstalling,
+  shouldInstallEngine,
+  systemRows,
+  type SystemCheck,
+  type SystemRow,
+} from './system-rows';
 
 const copy = onboardingCopy.system;
 
+const errorCode = (err: unknown) =>
+  err instanceof TRPCClientError ? (err.data as { hlabsCode?: string } | undefined)?.hlabsCode : undefined;
+
 function continueError(err: unknown): string {
-  const code = err instanceof TRPCClientError ? (err.data as { hlabsCode?: string } | undefined)?.hlabsCode : undefined;
+  const code = errorCode(err);
   return code === 'ENGINE_UNAVAILABLE' || code === 'DISK_FULL' ? copy.continueFailed[code] : copy.continueFailed.other;
 }
 
-export function SystemStep({ shippedPhase = SHIPPED_PHASE }: { shippedPhase?: number }) {
+/**
+ * Where setup carries on after Continue, when this page is on hlabs's own `.local` address and Continue moved it: a new
+ * name, or the web ports just saved (both stop the old address answering at once). The setup token goes along, since
+ * it's kept per address. Null to stay (nothing moved, or setup was opened another way, such as 127.0.0.1 from the tray).
+ */
+export function newSetupAddress(
+  location: Pick<Location, 'protocol' | 'hostname' | 'port'>,
+  check: Pick<SystemCheck, 'hostname' | 'ports'>,
+  hostname: string | undefined,
+  token = readSetupToken(),
+): string | null {
+  if (location.hostname !== `${check.hostname}.local`) return null;
+  const https = location.protocol === 'https:';
+  const standard = https ? 443 : 80;
+  const port = https ? check.ports.https.use : check.ports.http.use;
+  const name = hostname ?? check.hostname;
+  if (name === check.hostname && port === Number(location.port || standard)) return null;
+  const shown = port === standard ? '' : `:${port}`;
+  const query = token ? `?token=${encodeURIComponent(token)}` : '';
+  return `${location.protocol}//${name}.local${shown}${SETUP_PATH}${query}`;
+}
+
+/** As it's typed: lowercase, spaces become dashes. */
+const asServerName = (value: string) => value.toLowerCase().replace(/\s+/g, '-');
+
+export function SystemStep({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: number }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -38,7 +74,13 @@ export function SystemStep({ shippedPhase = SHIPPED_PHASE }: { shippedPhase?: nu
   }, [check.data, install]);
   const confirm = useMutation(
     trpc.onboarding.confirmSystem.mutationOptions({
-      onSuccess: async () => {
+      onSuccess: async (_data, input) => {
+        // A new name: the old address stops answering at once, so carry on at the new one (D-098).
+        const moved = check.data ? newSetupAddress(window.location, check.data, input.hostname) : null;
+        if (moved) {
+          window.location.assign(moved);
+          return;
+        }
         await queryClient.invalidateQueries({ queryKey: trpc.onboarding.status.queryKey() });
         await navigate({ to: '/setup/$step', params: { step: 'account' } });
       },
@@ -49,6 +91,11 @@ export function SystemStep({ shippedPhase = SHIPPED_PHASE }: { shippedPhase?: nu
   const failed = installFailed(check.data);
   const [logOpen, setLogOpen] = useState(false);
   const [startAtLogin, setStartAtLogin] = useState(true);
+  // The name on the network (D-098), from the check until it's edited.
+  const [typedName, setTypedName] = useState<string | null>(null);
+  const name = typedName ?? check.data?.hostname ?? 'hlabs';
+  const nameValid = SERVER_NAME_PATTERN.test(name);
+  const nameTaken = errorCode(confirm.error) === 'HOSTNAME_TAKEN';
   // The tray applies start at login, so the switch waits for it (D-042, D-036); never on headless Linux.
   const showStartAtLogin =
     check.data !== undefined && !check.data.os.headless && isFeatureEnabled('startAtLogin', shippedPhase);
@@ -136,12 +183,31 @@ export function SystemStep({ shippedPhase = SHIPPED_PHASE }: { shippedPhase?: nu
           </List>
         </div>
       ) : null}
+      {check.data ? (
+        <div className="mt-4 flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <TextField
+              label={copy.nameLabel}
+              value={name}
+              onChange={(e) => setTypedName(asServerName(e.target.value))}
+              hint={copy.nameHint(nameValid ? name : 'hlabs')}
+              error={!nameValid ? copy.nameInvalid : nameTaken ? copy.nameTaken : undefined}
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={40}
+            />
+          </div>
+          <span aria-hidden className="mt-9 font-mono text-body text-ink-muted">
+            .local
+          </span>
+        </div>
+      ) : null}
       {check.isError ? (
         <p role="alert" className="m-0 mt-4 text-body-sm">
           {copy.checkFailed}
         </p>
       ) : null}
-      {confirm.isError ? (
+      {confirm.isError && !nameTaken ? (
         <p role="alert" className="m-0 mt-4 text-body-sm">
           {continueError(confirm.error)}
         </p>
@@ -158,8 +224,8 @@ export function SystemStep({ shippedPhase = SHIPPED_PHASE }: { shippedPhase?: nu
           ) : null}
           <Button
             size="lg"
-            onClick={() => confirm.mutate({ startAtLogin: showStartAtLogin ? startAtLogin : true })}
-            disabled={!canContinue || confirm.isPending}
+            onClick={() => confirm.mutate({ startAtLogin: showStartAtLogin ? startAtLogin : true, hostname: name })}
+            disabled={!canContinue || !nameValid || confirm.isPending}
             aria-busy={confirm.isPending}
           >
             {onboardingCopy.continue}

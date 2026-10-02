@@ -1,0 +1,34 @@
+# From Paperless-ngx v3.2.1's docker-compose.postgres.yml, adapted to hlabs compose rules.
+services:
+  webserver:
+    image: ghcr.io/paperless-ngx/paperless-ngx:3.2.1@sha256:5fa76604a81df6945086e0837b14b56543d137e8ce4f311cc5d9ebe907e74e79
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_DBENGINE: postgresql
+      PAPERLESS_DBHOST: db
+      PAPERLESS_DBPASS: ${DB_PASSWORD}
+      PAPERLESS_SECRET_KEY: ${SECRET_KEY}
+      PAPERLESS_URL: ${HLABS_URL}
+      PAPERLESS_TIME_ZONE: ${TZ}
+      USERMAP_UID: ${PUID}
+      USERMAP_GID: ${PGID}
+    volumes:
+      - ${HLABS_APP_DATA}/data:/usr/src/paperless/data
+      - ${HLABS_APP_DATA}/media:/usr/src/paperless/media
+      - ${HLABS_APP_DATA}/export:/usr/src/paperless/export
+      - ${HLABS_FOLDER_CONSUME}:/usr/src/paperless/consume
+    depends_on:
+      - db
+      - broker
+
+  broker:
+    image: docker.io/valkey/valkey:9@sha256:70739f85ad2ee01a726a965584a0f94895f01b0c60b3cc8b0aeef11eaa6888cf
+
+  db:
+    image: docker.io/library/postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_DB: paperless
+      POSTGRES_USER: paperless
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ${HLABS_APP_DATA}/postgres:/var/lib/postgresql

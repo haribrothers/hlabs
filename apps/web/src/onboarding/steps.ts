@@ -1,5 +1,5 @@
 // Onboarding routes and where to resume (US-ONB-03, D-041). The server's saved step is the source of truth.
-import { enabledOnboardingSteps, isOnboardingStep, type OnboardingStep } from '@hlabs/shared';
+import { enabledOnboardingSteps, isOnboardingStep, VISIBLE_PHASE, type OnboardingStep } from '@hlabs/shared';
 import { SETUP_PATH } from '../lib/setup-token';
 
 /** `/setup` is the welcome screen; every other step lives at `/setup/<step>`. */
@@ -27,7 +27,8 @@ export function resumePath(opts: {
   const { saved } = opts;
   const requested = stepFromPath(opts.pathname);
   if (requested === null) return stepPath(saved);
-  const steps = enabledOnboardingSteps(opts.shippedPhase);
+  // The daemon runs the same steps: the shipped phase, or the previewed one in development (D-092).
+  const steps = enabledOnboardingSteps(opts.shippedPhase ?? VISIBLE_PHASE);
   if (requested === 'unknown' || !steps.includes(requested)) return stepPath(saved);
   if (opts.entry && requested === 'welcome' && saved !== 'welcome') return stepPath(saved);
   const savedIndex = steps.indexOf(saved);

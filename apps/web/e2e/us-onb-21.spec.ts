@@ -2,15 +2,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
-import { createAdminInUi, skipTwoFactor, turnOnTwoFactor } from './onboarding';
+import { createAdminInUi, skipTwoFactor, storageThenSkipApps, turnOnTwoFactor } from './onboarding';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
-async function finish(page: Page) {
-  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/storage`);
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/done`);
-}
+const finish = (page: Page) => storageThenSkipApps(page);
 
 test.describe('US-ONB-21', () => {
   test('summary after turning two-factor on', async ({ page, request }) => {

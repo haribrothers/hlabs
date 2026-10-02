@@ -33,6 +33,15 @@ export async function skipTwoFactor(page: Page) {
   await expect(page).toHaveURL(/\/setup\/storage$/);
 }
 
+/** On the storage step: Continue with This computer, then Skip on the starter apps (phase 2); ends on the finish screen. */
+export async function storageThenSkipApps(page: Page) {
+  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/storage`);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/apps`);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/done`);
+}
+
 /**
  * A finished first run in one call (the dev-only seed): admin "hari" (two-factor off unless asked) with data on this
  * computer, then this browser signed in as them and on Home. Specs about onboarding itself walk the real screens.

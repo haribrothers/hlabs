@@ -1,10 +1,11 @@
 // Daemon configuration from the environment, validated once at startup.
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { z } from 'zod';
 import { defaultPaths, type PlatformPaths } from './platform/paths';
 import { defaultSecretStoreKind, type SecretStoreKind } from './platform/secrets';
+import { BUILDING_PHASE, SHIPPED_PHASE } from '@hlabs/shared';
 import { VERSION } from './version';
 
 const flag = z
@@ -18,6 +19,8 @@ const envSchema = z.object({
   HLABS_PORT: z.coerce.number().int().min(0).max(65535).default(7474),
   HLABS_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
   HLABS_HEADLESS: flag,
+  /** Development only: the phase to preview (D-092), as the dashboard's dev server does. */
+  HLABS_PREVIEW_PHASE: z.coerce.number().int().min(0).optional(),
   HLABS_DEV_ANONYMOUS_ADMIN: flag,
   HLABS_DEV_IGNORE_ENGINES: flag,
   HLABS_DEV_NO_ENGINE_INSTALL: flag,
@@ -26,16 +29,69 @@ const envSchema = z.object({
   HLABS_PRIV_HELPER: z.string().optional(),
   HLABS_SECRET_STORE: z.enum(['keychain', 'file']).optional(),
   HLABS_DASHBOARD_URL: z.url().optional(),
+  HLABS_STORE_DIR: z.string().optional(),
+  HLABS_BIN_DIR: z.string().optional(),
+  HLABS_WEB_FALLBACK_DIR: z.string().optional(),
+  HLABS_PROXY: z.enum(['caddy', 'none']).optional(),
+  HLABS_MDNS: z.enum(['0', '1', 'true', 'false']).optional(),
+  HLABS_DASHBOARD_UPSTREAM: z.string().optional(),
+  /** Compose project names are `<prefix>-<appId>`; e2e uses its own so it never touches a dev instance's apps (D-090). */
+  HLABS_COMPOSE_PREFIX: z
+    .string()
+    .regex(/^[a-z0-9][a-z0-9-]*$/)
+    .default('hlabs'),
 });
 
+declare const __HLABS_BUNDLE__: boolean | undefined;
+
+/** Bundled files (the built-in store, caddy and docker-compose, the fallback page; D-076). In the bundle they sit next to
+ * hlabsd.mjs; from source they are the repository's (`store/`, `.bin/` from `pnpm fetch-binaries`, the fallback
+ * page build). */
+export interface ResourcePaths {
+  storeDir: string;
+  binDir: string;
+  webFallbackDir: string;
+}
+
+function defaultResources(): ResourcePaths {
+  if (typeof __HLABS_BUNDLE__ !== 'undefined') {
+    const here = dirname(fileURLToPath(import.meta.url));
+    return {
+      storeDir: resolve(here, 'store'),
+      binDir: resolve(here, 'bin'),
+      webFallbackDir: resolve(here, 'web-fallback'),
+    };
+  }
+  const repo = fileURLToPath(new URL('../../../', import.meta.url));
+  return {
+    storeDir: resolve(repo, 'store'),
+    binDir: resolve(repo, '.bin'),
+    webFallbackDir: resolve(repo, 'apps/web/dist-fallback'),
+  };
+}
+
 export interface DaemonConfig {
+  /** Compose project names are `<composePrefix>-<appId>` (`hlabs`; e2e's own, D-090). */
+  composePrefix: string;
   version: string;
   env: 'development' | 'test' | 'production';
+  /**
+   * The phase whose onboarding steps run (D-036, D-092): SHIPPED_PHASE, or in development the phase being previewed
+   * (HLABS_PREVIEW_PHASE, else BUILDING_PHASE), matching the dashboard's dev server.
+   */
+  phase: number;
   dev: boolean;
   /** Always loopback: everything external goes through Caddy (02 §2.2). */
   host: '127.0.0.1';
   port: number;
   paths: PlatformPaths;
+  resources: ResourcePaths;
+  /** Caddy in front of the daemon and apps (D-006). Off for `pnpm dev` and tests; `pnpm dev:full` turns it on. */
+  proxy: 'caddy' | 'none';
+  /** Publish hlabs.local and each app's name with mDNS (02 §2.6). */
+  mdns: boolean;
+  /** Where Caddy sends dashboard pages: the daemon, or Vite under `pnpm dev:full`. */
+  dashboardUpstream: string;
   /** Linux system service without a desktop session. */
   headless: boolean;
   /** Where the dashboard is opened from this computer; the setup URL is built from it (D-041). */
@@ -81,13 +137,25 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
       }
     : platformPaths;
   const dev = e.NODE_ENV === 'development';
+  const production = e.NODE_ENV === 'production';
+  const resources = defaultResources();
   return {
     version: VERSION,
     env: e.NODE_ENV,
+    phase: dev ? Math.max(SHIPPED_PHASE, e.HLABS_PREVIEW_PHASE ?? BUILDING_PHASE) : SHIPPED_PHASE,
     dev,
     host: '127.0.0.1',
     port: e.HLABS_PORT,
     paths,
+    resources: {
+      storeDir: e.HLABS_STORE_DIR ? resolve(e.HLABS_STORE_DIR) : resources.storeDir,
+      binDir: e.HLABS_BIN_DIR ? resolve(e.HLABS_BIN_DIR) : resources.binDir,
+      webFallbackDir: e.HLABS_WEB_FALLBACK_DIR ? resolve(e.HLABS_WEB_FALLBACK_DIR) : resources.webFallbackDir,
+    },
+    proxy: e.HLABS_PROXY ?? (production ? 'caddy' : 'none'),
+    mdns: e.HLABS_MDNS === undefined ? production : e.HLABS_MDNS === '1' || e.HLABS_MDNS === 'true',
+    dashboardUpstream: e.HLABS_DASHBOARD_UPSTREAM ?? `127.0.0.1:${e.HLABS_PORT}`,
+    composePrefix: e.HLABS_COMPOSE_PREFIX,
     headless: e.HLABS_HEADLESS,
     netmountHelper: e.HLABS_NETMOUNT_BIN ?? fileURLToPath(new URL('../native/.build/hlabs-netmount', import.meta.url)),
     privHelper: e.HLABS_PRIV_HELPER ?? '/usr/lib/hlabs/hlabs-priv',

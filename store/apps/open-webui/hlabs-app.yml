@@ -1,0 +1,39 @@
+schema: 1
+id: open-webui
+name: Open WebUI
+version: '0.11.4'
+revision: 1
+tagline: Chat with AI models running on your own hardware
+description: |
+  A chat app for AI models, like the big assistants but private. Use models from Ollama on this computer
+  so nothing leaves the house, or add an API key for a hosted model. The first account you create is
+  the admin.
+category: ai
+developer: { name: Open WebUI, url: https://openwebui.com }
+source: https://github.com/open-webui/open-webui
+license: BSD-3-Clause
+icon:
+  logo: logo.svg
+  gradient: ['#ffffff', '#e5e5e5']
+  fallback: message-circle
+platforms: [linux/amd64, linux/arm64]
+tags: [local-ai]
+requirements: { memory: 2048, disk: 8192 }
+web: { service: open-webui, port: 8080, embed: true }
+health: { service: open-webui, http: /health, timeout: 600 }
+env:
+  - key: OLLAMA_BASE_URL
+    label: Ollama address
+    description: Where Ollama answers, if you use it. The default is Ollama on this computer
+    type: string
+    default: http://host.docker.internal:11434
+  - key: WEBUI_SECRET_KEY
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [open-webui]
+  exclude: [cache/]
+  beforeUpdate: true
+permissions: { network: internet }

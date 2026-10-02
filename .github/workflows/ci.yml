@@ -30,6 +30,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Caddy and docker-compose, checked against pinned checksums (D-072)
+        run: pnpm fetch-binaries
       - name: Lint and dependency boundaries
         run: pnpm lint
       - run: pnpm format:check
@@ -52,6 +54,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm fetch-binaries
       - run: pnpm --filter @hlabs/icons build
       - run: pnpm --filter @hlabs/web exec playwright install --with-deps chromium
       - run: pnpm test:e2e

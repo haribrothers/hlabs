@@ -1,4 +1,4 @@
-import { LogoMark, Plus, tabGlyphs } from '@hlabs/icons';
+import { LOGO_SCALE, LogoMark, Plus, tabGlyphs } from '@hlabs/icons';
 import { useRef, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { cn } from '../lib/cn';
 import { useReduceMotion } from '../lib/motion';
@@ -186,9 +186,8 @@ export function Dock({
           className="hl-dock-item-app"
           tileClass="hl-dock-tile-app"
           tileStyle={{
-            background: app.logo
-              ? 'var(--fill-primary)'
-              : `linear-gradient(160deg, ${app.colors?.[0] ?? 'var(--accent-strong)'}, ${app.colors?.[1] ?? 'var(--wall-base)'})`,
+            // The same tile as on Home: the app's gradient, with its logo inset on it.
+            background: `linear-gradient(160deg, ${app.colors?.[0] ?? 'var(--accent-strong)'}, ${app.colors?.[1] ?? 'var(--wall-base)'})`,
           }}
           dot={app.open}
           badge={app.badge}
@@ -203,7 +202,16 @@ export function Dock({
           }
           onLongPress={onAppMenu ? (e) => onAppMenu(app.id, e) : undefined}
         >
-          {app.logo ? <img src={app.logo} alt="" className="hl-dock-logo" /> : app.icon}
+          {app.logo ? (
+            <img
+              src={app.logo}
+              alt=""
+              className="hl-dock-logo"
+              style={{ width: `${LOGO_SCALE * 100}%`, height: `${LOGO_SCALE * 100}%` }}
+            />
+          ) : (
+            app.icon
+          )}
         </DockItem>
       ))}
       {onAdd ? (

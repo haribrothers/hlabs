@@ -1,4 +1,4 @@
-import { ONBOARDING_STEPS } from '@hlabs/shared';
+import { ONBOARDING_STEPS, serverNameSchema } from '@hlabs/shared';
 import { z } from 'zod';
 import { io } from '../trpc';
 import {
@@ -14,6 +14,7 @@ import {
   pending,
   totpCodeSchema,
 } from './common';
+import { storeAppSchema } from './store';
 
 /** Steps from the shared registry (D-041; 04 `settings.onboarding.step`). */
 export const onboardingStepSchema = z.enum(ONBOARDING_STEPS);
@@ -59,13 +60,15 @@ export const systemCheckSchema = z.object({
   ports: z.object({ http: portCheckSchema, https: portCheckSchema, level: checkLevelSchema }),
   /** Every blocking check passes. */
   canContinue: z.boolean(),
+  /** The name on the network (`<hostname>.local`), chosen on this step (D-098). */
+  hostname: z.string(),
 });
 
 export const onboarding = {
   /** Public: never returns user data (US-ONB-01, US-ONB-03). */
   status: io(empty, z.object({ completed: z.boolean(), step: onboardingStepSchema, hasUsers: z.boolean() })),
   checkSystem: io(z.object({ includeLog: z.boolean().optional() }).optional(), systemCheckSchema),
-  confirmSystem: io(z.object({ startAtLogin: z.boolean() }), ok),
+  confirmSystem: io(z.object({ startAtLogin: z.boolean(), hostname: serverNameSchema.optional() }), ok),
   installEngine: io(empty, jobRefSchema),
   setStep: io(z.object({ step: onboardingStepSchema }), ok),
   /** The username is lowercased before it's checked, so any string up to 64 characters is accepted here. */
@@ -86,7 +89,16 @@ export const onboarding = {
     ok,
   ),
   connectRemote: io(empty, pending),
-  installStarterApps: io(z.object({ appIds: z.array(appIdSchema) }), jobIdsSchema),
+  /** OnbApps' tiles (US-ONB-19): each starter app, what memory it recommends and whether the engine has that free. */
+  starterApps: io(
+    empty,
+    z.object({
+      apps: z.array(
+        z.object({ app: storeAppSchema, memoryBytes: z.number().nullable(), needsMoreMemory: z.boolean() }),
+      ),
+    }),
+  ),
+  installStarterApps: io(z.object({ appIds: z.array(appIdSchema).min(1).max(8) }), jobIdsSchema),
   findBackups: io(empty, pending),
   listRestorePoints: io(z.object({ destination: pending, password: passwordSchema }), pending),
   restoreFromBackup: io(pending, jobRefSchema),

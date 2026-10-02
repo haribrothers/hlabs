@@ -1,0 +1,18 @@
+schema: 1
+id: rollback-demo
+name: Rollback demo
+version: '1.1.0'
+revision: 1
+tagline: A test app for e2e (US-STORE-17)
+description: |
+  A tiny web server. Version 1.1.0 listens on the wrong port, so it never passes its health check and the
+  update rolls back.
+category: developer
+developer: { name: hlabs e2e }
+icon:
+  gradient: ['#38bdf8', '#0369a1']
+  fallback: rotate-ccw
+platforms: [linux/amd64, linux/arm64]
+web: { service: web, port: 80 }
+health: { service: web, http: /, timeout: 15 }
+permissions: { network: none }

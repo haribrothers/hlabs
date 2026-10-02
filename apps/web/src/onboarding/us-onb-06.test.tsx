@@ -26,6 +26,7 @@ const check = (engine: Partial<SystemCheck['engine']> = {}): SystemCheck => ({
     level: 'warning',
   },
   canContinue: engine.state === 'running',
+  hostname: 'hlabs',
 });
 
 describe('US-ONB-06', () => {

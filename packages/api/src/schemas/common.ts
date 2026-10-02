@@ -1,5 +1,6 @@
 // Shared building blocks for every router's schemas.
 import {
+  INSTALL_STEPS,
   appIdSchema,
   displayNameSchema,
   EXCLUSIVE_JOB_KINDS,
@@ -43,6 +44,7 @@ export const appStateSchema = z.enum([
   'error',
   'uninstalling',
 ]);
+export type AppState = z.infer<typeof appStateSchema>;
 
 export const engineKindSchema = z.enum(['orbstack', 'docker-desktop', 'colima', 'docker-engine']);
 export type EngineKind = z.infer<typeof engineKindSchema>;
@@ -135,3 +137,19 @@ export const pageOf = <T extends z.ZodType>(item: T) =>
   z.object({ items: z.array(item), nextCursor: z.string().nullable() });
 
 export const appRefSchema = z.object({ appId: appIdSchema });
+
+export { INSTALL_STEPS };
+export const installStepSchema = z.enum(INSTALL_STEPS);
+export type InstallStep = z.infer<typeof installStepSchema>;
+
+/**
+ * What a step shows beside it: `check` → `{ arch }` ("arm64 images found"), `pull` → `{ done, of }` ("2 of 3"),
+ * `network` → `{ address }`.
+ */
+export const installStepDetailSchema = z.object({
+  arch: z.string().optional(),
+  done: z.number().int().nonnegative().optional(),
+  of: z.number().int().nonnegative().optional(),
+  address: z.string().optional(),
+});
+export type InstallStepDetail = z.infer<typeof installStepDetailSchema>;

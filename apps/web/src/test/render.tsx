@@ -15,6 +15,7 @@ import { observable } from '@trpc/server/observable';
 import type { ComponentType, ReactNode } from 'react';
 import { ConfirmHost } from '../lib/confirm';
 import { TRPCProvider } from '../lib/trpc';
+import { RouteError } from '../shell/route-fallbacks';
 
 export type Handlers = Record<string, (input: unknown) => unknown>;
 
@@ -83,6 +84,8 @@ export function renderScreen(Screen: ComponentType, handlers: Handlers, opts: { 
   const router = createRouter({
     routeTree: root.addChildren([screen, other]),
     history: createMemoryHistory({ initialEntries: [path] }),
+    // As the app's router: a FORBIDDEN page query shows "You don't have access to this" (US-STATE-20).
+    defaultErrorComponent: RouteError,
   });
 
   const result = render(

@@ -1,0 +1,16 @@
+# Home Assistant turns away proxied requests unless it trusts the proxy. Its HTTP settings live in its own store
+# (YAML `http:` is deprecated, and settings changed there must be confirmed in the UI within 5 minutes or they're
+# reverted), so a first start writes that store with the private ranges Caddy's requests arrive from as the
+# confirmed settings. An existing store is left alone; Home Assistant migrates the file itself on later versions.
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:2026.9.4@sha256:3e6710a7ab2a61311d9d899b719f6c3657791c63e8f4942cec4ebc42401d6b76
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /config/.storage
+        [ -f /config/.storage/http ] || printf '%s\n' '{"version":2,"minor_version":2,"key":"http","data":{"stable":{"server_port":8123,"use_x_forwarded_for":true,"trusted_proxies":["127.0.0.1/32","::1/128","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16"],"cors_allowed_origins":["https://cast.home-assistant.io"],"login_attempts_threshold":-1,"ip_ban_enabled":true,"ssl_profile":"modern","use_x_frame_options":true,"created_at":"2026-09-29T00:00:00+00:00","error":null,"error_message":null},"pending":null,"yaml_migration_done":true}}' > /config/.storage/http
+        exec /init
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config

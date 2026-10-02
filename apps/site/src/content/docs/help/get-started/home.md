@@ -20,9 +20,57 @@ More widgets (live usage, remote access and backups) appear as those parts of hl
 
 ## Your apps
 
-Under the widgets are the apps you can open: every installed app for admins, and the apps an admin shared with you for everyone else. Select an app to open it in a new browser tab. On your tailnet, apps open on their own port of the hlabs address.
+Under the widgets are the apps you can open: every installed app for admins, and the apps an admin shared with you for everyone else. Select an app to open it. On a computer, the apps from the hlabs App Store open in an app window over Home, with the app's name, whether it's running and its address at the top. On a phone or a narrow window, and for apps from other sources that don't support the window, they open in a new browser tab. On your tailnet, apps open on their own port of the hlabs address.
+
+To leave the app window, choose **Back to Home** or **Close app**, or press Esc (when you're not typing in the app). **Back to Home** keeps the window open: its app stays in the Dock with a dot under it, and selecting it there brings the window back. **Close app** and Esc close the window. Neither stops the app. If an app takes a while to load, the window offers **Open in a new tab**. The window stays open if you reload the page. The Dock stays below the window, so you can switch to another open app or go to another part of hlabs without closing it.
+
+Admins also get **Restart app**, **Logs** and **App settings** at the top of the window, and everyone gets **Open in a new tab**. Logs and App settings open over the window, and the app stays where you left it behind them. While an app restarts, the window says "Restarting…" and shows the app again as soon as it's running.
+
+If an app isn't running, the window tells you instead of showing a blank page:
+
+- **Stopped**: admins can choose **Start**. Members can ask an admin to start it.
+- **Not responding**: admins can choose **Restart app**, or **Logs** to see what went wrong.
+- **Starting, restarting or updating**: the window shows a spinner and opens the app as soon as it's ready.
+- **The container engine has stopped**: all apps are offline until the engine is running again. Your data is safe.
+
+If an admin hasn't shared an app with you, its address shows "You don't have access to this". Ask an admin if you need it.
+
+Each tile shows how its app is doing:
+
+- **Just the logo and name**: the app is running.
+- **A ring and "Installing… 64%"** or **"Updating…"**: the app is being installed or updated.
+- **"Starting…", "Restarting…", "Stopping…", "Rolling back…" or "Removing…"**: the app is on its way somewhere; the tile catches up by itself.
+- **Greyed out with "Stopped"**: the app is stopped.
+- **"Error"**: the app isn't responding, or its install failed.
+
+Screen readers hear the state with the name, such as "Nextcloud, installing, 64%".
+
+Selecting a stopped app doesn't open a blank page: hlabs says it's stopped, and admins can choose **Start** right there. Selecting an app that shows "Error" opens its logs, which start with why it isn't running. Members are told which admin to ask.
+
+Right-click a tile (or press and hold it on a touch screen, or press Shift+F10 or the Menu key) for its menu. Admins can **Open** the app, go to its **Settings**, **View logs**, **Restart** or **Stop** it (**Start** when it's stopped), or **Uninstall…** it. The tile changes at once, and hlabs tells you when the app has restarted, started or stopped. While an app is installing, updating or being removed, only **View logs** is available. Members get **Open**. Press Esc to close the menu.
 
 New apps appear on Home as soon as they're installed, and removed apps disappear, without reloading the page. With a keyboard, use Tab to reach the apps and the arrow keys to move between them.
+
+## Search
+
+Press ⌘K on a Mac (Ctrl+K on other computers) from anywhere in hlabs, or select **Search apps, files, settings** on Home or **Search** in the Dock. Before you type, Search lists your apps. Use ↑ and ↓ to move and ↵ to open. Press the shortcut again or Esc to close it.
+
+As you type, results come in groups:
+
+- **Installed**: your apps. Opening one works like selecting its tile.
+- **Actions** (admins): an app's settings, restarting it or its logs, such as "Restart Jellyfin". Restarting starts straight away; hlabs tells you it's restarting.
+- **App Store**: apps you can install, with **See all App Store results** for everything that matches.
+- **Settings**: the settings pages you can open, also by what they contain ("password" finds Account).
+
+Search doesn't mind capitals or accents. Members see only the apps shared with them, and the App Store only when members can install apps. If nothing matches, Search says so and still offers the App Store.
+
+## When the container engine stops
+
+hlabs runs apps in a container engine, such as OrbStack, Docker or Colima. If the engine stops, Home says "The container engine has stopped": all apps are offline, but their data is safe. App tiles are greyed out and can't be opened, and installing waits until the engine runs again. Everything else, including the Dock, search and settings, keeps working. Choose **Details** to see the engine in Settings › Engine & startup. Admins also get a notification, and can choose **Start engine**: hlabs starts it (it opens OrbStack or Docker Desktop, or starts Colima or Docker), waits up to two minutes for it, then starts the apps set to start automatically. If it doesn't start, hlabs says so, with **Details**.
+
+If you start the engine yourself, for example by opening OrbStack, hlabs notices within about ten seconds: the message goes, hlabs says "The container engine is running", and apps set to start automatically come back.
+
+Opening an app's address while the engine is stopped shows the same message, with the way back Home.
 
 ## The Dock
 

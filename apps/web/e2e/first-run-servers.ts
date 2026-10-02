@@ -42,6 +42,7 @@ export default async function firstRunServers(config: FullConfig) {
         HLABS_DEV_NO_ENGINE_CONTROL: '1',
         HLABS_DEV_ANONYMOUS_ADMIN: '1',
         HLABS_LOG_LEVEL: 'warn',
+        HLABS_COMPOSE_PREFIX: 'hlabs-e2e',
         HLABS_PORT: String(ports.daemon),
         HLABS_DATA_DIR: dataDir,
         HLABS_DASHBOARD_URL: `http://127.0.0.1:${ports.web}`,

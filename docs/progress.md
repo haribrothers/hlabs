@@ -81,44 +81,44 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 
 ## Phase 2 · Apps
 
-- [ ] US-ONB-19 · Pick starter apps
-- [ ] US-ONB-20 · Skip starter apps
-- [ ] US-HOME-06 · Recognise each app's state on its tile
-- [ ] US-HOME-07 · Act on an app from its menu
-- [ ] US-HOME-08 · Recover a stopped or broken app from its tile
-- [ ] US-HOME-09 · Open search from anywhere
-- [ ] US-HOME-10 · Find apps, actions, files, settings and store apps in one list
-- [ ] US-HOME-23 · See which apps are open in the Dock
-- [ ] US-STORE-01 · Browse the store home
-- [ ] US-STORE-02 · Navigate with the categories sidebar
-- [ ] US-STORE-03 · Search from the store home
-- [ ] US-STORE-06 · See an app's details before installing
-- [ ] US-STORE-07 · See requirements and what an app can access
-- [ ] US-STORE-08 · Choose folder access in the install sheet
-- [ ] US-STORE-09 · Review included services, address and login
-- [ ] US-STORE-10 · Fill in app settings and accept risky permissions
-- [ ] US-STORE-11 · Run an install as a job
-- [ ] US-STORE-12 · Watch install progress
-- [ ] US-STORE-13 · Understand why an install failed
-- [ ] US-STORE-14 · Retry or remove a failed install
-- [ ] US-STORE-17 · Roll back an update that doesn't start
-- [ ] US-APP-01 · Open an app in a window
-- [ ] US-APP-02 · App window controls
-- [ ] US-APP-03 · Opening an app that isn't running
-- [ ] US-APP-04 · See an app's status and start, stop or restart it
-- [ ] US-APP-05 · App address and tailnet address
-- [ ] US-APP-06 · Behaviour switches
-- [ ] US-APP-07 · Storage, resources and version
-- [ ] US-APP-08 · Follow an app's logs live
-- [ ] US-APP-09 · Filter logs
-- [ ] US-APP-10 · Download logs
-- [ ] US-APP-11 · Confirm uninstall and choose what happens to data
-- [ ] US-APP-12 · Uninstall runs and cleans up
-- [ ] US-STATE-08 · Grey out Home when the engine has stopped
-- [ ] US-STATE-09 · Start the engine from the banner
-- [ ] US-STATE-10 · Recover automatically when the engine comes back
-- [ ] US-AUTH-17 · Protect every app with forward auth
-- [ ] US-AUTH-19 · See a "no access" page for apps not shared with me
+- [x] US-ONB-19 · Pick starter apps
+- [x] US-ONB-20 · Skip starter apps (Home's empty state after it is US-HOME-15, phase 7)
+- [x] US-HOME-06 · Recognise each app's state on its tile (the "Update" badge appears with the updates list in phase 7, D-036)
+- [x] US-HOME-07 · Act on an app from its menu ("Edit Home" joins the menu with edit mode in phase 7, D-036)
+- [x] US-HOME-08 · Recover a stopped or broken app from its tile (the "Update" badge comes with the updates list in phase 7, D-036)
+- [x] US-HOME-09 · Open search from anywhere
+- [x] US-HOME-10 · Find apps, actions, files, settings and store apps in one list (the Files group joins with Files in phase 5, D-036)
+- [x] US-HOME-23 · See which apps are open in the Dock
+- [x] US-STORE-01 · Browse the store home
+- [x] US-STORE-02 · Navigate with the categories sidebar
+- [x] US-STORE-03 · Search from the store home
+- [x] US-STORE-06 · See an app's details before installing
+- [x] US-STORE-07 · See requirements and what an app can access
+- [x] US-STORE-08 · Choose folder access in the install sheet
+- [x] US-STORE-09 · Review included services, address and login
+- [x] US-STORE-10 · Fill in app settings and accept risky permissions
+- [x] US-STORE-11 · Run an install as a job
+- [x] US-STORE-12 · Watch install progress
+- [x] US-STORE-13 · Understand why an install failed
+- [x] US-STORE-14 · Retry or remove a failed install
+- [x] US-STORE-17 · Roll back an update that doesn't start (the banner shows on the app's details page until the Updates page in phase 7; data restore from the pre-update backup and "Restore from backup" wait for backups in phase 5)
+- [x] US-APP-01 · Open an app in a window
+- [x] US-APP-02 · App window controls
+- [x] US-APP-03 · Opening an app that isn't running
+- [x] US-APP-04 · See an app's status and start, stop or restart it
+- [x] US-APP-05 · App address and tailnet address
+- [x] US-APP-06 · Behaviour switches ("Include in backups" is wired to the backup plan with backups in phase 5, where it appears; "Update automatically" appears in phase 7)
+- [x] US-APP-07 · Storage, resources and version ("Uninstall…" with its dialog in US-APP-11; live CPU and memory in phase 4)
+- [x] US-APP-08 · Follow an app's logs live
+- [x] US-APP-09 · Filter logs
+- [x] US-APP-10 · Download logs
+- [x] US-APP-11 · Confirm uninstall and choose what happens to data
+- [x] US-APP-12 · Uninstall runs and cleans up
+- [x] US-STATE-08 · Grey out Home when the engine has stopped (the host widgets other than Storage arrive with their phases)
+- [x] US-STATE-09 · Start the engine from the banner
+- [x] US-STATE-10 · Recover automatically when the engine comes back
+- [x] US-AUTH-17 · Protect every app with forward auth
+- [x] US-AUTH-19 · See a "no access" page for apps not shared with me
 
 ## Phase 3 · Remote access and family
 

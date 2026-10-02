@@ -1,0 +1,11 @@
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:v0.11.4@sha256:9591b13f13843c7721c2b8eaf7382846c81b3ffe126526d1888d1fed50c6a33f
+    environment:
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
+      WEBUI_URL: ${HLABS_URL}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ${HLABS_APP_DATA}/data:/app/backend/data

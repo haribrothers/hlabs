@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-fallback/
+.bin/
 .turbo/
 *.log
 .env*
@@ -14,6 +15,7 @@ test-results/
 apps/web/e2e/.auth/
 
 .e2e-data/
+.matrix-data/
 .e2e-data-first-run/
 .e2e-data-first-run-*/
 .astro/

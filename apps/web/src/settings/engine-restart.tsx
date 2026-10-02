@@ -5,6 +5,7 @@ import { Button, Progress } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from '@trpc/tanstack-react-query';
 import { engineCopy } from '../copy/engine';
+import { errorCopy } from '../copy/errors';
 import { confirm } from '../lib/confirm';
 import { showErrorToast } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
@@ -14,23 +15,35 @@ const copy = engineCopy;
 const EXCLUSIVE = new Set<string>(EXCLUSIVE_JOB_KINDS);
 
 /** Active jobs, kept current by job events. An engine restart that fails says so (the engine is then stopped). */
-export function useActiveJobs() {
+export function useActiveJobs(enabled = true) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   useSubscription(
     trpc.events.stream.subscriptionOptions(
       { types: ['job.progress', 'job.finished'] },
       {
+        enabled,
         onData: ({ data: event }) => {
           void queryClient.invalidateQueries({ queryKey: trpc.jobs.list.queryKey() });
           if (event.type === 'job.finished' && event.data.kind === 'engine_restart' && event.data.state === 'failed') {
             showToast({ tone: 'danger', title: copy.notBack });
           }
+          // Start engine that didn't work (US-STATE-09): what to do, and the way to the engine's settings.
+          if (event.type === 'job.finished' && event.data.kind === 'engine_start' && event.data.state === 'failed') {
+            const { title, body } = errorCopy.codes.ENGINE_START_FAILED();
+            showToast({
+              tone: 'danger',
+              title,
+              body,
+              key: 'engine_start_failed',
+              actions: [{ kind: 'navigate', label: copy.details, to: '/settings/engine', admin: true }],
+            });
+          }
         },
       },
     ),
   );
-  return useQuery({ ...trpc.jobs.list.queryOptions(), retry: false });
+  return useQuery({ ...trpc.jobs.list.queryOptions(), enabled, retry: false });
 }
 
 /** The trailing control of the active engine's row. */
@@ -40,7 +53,7 @@ export function EngineRestartControl({ stopped }: { stopped: boolean }) {
   const queryClient = useQueryClient();
   const jobs = useActiveJobs();
   const exclusive = jobs.data?.items.find((j) => EXCLUSIVE.has(j.kind));
-  const restarting = jobs.data?.items.find((j) => j.kind === 'engine_restart');
+  const restarting = jobs.data?.items.find((j) => j.kind === 'engine_restart' || j.kind === 'engine_start');
 
   const restart = useMutation({
     mutationFn: () => (stopped ? client.settings.engine.start.mutate() : client.settings.engine.restart.mutate()),

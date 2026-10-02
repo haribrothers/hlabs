@@ -79,10 +79,11 @@ hlabs/
 | Script | Does |
 | --- | --- |
 | `pnpm dev` | Turbo: daemon (tsx watch, data dir `./.dev-data`), web (Vite, proxied to the daemon), no Caddy (web talks to daemon directly) |
-| `pnpm dev:full` | Also runs Caddy and mDNS so `https://hlabs.local` works locally |
+| `pnpm dev:full` | Also runs Caddy and mDNS so `https://hlabs.local` works locally (fetches the binaries first; Caddy binds 443 and 80, so on Linux run it where that's allowed) |
+| `pnpm fetch-binaries` | Downloads Caddy and docker-compose into `.bin/`, checked against pinned checksums (D-072); `--target` and `--out` for other platforms |
 | `pnpm dev:tray` | `tauri dev` against the running dev daemon |
 | `pnpm build` | Builds everything |
-| `pnpm test` / `pnpm test:e2e` | Vitest / Playwright |
+| `pnpm test` / `pnpm test:e2e` | Vitest / Playwright (its own instances: main on daemon 7574 and Vite 5273 with `./.e2e-data`, a first-run one per worker on 7480+/5180+; never a running `pnpm dev`, D-090) |
 | `pnpm lint` / `pnpm typecheck` | Across the workspace |
 | `pnpm db:generate` / `pnpm db:migrate` | drizzle-kit |
 | `pnpm store:lint` / `pnpm store:build` | Validate every app in `store/`, generate `index.json` |
