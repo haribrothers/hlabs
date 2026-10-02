@@ -1,7 +1,7 @@
 // tray.status, asked every 5 s while the menu is open and every 30 s while it's closed (only for the icon) (US-INST-05).
 import type { TrayStatus } from '@hlabs/api';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { daemon } from './daemon';
 
 export const OPEN_POLL_MS = 5_000;
@@ -17,8 +17,10 @@ export function useMenuOpen(): boolean {
   return open;
 }
 
-export function useTrayStatus(enabled: boolean, open: boolean): TrayStatus | null {
+/** tray.status, and a way to ask again at once (after an action from the menu). */
+export function useTrayStatus(enabled: boolean, open: boolean): [TrayStatus | null, () => void] {
   const [status, setStatus] = useState<TrayStatus | null>(null);
+  const [nudge, setNudge] = useState(0);
   useEffect(() => {
     if (!enabled) return;
     let active = true;
@@ -33,6 +35,6 @@ export function useTrayStatus(enabled: boolean, open: boolean): TrayStatus | nul
       active = false;
       clearInterval(timer);
     };
-  }, [enabled, open]);
-  return status;
+  }, [enabled, open, nudge]);
+  return [status, useCallback(() => setNudge((n) => n + 1), [])];
 }

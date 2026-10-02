@@ -38,3 +38,9 @@ If the menu says **Container engine stopped**, the program that runs your apps (
 ## Open the dashboard
 
 Choose **Open Dashboard** (or press ⌘D while the menu is open) to open hlabs in your browser. **Copy dashboard address** copies the address so you can paste it into a message to someone at home; the item says **Copied** for a moment. Both always use hlabs's current address, so they keep working after you rename this computer in hlabs. If setup isn't finished yet, the address opens setup.
+
+## Pause your apps
+
+On a laptop, choose **Pause all apps** to stop every app and save battery and memory. Nothing is deleted: your apps and their data stay exactly as they are. The menu then says **Paused · apps stopped**, and your apps stay stopped even if you restart the computer. The dashboard stays available and shows your apps as stopped.
+
+Choose **Resume apps** to start them again. Apps you had stopped yourself before pausing stay stopped.

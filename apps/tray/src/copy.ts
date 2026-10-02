@@ -8,6 +8,9 @@ export const trayCopy = {
   offlineTitle: 'hlabs',
   offlineBody: 'Your apps are offline.',
   paused: 'Paused · apps stopped',
+  /** US-INST-08: TrayStates "Paused". */
+  pausedNote: 'Your apps are stopped to save battery and memory. Data is untouched.',
+  resumeApps: 'Resume apps',
   /** US-INST-13, US-STATE-07. */
   restarting: 'Restarting…',
   updating: 'Updating hlabs…',

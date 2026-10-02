@@ -161,7 +161,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [x] US-INST-05 · See status at a glance (the tray asks tray.status every 5 s while the menu is open and every 30 s while it's closed rather than listening to events; CPU and memory are read when asked until the sampler, US-USE-08, keeps them; following Reduce transparency in the tray is left with the reduceTransparency field until the tray has a solid look, which the design doesn't draw)
 - [x] US-INST-06 · Open the dashboard and copy its address (the tray's Rust side opens the browser and writes the clipboard, so the window needs neither permission)
 - [ ] US-INST-07 · Back up now from the menu
-- [ ] US-INST-08 · Pause and resume all apps
+- [x] US-INST-08 · Pause and resume all apps (pause_all and resume_all jobs; settings.paused is written before stopping, so an install that finishes meanwhile is stopped and resumed with the others; waiting for a running backup comes with backups, phase 5)
 - [ ] US-INST-09 · Start at login
 - [ ] US-INST-10 · Quit hlabs
 - [x] US-INST-11 · Starting state (the count follows tray.status, asked every 5 s while the menu is open, rather than app.stateChanged; "starting" means a reconcile is running or an app that should run is starting or restarting; the needs-attention dot on the icon is US-INST-14)

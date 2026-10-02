@@ -186,6 +186,11 @@ export function setSetting<K extends SettingKey>(db: HlabsDb, key: K, value: z.i
   return parsed;
 }
 
+/** Removes a setting, so it reads as its default again (e.g. `paused` back to null). */
+export function clearSetting(db: HlabsDb, key: SettingKey): void {
+  db.delete(settings).where(eq(settings.key, key)).run();
+}
+
 export function getUserSetting<K extends UserSettingKey>(db: HlabsDb, key: K, userId: string): UserSettingValue<K> {
   return parseOrDefault(userSettingsSchemas[key], readRaw(db, `${key}:${userId}`)) as UserSettingValue<K>;
 }

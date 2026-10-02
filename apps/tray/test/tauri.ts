@@ -45,6 +45,7 @@ export function answer(a: Answers) {
         if (args?.path === 'tray.setupUrl') return { url: a.setupUrl ?? null, lanUrls: [] };
         if (args?.path === 'tray.status') return a.status ?? null;
         if (args?.path === 'tray.startEngine') return { jobId: 'job1' };
+        if (args?.path === 'tray.quickAction') return { jobId: 'job2' };
         if (args?.path === 'tray.diagnostics') return { report: 'hlabs diagnostics' };
         return null;
       default:

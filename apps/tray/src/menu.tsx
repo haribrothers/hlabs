@@ -11,6 +11,7 @@ import { useDaemonDownActions, useHealth, type DaemonHealth } from './health';
 import { iconFor, useMenuBarIcon } from './icon';
 import { appsLine, formatCpu, formatFree, formatMemory } from './format';
 import { useOpenSetup, useSetupPending } from './setup';
+import { useQuickAction } from './quick-action';
 import { useMenuOpen, useTrayStatus } from './status';
 import { trayCopy as t } from './copy';
 
@@ -61,6 +62,7 @@ export interface RunningActions {
   copyAddress?: () => void;
   /** "Copy dashboard address" reads "Copied" for 1.5 s. */
   copied?: boolean;
+  pauseAll?: () => void;
 }
 
 /**
@@ -75,7 +77,7 @@ export function runningItems(actions: RunningActions = {}): MenuItem[] {
     ...(isFeatureEnabled('backups') ? [{ label: t.backUpNow }] : []),
     { separator: true },
     { label: t.startAtLogin, checked: true },
-    { label: t.pauseAll },
+    { label: t.pauseAll, onSelect: actions.pauseAll },
     { label: t.checkForUpdates },
     { label: t.resetPassword },
     { separator: true },
@@ -91,7 +93,7 @@ export function Menu() {
   const openSetup = useOpenSetup();
   const open = useMenuOpen();
   const health = useHealth();
-  const status = useTrayStatus(boot?.step === 'started' && access === 'ready', open);
+  const [status, refresh] = useTrayStatus(boot?.step === 'started' && access === 'ready', open);
   useMenuBarIcon(iconFor({ boot, access, health, status }));
   // Nothing until the Rust side has said where things stand, so no state flashes by.
   if (boot === null || access === null) return null;
@@ -106,7 +108,32 @@ export function Menu() {
   // Waiting for /healthz after a launch, or it says hlabs is starting: Starting, without counts yet (US-INST-11).
   if (boot.step === 'starting' || health?.state === 'starting') return <StartingMenu status={null} />;
   if (status?.state === 'engineStopped') return <EngineStoppedMenu status={status} />;
-  return status?.state === 'starting' ? <StartingMenu status={status} /> : <RunningMenu status={status} />;
+  if (status?.state === 'paused') return <PausedMenu onChanged={refresh} />;
+  return status?.state === 'starting' ? (
+    <StartingMenu status={status} />
+  ) : (
+    <RunningMenu status={status} onChanged={refresh} />
+  );
+}
+
+/** TrayStates "Paused" (US-INST-08): only Resume apps, Open Dashboard and Quit. */
+export function PausedMenu({ onChanged }: { onChanged?: () => void }) {
+  const dashboard = useDashboardActions();
+  const resume = useQuickAction('resumeAll', onChanged);
+  return (
+    <TrayMenu
+      status="stopped"
+      statusText={t.paused}
+      note={{ body: t.pausedNote }}
+      action={{ label: t.resumeApps, onSelect: () => void resume.run(), busy: resume.busy }}
+      items={[
+        { separator: true },
+        { label: t.openDashboard, shortcut: '⌘D', onSelect: () => void dashboard.open() },
+        { separator: true },
+        { label: t.quit, shortcut: '⌘Q' },
+      ]}
+    />
+  );
 }
 
 /**
@@ -226,8 +253,9 @@ export function runningLine(status: TrayStatus): string {
 }
 
 /** TrayMenu (US-INST-05): "Running · N apps" and CPU, memory and free space; dashes until tray.status answers. */
-export function RunningMenu({ status }: { status: TrayStatus | null }) {
+export function RunningMenu({ status, onChanged }: { status: TrayStatus | null; onChanged?: () => void }) {
   const dashboard = useDashboardActions();
+  const pause = useQuickAction('pauseAll', onChanged);
   const cpu = formatCpu(status?.cpuPercent);
   const memory = formatMemory(status?.memoryUsedBytes);
   const free = formatFree(status?.freeBytes);
@@ -246,6 +274,7 @@ export function RunningMenu({ status }: { status: TrayStatus | null }) {
         openDashboard: () => void dashboard.open(),
         copyAddress: () => void dashboard.copy(),
         copied: dashboard.copied,
+        pauseAll: pause.busy ? undefined : () => void pause.run(),
       })}
     />
   );

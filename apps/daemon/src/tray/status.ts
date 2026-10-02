@@ -98,14 +98,15 @@ export async function trayStatus(deps: TrayStatusDeps): Promise<TrayStatus> {
   const appsRunning = installed.filter((a) => a.state === 'running').length;
   const starting = engine.state === 'running' && (deps.isReconciling() || expected.some((a) => COMING_UP.has(a.state)));
   const updates = getSetting(db, 'updates');
+  const paused = getSetting(db, 'paused') !== null;
   const [cpu, memory, free] = await Promise.all([deps.host.cpuPercent(), deps.host.memoryUsedBytes(), freeBytes(deps)]);
   return {
-    state: engine.state !== 'running' ? 'engineStopped' : starting ? 'starting' : 'running',
+    state: engine.state !== 'running' ? 'engineStopped' : paused ? 'paused' : starting ? 'starting' : 'running',
     appsRunning,
     appsExpected: expected.length,
     appsNeedAttention: installed.filter((a) => a.state === 'error').length,
     startupLogAppId: expected.find((a) => a.state !== 'running')?.id ?? null,
-    paused: false,
+    paused,
     cpuPercent: cpu === null ? null : Math.min(100, Math.max(0, cpu)),
     memoryUsedBytes: memory,
     freeBytes: free,
