@@ -41,7 +41,13 @@ export function Security({
     <List label={copy.security}>
       <ListRow
         title={copy.password}
-        subtitle={changedAt === null ? copy.passwordSetUp : copy.passwordChangedAgo(timeAgo(changedAt))}
+        subtitle={
+          changedAt !== null
+            ? copy.passwordChangedAgo(timeAgo(changedAt))
+            : a.role === 'member'
+              ? copy.passwordJoined
+              : copy.passwordSetUp
+        }
         trailing={
           <Button
             variant="secondary"

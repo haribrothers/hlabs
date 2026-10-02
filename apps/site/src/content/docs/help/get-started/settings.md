@@ -20,7 +20,7 @@ On a phone you see the list of sections first. Tap one to open it, and tap **Set
 
 ## Your profile
 
-**Settings › Account** shows your name, username and whether you're an admin or a member. Choose **Edit profile** to change your display name (up to 40 characters) and your avatar colour. Your new name shows straight away, including in the Home greeting. Your username can't be changed. hlabs is in English for now.
+**Settings › Account** shows your name, username and whether you're an admin or a member. Family members have the same password, two-factor and device controls as admins. Choose **Edit profile** to change your display name (up to 40 characters) and your avatar colour. Your new name shows straight away, including in the Home greeting. Your username can't be changed. hlabs is in English for now.
 
 ## Signed-in devices
 

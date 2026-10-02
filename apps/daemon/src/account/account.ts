@@ -6,6 +6,7 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { LoginService } from '../auth/login';
 import { hashPassword } from '../auth/passwords';
 import type { SessionService } from '../auth/sessions';
+import { homeFolderBytes } from '../storage/home-folder';
 
 /** Who manages hlabs, as members are told: the earliest-created enabled admin (US-ACCT-27, US-HOME-12). */
 export function managingAdminName(db: HlabsDb): string | null {
@@ -44,7 +45,8 @@ export function getAccount(db: HlabsDb, userId: string) {
     totpAddedDuringSetup: totp?.enabledAt != null && (setupDone === null || totp.enabledAt <= setupDone),
     totpRequired: getSetting(db, 'people').requireTotp,
     hostname: getSetting(db, 'hostname'),
-    homeFolderBytes: null,
+    // Counted in the background and kept 10 minutes; null while it's first being counted (US-ACCT-28).
+    homeFolderBytes: homeFolderBytes(db, user.username),
     adminName: managingAdminName(db),
   };
 }
