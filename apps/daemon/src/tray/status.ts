@@ -113,6 +113,7 @@ export async function trayStatus(deps: TrayStatusDeps): Promise<TrayStatus> {
       name: engine.state === 'missing' ? null : engine.candidate.kind,
       running: engine.state === 'running',
       managedByHlabs: engine.state === 'missing' ? false : engine.candidate.managedByHlabs,
+      canStart: engine.state !== 'missing' && engine.candidate.kind !== 'docker-engine',
     },
     dashboardUrl: dashboardUrl(deps),
     backup: backup(db),

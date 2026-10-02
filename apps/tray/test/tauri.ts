@@ -29,10 +29,13 @@ export function answer(a: Answers) {
         return true;
       case 'open_dashboard':
       case 'copy_dashboard_address':
+      case 'copy_text':
         return null;
       case 'daemon_call':
         if (args?.path === 'tray.setupUrl') return { url: a.setupUrl ?? null, lanUrls: [] };
         if (args?.path === 'tray.status') return a.status ?? null;
+        if (args?.path === 'tray.startEngine') return { jobId: 'job1' };
+        if (args?.path === 'tray.diagnostics') return { report: 'hlabs diagnostics' };
         return null;
       default:
         throw new Error(`unexpected command ${cmd}`);

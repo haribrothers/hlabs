@@ -149,6 +149,15 @@ async fn copy_dashboard_address(app: AppHandle) -> Result<(), DaemonError> {
         .map_err(|_| DaemonError::Protocol)
 }
 
+/// Puts text on the clipboard ("Copy diagnostics", US-INST-12).
+#[tauri::command]
+fn copy_text(app: AppHandle, text: String) -> Result<(), DaemonError> {
+    use tauri_plugin_clipboard_manager::ClipboardExt;
+    app.clipboard()
+        .write_text(text)
+        .map_err(|_| DaemonError::Protocol)
+}
+
 /// "Open setup": fetches `tray.setupUrl` again and opens it (US-INST-02).
 #[tauri::command]
 async fn open_setup(app: AppHandle) -> Result<bool, DaemonError> {
@@ -272,7 +281,8 @@ pub fn run() {
             boot_state,
             open_setup,
             open_dashboard,
-            copy_dashboard_address
+            copy_dashboard_address,
+            copy_text
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]

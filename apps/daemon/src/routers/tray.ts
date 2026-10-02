@@ -1,11 +1,23 @@
 import { hlabsError, type AppHandlers } from '@hlabs/api';
 import type { DaemonContext } from '../context';
 import { lanAddresses } from '../mdns/publisher';
+import { diagnosticsReport } from '../tray/diagnostics';
 import { dashboardUrl, trayStatus } from '../tray/status';
 
 export const tray: AppHandlers<DaemonContext>['tray'] = {
   // US-INST-05: state, apps, CPU, memory, free space and the dashboard's address.
   status: (_input, ctx) => trayStatus(ctx.services),
+
+  // US-INST-12: the same engine_start job as the dashboard's "Start engine" (US-STATE-09); a second press gets it again.
+  startEngine: (_input, ctx) => {
+    const { jobs } = ctx.services;
+    const running = jobs.listActive().find((j) => j.kind === 'engine_start');
+    if (running) return { jobId: running.id };
+    return { jobId: jobs.start('engine_start', { payload: { userId: null, via: 'tray' } }) };
+  },
+
+  // US-INST-12: a redacted plain-text report for "Copy diagnostics".
+  diagnostics: (_input, ctx) => ({ report: diagnosticsReport(ctx.services) }),
 
   // US-INST-06: the dashboard's current address for "Open Dashboard" and "Copy dashboard address"; the tray opens or
   // copies it. Pause, resume and back up come with US-INST-08 and US-INST-07.

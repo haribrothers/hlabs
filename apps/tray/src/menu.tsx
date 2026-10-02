@@ -6,6 +6,7 @@ import { TrayMenu, TraySetup, type MenuItem } from '@hlabs/ui';
 import { useAccess, type Access } from './access';
 import { useBoot, type BootState } from './boot';
 import { useDashboardActions } from './dashboard';
+import { useCopyDiagnostics, useStartEngine } from './engine';
 import { appsLine, formatCpu, formatFree, formatMemory } from './format';
 import { useOpenSetup, useSetupPending } from './setup';
 import { useMenuOpen, useTrayStatus } from './status';
@@ -98,7 +99,42 @@ export function Menu() {
   if (inSetup) return <FirstLaunch boot={boot} onOpenSetup={() => void openSetup()} />;
   // Waiting for /healthz after a launch: Starting, without counts yet (US-INST-11).
   if (boot.step === 'starting') return <StartingMenu status={null} />;
+  if (status?.state === 'engineStopped') return <EngineStoppedMenu status={status} />;
   return status?.state === 'starting' ? <StartingMenu status={status} /> : <RunningMenu status={status} />;
+}
+
+/** TrayStates "Error" (US-INST-12): the engine stopped, with Start engine, Troubleshoot… and Copy diagnostics. */
+export function EngineStoppedMenu({ status }: { status: TrayStatus }) {
+  const dashboard = useDashboardActions();
+  const engine = useStartEngine(status.engine.running);
+  const diagnostics = useCopyDiagnostics();
+  const name = status.engine.name ? (t.engineNames[status.engine.name] ?? null) : null;
+  return (
+    <TrayMenu
+      tone="danger"
+      statusText={t.engineStopped}
+      note={{
+        title: engine.phase === 'failed' ? t.engineDidntStart : undefined,
+        body: t.engineOffline(name),
+      }}
+      action={
+        status.engine.canStart
+          ? {
+              label: engine.phase === 'starting' ? t.startingEngine : t.startEngine,
+              onSelect: () => void engine.start(),
+              busy: engine.phase === 'starting',
+            }
+          : undefined
+      }
+      items={[
+        { separator: true },
+        { label: t.troubleshoot, onSelect: () => void dashboard.open('/') },
+        { label: diagnostics.copied ? t.copied : t.copyDiagnostics, onSelect: () => void diagnostics.copy() },
+        { separator: true },
+        { label: t.quit, shortcut: '⌘Q' },
+      ]}
+    />
+  );
 }
 
 /** TrayStates "Starting" (US-INST-11): "Starting · 4 of 11 apps" with a bar, Open Dashboard, Show startup log, Quit. */

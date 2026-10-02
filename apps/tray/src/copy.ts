@@ -4,6 +4,19 @@ export const trayCopy = {
   /** US-INST-05: "Running · 11 apps". */
   runningApps: { none: 'Running · no apps', one: 'Running · 1 app', many: (n: number) => `Running · ${n} apps` },
   engineStopped: 'Container engine stopped',
+  /** US-INST-12. */
+  engineNames: {
+    orbstack: 'OrbStack',
+    'docker-desktop': 'Docker Desktop',
+    colima: 'Colima',
+    'docker-engine': 'Docker Engine',
+  } as Record<string, string>,
+  engineOffline: (name: string | null) => `${name ?? 'The container engine'} isn't running, so your apps are offline.`,
+  startEngine: 'Start engine',
+  startingEngine: 'Starting engine…',
+  engineDidntStart: "Engine didn't start",
+  troubleshoot: 'Troubleshoot…',
+  copyDiagnostics: 'Copy diagnostics',
   /** US-INST-11. */
   starting: 'Starting…',
   startingApps: (running: number, expected: number) => `Starting · ${running} of ${expected} apps`,

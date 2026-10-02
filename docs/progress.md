@@ -165,7 +165,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [ ] US-INST-09 · Start at login
 - [ ] US-INST-10 · Quit hlabs
 - [x] US-INST-11 · Starting state (the count follows tray.status, asked every 5 s while the menu is open, rather than app.stateChanged; "starting" means a reconcile is running or an app that should run is starting or restarting; the needs-attention dot on the icon is US-INST-14)
-- [ ] US-INST-12 · Container engine stopped
+- [x] US-INST-12 · Container engine stopped (Start engine runs the dashboard's engine_start job, audited with via: tray; the menu moves on when tray.status says the engine runs; Troubleshoot… opens the dashboard's Home, where the engine-stopped banner and checklist are, US-STATE-08)
 - [ ] US-INST-13 · Can't reach hlabs
 - [ ] US-INST-14 · Menu-bar icon reflects state
 - [x] US-INST-15 · Tray authenticates to the daemon with a local token (where the token lives per platform and how the daemon picks up a new one: D-112; the `audit_log` rows with `via: "tray"` are written and tested by each tray action as it's built: pause/resume US-INST-08, start engine US-INST-12, reset password US-INST-18, backup in phase 5, uninstall in phase 6)

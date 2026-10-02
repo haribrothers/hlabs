@@ -108,6 +108,12 @@ impl DaemonClient {
                 }
                 req
             }
+            // A procedure without input (`z.void()`): tRPC's batch form with no input for item 0.
+            CallKind::Mutation if input.is_null() => self
+                .http
+                .post(format!("{url}?batch=1"))
+                .header("content-type", "application/json")
+                .body("{}"),
             CallKind::Mutation => self
                 .http
                 .post(&url)
@@ -167,7 +173,13 @@ pub fn dashboard_page(base: &str, path: Option<&str>) -> Option<String> {
 }
 
 fn parse(status: u16, body: &str) -> Result<Value, DaemonError> {
-    let envelope: Envelope = serde_json::from_str(body).map_err(|_| DaemonError::Protocol)?;
+    let value: Value = serde_json::from_str(body).map_err(|_| DaemonError::Protocol)?;
+    // A batch answer is a list with one item.
+    let value = match value {
+        Value::Array(mut items) if !items.is_empty() => items.swap_remove(0),
+        other => other,
+    };
+    let envelope: Envelope = serde_json::from_value(value).map_err(|_| DaemonError::Protocol)?;
     if let Some(error) = envelope.error {
         let hlabs_code = error
             .data
@@ -237,6 +249,19 @@ mod tests {
         let request = rx.recv().unwrap();
         assert!(request.starts_with("POST /trpc/tray.setStartAtLogin "));
         assert!(request.ends_with(r#"{"enabled":true}"#));
+    }
+
+    #[tokio::test]
+    async fn us_inst_12_a_mutation_without_input_uses_the_batch_form() {
+        let (url, rx) = serve_once("200 OK", r#"[{"result":{"data":{"jobId":"j"}}}]"#);
+        let data = DaemonClient::new(url, "t")
+            .call(CallKind::Mutation, "tray.startEngine", &Value::Null)
+            .await
+            .unwrap();
+        assert_eq!(data["jobId"], "j");
+        let request = rx.recv().unwrap();
+        assert!(request.starts_with("POST /trpc/tray.startEngine?batch=1 "));
+        assert!(request.ends_with("\r\n\r\n{}"));
     }
 
     #[tokio::test]

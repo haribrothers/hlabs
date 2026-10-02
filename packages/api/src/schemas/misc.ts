@@ -61,7 +61,14 @@ export const trayStatusSchema = z.object({
   memoryUsedBytes: z.number().nonnegative().nullable(),
   /** Free space on the storage root, bytes. */
   freeBytes: z.number().nonnegative().nullable(),
-  engine: z.object({ name: z.string().nullable(), running: z.boolean(), managedByHlabs: z.boolean() }),
+  engine: z.object({
+    /** The engine kind (`orbstack`, `colima`, `docker-desktop`, `docker-engine`); null when none was found. */
+    name: z.string().nullable(),
+    running: z.boolean(),
+    managedByHlabs: z.boolean(),
+    /** "Start engine" is offered (not for Docker Engine on Linux, US-INST-12). */
+    canStart: z.boolean(),
+  }),
   /** The dashboard's current address (the renamed name, or the LAN address when mDNS fell back). */
   dashboardUrl: z.string(),
   backup: z.object({

@@ -85,7 +85,13 @@ export function TrayMenu({
             </div>
           ) : null}
           {action ? (
-            <Button className="hl-tray-action" onClick={action.onSelect} busy={action.busy} disabled={action.disabled}>
+            <Button
+              size="sm"
+              className="hl-tray-action"
+              onClick={action.onSelect}
+              busy={action.busy}
+              disabled={action.disabled}
+            >
               {action.label}
             </Button>
           ) : null}
@@ -143,7 +149,7 @@ export function TraySetup({ title, subtitle, steps, stateLabels, action, width =
       </ul>
       <Progress value={value} aria-label={title} className="hl-tray-progress" />
       {action ? (
-        <Button className="hl-tray-action" onClick={action.onSelect} disabled={action.disabled}>
+        <Button size="sm" className="hl-tray-action" onClick={action.onSelect} disabled={action.disabled}>
           {action.label}
         </Button>
       ) : null}
