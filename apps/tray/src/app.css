@@ -16,3 +16,10 @@
 .tray-fit {
   width: max-content;
 }
+
+/* macOS blurs what's behind the window (windowEffects: hudWindow, rounded like the menu), so the menu's glass uses the
+   lighter window surface to let it show through; a backdrop-filter has nothing to blur inside the window. */
+.tray-fit .hl-glass-3 {
+  background: var(--surface-window);
+  backdrop-filter: none;
+}
