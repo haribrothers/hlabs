@@ -34,6 +34,8 @@ export const pendingInviteSchema = z.object({
   createdAt: timestampSchema,
   expiresAt: timestampSchema,
   url: z.string().nullable(),
+  /** The home-network link while `url` is the tailnet one (D-109). */
+  homeUrl: z.string().nullable(),
 });
 export type PendingInvite = z.infer<typeof pendingInviteSchema>;
 
@@ -72,7 +74,8 @@ export const users = {
   updateRole: io(userRef.extend({ role: roleSchema }), ok),
   disable: io(userRef, ok),
   enable: io(userRef, ok),
-  resetPasswordLink: io(userRef, z.object({ url: z.string(), expiresAt: z.number() })),
+  /** `url` is the tailnet link while remote access is on, with `homeUrl` the home-network one (D-109). */
+  resetPasswordLink: io(userRef, z.object({ url: z.string(), homeUrl: z.string().nullable(), expiresAt: z.number() })),
   /** `jobId` when their Home folder goes to the trash too (US-ACCT-16). */
   delete: io(
     userRef.extend({ deleteHomeFolder: z.boolean().default(false) }),
@@ -98,7 +101,10 @@ const inviteFields = z.object({
 });
 
 export const invites = {
-  create: io(inviteFields, z.object({ inviteId: idSchema, url: z.string(), expiresAt: z.number() })),
+  create: io(
+    inviteFields,
+    z.object({ inviteId: idSchema, url: z.string(), homeUrl: z.string().nullable(), expiresAt: z.number() }),
+  ),
   list: io(empty, z.object({ invites: z.array(pendingInviteSchema) })),
   // No defaults here: a field that isn't sent stays as it is.
   update: io(

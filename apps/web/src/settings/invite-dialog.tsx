@@ -8,6 +8,7 @@ import { peopleCopy as copy } from '../copy/people';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { AppSwitchList } from './app-switch-list';
+import { HomeLink } from './home-link';
 
 type Role = 'member' | 'admin';
 
@@ -23,7 +24,7 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
   const client = useTRPCClient();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const [invite, setInvite] = useState<{ inviteId: string; url: string } | null>(null);
+  const [invite, setInvite] = useState<{ inviteId: string; url: string; homeUrl: string | null } | null>(null);
   const [name, setName] = useState('');
   const savedName = useRef('');
   const [copied, setCopied] = useState(false);
@@ -69,7 +70,7 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
       // Closed while the link was being made: keep or revoke it as if it had been there.
       if (closing.current === 'revoke') return void revoke(made.inviteId);
       if (closing.current === 'keep') return refreshList();
-      setInvite({ inviteId: made.inviteId, url: made.url });
+      setInvite({ inviteId: made.inviteId, url: made.url, homeUrl: made.homeUrl });
     },
   });
   useEffect(() => {
@@ -201,6 +202,7 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
                   {copied ? copy.copied : copy.copy}
                 </Button>
               </div>
+              {invite?.homeUrl ? <HomeLink url={invite.homeUrl} familyHint /> : null}
               <p className="m-0 text-body-sm text-ink-muted">
                 {copy.worksOnce}{' '}
                 {invite ? (

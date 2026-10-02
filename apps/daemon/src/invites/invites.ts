@@ -6,6 +6,7 @@ import { ulid } from '@hlabs/shared';
 import { and, count, desc, eq, gt, isNull } from 'drizzle-orm';
 import { createHash, randomBytes } from 'node:crypto';
 import { lanDashboardOrigin } from '../http/dashboard-origins';
+import { linkOrigins } from '../network/domains';
 import type { SecretStore } from '../platform/secrets';
 
 export const inviteTokenRef = (inviteId: string) => `invite:${inviteId}`;
@@ -80,7 +81,7 @@ export async function createInvite(
         .run();
     audit(tx as unknown as HlabsDb, who, 'invites.create', id, { role: input.role }, now);
   });
-  return { inviteId: id, url: inviteUrl(db, token), expiresAt };
+  return { inviteId: id, ...inviteUrls(db, token), expiresAt };
 }
 
 /** Change a pending invite's name, role or apps (US-ACCT-21, US-ACCT-22); the link stays the same. */
@@ -115,7 +116,11 @@ export async function revokeInvite(db: HlabsDb, secrets: SecretStore, inviteId: 
   if (row.tokenRef) await secrets.delete(row.tokenRef);
 }
 
-export const inviteUrl = (db: HlabsDb, token: string) => `${lanDashboardOrigin(db)}/invite/${token}`;
+/** The invite link, and its home-network form while remote access is on (D-109). */
+export function inviteUrls(db: HlabsDb, token: string) {
+  const { primary, home } = linkOrigins(db, lanDashboardOrigin(db));
+  return { url: `${primary}/invite/${token}`, homeUrl: home ? `${home}/invite/${token}` : null };
+}
 
 /** Unused, unrevoked, unexpired invites, newest first, each with its link (US-ACCT-13, US-ACCT-17). */
 export async function listPendingInvites(
@@ -138,7 +143,7 @@ export async function listPendingInvites(
         displayName: i.displayName,
         createdAt: i.createdAt,
         expiresAt: i.expiresAt,
-        url: token ? inviteUrl(db, token) : null,
+        ...(token ? inviteUrls(db, token) : { url: null, homeUrl: null }),
       };
     }),
   );

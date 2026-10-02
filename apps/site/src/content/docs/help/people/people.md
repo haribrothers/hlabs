@@ -28,7 +28,7 @@ hlabs doesn't send email, so you invite people with a link. In **Settings › Us
 
 Choose their role first. A **Member** uses only the apps you share; an **Admin** can change everything and open every app. For a member, turn on the apps they can open. You can change this later in **Apps access**.
 
-You can type their name. It's shown on the page they open, and fills in their name when they make their account. Choose **Copy** and send the link however you like: a message, a chat app, or in person.
+You can type their name. It's shown on the page they open, and fills in their name when they make their account. Choose **Copy** and send the link however you like: a message, a chat app, or in person. While remote access is on, the link uses hlabs's Tailscale address, so it also works away from home for anyone on your tailnet; the home-network link is shown under it as **At home**.
 
 Your choices save as you make them, and the link stays the same, so it's fine to copy it first. Whatever is set when they accept the invite is what they get.
 

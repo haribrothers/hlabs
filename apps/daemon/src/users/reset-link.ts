@@ -9,6 +9,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { hashPassword } from '../auth/passwords';
 import type { SessionService } from '../auth/sessions';
 import { lanDashboardOrigin } from '../http/dashboard-origins';
+import { linkOrigins } from '../network/domains';
 
 export const RESET_LINK_TTL_MS = 15 * 60_000;
 
@@ -46,7 +47,8 @@ export function createResetLink(
       })
       .run();
   });
-  return { url: `${lanDashboardOrigin(db)}/reset/${token}`, expiresAt };
+  const { primary, home } = linkOrigins(db, lanDashboardOrigin(db));
+  return { url: `${primary}/reset/${token}`, homeUrl: home ? `${home}/reset/${token}` : null, expiresAt };
 }
 
 /** Uses a link once: a link that's unknown, used, replaced or older than 15 minutes is AUTH_RESET_EXPIRED. */

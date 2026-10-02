@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import { peopleCopy as copy } from '../copy/people';
 import { showToast } from '../lib/toasts';
 import { useTRPCClient } from '../lib/trpc';
+import { HomeLink } from './home-link';
 
 export function ResetLinkDialog({ userId, name, onClose }: { userId: string; name: string; onClose: () => void }) {
   const client = useTRPCClient();
@@ -61,6 +62,7 @@ export function ResetLinkDialog({ userId, name, onClose }: { userId: string; nam
                 {copy.copy}
               </Button>
             </div>
+            {make.data?.homeUrl ? <HomeLink url={make.data.homeUrl} /> : null}
             <p className="m-0 text-body-sm text-ink-muted">{copy.resetNote}</p>
           </>
         )}

@@ -45,3 +45,13 @@ export function tailnetDashboardUrl(db: HlabsDb): string | null {
   const port = getSetting(db, 'remote').dashboardPort;
   return host ? `https://${host}${port === 443 ? '' : `:${port}`}` : null;
 }
+
+/**
+ * Where a link people are sent should point (D-109): the tailnet dashboard while remote access is connected (it works
+ * at home and away), else hlabs on the home network; `home` is the home-network one while they differ.
+ */
+export function linkOrigins(db: HlabsDb, lanOrigin: string): { primary: string; home: string | null } {
+  const remote = getSetting(db, 'remote');
+  const tailnet = remote.state === 'connected' ? tailnetDashboardUrl(db) : null;
+  return tailnet ? { primary: tailnet, home: lanOrigin } : { primary: lanOrigin, home: null };
+}
