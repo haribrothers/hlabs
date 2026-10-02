@@ -1,19 +1,25 @@
-// US-AUTH-23 · Open an invite link (main instance: the admin makes the invite and another browser opens it). The main
-// instance answers cookie-less requests as its development admin, so the signed-out view is covered by unit tests.
+// US-AUTH-23 · Open an invite link (first-run instance: its admin makes the invite, a signed-out browser opens it).
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { MAIN_URL } from './instances';
+import { FIRST_RUN_URL } from './instances';
 import { createInvite } from './invites';
+import { ADMIN, finishOnboarding } from './onboarding';
 
-test('US-AUTH-23 another browser sees who invited them; a dead link says so', async ({ page, browser }, info) => {
-  const path = await createInvite(page);
-  const guest = await (await browser.newContext({ baseURL: MAIN_URL, ...info.project.use })).newPage();
+test.use({ baseURL: FIRST_RUN_URL });
+
+test('US-AUTH-23 a signed-out browser sees who invited them; a dead link says so', async ({
+  page,
+  request,
+  browser,
+}, info) => {
+  await finishOnboarding(page, request);
+  const path = await createInvite(page, { name: 'Anu' });
+  const guest = await (await browser.newContext({ ...info.project.use, baseURL: FIRST_RUN_URL })).newPage();
   await guest.goto(path);
   await expect(guest.getByRole('heading', { level: 1, name: 'Create your account' })).toBeVisible();
-  await expect(guest.getByText(/invited you to$/)).toBeVisible();
+  await expect(guest.getByText(`${ADMIN.name} invited you to`)).toBeVisible();
   await expect(guest.getByText("You'll get your own Home screen and a private Files folder.")).toBeVisible();
-  // No Dock on this page.
-  await expect(guest.getByRole('navigation', { name: /Dock|Sections/ })).toHaveCount(0);
+  await expect(guest.getByText(/You're logged in as/)).toHaveCount(0);
   if (process.env.HLABS_SHOTS)
     await guest.screenshot({ path: `${process.env.HLABS_SHOTS}/accept-invite-${info.project.name}.png` });
   expect((await new AxeBuilder({ page: guest }).analyze()).violations).toEqual([]);
@@ -25,9 +31,12 @@ test('US-AUTH-23 another browser sees who invited them; a dead link says so', as
   await expect(guest).toHaveURL(/\/login/);
 });
 
-test('US-AUTH-23 opened while signed in: "You\'re logged in as" first', async ({ page }) => {
+test('US-AUTH-23 opened while signed in: "You\'re logged in as" first', async ({ page, request }) => {
+  await finishOnboarding(page, request);
   const path = await createInvite(page);
   await page.goto(path);
-  await expect(page.getByText(/^You're logged in as @/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Log out and continue' })).toBeVisible();
+  await expect(page.getByText("You're logged in as @hari.")).toBeVisible();
+  await page.getByRole('button', { name: 'Log out and continue' }).click();
+  await expect(page.getByText("You're logged in as @hari.")).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Join hlabs' })).toBeVisible();
 });

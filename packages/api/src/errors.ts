@@ -36,6 +36,8 @@ export const HLABS_ERRORS = {
   USERNAME_INVALID: 'BAD_REQUEST',
   USERNAME_TAKEN: 'CONFLICT',
   LAST_ADMIN: 'PRECONDITION_FAILED',
+  /** The invite link was used, revoked or has expired (US-AUTH-24). */
+  INVITE_INVALID: 'PRECONDITION_FAILED',
 
   // Onboarding
   ONBOARDING_SETUP_TOKEN_REQUIRED: 'FORBIDDEN',

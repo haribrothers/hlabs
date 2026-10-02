@@ -1,4 +1,4 @@
-// AcceptInvite (US-AUTH-23): who invited me and what I'll get, before I make an account. A link that no longer works
+// AcceptInvite (US-AUTH-23, US-AUTH-24): who invited me and what I'll get, and the form to make my account. A link that no longer works
 // says so and points to log in. Signed in already: say who as, with a way to log out first.
 import { Avatar, avatarColorFor, Button, GlassCard } from '@hlabs/ui';
 import type { InviteInspect } from '@hlabs/api';
@@ -8,6 +8,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { inviteCopy as copy } from '../copy/invite';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
+import { JoinForm } from './join-form';
 import { LoginLayout } from './login-layout';
 
 /** "You'll get your own Home screen and a private Files folder." plus what was shared, as the invite says. */
@@ -50,7 +51,7 @@ function SignedInNote({ username }: { username: string }) {
   );
 }
 
-export function AcceptInvite({ token, children }: { token: string; children?: (invite: InviteInspect) => ReactNode }) {
+export function AcceptInvite({ token }: { token: string }) {
   const trpc = useTRPC();
   const invite = useQuery({ ...trpc.invites.inspect.queryOptions({ token }), retry: false });
   const me = useMe();
@@ -111,7 +112,7 @@ export function AcceptInvite({ token, children }: { token: string; children?: (i
           <p className="m-0 text-body text-ink-muted">{inviteLead(data)}</p>
         </div>
         {me.isSuccess ? <SignedInNote username={me.data.username} /> : null}
-        {children?.(data)}
+        <JoinForm token={token} initialName={data.displayName} onInvalid={() => void invite.refetch()} />
       </Card>
     </LoginLayout>
   );

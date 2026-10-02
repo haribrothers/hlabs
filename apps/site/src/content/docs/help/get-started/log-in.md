@@ -77,5 +77,6 @@ For everyone.
 
 If someone who runs hlabs invites you, they send you a link. Open it to see who invited you and what you'll get: your own Home screen, a private Files folder, and the apps they've shared with you. A link works once and only for 7 days. If it has been used, cancelled or has expired, the page says so: ask the person who invited you for a new one.
 
-If you open the link while you're logged in to hlabs as someone else, choose **Log out and continue** first.
+To make your account, enter your name, a username and a password, then choose **Join hlabs**. Usernames are lowercase letters, numbers and dashes (3 to 32, starting with a letter), and can't be changed later. Passwords need at least 12 characters. You're then logged in and see your Home screen. If your admin requires two-factor login, you set that up first.
 
+If you open the link while you're logged in to hlabs as someone else, choose **Log out and continue** first.
