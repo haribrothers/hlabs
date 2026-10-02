@@ -208,3 +208,48 @@ describe.skipIf(!existsSync(CADDY))('Caddy with the hlabs config', () => {
     expect(page.body).toBe('<h1>fallback</h1>');
   });
 });
+
+describe.skipIf(!existsSync(CADDY))("Caddy when an app's own port is busy for a moment", () => {
+  it('serves the app names meanwhile, then its own port once it is free (a restarted daemon, US-APP-05)', async () => {
+    const dir = tempDir();
+    const fallback = join(dir, 'fallback');
+    mkdirSync(fallback);
+    writeFileSync(join(fallback, 'index.html'), '<h1>fallback</h1>');
+    const [daemon, daemonPort] = await serve((_req, res) => res.writeHead(401).end());
+    const appPort = await freePort();
+    // The old Caddy, still holding the port.
+    const busy = createServer(() => {});
+    await new Promise<void>((r) => busy.listen(appPort, r));
+    const state: ProxyState = {
+      hostname: 'hlabs',
+      ports: { https: await freePort(), http: await freePort() },
+      onboardingComplete: true,
+      dashboardUpstream: `127.0.0.1:${daemonPort}`,
+      daemon: `127.0.0.1:${daemonPort}`,
+      tailnetHost: null,
+      apps: [{ appId: 'demo', hostname: 'demo', port: appPort, auth: 'hlabs', embed: false }],
+    };
+    const proxy = new CaddyProxy({
+      binary: CADDY,
+      dir: join(dir, 'caddy'),
+      webFallbackDir: fallback,
+      logger: silentLogger(),
+      blockedRetryMs: 300,
+    });
+    try {
+      await proxy.apply(state);
+      await certificatesReady(state.ports.https, ['demo.hlabs.local']);
+      await new Promise<void>((r) => busy.close(() => r()));
+      const deadline = Date.now() + 15_000;
+      for (;;) {
+        const res = await get(appPort, 'hlabs.local').catch(() => null);
+        if (res?.status === 401) break;
+        if (Date.now() > deadline) throw new Error("the app's own port was never served");
+        await new Promise((r) => setTimeout(r, 200));
+      }
+    } finally {
+      await proxy.stop();
+      daemon.close();
+    }
+  }, 30_000);
+});

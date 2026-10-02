@@ -48,7 +48,13 @@ export function nextOrigins(opts: {
   } catch {
     // Not a URL: nothing to add.
   }
-  for (const app of opts.apps) origins.add(`https://${app.hostname}.${local}`);
+  // The name for DNS servers too (D-105).
+  const arpa = `${opts.hostname}.home.arpa`;
+  origins.add(`https://${arpa}`);
+  for (const app of opts.apps) {
+    origins.add(`https://${app.hostname}.${local}`);
+    origins.add(`https://${app.hostname}.${arpa}`);
+  }
   // Its own port, the address it falls back to when its name isn't published (US-APP-05, D-086).
   for (const app of opts.apps) if (app.port !== null) origins.add(`https://${local}:${app.port}`);
   if (opts.tailnet) {

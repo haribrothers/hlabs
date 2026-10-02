@@ -73,4 +73,27 @@ describe('US-SYS-04', () => {
     await d.services!.remote.reconcile();
     expect((d.services!.tailscale as FakeTailscale).config).toEqual({});
   });
+
+  it("signed out on an app's tailnet address: log in on the tailnet dashboard, then back to the app", async () => {
+    const d = await daemonWithAdmin(closers);
+    add(d, 'vaultwarden', 12002);
+    const ts = d.services!.tailscale as FakeTailscale;
+    ts.current = {
+      kind: 'running',
+      tailnet: 'tail9.ts.net',
+      nodeName: 'hari-home',
+      httpsEnabled: true,
+      keyExpiry: null,
+    };
+    await d.mutate('network.remote.connect', { confirmTailnet: true });
+    const res = await fetch(`${d.url}/auth/verify`, {
+      redirect: 'manual',
+      headers: { 'x-forwarded-host': 'hari-home.tail9.ts.net:12002', 'x-forwarded-uri': '/', accept: 'text/html' },
+    });
+    expect(res.status).toBe(302);
+    // Not hlabs.local: that name doesn't resolve away from home.
+    expect(res.headers.get('location')).toBe(
+      `https://hari-home.tail9.ts.net/login?next=${encodeURIComponent('https://hari-home.tail9.ts.net:12002/')}`,
+    );
+  });
 });

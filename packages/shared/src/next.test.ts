@@ -35,6 +35,11 @@ describe('US-AUTH-18', () => {
     expect(safeNext('/files', allowed)).toBe('/files');
   });
 
+  it('allows the home.arpa names too (D-105)', () => {
+    expect(safeNext('https://hlabs.home.arpa/files', allowed)).toBe('https://hlabs.home.arpa/files');
+    expect(safeNext('https://immich.hlabs.home.arpa/photos', allowed)).toBe('https://immich.hlabs.home.arpa/photos');
+  });
+
   it('ignores everything else', () => {
     for (const bad of [
       'https://evil.com/',
@@ -54,6 +59,6 @@ describe('US-AUTH-18', () => {
 
   it('no tailnet: no tailnet addresses; an http dashboard URL (development) adds nothing', () => {
     const local = nextOrigins({ dashboardUrl: 'http://127.0.0.1:5173', hostname: 'den', apps: [], tailnet: null });
-    expect([...local]).toEqual(['https://den.local']);
+    expect([...local]).toEqual(['https://den.local', 'https://den.home.arpa']);
   });
 });

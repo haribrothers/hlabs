@@ -14,7 +14,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { readCookie, SESSION_COOKIE } from '../auth/sessions';
 import type { ServiceHolder, Services } from '../services';
 import { StaticPages, type NoAccessPage } from './static-page';
-import { appHostnameIn, homeDomainOf } from '../network/domains';
+import { appHostnameIn, homeDomainOf, tailnetDashboardUrl, tailnetHost } from '../network/domains';
 
 export const VERIFY_CACHE_MS = 10_000;
 
@@ -148,9 +148,13 @@ export function appForHost(db: HlabsDb, forwardedHost: string) {
 
 /**
  * The dashboard on the name and port the app was reached on: the same home domain (`.local` or `.home.arpa`, D-105),
- * the port 8443 when 443 was taken (D-016), the dashboard's port from an app's own port.
+ * the port 8443 when 443 was taken (D-016), the dashboard's port from an app's own port. An app reached on the
+ * tailnet name goes to the tailnet dashboard (US-SYS-04): the home names don't resolve away from home.
  */
 export function dashboardOrigin(db: HlabsDb, forwardedHost: string): string {
+  const tailnet = tailnetHost(db);
+  if (tailnet && forwardedHost.replace(/:\d+$/, '').toLowerCase() === tailnet.toLowerCase())
+    return tailnetDashboardUrl(db)!;
   const reached = /:(\d+)$/.exec(forwardedHost)?.[1];
   const port = appPortIn(forwardedHost) !== null ? String(getSetting(db, 'network').ports.https) : reached;
   return `https://${homeDomainOf(forwardedHost, getSetting(db, 'hostname'))}${port && port !== '443' ? `:${port}` : ''}`;
