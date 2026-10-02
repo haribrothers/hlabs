@@ -9,12 +9,14 @@ import { peopleCopy as copy } from '../copy/people';
 import { errorLine } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { useNow } from '../lib/use-now';
 
 export function DeleteUserDialog({ user, onClose }: { user: UserSummary; onClose: () => void }) {
   const trpc = useTRPC();
   const client = useTRPCClient();
   const queryClient = useQueryClient();
   const [withFolder, setWithFolder] = useState(false);
+  const now = useNow().getTime();
   const person = useQuery({
     ...trpc.users.get.queryOptions({ userId: user.id }),
     retry: false,
@@ -64,7 +66,7 @@ export function DeleteUserDialog({ user, onClose }: { user: UserSummary; onClose
           {bytes === null ? copy.deleteHomeFolderCounting : copy.deleteHomeFolder(formatBytes(bytes))}
         </label>
         <p className="m-0 text-body-sm text-ink-muted">
-          {withFolder ? copy.trashedHomeFolder : copy.keptHomeFolder(keptHomeFolderName(user.username, Date.now()))}
+          {withFolder ? copy.trashedHomeFolder : copy.keptHomeFolder(keptHomeFolderName(user.username, now))}
         </p>
         {remove.isError ? (
           <p role="alert" className="m-0 text-body-sm text-danger">
