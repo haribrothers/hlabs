@@ -1,6 +1,6 @@
 // The app grid (US-HOME-03): the apps this person can open, in their saved order, each opening in a new tab (or in
 // AppWindow when its manifest asks, phase 2). Arrow keys move between tiles. Admins end with "Install app" from
-// phase 2 (D-036).
+// phase 2 (D-036); members only while they're allowed to install (US-HOME-11, US-ACCT-20).
 import { appTileLook, Plus, iconDefaults } from '@hlabs/icons';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { AppIcon, type AppIconState } from '@hlabs/ui';
@@ -68,18 +68,21 @@ export function tileState(state: HomeApp['state']): AppIconState {
 export function AppGrid({
   apps,
   isAdmin,
+  canInstall = isAdmin,
   progress,
   offline = false,
 }: {
   apps: readonly HomeApp[];
   isAdmin: boolean;
+  /** Admins, and members while "Install apps from the App Store" is on (US-HOME-11, US-ACCT-20). */
+  canInstall?: boolean;
   progress?: ReadonlyMap<string, number>;
   /** The container engine has stopped: every app is offline and its tile can't be used (US-STATE-08). */
   offline?: boolean;
 }) {
   const openApp = useOpenApp(isAdmin);
   const command = useTileCommands(apps);
-  const showInstall = isAdmin && isFeatureEnabled('appStore');
+  const showInstall = canInstall && isFeatureEnabled('appStore');
   if (apps.length === 0 && !showInstall) return null;
   return (
     <ul

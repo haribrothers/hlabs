@@ -1,5 +1,5 @@
 // Invites made through the real InviteDialog, for the people stories (US-ACCT-21…, US-AUTH-23/24).
-import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, type APIRequestContext, type Browser, type Page } from '@playwright/test';
 
 /** Opens Users › Invite someone, applies the choices, presses Done, and returns the link. */
 export async function createInvite(
@@ -39,4 +39,20 @@ export async function createMember(
   });
   expect(res.ok()).toBe(true);
   return { username, password };
+}
+
+/** A new browser signed in as `who` (username and password), on Home. */
+export async function signedInAs(
+  browser: Browser,
+  use: object,
+  baseURL: string,
+  who: { username: string; password: string },
+) {
+  const page = await (await browser.newContext({ ...use, baseURL })).newPage();
+  await page.goto('/login/username');
+  await page.getByLabel('Username').fill(who.username);
+  await page.getByLabel('Password', { exact: true }).fill(who.password);
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page).toHaveURL(`${baseURL}/`);
+  return page;
 }

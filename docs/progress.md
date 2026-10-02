@@ -126,7 +126,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ONB-18 · Set up remote access later (done early so onboarding e2e can walk the remote step; the Connect row, its example address and stopping a login poll come with US-ONB-17)
 - [x] US-AUTH-23 · Open an invite link
 - [x] US-AUTH-24 · Create my account from an invite
-- [ ] US-HOME-11 · See only my shared apps on a member Home
+- [x] US-HOME-11 · See only my shared apps on a member Home (refusing a member's `home.saveLayout` with an app they can't open is tested when `home.saveLayout` is built with Home edit, phase 7)
 - [ ] US-HOME-12 · See my files and shared-apps summary
 - [x] US-ACCT-13 · See everyone who uses hlabs (Reset password and the menu items do nothing until their stories: US-ACCT-14…16)
 - [ ] US-ACCT-14 · Give a member a reset-password link

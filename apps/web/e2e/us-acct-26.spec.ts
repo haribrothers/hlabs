@@ -1,7 +1,7 @@
 // US-ACCT-26 · Access changes apply straight away (first-run instance: an admin and a member, each in a browser).
 import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
-import { createMember } from './invites';
+import { createMember, signedInAs } from './invites';
 import { finishOnboarding } from './onboarding';
 
 test.use({ baseURL: FIRST_RUN_URL });
@@ -16,12 +16,7 @@ test("US-ACCT-26 removing an app takes its tile off the member's open Home withi
   const name = 'Anu';
   const member = await createMember(page, request, FIRST_RUN_URL, { name, apps: ['Shared demo'] });
 
-  const home = await (await browser.newContext({ ...info.project.use, baseURL: FIRST_RUN_URL })).newPage();
-  await home.goto('/login/username');
-  await home.getByLabel('Username').fill(member.username);
-  await home.getByLabel('Password', { exact: true }).fill(member.password);
-  await home.getByRole('button', { name: 'Log in' }).click();
-  await expect(home).toHaveURL(`${FIRST_RUN_URL}/`);
+  const home = await signedInAs(browser, info.project.use, FIRST_RUN_URL, member);
   const tile = home.getByRole('button', { name: 'Open Shared demo' });
   await expect(tile).toBeVisible();
 
