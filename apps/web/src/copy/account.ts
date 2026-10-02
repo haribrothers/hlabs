@@ -1,5 +1,7 @@
 // Settings › Account (09-account-people.md).
 export const accountCopy = {
+  managedBy: (admin: string) => `Apps, users and system settings are managed by ${admin} (admin).`,
+  managedByAdmin: 'Apps, users and system settings are managed by your admin.',
   logOut: 'Log out',
   roles: { admin: 'Admin', member: 'Member' },
   who: (username: string, role: string) => `${username} · ${role}`,

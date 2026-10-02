@@ -142,7 +142,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ACCT-24 · Choose which apps a member can open
 - [x] US-ACCT-25 · Shared folder and live usage for a member (the switches are stored and `auth.me.canSeeUsage` follows them; Files hiding `/shared` comes with Files in phase 5, the Usage tab with phase 4)
 - [x] US-ACCT-26 · Access changes apply straight away
-- [ ] US-ACCT-27 · Member sees a limited Settings
+- [x] US-ACCT-27 · Member sees a limited Settings (Appearance, Notifications and About join the sidebar in phases 7, 9 and 8; the note is above Account as the story says, not at the foot of the sidebar as drawn)
 - [ ] US-ACCT-28 · Member's account page
 - [ ] US-SYS-01 · See how hlabs is reached on the home network
 - [ ] US-SYS-02 · Connect remote access with Tailscale
