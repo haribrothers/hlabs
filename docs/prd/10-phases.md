@@ -11,7 +11,7 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 | 0 | Foundations | 0 |  |
 | 1 | Core, first run and sign in | 69 |  |
 | 2 | Apps | 38 |  |
-| 3 | Remote access and family | 28 |  |
+| 3 | Remote access and family | 29 |  |
 | 4 | Menu-bar app, monitoring and updates | 38 |  |
 | 5 | Backups and Files | 30 |  |
 | 6 | Distribution | 21 | MVP / 1.0 beta |
@@ -271,7 +271,8 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-SYS-03 · Disconnect remote access (P1)
 - US-SYS-04 · See each app's tailnet address (P1)
 - US-SYS-05 · See and change web ports (P1)
-- US-SYS-06 · Use Pi-hole for DNS (P1)
+- US-SYS-06 · Use a local DNS server (P1)
+- US-SYS-41 · Reach hlabs through a subnet router (P2)
 
 ## Phase 4 · Menu-bar app, monitoring and updates
 

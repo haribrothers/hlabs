@@ -14,6 +14,7 @@
 | R-09 | **Tailscale dependency** (account, app installed separately). | Remote access needs a third-party account. | Clearly optional; LAN works without it. |
 | R-10 | **SMB on macOS** needs port 445, which conflicts with macOS File Sharing (P3 FilesShare). | Feature may not work alongside built-in sharing. | Use macOS File Sharing itself on Mac (D-051). |
 | R-11 | **App data owned by container users** (www-data, postgres, root) on Linux. | Removing an app's data ("Remove partial install", US-APP-12's uninstall) can fail with EACCES when the hlabs user doesn't own the files. | US-APP-12 deletes app data through a short-lived container running as root on that folder only, and falls back to reporting what's left. |
+| R-12 | **Tailscale's LocalAPI differs by platform and variant** (macOS App Store, standalone, open-source; Linux operator permission). | Remote access can't publish Serve entries on some installs. | Spike each variant before US-SYS-02 (D-104); show the operator command on Linux; Headscale best effort. |
 
 ## Open questions for Hari
 All answered on 27 Sep 2026:

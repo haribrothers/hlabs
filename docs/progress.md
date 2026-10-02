@@ -149,7 +149,8 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [ ] US-SYS-03 · Disconnect remote access
 - [ ] US-SYS-04 · See each app's tailnet address
 - [ ] US-SYS-05 · See and change web ports
-- [ ] US-SYS-06 · Use Pi-hole for DNS
+- [ ] US-SYS-06 · Use a local DNS server
+- [ ] US-SYS-41 · Reach hlabs through a subnet router
 
 ## Phase 4 · Menu-bar app, monitoring and updates
 
