@@ -16,13 +16,14 @@ import {
   ListRow,
 } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { peopleCopy as copy } from '../copy/people';
 import { daysAgo, timeAgo } from '../lib/relative-time';
 import { useTRPC } from '../lib/trpc';
 import { useIsDesktop } from '../lib/use-media';
 import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
+import { InviteDialog } from './invite-dialog';
 
 const DAY = 86_400_000;
 
@@ -139,11 +140,7 @@ function InviteRow({ invite, now, desktop }: { invite: PendingInvite; now: numbe
           <Mail aria-hidden {...iconDefaults} size={16} />
         </span>
       }
-      title={
-        <span className="font-semibold">
-          {invite.displayName ? copy.inviteFor(invite.displayName) : copy.invitePending}
-        </span>
-      }
+      title={<span className="font-semibold">{copy.invitePending}</span>}
       subtitle={inviteLine(invite, now)}
       trailing={desktop ? actions : undefined}
       below={desktop ? undefined : actions}
@@ -165,11 +162,15 @@ function SkeletonRow() {
 
 /** The "Invite someone" button beside the section title. */
 export function InviteButton() {
+  const [open, setOpen] = useState(false);
   return (
-    <Button size="sm">
-      <Plus aria-hidden {...iconDefaults} size={16} />
-      {copy.invite}
-    </Button>
+    <>
+      <Button size="sm" onClick={() => setOpen(true)}>
+        <Plus aria-hidden {...iconDefaults} size={16} />
+        {copy.invite}
+      </Button>
+      {open ? <InviteDialog onClose={() => setOpen(false)} /> : null}
+    </>
   );
 }
 

@@ -57,7 +57,8 @@ export const users = {
 };
 
 const inviteFields = z.object({
-  displayName: displayNameSchema.optional(),
+  /** "Their name (optional)": empty clears it (US-ACCT-21). */
+  displayName: z.string().trim().max(40).optional(),
   role: roleSchema,
   appIds: z.array(appIdSchema).default([]),
 });

@@ -1,7 +1,7 @@
 ---
 title: People who use hlabs
 description: See everyone who has an account on your hlabs, and the invites still waiting.
-features: [F-ACCT-05]
+features: [F-ACCT-05, F-ACCT-07]
 ---
 
 For admins only.
@@ -21,3 +21,12 @@ Admins can change everything and open every app. Members only see the apps you s
 Someone who has been disabled is shown faded, with a **Disabled** label. They can't log in until an admin enables them again; their account and files are kept.
 
 Invites that haven't been used yet are listed under the people, with when the link was made, how many days it has left and the role it gives. Invites that were used or have expired aren't listed.
+
+## Invite someone
+
+hlabs doesn't send email, so you invite people with a link. In **Settings › Users**, choose **Invite someone**. A link is made straight away; it works once and expires after 7 days.
+
+You can type their name. It's shown on the page they open, and fills in their name when they make their account. Choose **Copy** and send the link however you like: a message, a chat app, or in person.
+
+Choose **Done** when you've shared it. The invite then waits under **People** until it's used. If you choose **Close** without copying the link, the invite is cancelled; once you've copied it, it's kept, because you may already have sent it.
+
