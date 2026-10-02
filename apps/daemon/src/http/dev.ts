@@ -5,6 +5,7 @@ import {
   appSources,
   catalogApps,
   getSetting,
+  invites,
   jobs,
   loginAttempts,
   setSetting,
@@ -285,6 +286,9 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     setSetting(db, 'onboarding', { ...getSetting(db, 'onboarding'), completedAt: null, step: 'account' });
     // As a fresh install: setup leaves the startup switches on (US-SYS-20), whatever an earlier run changed.
     setSetting(db, 'startup', settingsSchemas.startup.parse(undefined));
+    // Nor the people policy (US-ACCT-18…20) or invites left by an earlier run.
+    setSetting(db, 'people', settingsSchemas.people.parse(undefined));
+    db.delete(invites).run();
     if (input.ports) setSetting(db, 'network', { ...getSetting(db, 'network'), ports: input.ports });
     const userId = await createAdmin(db, { ...input, ip: null, phase: config.phase });
     let secret: string | null = null;

@@ -77,7 +77,13 @@ test('US-ACCT-13 member, disabled and invite rows (lists answered with fixed peo
   await expect(people.getByText('@anu · 2FA on · last active yesterday · 4 apps')).toBeVisible();
   await expect(people.getByText('Disabled')).toBeVisible();
   await expect(people.getByText('Link created today · expires in 7 days · Member')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Apps access' })).toHaveCount(2);
+  // Other specs' members may be listed too; the two fixed members have their own buttons.
+  for (const who of ['Anu', 'Ravi'])
+    await expect(
+      people
+        .locator('.hl-list-row', { hasText: `@${who.toLowerCase()} ·` })
+        .getByRole('button', { name: 'Apps access' }),
+    ).toBeVisible();
   if (process.env.HLABS_SHOTS)
     await page.screenshot({ path: `${process.env.HLABS_SHOTS}/users-rows-${info.project.name}.png` });
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);

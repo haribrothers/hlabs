@@ -2,10 +2,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
-import { createMember, signedInAs } from './invites';
+import { createMember, signedInAs, removeFakeApps } from './invites';
 import { ADMIN, finishOnboarding } from './onboarding';
 
 test.use({ baseURL: FIRST_RUN_URL });
+
+// Other specs on this instance count its apps (the finish screen's starter apps).
+test.afterEach(({ request }) => removeFakeApps(request, FIRST_RUN_URL, ['jelly-demo', 'photo-demo']));
 
 test('US-HOME-12 a member sees My files and who shared their apps', async ({ page, request, browser }, info) => {
   await finishOnboarding(page, request);

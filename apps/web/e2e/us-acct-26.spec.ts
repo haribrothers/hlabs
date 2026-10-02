@@ -1,10 +1,13 @@
 // US-ACCT-26 · Access changes apply straight away (first-run instance: an admin and a member, each in a browser).
 import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
-import { createMember, signedInAs } from './invites';
+import { createMember, signedInAs, removeFakeApps } from './invites';
 import { finishOnboarding } from './onboarding';
 
 test.use({ baseURL: FIRST_RUN_URL });
+
+// Other specs on this instance count its apps (the finish screen's starter apps).
+test.afterEach(({ request }) => removeFakeApps(request, FIRST_RUN_URL, ['shared-demo']));
 
 test("US-ACCT-26 removing an app takes its tile off the member's open Home within 2 seconds", async ({
   page,

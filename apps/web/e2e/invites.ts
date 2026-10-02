@@ -56,3 +56,8 @@ export async function signedInAs(
   await expect(page).toHaveURL(`${baseURL}/`);
   return page;
 }
+
+/** Takes away fake apps a spec added to a first-run instance (other specs count its apps). */
+export async function removeFakeApps(request: APIRequestContext, baseURL: string, ids: string[]) {
+  for (const id of ids) await request.post(`${baseURL}/dev/fake-app`, { data: { id, remove: true } });
+}
