@@ -52,16 +52,58 @@ export function inviteLine(i: PendingInvite, now: number): string {
 }
 
 function MoreOptions({ user, size }: { user: UserSummary; size: 'sm' | 'md' }) {
+  const client = useTRPCClient();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const name = user.displayName;
+  const refresh = () => queryClient.invalidateQueries({ queryKey: trpc.users.list.queryKey() });
+  const changeRole = () => {
+    const role = user.role === 'admin' ? 'member' : 'admin';
+    void confirm({
+      title: role === 'admin' ? copy.makeAdminTitle(name) : copy.makeMemberTitle(name),
+      body: role === 'admin' ? copy.makeAdminBody(name) : copy.makeMemberBody(name),
+      confirmLabel: role === 'admin' ? copy.makeAdmin : copy.makeMember,
+      onConfirm: async () => {
+        await client.users.updateRole.mutate({ userId: user.id, role });
+        await refresh();
+        showToast({ tone: 'success', title: copy.roleChanged(name, copy.roles[role]) });
+      },
+    });
+  };
+  const disable = () =>
+    void confirm({
+      title: copy.disableTitle(name),
+      body: copy.disableBody,
+      confirmLabel: copy.disable,
+      tone: 'danger',
+      onConfirm: async () => {
+        await client.users.disable.mutate({ userId: user.id });
+        await refresh();
+        showToast({ tone: 'success', title: copy.disabledToast(name) });
+      },
+    });
+  const enable = () =>
+    void client.users.enable.mutate({ userId: user.id }).then(
+      async () => {
+        await refresh();
+        showToast({ tone: 'success', title: copy.enabledToast(name) });
+      },
+      () => showToast({ tone: 'danger', title: copy.actionFailed }),
+    );
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" size={size} aria-label={copy.moreOptions(user.displayName)}>
+        <Button variant="secondary" size={size} aria-label={copy.moreOptions(name)}>
           <MoreHorizontal aria-hidden {...iconDefaults} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-48">
-        <DropdownMenuItem>{user.role === 'admin' ? copy.makeMember : copy.makeAdmin}</DropdownMenuItem>
-        <DropdownMenuItem>{user.disabled ? copy.enable : copy.disable}</DropdownMenuItem>
+        <DropdownMenuItem onSelect={changeRole}>
+          {user.role === 'admin' ? copy.makeMember : copy.makeAdmin}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={user.disabled ? enable : disable}>
+          {user.disabled ? copy.enable : copy.disable}
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem danger>{copy.delete}</DropdownMenuItem>
       </DropdownMenuContent>

@@ -1,6 +1,6 @@
 import { hlabsError, type AppHandlers } from '@hlabs/api';
 import type { DaemonContext } from '../context';
-import { getUser, listUsers, setAppAccess } from '../users/users';
+import { disableUser, enableUser, getUser, listUsers, setAppAccess, updateRole } from '../users/users';
 
 /** The signed-in admin, for the audit log. */
 const who = (ctx: DaemonContext) => {
@@ -12,6 +12,18 @@ const who = (ctx: DaemonContext) => {
 export const users: AppHandlers<DaemonContext>['users'] = {
   list: (_input, ctx) => ({ users: listUsers(ctx.services.db) }),
   get: ({ userId }, ctx) => getUser(ctx.services.db, userId),
+  updateRole: (input, ctx) => {
+    updateRole(ctx.services, input, who(ctx));
+    return { ok: true as const };
+  },
+  disable: ({ userId }, ctx) => {
+    disableUser(ctx.services, userId, who(ctx));
+    return { ok: true as const };
+  },
+  enable: ({ userId }, ctx) => {
+    enableUser(ctx.services.db, userId, who(ctx));
+    return { ok: true as const };
+  },
   setAppAccess: (input, ctx) => {
     setAppAccess(ctx.services, input, who(ctx));
     return { ok: true as const };

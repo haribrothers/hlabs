@@ -2,7 +2,8 @@
 import { hlabsError, type UserSummary } from '@hlabs/api';
 import { appAccess, apps, auditLog, sessions, users, userTotp, type HlabsDb } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
-import { asc, count, eq, inArray, isNotNull, max } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNotNull, isNull, max, ne } from 'drizzle-orm';
+import type { SessionService } from '../auth/sessions';
 import type { EventBus } from '../events/bus';
 
 /**
@@ -129,4 +130,71 @@ export function setAppAccess(
       .run();
   });
   deps.bus.emit('access.changed', { userId: input.userId }, { kind: 'user', userId: input.userId });
+}
+
+type Tx = Parameters<Parameters<HlabsDb['transaction']>[0]>[0];
+
+/** 04 invariant 1: some enabled admin other than `userId` remains. */
+function anotherEnabledAdmin(tx: Tx, userId: string): boolean {
+  return (
+    tx
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.role, 'admin'), isNull(users.disabledAt), ne(users.id, userId)))
+      .get() !== undefined
+  );
+}
+
+function audit(tx: Tx, who: Who, action: string, target: string, detail: Record<string, unknown> | null, now: number) {
+  tx.insert(auditLog)
+    .values({ id: ulid(), at: now, userId: who.userId, action, target, detailJson: detail, ip: who.ip })
+    .run();
+}
+
+/**
+ * Make someone an admin or a member (US-ACCT-15). Their app access is kept (and ignored while they're an admin).
+ * Never leaves hlabs without an enabled admin (LAST_ADMIN). What they can open changes, so their dashboards refetch.
+ */
+export function updateRole(
+  deps: { db: HlabsDb; bus: EventBus },
+  input: { userId: string; role: 'admin' | 'member' },
+  who: Who,
+  now = Date.now(),
+) {
+  const user = userRow(deps.db, input.userId);
+  if (user.role === input.role) return;
+  deps.db.transaction((tx) => {
+    if (input.role === 'member' && user.disabledAt === null && !anotherEnabledAdmin(tx, user.id))
+      throw hlabsError('LAST_ADMIN');
+    tx.update(users).set({ role: input.role }).where(eq(users.id, user.id)).run();
+    audit(tx, who, 'users.updateRole', user.id, { from: user.role, to: input.role }, now);
+  });
+  deps.bus.emit('access.changed', { userId: user.id }, { kind: 'user', userId: user.id });
+}
+
+/** Block someone for now (US-ACCT-15): every session ends, and logging in fails as a wrong password would. */
+export function disableUser(
+  deps: { db: HlabsDb; sessions: SessionService },
+  userId: string,
+  who: Who,
+  now = Date.now(),
+) {
+  const user = userRow(deps.db, userId);
+  if (user.disabledAt !== null) return;
+  deps.db.transaction((tx) => {
+    if (user.role === 'admin' && !anotherEnabledAdmin(tx, user.id)) throw hlabsError('LAST_ADMIN');
+    tx.update(users).set({ disabledAt: now }).where(eq(users.id, user.id)).run();
+    audit(tx, who, 'users.disable', user.id, null, now);
+  });
+  deps.sessions.revoke({ userId: user.id }, now);
+}
+
+/** Let someone back in with their old password (US-ACCT-15). */
+export function enableUser(db: HlabsDb, userId: string, who: Who, now = Date.now()) {
+  const user = userRow(db, userId);
+  if (user.disabledAt === null) return;
+  db.transaction((tx) => {
+    tx.update(users).set({ disabledAt: null }).where(eq(users.id, user.id)).run();
+    audit(tx, who, 'users.enable', user.id, null, now);
+  });
 }

@@ -53,3 +53,12 @@ Changes apply straight away. An app you take away disappears from their Home scr
 
 Admins can open every app, so they have no **Apps access** button.
 
+## Change someone's role, or disable them
+
+Choose **•••** next to someone for more options:
+
+- **Make admin** gives them full control: they can change everything and open every app. **Make member** takes it back; the apps you'd shared with them are remembered.
+- **Disable** logs them out everywhere and stops them logging in, without deleting anything. **Enable** lets them back in with their old password.
+
+hlabs always needs at least one admin who can log in, so it won't let you disable or demote the last one.
+

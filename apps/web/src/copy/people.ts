@@ -19,6 +19,17 @@ export const peopleCopy = {
   disable: 'Disable',
   enable: 'Enable',
   delete: 'Delete…',
+  makeAdminTitle: (name: string) => `Make ${name} an admin?`,
+  makeAdminBody: (name: string) => `${name} will be able to change everything.`,
+  makeMemberTitle: (name: string) => `Make ${name} a member?`,
+  makeMemberBody: (name: string) => `${name} will only open the apps you share with them.`,
+  disableTitle: (name: string) => `Disable ${name}?`,
+  disableBody:
+    "They're logged out everywhere and can't log in until you enable them. Their account and files are kept.",
+  roleChanged: (name: string, role: string) => `${name} is now ${role === 'Admin' ? 'an admin' : 'a member'}`,
+  disabledToast: (name: string) => `${name} is disabled`,
+  enabledToast: (name: string) => `${name} can log in again`,
+  actionFailed: "Couldn't make that change. Try again.",
   invitePending: 'Invite pending',
   inviteLine: (created: string, days: number, role: string) =>
     `Link created ${created} · expires in ${days === 1 ? '1 day' : `${days} days`} · ${role}`,

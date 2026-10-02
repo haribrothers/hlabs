@@ -109,7 +109,7 @@ export const errorCopy = {
       body: 'Use lowercase letters, numbers and dashes, starting with a letter.',
     }),
     USERNAME_TAKEN: () => ({ title: 'That username is taken', body: 'Choose another one.' }),
-    LAST_ADMIN: () => ({ title: 'hlabs needs an admin', body: 'Make someone else an admin first.' }),
+    LAST_ADMIN: () => ({ title: 'hlabs needs at least one admin', body: 'Make someone else an admin first.' }),
     INVITE_INVALID: () => ({
       title: "This invite doesn't work anymore",
       body: 'Ask the person who invited you for a new link.',
