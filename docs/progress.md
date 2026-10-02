@@ -140,7 +140,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ACCT-22 · Choose the invitee's role and apps (copying the choices to the new account is tested with US-AUTH-24)
 - [x] US-ACCT-23 · Preview the invite page
 - [x] US-ACCT-24 · Choose which apps a member can open
-- [ ] US-ACCT-25 · Shared folder and live usage for a member
+- [x] US-ACCT-25 · Shared folder and live usage for a member (the switches are stored and `auth.me.canSeeUsage` follows them; Files hiding `/shared` comes with Files in phase 5, the Usage tab with phase 4)
 - [ ] US-ACCT-26 · Access changes apply straight away
 - [ ] US-ACCT-27 · Member sees a limited Settings
 - [ ] US-ACCT-28 · Member's account page

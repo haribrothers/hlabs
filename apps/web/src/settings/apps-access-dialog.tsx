@@ -1,6 +1,6 @@
 // AppsAccess (US-ACCT-24, US-ACCT-25): what a member can open, saved together with Save; Cancel or Escape keeps
 // what they had.
-import { Avatar, avatarColorFor, Button, ModalDialog } from '@hlabs/ui';
+import { Avatar, avatarColorFor, Button, List, ListRow, ModalDialog, Switch } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -18,9 +18,14 @@ export function AppsAccessDialog({ userId, onClose }: { userId: string; onClose:
   // What they can open now, until a switch is changed here.
   const [edited, setAppIds] = useState<ReadonlySet<string> | null>(null);
   const appIds = edited ?? (person.data ? new Set(person.data.appIds) : null);
+  const [shared, setShared] = useState<boolean | null>(null);
+  const [usage, setUsage] = useState<boolean | null>(null);
+  const canSeeShared = shared ?? person.data?.canSeeShared ?? false;
+  const canSeeUsage = usage ?? person.data?.canSeeUsage ?? false;
 
   const save = useMutation({
-    mutationFn: () => client.users.setAppAccess.mutate({ userId, appIds: [...(appIds ?? [])] }),
+    mutationFn: () =>
+      client.users.setAppAccess.mutate({ userId, appIds: [...(appIds ?? [])], canSeeShared, canSeeUsage }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: trpc.users.list.queryKey() });
       showToast({ tone: 'success', title: copy.saved });
@@ -66,21 +71,37 @@ export function AppsAccessDialog({ userId, onClose }: { userId: string; onClose:
         </>
       }
     >
-      {!installed || appIds === null ? null : installed.length === 0 ? (
-        <p className="m-0 text-body">
-          {copy.noAppsYet}.{' '}
-          <Link to="/store" className="hl-focus rounded-xs font-semibold text-accent-link no-underline">
-            {copy.openAppStore}
-          </Link>
-        </p>
-      ) : (
-        <AppSwitchList
-          label={<span className="sr-only">{copy.accessApps(name)}</span>}
-          apps={installed}
-          checked={appIds}
-          onToggle={toggle}
-          hint={(app) => (app.ownLogin ? copy.ownLoginToo : undefined)}
-        />
+      {!installed || appIds === null ? null : (
+        <div className="flex flex-col gap-4">
+          {installed.length === 0 ? (
+            <p className="m-0 text-body">
+              {copy.noAppsYet}.{' '}
+              <Link to="/store" className="hl-focus rounded-xs font-semibold text-accent-link no-underline">
+                {copy.openAppStore}
+              </Link>
+            </p>
+          ) : (
+            <AppSwitchList
+              label={<span className="sr-only">{copy.accessApps(name)}</span>}
+              apps={installed}
+              checked={appIds}
+              onToggle={toggle}
+              hint={(app) => (app.ownLogin ? copy.ownLoginToo : undefined)}
+            />
+          )}
+          {/* US-ACCT-25: saved with the apps, in the same request. */}
+          <List label={<span className="sr-only">{copy.memberOptions(name)}</span>}>
+            <ListRow
+              title={copy.seeShared}
+              subtitle={copy.seeSharedHint}
+              trailing={<Switch aria-label={copy.seeShared} checked={canSeeShared} onChange={setShared} />}
+            />
+            <ListRow
+              title={copy.seeUsage}
+              trailing={<Switch aria-label={copy.seeUsage} checked={canSeeUsage} onChange={setUsage} />}
+            />
+          </List>
+        </div>
       )}
     </ModalDialog>
   );

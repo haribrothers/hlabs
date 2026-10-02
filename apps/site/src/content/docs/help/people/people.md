@@ -44,5 +44,10 @@ Each invite that hasn't been used yet shows when its link was made, how many day
 
 Family members only see and open the apps you share with them. In **Settings › Users**, choose **Apps access** next to a member, turn apps on or off, and choose **Save**. Apps you don't share aren't on their Home screen. Some apps, like Vaultwarden, also ask people to log in to the app itself; they're marked "Uses its own login too".
 
+Below the apps there are two more switches, saved with them:
+
+- **See the Shared folder in Files**: the folder everyone can share files in. Each person's own Home folder is always private, whatever you choose.
+- **See live usage**: the Usage page with this computer's CPU, memory, storage and network. It also needs **See live usage** to be on for all members in **Users** (see below).
+
 Admins can open every app, so they have no **Apps access** button.
 

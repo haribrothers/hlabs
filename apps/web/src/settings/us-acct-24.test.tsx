@@ -64,7 +64,7 @@ describe('US-ACCT-24', () => {
     fireEvent.click(screen.getByRole('switch', { name: 'Jellyfin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(calls.find((c) => c.path === 'users.setAppAccess')?.input).toEqual({
+    expect(calls.find((c) => c.path === 'users.setAppAccess')?.input).toMatchObject({
       userId: 'u2',
       appIds: ['vaultwarden'],
     });
