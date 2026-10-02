@@ -22,7 +22,7 @@ function open() {
           name: 'Jellyfin',
           state: 'running',
           embed: true,
-          urls: { local: 'https://jellyfin.hlabs.local', tailnet: null },
+          urls: { local: 'https://jellyfin.hlabs.local', tailnet: null, port: null },
         }),
       'events.stream': () => new Promise(() => {}),
       'auth.me': fakeMe({ role: 'admin' }),

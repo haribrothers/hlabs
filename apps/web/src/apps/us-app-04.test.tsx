@@ -30,7 +30,7 @@ function open(
     state,
     startedAt,
     engineRunning,
-    urls: { local: 'https://vaultwarden.hlabs.local', tailnet: null },
+    urls: { local: 'https://vaultwarden.hlabs.local', tailnet: null, port: null },
   });
   let publish!: (event: unknown) => void;
   const stream = () => new Promise((r) => (publish = r));

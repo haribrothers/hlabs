@@ -18,7 +18,7 @@ const jellyfin = appDetail({
   embed: true,
   ownLogin: false,
   address: 'jellyfin.hlabs.local',
-  urls: { local: 'https://jellyfin.hlabs.local', tailnet: 'https://hlabs.tail1234.ts.net:14004' },
+  urls: { local: 'https://jellyfin.hlabs.local', tailnet: 'https://hlabs.tail1234.ts.net:14004', port: null },
   webPath: '/web/',
 });
 
@@ -105,7 +105,7 @@ describe('US-APP-01', () => {
       icon: { logoUrl: null, gradient: null, fallback: null },
       embed,
       ownLogin: false,
-      urls: { local: `https://${id}.hlabs.local`, tailnet: null },
+      urls: { local: `https://${id}.hlabs.local`, tailnet: null, port: null },
     });
     const { router } = renderScreen(
       () => <AppGrid apps={[tile('jellyfin', true), tile('gitea', false)]} isAdmin={false} />,

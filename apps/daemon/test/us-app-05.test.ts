@@ -40,11 +40,15 @@ class FakeChild extends EventEmitter implements Child {
 describe('US-APP-05', () => {
   it("the app's address is its name; while the name can't be published, https://hlabs.local:<port>", async () => {
     const t = await installed();
-    expect(await t.urls()).toEqual({ local: 'https://vaultwarden.hlabs.local', tailnet: null });
+    expect(await t.urls()).toEqual({ local: 'https://vaultwarden.hlabs.local', tailnet: null, port: t.port });
     (t.s.mdns as NoopMdnsPublisher).failing.add('vaultwarden.hlabs.local');
-    expect(await t.urls()).toEqual({ local: `https://hlabs.local:${t.port}`, tailnet: null });
+    expect(await t.urls()).toEqual({ local: `https://hlabs.local:${t.port}`, tailnet: null, port: t.port });
     const list = (await t.d.query('apps.list')) as { result: { data: { apps: Array<{ urls: unknown }> } } };
-    expect(list.result.data.apps[0]!.urls).toEqual({ local: `https://hlabs.local:${t.port}`, tailnet: null });
+    expect(list.result.data.apps[0]!.urls).toEqual({
+      local: `https://hlabs.local:${t.port}`,
+      tailnet: null,
+      port: t.port,
+    });
   });
 
   it('with remote access on, the tailnet address is the tailnet app port on the dashboard tailnet name (D-012, D-110)', async () => {
@@ -53,6 +57,7 @@ describe('US-APP-05', () => {
     expect(await t.urls()).toEqual({
       local: 'https://vaultwarden.hlabs.local',
       tailnet: `https://hlabs.tail1234.ts.net:${t.port + 2000}`,
+      port: t.port,
     });
   });
 

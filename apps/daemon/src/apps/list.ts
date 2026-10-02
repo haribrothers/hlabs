@@ -79,6 +79,7 @@ export function appSummary(
           ? `https://${app.hostname}.${hostname}.local`
           : `https://${hostname}.local:${app.portFallback}`,
       tailnet: tailnet && app.portFallback !== null ? `https://${tailnet}:${tailnetAppPort(app.portFallback)}` : null,
+      port: app.portFallback,
     },
   };
 }

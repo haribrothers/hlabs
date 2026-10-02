@@ -63,4 +63,17 @@ describe('US-AUTH-18', () => {
     const local = nextOrigins({ dashboardUrl: 'http://127.0.0.1:5173', hostname: 'den', apps: [], tailnet: null });
     expect([...local]).toEqual(['https://den.local', 'https://den.home.arpa']);
   });
+
+  it("allows this computer's LAN address: the dashboard and each app's own port there (US-SYS-41)", () => {
+    const lan = nextOrigins({
+      dashboardUrl: 'https://hlabs.local',
+      hostname: 'hlabs',
+      apps: [{ hostname: 'immich', port: 12001 }],
+      tailnet: null,
+      lanAddresses: ['10.85.0.10'],
+    });
+    expect(safeNext('https://10.85.0.10:12001/photos', lan)).toBe('https://10.85.0.10:12001/photos');
+    expect(safeNext('https://10.85.0.10/files', lan)).toBe('https://10.85.0.10/files');
+    expect(safeNext('https://10.85.0.11:12001/', lan)).toBe('/');
+  });
 });

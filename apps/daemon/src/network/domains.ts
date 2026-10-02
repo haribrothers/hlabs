@@ -22,10 +22,12 @@ export function appHostnameIn(host: string, hostname: string): string | null {
   return null;
 }
 
-/** Which home domain a host is on (`hlabs.home.arpa`, `x.hlabs.home.arpa` → the home.arpa one), else `.local`. */
+/** Which home domain a host is on (`x.hlabs.home.arpa` → the home.arpa one; an IP address → itself), else `.local`. */
 export function homeDomainOf(host: string, hostname: string): string {
   const [local, dns] = homeDomains(hostname);
   const bare = host.replace(/:\d+$/, '').toLowerCase();
+  // Reached by this computer's address (through a subnet router, US-SYS-41): the dashboard is at that address.
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(bare)) return bare;
   return bare === dns || bare.endsWith(`.${dns}`) ? dns : local;
 }
 

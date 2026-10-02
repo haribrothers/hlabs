@@ -39,6 +39,10 @@ export function nextOrigins(opts: {
   tailnetNode?: string | null;
   /** The dashboard's tailnet port: 443, or 8443 after a clash (D-103). */
   tailnetDashboardPort?: number;
+  /** This computer's LAN addresses: the dashboard and each app's own port there (US-SYS-41). */
+  lanAddresses?: readonly string[];
+  /** The dashboard's HTTPS port at those addresses (443, or 8443 after a clash, D-016). */
+  httpsPort?: number;
 }): Set<string> {
   const origins = new Set<string>();
   const local = `${opts.hostname}.local`;
@@ -58,6 +62,11 @@ export function nextOrigins(opts: {
   }
   // Its own port, the address it falls back to when its name isn't published (US-APP-05, D-086).
   for (const app of opts.apps) if (app.port !== null) origins.add(`https://${local}:${app.port}`);
+  for (const ip of opts.lanAddresses ?? []) {
+    const port = opts.httpsPort ?? 443;
+    origins.add(`https://${ip}${port === 443 ? '' : `:${port}`}`);
+    for (const app of opts.apps) if (app.port !== null) origins.add(`https://${ip}:${app.port}`);
+  }
   if (opts.tailnet) {
     const tailnetHost = `${opts.tailnetNode ?? opts.hostname}.${opts.tailnet.replace(/\.ts\.net$/, '')}.ts.net`;
     const port = opts.tailnetDashboardPort ?? 443;

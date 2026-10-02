@@ -114,10 +114,11 @@ function appUnavailable(daemon: string, hosts?: string[]) {
 
 /**
  * An app on its own port, under any name (D-086): `https://hlabs.local:<port>` when its name can't be published
- * (US-APP-05), and its tailnet address. TLS with the dashboard's certificate.
+ * (US-APP-05), its tailnet address, and `https://<LAN IP>:<port>` (US-SYS-41). TLS with the dashboard's certificate;
+ * a browser that sends no name (an IP address) gets the LAN address's.
  */
-function appPortServer(app: AppRoute, hostname: string, daemon: string, ancestors: string[]) {
-  const domain = homeDomains(hostname)[0];
+function appPortServer(app: AppRoute, hostname: string, daemon: string, ancestors: string[], lan: string[]) {
+  const domain = lan[0] ?? homeDomains(hostname)[0];
   const { match: _host, ...route } = appRoute(app, hostname, daemon, ancestors);
   return {
     listen: [`:${app.port}`],
@@ -140,7 +141,7 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
   const httpsPort = state.ports.https === 443 ? '' : `:${state.ports.https}`;
   // Where the dashboard runs, the only pages that may frame an app.
   const ancestors = [
-    ...domains.map((d) => `https://${d}${httpsPort}`),
+    ...dashboardHosts.map((d) => `https://${d}${httpsPort}`),
     ...(state.tailnetHost ? [`https://${state.tailnetHost}`] : []),
   ];
 
@@ -231,7 +232,10 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
           ...(opts.appPorts === false
             ? {}
             : Object.fromEntries(
-                state.apps.map((a) => [`app-${a.appId}`, appPortServer(a, state.hostname, state.daemon, ancestors)]),
+                state.apps.map((a) => [
+                  `app-${a.appId}`,
+                  appPortServer(a, state.hostname, state.daemon, ancestors, lan),
+                ]),
               )),
         },
       },

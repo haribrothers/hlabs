@@ -51,8 +51,13 @@ export const homeAppSchema = z.object({
   urls: z.object({
     /** `https://<app>.<hostname>.local` */
     local: z.string(),
-    /** `https://<hostname>.<tailnet>.ts.net:<port>` when remote access is on (D-012). */
+    /** `https://<hostname>.<tailnet>.ts.net:<port + 2000>` when remote access is on (D-012, D-110). */
     tailnet: z.string().nullable(),
+    /**
+     * Its own port (12000–12999), served under any name: the dashboard opened at an address like
+     * `https://192.168.1.20` opens the app at `https://192.168.1.20:<port>` (US-SYS-41).
+     */
+    port: z.number().int().nullable(),
   }),
 });
 

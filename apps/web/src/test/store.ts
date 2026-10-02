@@ -86,7 +86,7 @@ export const appDetail = (extra: Partial<AppDetail> = {}): AppDetail => ({
   embed: false,
   ownLogin: false,
   webPath: '/',
-  urls: { local: 'https://immich.hlabs.local', tailnet: null },
+  urls: { local: 'https://immich.hlabs.local', tailnet: null, port: null },
   engineRunning: true,
   startedAt: null,
   dataFolder: '~/hlabs/app-data/app',

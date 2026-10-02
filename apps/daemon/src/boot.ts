@@ -33,7 +33,7 @@ import { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
 import { ChildRegistry } from './platform/children';
-import { createMdnsPublisher, lanAddress } from './mdns/publisher';
+import { createMdnsPublisher, lanAddress, lanAddresses } from './mdns/publisher';
 import { DNS_RETRY_MS, DnsService } from './network/dns';
 import { RemoteService } from './network/remote';
 import { FakeTailscale } from './tailscale/fake';
@@ -383,6 +383,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
         tailnet: getSetting(db, 'remote').tailnetName,
         tailnetNode: getSetting(db, 'remote').nodeName,
         tailnetDashboardPort: getSetting(db, 'remote').dashboardPort,
+        lanAddresses: lanAddresses(),
+        httpsPort: getSetting(db, 'network').ports.https,
       }),
     ),
     notifications,

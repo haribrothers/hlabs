@@ -1,5 +1,5 @@
 // US-SYS-41 · Reach hlabs through a subnet router (server side, D-107).
-import { auditLog, getSetting, setSetting, users } from '@hlabs/db';
+import { apps, auditLog, getSetting, setSetting, users } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dashboardOrigins } from '../src/http/dashboard-origins';
@@ -70,5 +70,29 @@ describe('US-SYS-41', () => {
     expect(dashboardOrigins('https://hlabs.local', db, () => ['10.85.0.10'])).toContain('https://10.85.0.10');
     setSetting(db, 'network', { ...getSetting(db, 'network'), ports: { https: 8443, http: 8080 } });
     expect(dashboardOrigins('https://hlabs.local', db, () => ['10.85.0.10'])).toContain('https://10.85.0.10:8443');
+  });
+
+  it("signed out at an app's own port on this computer's address: log in at that address, then back (D-110 port)", async () => {
+    const d = await daemonWithAdmin(closers);
+    d.services!.db.insert(apps)
+      .values({
+        id: 'immich',
+        version: '1',
+        state: 'running',
+        hostname: 'immich',
+        portFallback: 12001,
+        installedAt: 1,
+        updatedAt: 1,
+      })
+      .run();
+    const res = await fetch(`${d.url}/auth/verify`, {
+      redirect: 'manual',
+      headers: { 'x-forwarded-host': '10.85.0.10:12001', 'x-forwarded-uri': '/', accept: 'text/html' },
+    });
+    expect(res.headers.get('location')).toBe(
+      `https://10.85.0.10/login?next=${encodeURIComponent('https://10.85.0.10:12001/')}`,
+    );
+    const list = (await d.query('apps.list')).result!.data.apps as Array<{ urls: { port: number | null } }>;
+    expect(list[0]!.urls.port).toBe(12001);
   });
 });

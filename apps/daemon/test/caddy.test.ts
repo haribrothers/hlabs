@@ -136,6 +136,19 @@ describe('buildCaddyConfig', () => {
     expect(server.tls_connection_policies).toEqual([{ default_sni: '10.85.0.10' }]);
     // Without one, nothing changes.
     expect(config.apps.http.servers.https.tls_connection_policies).toBeUndefined();
+    // Apps on their own port at that address get its certificate too, and the dashboard there may frame them.
+    const appServer = c.apps.http.servers['app-immich'];
+    expect(appServer.tls_connection_policies).toEqual([{ default_sni: '10.85.0.10' }]);
+    const embedded = buildCaddyConfig(
+      state({
+        lanAddresses: ['10.85.0.10'],
+        apps: [{ appId: 'immich', hostname: 'immich', port: 12000, auth: 'hlabs', embed: true }],
+      }),
+      paths,
+    ) as Json;
+    expect(JSON.stringify(embedded.apps.http.servers['app-immich'])).toContain(
+      'frame-ancestors https://hlabs.local https://hlabs.home.arpa https://10.85.0.10',
+    );
   });
 
   it('keeps the admin API on a unix socket', () => {

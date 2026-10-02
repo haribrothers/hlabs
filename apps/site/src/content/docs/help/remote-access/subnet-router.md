@@ -18,6 +18,8 @@ hlabs then leaves Tailscale alone and lists the dashboard's addresses that work 
 - this computer's address on your network, such as `https://192.168.1.20`, and
 - `https://hlabs.home.arpa`, if hlabs keeps its names in a local DNS server (see [Use your own DNS server](/help/remote-access/dns-server/)).
 
+Apps you open from the dashboard at that address open at the same address with their own port, such as `https://192.168.1.20:12001`.
+
 Invite and reset-password links use the home-network address in this mode.
 
 ## Make the names work from away
