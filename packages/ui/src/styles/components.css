@@ -1108,6 +1108,14 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    max-height: calc(100dvh - 2 * var(--space-4));
+  }
+  /* A long body (a list of apps) scrolls between the title and the buttons. The padding keeps focus rings unclipped. */
+  .hl-dialog-modal > .hl-dialog-body {
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--space-1);
+    margin: calc(-1 * var(--space-1));
   }
   /* The search panel (Spotlight): centred near the top, its list scrolling inside. */
   .hl-command {

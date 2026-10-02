@@ -1,12 +1,15 @@
 // InviteDialog (US-ACCT-21…23): opening it makes a pending invite straight away (Member, no apps) and shows its link.
 // Changes save as they're made, so the same link always reflects them. Done keeps the invite; Close (or Escape)
 // revokes it unless the link was copied, because then it may already have been sent.
-import { Button, ModalDialog, TextField } from '@hlabs/ui';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button, ChoiceList, ModalDialog, TextField } from '@hlabs/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { peopleCopy as copy } from '../copy/people';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { AppSwitchList } from './app-switch-list';
+
+type Role = 'member' | 'admin';
 
 /** How long typing in "Their name" waits before it's saved. */
 const NAME_SAVE_DELAY_MS = 500;
@@ -24,6 +27,31 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
   const everCopied = useRef(false);
   const closing = useRef<'keep' | 'revoke' | null>(null);
   const started = useRef(false);
+  const [role, setRole] = useState<Role>('member');
+  const [appIds, setAppIds] = useState<ReadonlySet<string>>(new Set());
+  const apps = useQuery({ ...trpc.apps.list.queryOptions(), retry: false });
+  // Role and app changes save one after another, so the last choice is the one kept.
+  const saves = useRef<Promise<unknown>>(Promise.resolve());
+  const saveChoice = (change: { role?: Role; appIds?: string[] }) => {
+    if (!invite) return;
+    const { inviteId } = invite;
+    saves.current = saves.current.then(() =>
+      client.invites.update
+        .mutate({ inviteId, ...change })
+        .catch(() => showToast({ tone: 'danger', title: copy.saveFailed })),
+    );
+  };
+  const chooseRole = (next: Role) => {
+    setRole(next);
+    saveChoice({ role: next });
+  };
+  const toggleApp = (appId: string, on: boolean) => {
+    const next = new Set(appIds);
+    if (on) next.add(appId);
+    else next.delete(appId);
+    setAppIds(next);
+    saveChoice({ appIds: [...next] });
+  };
 
   const refreshList = () => void queryClient.invalidateQueries({ queryKey: trpc.invites.list.queryKey() });
   const revoke = (inviteId: string) =>
@@ -81,6 +109,7 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
 
   const done = async () => {
     closing.current = 'keep';
+    await saves.current;
     if (invite && name !== savedName.current)
       await client.invites.update.mutate({ inviteId: invite.inviteId, displayName: name }).catch(() => undefined);
     refreshList();
@@ -122,6 +151,28 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
+        <div className="hl-list">
+          <span className="hl-list-label" aria-hidden>
+            {copy.role}
+          </span>
+          <ChoiceList<Role>
+            label={copy.role}
+            className="grid grid-cols-2"
+            value={role}
+            onChange={chooseRole}
+            options={[
+              { value: 'member', title: copy.roles.member, subtitle: copy.roleMember },
+              { value: 'admin', title: copy.roles.admin, subtitle: copy.roleAdmin },
+            ]}
+          />
+        </div>
+        {role === 'admin' ? (
+          <p className="m-0 text-body text-ink-muted">{copy.adminsOpenEverything}</p>
+        ) : apps.data && apps.data.apps.length === 0 ? (
+          <p className="m-0 text-body text-ink-muted">{copy.noAppsYet}</p>
+        ) : apps.data ? (
+          <AppSwitchList label={copy.appsTheyCanOpen} apps={apps.data.apps} checked={appIds} onToggle={toggleApp} />
+        ) : null}
         <section aria-labelledby="invite-link-label" className="flex flex-col gap-2 rounded-md bg-surface-row p-4">
           <span id="invite-link-label" className="text-footnote font-semibold text-ink">
             {copy.inviteLink}

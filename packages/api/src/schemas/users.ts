@@ -66,7 +66,16 @@ const inviteFields = z.object({
 export const invites = {
   create: io(inviteFields, z.object({ inviteId: idSchema, url: z.string(), expiresAt: z.number() })),
   list: io(empty, z.object({ invites: z.array(pendingInviteSchema) })),
-  update: io(inviteFields.partial().extend({ inviteId: idSchema }), ok),
+  // No defaults here: a field that isn't sent stays as it is.
+  update: io(
+    z.object({
+      inviteId: idSchema,
+      displayName: inviteFields.shape.displayName,
+      role: roleSchema.optional(),
+      appIds: z.array(appIdSchema).optional(),
+    }),
+    ok,
+  ),
   revoke: io(z.object({ inviteId: idSchema }), ok),
   inspect: io(z.object({ token: z.string().min(1) }), pending),
   accept: io(

@@ -136,8 +136,8 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [ ] US-ACCT-18 · Choose what the log-in screen shows
 - [ ] US-ACCT-19 · Require two-factor for everyone
 - [ ] US-ACCT-20 · Decide what members can do
-- [x] US-ACCT-21 · Create an invite link (role, apps and "Preview what they see" join the dialog with US-ACCT-22 and US-ACCT-23)
-- [ ] US-ACCT-22 · Choose the invitee's role and apps
+- [x] US-ACCT-21 · Create an invite link ("Preview what they see" joins the dialog with US-ACCT-23)
+- [x] US-ACCT-22 · Choose the invitee's role and apps (copying the choices to the new account is tested with US-AUTH-24)
 - [ ] US-ACCT-23 · Preview the invite page
 - [ ] US-ACCT-24 · Choose which apps a member can open
 - [ ] US-ACCT-25 · Shared folder and live usage for a member

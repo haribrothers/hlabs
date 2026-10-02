@@ -26,7 +26,11 @@ Invites that haven't been used yet are listed under the people, with when the li
 
 hlabs doesn't send email, so you invite people with a link. In **Settings › Users**, choose **Invite someone**. A link is made straight away; it works once and expires after 7 days.
 
+Choose their role first. A **Member** uses only the apps you share; an **Admin** can change everything and open every app. For a member, turn on the apps they can open. You can change this later in **Apps access**.
+
 You can type their name. It's shown on the page they open, and fills in their name when they make their account. Choose **Copy** and send the link however you like: a message, a chat app, or in person.
+
+Your choices save as you make them, and the link stays the same, so it's fine to copy it first. Whatever is set when they accept the invite is what they get.
 
 Choose **Done** when you've shared it. The invite then waits under **People** until it's used. If you choose **Close** without copying the link, the invite is cancelled; once you've copied it, it's kept, because you may already have sent it.
 
