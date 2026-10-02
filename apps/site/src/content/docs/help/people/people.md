@@ -72,3 +72,7 @@ Their Home folder is kept unless you tick **Also delete their Home folder**. Kep
 
 hlabs doesn't use email, so you give them a link instead. In **Settings › Users**, choose **Reset password** next to them and send them the link. It works once, for 15 minutes; making a new one stops the old one. When they choose a new password with it, they're logged out on every device and log in again with the new one.
 
+## The log-in screen
+
+Under **Log-in screen**, **Show the list of users** decides whether the log-in screen shows everyone's name and picture to choose from. Turn it off and everyone types their username instead. That's a good idea if hlabs can be reached away from home with Tailscale, so people who aren't family can't see who lives there.
+

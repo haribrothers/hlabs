@@ -45,6 +45,10 @@ export const peopleCopy = {
   resetLink: 'Reset link',
   resetNote: 'Works once · expires in 15 minutes',
   resetFailed: "Couldn't make a reset link. Try again.",
+  loginScreen: 'Log-in screen',
+  showUserList: 'Show the list of users',
+  showUserListHint: 'Off: everyone types a username. Recommended when hlabs is reachable over Tailscale.',
+  policyFailed: "Couldn't save that setting. Try again.",
   actionFailed: "Couldn't make that change. Try again.",
   invitePending: 'Invite pending',
   inviteLine: (created: string, days: number, role: string) =>

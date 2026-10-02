@@ -10,6 +10,7 @@ export const peoplePolicySchema = z.object({
   membersCanInstall: z.boolean(),
   membersCanSeeUsage: z.boolean(),
 });
+export type PeoplePolicy = z.infer<typeof peoplePolicySchema>;
 
 /** A row in Settings › Users (US-ACCT-13). `appCount` counts `app_access` rows; it means something for members only. */
 export const userSummarySchema = z.object({

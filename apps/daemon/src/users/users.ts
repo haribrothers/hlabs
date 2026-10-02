@@ -1,6 +1,6 @@
 // The people who use hlabs (09-account-people.md, F-ACCT-05): what an admin sees and changes in Settings › Users.
 import { hlabsError, type UserSummary } from '@hlabs/api';
-import { appAccess, apps, auditLog, sessions, users, userTotp, type HlabsDb } from '@hlabs/db';
+import { appAccess, apps, auditLog, getSetting, sessions, setSetting, users, userTotp, type HlabsDb } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { and, asc, count, eq, inArray, isNotNull, isNull, max, ne } from 'drizzle-orm';
 import type { SessionService } from '../auth/sessions';
@@ -236,4 +236,38 @@ export async function deleteUser(
       payload: { path: homePath, username: user.username, ownerUserId: who.userId },
     }),
   };
+}
+
+export type PeoplePolicy = ReturnType<typeof getPolicy>;
+
+/** Users › Log-in screen and What members can do (US-ACCT-18…20), `settings.people`. */
+export function getPolicy(db: HlabsDb) {
+  const { showUserList, requireTotp, membersCanInstall, membersCanSeeUsage } = getSetting(db, 'people');
+  return { showUserList, requireTotp, membersCanInstall, membersCanSeeUsage };
+}
+
+/**
+ * Changes the switches sent, audited. Requiring two-factor for everyone needs it on the admin's own account first
+ * (TOTP_REQUIRED_SELF_FIRST, US-ACCT-19). Members' dashboards refetch, as what they see may change.
+ */
+export function updatePolicy(
+  deps: { db: HlabsDb; bus: EventBus },
+  change: Partial<PeoplePolicy>,
+  who: Who,
+  now = Date.now(),
+): PeoplePolicy {
+  const { db } = deps;
+  const set = Object.fromEntries(Object.entries(change).filter(([, v]) => v !== undefined)) as Partial<PeoplePolicy>;
+  if (set.requireTotp === true && !getPolicy(db).requireTotp) {
+    const totp = db.select().from(userTotp).where(eq(userTotp.userId, who.userId)).get();
+    if (!totp?.enabledAt) throw hlabsError('TOTP_REQUIRED_SELF_FIRST');
+  }
+  db.transaction((tx) => {
+    const inTx = tx as unknown as HlabsDb;
+    setSetting(inTx, 'people', { ...getSetting(inTx, 'people'), ...set });
+    audit(tx, who, 'users.updatePolicy', 'people', set, now);
+  });
+  for (const m of db.select({ id: users.id }).from(users).where(eq(users.role, 'member')).all())
+    deps.bus.emit('access.changed', { userId: m.id }, { kind: 'user', userId: m.id });
+  return getPolicy(db);
 }
