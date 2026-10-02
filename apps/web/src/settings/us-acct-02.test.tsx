@@ -9,11 +9,12 @@ describe('US-ACCT-02', () => {
     renderScreen(SettingsLayout, { 'auth.me': fakeMe() }, { path: '/settings/account' });
     const nav = await screen.findByRole('navigation', { name: 'Settings sections' });
     const account = screen.getByRole('link', { name: 'Account' });
-    const engine = screen.getByRole('link', { name: 'Engine & startup' });
+    // Phase 3: Users comes after Account.
+    const users = screen.getByRole('link', { name: 'Users' });
     expect(account).toHaveAttribute('aria-current', 'page');
     account.focus();
     fireEvent.keyDown(nav, { key: 'ArrowDown' });
-    expect(engine).toHaveFocus();
+    expect(users).toHaveFocus();
     fireEvent.keyDown(nav, { key: 'ArrowUp' });
     expect(account).toHaveFocus();
   });

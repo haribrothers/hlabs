@@ -122,6 +122,8 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 
 ## Phase 3 · Remote access and family
 
+Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS with standalone Tailscale and an iPad on the tailnet: a member invited by link logs in and opens only the apps shared with them, both on the tailnet (`https://<node>.<tailnet>.ts.net`, apps on their tailnet ports, D-110) and at home (`https://<host>.local`); an app not shared with them shows the "no access" page and opens straight away once shared. Also checked live: Pi-hole v6 on a Raspberry Pi as the local DNS server, `home.arpa` names, and the dashboard and apps at the LAN address (subnet router mode). Not checked live: AdGuard Home, Linux, the App Store build of Tailscale, Headscale (R-12).
+
 - [x] US-ONB-17 · Connect Tailscale for remote access
 - [x] US-ONB-18 · Set up remote access later
 - [x] US-AUTH-23 · Open an invite link
