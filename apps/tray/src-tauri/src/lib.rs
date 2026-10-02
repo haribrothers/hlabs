@@ -261,6 +261,12 @@ fn copy_text(app: AppHandle, text: String) -> Result<(), DaemonError> {
         .map_err(|_| DaemonError::Protocol)
 }
 
+/// "Quit hlabs" (US-INST-10, D-015): only the menu-bar app quits; the daemon is the LaunchAgent's.
+#[tauri::command]
+fn quit_tray(app: AppHandle) {
+    app.exit(0);
+}
+
 /// Start at login (US-INST-09): the tray's login item and, in an app with the daemon bundled, the
 /// LaunchAgent whose `RunAtLoad` goes with it.
 struct StartAtLogin {
@@ -510,7 +516,8 @@ pub fn run() {
             set_icon,
             notify,
             start_at_login_state,
-            set_start_at_login
+            set_start_at_login,
+            quit_tray
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]

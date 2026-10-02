@@ -38,6 +38,7 @@ export function answer(a: Answers) {
       case 'copy_local_diagnostics':
       case 'set_icon':
       case 'notify':
+      case 'quit_tray':
         return null;
       case 'start_at_login_state':
         return a.startAtLogin ?? true;

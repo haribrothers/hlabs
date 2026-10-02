@@ -48,3 +48,7 @@ Choose **Resume apps** to start them again. Apps you had stopped yourself before
 ## Start at login
 
 **Start at login** has a check mark when hlabs starts by itself when you log in to this Mac. It's on when you install hlabs. Choose it to turn it off: hlabs keeps running now, but won't start next time you log in, so your apps won't be available until you open hlabs. The same switch is in Settings › Engine & startup in the dashboard; changing either one changes both. If your Mac doesn't allow the change (for example, a work profile manages login items), the item says **Couldn't change login setting** and nothing changes.
+
+## Quit the menu-bar app
+
+**Quit hlabs** (or ⌘Q while the menu is open) closes only the menu-bar app. hlabs and your apps keep running in the background, so nothing is asked first. To bring the icon back, open hlabs from your Applications folder; it also comes back when you log in if **Start at login** is on. To stop your apps, use **Pause all apps** instead.

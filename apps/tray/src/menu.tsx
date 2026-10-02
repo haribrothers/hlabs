@@ -11,6 +11,7 @@ import { useDaemonDownActions, useHealth, type DaemonHealth } from './health';
 import { iconFor, useMenuBarIcon } from './icon';
 import { appsLine, formatCpu, formatFree, formatMemory } from './format';
 import { useOpenSetup, useSetupPending } from './setup';
+import { quitTray } from './quit';
 import { useQuickAction } from './quick-action';
 import { useStartAtLogin } from './start-at-login';
 import { useMenuOpen, useTrayStatus } from './status';
@@ -24,7 +25,7 @@ export function AccessProblem({ access, onRetry }: { access: Exclude<Access, 're
         statusText={t.keychainStatus}
         note={{ body: t.keychainNote }}
         action={{ label: t.tryAgain, onSelect: onRetry }}
-        items={[{ label: t.quit, shortcut: '⌘Q' }]}
+        items={[quitItem]}
       />
     );
   }
@@ -33,7 +34,7 @@ export function AccessProblem({ access, onRetry }: { access: Exclude<Access, 're
       tone="danger"
       statusText={t.unreachableStatus}
       action={{ label: t.tryAgain, onSelect: onRetry }}
-      items={[{ label: t.quit, shortcut: '⌘Q' }]}
+      items={[quitItem]}
     />
   );
 }
@@ -68,6 +69,9 @@ export interface RunningActions {
   startAtLogin?: { checked: boolean; failed: boolean; toggle: () => void };
 }
 
+/** "Quit hlabs" (⌘Q, US-INST-10): quits only the menu-bar app; hlabs and your apps keep running (D-015). */
+export const quitItem: MenuItem = { label: t.quit, shortcut: '⌘Q', onSelect: () => void quitTray() };
+
 /**
  * The running menu, in the design's order (TrayMenu): what the actions do arrives with their stories (US-INST-05…10,
  * US-INST-17, US-INST-19); "Back up now" waits for backups (phase 5) and "Uninstall hlabs…" for phase 6 (D-036).
@@ -89,7 +93,7 @@ export function runningItems(actions: RunningActions = {}): MenuItem[] {
     { label: t.resetPassword },
     { separator: true },
     ...(isFeatureEnabled('uninstall') ? [{ label: t.uninstall }] : []),
-    { label: t.quit, shortcut: '⌘Q' },
+    quitItem,
   ];
 }
 
@@ -139,7 +143,7 @@ export function PausedMenu({ onChanged }: { onChanged?: () => void }) {
         { separator: true },
         { label: t.openDashboard, shortcut: '⌘D', onSelect: () => void dashboard.open() },
         { separator: true },
-        { label: t.quit, shortcut: '⌘Q' },
+        quitItem,
       ]}
     />
   );
@@ -156,7 +160,7 @@ export function DaemonDownMenu({
 }) {
   const actions = useDaemonDownActions();
   const dashboard = useDashboardActions();
-  const quit: MenuItem = { label: t.quit, shortcut: '⌘Q' };
+  const quit = quitItem;
   if (health.state === 'updating') {
     return (
       <TrayMenu
@@ -220,7 +224,7 @@ export function EngineStoppedMenu({ status }: { status: TrayStatus }) {
         { label: t.troubleshoot, onSelect: () => void dashboard.open('/') },
         { label: diagnostics.copied ? t.copied : t.copyDiagnostics, onSelect: () => void diagnostics.copy() },
         { separator: true },
-        { label: t.quit, shortcut: '⌘Q' },
+        quitItem,
       ]}
     />
   );
@@ -248,7 +252,7 @@ export function StartingMenu({ status }: { status: TrayStatus | null }) {
         { label: t.openDashboard, shortcut: '⌘D', onSelect: () => void dashboard.open() },
         { label: t.showStartupLog, onSelect: () => void dashboard.open(logPath) },
         { separator: true },
-        { label: t.quit, shortcut: '⌘Q' },
+        quitItem,
       ]}
     />
   );
