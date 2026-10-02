@@ -2,9 +2,17 @@
 @import '@hlabs/ui/styles.css';
 
 @layer base {
+  html,
   body {
     margin: 0;
+    padding: 0;
     background: transparent;
+    overflow: hidden;
     font-family: var(--font-sans);
   }
+}
+
+/* Measured by FitWindow: as big as the menu and no bigger. */
+.tray-fit {
+  width: max-content;
 }

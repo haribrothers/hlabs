@@ -8,6 +8,7 @@ mod daemon;
 mod launchd;
 mod paths;
 mod token;
+mod window;
 
 use access::{Access, TokenGuard};
 use bootstrap::Waited;
@@ -280,24 +281,28 @@ pub fn run() {
                     if let TrayIconEvent::Click {
                         button: MouseButton::Left,
                         button_state: MouseButtonState::Up,
+                        rect,
                         ..
                     } = event
                     {
-                        if let Some(window) = tray.app_handle().get_webview_window("menu") {
-                            let visible = window.is_visible().unwrap_or(false);
-                            let _ = if visible {
-                                window.hide()
-                            } else {
-                                window.show().and_then(|_| window.set_focus())
-                            };
-                        }
+                        window::toggle_menu(tray.app_handle(), &rect);
                     }
                 })
                 .build(app)?;
+            app.manage(window::MenuState::default());
+            if let Some(menu) = app.get_webview_window(window::MENU_WINDOW) {
+                let handle = app.handle().clone();
+                menu.on_window_event(move |event| {
+                    if let tauri::WindowEvent::Focused(false) = event {
+                        window::on_blur(&handle);
+                    }
+                });
+            }
             if first_launch {
-                if let Some(window) = app.get_webview_window("menu") {
-                    let _ = window.show().and_then(|_| window.set_focus());
-                }
+                let rect = app
+                    .tray_by_id("hlabs")
+                    .and_then(|tray| tray.rect().ok().flatten());
+                window::show_menu(app.handle(), rect.as_ref());
             }
             Ok(())
         })

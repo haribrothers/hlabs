@@ -81,7 +81,7 @@ hlabs/
 | `pnpm dev` | Turbo: daemon (tsx watch, data dir `./.dev-data`), web (Vite, proxied to the daemon), no Caddy (web talks to daemon directly) |
 | `pnpm dev:full` | Also runs Caddy and mDNS so `https://hlabs.local` works locally (fetches the binaries first; Caddy binds 443 and 80, so on Linux run it where that's allowed) |
 | `pnpm fetch-binaries` | Downloads Caddy and docker-compose into `.bin/`, checked against pinned checksums (D-072); `--target` and `--out` for other platforms; `--packaging` adds the node runtime the app bundle runs hlabsd with (D-113) |
-| `pnpm dev:tray` | `tauri dev` against the running dev daemon |
+| `pnpm dev:tray` | `tauri dev` against the running dev daemon (`scripts/dev-tray.ts` runs it in its own process group, so Ctrl-C stops it cleanly) |
 | `pnpm build:tray` | An unsigned `hlabs.app` for this Mac with hlabsd bundled in `Contents/Resources/daemon` (`scripts/bundle-app.ts`, D-113); opening it installs and starts the LaunchAgent like a release (US-INST-01), so don't open it on a computer running `pnpm dev` |
 | `pnpm build` | Builds everything |
 | `pnpm test` / `pnpm test:e2e` | Vitest / Playwright (its own instances: main on daemon 7574 and Vite 5273 with `./.e2e-data`, a first-run one per worker on 7480+/5180+; never a running `pnpm dev`, D-090) |
