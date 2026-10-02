@@ -10,6 +10,7 @@ const app = (id: string, name: string, extra: Partial<HomeApp> = {}): HomeApp =>
   state: 'running',
   icon: { logoUrl: null, gradient: null, fallback: null },
   embed: false,
+  ownLogin: false,
   urls: { local: `https://${id}.hlabs.local`, tailnet: `https://hlabs.tail1234.ts.net:12001` },
   ...extra,
 });

@@ -84,6 +84,7 @@ export const appDetail = (extra: Partial<AppDetail> = {}): AppDetail => ({
   nextFreePort: null,
   icon: { logoUrl: null, gradient: null, fallback: null },
   embed: false,
+  ownLogin: false,
   webPath: '/',
   urls: { local: 'https://immich.hlabs.local', tailnet: null },
   engineRunning: true,

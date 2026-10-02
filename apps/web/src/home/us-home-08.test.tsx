@@ -18,6 +18,7 @@ const app = (id: string, name: string, state: HomeApp['state']): HomeApp => ({
   state,
   icon: { logoUrl: null, gradient: null, fallback: null },
   embed: false,
+  ownLogin: false,
   urls: { local: `https://${id}.hlabs.local`, tailnet: null },
 });
 

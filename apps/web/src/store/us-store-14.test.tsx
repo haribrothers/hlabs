@@ -89,6 +89,7 @@ describe('US-STORE-14', () => {
       state: 'install_failed',
       icon: { logoUrl: null, gradient: null, fallback: null },
       embed: false,
+      ownLogin: false,
       urls: { local: 'https://immich.hlabs.local', tailnet: null },
     };
     const { router } = renderScreen(() => <AppGrid apps={[tile]} isAdmin={false} />, {});
@@ -105,6 +106,7 @@ describe('US-STORE-14', () => {
       state: 'installing',
       icon: { logoUrl: null, gradient: null, fallback: null },
       embed: false,
+      ownLogin: false,
       urls: { local: 'https://immich.hlabs.local', tailnet: null },
     };
     const { router } = renderScreen(

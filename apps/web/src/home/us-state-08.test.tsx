@@ -15,6 +15,7 @@ const app = (id: string, name: string): HomeApp => ({
   state: 'running',
   icon: { logoUrl: null, gradient: null, fallback: null },
   embed: false,
+  ownLogin: false,
   urls: { local: `https://${id}.hlabs.local`, tailnet: null },
 });
 const info = (running: boolean) => ({ engine: { kind: 'orbstack', running, version: running ? '27' : null } });

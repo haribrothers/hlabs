@@ -16,6 +16,7 @@ const manifestBits = z.object({
     })
     .optional(),
   web: z.object({ embed: z.boolean().optional(), path: z.string().optional() }).optional(),
+  ownLogin: z.boolean().optional(),
 });
 
 /** A relative logo is served with the app's assets; https logos are used as they are. */
@@ -67,6 +68,8 @@ export function appSummary(
       fallback: m.icon?.fallback ?? null,
     },
     embed: m.web?.embed ?? false,
+    /** The app asks for its own login as well as hlabs's (US-ACCT-24). */
+    ownLogin: m.ownLogin ?? false,
     webPath: m.web?.path ?? '/',
     urls: {
       local:

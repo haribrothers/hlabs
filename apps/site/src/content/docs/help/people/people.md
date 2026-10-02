@@ -1,7 +1,7 @@
 ---
 title: People who use hlabs
 description: See everyone who has an account on your hlabs, and the invites still waiting.
-features: [F-ACCT-05, F-ACCT-07]
+features: [F-ACCT-05, F-ACCT-07, F-ACCT-08]
 ---
 
 For admins only.
@@ -39,4 +39,10 @@ Choose **Done** when you've shared it. The invite then waits under **People** un
 ## Copy or cancel an invite
 
 Each invite that hasn't been used yet shows when its link was made, how many days it has left and the role it gives. Choose **Copy link** to copy the same link again, for example if they lost your message. Choose **Revoke** to cancel it: the link stops working straight away, and anyone who opens it is told it doesn't work anymore.
+
+## Choose which apps someone can open
+
+Family members only see and open the apps you share with them. In **Settings › Users**, choose **Apps access** next to a member, turn apps on or off, and choose **Save**. Apps you don't share aren't on their Home screen. Some apps, like Vaultwarden, also ask people to log in to the app itself; they're marked "Uses its own login too".
+
+Admins can open every app, so they have no **Apps access** button.
 

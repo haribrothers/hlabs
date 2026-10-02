@@ -128,7 +128,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-AUTH-24 · Create my account from an invite
 - [ ] US-HOME-11 · See only my shared apps on a member Home
 - [ ] US-HOME-12 · See my files and shared-apps summary
-- [x] US-ACCT-13 · See everyone who uses hlabs (the row buttons and menu items do nothing until their stories: US-ACCT-14…16, US-ACCT-24)
+- [x] US-ACCT-13 · See everyone who uses hlabs (Reset password and the menu items do nothing until their stories: US-ACCT-14…16)
 - [ ] US-ACCT-14 · Give a member a reset-password link
 - [ ] US-ACCT-15 · Change role, disable or enable someone
 - [ ] US-ACCT-16 · Delete someone
@@ -139,7 +139,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ACCT-21 · Create an invite link
 - [x] US-ACCT-22 · Choose the invitee's role and apps (copying the choices to the new account is tested with US-AUTH-24)
 - [x] US-ACCT-23 · Preview the invite page
-- [ ] US-ACCT-24 · Choose which apps a member can open
+- [x] US-ACCT-24 · Choose which apps a member can open
 - [ ] US-ACCT-25 · Shared folder and live usage for a member
 - [ ] US-ACCT-26 · Access changes apply straight away
 - [ ] US-ACCT-27 · Member sees a limited Settings

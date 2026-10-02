@@ -107,7 +107,7 @@ export function AcceptInvite({ token, preview = false }: { token: string; previe
             <Avatar name={inviter} color={avatarColorFor(inviter, data.inviterAvatarColor)} size="md" />
           ) : null}
           <div className="flex flex-col">
-            <span className="text-footnote text-ink-muted">
+            <span className="text-body-sm text-ink-muted">
               {inviter ? copy.invitedYou(inviter) : copy.someoneInvitedYou}
             </span>
             <span className="text-headline font-bold">{copy.product}</span>

@@ -46,6 +46,8 @@ export const homeAppSchema = z.object({
   }),
   /** D-038: opens in AppWindow (phase 2) instead of a new tab. */
   embed: z.boolean(),
+  /** The manifest's `ownLogin`: people log in to the app itself too ("Uses its own login too", US-ACCT-24). */
+  ownLogin: z.boolean(),
   urls: z.object({
     /** `https://<app>.<hostname>.local` */
     local: z.string(),

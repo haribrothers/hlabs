@@ -177,7 +177,7 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
           <AppSwitchList label={copy.appsTheyCanOpen} apps={apps.data.apps} checked={appIds} onToggle={toggleApp} />
         ) : null}
         <section aria-labelledby="invite-link-label" className="flex flex-col gap-2 rounded-md bg-surface-row p-4">
-          <span id="invite-link-label" className="text-footnote font-semibold text-ink">
+          <span id="invite-link-label" className="text-body-sm font-semibold text-ink">
             {copy.inviteLink}
           </span>
           {create.isError ? (
@@ -201,7 +201,7 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
                   {copied ? copy.copied : copy.copy}
                 </Button>
               </div>
-              <p className="m-0 text-footnote text-ink-muted">
+              <p className="m-0 text-body-sm text-ink-muted">
                 {copy.worksOnce}{' '}
                 {invite ? (
                   <a

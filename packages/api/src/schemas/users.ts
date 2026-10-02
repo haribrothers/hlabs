@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { io } from '../trpc';
-import { appIdSchema, displayNameSchema, empty, idSchema, ok, pending, roleSchema, timestampSchema } from './common';
+import { appIdSchema, displayNameSchema, empty, idSchema, ok, roleSchema, timestampSchema } from './common';
 
 const userRef = z.object({ userId: idSchema });
 
@@ -52,7 +52,20 @@ export type InviteInspect = z.infer<typeof inviteInspectSchema>;
 
 export const users = {
   list: io(empty, z.object({ users: z.array(userSummarySchema) })),
-  get: io(userRef, pending),
+  get: io(
+    userRef,
+    z.object({
+      id: idSchema,
+      username: z.string(),
+      displayName: z.string(),
+      role: roleSchema,
+      avatarColor: z.string().nullable(),
+      /** Apps in `app_access` (ignored while the person is an admin). */
+      appIds: z.array(appIdSchema),
+      canSeeShared: z.boolean(),
+      canSeeUsage: z.boolean(),
+    }),
+  ),
   updateRole: io(userRef.extend({ role: roleSchema }), ok),
   disable: io(userRef, ok),
   enable: io(userRef, ok),

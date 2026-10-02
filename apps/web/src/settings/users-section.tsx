@@ -25,6 +25,7 @@ import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useIsDesktop } from '../lib/use-media';
 import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
+import { AppsAccessDialog } from './apps-access-dialog';
 import { InviteDialog } from './invite-dialog';
 
 const DAY = 86_400_000;
@@ -73,7 +74,19 @@ function RowActions({ children }: { children: ReactNode }) {
   return <span className="flex flex-wrap items-center gap-2">{children}</span>;
 }
 
-function UserRow({ user, isMe, now, desktop }: { user: UserSummary; isMe: boolean; now: number; desktop: boolean }) {
+function UserRow({
+  user,
+  isMe,
+  now,
+  desktop,
+  onAppsAccess,
+}: {
+  user: UserSummary;
+  isMe: boolean;
+  now: number;
+  desktop: boolean;
+  onAppsAccess: () => void;
+}) {
   const size = desktop ? 'sm' : 'md';
   const disabled = user.disabled ? <Badge tone="warning">{copy.disabled}</Badge> : null;
   const role = <Badge>{copy.roles[user.role]}</Badge>;
@@ -81,7 +94,7 @@ function UserRow({ user, isMe, now, desktop }: { user: UserSummary; isMe: boolea
     <>
       {user.role === 'member' ? (
         <>
-          <Button variant="secondary" size={size}>
+          <Button variant="secondary" size={size} onClick={onAppsAccess}>
             {copy.appsAccess}
           </Button>
           <Button variant="secondary" size={size}>
@@ -203,6 +216,7 @@ export function UsersSection() {
   const me = useMe().data;
   const now = useNow().getTime();
   const desktop = useIsDesktop();
+  const [accessFor, setAccessFor] = useState<string | null>(null);
   const people = useQuery({ ...trpc.users.list.queryOptions(), retry: false });
   const invites = useQuery({ ...trpc.invites.list.queryOptions(), retry: false });
 
@@ -241,12 +255,20 @@ export function UsersSection() {
     <div className="flex flex-col gap-6">
       <List label={copy.people(users.length + pending.length)}>
         {users.map((u) => (
-          <UserRow key={u.id} user={u} isMe={u.id === me?.id} now={now} desktop={desktop} />
+          <UserRow
+            key={u.id}
+            user={u}
+            isMe={u.id === me?.id}
+            now={now}
+            desktop={desktop}
+            onAppsAccess={() => setAccessFor(u.id)}
+          />
         ))}
         {pending.map((i) => (
           <InviteRow key={i.id} invite={i} now={now} desktop={desktop} />
         ))}
       </List>
+      {accessFor ? <AppsAccessDialog userId={accessFor} onClose={() => setAccessFor(null)} /> : null}
     </div>
   );
 }

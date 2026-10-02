@@ -1,5 +1,5 @@
 // Invites made through the real InviteDialog, for the people stories (US-ACCT-21…, US-AUTH-23/24).
-import { expect, type Page } from '@playwright/test';
+import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
 /** Opens Users › Invite someone, applies the choices, presses Done, and returns the link. */
 export async function createInvite(
@@ -19,4 +19,24 @@ export async function createInvite(
   await expect(dialog).toBeHidden();
   // The link names hlabs.local; open it on the instance under test.
   return new URL(url).pathname;
+}
+
+/**
+ * A member made through a real invite: the admin page makes the link, and it's accepted over the API (no browser
+ * session changes hands). Returns their username and password.
+ */
+export async function createMember(
+  page: Page,
+  request: APIRequestContext,
+  baseURL: string,
+  opts: { name: string; apps?: string[]; role?: 'Member' | 'Admin' },
+) {
+  const path = await createInvite(page, { role: opts.role, apps: opts.apps });
+  const username = `m${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+  const password = 'correct horse battery staple';
+  const res = await request.post(`${baseURL}/trpc/invites.accept`, {
+    data: { token: path.split('/').pop(), displayName: opts.name, username, password },
+  });
+  expect(res.ok()).toBe(true);
+  return { username, password };
 }

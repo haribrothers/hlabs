@@ -16,6 +16,7 @@ const jellyfin = appDetail({
   name: 'Jellyfin',
   state: 'running',
   embed: true,
+  ownLogin: false,
   address: 'jellyfin.hlabs.local',
   urls: { local: 'https://jellyfin.hlabs.local', tailnet: 'https://hlabs.tail1234.ts.net:12004' },
   webPath: '/web/',
@@ -103,6 +104,7 @@ describe('US-APP-01', () => {
       state: 'running',
       icon: { logoUrl: null, gradient: null, fallback: null },
       embed,
+      ownLogin: false,
       urls: { local: `https://${id}.hlabs.local`, tailnet: null },
     });
     const { router } = renderScreen(
