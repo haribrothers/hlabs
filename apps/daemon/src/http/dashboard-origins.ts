@@ -7,6 +7,11 @@ import { tailnetHost } from '../network/service';
 const withPort = (scheme: 'https' | 'http', host: string, port: number) =>
   `${scheme}://${host}${port === (scheme === 'https' ? 443 : 80) ? '' : `:${port}`}`;
 
+/** hlabs on the home network over HTTPS (`https://hlabs.local`, with the port when 443 was taken, D-016). */
+export function lanDashboardOrigin(db: HlabsDb): string {
+  return withPort('https', `${getSetting(db, 'hostname')}.local`, getSetting(db, 'network').ports.https);
+}
+
 /**
  * `configured` (HLABS_DASHBOARD_URL: the tray's loopback address, or Vite in development), hlabs's own name over HTTPS,
  * over plain HTTP while setup runs (D-013), and the tailnet address once remote access is on.
@@ -14,10 +19,10 @@ const withPort = (scheme: 'https' | 'http', host: string, port: number) =>
 export function dashboardOrigins(configured: string, db: HlabsDb | null): string[] {
   const origins = [new URL(configured).origin];
   if (!db) return origins;
+  origins.push(lanDashboardOrigin(db));
   const host = `${getSetting(db, 'hostname')}.local`;
-  const { http, https } = getSetting(db, 'network').ports;
-  origins.push(withPort('https', host, https));
-  if (getSetting(db, 'onboarding').completedAt === null) origins.push(withPort('http', host, http));
+  if (getSetting(db, 'onboarding').completedAt === null)
+    origins.push(withPort('http', host, getSetting(db, 'network').ports.http));
   const tailnet = tailnetHost(db);
   if (tailnet) origins.push(`https://${tailnet}`);
   return [...new Set(origins)];

@@ -30,6 +30,10 @@ export default defineConfig({
             { label: 'Manage an app', link: '/help/apps/manage-apps/' },
           ],
         },
+        {
+          label: 'People and family',
+          items: [{ label: 'People who use hlabs', link: '/help/people/people/' }],
+        },
       ],
     }),
   ],

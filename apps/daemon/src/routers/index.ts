@@ -7,6 +7,7 @@ import { apps } from './apps';
 import { auth } from './auth';
 import { events } from './events';
 import { home } from './home';
+import { invites } from './invites';
 import { jobs } from './jobs';
 import { notifications } from './notifications';
 import { onboarding } from './onboarding';
@@ -14,6 +15,7 @@ import { storage } from './storage';
 import { store } from './store';
 import { settings } from './settings';
 import { system } from './system';
+import { users } from './users';
 
 export const handlers: AppHandlers<DaemonContext> = {
   system,
@@ -28,6 +30,8 @@ export const handlers: AppHandlers<DaemonContext> = {
   account,
   settings,
   notifications,
+  users,
+  invites,
 };
 
 type Fn = (input: unknown, ctx: DaemonContext, signal: AbortSignal | undefined) => unknown;

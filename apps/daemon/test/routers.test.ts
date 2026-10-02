@@ -34,9 +34,9 @@ describe('routers', () => {
   it('answers NOT_IMPLEMENTED (501) for stubbed procedures, with the hlabsCode and no stack', async () => {
     const d = await startDaemon();
     closers.push(d.close);
-    const { status, body } = await call(d.url, 'users.list');
+    const { status, body } = await call(d.url, 'ai.get');
     expect(status).toBe(501);
-    expect(body.error?.data).toMatchObject({ hlabsCode: 'NOT_IMPLEMENTED', path: 'users.list' });
+    expect(body.error?.data).toMatchObject({ hlabsCode: 'NOT_IMPLEMENTED', path: 'ai.get' });
     expect(body.error?.data).not.toHaveProperty('stack');
   });
 

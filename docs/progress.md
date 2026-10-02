@@ -128,7 +128,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [ ] US-AUTH-24 · Create my account from an invite
 - [ ] US-HOME-11 · See only my shared apps on a member Home
 - [ ] US-HOME-12 · See my files and shared-apps summary
-- [ ] US-ACCT-13 · See everyone who uses hlabs
+- [x] US-ACCT-13 · See everyone who uses hlabs (the row buttons and menu items do nothing until their stories: US-ACCT-14…17, US-ACCT-21, US-ACCT-24)
 - [ ] US-ACCT-14 · Give a member a reset-password link
 - [ ] US-ACCT-15 · Change role, disable or enable someone
 - [ ] US-ACCT-16 · Delete someone

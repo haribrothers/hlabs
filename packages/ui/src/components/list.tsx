@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from 'react';
+import { cn } from '../lib/cn';
 
 export interface ListProps {
   label?: ReactNode;
@@ -32,9 +33,11 @@ export interface ListRowProps {
   href?: string;
   /** Full-width content under the row, such as a Progress bar and a note. */
   below?: ReactNode;
+  /** Something switched off, such as a disabled person: the leading visual fades and the title turns muted. */
+  dimmed?: boolean;
 }
 
-export function ListRow({ title, subtitle, leading, trailing, href, below }: ListRowProps) {
+export function ListRow({ title, subtitle, leading, trailing, href, below, dimmed = false }: ListRowProps) {
   const inner = (
     <>
       {leading}
@@ -46,7 +49,7 @@ export function ListRow({ title, subtitle, leading, trailing, href, below }: Lis
       {below ? <div className="hl-list-below">{below}</div> : null}
     </>
   );
-  const className = below ? 'hl-list-row hl-list-row-below' : 'hl-list-row';
+  const className = cn('hl-list-row', below && 'hl-list-row-below', dimmed && 'hl-list-row-dimmed');
   return href ? (
     <a href={href} className={`${className} hl-row-link`}>
       {inner}

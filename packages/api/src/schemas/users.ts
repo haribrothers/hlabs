@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { io } from '../trpc';
-import { appIdSchema, displayNameSchema, empty, idSchema, ok, pending, roleSchema } from './common';
+import { appIdSchema, displayNameSchema, empty, idSchema, ok, pending, roleSchema, timestampSchema } from './common';
 
 const userRef = z.object({ userId: idSchema });
 
@@ -11,8 +11,33 @@ export const peoplePolicySchema = z.object({
   membersCanSeeUsage: z.boolean(),
 });
 
+/** A row in Settings › Users (US-ACCT-13). `appCount` counts `app_access` rows; it means something for members only. */
+export const userSummarySchema = z.object({
+  id: idSchema,
+  username: z.string(),
+  displayName: z.string(),
+  role: roleSchema,
+  avatarColor: z.string().nullable(),
+  totpEnabled: z.boolean(),
+  lastActiveAt: timestampSchema.nullable(),
+  disabled: z.boolean(),
+  appCount: z.number().int().nonnegative(),
+});
+export type UserSummary = z.infer<typeof userSummarySchema>;
+
+/** A pending invite (US-ACCT-17): unused, not revoked, not expired. `url` is the link first created. */
+export const pendingInviteSchema = z.object({
+  id: idSchema,
+  role: roleSchema,
+  displayName: z.string().nullable(),
+  createdAt: timestampSchema,
+  expiresAt: timestampSchema,
+  url: z.string().nullable(),
+});
+export type PendingInvite = z.infer<typeof pendingInviteSchema>;
+
 export const users = {
-  list: io(empty, pending),
+  list: io(empty, z.object({ users: z.array(userSummarySchema) })),
   get: io(userRef, pending),
   updateRole: io(userRef.extend({ role: roleSchema }), ok),
   disable: io(userRef, ok),
@@ -39,7 +64,7 @@ const inviteFields = z.object({
 
 export const invites = {
   create: io(inviteFields, z.object({ inviteId: idSchema, url: z.string(), expiresAt: z.number() })),
-  list: io(empty, pending),
+  list: io(empty, z.object({ invites: z.array(pendingInviteSchema) })),
   update: io(inviteFields.partial().extend({ inviteId: idSchema }), ok),
   revoke: io(z.object({ inviteId: idSchema }), ok),
   inspect: io(z.object({ token: z.string().min(1) }), pending),
