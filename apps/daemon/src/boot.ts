@@ -164,6 +164,17 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   const children = new ChildRegistry(join(config.paths.dataDir, 'run', 'children.json'));
   const reaped = children.reapStale();
   if (reaped) logger.warn({ reaped }, 'ended helper processes a previous daemon left running');
+  // Remote access first: starting Caddy frees the web ports Tailscale Serve holds for hlabs (D-111).
+  const tailscale = deps.tailscale ?? (config.devFakeTailscale ? new FakeTailscale() : new LocalApiTailscale());
+  const sessions = new SessionService(db, bus);
+  const remote = new RemoteService({
+    db,
+    tailscale,
+    sessions,
+    logger,
+    dashboardUpstream: config.dashboardUpstream,
+    routes: () => appService.routes(),
+  });
   const proxy =
     deps.proxy ??
     (config.proxy === 'caddy'
@@ -173,6 +184,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
           webFallbackDir: config.resources.webFallbackDir,
           logger,
           children,
+          aroundStart: (ports, start) => remote.whileReleased(ports, start),
         })
       : new NoopProxyManager());
   const mdns =
@@ -191,16 +203,6 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   });
   await network.sync();
   network.watch(bus);
-  const tailscale = deps.tailscale ?? (config.devFakeTailscale ? new FakeTailscale() : new LocalApiTailscale());
-  const sessions = new SessionService(db, bus);
-  const remote = new RemoteService({
-    db,
-    tailscale,
-    sessions,
-    logger,
-    dashboardUpstream: config.dashboardUpstream,
-    routes: () => appService.routes(),
-  });
   const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);
   const dns = new DnsService({
     db,

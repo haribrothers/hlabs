@@ -274,3 +274,41 @@ describe.skipIf(!existsSync(CADDY))("Caddy when an app's own port is busy for a 
     }
   }, 30_000);
 });
+
+describe.skipIf(!existsSync(CADDY))('Caddy and remote access (D-111)', () => {
+  it('runs aroundStart with the web ports when Caddy starts, not on a reload', async () => {
+    const dir = tempDir();
+    const fallback = join(dir, 'fallback');
+    mkdirSync(fallback);
+    writeFileSync(join(fallback, 'index.html'), '<h1>fallback</h1>');
+    const [daemon, daemonPort] = await serve((_req, res) => res.end());
+    const calls: number[][] = [];
+    const proxy = new CaddyProxy({
+      binary: CADDY,
+      dir: join(dir, 'caddy'),
+      webFallbackDir: fallback,
+      logger: silentLogger(),
+      aroundStart: async (ports, start) => {
+        calls.push(ports);
+        await start();
+      },
+    });
+    const state: ProxyState = {
+      hostname: 'hlabs',
+      ports: { https: await freePort(), http: await freePort() },
+      onboardingComplete: true,
+      dashboardUpstream: `127.0.0.1:${daemonPort}`,
+      daemon: `127.0.0.1:${daemonPort}`,
+      tailnetHost: null,
+      apps: [],
+    };
+    try {
+      await proxy.apply(state);
+      await proxy.apply({ ...state, onboardingComplete: false });
+      expect(calls).toEqual([[state.ports.https, state.ports.http]]);
+    } finally {
+      await proxy.stop();
+      daemon.close();
+    }
+  }, 30_000);
+});

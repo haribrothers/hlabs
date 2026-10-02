@@ -14,6 +14,9 @@ import { tailnetAppPort } from '@hlabs/shared';
 
 /** A log-in that isn't finished by then is given up (US-SYS-02). */
 export const LOGIN_TIMEOUT_MS = 10 * 60_000;
+/** Starting Caddy while Serve lets go of its ports (D-111): tries, and the wait between them. */
+const RELEASE_TRIES = 5;
+const RELEASE_WAIT_MS = 500;
 /** The dashboard's tailnet port when 443 is served by something else already (D-103). */
 export const ALTERNATE_DASHBOARD_PORT = 8443;
 
@@ -233,6 +236,38 @@ export class RemoteService {
     });
     this.reconciling = next;
     return next;
+  }
+
+  /**
+   * Runs `start` (Caddy starting) with hlabs's own Serve entries off `ports`, then serves them again. On macOS Tailscale
+   * Serve listens on the ports it serves, and Caddy can't take a port it holds; once Caddy has it, Serve works
+   * alongside. Only hlabs's entries are touched (D-103); if Tailscale can't be reached, `start` just runs.
+   */
+  async whileReleased(ports: readonly number[], start: () => Promise<void>): Promise<void> {
+    const s = this.settings();
+    const held = s.mode === 'tailscale' && s.state === 'connected' ? s.serve.filter((p) => ports.includes(p)) : [];
+    if (!held.length) return start();
+    try {
+      const { config, etag } = await this.deps.tailscale.serveConfig();
+      await this.deps.tailscale.setServeConfig(mergeServe(config, held, []), etag);
+    } catch (err) {
+      this.deps.logger.warn({ err, ports: held }, "couldn't release Tailscale Serve's ports before starting Caddy");
+      return start();
+    }
+    try {
+      // Tailscale may take a moment to let go of the port: Caddy is tried a few times before giving up.
+      for (let attempt = 1; ; attempt++) {
+        try {
+          await start();
+          break;
+        } catch (err) {
+          if (attempt >= RELEASE_TRIES) throw err;
+          await new Promise((r) => setTimeout(r, RELEASE_WAIT_MS));
+        }
+      }
+    } finally {
+      await this.reconcile();
+    }
   }
 
   /** Rewrites the Serve config without hlabs's entries; everything else stays (D-103). */
