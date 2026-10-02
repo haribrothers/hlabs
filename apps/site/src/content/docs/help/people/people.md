@@ -78,3 +78,10 @@ Under **Log-in screen**, **Show the list of users** decides whether the log-in s
 
 **Require two-factor for everyone** makes everyone use two-factor login. Anyone who hasn't set it up is asked to the next time they log in, and nobody can turn theirs off while it's required. You need two-factor on your own account before you can turn this on.
 
+## What members can do
+
+Under **What members can do**:
+
+- **Install apps from the App Store** lets family members install apps themselves, from hlabs's own App Store and only apps that don't ask for risky access. An app they install is shared with them straight away. Off, they can only open the apps you share.
+- **See live usage** lets members see the Usage page, but only those you've also turned it on for in **Apps access**.
+

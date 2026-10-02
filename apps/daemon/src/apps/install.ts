@@ -265,6 +265,8 @@ export class InstallService {
           installedBy: user.userId,
         })
         .run();
+      // A member's own install is shared with them, so it's on their Home (US-ACCT-20).
+      if (user.role !== 'admin') tx.insert(appAccess).values({ appId: manifest.id, userId: user.userId }).run();
       for (const p of manifest.env) {
         const secret = isSecret(p);
         tx.insert(appEnv)

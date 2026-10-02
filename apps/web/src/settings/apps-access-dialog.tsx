@@ -15,6 +15,9 @@ export function AppsAccessDialog({ userId, onClose }: { userId: string; onClose:
   const queryClient = useQueryClient();
   const person = useQuery({ ...trpc.users.get.queryOptions({ userId }), retry: false, staleTime: 0 });
   const apps = useQuery({ ...trpc.apps.list.queryOptions(), retry: false });
+  // Their own usage switch only matters while "See live usage" is on for members (US-ACCT-20).
+  const policy = useQuery({ ...trpc.users.getPolicy.queryOptions(), retry: false });
+  const usageOffForAll = policy.data ? !policy.data.membersCanSeeUsage : false;
   // What they can open now, until a switch is changed here.
   const [edited, setAppIds] = useState<ReadonlySet<string> | null>(null);
   const appIds = edited ?? (person.data ? new Set(person.data.appIds) : null);
@@ -98,7 +101,15 @@ export function AppsAccessDialog({ userId, onClose }: { userId: string; onClose:
             />
             <ListRow
               title={copy.seeUsage}
-              trailing={<Switch aria-label={copy.seeUsage} checked={canSeeUsage} onChange={setUsage} />}
+              subtitle={usageOffForAll ? copy.usageOffForAll : undefined}
+              trailing={
+                <Switch
+                  aria-label={copy.seeUsage}
+                  checked={canSeeUsage}
+                  disabled={usageOffForAll}
+                  onChange={setUsage}
+                />
+              }
             />
           </List>
         </div>

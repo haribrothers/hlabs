@@ -108,3 +108,12 @@ export function LoginScreenPolicy() {
     </>
   );
 }
+
+export function MembersPolicy() {
+  return (
+    <List label={copy.membersCan}>
+      <PolicySwitch name="membersCanInstall" title={copy.membersInstall} hint={copy.membersInstallHint} />
+      <PolicySwitch name="membersCanSeeUsage" title={copy.membersUsage} />
+    </List>
+  );
+}

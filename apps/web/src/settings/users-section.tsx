@@ -28,7 +28,7 @@ import { useNow } from '../lib/use-now';
 import { AppsAccessDialog } from './apps-access-dialog';
 import { DeleteUserDialog } from './delete-user-dialog';
 import { InviteDialog } from './invite-dialog';
-import { LoginScreenPolicy } from './people-policy';
+import { LoginScreenPolicy, MembersPolicy } from './people-policy';
 import { ResetLinkDialog } from './reset-link-dialog';
 
 const DAY = 86_400_000;
@@ -325,6 +325,7 @@ export function UsersSection() {
         ))}
       </List>
       <LoginScreenPolicy />
+      <MembersPolicy />
       {accessFor ? <AppsAccessDialog userId={accessFor} onClose={() => setAccessFor(null)} /> : null}
       {deleting ? <DeleteUserDialog user={deleting} onClose={() => setDeleting(null)} /> : null}
       {resetting ? (
