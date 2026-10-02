@@ -7,6 +7,7 @@ import { useAccess, type Access } from './access';
 import { useBoot, type BootState } from './boot';
 import { useDashboardActions } from './dashboard';
 import { useCopyDiagnostics, useStartEngine } from './engine';
+import { useDaemonDownActions, useHealth, type DaemonHealth } from './health';
 import { appsLine, formatCpu, formatFree, formatMemory } from './format';
 import { useOpenSetup, useSetupPending } from './setup';
 import { useMenuOpen, useTrayStatus } from './status';
@@ -88,19 +89,69 @@ export function Menu() {
   const setupPending = useSetupPending(boot?.step === 'started' && access === 'ready');
   const openSetup = useOpenSetup();
   const open = useMenuOpen();
+  const health = useHealth();
   const status = useTrayStatus(boot?.step === 'started' && access === 'ready', open);
   // Nothing until the Rust side has said where things stand, so no state flashes by.
   if (boot === null || access === null) return null;
-  // The daemon didn't answer within 60 s: "Can't reach hlabs", and nothing is opened in the browser.
-  if (boot.step === 'failed') return <AccessProblem access="unreachable" onRetry={() => void retry()} />;
+  // hlabs isn't answering (or didn't start within 60 s): "Can't reach hlabs"; nothing is opened in the browser.
+  if (health?.state === 'down' || health?.state === 'restarting' || health?.state === 'updating')
+    return <DaemonDownMenu health={health} />;
+  if (boot.step === 'failed') return <DaemonDownMenu health={{ state: 'down', reason: boot.reason }} />;
   if (access !== 'ready') return <AccessProblem access={access} onRetry={() => void retry()} />;
   // Until onboarding is complete (also when hlabs restarts before it is, or the window was closed).
   const inSetup = setupPending === true || (boot.firstLaunch && setupPending === null);
   if (inSetup) return <FirstLaunch boot={boot} onOpenSetup={() => void openSetup()} />;
-  // Waiting for /healthz after a launch: Starting, without counts yet (US-INST-11).
-  if (boot.step === 'starting') return <StartingMenu status={null} />;
+  // Waiting for /healthz after a launch, or it says hlabs is starting: Starting, without counts yet (US-INST-11).
+  if (boot.step === 'starting' || health?.state === 'starting') return <StartingMenu status={null} />;
   if (status?.state === 'engineStopped') return <EngineStoppedMenu status={status} />;
   return status?.state === 'starting' ? <StartingMenu status={status} /> : <RunningMenu status={status} />;
+}
+
+/**
+ * "Can't reach hlabs" (US-INST-13, US-STATE-07): Restart hlabs, Show logs, Copy diagnostics, Quit, none of which need
+ * the API; "Restarting…" while it restarts; "Updating hlabs…" (no restart) during an update.
+ */
+export function DaemonDownMenu({
+  health,
+}: {
+  health: Extract<DaemonHealth, { state: 'down' | 'restarting' | 'updating' }>;
+}) {
+  const actions = useDaemonDownActions();
+  const dashboard = useDashboardActions();
+  const quit: MenuItem = { label: t.quit, shortcut: '⌘Q' };
+  if (health.state === 'updating') {
+    return (
+      <TrayMenu
+        status="working"
+        statusText={t.updating}
+        items={[
+          { separator: true },
+          { label: t.openDashboard, shortcut: '⌘D', onSelect: () => void dashboard.open() },
+          { separator: true },
+          quit,
+        ]}
+      />
+    );
+  }
+  const reason = health.state === 'down' && health.reason ? (t.downReasons[health.reason] ?? null) : null;
+  const restarting = health.state === 'restarting';
+  return (
+    <TrayMenu
+      tone="danger"
+      statusText={restarting ? t.restarting : t.unreachableStatus}
+      note={{ body: reason ?? t.downNote }}
+      items={[
+        { separator: true },
+        // With a reason, the dashboard's address shows the "Can't reach hlabs" page that explains it.
+        ...(reason ? [{ label: t.openDashboard, shortcut: '⌘D', onSelect: () => void dashboard.open() }] : []),
+        { label: t.restartHlabs, onSelect: () => void actions.restart(), disabled: restarting },
+        { label: t.showLogs, onSelect: () => void actions.showLogs() },
+        { label: actions.copied ? t.copied : t.copyDiagnostics, onSelect: () => void actions.copyDiagnostics() },
+        { separator: true },
+        quit,
+      ]}
+    />
+  );
 }
 
 /** TrayStates "Error" (US-INST-12): the engine stopped, with Start engine, Troubleshoot… and Copy diagnostics. */

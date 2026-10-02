@@ -9,6 +9,8 @@ export interface Answers {
   retryAccess?: string;
   /** tray.status's answer. */
   status?: unknown;
+  /** The Rust side's health state. */
+  health?: unknown;
 }
 
 export const tauri = {
@@ -25,6 +27,12 @@ export function answer(a: Answers) {
         return a.retryAccess ?? 'ready';
       case 'boot_state':
         return a.boot ?? null;
+      case 'health_state':
+        return a.health ?? { state: 'up' };
+      case 'restart_daemon':
+      case 'show_logs':
+      case 'copy_local_diagnostics':
+        return null;
       case 'open_setup':
         return true;
       case 'open_dashboard':

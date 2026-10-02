@@ -135,6 +135,9 @@ mod tests {
             self.0.fetch_add(1, Ordering::SeqCst);
             Ok(())
         }
+        fn describe(&self) -> String {
+            "fake".into()
+        }
     }
 
     fn guard(store: MemoryStore) -> (TokenGuard, Arc<AtomicU32>) {

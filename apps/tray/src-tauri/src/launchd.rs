@@ -40,6 +40,8 @@ impl Runner for SystemRunner {
 /// Restarting the daemon, e.g. so it loads a new tray token (US-INST-16).
 pub trait DaemonService: Send + Sync {
     fn restart(&self) -> Result<(), String>;
+    /// What the OS says about the service, for "Copy diagnostics" (US-INST-13).
+    fn describe(&self) -> String;
 }
 
 /// `gui/<uid>/dev.hlabs.daemon`.
@@ -65,6 +67,17 @@ impl<R: Runner> DaemonService for LaunchAgent<R> {
             Err(format!("launchctl kickstart failed: {}", ran.stderr.trim()))
         }
     }
+
+    fn describe(&self) -> String {
+        match self
+            .runner
+            .run("/bin/launchctl", &["print", &service_target(self.uid)])
+        {
+            Ok(ran) if ran.ok() => "loaded".to_owned(),
+            Ok(_) => "not loaded".to_owned(),
+            Err(err) => err,
+        }
+    }
 }
 
 /// In development the daemon runs under `pnpm dev`, not launchd, and it reads a new token by itself
@@ -74,6 +87,10 @@ pub struct NoService;
 impl DaemonService for NoService {
     fn restart(&self) -> Result<(), String> {
         Ok(())
+    }
+
+    fn describe(&self) -> String {
+        "not run by launchd (development)".to_owned()
     }
 }
 

@@ -194,8 +194,9 @@ impl<R: Runner> Bootstrap<R> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Health {
     Ready,
-    /// Not ready yet (starting, or nothing answering).
-    NotYet,
+    /// Not ready yet: nothing answered (`None`), or a 503 with a reason that waiting may fix
+    /// (`starting`, `updating`).
+    NotYet(Option<String>),
     /// The daemon won't become ready by waiting (e.g. `migration_failed`), with its reason.
     Failed(String),
 }
@@ -212,7 +213,7 @@ pub fn read_health(status: u16, body: &str) -> Health {
         .and_then(|v| v.get("reason").and_then(|r| r.as_str()).map(str::to_owned));
     match reason {
         Some(r) if FATAL_REASONS.contains(&r.as_str()) => Health::Failed(r),
-        _ => Health::NotYet,
+        other => Health::NotYet(other),
     }
 }
 
@@ -224,14 +225,14 @@ pub async fn check_health(base_url: &str) -> Health {
         .build()
     {
         Ok(c) => c,
-        Err(_) => return Health::NotYet,
+        Err(_) => return Health::NotYet(None),
     };
     match client.get(format!("{base_url}/healthz")).send().await {
         Ok(res) => {
             let status = res.status().as_u16();
             read_health(status, &res.text().await.unwrap_or_default())
         }
-        Err(_) => Health::NotYet,
+        Err(_) => Health::NotYet(None),
     }
 }
 
@@ -250,7 +251,7 @@ pub async fn wait_for_health(base_url: &str, timeout: Duration) -> Waited {
         match check_health(base_url).await {
             Health::Ready => return Waited::Ready,
             Health::Failed(reason) => return Waited::Failed(reason),
-            Health::NotYet => {}
+            Health::NotYet(_) => {}
         }
         if tokio::time::Instant::now() >= deadline {
             return Waited::TimedOut;
@@ -458,9 +459,12 @@ mod tests {
     #[test]
     fn us_inst_01_healthz_ready_starting_and_failed() {
         assert_eq!(read_health(200, r#"{"status":"ok"}"#), Health::Ready);
-        assert_eq!(read_health(503, r#"{"reason":"starting"}"#), Health::NotYet);
+        assert_eq!(
+            read_health(503, r#"{"reason":"starting"}"#),
+            Health::NotYet(Some("starting".into()))
+        );
         // A stopped engine doesn't fail /healthz; anything unknown just means "not yet".
-        assert_eq!(read_health(503, "nonsense"), Health::NotYet);
+        assert_eq!(read_health(503, "nonsense"), Health::NotYet(None));
         assert_eq!(
             read_health(503, r#"{"reason":"migration_failed"}"#),
             Health::Failed("migration_failed".into())

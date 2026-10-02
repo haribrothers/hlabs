@@ -4,6 +4,17 @@ export const trayCopy = {
   /** US-INST-05: "Running · 11 apps". */
   runningApps: { none: 'Running · no apps', one: 'Running · 1 app', many: (n: number) => `Running · ${n} apps` },
   engineStopped: 'Container engine stopped',
+  /** US-INST-13, US-STATE-07. */
+  restarting: 'Restarting…',
+  updating: 'Updating hlabs…',
+  restartHlabs: 'Restart hlabs',
+  showLogs: 'Show logs',
+  /** Why hlabs is down, from /healthz (US-STATE-05's reasons, worded for the computer running hlabs). */
+  downReasons: {
+    migration_failed: "hlabs couldn't update its database. Your data hasn't been changed.",
+    storage_unavailable: "hlabs can't find its storage folder. Check that the drive is connected.",
+  } as Record<string, string>,
+  downNote: "The background service that runs your apps isn't answering.",
   /** US-INST-12. */
   engineNames: {
     orbstack: 'OrbStack',

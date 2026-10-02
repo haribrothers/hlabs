@@ -5,7 +5,9 @@
 mod access;
 mod bootstrap;
 mod daemon;
+mod health;
 mod launchd;
+mod logs;
 mod paths;
 mod token;
 mod window;
@@ -48,6 +50,95 @@ struct BootState {
 }
 
 struct Boot(Mutex<BootState>);
+
+/// Whether hlabs answers `/healthz` (US-INST-13, US-STATE-07).
+#[derive(Default)]
+struct HealthWatch(Mutex<health::Monitor>);
+
+/// The dashboard's address from the last `tray.status`, for "Open Dashboard" while hlabs is down.
+#[derive(Default)]
+struct LastDashboard(Mutex<Option<String>>);
+
+const HEALTH_EVENT: &str = "health-changed";
+
+fn health_state_of(app: &AppHandle) -> health::DaemonHealth {
+    app.state::<HealthWatch>()
+        .0
+        .lock()
+        .expect("health poisoned")
+        .state()
+        .clone()
+}
+
+fn update_health(app: &AppHandle, change: impl FnOnce(&mut health::Monitor)) {
+    let (before, after) = {
+        let watch = app.state::<HealthWatch>();
+        let mut monitor = watch.0.lock().expect("health poisoned");
+        let before = monitor.state().clone();
+        change(&mut monitor);
+        (before, monitor.state().clone())
+    };
+    if before != after {
+        let _ = app.emit(HEALTH_EVENT, after);
+    }
+}
+
+/// Asks `/healthz` every 5 s for as long as the tray runs.
+async fn watch_health(app: AppHandle) {
+    loop {
+        tokio::time::sleep(health::POLL).await;
+        let answer = bootstrap::check_health(DEFAULT_BASE_URL).await;
+        update_health(&app, |m| {
+            m.observe(answer, std::time::Instant::now());
+        });
+    }
+}
+
+#[tauri::command]
+fn health_state(app: AppHandle) -> health::DaemonHealth {
+    health_state_of(&app)
+}
+
+/// "Restart hlabs": restarts the background service and waits up to 60 s (US-STATE-07).
+#[tauri::command]
+async fn restart_daemon(app: AppHandle) -> Result<(), String> {
+    update_health(&app, |m| m.restarting(std::time::Instant::now()));
+    let restarted = tauri::async_runtime::spawn_blocking(|| launchd::default_service().restart())
+        .await
+        .map_err(|e| e.to_string())?;
+    if let Err(err) = restarted {
+        update_health(&app, |m| m.down(None, std::time::Instant::now()));
+        return Err(err);
+    }
+    Ok(())
+}
+
+/// "Show logs": the newest daemon log file in the system's viewer, without the API (US-INST-13).
+#[tauri::command]
+fn show_logs(app: AppHandle) -> Result<(), String> {
+    use tauri_plugin_opener::OpenerExt;
+    let logs_dir = paths::data_dir().join("logs");
+    let target = logs::newest_log(&logs_dir).unwrap_or(logs_dir);
+    app.opener()
+        .open_path(target.to_string_lossy(), None::<&str>)
+        .map_err(|e| e.to_string())
+}
+
+/// "Copy diagnostics" while hlabs isn't answering: built here from the log file (US-INST-13).
+#[tauri::command]
+async fn copy_local_diagnostics(app: AppHandle) -> Result<(), String> {
+    use tauri_plugin_clipboard_manager::ClipboardExt;
+    let version = app.package_info().version.to_string();
+    let report = tauri::async_runtime::spawn_blocking(move || {
+        let service = launchd::default_service().describe();
+        logs::local_report(&version, &service, &paths::data_dir())
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    app.clipboard()
+        .write_text(report)
+        .map_err(|e| e.to_string())
+}
 
 fn update_boot(app: &AppHandle, change: impl FnOnce(&mut BootState)) {
     let state = {
@@ -113,14 +204,25 @@ async fn dashboard_url(app: &AppHandle, action: &str) -> Result<String, DaemonEr
         .token()
         .map(str::to_owned)
         .ok_or(DaemonError::NoAccess)?;
-    let data = DaemonClient::new(DEFAULT_BASE_URL, token)
+    let answer = DaemonClient::new(DEFAULT_BASE_URL, token)
         .call(
             CallKind::Mutation,
             "tray.quickAction",
             &serde_json::json!({ "action": action }),
         )
-        .await?;
-    daemon::web_url(&data).ok_or(DaemonError::Protocol)
+        .await;
+    match answer {
+        Ok(data) => daemon::web_url(&data).ok_or(DaemonError::Protocol),
+        // hlabs is down: the last address it gave; Caddy shows the "Can't reach hlabs" page there (US-INST-13).
+        Err(DaemonError::Unreachable | DaemonError::Api { .. }) => app
+            .state::<LastDashboard>()
+            .0
+            .lock()
+            .expect("poisoned")
+            .clone()
+            .ok_or(DaemonError::Unreachable),
+        Err(err) => Err(err),
+    }
 }
 
 /// "Open Dashboard" (⌘D), or a page of it such as an app's logs for "Show startup log" (US-INST-11):
@@ -208,6 +310,12 @@ async fn daemon_call(
     let result = DaemonClient::new(DEFAULT_BASE_URL, token)
         .call(kind, &path, &input.unwrap_or(Value::Null))
         .await;
+    if let (Ok(data), "tray.status") = (&result, path.as_str()) {
+        if let Some(url) = daemon::web_url(&serde_json::json!({ "url": data.get("dashboardUrl") }))
+        {
+            *app.state::<LastDashboard>().0.lock().expect("poisoned") = Some(url);
+        }
+    }
     let mut guard = daemon.lock();
     match &result {
         Ok(_) => guard.succeeded(),
@@ -237,13 +345,21 @@ fn retry_access(app: AppHandle, daemon: State<'_, Daemon>) -> Access {
     after
 }
 
-/// Waits for `/healthz` (60 s), then reports started (and opens setup) or failed.
+/// Waits for `/healthz` (60 s), then reports started (and opens setup) or failed, and from then on
+/// watches it every 5 s.
 async fn wait_until_started(app: &AppHandle) {
     match bootstrap::wait_for_health(DEFAULT_BASE_URL, bootstrap::HEALTH_TIMEOUT).await {
         Waited::Ready => started(app).await,
-        Waited::TimedOut => set_boot(app, BootStep::Failed, None),
-        Waited::Failed(reason) => set_boot(app, BootStep::Failed, Some(reason)),
+        Waited::TimedOut => {
+            set_boot(app, BootStep::Failed, None);
+            update_health(app, |m| m.down(None, std::time::Instant::now()));
+        }
+        Waited::Failed(reason) => {
+            set_boot(app, BootStep::Failed, Some(reason.clone()));
+            update_health(app, |m| m.down(Some(reason), std::time::Instant::now()));
+        }
     }
+    tauri::async_runtime::spawn(watch_health(app.clone()));
 }
 
 /// The bootstrap for a macOS release build that has the daemon bundled; `None` otherwise.
@@ -282,7 +398,11 @@ pub fn run() {
             open_setup,
             open_dashboard,
             copy_dashboard_address,
-            copy_text
+            copy_text,
+            health_state,
+            restart_daemon,
+            show_logs,
+            copy_local_diagnostics
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]
@@ -304,6 +424,8 @@ pub fn run() {
             // The token exists before the LaunchAgent starts the daemon that reads it.
             guard.start();
             app.manage(Daemon(Mutex::new(guard)));
+            app.manage(HealthWatch::default());
+            app.manage(LastDashboard::default());
             app.manage(Boot(Mutex::new(BootState {
                 first_launch,
                 step: BootStep::Starting,

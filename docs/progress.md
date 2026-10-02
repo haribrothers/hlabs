@@ -166,7 +166,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [ ] US-INST-10 · Quit hlabs
 - [x] US-INST-11 · Starting state (the count follows tray.status, asked every 5 s while the menu is open, rather than app.stateChanged; "starting" means a reconcile is running or an app that should run is starting or restarting; the needs-attention dot on the icon is US-INST-14)
 - [x] US-INST-12 · Container engine stopped (Start engine runs the dashboard's engine_start job, audited with via: tray; the menu moves on when tray.status says the engine runs; Troubleshoot… opens the dashboard's Home, where the engine-stopped banner and checklist are, US-STATE-08)
-- [ ] US-INST-13 · Can't reach hlabs
+- [x] US-INST-13 · Can't reach hlabs (the red dot on the icon is US-INST-14; with a reason, Open Dashboard opens the last address hlabs gave, where Caddy shows the "Can't reach hlabs" page; the Linux restart and journal are for the Linux tray, phase 6)
 - [ ] US-INST-14 · Menu-bar icon reflects state
 - [x] US-INST-15 · Tray authenticates to the daemon with a local token (where the token lives per platform and how the daemon picks up a new one: D-112; the `audit_log` rows with `via: "tray"` are written and tested by each tray action as it's built: pause/resume US-INST-08, start engine US-INST-12, reset password US-INST-18, backup in phase 5, uninstall in phase 6)
 - [x] US-INST-16 · Recover from a missing or mismatched tray token (the daemon also reads a regenerated token by itself within 5 s, D-112, so the restart is belt and braces; in development there is no LaunchAgent to restart. The tray's own diagnostics redact Bearer values: the tray client never prints its token and the daemon's log redacts `Authorization`; "Copy diagnostics" itself is US-INST-12)
@@ -193,7 +193,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [ ] US-STATE-01 · Show a full-screen updating state
 - [ ] US-STATE-02 · Reconnect automatically when the update finishes
 - [ ] US-STATE-03 · Handle a failed or stuck update
-- [ ] US-STATE-07 · Show the daemon-down state in the tray
+- [x] US-STATE-07 · Show the daemon-down state in the tray (built with US-INST-13: one health watch in the tray's Rust side, /healthz every 5 s)
 
 ## Phase 5 · Backups and Files
 
