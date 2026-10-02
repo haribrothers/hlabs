@@ -200,6 +200,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     dashboardUpstream: config.dashboardUpstream,
     routes: () => appService.routes(),
   });
+  // Apps installed or uninstalled while remote access is on get or lose their tailnet address (US-SYS-04).
+  bus.on(({ event }) => {
+    if (event.type === 'app.stateChanged') void remote.reconcile();
+  });
 
   // 4. The built-in store, then reconcile installed apps with the engine.
   readiness.step(3);

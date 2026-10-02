@@ -153,6 +153,8 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     embed: z.boolean().default(false),
     /** `apps.state_detail`, e.g. a failed install's `{ code, port, step }` (US-STORE-13 e2e). */
     stateDetail: z.record(z.string(), z.unknown()).optional(),
+    /** Its own port (12000–12999), for its fallback and tailnet addresses (US-SYS-04 e2e). */
+    port: z.number().int().min(12000).max(12999).optional(),
   });
   // The engine as stopped (or back), without touching the real one: e2e for the engine-stopped states (US-STATE-08…10).
   const engineBody = z.object({ running: z.boolean() });
@@ -209,7 +211,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
   app.post('/dev/fake-app', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
-    const { id, name, remove, state, progress, embed, stateDetail: detail } = fakeApp.parse(req.body);
+    const { id, name, remove, state, progress, embed, stateDetail: detail, port } = fakeApp.parse(req.body);
     const stateDetail = detail ? JSON.stringify(detail) : null;
     const { db, bus } = services;
     if (remove) {
@@ -244,6 +246,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
         state,
         stateDetail,
         hostname: id,
+        portFallback: port ?? null,
         installedAt: Date.now(),
         updatedAt: Date.now(),
       })

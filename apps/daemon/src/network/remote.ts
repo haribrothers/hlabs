@@ -212,6 +212,27 @@ export class RemoteService {
     return { state: 'connected', url: tailnetDashboardUrl(this.deps.db)! };
   }
 
+  private reconciling: Promise<void> = Promise.resolve();
+
+  /**
+   * Keeps the tailnet in step with the apps (US-SYS-04): while connected, an installed app gets its Serve entry and an
+   * uninstalled one loses it. Runs one at a time; a problem is logged and tried again on the next change.
+   */
+  reconcile(): Promise<void> {
+    const next = this.reconciling.then(async () => {
+      const saved = this.settings();
+      if (saved.mode !== 'tailscale' || saved.state !== 'connected') return;
+      try {
+        const ts = await this.state();
+        if (ts.kind === 'running') await this.publish(ts, saved.dashboardPort);
+      } catch (err) {
+        this.deps.logger.warn({ err }, "couldn't update the apps on the tailnet");
+      }
+    });
+    this.reconciling = next;
+    return next;
+  }
+
   /** Rewrites the Serve config without hlabs's entries; everything else stays (D-103). */
   private async unpublish() {
     const owned = this.settings().serve;

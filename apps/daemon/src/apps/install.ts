@@ -39,6 +39,7 @@ import { waitHealthy, type HealthProbes } from './health';
 import { takenHostnames } from './hostnames';
 import type { AppDiskUsage } from './disk';
 import { appSummary, catalogManifest, catalogRow } from './list';
+import { tailnetHost } from '../network/domains';
 import { allocatePort, loopbackPort, loopbackPortFree } from './ports';
 import type { AppService } from './service';
 import { canTransition, stateDetail } from './state-machine';
@@ -564,6 +565,8 @@ export class InstallService {
       folders: folderPaths(manifest, mounts, appData),
       hostname: `${hostname}.${domain}`,
       url: `https://${hostname}.${domain}`,
+      // Its tailnet address, while remote access is on (D-012, D-102).
+      tailnetUrl: tailnetHost(this.deps.db) ? `https://${tailnetHost(this.deps.db)}:${port}` : undefined,
       tz: (this.deps.timeZone ?? hostTimeZone)(),
       puid: process.getuid?.() ?? 1000,
       pgid: process.getgid?.() ?? 1000,

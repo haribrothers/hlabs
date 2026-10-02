@@ -69,6 +69,7 @@ export const networkCopy = {
   disconnectHere: "You're using remote access right now. This page will stop working.",
   remoteOff: 'Remote access is off',
   connectFailed: "Couldn't connect remote access. Try again.",
+  dashboard: 'Dashboard',
   appAddresses: 'App addresses',
   noApps: 'No apps yet',
   openStore: 'Open the App Store',

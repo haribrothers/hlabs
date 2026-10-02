@@ -15,7 +15,7 @@ hlabs uses **Tailscale**, a free private network between your own devices, so yo
 3. If Tailscale isn't signed in yet, its log-in page opens in a new tab. Sign in there; hlabs notices within a few seconds. This computer joins your tailnet with the name of your server, such as `hlabs`.
 4. If Tailscale is already signed in on this computer, hlabs asks before publishing anything and names the tailnet. If that's a work tailnet, cancel and sign Tailscale in to a personal one first. The computer keeps the name it already has on the tailnet.
 
-When it's connected, the dashboard is at `https://<name>.<tailnet>.ts.net` and each app at that address with its own port, such as `https://hlabs.tail1234.ts.net:12001`. Tailscale gives these addresses real certificates, so there are no browser warnings. Getting a certificate publishes the computer's tailnet name in public certificate logs; the name says nothing about what's on it.
+When it's connected, the dashboard is at `https://<name>.<tailnet>.ts.net` and each app at that address with its own port, such as `https://hlabs.tail1234.ts.net:12001`. Settings › Network & remote access lists them all, with **Copy**; apps you install or remove later are added or taken away within a few seconds. Tailscale gives these addresses real certificates, so there are no browser warnings. Getting a certificate publishes the computer's tailnet name in public certificate logs; the name says nothing about what's on it.
 
 ## If something's in the way
 

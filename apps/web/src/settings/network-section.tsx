@@ -7,7 +7,7 @@ import { Badge, Button, List, ListRow, tokens } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useSubscription } from '@trpc/tanstack-react-query';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { CopyAddress } from '../apps/app-access';
 import { networkCopy as copy } from '../copy/network';
 import type { HomeApp } from '../home/home-app';
@@ -157,6 +157,53 @@ function AppAddresses({ apps }: { apps: readonly HomeApp[] }) {
   );
 }
 
+/**
+ * While connected (US-SYS-04): the dashboard's tailnet address and each app's, on its own port of the same name
+ * (D-012, D-102). No per-app names or sub-paths.
+ */
+function TailnetAddresses({ dashboard, apps }: { dashboard: string; apps: readonly HomeApp[] }) {
+  const desktop = useIsDesktop();
+  const row = (key: string, title: ReactNode, url: string, leading?: ReactNode) => (
+    <ListRow
+      key={key}
+      leading={leading}
+      title={title}
+      subtitle={desktop ? undefined : <AddressLink url={url} />}
+      trailing={
+        <span className="flex items-center gap-3">
+          {desktop ? <AddressLink url={url} /> : null}
+          <CopyAddress url={url} />
+        </span>
+      }
+    />
+  );
+  return (
+    <>
+      {row('dashboard', copy.dashboard, dashboard)}
+      {[...apps]
+        .filter((a) => a.urls.tailnet)
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((app) => {
+          const look = appTileLook(app.name, app.icon, LOGO);
+          return row(
+            app.id,
+            app.name,
+            app.urls.tailnet!,
+            <AppLogo
+              decorative
+              name={app.name}
+              src={app.icon.logoUrl}
+              colors={look.colors}
+              fallbackIcon={look.fallbackIcon}
+              size={LOGO}
+              radius={tokens.SPACE_2}
+            />,
+          );
+        })}
+    </>
+  );
+}
+
 export function NetworkSection({ shippedPhase }: { shippedPhase?: number }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -192,6 +239,9 @@ export function NetworkSection({ shippedPhase }: { shippedPhase?: number }) {
       <HomeNetwork status={status.data} shippedPhase={shippedPhase} onChangePorts={() => setChanging(true)} />
       <List label={copy.remoteAccess}>
         <TailscaleRow remote={status.data.remote} />
+        {status.data.remote.state === 'connected' && status.data.remote.url ? (
+          <TailnetAddresses dashboard={status.data.remote.url} apps={apps.data?.apps ?? []} />
+        ) : null}
       </List>
       {apps.data ? <AppAddresses apps={apps.data.apps} /> : null}
       {changing ? <WebPortsDialog onClose={() => setChanging(false)} /> : null}
