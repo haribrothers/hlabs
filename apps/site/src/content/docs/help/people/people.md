@@ -49,5 +49,7 @@ Below the apps there are two more switches, saved with them:
 - **See the Shared folder in Files**: the folder everyone can share files in. Each person's own Home folder is always private, whatever you choose.
 - **See live usage**: the Usage page with this computer's CPU, memory, storage and network. It also needs **See live usage** to be on for all members in **Users** (see below).
 
+Changes apply straight away. An app you take away disappears from their Home screen within a couple of seconds, and if they open its address they see "You don't have access to this". An app you add appears without them logging in again.
+
 Admins can open every app, so they have no **Apps access** button.
 
