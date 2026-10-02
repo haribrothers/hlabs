@@ -11,4 +11,18 @@ vi.mock('@tauri-apps/api/event', () => ({
   },
 }));
 
+vi.mock('@tauri-apps/api/window', () => ({
+  getCurrentWindow: () => ({
+    onFocusChanged: async () => () => {},
+    hide: async () => {},
+    setSize: async () => {},
+  }),
+  LogicalSize: class {
+    constructor(
+      readonly width: number,
+      readonly height: number,
+    ) {}
+  },
+}));
+
 afterEach(cleanup);

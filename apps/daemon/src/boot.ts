@@ -49,6 +49,7 @@ import { OnboardingService } from './onboarding/service';
 import { NodeDriveProbe, type DriveProbe } from './platform/drives';
 import { LinuxNetworkMounter, MacNetworkMounter, type NetworkMounter } from './platform/network-mount';
 import { NetworkStorage } from './storage/network';
+import { SystemHostStats, type HostStats } from './platform/host-stats';
 import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
@@ -73,6 +74,7 @@ export interface BootDeps {
   tailscale?: TailscaleClient;
   secrets?: SecretStore;
   system?: SystemProbe;
+  host?: HostStats;
   drives?: DriveProbe;
   mounter?: NetworkMounter;
   /** Downloads, tar and colima for the engine install (US-ONB-05). */
@@ -392,6 +394,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     notifications,
     drives: deps.drives ?? new NodeDriveProbe(),
     system: probe,
+    host: deps.host ?? new SystemHostStats(),
     keepAwake: new KeepAwake(deps.sleepBlocker ?? processSleepBlocker(), () => ({
       keepAwake: getSetting(db, 'startup').keepAwake,
       appsRunning: db.select({ id: apps.id }).from(apps).where(eq(apps.state, 'running')).all().length,

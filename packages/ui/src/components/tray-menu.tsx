@@ -11,8 +11,8 @@ export interface TrayMenuProps {
   statusText: string;
   /** 'danger' for the error states (TrayStates "Error"): a warning in place of the logo, the status in danger. */
   tone?: 'default' | 'danger';
-  /** CPU, memory, free space. */
-  stats?: { label: string; value: string }[];
+  /** CPU, memory, free space. `spoken` replaces both for screen readers ("CPU usage 18 percent"). */
+  stats?: { label: string; value: string; spoken?: string }[];
   /** A short explanation under the header (Paused, Error and Update states). */
   note?: { title?: string; body: ReactNode };
   /** The state's one primary button ("Resume apps", "Start engine", "Try again"…). */
@@ -58,8 +58,9 @@ export function TrayMenu({
           <span className="hl-tray-stats">
             {stats.map((s) => (
               <span key={s.label} className="hl-tray-stat">
-                <span>{s.label}</span>
-                <b>{s.value}</b>
+                <span aria-hidden={s.spoken ? true : undefined}>{s.label}</span>
+                <b aria-hidden={s.spoken ? true : undefined}>{s.value}</b>
+                {s.spoken ? <span className="hl-sr">{s.spoken}</span> : null}
               </span>
             ))}
           </span>

@@ -57,7 +57,7 @@ These were added while writing user stories and are **part of the API contract**
 
 ### From [01 · Install & menu-bar app](../features/01-install-tray.md)
 
-- `tray.status` output extended: `appsRunning`, `appsExpected`, `paused`, `engine { name, running, managedByHlabs }`, `dashboardUrl`, `backup { configured, lastSucceededAt, running, progress, lastFailed }`, `updateChannel`, `autoUpdate`, `exclusiveJobRunning`, `onboardingComplete`, `reduceTransparency`.
+- `tray.status` output (`trayStatusSchema`): `state` (`starting` \| `running` \| `paused` \| `engineStopped`), `appsRunning` (installed apps in state `running`), `appsExpected`, `paused`, `cpuPercent` (0–100), `memoryUsedBytes`, `freeBytes` (on the storage root; each null when it can't be read, never 0), `engine { name (the engine kind), running, managedByHlabs }`, `dashboardUrl` (the `.local` address, or the LAN address while it isn't published; the configured one without Caddy), `backup { configured, lastSucceededAt, running, progress, lastFailed }`, `updateChannel`, `autoUpdate`, `exclusiveJobRunning`, `onboardingComplete`, `reduceTransparency` (the first enabled admin's). Until the usage sampler (US-USE-08), CPU and memory are read when asked.
 - `tray.listUsers` (trayProcedure query): enabled users with `id`, `username`, `displayName`, `role`, `totpEnabled`.
 - `tray.resetPassword` input changed to `{ username, newPassword, disableTotp }` (applies directly; writes `password_resets` with `created_via = tray`).
 - `tray.setStartAtLogin` (trayProcedure mutation): `{ enabled }`, confirms the tray applied a start-at-login change (D-042).

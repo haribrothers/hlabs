@@ -13,6 +13,7 @@ import type { LoginService } from './auth/login';
 import type { OnboardingService } from './onboarding/service';
 import type { DriveProbe } from './platform/drives';
 import type { KeepAwake } from './platform/keep-awake';
+import type { HostStats } from './platform/host-stats';
 import type { SystemProbe } from './platform/system';
 import type { NotificationService } from './notifications/service';
 import type { NetworkStorage } from './storage/network';
@@ -65,6 +66,8 @@ export interface Services {
   drives: DriveProbe;
   /** CPU, memory and disk of this computer. */
   system: SystemProbe;
+  /** CPU and memory in use right now (US-INST-05). */
+  host: HostStats;
   /** Holds off sleep while apps run, when the setting is on (US-SYS-20). */
   keepAwake: KeepAwake;
   network: NetworkStorage;

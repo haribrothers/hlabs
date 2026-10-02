@@ -7,6 +7,8 @@ export interface Answers {
   /** tray.setupUrl's url (null once onboarding is complete). */
   setupUrl?: string | null;
   retryAccess?: string;
+  /** tray.status's answer. */
+  status?: unknown;
 }
 
 export const tauri = {
@@ -27,6 +29,7 @@ export function answer(a: Answers) {
         return true;
       case 'daemon_call':
         if (args?.path === 'tray.setupUrl') return { url: a.setupUrl ?? null, lanUrls: [] };
+        if (args?.path === 'tray.status') return a.status ?? null;
         return null;
       default:
         throw new Error(`unexpected command ${cmd}`);

@@ -1,6 +1,12 @@
 // Tray menu copy. Actions follow the prototype order (TrayMenu guidelines).
 export const trayCopy = {
   running: 'Running',
+  /** US-INST-05: "Running · 11 apps". */
+  runningApps: { none: 'Running · no apps', one: 'Running · 1 app', many: (n: number) => `Running · ${n} apps` },
+  engineStopped: 'Container engine stopped',
+  cpuSpoken: (v: string) => (v === '–' ? 'CPU usage not known yet' : `CPU usage ${v.replace('%', ' percent')}`),
+  memorySpoken: (v: string) => (v === '–' ? 'Memory in use not known yet' : `Memory in use ${v}`),
+  freeSpoken: (v: string) => (v === '–' ? 'Free space not known yet' : `Free space ${v}`),
   cpu: 'CPU',
   memory: 'Memory',
   free: 'Free',

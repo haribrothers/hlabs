@@ -29,6 +29,7 @@
     "otplib": "^13.5.0",
     "pino": "^10.3.1",
     "pino-roll": "^4.0.0",
+    "systeminformation": "^5.33.15",
     "zod": "^4.6.5"
   },
   "devDependencies": {

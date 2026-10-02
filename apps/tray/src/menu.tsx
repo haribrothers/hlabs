@@ -1,10 +1,13 @@
 // The tray window: the menu for the tray's current state. Stats, actions and the other states arrive with their stories
 // (US-INST-05…).
+import type { TrayStatus } from '@hlabs/api';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { TrayMenu, TraySetup, type MenuItem } from '@hlabs/ui';
 import { useAccess, type Access } from './access';
 import { useBoot, type BootState } from './boot';
+import { appsLine, formatCpu, formatFree, formatMemory } from './format';
 import { useOpenSetup, useSetupPending } from './setup';
+import { useMenuOpen, useTrayStatus } from './status';
 import { trayCopy as t } from './copy';
 
 export function AccessProblem({ access, onRetry }: { access: Exclude<Access, 'ready'>; onRetry: () => void }) {
@@ -75,6 +78,8 @@ export function Menu() {
   const boot = useBoot();
   const setupPending = useSetupPending(boot?.step === 'started' && access === 'ready');
   const openSetup = useOpenSetup();
+  const open = useMenuOpen();
+  const status = useTrayStatus(boot?.step === 'started' && access === 'ready', open);
   // Nothing until the Rust side has said where things stand, so no state flashes by.
   if (boot === null || access === null) return null;
   // The daemon didn't answer within 60 s: "Can't reach hlabs", and nothing is opened in the browser.
@@ -83,13 +88,23 @@ export function Menu() {
   // Until onboarding is complete (also when hlabs restarts before it is, or the window was closed).
   const inSetup = setupPending === true || (boot.firstLaunch && setupPending === null);
   if (inSetup) return <FirstLaunch boot={boot} onOpenSetup={() => void openSetup()} />;
+  return <RunningMenu status={status} />;
+}
+
+/** TrayMenu (US-INST-05): "Running · N apps" and CPU, memory and free space; dashes until tray.status answers. */
+export function RunningMenu({ status }: { status: TrayStatus | null }) {
+  const cpu = formatCpu(status?.cpuPercent);
+  const memory = formatMemory(status?.memoryUsedBytes);
+  const free = formatFree(status?.freeBytes);
+  const stopped = status?.state === 'engineStopped';
   return (
     <TrayMenu
-      statusText={t.running}
+      status={stopped ? 'failed' : 'running'}
+      statusText={stopped ? t.engineStopped : status ? appsLine(status.appsRunning, t.runningApps) : t.running}
       stats={[
-        { label: t.cpu, value: '—' },
-        { label: t.memory, value: '—' },
-        { label: t.free, value: '—' },
+        { label: t.cpu, value: cpu, spoken: t.cpuSpoken(cpu) },
+        { label: t.memory, value: memory, spoken: t.memorySpoken(memory) },
+        { label: t.free, value: free, spoken: t.freeSpoken(free) },
       ]}
       items={runningItems()}
     />

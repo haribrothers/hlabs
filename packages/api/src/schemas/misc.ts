@@ -42,8 +42,42 @@ export const ai = {
   },
 };
 
+/** What the tray shows (US-INST-05; 05 "From 01 · Install & menu-bar app"). */
+export const trayStatusSchema = z.object({
+  /** `starting` (US-INST-11) and `paused` (US-INST-08) come with their stories. */
+  state: z.enum(['starting', 'running', 'paused', 'engineStopped']),
+  /** Installed apps in state `running`. */
+  appsRunning: z.number().int().nonnegative(),
+  /** Installed apps that should be running (not stopped on purpose). */
+  appsExpected: z.number().int().nonnegative(),
+  paused: z.boolean(),
+  /** Host CPU in use, 0–100; null when it can't be read. */
+  cpuPercent: z.number().min(0).max(100).nullable(),
+  /** Host memory in use, bytes. */
+  memoryUsedBytes: z.number().nonnegative().nullable(),
+  /** Free space on the storage root, bytes. */
+  freeBytes: z.number().nonnegative().nullable(),
+  engine: z.object({ name: z.string().nullable(), running: z.boolean(), managedByHlabs: z.boolean() }),
+  /** The dashboard's current address (the renamed name, or the LAN address when mDNS fell back). */
+  dashboardUrl: z.string(),
+  backup: z.object({
+    configured: z.boolean(),
+    lastSucceededAt: timestampSchema.nullable(),
+    running: z.boolean(),
+    progress: z.number().min(0).max(1).nullable(),
+    lastFailed: z.boolean(),
+  }),
+  updateChannel: z.enum(['stable', 'beta']),
+  autoUpdate: z.boolean(),
+  exclusiveJobRunning: z.boolean(),
+  onboardingComplete: z.boolean(),
+  /** The first admin's "Reduce transparency" (Settings › Appearance). */
+  reduceTransparency: z.boolean(),
+});
+export type TrayStatus = z.infer<typeof trayStatusSchema>;
+
 export const tray = {
-  status: io(empty, pending),
+  status: io(empty, trayStatusSchema),
   listUsers: io(empty, pending),
   quickAction: io(
     z.object({ action: z.enum(['openDashboard', 'copyAddress', 'backupNow', 'pauseAll', 'resumeAll']) }),

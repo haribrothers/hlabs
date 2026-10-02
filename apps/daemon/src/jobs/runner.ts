@@ -59,6 +59,16 @@ export class JobRunner {
     return result.changes;
   }
 
+  /** An exclusive job (restore, move all data, factory reset, system update) is queued or running (D-020). */
+  exclusiveRunning(): boolean {
+    return this.db
+      .select({ kind: jobs.kind })
+      .from(jobs)
+      .where(inArray(jobs.state, [...ACTIVE]))
+      .all()
+      .some((j) => EXCLUSIVE.has(j.kind));
+  }
+
   /** Throws JOB_EXCLUSIVE_RUNNING when D-020 wouldn't let a job of this kind start now (check before other work). */
   assertCanStart(kind: JobKind): void {
     const active = this.db

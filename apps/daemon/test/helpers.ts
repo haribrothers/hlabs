@@ -12,6 +12,7 @@ import { buildServer } from '../src/server';
 import { ServiceHolder } from '../src/services';
 import { FakeEngine, fakeMachine } from './fakes/engine';
 import { FakeEngineControl } from './fakes/engine-control';
+import { FakeHostStats } from './fakes/host-stats';
 import { FakeSleepBlocker } from './fakes/sleep-blocker';
 import { FakeSystemProbe } from './fakes/system';
 
@@ -90,6 +91,7 @@ export async function startDaemon(
     drives: { externalDrives: async () => [] },
     engineControl: new FakeEngineControl(),
     sleepBlocker: new FakeSleepBlocker(),
+    host: new FakeHostStats(),
     ...options.boot,
   };
   const services = options.skipBoot ? null : await boot(bootDeps);
