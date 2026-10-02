@@ -11,9 +11,10 @@ const who = (ctx: DaemonContext) => {
 
 export const network: AppHandlers<DaemonContext>['network'] = {
   /** How hlabs is reached (US-SYS-01): its home-network addresses and web ports. */
-  status: async (_input, ctx) => {
+  status: async (input, ctx) => {
     const { routing, remote, db } = ctx.services;
-    return { home: routing.homeNetwork(), remote: await remote.status(), ports: getSetting(db, 'network').ports };
+    const remoteStatus = input?.probe === false ? remote.saved() : await remote.status();
+    return { home: routing.homeNetwork(), remote: remoteStatus, ports: getSetting(db, 'network').ports };
   },
   remote: {
     /** Connect with Tailscale (US-SYS-02); the dashboard opens the log-in page and asks status every 2 s. */

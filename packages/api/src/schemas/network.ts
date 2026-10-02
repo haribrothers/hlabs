@@ -47,6 +47,21 @@ export const remoteStatusSchema = z.object({
 });
 export type RemoteStatus = z.infer<typeof remoteStatusSchema>;
 
+export const remoteConnectInput = z
+  .object({
+    confirmTailnet: z.boolean().optional(),
+    dashboardPort: z.union([z.literal(443), z.literal(8443)]).optional(),
+  })
+  .optional();
+
+export const remoteConnectResult = z.discriminatedUnion('state', [
+  z.object({ state: z.literal('not_installed') }),
+  z.object({ state: z.literal('stopped') }),
+  z.object({ state: z.literal('needs_login'), loginUrl: z.string().nullable() }),
+  z.object({ state: z.literal('confirm'), tailnet: z.string(), nodeName: z.string() }),
+  z.object({ state: z.literal('connected'), url: z.string() }),
+]);
+
 export const networkStatusSchema = z.object({
   home: homeNetworkSchema,
   remote: remoteStatusSchema,
@@ -56,28 +71,15 @@ export const networkStatusSchema = z.object({
 export type NetworkStatus = z.infer<typeof networkStatusSchema>;
 
 export const network = {
-  status: io(empty, networkStatusSchema),
+  /** `probe: false` reports remote access as saved, without asking Tailscale (the setup finish screen). */
+  status: io(z.object({ probe: z.boolean().optional() }).optional(), networkStatusSchema),
   setHostname: io(z.object({ hostname: hostnameSchema }), jobRefSchema),
   remote: {
     /**
      * Connect with Tailscale (US-SYS-02): `confirm` names the tailnet first when Tailscale is already signed in
      * (D-102); `dashboardPort` 8443 after a clash on 443 (D-103).
      */
-    connect: io(
-      z
-        .object({
-          confirmTailnet: z.boolean().optional(),
-          dashboardPort: z.union([z.literal(443), z.literal(8443)]).optional(),
-        })
-        .optional(),
-      z.discriminatedUnion('state', [
-        z.object({ state: z.literal('not_installed') }),
-        z.object({ state: z.literal('stopped') }),
-        z.object({ state: z.literal('needs_login'), loginUrl: z.string().nullable() }),
-        z.object({ state: z.literal('confirm'), tailnet: z.string(), nodeName: z.string() }),
-        z.object({ state: z.literal('connected'), url: z.string() }),
-      ]),
-    ),
+    connect: io(remoteConnectInput, remoteConnectResult),
     disconnect: io(empty, ok),
   },
   caCertificate: io(empty, z.object({ pem: z.string(), fingerprint: z.string() })),

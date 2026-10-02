@@ -105,6 +105,8 @@ App databases always stay on this computer for speed, wherever your files go.
 
 Next, hlabs shows the address it already has on your home network, ready to use. You can also reach it from your phone or laptop away from home with Tailscale, a free private network, with nothing exposed to the internet.
 
+To connect now, choose **Connect**: Tailscale's log-in page opens in a new tab (or, if Tailscale isn't installed yet, its download page). When you've signed in, the step says **Connected** with your tailnet address; choose **Continue**. If Tailscale is already signed in on this computer, hlabs asks before publishing anything on that tailnet. See [Reach hlabs from anywhere](/help/remote-access/tailscale/).
+
 To do that later, choose **Set up later**. Nothing is set up, and the finish screen says remote access is for your home network only. You can turn it on at any time in **Settings › Network & remote access**.
 
 ## Pick a few apps to start

@@ -36,8 +36,8 @@ export function useRemoteStatus() {
 
 type Problem = 'permission' | 'https' | 'conflict' | null;
 
-/** Connect, with the dialogs and problems it can lead to. */
-export function useRemoteConnect() {
+/** Connect, with the dialogs and problems it can lead to; from setup it goes through `onboarding.connectRemote`. */
+export function useRemoteConnect({ via = 'settings' }: { via?: 'settings' | 'onboarding' } = {}) {
   const trpc = useTRPC();
   const client = useTRPCClient();
   const queryClient = useQueryClient();
@@ -50,8 +50,13 @@ export function useRemoteConnect() {
       // A tab opened now, while the click still counts, so a popup blocker lets the log-in page through.
       const tab = input.confirmTailnet ? null : window.open('', '_blank');
       try {
-        const result = await client.network.remote.connect.mutate(input);
+        const result =
+          via === 'onboarding'
+            ? await client.onboarding.connectRemote.mutate(input)
+            : await client.network.remote.connect.mutate(input);
         if (result.state === 'needs_login' && result.loginUrl && tab) tab.location.href = result.loginUrl;
+        // Not installed: the tab shows where to get it (US-ONB-17).
+        else if (result.state === 'not_installed' && tab) tab.location.href = tailscaleDownload();
         else tab?.close();
         return result;
       } catch (err) {
@@ -128,7 +133,7 @@ function TailscaleIcon() {
   );
 }
 
-function Problems({ problem, onRetry }: { problem: Problem; onRetry: () => void }) {
+export function Problems({ problem, onRetry }: { problem: Problem; onRetry: () => void }) {
   if (problem === 'permission') {
     const copyCommand = () =>
       navigator.clipboard.writeText(copy.operatorCommand).then(

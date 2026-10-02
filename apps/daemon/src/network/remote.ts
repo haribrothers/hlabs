@@ -277,6 +277,21 @@ export class RemoteService {
     this.audit(who, 'network.remote.disconnect', { sessionsEnded: ended.length });
   }
 
+  /** Remote access as saved, without asking Tailscale. */
+  saved(): RemoteStatus {
+    const s = this.settings();
+    const connected = s.mode === 'tailscale' && s.state === 'connected';
+    return {
+      mode: s.mode,
+      state: connected ? 'connected' : 'off',
+      tailnet: s.tailnetName,
+      nodeName: s.nodeName,
+      url: connected ? tailnetDashboardUrl(this.deps.db) : null,
+      loginUrl: null,
+      keyExpiry: null,
+    };
+  }
+
   /**
    * Where remote access stands. A log-in in progress finishes here: once Tailscale runs, hlabs publishes (the
    * dashboard asks every 2 s while it waits); after 10 minutes it's given up.
