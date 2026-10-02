@@ -13,7 +13,8 @@ const app = (id: string, name: string, state: HomeApp['state']): HomeApp => ({
   state,
   icon: { logoUrl: null, gradient: null, fallback: null },
   embed: false,
-  urls: { local: `https://${id}.hlabs.local`, tailnet: null },
+  ownLogin: false,
+  urls: { local: `https://${id}.hlabs.local`, tailnet: null, port: null },
 });
 
 describe('US-HOME-06', () => {

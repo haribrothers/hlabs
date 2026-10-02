@@ -3,7 +3,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
-import { createAdminInUi, skipTwoFactor } from './onboarding';
+import { createAdminInUi, skipTwoFactor, remoteLater } from './onboarding';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
@@ -58,8 +58,8 @@ test('US-ONB-19 pick starter apps: eight tiles, none picked; Install and finish 
   await skipTwoFactor(page);
   await page.getByRole('button', { name: 'Continue' }).click();
 
-  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/apps`);
-  await expect(page.getByRole('navigation', { name: 'Setup progress' })).toContainText('Step 5 of 5');
+  await remoteLater(page);
+  await expect(page.getByRole('navigation', { name: 'Setup progress' })).toContainText('Step 6 of 6');
   await expect(page.getByRole('heading', { level: 1, name: 'Pick a few apps to start' })).toBeFocused();
   await expect(page.getByText("They'll install in the background. Hundreds more are in the App Store.")).toBeVisible();
   const tiles = page.getByRole('list', { name: 'Starter apps' }).getByRole('button');

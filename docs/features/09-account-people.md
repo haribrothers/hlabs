@@ -237,7 +237,7 @@ The Settings window, the pages everyone uses to look after their own account (pr
 **As** an admin, **I want** to create a one-time reset link for a member, **so that** they can get back in without email.
 
 **Acceptance criteria**
-- **Given** a member row, **when** I click "Reset password", **then** a Dialog shows a link `https://<hostname>/reset/<token>` with "Copy" and the note "Works once · expires in 15 minutes".
+- **Given** a member row, **when** I click "Reset password", **then** a Dialog shows a link `https://<hostname>/reset/<token>` with "Copy" and the note "Works once · expires in 15 minutes"; while remote access is connected the link uses the tailnet address, with the home-network link as "At home" (D-109).
 - **Given** the link is created, **when** I create another for the same member, **then** the earlier unused link stops working.
 - **Given** the member opens the link within 15 minutes, **when** they set a new password, **then** all their sessions are revoked and the link cannot be used again.
 - **Given** the link is older than 15 minutes, **when** opened, **then** the reset page says the link has expired and to ask an admin for a new one.
@@ -269,7 +269,7 @@ The Settings window, the pages everyone uses to look after their own account (pr
 
 **Acceptance criteria**
 - **Given** I choose "Delete…", **when** the Dialog opens, **then** it names the person, has a "Also delete their Home folder (<size>)" checkbox, unchecked by default, and a destructive "Delete <name>" button.
-- **Given** I confirm with the checkbox off, **when** it succeeds, **then** the user, their sessions, 2FA, recovery codes and app access are removed, and their Home folder stays at `users/<username>/` visible to admins in Files.
+- **Given** I confirm with the checkbox off, **when** it succeeds, **then** the user, their sessions, 2FA, recovery codes and app access are removed, and their Home folder is kept, renamed `users/<username>-deleted-<yyyy-mm-dd>/` (D-101), visible to admins in Files.
 - **Given** I confirm with the checkbox on, **when** it succeeds, **then** their Home folder is moved to the trash (30-day auto-empty) as a job.
 - **Given** the user is the last enabled admin, **when** I try, **then** it is refused with "hlabs needs at least one admin."
 - **Given** a deleted username, **when** someone later accepts an invite, **then** that username can be reused.
@@ -346,6 +346,7 @@ The Settings window, the pages everyone uses to look after their own account (pr
 
 **Acceptance criteria**
 - **Given** I click "Invite someone", **when** the Dialog opens, **then** an invite is created with role Member and no apps, and the link `https://<hostname>/invite/<token>` is shown with "Copy" and "Works once · expires in 7 days ·".
+- **Given** remote access is connected, **when** the Dialog shows the link, **then** it uses the tailnet address (`https://<node>.<tailnet>.ts.net/invite/<token>`), shows the home-network link under it labelled "At home", and links the help page on adding family to the tailnet (D-108, D-109).
 - **Given** I type "Their name (optional)", **when** I stop typing for 500 ms, **then** it is saved; it is shown on the invite page and pre-fills their display name.
 - **Given** I click "Copy", **when** it succeeds, **then** the link is on the clipboard and the button reads "Copied" for 2 seconds.
 - **Given** I click "Done", **when** the Dialog closes, **then** the invite appears as pending in Users (US-ACCT-17).

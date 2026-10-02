@@ -48,10 +48,28 @@ export const settingsSchemas = {
     .default({ channel: 'stable', autoHlabs: true, autoApps: false, backupBeforeUpdate: true }),
   remote: z
     .object({
+      /** How hlabs is reached from away (D-107): not at all, Tailscale on this computer, or a subnet router. */
+      mode: z.enum(['off', 'tailscale', 'subnetRouter']).default('off'),
       state: z.enum(['off', 'connecting', 'connected', 'error']).default('off'),
+      /** The tailnet's DNS suffix (`tail1234.ts.net`) and this computer's name on it (D-102). */
       tailnetName: z.string().nullable().default(null),
+      nodeName: z.string().nullable().default(null),
+      /** The dashboard's tailnet port: 443, or 8443 when 443 was taken (D-103). */
+      dashboardPort: z.number().int().default(443),
+      /** The Serve ports hlabs created; only these are ever changed or removed (D-103). */
+      serve: z.array(z.number().int()).default([]),
+      /** When a log-in was started (10-minute limit, US-SYS-02). */
+      connectStartedAt: z.number().int().nullable().default(null),
     })
-    .default({ state: 'off', tailnetName: null }),
+    .default({
+      mode: 'off',
+      state: 'off',
+      tailnetName: null,
+      nodeName: null,
+      dashboardPort: 443,
+      serve: [],
+      connectStartedAt: null,
+    }),
   paused: z
     .object({ at: z.number().int(), appIds: z.array(z.string()) })
     .nullable()
@@ -84,9 +102,24 @@ export const settingsSchemas = {
   network: z
     .object({
       ports: z.object({ https: portSchema, http: portSchema }).default({ https: 443, http: 80 }),
-      piholeDns: z.boolean().default(false),
+      /** The local DNS server hlabs keeps its names in (US-SYS-06, D-106). */
+      dns: z
+        .object({
+          kind: z.enum(['none', 'adguard', 'pihole', 'manual']).default('none'),
+          /** Pi-hole's address (`http://192.168.1.2`); its app password is in the secret store. */
+          address: z.string().nullable().default(null),
+          /** What hlabs wrote, so only that is ever removed: rewrites `domain answer`, or dnsmasq lines. */
+          owned: z.array(z.string()).default([]),
+          lastSyncAt: z.number().int().nullable().default(null),
+          /** The last sync failed: `unreachable` or `auth`. */
+          problem: z.enum(['unreachable', 'auth']).nullable().default(null),
+        })
+        .default({ kind: 'none', address: null, owned: [], lastSyncAt: null, problem: null }),
     })
-    .default({ ports: { https: 443, http: 80 }, piholeDns: false }),
+    .default({
+      ports: { https: 443, http: 80 },
+      dns: { kind: 'none', address: null, owned: [], lastSyncAt: null, problem: null },
+    }),
   startup: z
     .object({
       startAtLogin: z.boolean().default(true),

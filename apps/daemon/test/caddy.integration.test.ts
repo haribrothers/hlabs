@@ -10,6 +10,7 @@ import {
   type ServerResponse,
 } from 'node:http';
 import { request } from 'node:https';
+import type { TLSSocket } from 'node:tls';
 import type { AddressInfo } from 'node:net';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -134,6 +135,8 @@ describe.skipIf(!existsSync(CADDY))('Caddy with the hlabs config', () => {
       dashboardUpstream: `127.0.0.1:${dashboardPort}`,
       daemon: `127.0.0.1:${daemonPort}`,
       tailnetHost: null,
+      // This computer's LAN address, as a browser reaches it with no name (US-SYS-01, US-SYS-41).
+      lanAddresses: ['127.0.0.1'],
       apps: [
         { appId: 'demo', hostname: 'demo', port: appPort - LOOPBACK_OFFSET, auth: 'hlabs', embed: false },
         { appId: 'open', hostname: 'open', port: appPort - LOOPBACK_OFFSET, auth: 'none', embed: false },
@@ -153,6 +156,24 @@ describe.skipIf(!existsSync(CADDY))('Caddy with the hlabs config', () => {
   afterAll(async () => {
     await proxy?.stop();
     for (const s of servers) s.close();
+  });
+
+  it('serves the dashboard on the LAN address, with a certificate for it when the browser sends no name', async () => {
+    const res = await new Promise<Reply>((resolve, reject) => {
+      const req = request(
+        { host: '127.0.0.1', port: state.ports.https, path: '/', rejectUnauthorized: false, agent: false },
+        (r) => {
+          let body = '';
+          r.on('data', (c: Buffer) => (body += c.toString()));
+          r.on('end', () => resolve({ status: r.statusCode!, headers: r.headers, body }));
+          const cert = (r.socket as TLSSocket).getPeerCertificate();
+          expect(cert.subjectaltname).toContain('IP Address:127.0.0.1');
+        },
+      );
+      req.on('error', reject);
+      req.end();
+    });
+    expect(res.body).toBe('dashboard user=-');
   });
 
   it('proxies the dashboard and drops identity headers the browser sent', async () => {
@@ -207,4 +228,87 @@ describe.skipIf(!existsSync(CADDY))('Caddy with the hlabs config', () => {
     expect(page.status).toBe(503);
     expect(page.body).toBe('<h1>fallback</h1>');
   });
+});
+
+describe.skipIf(!existsSync(CADDY))("Caddy when an app's own port is busy for a moment", () => {
+  it('serves the app names meanwhile, then its own port once it is free (a restarted daemon, US-APP-05)', async () => {
+    const dir = tempDir();
+    const fallback = join(dir, 'fallback');
+    mkdirSync(fallback);
+    writeFileSync(join(fallback, 'index.html'), '<h1>fallback</h1>');
+    const [daemon, daemonPort] = await serve((_req, res) => res.writeHead(401).end());
+    const appPort = await freePort();
+    // The old Caddy, still holding the port.
+    const busy = createServer(() => {});
+    await new Promise<void>((r) => busy.listen(appPort, r));
+    const state: ProxyState = {
+      hostname: 'hlabs',
+      ports: { https: await freePort(), http: await freePort() },
+      onboardingComplete: true,
+      dashboardUpstream: `127.0.0.1:${daemonPort}`,
+      daemon: `127.0.0.1:${daemonPort}`,
+      tailnetHost: null,
+      apps: [{ appId: 'demo', hostname: 'demo', port: appPort, auth: 'hlabs', embed: false }],
+    };
+    const proxy = new CaddyProxy({
+      binary: CADDY,
+      dir: join(dir, 'caddy'),
+      webFallbackDir: fallback,
+      logger: silentLogger(),
+      blockedRetryMs: 300,
+    });
+    try {
+      await proxy.apply(state);
+      await certificatesReady(state.ports.https, ['demo.hlabs.local']);
+      await new Promise<void>((r) => busy.close(() => r()));
+      const deadline = Date.now() + 15_000;
+      for (;;) {
+        const res = await get(appPort, 'hlabs.local').catch(() => null);
+        if (res?.status === 401) break;
+        if (Date.now() > deadline) throw new Error("the app's own port was never served");
+        await new Promise((r) => setTimeout(r, 200));
+      }
+    } finally {
+      await proxy.stop();
+      daemon.close();
+    }
+  }, 30_000);
+});
+
+describe.skipIf(!existsSync(CADDY))('Caddy and remote access (D-111)', () => {
+  it('runs aroundStart with the web ports when Caddy starts, not on a reload', async () => {
+    const dir = tempDir();
+    const fallback = join(dir, 'fallback');
+    mkdirSync(fallback);
+    writeFileSync(join(fallback, 'index.html'), '<h1>fallback</h1>');
+    const [daemon, daemonPort] = await serve((_req, res) => res.end());
+    const calls: number[][] = [];
+    const proxy = new CaddyProxy({
+      binary: CADDY,
+      dir: join(dir, 'caddy'),
+      webFallbackDir: fallback,
+      logger: silentLogger(),
+      aroundStart: async (ports, start) => {
+        calls.push(ports);
+        await start();
+      },
+    });
+    const state: ProxyState = {
+      hostname: 'hlabs',
+      ports: { https: await freePort(), http: await freePort() },
+      onboardingComplete: true,
+      dashboardUpstream: `127.0.0.1:${daemonPort}`,
+      daemon: `127.0.0.1:${daemonPort}`,
+      tailnetHost: null,
+      apps: [],
+    };
+    try {
+      await proxy.apply(state);
+      await proxy.apply({ ...state, onboardingComplete: false });
+      expect(calls).toEqual([[state.ports.https, state.ports.http]]);
+    } finally {
+      await proxy.stop();
+      daemon.close();
+    }
+  }, 30_000);
 });

@@ -5,6 +5,7 @@
 import { join } from 'node:path';
 import { loopbackPort } from '../apps/ports';
 import type { AppRoute } from '../apps/service';
+import { appHosts, homeDomains } from '../network/domains';
 import { fallbackErrorRoutes } from './fallback';
 import type { ProxyState } from './index';
 
@@ -79,10 +80,10 @@ function forwardAuth(daemon: string) {
   };
 }
 
-function appRoute(app: AppRoute, domain: string, daemon: string, ancestors: string[]) {
+function appRoute(app: AppRoute, hostname: string, daemon: string, ancestors: string[]) {
   const proxy = proxyTo(`127.0.0.1:${loopbackPort(app.port)}`);
   return {
-    match: [{ host: [`${app.hostname}.${domain}`] }],
+    match: [{ host: appHosts(app.hostname, hostname) }],
     handle: [
       { handler: 'headers', request: { delete: IDENTITY_HEADERS } },
       ...(app.auth === 'hlabs' ? [forwardAuth(daemon)] : []),
@@ -113,10 +114,12 @@ function appUnavailable(daemon: string, hosts?: string[]) {
 
 /**
  * An app on its own port, under any name (D-086): `https://hlabs.local:<port>` when its name can't be published
- * (US-APP-05), and its tailnet address. TLS with the dashboard's certificate.
+ * (US-APP-05), its tailnet address, and `https://<LAN IP>:<port>` (US-SYS-41). TLS with the dashboard's certificate;
+ * a browser that sends no name (an IP address) gets the LAN address's.
  */
-function appPortServer(app: AppRoute, domain: string, daemon: string, ancestors: string[]) {
-  const { match: _host, ...route } = appRoute(app, domain, daemon, ancestors);
+function appPortServer(app: AppRoute, hostname: string, daemon: string, ancestors: string[], lan: string[]) {
+  const domain = lan[0] ?? homeDomains(hostname)[0];
+  const { match: _host, ...route } = appRoute(app, hostname, daemon, ancestors);
   return {
     listen: [`:${app.port}`],
     routes: [route],
@@ -128,14 +131,22 @@ function appPortServer(app: AppRoute, domain: string, daemon: string, ancestors:
 
 /** `appPorts: false` leaves out the apps' own ports, for when another program holds one of them. */
 export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { appPorts?: boolean } = {}) {
-  const domain = `${state.hostname}.local`;
-  const hosts = [domain, ...state.apps.map((a) => `${a.hostname}.${domain}`)];
+  // The dashboard and every app answer on `.local` (mDNS) and `.home.arpa` (DNS servers, D-105).
+  const domains = homeDomains(state.hostname);
+  const lan = state.lanAddresses ?? [];
+  // The dashboard by name, and by this computer's address on the network (US-SYS-01, US-SYS-41).
+  const dashboardHosts = [...domains, ...lan];
+  const appNames = state.apps.flatMap((a) => appHosts(a.hostname, state.hostname));
+  const hosts = [...dashboardHosts, ...appNames];
   const httpsPort = state.ports.https === 443 ? '' : `:${state.ports.https}`;
   // Where the dashboard runs, the only pages that may frame an app.
-  const ancestors = [`https://${domain}${httpsPort}`, ...(state.tailnetHost ? [`https://${state.tailnetHost}`] : [])];
+  const ancestors = [
+    ...dashboardHosts.map((d) => `https://${d}${httpsPort}`),
+    ...(state.tailnetHost ? [`https://${state.tailnetHost}`] : []),
+  ];
 
   const dashboard = {
-    match: [{ host: [domain] }],
+    match: [{ host: dashboardHosts }],
     handle: [{ handler: 'headers', request: { delete: IDENTITY_HEADERS } }, proxyTo(state.dashboardUpstream)],
     terminal: true,
   };
@@ -194,29 +205,24 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
             // The CA certificate on the dashboard over HTTPS too, so "Trust hlabs on this device" can download it
             // from the page it's on (a plain-HTTP download from an HTTPS page is blocked; D-097).
             routes: [
-              { ...caCert, match: [{ host: [domain], path: ['/ca.crt'] }] },
+              { ...caCert, match: [{ host: dashboardHosts, path: ['/ca.crt'] }] },
               dashboard,
-              ...state.apps.map((a) => appRoute(a, domain, state.daemon, ancestors)),
+              ...state.apps.map((a) => appRoute(a, state.hostname, state.daemon, ancestors)),
             ],
             // When the daemon doesn't answer, the dashboard gets the fallback page (US-STATE-04).
             errors: {
               routes: [
                 {
-                  match: [{ host: [domain] }],
+                  match: [{ host: dashboardHosts }],
                   handle: [{ handler: 'subroute', ...fallbackErrorRoutes(paths.webFallbackDir) }],
                   terminal: true,
                 },
-                ...(state.apps.length
-                  ? [
-                      appUnavailable(
-                        state.daemon,
-                        state.apps.map((a) => `${a.hostname}.${domain}`),
-                      ),
-                    ]
-                  : []),
+                ...(state.apps.length ? [appUnavailable(state.daemon, appNames)] : []),
               ],
             },
             automatic_https: { disable_redirects: true },
+            // A browser sends no name for an address like https://192.168.1.20; it gets that address's certificate.
+            ...(lan[0] ? { tls_connection_policies: [{ default_sni: lan[0] }] } : {}),
           },
           http: {
             listen: [`:${state.ports.http}`],
@@ -226,7 +232,10 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
           ...(opts.appPorts === false
             ? {}
             : Object.fromEntries(
-                state.apps.map((a) => [`app-${a.appId}`, appPortServer(a, domain, state.daemon, ancestors)]),
+                state.apps.map((a) => [
+                  `app-${a.appId}`,
+                  appPortServer(a, state.hostname, state.daemon, ancestors, lan),
+                ]),
               )),
         },
       },

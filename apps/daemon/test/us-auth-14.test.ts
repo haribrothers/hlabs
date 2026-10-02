@@ -27,6 +27,9 @@ describe('US-AUTH-14', () => {
     expect(cookieDomain('192.168.1.20:7443', 'hlabs')).toBeUndefined();
     expect(cookieDomain('den.local', 'den')).toBe('.den.local');
     expect(cookieDomain(null, 'hlabs')).toBeUndefined();
+    // Its name for DNS servers shares the session with apps under it too (D-105).
+    expect(cookieDomain('harilabs.home.arpa', 'harilabs')).toBe('.harilabs.home.arpa');
+    expect(cookieDomain('immich.harilabs.home.arpa', 'harilabs')).toBeUndefined();
   });
 
   it('remember off: a browser-session cookie and 12 hours idle; on: Max-Age 30 days and 30 days sliding', async () => {

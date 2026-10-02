@@ -76,6 +76,7 @@ export function HomeView() {
             (layout.data?.items ?? []).filter((i) => i.kind === 'app').map((i) => i.id),
           )}
           isAdmin={me.data?.role === 'admin'}
+          canInstall={me.data?.canInstallApps ?? false}
           progress={progress}
           offline={engineDown}
         />

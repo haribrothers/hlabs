@@ -22,7 +22,7 @@ test.describe('US-ONB-21', () => {
     await expect(summary).toContainText('hari · 2FA on');
     await expect(summary).toContainText('Storage');
     await expect(summary).toContainText('This computer');
-    await expect(summary).not.toContainText('Remote access');
+    await expect(summary).toContainText('Remote accessHome network only');
     await expect(page.getByRole('navigation', { name: 'Setup progress' })).toHaveCount(0);
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   });

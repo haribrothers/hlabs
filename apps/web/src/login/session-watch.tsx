@@ -33,6 +33,7 @@ export function SessionWatch() {
   const trpc = useTRPC();
   const client = useTRPCClient();
   const signedOut = useSignedOutHere();
+  const queryClient = useQueryClient();
   useReconnectWhenVisible();
   const [feed] = useState(
     () =>
@@ -44,7 +45,7 @@ export function SessionWatch() {
   );
   useSubscription(
     trpc.events.stream.subscriptionOptions(
-      { types: ['session.revoked', 'notification.created', 'notification.read'] },
+      { types: ['session.revoked', 'access.changed', 'notification.created', 'notification.read'] },
       {
         onStarted: () => void feed.onConnected(),
         onConnectionStateChange: (state) => {
@@ -54,6 +55,8 @@ export function SessionWatch() {
         onData: (envelope) => {
           const event = envelope.data;
           if (event.type === 'session.revoked') void signedOut();
+          // An admin changed what I can open (US-ACCT-26): Home's tiles, the Dock and app pages refetch now.
+          else if (event.type === 'access.changed') void queryClient.invalidateQueries();
           else if (event.type === 'notification.created') feed.onCreated(event);
           else if (event.type === 'notification.read') feed.onRead(event);
         },

@@ -6,8 +6,14 @@ import { asc, eq, isNull } from 'drizzle-orm';
 import { csrfTokenFor } from '../auth/sessions';
 import { clearSessionCookie, setSessionCookie } from './session-cookie';
 import type { DaemonContext } from '../context';
+import { resetPassword } from '../users/reset-link';
 
 export const auth: AppHandlers<DaemonContext>['auth'] = {
+  /** A new password from an admin's one-time link (US-ACCT-14; its page is US-AUTH-22). Signs them out everywhere. */
+  resetPassword: async (input, ctx) => {
+    await resetPassword(ctx.services, input, ctx.request.ip);
+    return { ok: true as const };
+  },
   /**
    * Sign out one of my devices (US-ACCT-05): only my own sessions; already ended ones are fine (idempotent). The
    * device hears `session.revoked` and goes to log in.
@@ -133,6 +139,14 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
   },
 
   /** The signed-in user and the CSRF token for mutations. Needs a real session (07 §7.3). */
+  continue: ({ next }, ctx) => {
+    const id = ctx.identity;
+    if (id.kind !== 'user' || !id.session) throw hlabsError('AUTH_REQUIRED');
+    const row = ctx.services.db.select().from(sessions).where(eq(sessions.id, id.session.id)).get();
+    if (!row) throw hlabsError('AUTH_REQUIRED');
+    setSessionCookie(ctx, { raw: id.session.raw, remember: id.session.remember, expiresAt: row.expiresAt });
+    return { redirectTo: ctx.services.login.redirectFor(next) };
+  },
   me: (_input, ctx) => {
     const id = ctx.identity;
     if (id.kind !== 'user' || !id.session) throw hlabsError('AUTH_REQUIRED');

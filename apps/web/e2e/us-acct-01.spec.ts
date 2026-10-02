@@ -9,16 +9,16 @@ test.describe('US-ACCT-01', () => {
     await page.goto('/settings');
     await expect(page).toHaveURL(/\/settings\/account$/);
     const nav = page.getByRole('navigation', { name: 'Settings sections' });
-    await expect(nav.getByRole('link')).toHaveText(['Account', 'Engine & startup']);
+    await expect(nav.getByRole('link')).toHaveText(['Account', 'Users', 'Network & remote access', 'Engine & startup']);
     await expect(nav.getByRole('link', { name: 'Account' })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeVisible();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   });
 
   test('a section from a later phase, or an unknown one, is "Page not found"', async ({ page }) => {
-    await page.goto('/settings/users');
+    await page.goto('/settings/storage');
     await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible();
-    await expect(page).toHaveURL(/\/settings\/users$/);
+    await expect(page).toHaveURL(/\/settings\/storage$/);
     await page.goto('/settings/nope');
     await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible();
   });

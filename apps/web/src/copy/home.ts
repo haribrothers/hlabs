@@ -10,6 +10,18 @@ export const homeCopy = {
   appsUsage: 'Apps',
   system: 'System',
   couldntLoad: "Couldn't load",
+  myFiles: 'My files',
+  inHomeFolder: 'in your Home folder',
+  calculating: 'Calculating…',
+  lastPhotoBackup: (ago: string) => `Last photo backup from your phone: ${ago}`,
+  sharedBy: (admin: string) => `Shared with you by ${admin}`,
+  sharedWithYou: 'Shared with you',
+  appsAllRunning: (n: number) => (n === 1 ? '1 app · running' : `${n} apps · all running`),
+  appsSomeRunning: (running: number, n: number) => `${running} of ${n} running`,
+  noAppsShared: 'No apps shared yet',
+  askFor: (admin: string) => `Ask ${admin} if you need another app`,
+  askAdmin: 'Ask your admin if you need another app',
+  browseStore: 'Browse the App Store',
   retry: 'Try again',
   /** What a tile says while its app is between states (US-HOME-06). */
   tileStatus: {

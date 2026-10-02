@@ -60,7 +60,8 @@ describe('US-HOME-03', () => {
       state: 'running',
       icon: { logoUrl: '/api/apps/jellyfin/assets/logo.svg', gradient: ['#8b5cf6', '#4c1d95'], fallback: 'film' },
       embed: false,
-      urls: { local: 'https://jellyfin.hlabs.local', tailnet: 'https://hlabs.tail1234.ts.net:12001' },
+      ownLogin: false,
+      urls: { local: 'https://jellyfin.hlabs.local', tailnet: 'https://hlabs.tail1234.ts.net:14001', port: 12001 },
     });
     expect(list.apps[1]).toMatchObject({ embed: true, icon: { logoUrl: null, gradient: null, fallback: null } });
   });

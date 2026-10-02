@@ -24,7 +24,7 @@ const EXPECTED: Row[] = [
   ['onboarding.restoreFromBackup', 'm', 'setup'], ['onboarding.complete', 'm', 'setup'],
 
   ['auth.listLoginUsers', 'q', 'public'], ['auth.login', 'm', 'public'], ['auth.verifyTotp', 'm', 'public'],
-  ['auth.useRecoveryCode', 'm', 'public'], ['auth.resetPassword', 'm', 'public'], ['auth.logout', 'm', 'authed'],
+  ['auth.useRecoveryCode', 'm', 'public'], ['auth.resetPassword', 'm', 'public'], ['auth.logout', 'm', 'authed'], ['auth.continue', 'm', 'authed'],
   ['auth.me', 'q', 'authed'], ['auth.listSessions', 'q', 'authed'], ['auth.revokeSession', 'm', 'authed'],
 
   ['account.get', 'q', 'authed'], ['account.update', 'm', 'authed'], ['account.changePassword', 'm', 'authed'],
@@ -80,7 +80,7 @@ const EXPECTED: Row[] = [
 
   ['network.status', 'q', 'admin'], ['network.setHostname', 'm', 'admin'], ['network.remote.connect', 'm', 'admin'],
   ['network.remote.disconnect', 'm', 'admin'], ['network.caCertificate', 'q', 'admin'], ['network.ports', 'q', 'admin'],
-  ['network.setPorts', 'm', 'admin'], ['network.setPiholeDns', 'm', 'admin'],
+  ['network.setPorts', 'm', 'admin'], ['network.setDnsServer', 'm', 'admin'], ['network.setRemoteMode', 'm', 'admin'], ['network.testDnsServer', 'm', 'admin'],
 
   ['settings.get', 'q', 'authed'], ['settings.appearance.update', 'm', 'authed'],
   ['settings.notifications.update', 'm', 'authed'], ['settings.notifications.test', 'm', 'admin'],

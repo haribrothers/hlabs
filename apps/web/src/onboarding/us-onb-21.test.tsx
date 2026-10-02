@@ -14,6 +14,9 @@ const handlers = (over: { totpEnabled?: boolean; root?: string; headless?: boole
     hostname: 'hlabs',
     os: { platform: 'darwin', release: '25', arch: 'arm64', headless: over.headless ?? false },
   }),
+  'network.status': () => ({
+    remote: { mode: 'off', state: 'off', tailnet: null, nodeName: null, url: null, loginUrl: null, keyExpiry: null },
+  }),
   'storage.locations.list': () => ({
     locations: [
       {
@@ -49,8 +52,8 @@ describe('US-ONB-21', () => {
     const summary = screen.getByRole('group', { name: 'What was set up' });
     expect(await within(summary).findByText('hari · 2FA on')).toBeInTheDocument();
     expect(await within(summary).findByText('This computer')).toBeInTheDocument();
-    // Remote access (phase 3) and installing apps (phase 2) aren't shown yet (D-036).
-    expect(within(summary).queryByText('Remote access')).toBeNull();
+    // Remote access (phase 3) is shown; no apps were picked, so nothing is installing.
+    expect(await within(summary).findByText('Home network only')).toBeInTheDocument();
     expect(within(summary).queryByText(/Installing/)).toBeNull();
     expect(screen.queryByText(/^Step \d/)).toBeNull();
   });

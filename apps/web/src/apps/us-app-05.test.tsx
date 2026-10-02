@@ -10,8 +10,8 @@ import { AppSettings } from './app-settings';
 
 const never = () => new Promise(() => {});
 const vaultwarden = (tailnet: string | null = null, local = 'https://vaultwarden.hlabs.local') =>
-  appDetail({ id: 'vaultwarden', name: 'Vaultwarden', state: 'running', urls: { local, tailnet } });
-const TAILNET = 'https://hlabs.tail1234.ts.net:12003';
+  appDetail({ id: 'vaultwarden', name: 'Vaultwarden', state: 'running', urls: { local, tailnet, port: null } });
+const TAILNET = 'https://hlabs.tail1234.ts.net:14003';
 
 afterEach(() => {
   vi.restoreAllMocks();

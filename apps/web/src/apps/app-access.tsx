@@ -9,7 +9,7 @@ import { showToast } from '../lib/toasts';
 
 const copy = appsCopy;
 
-function CopyAddress({ url }: { url: string }) {
+export function CopyAddress({ url }: { url: string }) {
   const copyIt = () =>
     navigator.clipboard.writeText(url).then(
       () => showToast({ tone: 'success', title: copy.addressCopied }),

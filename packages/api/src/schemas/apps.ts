@@ -46,11 +46,18 @@ export const homeAppSchema = z.object({
   }),
   /** D-038: opens in AppWindow (phase 2) instead of a new tab. */
   embed: z.boolean(),
+  /** The manifest's `ownLogin`: people log in to the app itself too ("Uses its own login too", US-ACCT-24). */
+  ownLogin: z.boolean(),
   urls: z.object({
     /** `https://<app>.<hostname>.local` */
     local: z.string(),
-    /** `https://<hostname>.<tailnet>.ts.net:<port>` when remote access is on (D-012). */
+    /** `https://<hostname>.<tailnet>.ts.net:<port + 2000>` when remote access is on (D-012, D-110). */
     tailnet: z.string().nullable(),
+    /**
+     * Its own port (12000–12999), served under any name: the dashboard opened at an address like
+     * `https://192.168.1.20` opens the app at `https://192.168.1.20:<port>` (US-SYS-41).
+     */
+    port: z.number().int().nullable(),
   }),
 });
 
@@ -60,8 +67,10 @@ export const appDetailSchema = homeAppSchema.extend({
   stateDetail: z.record(z.string(), z.unknown()).nullable(),
   /** e.g. `immich.hlabs.local` */
   address: z.string(),
-  /** The app's port (12000–12999): its LAN fallback and tailnet port. Its web service listens on 127.0.0.1 at this + 1000
-   * (D-086). */
+  /**
+   * The app's port (12000–12999): its LAN fallback port; its tailnet port is this + 2000 (D-110). Its web service
+   * listens on 127.0.0.1 at this + 1000 (D-086).
+   */
   webPort: z.number().int().nullable(),
   /** Its latest install job, for the progress page. */
   installJobId: z.string().nullable(),

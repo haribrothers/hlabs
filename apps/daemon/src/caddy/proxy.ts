@@ -19,6 +19,13 @@ export interface CaddyProxyDeps {
   webFallbackDir: string;
   logger: Logger;
   restartDelayMs?: number;
+  /**
+   * Runs around starting a new Caddy, given the web ports it will listen on: remote access frees Tailscale Serve's
+   * hold on them first (on macOS Serve listens on the ports it serves), then serves again once Caddy has them.
+   */
+  aroundStart?: (ports: number[], start: () => Promise<void>) => Promise<void>;
+  /** How long to wait before trying apps' own ports again after one was taken (default 30 s). */
+  blockedRetryMs?: number;
   /** Records the running Caddy, so a killed daemon's is ended at the next start. */
   children?: ChildRegistry;
 }
@@ -70,6 +77,9 @@ export class CaddyProxy implements ProxyManager {
   private last: ProxyState | null = null;
   /** The app ports that couldn't be served last time (`12000,12003`), or null. */
   private blockedPorts: string | null = null;
+  private retryTimer: NodeJS.Timeout | null = null;
+  /** The ports last warned about, so a retry that fails the same way stays quiet. */
+  private warnedPorts: string | null = null;
   private queue: Promise<void> = Promise.resolve();
   readonly paths: CaddyPaths;
 
@@ -92,6 +102,7 @@ export class CaddyProxy implements ProxyManager {
 
   async stop(): Promise<void> {
     this.stopping = true;
+    if (this.retryTimer) clearTimeout(this.retryTimer);
     const child = this.child;
     if (!child || child.exitCode !== null) return;
     await adminRequest(this.paths.adminSocket, 'POST', '/stop').catch(() => child.kill('SIGTERM'));
@@ -103,19 +114,31 @@ export class CaddyProxy implements ProxyManager {
   }
 
   /**
-   * Loads the config. When it can't be (most often another program holds one of the apps' own ports), the apps are
-   * served on their hostnames only, and their ports are tried again once they change.
+   * Loads the config. When it can't be (another program holds one of the apps' own ports, or the Caddy a restarted
+   * daemon left behind hasn't let go of it yet), the apps are served on their hostnames only, and their ports are
+   * tried again when they change and every 30 s.
    */
   private async applyNow(state: ProxyState): Promise<void> {
+    const starting = !this.child || this.child.exitCode !== null;
+    if (starting && this.deps.aroundStart)
+      return this.deps.aroundStart([state.ports.https, state.ports.http], () => this.applyState(state));
+    return this.applyState(state);
+  }
+
+  private async applyState(state: ProxyState): Promise<void> {
     const ports = state.apps.map((a) => a.port).join(',');
     if (this.blockedPorts !== ports) {
       try {
         await this.load(buildCaddyConfig(state, this.paths));
+        this.warnedPorts = null;
         return;
       } catch (err) {
         if (!state.apps.length) throw err;
         this.blockedPorts = ports;
-        this.deps.logger.warn({ err, ports }, "couldn't serve apps on their own ports; serving their hostnames only");
+        if (this.warnedPorts !== ports)
+          this.deps.logger.warn({ err, ports }, "couldn't serve apps on their own ports; serving their hostnames only");
+        this.warnedPorts = ports;
+        this.retryBlockedLater();
       }
     }
     await this.load(buildCaddyConfig(state, this.paths, { appPorts: false }));
@@ -153,9 +176,11 @@ export class CaddyProxy implements ProxyManager {
     this.deps.children?.add(child.pid, configFile);
     let stderr = '';
     child.stderr?.setEncoding('utf8').on('data', (chunk: string) => (stderr = (stderr + chunk).slice(-4_000)));
+    let running = false;
     child.once('exit', (code, signal) => {
       this.deps.children?.remove(child.pid);
-      if (this.stopping) return;
+      // A Caddy that never came up is the caller's to retry (D-111); one that stops later is started again here.
+      if (this.stopping || !running) return;
       this.deps.logger.error({ code, signal, stderr: stderr.slice(-1_000) }, 'caddy exited; starting it again');
       const timer = setTimeout(() => {
         if (!this.stopping && this.last) void this.apply(this.last).catch((err: unknown) => this.logFailure(err));
@@ -169,6 +194,7 @@ export class CaddyProxy implements ProxyManager {
       try {
         await adminRequest(this.paths.adminSocket, 'GET', '/config/');
         chmodSync(this.paths.adminSocket, 0o600);
+        running = true;
         this.deps.logger.info({ pid: child.pid }, 'caddy is running');
         return;
       } catch {
@@ -176,6 +202,17 @@ export class CaddyProxy implements ProxyManager {
         await new Promise((r) => setTimeout(r, 100));
       }
     }
+  }
+
+  private retryBlockedLater() {
+    if (this.retryTimer) return;
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
+      if (this.stopping || !this.last) return;
+      this.blockedPorts = null;
+      void this.apply(this.last).catch((err: unknown) => this.logFailure(err));
+    }, this.deps.blockedRetryMs ?? 30_000);
+    this.retryTimer.unref();
   }
 
   private logFailure(err: unknown) {

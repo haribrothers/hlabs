@@ -1,5 +1,7 @@
 // Settings › Account (09-account-people.md).
 export const accountCopy = {
+  managedBy: (admin: string) => `Apps, users and system settings are managed by ${admin} (admin).`,
+  managedByAdmin: 'Apps, users and system settings are managed by your admin.',
   logOut: 'Log out',
   roles: { admin: 'Admin', member: 'Member' },
   who: (username: string, role: string) => `${username} · ${role}`,
@@ -21,6 +23,9 @@ export const accountCopy = {
   security: 'Security',
   password: 'Password',
   passwordSetUp: 'Changed when you set up hlabs',
+  passwordJoined: 'Set when you joined hlabs',
+  inHomeFolder: (size: string) => `${size} in Home folder`,
+  calculating: 'Calculating…',
   passwordChangedAgo: (ago: string) => `Changed ${ago}`,
   change: 'Change',
   changePasswordTitle: 'Change password',

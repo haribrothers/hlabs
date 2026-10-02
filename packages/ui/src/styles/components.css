@@ -326,6 +326,12 @@
   .hl-choice[aria-checked='true'] {
     border: 1.5px solid var(--accent);
   }
+  /* Can't be chosen: muted ink (not opacity, so the text keeps its contrast) and a dashed edge. */
+  .hl-choice:disabled {
+    border-style: dashed;
+    color: var(--ink-muted);
+    cursor: not-allowed;
+  }
   .hl-choice-icon {
     display: grid;
     place-items: center;
@@ -562,6 +568,11 @@
   .hl-list-row.hl-list-row-below {
     flex-wrap: wrap;
   }
+  /* Only the content below wraps to its own line; the text shrinks beside the leading visual and trailing. */
+  .hl-list-row-below > .hl-list-text {
+    flex-basis: 0;
+    min-width: 0;
+  }
   .hl-list-below {
     flex-basis: 100%;
     display: flex;
@@ -572,6 +583,13 @@
   }
   .hl-list-sub {
     font: 400 12px/16px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+  /* Text stays at full contrast (muted ink, not opacity); only the leading visual fades. */
+  .hl-list-row-dimmed > :first-child:not(.hl-list-text) {
+    opacity: 0.5;
+  }
+  .hl-list-row-dimmed .hl-list-text > :first-child {
     color: var(--ink-muted);
   }
   .hl-row-link:hover {
@@ -1096,6 +1114,14 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    max-height: calc(100dvh - 2 * var(--space-4));
+  }
+  /* A long body (a list of apps) scrolls between the title and the buttons. The padding keeps focus rings unclipped. */
+  .hl-dialog-modal > .hl-dialog-body {
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--space-1);
+    margin: calc(-1 * var(--space-1));
   }
   /* The search panel (Spotlight): centred near the top, its list scrolling inside. */
   .hl-command {

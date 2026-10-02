@@ -44,6 +44,7 @@ export const appRouter = router({
     useRecoveryCode: m(p.public, s.auth.useRecoveryCode),
     resetPassword: m(p.public, s.auth.resetPassword),
     logout: m(p.authed, s.auth.logout),
+    continue: m(p.authed, s.auth.continue),
     me: q(p.authed, s.auth.me),
     listSessions: q(p.authed, s.auth.listSessions),
     revokeSession: m(p.authed, s.auth.revokeSession),
@@ -214,7 +215,9 @@ export const appRouter = router({
     caCertificate: q(p.admin, s.network.caCertificate),
     ports: q(p.admin, s.network.ports),
     setPorts: m(p.admin, s.network.setPorts),
-    setPiholeDns: m(p.admin, s.network.setPiholeDns),
+    setDnsServer: m(p.admin, s.network.setDnsServer),
+    setRemoteMode: m(p.admin, s.network.setRemoteMode),
+    testDnsServer: m(p.admin, s.network.testDnsServer),
   }),
 
   settings: router({

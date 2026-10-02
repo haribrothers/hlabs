@@ -5,6 +5,8 @@ import {
   appSources,
   catalogApps,
   getSetting,
+  type HlabsDb,
+  invites,
   jobs,
   loginAttempts,
   setSetting,
@@ -12,7 +14,7 @@ import {
   storageLocations,
   users,
 } from '@hlabs/db';
-import { ulid } from '@hlabs/shared';
+import { type OnboardingStep, ulid } from '@hlabs/shared';
 import { and, eq } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
@@ -21,11 +23,30 @@ import { hashPassword } from '../auth/passwords';
 import { createAdmin } from '../onboarding/create-admin';
 import { prepareStorageRoot, setStorageRoot } from '../onboarding/storage';
 import { cookieDomain, sessionCookie } from '../auth/sessions';
+import { FakeTailscale } from '../tailscale/fake';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { ServiceHolder } from '../services';
 
 /** Development-only routes. Never registered in production. */
+/**
+ * What a fresh install has, whatever an earlier e2e spec on this instance changed: no users (so no sessions) or log-in
+ * attempts, onboarding at `step`, the startup switches on (US-SYS-20), the people policy and no invites
+ * (US-ACCT-18…21), remote access off (US-SYS-02…41), web ports as given or the defaults (US-SYS-05), and no local DNS
+ * server (US-SYS-06).
+ */
+function asFreshInstall(db: HlabsDb, step: OnboardingStep, ports?: { https: number; http: number }) {
+  db.delete(users).run();
+  db.delete(loginAttempts).run();
+  setSetting(db, 'onboarding', { ...getSetting(db, 'onboarding'), completedAt: null, step });
+  setSetting(db, 'startup', settingsSchemas.startup.parse(undefined));
+  setSetting(db, 'people', settingsSchemas.people.parse(undefined));
+  setSetting(db, 'remote', settingsSchemas.remote.parse(undefined));
+  db.delete(invites).run();
+  const fresh = settingsSchemas.network.parse(undefined);
+  setSetting(db, 'network', { ...getSetting(db, 'network'), ports: ports ?? fresh.ports, dns: fresh.dns });
+}
+
 export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): void {
   const body = z
     .object({ message: z.string().max(200).default('Hello from hlabsd') })
@@ -63,19 +84,14 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     return { url: await services.onboarding.setupUrl() };
   });
 
-  // Puts onboarding back at a step, as a fresh first run: users (and so their sessions) and log-in attempts are
-  // removed, and the
-  // setup token is kept or made again (e2e specs start from a known state).
+  // Puts onboarding back at a step, as a fresh install (`asFreshInstall`), with the setup token kept or made again
+  // (e2e specs start from a known state).
   const resetBody = z.object({ step: onboardingStepSchema.default('welcome') }).default({ step: 'welcome' });
   app.post('/dev/reset-onboarding', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
     const { step } = resetBody.parse(req.body ?? undefined);
-    services.db.delete(users).run();
-    services.db.delete(loginAttempts).run();
-    setSetting(services.db, 'onboarding', { ...getSetting(services.db, 'onboarding'), completedAt: null, step });
-    // As a fresh install: setup leaves the startup switches on (US-SYS-20), whatever an earlier run changed.
-    setSetting(services.db, 'startup', settingsSchemas.startup.parse(undefined));
+    asFreshInstall(services.db, step);
     // And the default name on the network (D-098).
     setSetting(services.db, 'hostname', settingsSchemas.hostname.parse(undefined));
     return { url: await services.onboarding.prepareSetupToken() };
@@ -151,6 +167,8 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     embed: z.boolean().default(false),
     /** `apps.state_detail`, e.g. a failed install's `{ code, port, step }` (US-STORE-13 e2e). */
     stateDetail: z.record(z.string(), z.unknown()).optional(),
+    /** Its own port (12000–12999), for its fallback and tailnet addresses (US-SYS-04 e2e). */
+    port: z.number().int().min(12000).max(12999).optional(),
   });
   // The engine as stopped (or back), without touching the real one: e2e for the engine-stopped states (US-STATE-08…10).
   const engineBody = z.object({ running: z.boolean() });
@@ -162,10 +180,52 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     return { state: status.state };
   });
 
+  // The pretend Tailscale (HLABS_DEV_FAKE_TAILSCALE): e2e sets what it reports (US-SYS-02…04, US-ONB-17).
+  const tailscaleBody = z.object({
+    state: z.enum(['not_installed', 'stopped', 'needs_login', 'running']),
+    tailnet: z.string().default('tail1234.ts.net'),
+    nodeName: z.string().default('hlabs'),
+    httpsEnabled: z.boolean().default(true),
+    /** Log-ins finish at once, as if the person completed them in the other tab. */
+    autoComplete: z.boolean().default(false),
+    /** Writes refused, as without the Linux operator setting (D-104). */
+    denyWrites: z.boolean().default(false),
+    /** Ports something else already serves (D-103). */
+    servedPorts: z.array(z.number().int()).default([]),
+    /** The log-in page a log-in gives (e2e: never a real Tailscale page). */
+    authUrl: z.string().default('about:blank'),
+    /** Start remote access afresh (false: a log-in in progress finishes, as when the person signs in). */
+    reset: z.boolean().default(true),
+  });
+  app.post('/dev/tailscale', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    if (!(services.tailscale instanceof FakeTailscale))
+      return reply.code(409).send({ reason: 'not the fake Tailscale' });
+    const b = tailscaleBody.parse(req.body);
+    const ts = services.tailscale;
+    ts.current =
+      b.state === 'running'
+        ? { kind: 'running', tailnet: b.tailnet, nodeName: b.nodeName, httpsEnabled: b.httpsEnabled, keyExpiry: null }
+        : b.state === 'needs_login'
+          ? { kind: 'needs_login', authUrl: null }
+          : { kind: b.state };
+    ts.autoComplete = b.autoComplete ? { tailnet: b.tailnet } : null;
+    ts.denyWrites = b.denyWrites;
+    ts.authUrl = b.authUrl;
+    if (!b.reset) return { ok: true };
+    ts.config = b.servedPorts.length
+      ? { TCP: Object.fromEntries(b.servedPorts.map((p) => [String(p), { HTTPS: true }])) }
+      : {};
+    // A fresh start for remote access too.
+    setSetting(services.db, 'remote', settingsSchemas.remote.parse(undefined));
+    return { ok: true };
+  });
+
   app.post('/dev/fake-app', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
-    const { id, name, remove, state, progress, embed, stateDetail: detail } = fakeApp.parse(req.body);
+    const { id, name, remove, state, progress, embed, stateDetail: detail, port } = fakeApp.parse(req.body);
     const stateDetail = detail ? JSON.stringify(detail) : null;
     const { db, bus } = services;
     if (remove) {
@@ -200,6 +260,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
         state,
         stateDetail,
         hostname: id,
+        portFallback: port ?? null,
         installedAt: Date.now(),
         updatedAt: Date.now(),
       })
@@ -280,12 +341,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
     const input = seedBody.parse(req.body);
     const { db, totp, onboarding, config } = services;
-    db.delete(users).run();
-    db.delete(loginAttempts).run();
-    setSetting(db, 'onboarding', { ...getSetting(db, 'onboarding'), completedAt: null, step: 'account' });
-    // As a fresh install: setup leaves the startup switches on (US-SYS-20), whatever an earlier run changed.
-    setSetting(db, 'startup', settingsSchemas.startup.parse(undefined));
-    if (input.ports) setSetting(db, 'network', { ...getSetting(db, 'network'), ports: input.ports });
+    asFreshInstall(db, 'account', input.ports);
     const userId = await createAdmin(db, { ...input, ip: null, phase: config.phase });
     let secret: string | null = null;
     let recoveryCodes: string[] = [];

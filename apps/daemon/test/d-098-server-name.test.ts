@@ -94,20 +94,26 @@ describe('D-098 · the dashboard addresses follow the name', () => {
     const { setSetting } = await import('@hlabs/db');
     const d = await atSystemStep();
     const db = d.services!.db;
-    expect(dashboardOrigins('https://hlabs.local', db)).toEqual(['https://hlabs.local', 'http://hlabs.local']);
+    expect(dashboardOrigins('https://hlabs.local', db, () => [])).toEqual([
+      'https://hlabs.local',
+      'https://hlabs.home.arpa',
+      'http://hlabs.local',
+    ]);
     await d.call('confirmSystem', { startAtLogin: true, hostname: 'harilabs' });
     setSetting(db, 'network', { ...getSetting(db, 'network'), ports: { https: 8443, http: 8080 } });
-    expect(dashboardOrigins('https://hlabs.local', db)).toEqual([
+    expect(dashboardOrigins('https://hlabs.local', db, () => [])).toEqual([
       'https://hlabs.local',
       'https://harilabs.local:8443',
+      'https://harilabs.home.arpa:8443',
       'http://harilabs.local:8080',
     ]);
     // After setup, not over plain HTTP; with remote access, the tailnet address too.
     setSetting(db, 'onboarding', { ...getSetting(db, 'onboarding'), completedAt: Date.now() });
     setSetting(db, 'remote', { ...getSetting(db, 'remote'), tailnetName: 'tail1234.ts.net' });
-    expect(dashboardOrigins('http://127.0.0.1:7474', db)).toEqual([
+    expect(dashboardOrigins('http://127.0.0.1:7474', db, () => [])).toEqual([
       'http://127.0.0.1:7474',
       'https://harilabs.local:8443',
+      'https://harilabs.home.arpa:8443',
       'https://harilabs.tail1234.ts.net',
     ]);
   });

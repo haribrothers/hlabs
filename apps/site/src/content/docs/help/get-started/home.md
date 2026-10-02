@@ -79,3 +79,10 @@ The Dock at the bottom of the screen takes you to each part of hlabs; a dot mark
 Parts of hlabs that haven't arrived yet aren't shown in the Dock. The App Store, Files, Usage and Backups appear as they're added.
 
 Family members see Home, Files and Settings in their Dock, plus Usage and the App Store when an admin allows them.
+
+## Home for family members
+
+If someone invited you, your Home screen shows only the apps they've shared with you. When they share another app it appears straight away, and when they take one away it disappears. Things about running the server, like storage and backups, aren't shown; ask the person who runs hlabs if you need another app.
+
+Two cards sit above your apps. **My files** shows how much is in your private Home folder. **Shared with you** says how many of your apps are running and who to ask for another one, or, if you're allowed to install apps yourself, takes you to the App Store.
+

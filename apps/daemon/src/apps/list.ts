@@ -4,6 +4,8 @@ import { apps, catalogApps, getSetting, type HlabsDb } from '@hlabs/db';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { visibleAppIds } from '../home/layout';
+import { tailnetHost } from '../network/domains';
+import { tailnetAppPort } from '@hlabs/shared';
 
 /** The few manifest fields Home needs; the full schema lives in @hlabs/app-manifest. */
 const manifestBits = z.object({
@@ -16,6 +18,7 @@ const manifestBits = z.object({
     })
     .optional(),
   web: z.object({ embed: z.boolean().optional(), path: z.string().optional() }).optional(),
+  ownLogin: z.boolean().optional(),
 });
 
 /** A relative logo is served with the app's assets; https logos are used as they are. */
@@ -55,7 +58,7 @@ export function appSummary(
   isPublished: (name: string) => boolean = () => true,
 ) {
   const hostname = getSetting(db, 'hostname');
-  const tailnet = getSetting(db, 'remote').tailnetName?.replace(/\.ts\.net$/, '') ?? null;
+  const tailnet = tailnetHost(db);
   const m = catalogManifest(db, app);
   return {
     id: app.id,
@@ -67,14 +70,16 @@ export function appSummary(
       fallback: m.icon?.fallback ?? null,
     },
     embed: m.web?.embed ?? false,
+    /** The app asks for its own login as well as hlabs's (US-ACCT-24). */
+    ownLogin: m.ownLogin ?? false,
     webPath: m.web?.path ?? '/',
     urls: {
       local:
         isPublished(`${app.hostname}.${hostname}.local`) || app.portFallback === null
           ? `https://${app.hostname}.${hostname}.local`
           : `https://${hostname}.local:${app.portFallback}`,
-      tailnet:
-        tailnet && app.portFallback !== null ? `https://${hostname}.${tailnet}.ts.net:${app.portFallback}` : null,
+      tailnet: tailnet && app.portFallback !== null ? `https://${tailnet}:${tailnetAppPort(app.portFallback)}` : null,
+      port: app.portFallback,
     },
   };
 }

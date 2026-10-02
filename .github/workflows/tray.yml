@@ -5,6 +5,11 @@ on:
   pull_request:
     paths: ['apps/tray/**', 'packages/ui/**', 'packages/icons/**', '.github/workflows/tray.yml']
 
+# A newer push makes a running check of an older one pointless.
+concurrency:
+  group: tray-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

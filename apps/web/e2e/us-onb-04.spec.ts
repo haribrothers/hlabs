@@ -11,7 +11,7 @@ test.describe('US-ONB-04', () => {
   test('checks this computer, then Continue opens the account step', async ({ page, request }) => {
     await page.goto(await resetOnboarding(request, 'system'));
     await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/system`);
-    await expect(page.getByRole('navigation', { name: 'Setup progress' })).toContainText('Step 1 of 5');
+    await expect(page.getByRole('navigation', { name: 'Setup progress' })).toContainText('Step 1 of 6');
     await expect(page.getByRole('heading', { level: 1, name: 'Checking this computer' })).toBeVisible();
     await expect(page.getByText("hlabs runs apps in containers. We'll set up anything that's missing.")).toBeVisible();
 

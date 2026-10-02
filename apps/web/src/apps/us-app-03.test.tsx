@@ -16,7 +16,7 @@ function open(state: AppState, handlers: Handlers = {}, role: 'admin' | 'member'
     state,
     embed: true,
     engineRunning,
-    urls: { local: 'https://jellyfin.hlabs.local', tailnet: null },
+    urls: { local: 'https://jellyfin.hlabs.local', tailnet: null, port: null },
   });
   const rendered = renderScreen(
     () => <AppWindow appId="jellyfin" />,

@@ -13,7 +13,7 @@ const jellyfin = appDetail({
   name: 'Jellyfin',
   state: 'running',
   embed: true,
-  urls: { local: 'https://jellyfin.hlabs.local', tailnet: null },
+  urls: { local: 'https://jellyfin.hlabs.local', tailnet: null, port: null },
 });
 
 function open(handlers: Handlers = {}, role: 'admin' | 'member' = 'admin') {

@@ -83,6 +83,8 @@ function startDaemon(): ChildProcess {
       HLABS_MDNS: '0',
       HLABS_DEV_NO_ENGINE_INSTALL: '1',
       HLABS_DEV_NO_ENGINE_CONTROL: '1',
+      // A pretend Tailscale: e2e never touches the real one (CI has none).
+      HLABS_DEV_FAKE_TAILSCALE: '1',
       HLABS_COMPOSE_PREFIX: 'hlabs-matrix',
       HLABS_LOG_LEVEL: 'warn',
     },

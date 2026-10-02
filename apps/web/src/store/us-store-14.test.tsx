@@ -89,7 +89,8 @@ describe('US-STORE-14', () => {
       state: 'install_failed',
       icon: { logoUrl: null, gradient: null, fallback: null },
       embed: false,
-      urls: { local: 'https://immich.hlabs.local', tailnet: null },
+      ownLogin: false,
+      urls: { local: 'https://immich.hlabs.local', tailnet: null, port: null },
     };
     const { router } = renderScreen(() => <AppGrid apps={[tile]} isAdmin={false} />, {});
     const button = await screen.findByRole('button', { name: 'Immich, error' });
@@ -105,7 +106,8 @@ describe('US-STORE-14', () => {
       state: 'installing',
       icon: { logoUrl: null, gradient: null, fallback: null },
       embed: false,
-      urls: { local: 'https://immich.hlabs.local', tailnet: null },
+      ownLogin: false,
+      urls: { local: 'https://immich.hlabs.local', tailnet: null, port: null },
     };
     const { router } = renderScreen(
       () => <AppGrid apps={[tile]} isAdmin={false} progress={new Map([['immich', 42]])} />,

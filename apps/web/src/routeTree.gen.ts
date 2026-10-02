@@ -19,6 +19,7 @@ import { Route as TrustRouteImport } from './routes/trust'
 import { Route as UsageRouteImport } from './routes/usage'
 import { Route as AppsAppIdRouteImport } from './routes/apps.$appId'
 import { Route as DevUiRouteImport } from './routes/dev/ui'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as LoginCodeRouteImport } from './routes/login.code'
 import { Route as LoginLockedRouteImport } from './routes/login.locked'
@@ -87,6 +88,11 @@ const AppsAppIdRoute = AppsAppIdRouteImport.update({
 const DevUiRoute = DevUiRouteImport.update({
   id: '/dev/ui',
   path: '/dev/ui',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginIndexRoute = LoginIndexRouteImport.update({
@@ -198,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/usage': typeof UsageRoute
   '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
   '/login/locked': typeof LoginLockedRoute
   '/login/password': typeof LoginPasswordRoute
@@ -226,6 +233,7 @@ export interface FileRoutesByTo {
   '/usage': typeof UsageRoute
   '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
   '/login/locked': typeof LoginLockedRoute
   '/login/password': typeof LoginPasswordRoute
@@ -258,6 +266,7 @@ export interface FileRoutesById {
   '/usage': typeof UsageRoute
   '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
   '/login/locked': typeof LoginLockedRoute
   '/login/password': typeof LoginPasswordRoute
@@ -291,6 +300,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/apps/$appId'
     | '/dev/ui'
+    | '/invite/$token'
     | '/login/code'
     | '/login/locked'
     | '/login/password'
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/apps/$appId'
     | '/dev/ui'
+    | '/invite/$token'
     | '/login/code'
     | '/login/locked'
     | '/login/password'
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/apps/$appId'
     | '/dev/ui'
+    | '/invite/$token'
     | '/login/code'
     | '/login/locked'
     | '/login/password'
@@ -382,6 +394,7 @@ export interface RootRouteChildren {
   UsageRoute: typeof UsageRoute
   AppsAppIdRoute: typeof AppsAppIdRoute
   DevUiRoute: typeof DevUiRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   LoginCodeRoute: typeof LoginCodeRoute
   LoginLockedRoute: typeof LoginLockedRoute
   LoginPasswordRoute: typeof LoginPasswordRoute
@@ -464,6 +477,13 @@ declare module '@tanstack/react-router' {
       path: '/dev/ui'
       fullPath: '/dev/ui'
       preLoaderRoute: typeof DevUiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login/': {
@@ -657,6 +677,7 @@ const rootRouteChildren: RootRouteChildren = {
   UsageRoute: UsageRoute,
   AppsAppIdRoute: AppsAppIdRoute,
   DevUiRoute: DevUiRoute,
+  InviteTokenRoute: InviteTokenRoute,
   LoginCodeRoute: LoginCodeRoute,
   LoginLockedRoute: LoginLockedRoute,
   LoginPasswordRoute: LoginPasswordRoute,

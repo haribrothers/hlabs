@@ -48,7 +48,7 @@ describe('US-ONB-15', () => {
     ]);
     expect(d.config.paths.appDataDir.startsWith(t5.path)).toBe(false);
     // Phase 2: on to the starter apps.
-    expect(getSetting(db, 'onboarding').step).toBe('apps');
+    expect(getSetting(db, 'onboarding').step).toBe('remote');
   });
 
   it('refuses a drive that was ejected or cannot be written', async () => {

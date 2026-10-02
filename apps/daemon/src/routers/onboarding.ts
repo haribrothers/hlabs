@@ -29,6 +29,9 @@ export const onboarding: AppHandlers<DaemonContext>['onboarding'] = {
     setSessionCookie(ctx, session);
     return { userId };
   },
+  /** Connect remote access from setup (US-ONB-17): the same flow as Settings (D-102…D-104). */
+  connectRemote: (input, ctx) =>
+    ctx.services.remote.connect(input ?? {}, { userId: signedInUser(ctx), ip: ctx.request.ip }),
   /** A new pending secret for the signed-in admin; a reload replaces it (US-ONB-11). */
   setupTotp: (_input, ctx) => ctx.services.totp.begin(signedInUser(ctx)),
   confirmTotp: async ({ code }, ctx) => ({

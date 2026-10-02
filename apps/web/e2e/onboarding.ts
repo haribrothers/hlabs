@@ -33,11 +33,21 @@ export async function skipTwoFactor(page: Page) {
   await expect(page).toHaveURL(/\/setup\/storage$/);
 }
 
-/** On the storage step: Continue with This computer, then Skip on the starter apps (phase 2); ends on the finish screen. */
+/** On the remote access step (phase 3): Set up later; ends on the starter apps. */
+export async function remoteLater(page: Page) {
+  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/remote`);
+  await page.getByRole('button', { name: 'Set up later' }).click();
+  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/apps`);
+}
+
+/**
+ * On the storage step: Continue with This computer, Set up later for remote access, then Skip on the starter apps;
+ * ends on the finish screen.
+ */
 export async function storageThenSkipApps(page: Page) {
   await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/storage`);
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/apps`);
+  await remoteLater(page);
   await page.getByRole('button', { name: 'Skip' }).click();
   await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/done`);
 }

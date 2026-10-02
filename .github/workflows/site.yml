@@ -9,6 +9,11 @@ on:
     branches: [main]
     paths: ['apps/site/**', 'store/**', 'packages/ui/**', 'packages/icons/**']
 
+# A newer push makes a running check of an older one pointless.
+concurrency:
+  group: site-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

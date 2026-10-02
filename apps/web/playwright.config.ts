@@ -20,11 +20,16 @@ if (process.env.TEST_WORKER_INDEX === undefined) {
   cpSync('../../store', E2E_STORE_DIR, { recursive: true });
 }
 // Specs that need a known admin they create themselves (all onboarding and log-in stories, and a few later ones).
-const FIRST_RUN_SPECS = /(d-098-server-name|us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-2])|us-sys-(1[89]|20))\.spec\.ts/;
+// Signed-out browsers need them too: the main instance answers cookie-less requests as its development admin.
+const FIRST_RUN_SPECS =
+  /(d-098-server-name|us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-24-9]|2[0678])|us-home-1[12]|us-sys-(0[2-6]|1[89]|20|41))\.spec\.ts/;
 // Specs that change the main instance for everyone, run after the desktop and phone specs, one at a time: those that
 // really install store apps (the D-071 smoke set, and uninstalling one) or leave failed installs, and those that report
 // the engine as stopped (US-STATE-08…10).
 const SERIAL_SPECS = /(us-store-1[1-4]|us-store-17-rollback|us-app-12|us-state-(0[89]|10))\.spec\.ts/;
+// CI runs each project in a job of its own (HLABS_E2E_SPLIT, .github/workflows/ci.yml): the serial specs then have a
+// main instance to themselves and needn't wait for the desktop and phone specs.
+const SPLIT = !!process.env.HLABS_E2E_SPLIT;
 
 // HLABS_DEV_NO_ENGINE_INSTALL: a run on a machine with no engine must never download Colima (11: tests don't
 // reach the internet).
@@ -32,6 +37,8 @@ const daemonEnv = {
   NODE_ENV: 'development',
   HLABS_DEV_NO_ENGINE_INSTALL: '1',
   HLABS_DEV_NO_ENGINE_CONTROL: '1',
+  // A pretend Tailscale: e2e never touches the real one (CI has none).
+  HLABS_DEV_FAKE_TAILSCALE: '1',
   HLABS_DEV_ANONYMOUS_ADMIN: '1',
   HLABS_LOG_LEVEL: 'warn',
   // Its own compose projects, never a dev instance's apps (D-090).
@@ -68,7 +75,7 @@ export default defineConfig({
       workers: 1,
       fullyParallel: false,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, storageState: MAIN_STORAGE_STATE },
-      dependencies: ['desktop', 'phone'],
+      dependencies: SPLIT ? ['setup'] : ['desktop', 'phone'],
     },
     // Each worker resets its own first-run instance, so these run in parallel.
     {

@@ -84,6 +84,12 @@ export class SessionService {
     return ended;
   }
 
+  /** Ends every live session that `match` picks (tailnet sessions on disconnect, US-SYS-03); returns their ids. */
+  revokeWhere(match: (s: typeof sessions.$inferSelect) => boolean, now = Date.now()): string[] {
+    const live = this.db.select().from(sessions).where(isNull(sessions.revokedAt)).all().filter(match);
+    return live.flatMap((s) => this.revoke({ sessionId: s.id }, now));
+  }
+
   create(opts: { userId: string; remember?: boolean; ip?: string | null; userAgent?: string | null; now?: number }) {
     const now = opts.now ?? Date.now();
     const raw = randomBytes(32).toString('base64url');
@@ -132,14 +138,14 @@ export class SessionService {
 }
 
 /**
- * The cookie's Domain (US-AUTH-14): `.<hostname>.local` when the dashboard is reached on its mDNS name, so app
- * hostnames under it share the session; otherwise none, so it stays on the host it was set on (tailnet name, an IP or
- * a fallback port).
+ * The cookie's Domain (US-AUTH-14): `.<hostname>.local` or `.<hostname>.home.arpa` (D-105) when the dashboard is
+ * reached on that name, so app hostnames under it share the session; otherwise none, so it stays on the host it was
+ * set on (tailnet name, an IP or a fallback port).
  */
 export function cookieDomain(host: string | null, hostname: string): string | undefined {
   const name = host?.replace(/:\d+$/, '').toLowerCase();
-  const local = `${hostname.toLowerCase()}.local`;
-  return name === local ? `.${local}` : undefined;
+  const home = [`${hostname.toLowerCase()}.local`, `${hostname.toLowerCase()}.home.arpa`];
+  return name && home.includes(name) ? `.${name}` : undefined;
 }
 
 /** `hlabs_session` cookie: HttpOnly, Secure, SameSite=Lax, Path=/; persistent only with "Remember me". */

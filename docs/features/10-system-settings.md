@@ -31,6 +31,7 @@ The system half of Settings: how hlabs is reached on the home network and over T
 **Acceptance criteria**
 - **Given** I am an admin, **when** I open Settings › Network & remote access, **then** the "Home network" group shows "Local address" with the current hostname (e.g. `hlabs.local`) and a "Rename" button, "HTTPS on the home network" with the copy "Install the hlabs certificate once on each device to remove browser warnings" and a "Get certificate" button, and "Web ports".
 - **Given** apps are installed, **when** the page loads, **then** "App addresses" lists each installed app (AppIcon + name) with its full URL (e.g. `https://jellyfin.hlabs.local`), sorted by name; an app on port fallback shows `https://hlabs.local:<port>` instead.
+- **Given** the "Home network" group, **when** shown, **then** the Local address row also gives the DNS name `hlabs.home.arpa` with "For devices that use your DNS server" (D-105); app rows show their `home.arpa` address under the `.local` one when a local DNS server is set up (US-SYS-06).
 - **Given** I click an app address, **when** the row is activated (click or Enter), **then** the URL opens in a new tab; a copy icon button copies it and shows a Toast "Address copied".
 - **Given** no apps are installed, **when** the page loads, **then** "App addresses" shows "No apps yet" with a link to the App Store.
 - **Given** the mDNS name could not be published, **when** the page loads, **then** the Local address row shows a warning Badge "Not published" and the fallback address `https://<LAN IP>:<port>`, plus the LAN IPv4 addresses from `network.status`.
@@ -49,15 +50,21 @@ The system half of Settings: how hlabs is reached on the home network and over T
 
 **Acceptance criteria**
 - **Given** Tailscale is not installed, **when** I view "Remote access", **then** the Tailscale row shows "Not installed" and a "Get Tailscale" button linking to the official installer for this OS; no connect action is offered.
-- **Given** Tailscale is installed but logged out, **when** I click "Connect", **then** `network.remote.connect` returns a login URL, which opens in a new tab, and the row shows StatusDot "Waiting for sign-in…" until the LocalAPI reports running.
-- **Given** the login completes, **when** Tailscale reports running, **then** within 5 s the row shows the tailnet URL (`hlabs.<tailnet>.ts.net`), a green StatusDot "Connected" and a "Disconnect" button; the dashboard (`https://hlabs.<tailnet>.ts.net`) and every app (`https://hlabs.<tailnet>.ts.net:<port>`, D-012) are published with Tailscale Serve over HTTPS using `tailscale cert`.
+- **Given** Tailscale is installed but logged out, **when** I click "Connect", **then** `network.remote.connect` returns a login URL, which opens in a new tab, and the row shows StatusDot "Waiting for sign-in…" until the LocalAPI reports running. hlabs names the node after the server's name (`hlabs`) for this first log-in (D-102).
+- **Given** Tailscale is already logged in, **when** I click "Connect", **then** a Dialog names the tailnet and this computer's name on it ("Publish hlabs on <tailnet> as <node>.<tailnet>.ts.net?") with "Cancel" and "Connect"; nothing is published until I confirm, and the node is never renamed (D-102).
+- **Given** something else is already served on port 443 (or an app's port) of this computer's tailnet name, **when** I connect, **then** nothing is overwritten: a Dialog explains which port is in use and offers "Use port 8443 for the dashboard" or "Cancel" (hlabsCode `TAILSCALE_SERVE_CONFLICT`, D-103).
+- **Given** Linux and the daemon isn't Tailscale's operator, **when** I connect, **then** the row says "Tailscale needs permission first" with the command `sudo tailscale set --operator=hlabs`, a Copy button and "Try again" (hlabsCode `TAILSCALE_PERMISSION_DENIED`, D-104).
+- **Given** the login completes, **when** Tailscale reports running, **then** within 5 s the row shows the tailnet URL (`<node>.<tailnet>.ts.net`), a green StatusDot "Connected" and a "Disconnect" button; the dashboard (`https://<node>.<tailnet>.ts.net`, or `:8443` after a clash) and every app (`https://<node>.<tailnet>.ts.net:<port>`, D-012, D-102) are published with Tailscale Serve over HTTPS using `tailscale cert`.
+- **Given** remote access is connected, **when** the row is shown, **then** it also warns when the node's key expires within 14 days ("Tailscale will sign this computer out on <date>. Renew the key in the Tailscale admin console.") and links the help page on sharing hlabs with family on the tailnet (D-108).
 - **Given** the sign-in is not completed within 10 minutes, **when** the timeout passes, **then** the row returns to "Connect" and shows "Sign-in timed out. Try again."
 - **Given** Tailscale is connected, **when** I open the dashboard on the tailnet URL, **then** sign-in works and the session cookie is valid for that host.
-- **Given** any state, **when** remote access is configured, **then** Tailscale Funnel is never enabled (verified by a test that inspects the Serve config).
+- **Given** any state, **when** remote access is configured, **then** Tailscale Funnel is never enabled, and Funnel or Serve entries hlabs didn't create are left as they are (verified by a test that inspects the Serve config, D-103).
 
 **Implementation notes**
 - API: `network.status`, `network.remote.connect`.
-- Data: `settings.remote` (tailscale state, tailnet name), `audit_log` action `network.remote.connect`.
+- API: `network.remote.connect { confirmTailnet?: boolean, dashboardPort?: 443 | 8443 }`; hlabsCodes `TAILSCALE_SERVE_CONFLICT` (detail: port), `TAILSCALE_PERMISSION_DENIED`, `TAILSCALE_HTTPS_DISABLED`.
+- Data: `settings.remote` (mode, state, tailnet and node name, dashboard port, the Serve entries hlabs created), `audit_log` action `network.remote.connect`.
+- Track B starts with a spike of the LocalAPI on each macOS Tailscale variant and on Linux (D-104, R-12).
 - UI: ListRow with StatusDot, Button. Tailscale is not bundled (02 §2.2).
 - Edge cases: Tailscale daemon stopped (show "Tailscale isn't running" + "Open Tailscale"); tailnet without HTTPS certificates enabled (show hlabsCode `TAILSCALE_HTTPS_DISABLED` with a link to the admin console setting).
 
@@ -81,7 +88,7 @@ The system half of Settings: how hlabs is reached on the home network and over T
 **As** an admin, **I want** to see and copy the tailnet address of the dashboard and of each app, **so that** I can open them or share them with family away from home.
 
 **Acceptance criteria**
-- **Given** remote access is connected, **when** I view "Remote access", **then** it shows "Dashboard" with `https://hlabs.<tailnet>.ts.net` and, for each installed app (AppIcon + name, sorted by name), its address `https://hlabs.<tailnet>.ts.net:<port>`, where `<port>` is the app's port in 12000–12999 (the same port as its LAN fallback, D-012).
+- **Given** remote access is connected, **when** I view "Remote access", **then** it shows "Dashboard" with `https://<node>.<tailnet>.ts.net` (with `:8443` after a port clash, D-103) and, for each installed app (AppIcon + name, sorted by name), its address `https://<node>.<tailnet>.ts.net:<port>`, where `<port>` is the app's tailnet port in 14000–14999 (its LAN fallback port + 2000, D-012, D-102, D-110).
 - **Given** an address row, **when** I click the copy icon button, **then** the address is copied and a Toast "Address copied" appears; clicking the address opens it in a new tab.
 - **Given** an app is installed or uninstalled while remote access is connected, **when** `app.stateChanged` arrives, **then** its Tailscale Serve entry is added or removed and the list updates within 10 s without reload.
 - **Given** remote access is not connected, **when** I view the page, **then** no tailnet addresses are shown, only the "Connect" row from US-SYS-02.
@@ -91,7 +98,7 @@ The system half of Settings: how hlabs is reached on the home network and over T
 - API: `network.status` (tailnet URL), `apps.list` (app ports).
 - Data: `settings.remote`, `apps.port_fallback` (the app's port, also used on the tailnet).
 - UI: List/ListRow, AppIcon, copy Button, Toast. Local `*.hlabs.local` addresses are listed separately in US-SYS-01.
-- `HLABS_TAILNET_URL` for an app is `https://hlabs.<tailnet>.ts.net:<port>`; restart only apps whose compose uses it when remote access is connected or disconnected.
+- `HLABS_TAILNET_URL` for an app is `https://<node>.<tailnet>.ts.net:<port>`; restart only apps whose compose uses it when remote access is connected or disconnected.
 
 ### US-SYS-05 · See and change web ports
 **Feature:** F-SYS-01 · **Priority:** P1 · **Phase:** 3 · **Screens:** `SettingsNetwork`
@@ -110,21 +117,42 @@ The system half of Settings: how hlabs is reached on the home network and over T
 - UI: Dialog, TextField (numeric), Button.
 - Fallback at startup (D-016): HTTPS 443, else 8443; HTTP 80, else 8080. No other fallback ports. Record which ones were used.
 
-### US-SYS-06 · Use Pi-hole for DNS
+### US-SYS-06 · Use a local DNS server
 **Feature:** F-SYS-01 · **Priority:** P1 · **Phase:** 3 · **Screens:** `SettingsNetwork`
-**As** an admin who runs Pi-hole, **I want** hlabs to publish its names into Pi-hole, **so that** `*.hlabs.local` resolves on devices that don't support mDNS (Android, Windows).
+**As** an admin who runs a DNS server such as Pi-hole or AdGuard Home, **I want** hlabs to keep its names in that server, **so that** every device on the home network finds hlabs, including the ones that don't use mDNS (D-105, D-106).
 
 **Acceptance criteria**
-- **Given** Pi-hole is not installed, **when** I view "Use Pi-hole for DNS", **then** the Switch is disabled with "Install Pi-hole from the App Store to use this" linking to its AppDetails.
-- **Given** Pi-hole is installed and running, **when** I turn the Switch on, **then** hlabs writes local DNS records for the dashboard hostname and every app hostname to this computer's LAN address, and keeps them in sync when apps are installed, uninstalled or renamed.
-- **Given** it is on, **when** I turn it off, **then** hlabs removes only the records it created.
-- **Given** Pi-hole is stopped, **when** hlabs tries to sync, **then** the row shows a warning Badge "Pi-hole isn't running" and retries on the next `app.stateChanged` for Pi-hole.
+- **Given** "Local DNS server", **when** shown, **then** I can choose "None" (default), "AdGuard Home on this computer", "Pi-hole", or "Another DNS server", with the helper "Point your router's DNS at it so every device uses it."
+- **Given** AdGuard Home isn't installed, **when** I view the choices, **then** "AdGuard Home on this computer" is disabled with "Install AdGuard Home from the App Store to use this", linking to its AppDetails.
+- **Given** I choose AdGuard Home (installed and running), **when** it saves, **then** hlabs adds a DNS rewrite for `*.<host>.home.arpa`, `<host>.home.arpa` and the `.local` names to this computer's LAN address through AdGuard Home's API, and keeps it right when the LAN address or the server name changes.
+- **Given** I choose Pi-hole, **when** I enter its address and an app password and click "Test", **then** hlabs checks Pi-hole's API and shows success or the error inline; on Save the password goes to the secret store and hlabs writes the records (a dnsmasq wildcard for `<host>.home.arpa`) through Pi-hole's API. It works for a Pi-hole on another device (such as a Raspberry Pi that's the router's DNS) as well as on this computer.
+- **Given** I choose "Another DNS server", **when** it saves, **then** the page lists the records to add by hand (name, type, address) with a Copy button, and says they change if this computer's LAN address does.
+- **Given** a DNS server is chosen, **when** apps are installed, uninstalled or renamed, **then** the records stay in sync (one wildcard covers apps where the server supports it).
+- **Given** I switch to "None" or to another server, **when** it saves, **then** hlabs removes only the records it created.
+- **Given** the server can't be reached when hlabs syncs, **then** the row shows a warning Badge "<server> isn't answering" and hlabs tries again on the next change and every 10 minutes.
 
 **Implementation notes**
-- API: `network.setPiholeDns` (addition).
-- Data: `settings` key `network` field `piholeDns` (04 data model).
-- UI: Switch, Badge.
-- Records are written through Pi-hole's custom DNS list file in its app-data (`custom.list`), then Pi-hole's DNS is reloaded. Setting the router's DNS is left to the user; show "Point your router's DNS at this computer" as helper text.
+- API: `network.setDnsServer { kind: 'none' | 'adguard' | 'pihole' | 'manual', address?, appPassword? }` (replaces `network.setPiholeDns`), `network.testDnsServer` (Pi-hole), `network.status` (the records, last sync, problem); hlabsCodes `DNS_SERVER_UNREACHABLE`, `DNS_SERVER_AUTH_FAILED`.
+- Data: `settings.network.dns` (kind, address, last sync); the Pi-hole app password in the secret store (`secret_ref`), never SQLite.
+- Pi-hole v6 no longer reads `custom.list`; use its API (check the v6 API docs when building). Pi-hole isn't in the built-in store; AdGuard Home is.
+- The Pi-hole address is an outbound connection: list it in Settings › Advanced › "What hlabs connects to" (07 §7.1).
+- UI: ChoiceList, TextField, Button, Badge, List/ListRow, copy Button, Toast.
+
+### US-SYS-41 · Reach hlabs through a subnet router
+**Feature:** F-SYS-01 · **Priority:** P2 · **Phase:** 3 · **Screens:** `SettingsNetwork`
+**As** an admin who already reaches my home network through a Tailscale subnet router (for example on a Raspberry Pi), **I want** to tell hlabs so, **so that** I don't need Tailscale on this computer and see the addresses that work from away (D-107).
+
+**Acceptance criteria**
+- **Given** "Remote access", **when** remote access isn't connected, **then** besides "Connect" it offers "I reach my home network through a Tailscale subnet router".
+- **Given** I choose it, **when** it saves, **then** hlabs doesn't use Tailscale on this computer, and "Remote access" shows "Through your subnet router" with the dashboard's LAN-IP address (`https://<LAN IP>[:port]`) and, if a local DNS server is set up (US-SYS-06), `https://<host>.home.arpa`, each with Copy.
+- **Given** this mode, **when** shown, **then** a help link explains pointing the tailnet's split DNS for `home.arpa` at the local DNS server, and installing the hlabs certificate on each device.
+- **Given** this mode, **when** I choose "Use Tailscale on this computer instead", **then** it goes back to the Connect flow (US-SYS-02).
+- **Given** this mode, **then** invite and reset links use the home-network address (D-109).
+
+**Implementation notes**
+- API: `network.setRemoteMode { mode: 'off' | 'subnetRouter' }` (Tailscale mode is set by `network.remote.connect`), `network.status`.
+- Data: `settings.remote.mode`; `audit_log` action `network.remote.mode`.
+- UI: ListRow, Button, copy Button, help link via `helpUrl()`.
 
 ### US-SYS-07 · Pick a new server name
 **Feature:** F-SYS-02 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `RenameHostname`
@@ -489,7 +517,7 @@ The system half of Settings: how hlabs is reached on the home network and over T
 **As** an admin, **I want** a list of every outside service hlabs talks to, **so that** I can trust that nothing leaves the house unless I turned it on.
 
 **Acceptance criteria**
-- **Given** the Advanced page, **then** a "What hlabs connects to" row opens a list of: store sources (each URL), container registries used by installed apps, hlabs update server, Tailscale (if on), each backup destination (if configured) and the ntfy server (if configured, D-033).
+- **Given** the Advanced page, **then** a "What hlabs connects to" row opens a list of: store sources (each URL), container registries used by installed apps, hlabs update server, Tailscale (if on), each backup destination (if configured), the ntfy server (if configured, D-033) and the Pi-hole hlabs keeps its names in (if chosen, D-106).
 - **Given** each entry, **then** it shows the host, why ("Checks for app updates every 6 hours"), and when it was last contacted.
 - **Given** telemetry, **then** the list states "hlabs sends no usage data or crash reports."
 - **Given** a service is off (e.g. Tailscale disconnected), **then** it is listed as "Off".

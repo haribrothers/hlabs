@@ -83,3 +83,11 @@ describe('features', () => {
     expect(isFeatureEnabled('backups', 5)).toBe(true);
   });
 });
+
+describe('keptHomeFolderName (US-ACCT-16, D-101)', () => {
+  it('names the folder after the person and the day, in local time', async () => {
+    const { keptHomeFolderName } = await import('./people');
+    expect(keptHomeFolderName('anu', new Date(2026, 9, 2, 23, 30).getTime())).toBe('anu-deleted-2026-10-02');
+    expect(keptHomeFolderName('ravi', new Date(2027, 0, 5).getTime())).toBe('ravi-deleted-2027-01-05');
+  });
+});

@@ -39,8 +39,8 @@ describe('US-AUTH-18', () => {
       kind: 'ok',
       redirectTo: 'https://immich.hlabs.local/photos',
     });
-    expect(await login('https://hlabs.tail1234.ts.net:12001/photos')).toMatchObject({
-      redirectTo: 'https://hlabs.tail1234.ts.net:12001/photos',
+    expect(await login('https://hlabs.tail1234.ts.net:14001/photos')).toMatchObject({
+      redirectTo: 'https://hlabs.tail1234.ts.net:14001/photos',
     });
     expect(await login('/files')).toMatchObject({ redirectTo: '/files' });
     expect(await login('https://evil.com/')).toMatchObject({ redirectTo: '/' });
@@ -58,5 +58,38 @@ describe('US-AUTH-18', () => {
       userAgent: null,
     });
     expect(done.redirectTo).toBe('https://immich.hlabs.local/photos');
+  });
+
+  it('already signed in on the way to an app on home.arpa: the cookie is set for .<host>.home.arpa, and only allowed addresses come back (D-105)', async () => {
+    const d = await daemonWithAdmin(closers);
+    d.services!.db.insert(apps)
+      .values({
+        id: 'immich',
+        version: '1',
+        state: 'running',
+        hostname: 'immich',
+        portFallback: 12001,
+        installedAt: 1,
+        updatedAt: 1,
+      })
+      .run();
+    const go = (next: string) =>
+      fetch(`${d.url}/trpc/auth.continue`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          cookie: d.cookie,
+          'x-hlabs-csrf': d.csrf,
+          'x-forwarded-host': 'hlabs.home.arpa',
+        },
+        body: JSON.stringify({ next }),
+      });
+    const res = await go('https://immich.hlabs.home.arpa/photos');
+    expect(((await res.json()) as { result: { data: unknown } }).result.data).toEqual({
+      redirectTo: 'https://immich.hlabs.home.arpa/photos',
+    });
+    expect(res.headers.get('set-cookie')).toMatch(/Domain=\.hlabs\.home\.arpa/);
+    const evil = (await (await go('https://evil.example/')).json()) as { result: { data: unknown } };
+    expect(evil.result.data).toEqual({ redirectTo: '/' });
   });
 });

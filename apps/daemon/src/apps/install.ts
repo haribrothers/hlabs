@@ -39,10 +39,12 @@ import { waitHealthy, type HealthProbes } from './health';
 import { takenHostnames } from './hostnames';
 import type { AppDiskUsage } from './disk';
 import { appSummary, catalogManifest, catalogRow } from './list';
+import { tailnetHost } from '../network/domains';
 import { allocatePort, loopbackPort, loopbackPortFree } from './ports';
 import type { AppService } from './service';
 import { canTransition, stateDetail } from './state-machine';
 import { hostTimeZone } from '../platform/timezone';
+import { tailnetAppPort } from '@hlabs/shared';
 
 export interface InstallRequest {
   appId: string;
@@ -265,6 +267,8 @@ export class InstallService {
           installedBy: user.userId,
         })
         .run();
+      // A member's own install is shared with them, so it's on their Home (US-ACCT-20).
+      if (user.role !== 'admin') tx.insert(appAccess).values({ appId: manifest.id, userId: user.userId }).run();
       for (const p of manifest.env) {
         const secret = isSecret(p);
         tx.insert(appEnv)
@@ -562,6 +566,10 @@ export class InstallService {
       folders: folderPaths(manifest, mounts, appData),
       hostname: `${hostname}.${domain}`,
       url: `https://${hostname}.${domain}`,
+      // Its tailnet address, while remote access is on (D-012, D-102, D-110).
+      tailnetUrl: tailnetHost(this.deps.db)
+        ? `https://${tailnetHost(this.deps.db)}:${tailnetAppPort(port)}`
+        : undefined,
       tz: (this.deps.timeZone ?? hostTimeZone)(),
       puid: process.getuid?.() ?? 1000,
       pgid: process.getgid?.() ?? 1000,

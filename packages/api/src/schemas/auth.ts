@@ -76,6 +76,11 @@ export const auth = {
     redirectSchema.extend({ recoveryCodesLeft: z.number().int().min(0) }),
   ),
   logout: io(empty, ok),
+  /**
+   * Already signed in, on the way to `next` (an app that didn't see the session): the cookie is set again for the
+   * name the dashboard is on, so apps under it share it (D-105), and the allowed `next` comes back.
+   */
+  continue: io(z.object({ next: z.string().max(2048).optional() }), redirectSchema),
   me: io(empty, meSchema),
   listSessions: io(
     empty,

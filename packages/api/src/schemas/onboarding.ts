@@ -1,6 +1,7 @@
 import { ONBOARDING_STEPS, serverNameSchema } from '@hlabs/shared';
 import { z } from 'zod';
 import { io } from '../trpc';
+import { remoteConnectInput, remoteConnectResult } from './network';
 import {
   appIdSchema,
   displayNameSchema,
@@ -88,7 +89,8 @@ export const onboarding = {
     ]),
     ok,
   ),
-  connectRemote: io(empty, pending),
+  /** The remote step's Connect (US-ONB-17): the same as `network.remote.connect`, with the admin's session. */
+  connectRemote: io(remoteConnectInput, remoteConnectResult),
   /** OnbApps' tiles (US-ONB-19): each starter app, what memory it recommends and whether the engine has that free. */
   starterApps: io(
     empty,

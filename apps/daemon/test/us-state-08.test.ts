@@ -89,7 +89,7 @@ describe('US-STATE-08', () => {
     );
     const servers = config.apps.http.servers as Record<string, { errors?: { routes: unknown[] } }>;
     const byName = JSON.stringify(servers.https!.errors!.routes);
-    expect(byName).toContain('"host":["kuma.hlabs.local"]');
+    expect(byName).toContain('"host":["kuma.hlabs.local","kuma.hlabs.home.arpa"]');
     expect(byName).toContain('/auth/unavailable');
     expect(JSON.stringify(servers['app-kuma']!.errors!.routes)).toContain('/auth/unavailable');
   });

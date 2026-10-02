@@ -1,0 +1,98 @@
+// US-SYS-41 · Reach hlabs through a subnet router (server side, D-107).
+import { apps, auditLog, getSetting, setSetting, users } from '@hlabs/db';
+import { eq } from 'drizzle-orm';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { dashboardOrigins } from '../src/http/dashboard-origins';
+import type { FakeTailscale } from '../src/tailscale/fake';
+import { daemonWithAdmin } from './admin-session';
+
+const closers: Array<() => Promise<void>> = [];
+afterEach(async () => {
+  for (const close of closers.splice(0)) await close();
+});
+
+describe('US-SYS-41', () => {
+  it("saves the subnet router mode, audited, and then doesn't ask Tailscale on this computer", async () => {
+    const d = await daemonWithAdmin(closers);
+    const ts = d.services!.tailscale as FakeTailscale;
+    expect((await d.mutate('network.setRemoteMode', { mode: 'subnetRouter' })).result?.data).toEqual({ ok: true });
+    expect(getSetting(d.services!.db, 'remote')).toMatchObject({ mode: 'subnetRouter', state: 'off' });
+    expect(
+      d.services!.db.select().from(auditLog).where(eq(auditLog.action, 'network.remote.mode')).get()?.detailJson,
+    ).toEqual({ mode: 'subnetRouter' });
+
+    const asked = vi.spyOn(ts, 'state');
+    expect((await d.query('network.status')).result!.data.remote).toMatchObject({ mode: 'subnetRouter', url: null });
+    await d.services!.remote.reconcile();
+    expect(asked).not.toHaveBeenCalled();
+  });
+
+  it('invite links use the home-network address in this mode (D-109)', async () => {
+    const d = await daemonWithAdmin(closers);
+    await d.mutate('network.setRemoteMode', { mode: 'subnetRouter' });
+    const made = (await d.mutate('invites.create', { role: 'member' })).result!.data;
+    expect(made.url).toMatch(/^https:\/\/hlabs\.local\/invite\//);
+    expect(made.homeUrl).toBeNull();
+  });
+
+  it('"Use Tailscale on this computer instead" goes back to Connect; a log-in in progress is given up', async () => {
+    const d = await daemonWithAdmin(closers);
+    await d.mutate('network.setRemoteMode', { mode: 'subnetRouter' });
+    await d.mutate('network.setRemoteMode', { mode: 'off' });
+    expect((await d.query('network.status')).result!.data.remote).toMatchObject({ mode: 'off', state: 'off' });
+    const connect = (await d.mutate('network.remote.connect')).result!.data;
+    expect(connect.state).toBe('needs_login');
+    await d.mutate('network.setRemoteMode', { mode: 'subnetRouter' });
+    expect(getSetting(d.services!.db, 'remote')).toMatchObject({ mode: 'subnetRouter', connectStartedAt: null });
+  });
+
+  it('refused while connected with Tailscale here; members get ACCESS_DENIED', async () => {
+    const d = await daemonWithAdmin(closers);
+    const ts = d.services!.tailscale as FakeTailscale;
+    ts.current = {
+      kind: 'running',
+      tailnet: 'tail9.ts.net',
+      nodeName: 'hari-home',
+      httpsEnabled: true,
+      keyExpiry: null,
+    };
+    await d.mutate('network.remote.connect', { confirmTailnet: true });
+    expect((await d.mutate('network.setRemoteMode', { mode: 'subnetRouter' })).error?.data.hlabsCode).toBe(
+      'VALIDATION_FAILED',
+    );
+    d.services!.db.update(users).set({ role: 'member' }).where(eq(users.id, d.userId)).run();
+    expect((await d.mutate('network.setRemoteMode', { mode: 'off' })).error?.data.hlabsCode).toBe('ACCESS_DENIED');
+  });
+
+  it("the dashboard's LAN address is an allowed origin, with the port when 443 was taken", async () => {
+    const d = await daemonWithAdmin(closers);
+    const { db } = d.services!;
+    expect(dashboardOrigins('https://hlabs.local', db, () => ['10.85.0.10'])).toContain('https://10.85.0.10');
+    setSetting(db, 'network', { ...getSetting(db, 'network'), ports: { https: 8443, http: 8080 } });
+    expect(dashboardOrigins('https://hlabs.local', db, () => ['10.85.0.10'])).toContain('https://10.85.0.10:8443');
+  });
+
+  it("signed out at an app's own port on this computer's address: log in at that address, then back (D-110 port)", async () => {
+    const d = await daemonWithAdmin(closers);
+    d.services!.db.insert(apps)
+      .values({
+        id: 'immich',
+        version: '1',
+        state: 'running',
+        hostname: 'immich',
+        portFallback: 12001,
+        installedAt: 1,
+        updatedAt: 1,
+      })
+      .run();
+    const res = await fetch(`${d.url}/auth/verify`, {
+      redirect: 'manual',
+      headers: { 'x-forwarded-host': '10.85.0.10:12001', 'x-forwarded-uri': '/', accept: 'text/html' },
+    });
+    expect(res.headers.get('location')).toBe(
+      `https://10.85.0.10/login?next=${encodeURIComponent('https://10.85.0.10:12001/')}`,
+    );
+    const list = (await d.query('apps.list')).result!.data.apps as Array<{ urls: { port: number | null } }>;
+    expect(list[0]!.urls.port).toBe(12001);
+  });
+});

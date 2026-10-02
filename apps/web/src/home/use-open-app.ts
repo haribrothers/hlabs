@@ -7,13 +7,14 @@ import { showToast } from '../lib/toasts';
 import { useTRPC } from '../lib/trpc';
 import { useMedia } from '../lib/use-media';
 import type { HomeApp } from './home-app';
+import { appAddress } from '../lib/app-address';
 
 /** The app window opens on a desktop layout (US-APP-01); phones are covered by 12-phone.md. */
 export const APP_WINDOW_QUERY = '(min-width: 1024px)';
 
 /** On the tailnet name, apps open on their port there (D-012); otherwise on their .local hostname. */
 export function appUrl(app: HomeApp, location: Pick<Location, 'hostname'> = window.location): string {
-  return location.hostname.endsWith('.ts.net') && app.urls.tailnet ? app.urls.tailnet : app.urls.local;
+  return appAddress(app.urls, location);
 }
 
 export function useOpenApp(isAdmin: boolean): (app: HomeApp) => void {

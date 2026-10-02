@@ -23,8 +23,9 @@ export default defineConfig(({ command }) => ({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
-    // pnpm dev:full: Caddy sends https://hlabs.local here.
-    allowedHosts: ['.local'],
+    // pnpm dev:full: Caddy sends https://hlabs.local and hlabs.home.arpa here (D-105), and Tailscale Serve sends the
+    // tailnet name (<node>.<tailnet>.ts.net, US-SYS-02).
+    allowedHosts: ['.local', '.home.arpa', '.ts.net'],
     proxy: {
       '/trpc': { target: DAEMON, changeOrigin: false },
       '/healthz': DAEMON,
@@ -37,6 +38,7 @@ export default defineConfig(({ command }) => ({
       '/dev/revoke-sessions': DAEMON,
       '/dev/fake-app': DAEMON,
       '/dev/engine': DAEMON,
+      '/dev/tailscale': DAEMON,
       '/dev/remove-app': DAEMON,
       '/dev/rolled-back': DAEMON,
       '/dev/sync-store': DAEMON,

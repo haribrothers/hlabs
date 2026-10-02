@@ -109,7 +109,11 @@ export const errorCopy = {
       body: 'Use lowercase letters, numbers and dashes, starting with a letter.',
     }),
     USERNAME_TAKEN: () => ({ title: 'That username is taken', body: 'Choose another one.' }),
-    LAST_ADMIN: () => ({ title: 'hlabs needs an admin', body: 'Make someone else an admin first.' }),
+    LAST_ADMIN: () => ({ title: 'hlabs needs at least one admin', body: 'Make someone else an admin first.' }),
+    INVITE_INVALID: () => ({
+      title: "This invite doesn't work anymore",
+      body: 'Ask the person who invited you for a new link.',
+    }),
     // Onboarding
     ONBOARDING_SETUP_TOKEN_REQUIRED: () => ({
       title: 'Open setup from this computer',
@@ -193,6 +197,29 @@ export const errorCopy = {
     FILES_NAME_EXISTS: () => ({ title: 'That name is taken', body: 'Choose another name.' }),
     FILES_INVALID_PATH: () => ({ title: "That place doesn't exist", body: 'It may have been moved or removed.' }),
     FILES_INVALID_NAME: () => ({ title: "That name won't work", body: 'Names can’t contain / or be empty.' }),
+    TAILSCALE_PERMISSION_DENIED: () => ({
+      title: 'Tailscale needs permission first',
+      body: 'Run sudo tailscale set --operator=hlabs once on this computer, then try again.',
+    }),
+    DNS_SERVER_UNREACHABLE: () => ({
+      title: "The DNS server isn't answering",
+      body: 'Check its address and that it is running, then try again.',
+    }),
+    DNS_SERVER_AUTH_FAILED: () => ({
+      title: 'Pi-hole refused the app password',
+      body: 'Make an app password in Pi-hole under Settings › Web interface / API, then paste it here.',
+    }),
+    TAILSCALE_NOT_RUNNING: () => ({
+      title: "Tailscale isn't running",
+      body: 'Open Tailscale on this computer so hlabs can take its addresses off your tailnet, then try again.',
+    }),
+    TAILSCALE_SERVE_CONFLICT: (d) => ({
+      title:
+        num(d, 'port') !== null
+          ? `Port ${num(d, 'port')} is already served on your tailnet`
+          : 'A port is already served',
+      body: 'Something else on this computer uses it with Tailscale Serve. Choose another port or stop that first.',
+    }),
     NETWORK_PORT_IN_USE: (d) => ({
       title: num(d, 'port') !== null ? `Port ${num(d, 'port')} is in use` : 'That port is in use',
       body: 'Another program is using it. Choose another port or close that program.',

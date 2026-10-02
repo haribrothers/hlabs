@@ -122,34 +122,37 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 
 ## Phase 3 · Remote access and family
 
-- [ ] US-ONB-17 · Connect Tailscale for remote access
-- [ ] US-ONB-18 · Set up remote access later
-- [ ] US-AUTH-23 · Open an invite link
-- [ ] US-AUTH-24 · Create my account from an invite
-- [ ] US-HOME-11 · See only my shared apps on a member Home
-- [ ] US-HOME-12 · See my files and shared-apps summary
-- [ ] US-ACCT-13 · See everyone who uses hlabs
-- [ ] US-ACCT-14 · Give a member a reset-password link
-- [ ] US-ACCT-15 · Change role, disable or enable someone
-- [ ] US-ACCT-16 · Delete someone
-- [ ] US-ACCT-17 · Manage pending invites
-- [ ] US-ACCT-18 · Choose what the log-in screen shows
-- [ ] US-ACCT-19 · Require two-factor for everyone
-- [ ] US-ACCT-20 · Decide what members can do
-- [ ] US-ACCT-21 · Create an invite link
-- [ ] US-ACCT-22 · Choose the invitee's role and apps
-- [ ] US-ACCT-23 · Preview the invite page
-- [ ] US-ACCT-24 · Choose which apps a member can open
-- [ ] US-ACCT-25 · Shared folder and live usage for a member
-- [ ] US-ACCT-26 · Access changes apply straight away
-- [ ] US-ACCT-27 · Member sees a limited Settings
-- [ ] US-ACCT-28 · Member's account page
-- [ ] US-SYS-01 · See how hlabs is reached on the home network
-- [ ] US-SYS-02 · Connect remote access with Tailscale
-- [ ] US-SYS-03 · Disconnect remote access
-- [ ] US-SYS-04 · See each app's tailnet address
-- [ ] US-SYS-05 · See and change web ports
-- [ ] US-SYS-06 · Use Pi-hole for DNS
+Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS with standalone Tailscale and an iPad on the tailnet: a member invited by link logs in and opens only the apps shared with them, both on the tailnet (`https://<node>.<tailnet>.ts.net`, apps on their tailnet ports, D-110) and at home (`https://<host>.local`); an app not shared with them shows the "no access" page and opens straight away once shared. Also checked live: Pi-hole v6 on a Raspberry Pi as the local DNS server, `home.arpa` names, and the dashboard and apps at the LAN address (subnet router mode). Not checked live: AdGuard Home, Linux, the App Store build of Tailscale, Headscale (R-12).
+
+- [x] US-ONB-17 · Connect Tailscale for remote access
+- [x] US-ONB-18 · Set up remote access later
+- [x] US-AUTH-23 · Open an invite link
+- [x] US-AUTH-24 · Create my account from an invite
+- [x] US-HOME-11 · See only my shared apps on a member Home (refusing a member's `home.saveLayout` with an app they can't open is tested when `home.saveLayout` is built with Home edit, phase 7)
+- [x] US-HOME-12 · See my files and shared-apps summary ("Last photo backup from your phone" stays hidden until hlabs reads Immich's API; My files opens Files once it ships in phase 5)
+- [x] US-ACCT-13 · See everyone who uses hlabs
+- [x] US-ACCT-14 · Give a member a reset-password link (the /reset page that uses it is US-AUTH-22, phase 4; auth.resetPassword is built and tested here)
+- [x] US-ACCT-15 · Change role, disable or enable someone
+- [x] US-ACCT-16 · Delete someone (emptying the trash after 30 days comes with the Trash, phase 8; a kept Home folder is renamed, D-101)
+- [x] US-ACCT-17 · Manage pending invites (a revoked link reads "This invite doesn't work anymore", US-AUTH-23's wording for that page, rather than "This invite is no longer valid")
+- [x] US-ACCT-18 · Choose what the log-in screen shows (the "reachable over Tailscale" warning appears with network.status in US-SYS-02)
+- [x] US-ACCT-19 · Require two-factor for everyone
+- [x] US-ACCT-20 · Decide what members can do (the Usage tab and usage.* themselves ship in phase 4; members are refused there already)
+- [x] US-ACCT-21 · Create an invite link
+- [x] US-ACCT-22 · Choose the invitee's role and apps (copying the choices to the new account is tested with US-AUTH-24)
+- [x] US-ACCT-23 · Preview the invite page
+- [x] US-ACCT-24 · Choose which apps a member can open
+- [x] US-ACCT-25 · Shared folder and live usage for a member (the switches are stored and `auth.me.canSeeUsage` follows them; Files hiding `/shared` comes with Files in phase 5, the Usage tab with phase 4)
+- [x] US-ACCT-26 · Access changes apply straight away
+- [x] US-ACCT-27 · Member sees a limited Settings (Appearance, Notifications and About join the sidebar in phases 7, 9 and 8; the note is above Account as the story says, not at the foot of the sidebar as drawn)
+- [x] US-ACCT-28 · Member's account page (the Home folder size shows once Files ships in phase 5)
+- [x] US-SYS-01 · See how hlabs is reached on the home network (Rename and Get certificate appear in phase 9; home.arpa names added, D-105)
+- [x] US-SYS-02 · Connect remote access with Tailscale (checked live on macOS standalone Tailscale; the App Store variant and Linux are untested live, R-12)
+- [x] US-SYS-03 · Disconnect remote access
+- [x] US-SYS-04 · See each app's tailnet address (no built-in app uses HLABS_TAILNET_URL yet, so no restarts on connect or disconnect; the live check on macOS moved apps to their own tailnet ports, D-110)
+- [x] US-SYS-05 · See and change web ports
+- [x] US-SYS-06 · Use a local DNS server (checked live with Pi-hole v6 on a Raspberry Pi; AdGuard Home is tested against a stand-in that answers as its API does, not live yet; a changed LAN address is picked up by the 10-minute sync, a renamed server by its rename in phase 9)
+- [x] US-SYS-41 · Reach hlabs through a subnet router (hlabs can't see the router, so the mode shows the addresses without a Connected status)
 
 ## Phase 4 · Menu-bar app, monitoring and updates
 

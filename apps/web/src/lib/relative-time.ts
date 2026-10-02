@@ -17,3 +17,11 @@ export function timeAgo(at: number, now = Date.now()): string {
   }
   return 'just now';
 }
+
+const days = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+
+/** "today", "yesterday", "3 days ago", then weeks and longer as `timeAgo` says them. */
+export function daysAgo(at: number, now = Date.now()): string {
+  const n = Math.floor(Math.max(0, now - at) / 86_400_000);
+  return n < 7 ? days.format(-n, 'day') : timeAgo(at, now);
+}

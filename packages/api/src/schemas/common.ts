@@ -102,6 +102,8 @@ export const jobKindSchema = z.enum([
   'engine_restart',
   'prune_images',
   'files_move',
+  /** A deleted person's Home folder going to the trash (US-ACCT-16). */
+  'home_folder_trash',
   'diagnostics',
   'hlabs_uninstall',
   /** Dev and test only. */

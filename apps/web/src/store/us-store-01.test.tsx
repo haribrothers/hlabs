@@ -15,7 +15,8 @@ const installed = (id: string, state: InstalledApp['state']): InstalledApp => ({
   state,
   icon: { logoUrl: null, gradient: null, fallback: null },
   embed: false,
-  urls: { local: `https://${id}.hlabs.local`, tailnet: null },
+  ownLogin: false,
+  urls: { local: `https://${id}.hlabs.local`, tailnet: null, port: null },
 });
 
 const home = {

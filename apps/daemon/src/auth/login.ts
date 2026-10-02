@@ -352,6 +352,11 @@ export class LoginService {
     return { session, redirectTo: safeNext(next, this.nextOrigins()) };
   }
 
+  /** Where an already signed-in person goes next: a dashboard path, or an allowed app address (else `/`). */
+  redirectFor(next: string | undefined): string {
+    return safeNext(next, this.nextOrigins());
+  }
+
   /** A warning notification for one user, or for all admins (`userId` null), announced on the bus. */
   private notify(n: { userId: string | null; kind: string; title: string; body: string; now: number }) {
     createNotification(this.db, this.bus, { ...n, severity: 'warning' });

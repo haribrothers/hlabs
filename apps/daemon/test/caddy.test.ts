@@ -1,5 +1,5 @@
 // Caddy's config (02 §2.6, D-006), the NetworkService that applies it, and the admin socket path (D-073).
-import { openDb, setSetting } from '@hlabs/db';
+import { getSetting, openDb, setSetting } from '@hlabs/db';
 import { describe, expect, it } from 'vitest';
 import type { AppRoute } from '../src/apps/service';
 import { buildCaddyConfig, IDENTITY_HEADERS } from '../src/caddy/config';
@@ -50,9 +50,23 @@ describe('buildCaddyConfig', () => {
       'immich.hlabs.local',
       'vaultwarden.hlabs.local',
     ]);
+    // Each name on .local (mDNS) and on .home.arpa, for DNS servers (D-105).
+    expect(https.routes.map((r: Json) => r.match[0].host)).toEqual([
+      ['hlabs.local', 'hlabs.home.arpa'],
+      ['hlabs.local', 'hlabs.home.arpa'],
+      ['immich.hlabs.local', 'immich.hlabs.home.arpa'],
+      ['vaultwarden.hlabs.local', 'vaultwarden.hlabs.home.arpa'],
+    ]);
     expect(config.apps.tls.automation.policies).toEqual([
       {
-        subjects: ['hlabs.local', 'immich.hlabs.local', 'vaultwarden.hlabs.local'],
+        subjects: [
+          'hlabs.local',
+          'hlabs.home.arpa',
+          'immich.hlabs.local',
+          'immich.hlabs.home.arpa',
+          'vaultwarden.hlabs.local',
+          'vaultwarden.hlabs.home.arpa',
+        ],
         issuers: [{ module: 'internal' }],
       },
     ]);
@@ -79,7 +93,7 @@ describe('buildCaddyConfig', () => {
   });
 
   it('answers a down daemon with the fallback page on the dashboard only (US-STATE-04)', () => {
-    expect(https.errors.routes[0].match).toEqual([{ host: ['hlabs.local'] }]);
+    expect(https.errors.routes[0].match).toEqual([{ host: ['hlabs.local', 'hlabs.home.arpa'] }]);
     expect(JSON.stringify(https.errors.routes[0].handle)).toContain('/res/web-fallback');
   });
 
@@ -94,7 +108,7 @@ describe('buildCaddyConfig', () => {
 
   it('the dashboard also serves /ca.crt over HTTPS, for the trust guide to download (D-097)', () => {
     const route = https.routes[0];
-    expect(route.match).toEqual([{ host: ['hlabs.local'], path: ['/ca.crt'] }]);
+    expect(route.match).toEqual([{ host: ['hlabs.local', 'hlabs.home.arpa'], path: ['/ca.crt'] }]);
     expect(JSON.stringify(route.handle)).toContain('hlabs-ca.crt');
   });
 
@@ -111,6 +125,30 @@ describe('buildCaddyConfig', () => {
     expect(c.apps.http.servers.http.routes[1].handle[0].headers.Location).toEqual([
       'https://{http.request.host}:8443{http.request.uri}',
     ]);
+  });
+
+  it("serves the dashboard on this computer's LAN address with a certificate for it (US-SYS-01, US-SYS-41)", () => {
+    const c = buildCaddyConfig(state({ lanAddresses: ['10.85.0.10'] }), paths) as Json;
+    const server = c.apps.http.servers.https;
+    expect(server.routes[1].match[0].host).toEqual(['hlabs.local', 'hlabs.home.arpa', '10.85.0.10']);
+    expect(c.apps.tls.automation.policies[0].subjects).toContain('10.85.0.10');
+    // A browser sends no name for an IP address: it gets that address's certificate.
+    expect(server.tls_connection_policies).toEqual([{ default_sni: '10.85.0.10' }]);
+    // Without one, nothing changes.
+    expect(config.apps.http.servers.https.tls_connection_policies).toBeUndefined();
+    // Apps on their own port at that address get its certificate too, and the dashboard there may frame them.
+    const appServer = c.apps.http.servers['app-immich'];
+    expect(appServer.tls_connection_policies).toEqual([{ default_sni: '10.85.0.10' }]);
+    const embedded = buildCaddyConfig(
+      state({
+        lanAddresses: ['10.85.0.10'],
+        apps: [{ appId: 'immich', hostname: 'immich', port: 12000, auth: 'hlabs', embed: true }],
+      }),
+      paths,
+    ) as Json;
+    expect(JSON.stringify(embedded.apps.http.servers['app-immich'])).toContain(
+      'frame-ancestors https://hlabs.local https://hlabs.home.arpa https://10.85.0.10',
+    );
   });
 
   it('keeps the admin API on a unix socket', () => {
@@ -142,6 +180,7 @@ describe('NetworkService', () => {
       routes: () => routes,
       dashboardUpstream: '127.0.0.1:5173',
       daemon: '127.0.0.1:7474',
+      lanAddresses: () => ['192.168.1.20'],
     });
     return { db, mdns, network, errors, setRoutes: (r: AppRoute[]) => (routes = r) };
   }
@@ -149,7 +188,7 @@ describe('NetworkService', () => {
   it('applies the state from the database and publishes the names', async () => {
     const proxy = new NoopProxyManager();
     const t = setup(proxy);
-    setSetting(t.db, 'network', { ports: { https: 8443, http: 8080 }, piholeDns: false });
+    setSetting(t.db, 'network', { ...getSetting(t.db, 'network'), ports: { https: 8443, http: 8080 } });
     t.setRoutes([{ appId: 'immich', hostname: 'immich', port: 12000, auth: 'hlabs', embed: false }]);
     await t.network.sync();
     expect(proxy.last).toEqual({
@@ -159,6 +198,7 @@ describe('NetworkService', () => {
       dashboardUpstream: '127.0.0.1:5173',
       daemon: '127.0.0.1:7474',
       tailnetHost: null,
+      lanAddresses: ['192.168.1.20'],
       apps: [{ appId: 'immich', hostname: 'immich', port: 12000, auth: 'hlabs', embed: false }],
     });
     expect(t.mdns.names).toEqual(['hlabs.local', 'immich.hlabs.local']);

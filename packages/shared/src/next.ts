@@ -1,6 +1,7 @@
 // Where to go after logging in (US-AUTH-03, US-AUTH-05, US-AUTH-18): a path on this dashboard, or an https address
 // whose origin the daemon allows (the dashboard, an installed app's hostname, the tailnet name or an app's tailnet
 // port). Never another site, never the log-in page itself. Shared by the daemon and the dashboard.
+import { tailnetAppPort } from './ports';
 export const NEXT_MAX_LENGTH = 2048;
 
 /**
@@ -30,10 +31,18 @@ export function nextOrigins(opts: {
   dashboardUrl: string;
   /** The machine's name: `hlabs` → `hlabs.local`. */
   hostname: string;
-  /** Installed apps: hostname label and tailnet/fallback port. */
+  /** Installed apps: hostname label and own port (the tailnet one is 2000 above, D-110). */
   apps: ReadonlyArray<{ hostname: string; port: number | null }>;
   /** The tailnet's DNS name (`tail1234` or `tail1234.ts.net`) when remote access is on. */
   tailnet: string | null;
+  /** This computer's name on the tailnet (D-102); the machine's name when not given. */
+  tailnetNode?: string | null;
+  /** The dashboard's tailnet port: 443, or 8443 after a clash (D-103). */
+  tailnetDashboardPort?: number;
+  /** This computer's LAN addresses: the dashboard and each app's own port there (US-SYS-41). */
+  lanAddresses?: readonly string[];
+  /** The dashboard's HTTPS port at those addresses (443, or 8443 after a clash, D-016). */
+  httpsPort?: number;
 }): Set<string> {
   const origins = new Set<string>();
   const local = `${opts.hostname}.local`;
@@ -44,13 +53,26 @@ export function nextOrigins(opts: {
   } catch {
     // Not a URL: nothing to add.
   }
-  for (const app of opts.apps) origins.add(`https://${app.hostname}.${local}`);
+  // The name for DNS servers too (D-105).
+  const arpa = `${opts.hostname}.home.arpa`;
+  origins.add(`https://${arpa}`);
+  for (const app of opts.apps) {
+    origins.add(`https://${app.hostname}.${local}`);
+    origins.add(`https://${app.hostname}.${arpa}`);
+  }
   // Its own port, the address it falls back to when its name isn't published (US-APP-05, D-086).
   for (const app of opts.apps) if (app.port !== null) origins.add(`https://${local}:${app.port}`);
+  for (const ip of opts.lanAddresses ?? []) {
+    const port = opts.httpsPort ?? 443;
+    origins.add(`https://${ip}${port === 443 ? '' : `:${port}`}`);
+    for (const app of opts.apps) if (app.port !== null) origins.add(`https://${ip}:${app.port}`);
+  }
   if (opts.tailnet) {
-    const tailnetHost = `${opts.hostname}.${opts.tailnet.replace(/\.ts\.net$/, '')}.ts.net`;
-    origins.add(`https://${tailnetHost}`);
-    for (const app of opts.apps) if (app.port !== null) origins.add(`https://${tailnetHost}:${app.port}`);
+    const tailnetHost = `${opts.tailnetNode ?? opts.hostname}.${opts.tailnet.replace(/\.ts\.net$/, '')}.ts.net`;
+    const port = opts.tailnetDashboardPort ?? 443;
+    origins.add(`https://${tailnetHost}${port === 443 ? '' : `:${port}`}`);
+    for (const app of opts.apps)
+      if (app.port !== null) origins.add(`https://${tailnetHost}:${tailnetAppPort(app.port)}`);
   }
   return origins;
 }

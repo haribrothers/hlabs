@@ -8,23 +8,41 @@ import { useMe } from '../lib/use-me';
 import { AccessDenied } from '../shell/access-denied';
 import { AccountSection } from './account-section';
 import { EngineSection, EngineStatus } from './engine-section';
+import { NetworkSection } from './network-section';
 import { sectionAccess, type SectionId } from './sections';
+import { InviteButton, UsersSection } from './users-section';
 
-const CONTENT: Partial<Record<SectionId, ComponentType<{ openTwoFactor?: boolean; next?: string }>>> = {
+const CONTENT: Partial<
+  Record<SectionId, ComponentType<{ openTwoFactor?: boolean; next?: string; shippedPhase?: number }>>
+> = {
   account: AccountSection,
+  users: UsersSection,
+  network: NetworkSection,
   engine: EngineSection,
 };
 
 /** Something shown next to a section's title, such as the engine's state. */
 const ASIDE: Partial<Record<SectionId, ComponentType>> = {
+  users: InviteButton,
   engine: EngineStatus,
 };
 
-export function SectionPage({ id, openTwoFactor, next }: { id: string; openTwoFactor?: boolean; next?: string }) {
+export function SectionPage({
+  id,
+  openTwoFactor,
+  next,
+  shippedPhase,
+}: {
+  id: string;
+  openTwoFactor?: boolean;
+  next?: string;
+  /** For tests of a section whose phase hasn't shipped yet. */
+  shippedPhase?: number;
+}) {
   const me = useMe().data;
   const desktop = useIsDesktop();
   const heading = useRef<HTMLHeadingElement>(null);
-  const access = me ? sectionAccess(id, me.role) : null;
+  const access = me ? sectionAccess(id, me.role, shippedPhase) : null;
   const label = access?.kind === 'ok' ? access.section.label : null;
   useEffect(() => {
     if (!label) return;
@@ -56,7 +74,7 @@ export function SectionPage({ id, openTwoFactor, next }: { id: string; openTwoFa
         }
       >
         {Content ? (
-          <Content openTwoFactor={openTwoFactor} next={next} />
+          <Content openTwoFactor={openTwoFactor} next={next} shippedPhase={shippedPhase} />
         ) : (
           <p className="m-0 text-body text-ink-muted">{settingsCopy.empty}</p>
         )}

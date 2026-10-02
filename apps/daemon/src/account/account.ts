@@ -6,6 +6,19 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { LoginService } from '../auth/login';
 import { hashPassword } from '../auth/passwords';
 import type { SessionService } from '../auth/sessions';
+import { homeFolderBytes } from '../storage/home-folder';
+
+/** Who manages hlabs, as members are told: the earliest-created enabled admin (US-ACCT-27, US-HOME-12). */
+export function managingAdminName(db: HlabsDb): string | null {
+  return (
+    db
+      .select({ displayName: users.displayName })
+      .from(users)
+      .where(and(eq(users.role, 'admin'), isNull(users.disabledAt)))
+      .orderBy(asc(users.createdAt))
+      .get()?.displayName ?? null
+  );
+}
 
 export function getAccount(db: HlabsDb, userId: string) {
   const user = db.select().from(users).where(eq(users.id, userId)).get();
@@ -18,12 +31,6 @@ export function getAccount(db: HlabsDb, userId: string) {
     .orderBy(asc(recoveryCodes.id))
     .all();
   const setupDone = getSetting(db, 'onboarding').completedAt;
-  const admin = db
-    .select({ displayName: users.displayName })
-    .from(users)
-    .where(and(eq(users.role, 'admin'), isNull(users.disabledAt)))
-    .orderBy(asc(users.createdAt))
-    .get();
   return {
     id: user.id,
     username: user.username,
@@ -38,8 +45,9 @@ export function getAccount(db: HlabsDb, userId: string) {
     totpAddedDuringSetup: totp?.enabledAt != null && (setupDone === null || totp.enabledAt <= setupDone),
     totpRequired: getSetting(db, 'people').requireTotp,
     hostname: getSetting(db, 'hostname'),
-    homeFolderBytes: null,
-    adminName: admin?.displayName ?? null,
+    // Counted in the background and kept 10 minutes; null while it's first being counted (US-ACCT-28).
+    homeFolderBytes: homeFolderBytes(db, user.username),
+    adminName: managingAdminName(db),
   };
 }
 

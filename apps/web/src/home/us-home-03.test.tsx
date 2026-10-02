@@ -10,7 +10,8 @@ const app = (id: string, name: string, extra: Partial<HomeApp> = {}): HomeApp =>
   state: 'running',
   icon: { logoUrl: null, gradient: null, fallback: null },
   embed: false,
-  urls: { local: `https://${id}.hlabs.local`, tailnet: `https://hlabs.tail1234.ts.net:12001` },
+  ownLogin: false,
+  urls: { local: `https://${id}.hlabs.local`, tailnet: `https://hlabs.tail1234.ts.net:14001`, port: null },
   ...extra,
 });
 
@@ -33,7 +34,7 @@ describe('US-HOME-03', () => {
 
   it('on the tailnet name apps open on their port there', () => {
     const a = app('immich', 'Immich');
-    expect(appUrl(a, { hostname: 'hlabs.tail1234.ts.net' })).toBe('https://hlabs.tail1234.ts.net:12001');
+    expect(appUrl(a, { hostname: 'hlabs.tail1234.ts.net' })).toBe('https://hlabs.tail1234.ts.net:14001');
     expect(appUrl(a, { hostname: 'hlabs.local' })).toBe('https://immich.hlabs.local');
   });
 

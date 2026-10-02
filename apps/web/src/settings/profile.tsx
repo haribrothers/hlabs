@@ -1,5 +1,6 @@
 // Account › profile (US-ACCT-03): avatar, name and "<username> · <role>", and the Edit profile dialog (display name,
 // avatar colour, language; the username is shown read-only).
+import { formatBytes, isFeatureEnabled } from '@hlabs/shared';
 import {
   Avatar,
   avatarColorFor,
@@ -121,19 +122,39 @@ function EditProfile({ account, onClose }: { account: Account; onClose: () => vo
   );
 }
 
+/** How often to ask again while the Home folder is first being counted. */
+const RECOUNT_MS = 2_000;
+
+/**
+ * "<username> · <role>", then "· 4.2 GB in Home folder" once Files ships (D-036, US-ACCT-28), "Calculating…" while the
+ * folder is first counted.
+ */
+export function profileLine(
+  a: { username: string; role: 'admin' | 'member'; homeFolderBytes: number | null },
+  filesShipped = isFeatureEnabled('files'),
+): string {
+  const who = copy.who(a.username, copy.roles[a.role]);
+  if (!filesShipped) return who;
+  return `${who} · ${a.homeFolderBytes === null ? copy.calculating : copy.inHomeFolder(formatBytes(a.homeFolderBytes))}`;
+}
+
 export function Profile() {
   const trpc = useTRPC();
-  const account = useQuery({ ...trpc.account.get.queryOptions(), retry: false });
+  const account = useQuery({
+    ...trpc.account.get.queryOptions(),
+    retry: false,
+    refetchInterval: (q) => (isFeatureEnabled('files') && q.state.data?.homeFolderBytes === null ? RECOUNT_MS : false),
+  });
   const [editing, setEditing] = useState(false);
   if (!account.data) return null;
   const a = account.data;
-  // One row on the list surface, as in the design: avatar, name over "<username> · <role>", Edit profile.
+  // One row on the list surface, as in the design: avatar, name over "<username> · <role> · <size>", Edit profile.
   return (
     <div className="hl-list-box">
       <ListRow
         leading={<Avatar name={a.displayName} color={avatarColorFor(a.username, a.avatarColor)} size="xl" />}
         title={<span className="text-headline font-bold">{a.displayName}</span>}
-        subtitle={copy.who(a.username, copy.roles[a.role])}
+        subtitle={profileLine(a)}
         trailing={
           <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
             {copy.editProfile}

@@ -36,6 +36,8 @@ export const HLABS_ERRORS = {
   USERNAME_INVALID: 'BAD_REQUEST',
   USERNAME_TAKEN: 'CONFLICT',
   LAST_ADMIN: 'PRECONDITION_FAILED',
+  /** The invite link was used, revoked or has expired (US-AUTH-24). */
+  INVITE_INVALID: 'PRECONDITION_FAILED',
 
   // Onboarding
   ONBOARDING_SETUP_TOKEN_REQUIRED: 'FORBIDDEN',
@@ -81,6 +83,16 @@ export const HLABS_ERRORS = {
   FILES_INVALID_NAME: 'BAD_REQUEST',
   NETWORK_PORT_IN_USE: 'CONFLICT',
   TAILSCALE_HTTPS_DISABLED: 'PRECONDITION_FAILED',
+  /** Linux: the daemon's user isn't Tailscale's operator (D-104). Not FORBIDDEN: that would mean "no access". */
+  TAILSCALE_PERMISSION_DENIED: 'PRECONDITION_FAILED',
+  /** A port hlabs would serve on the tailnet is served by something else (D-103); detail: `{ port }`. */
+  TAILSCALE_SERVE_CONFLICT: 'CONFLICT',
+  /** Disconnecting needs Tailscale running, to take hlabs's Serve entries away (US-SYS-03). */
+  TAILSCALE_NOT_RUNNING: 'PRECONDITION_FAILED',
+  /** The local DNS server didn't answer (US-SYS-06). */
+  DNS_SERVER_UNREACHABLE: 'PRECONDITION_FAILED',
+  /** Pi-hole refused the app password (US-SYS-06). */
+  DNS_SERVER_AUTH_FAILED: 'BAD_REQUEST',
 
   // Backups and restore
   BACKUP_DEST_UNREACHABLE: 'BAD_GATEWAY',

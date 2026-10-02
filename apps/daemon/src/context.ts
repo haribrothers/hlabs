@@ -2,6 +2,7 @@
 import { hlabsError, listProcedures, type Access, type ApiContext } from '@hlabs/api';
 import { csrfMatches } from './auth/sessions';
 import type { Listener } from './events/bus';
+import { memberSeesUsage } from './home/layout';
 import type { Services } from './services';
 
 /**
@@ -98,6 +99,10 @@ export class DaemonContext implements ApiContext {
     if (id.kind === 'user') {
       const allowed = access.includes('authed') || (access.includes('admin') && id.role === 'admin');
       if (!allowed) throw hlabsError('ACCESS_DENIED');
+      // Live usage for members needs "See live usage" for members and their own switch (US-ACCT-20, D-029, 07 §7.4).
+      if (path.startsWith('usage.') && id.role !== 'admin' && !memberSeesUsage(this.services.db, id.userId)) {
+        throw hlabsError('ACCESS_DENIED');
+      }
       this.checkCsrf(path);
       return;
     }

@@ -6,6 +6,7 @@ import { KeepAwake, processSleepBlocker, type SleepBlocker } from './platform/ke
 import { eq } from 'drizzle-orm';
 import { registerEngineRestart } from './engine/restart-job';
 import { registerEngineStart } from './engine/start-job';
+import { registerHomeFolderTrash } from './users/home-trash-job';
 import { watchEngine } from './engine/watch';
 import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
 import { nextOrigins } from '@hlabs/shared';
@@ -32,7 +33,12 @@ import { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
 import { ChildRegistry } from './platform/children';
-import { createMdnsPublisher } from './mdns/publisher';
+import { createMdnsPublisher, lanAddress, lanAddresses } from './mdns/publisher';
+import { DNS_RETRY_MS, DnsService } from './network/dns';
+import { RemoteService } from './network/remote';
+import { FakeTailscale } from './tailscale/fake';
+import { LocalApiTailscale } from './tailscale/localapi';
+import type { TailscaleClient } from './tailscale/types';
 import { AppDiskUsage } from './apps/disk';
 import { AppLogs } from './apps/logs';
 import { UpdateService } from './apps/update';
@@ -63,6 +69,8 @@ export interface BootDeps {
   engine?: Partial<EngineServiceDeps>;
   proxy?: ProxyManager;
   mdns?: MdnsPublisher;
+  /** The Tailscale on this computer (a fake in tests, and with HLABS_DEV_FAKE_TAILSCALE). */
+  tailscale?: TailscaleClient;
   secrets?: SecretStore;
   system?: SystemProbe;
   drives?: DriveProbe;
@@ -156,6 +164,17 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   const children = new ChildRegistry(join(config.paths.dataDir, 'run', 'children.json'));
   const reaped = children.reapStale();
   if (reaped) logger.warn({ reaped }, 'ended helper processes a previous daemon left running');
+  // Remote access first: starting Caddy frees the web ports Tailscale Serve holds for hlabs (D-111).
+  const tailscale = deps.tailscale ?? (config.devFakeTailscale ? new FakeTailscale() : new LocalApiTailscale());
+  const sessions = new SessionService(db, bus);
+  const remote = new RemoteService({
+    db,
+    tailscale,
+    sessions,
+    logger,
+    dashboardUpstream: config.dashboardUpstream,
+    routes: () => appService.routes(),
+  });
   const proxy =
     deps.proxy ??
     (config.proxy === 'caddy'
@@ -165,6 +184,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
           webFallbackDir: config.resources.webFallbackDir,
           logger,
           children,
+          aroundStart: (ports, start) => remote.whileReleased(ports, start),
         })
       : new NoopProxyManager());
   const mdns =
@@ -183,6 +203,29 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   });
   await network.sync();
   network.watch(bus);
+  const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);
+  const dns = new DnsService({
+    db,
+    secrets,
+    logger,
+    lanAddress: () => lanAddress(),
+  });
+  // Apps installed or uninstalled get or lose their tailnet address (US-SYS-04) and DNS records (US-SYS-06).
+  bus.on(({ event }) => {
+    if (event.type !== 'app.stateChanged') return;
+    void remote.reconcile();
+    void dns.sync();
+  });
+  // At start too: a tailnet that changed while hlabs was off, or Serve entries from before D-110, are brought up to date.
+  void remote.reconcile();
+  // A DNS server that didn't answer, or a LAN address that changed, is caught up with regularly: the records, and
+  // Caddy's certificates for the LAN address (sync applies only when something changed).
+  const dnsTimer = setInterval(() => {
+    void dns.sync();
+    void network.sync();
+  }, DNS_RETRY_MS);
+  dnsTimer.unref();
+  void dns.sync();
 
   // 4. The built-in store, then reconcile installed apps with the engine.
   readiness.step(3);
@@ -229,7 +272,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     onResources: (resources) => setSetting(db, 'engine', { ...getSetting(db, 'engine'), resources }),
   });
   registerEngineStart({ jobs, engine, db, control: engineControl, appsBack });
-  const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);
+  registerHomeFolderTrash({ jobs, db });
   const onboarding = new OnboardingService({
     db,
     secrets,
@@ -261,7 +304,6 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     print(`\n  Set up hlabs: open ${setupUrl}\n`);
   }
 
-  const sessions = new SessionService(db, bus);
   const totp = new TotpService(db, secrets);
   const notifications = new NotificationService(db, bus);
   watchEngine({
@@ -327,6 +369,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     updates,
     logs: new AppLogs({ engine, project: (appId) => appService.project(appId).name }),
     routing: network,
+    remote,
+    tailscale,
+    dns,
     apps: appService,
     reconciled,
     onboarding,
@@ -338,6 +383,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
         hostname: getSetting(db, 'hostname'),
         apps: db.select({ hostname: apps.hostname, port: apps.portFallback }).from(apps).all(),
         tailnet: getSetting(db, 'remote').tailnetName,
+        tailnetNode: getSetting(db, 'remote').nodeName,
+        tailnetDashboardPort: getSetting(db, 'remote').dashboardPort,
+        lanAddresses: lanAddresses(),
+        httpsPort: getSetting(db, 'network').ports.https,
       }),
     ),
     notifications,

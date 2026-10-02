@@ -22,6 +22,11 @@ on:
         description: 'App ids to check, comma-separated (empty: every app)'
         required: false
 
+# A newer push makes a running check of an older one pointless.
+concurrency:
+  group: store-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
