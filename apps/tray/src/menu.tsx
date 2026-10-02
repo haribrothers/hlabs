@@ -1,6 +1,7 @@
 // The tray window: the menu for the tray's current state. Stats, actions and the other states arrive with their stories
 // (US-INST-05…).
-import { TrayMenu, TraySetup } from '@hlabs/ui';
+import { isFeatureEnabled } from '@hlabs/shared';
+import { TrayMenu, TraySetup, type MenuItem } from '@hlabs/ui';
 import { useAccess, type Access } from './access';
 import { useBoot, type BootState } from './boot';
 import { useOpenSetup, useSetupPending } from './setup';
@@ -48,6 +49,27 @@ export function FirstLaunch({ boot, onOpenSetup }: { boot: BootState; onOpenSetu
   );
 }
 
+/**
+ * The running menu, in the design's order (TrayMenu): what the actions do arrives with their stories (US-INST-05…10,
+ * US-INST-17, US-INST-19); "Back up now" waits for backups (phase 5) and "Uninstall hlabs…" for phase 6 (D-036).
+ */
+export function runningItems(): MenuItem[] {
+  return [
+    { separator: true },
+    { label: t.openDashboard, shortcut: '⌘D' },
+    { label: t.copyAddress },
+    ...(isFeatureEnabled('backups') ? [{ label: t.backUpNow }] : []),
+    { separator: true },
+    { label: t.startAtLogin, checked: true },
+    { label: t.pauseAll },
+    { label: t.checkForUpdates },
+    { label: t.resetPassword },
+    { separator: true },
+    ...(isFeatureEnabled('uninstall') ? [{ label: t.uninstall }] : []),
+    { label: t.quit, shortcut: '⌘Q' },
+  ];
+}
+
 export function Menu() {
   const { access, retry } = useAccess();
   const boot = useBoot();
@@ -69,13 +91,7 @@ export function Menu() {
         { label: t.memory, value: '—' },
         { label: t.free, value: '—' },
       ]}
-      items={[
-        { label: t.openDashboard },
-        { label: t.copyAddress },
-        { label: t.backUpNow },
-        { separator: true },
-        { label: t.quit },
-      ]}
+      items={runningItems()}
     />
   );
 }

@@ -160,6 +160,9 @@ importers:
       '@hlabs/icons':
         specifier: workspace:*
         version: link:../../packages/icons
+      '@hlabs/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@hlabs/ui':
         specifier: workspace:*
         version: link:../../packages/ui

@@ -34,6 +34,8 @@ export const FEATURE_PHASE = {
   liveUsage: 4,
   hlabsUpdates: 4,
   backups: 5,
+  /** "Uninstall hlabs…" in the tray (US-INST-21, US-INST-22). */
+  uninstall: 6,
   files: 5,
   notifications: 7,
   /** The App Store updates list (F-STORE-08) and the Dock's update badge (US-HOME-05). */

@@ -1513,7 +1513,15 @@
   }
   .hl-tray-stat b {
     font-size: 13px;
+    line-height: 16px;
     color: var(--ink);
+  }
+  /* TrayMenu design: the label and value sit close; the status line is quieter than the name above it. */
+  .hl-tray-stat {
+    line-height: 14px;
+  }
+  .hl-tray-id .hl-status {
+    font: 500 12px/16px var(--hl-font-sans);
   }
   .hl-tray-logo-danger {
     color: var(--danger);
