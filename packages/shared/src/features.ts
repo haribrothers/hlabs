@@ -51,6 +51,8 @@ export const FEATURE_PHASE = {
   trashScreen: 8,
   aiAccess: 8,
   renameServer: 9,
+  /** The certificate guide (F-SYS-03): "Get certificate" in Network & remote access. */
+  certGuide: 9,
   moveAllData: 9,
   engineSwitch: 9,
   /** App settings tabs (US-APP-04): Configuration, Permissions and Usage (F-APP-05…07). */

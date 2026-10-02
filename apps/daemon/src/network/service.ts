@@ -7,6 +7,8 @@ import type { ProxyManager, ProxyState } from '../caddy/index';
 import type { EventBus } from '../events/bus';
 import type { Logger } from '../logger';
 import type { MdnsPublisher } from '../mdns/index';
+import { lanAddresses } from '../mdns/publisher';
+import { homeDomains } from './domains';
 
 export interface NetworkServiceDeps {
   db: HlabsDb;
@@ -17,6 +19,8 @@ export interface NetworkServiceDeps {
   dashboardUpstream: string;
   /** The daemon's loopback address, for forward auth. */
   daemon: string;
+  /** This computer's LAN IPv4 addresses, best first. */
+  lanAddresses?: () => string[];
 }
 
 /** `<hostname>.<tailnet>.ts.net` when remote access is set up (D-012). */
@@ -55,6 +59,28 @@ export class NetworkService {
     const next = this.queue.then(() => this.syncNow(options.force ?? false));
     this.queue = next;
     return next;
+  }
+
+  /**
+   * How hlabs is reached on the home network (US-SYS-01): its `.local` and `.home.arpa` addresses (D-105), whether
+   * the `.local` name is published, and the LAN addresses to use when it isn't.
+   */
+  homeNetwork() {
+    const { db } = this.deps;
+    const hostname = getSetting(db, 'hostname');
+    const ports = getSetting(db, 'network').ports;
+    const [local, dns] = homeDomains(hostname);
+    const withPort = (host: string) => `https://${host}${ports.https === 443 ? '' : `:${ports.https}`}`;
+    const lan = (this.deps.lanAddresses ?? lanAddresses)();
+    const published = this.isPublished(local);
+    return {
+      hostname,
+      localAddress: withPort(local),
+      dnsAddress: withPort(dns),
+      published,
+      lanAddresses: lan,
+      fallbackAddress: published || !lan[0] ? null : withPort(lan[0]),
+    };
   }
 
   /** Whether a name (`immich.hlabs.local`) is published on the LAN; apps whose names aren't use their own port. */

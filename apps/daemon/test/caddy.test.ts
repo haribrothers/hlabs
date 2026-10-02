@@ -50,9 +50,23 @@ describe('buildCaddyConfig', () => {
       'immich.hlabs.local',
       'vaultwarden.hlabs.local',
     ]);
+    // Each name on .local (mDNS) and on .home.arpa, for DNS servers (D-105).
+    expect(https.routes.map((r: Json) => r.match[0].host)).toEqual([
+      ['hlabs.local', 'hlabs.home.arpa'],
+      ['hlabs.local', 'hlabs.home.arpa'],
+      ['immich.hlabs.local', 'immich.hlabs.home.arpa'],
+      ['vaultwarden.hlabs.local', 'vaultwarden.hlabs.home.arpa'],
+    ]);
     expect(config.apps.tls.automation.policies).toEqual([
       {
-        subjects: ['hlabs.local', 'immich.hlabs.local', 'vaultwarden.hlabs.local'],
+        subjects: [
+          'hlabs.local',
+          'hlabs.home.arpa',
+          'immich.hlabs.local',
+          'immich.hlabs.home.arpa',
+          'vaultwarden.hlabs.local',
+          'vaultwarden.hlabs.home.arpa',
+        ],
         issuers: [{ module: 'internal' }],
       },
     ]);
@@ -79,7 +93,7 @@ describe('buildCaddyConfig', () => {
   });
 
   it('answers a down daemon with the fallback page on the dashboard only (US-STATE-04)', () => {
-    expect(https.errors.routes[0].match).toEqual([{ host: ['hlabs.local'] }]);
+    expect(https.errors.routes[0].match).toEqual([{ host: ['hlabs.local', 'hlabs.home.arpa'] }]);
     expect(JSON.stringify(https.errors.routes[0].handle)).toContain('/res/web-fallback');
   });
 
@@ -94,7 +108,7 @@ describe('buildCaddyConfig', () => {
 
   it('the dashboard also serves /ca.crt over HTTPS, for the trust guide to download (D-097)', () => {
     const route = https.routes[0];
-    expect(route.match).toEqual([{ host: ['hlabs.local'], path: ['/ca.crt'] }]);
+    expect(route.match).toEqual([{ host: ['hlabs.local', 'hlabs.home.arpa'], path: ['/ca.crt'] }]);
     expect(JSON.stringify(route.handle)).toContain('hlabs-ca.crt');
   });
 

@@ -8,12 +8,16 @@ import { useMe } from '../lib/use-me';
 import { AccessDenied } from '../shell/access-denied';
 import { AccountSection } from './account-section';
 import { EngineSection, EngineStatus } from './engine-section';
+import { NetworkSection } from './network-section';
 import { sectionAccess, type SectionId } from './sections';
 import { InviteButton, UsersSection } from './users-section';
 
-const CONTENT: Partial<Record<SectionId, ComponentType<{ openTwoFactor?: boolean; next?: string }>>> = {
+const CONTENT: Partial<
+  Record<SectionId, ComponentType<{ openTwoFactor?: boolean; next?: string; shippedPhase?: number }>>
+> = {
   account: AccountSection,
   users: UsersSection,
+  network: NetworkSection,
   engine: EngineSection,
 };
 
@@ -70,7 +74,7 @@ export function SectionPage({
         }
       >
         {Content ? (
-          <Content openTwoFactor={openTwoFactor} next={next} />
+          <Content openTwoFactor={openTwoFactor} next={next} shippedPhase={shippedPhase} />
         ) : (
           <p className="m-0 text-body text-ink-muted">{settingsCopy.empty}</p>
         )}

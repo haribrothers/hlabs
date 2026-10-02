@@ -8,6 +8,7 @@ import { auth } from './auth';
 import { events } from './events';
 import { home } from './home';
 import { invites } from './invites';
+import { network } from './network';
 import { jobs } from './jobs';
 import { notifications } from './notifications';
 import { onboarding } from './onboarding';
@@ -32,6 +33,7 @@ export const handlers: AppHandlers<DaemonContext> = {
   notifications,
   users,
   invites,
+  network,
 };
 
 type Fn = (input: unknown, ctx: DaemonContext, signal: AbortSignal | undefined) => unknown;

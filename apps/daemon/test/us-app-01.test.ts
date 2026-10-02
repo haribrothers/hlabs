@@ -47,11 +47,14 @@ describe('US-APP-01', () => {
     const framed = routeFor(config, 'jellyfin.hlabs.local').handle.at(-1);
     expect(framed.headers.response).toEqual({
       delete: ['X-Frame-Options'],
-      add: { 'Content-Security-Policy': ['frame-ancestors https://hlabs.local'] },
+      add: { 'Content-Security-Policy': ['frame-ancestors https://hlabs.local https://hlabs.home.arpa'] },
       // An app's own frame-ancestors ('self' in Audiobookshelf, Nextcloud…) would still refuse the dashboard.
       replace: {
         'Content-Security-Policy': [
-          { search_regexp: 'frame-ancestors[^;]*', replace: 'frame-ancestors https://hlabs.local' },
+          {
+            search_regexp: 'frame-ancestors[^;]*',
+            replace: 'frame-ancestors https://hlabs.local https://hlabs.home.arpa',
+          },
         ],
       },
     });
@@ -64,7 +67,9 @@ describe('US-APP-01', () => {
       paths,
     );
     expect(routeFor(config, 'jellyfin.hlabs.local').handle.at(-1).headers.response.add).toEqual({
-      'Content-Security-Policy': ['frame-ancestors https://hlabs.local:8443 https://hlabs.tail1234.ts.net'],
+      'Content-Security-Policy': [
+        'frame-ancestors https://hlabs.local:8443 https://hlabs.home.arpa:8443 https://hlabs.tail1234.ts.net',
+      ],
     });
   });
 

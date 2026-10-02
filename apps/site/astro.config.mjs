@@ -31,6 +31,10 @@ export default defineConfig({
           ],
         },
         {
+          label: 'Remote access',
+          items: [{ label: 'How to reach hlabs', link: '/help/remote-access/addresses/' }],
+        },
+        {
           label: 'People and family',
           items: [{ label: 'People who use hlabs', link: '/help/people/people/' }],
         },

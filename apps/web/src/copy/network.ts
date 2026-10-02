@@ -1,0 +1,21 @@
+// Settings › Network & remote access (10-system-settings.md F-SYS-01).
+export const networkCopy = {
+  homeNetwork: 'Home network',
+  localAddress: 'Local address',
+  dnsName: (address: string) => `${address} · for devices that use your DNS server`,
+  notPublished: 'Not published',
+  useInstead: (address: string) => `Use ${address} until the name is published`,
+  lanAddresses: (list: string) => `This computer on your network: ${list}`,
+  rename: 'Rename',
+  https: 'HTTPS on the home network',
+  httpsHint: 'Install the hlabs certificate once on each device to remove browser warnings',
+  getCertificate: 'Get certificate',
+  webPorts: 'Web ports',
+  ports: (http: number, https: number) => `HTTP ${http} · HTTPS ${https}`,
+  portTaken: (port: number) => `${port} is used by another program`,
+  appAddresses: 'App addresses',
+  noApps: 'No apps yet',
+  openStore: 'Open the App Store',
+  loadFailed: "Couldn't load how hlabs is reached.",
+  tryAgain: 'Try again',
+} as const;

@@ -52,6 +52,11 @@ const VIRTUAL = /^(lo|docker|br-|veth|virbr|vmnet|vboxnet|utun|bridge|tailscale|
 
 /** The LAN IPv4 address: wired and Wi-Fi interfaces first, never loopback, container bridges or VPNs. */
 export function lanAddress(interfaces = networkInterfaces()): string | null {
+  return lanAddresses(interfaces)[0] ?? null;
+}
+
+/** Every LAN IPv4 address, best first (US-SYS-01 lists them when the name can't be published). */
+export function lanAddresses(interfaces = networkInterfaces()): string[] {
   const candidates = Object.entries(interfaces)
     .filter(([name]) => !VIRTUAL.test(name))
     .flatMap(([name, addrs]) =>
@@ -60,7 +65,7 @@ export function lanAddress(interfaces = networkInterfaces()): string | null {
     .filter((c) => !c.address.startsWith('169.254.'));
   const rank = (name: string) => (/^(en|eth)/.test(name) ? 0 : /^(wl|wlan)/.test(name) ? 1 : 2);
   candidates.sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name, 'en', { numeric: true }));
-  return candidates[0]?.address ?? null;
+  return [...new Set(candidates.map((c) => c.address))];
 }
 
 /** How long a publisher must run before its name counts as published again. */

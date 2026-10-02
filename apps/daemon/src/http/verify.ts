@@ -14,6 +14,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { readCookie, SESSION_COOKIE } from '../auth/sessions';
 import type { ServiceHolder, Services } from '../services';
 import { StaticPages, type NoAccessPage } from './static-page';
+import { appHostnameIn, homeDomainOf } from '../network/domains';
 
 export const VERIFY_CACHE_MS = 10_000;
 
@@ -129,30 +130,30 @@ function appPortIn(forwardedHost: string): number | null {
 }
 
 /**
- * The installed app a forwarded host names, in a state that has a route: `<app>.<hostname>.local`, or any name on
+ * The installed app a forwarded host names, in a state that has a route: `<app>.<hostname>.local` (or `.home.arpa`,
+ * D-105), or any name on
  * the app's own port (`hlabs.local:12003` when its name isn't published, US-APP-05; its tailnet address).
  */
 export function appForHost(db: HlabsDb, forwardedHost: string) {
   const host = forwardedHost.replace(/:\d+$/, '').toLowerCase();
-  const suffix = `.${getSetting(db, 'hostname')}.local`;
+  const named = appHostnameIn(host, getSetting(db, 'hostname'));
   const port = appPortIn(forwardedHost);
-  const app = host.endsWith(suffix)
-    ? db
-        .select()
-        .from(apps)
-        .where(eq(apps.hostname, host.slice(0, -suffix.length)))
-        .get()
+  const app = named
+    ? db.select().from(apps).where(eq(apps.hostname, named)).get()
     : port !== null
       ? db.select().from(apps).where(eq(apps.portFallback, port)).get()
       : undefined;
   return app && LIVE.has(app.state) ? app : null;
 }
 
-/** The dashboard on the port the app was reached on (8443 when 443 was taken, D-016), its own port from an app's. */
+/**
+ * The dashboard on the name and port the app was reached on: the same home domain (`.local` or `.home.arpa`, D-105),
+ * the port 8443 when 443 was taken (D-016), the dashboard's port from an app's own port.
+ */
 export function dashboardOrigin(db: HlabsDb, forwardedHost: string): string {
   const reached = /:(\d+)$/.exec(forwardedHost)?.[1];
   const port = appPortIn(forwardedHost) !== null ? String(getSetting(db, 'network').ports.https) : reached;
-  return `https://${getSetting(db, 'hostname')}.local${port && port !== '443' ? `:${port}` : ''}`;
+  return `https://${homeDomainOf(forwardedHost, getSetting(db, 'hostname'))}${port && port !== '443' ? `:${port}` : ''}`;
 }
 
 export function registerAuthVerify(app: FastifyInstance, holder: ServiceHolder, webFallbackDir: string): void {
