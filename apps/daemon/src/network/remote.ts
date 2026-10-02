@@ -6,6 +6,7 @@ import { hlabsError } from '@hlabs/api';
 import { auditLog, getSetting, setSetting, type HlabsDb } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import type { AppRoute } from '../apps/service';
+import type { SessionService } from '../auth/sessions';
 import type { Logger } from '../logger';
 import { TailscaleError, type ServeConfig, type TailscaleClient, type TailscaleState } from '../tailscale/types';
 import { tailnetDashboardUrl } from './domains';
@@ -43,12 +44,21 @@ interface Who {
 export interface RemoteDeps {
   db: HlabsDb;
   tailscale: TailscaleClient;
+  sessions: SessionService;
   logger: Logger;
   /** Where the dashboard is served on this computer (`127.0.0.1:7474`). */
   dashboardUpstream: string;
   /** The routed apps, each with its port (12000–12999). */
   routes: () => AppRoute[];
   now?: () => number;
+}
+
+/** Tailscale's addresses (100.64.0.0/10, fd7a:115c:a1e0::/48): sessions that came over the tailnet. */
+export function isTailnetIp(ip: string | null): boolean {
+  if (!ip) return false;
+  const v4 = /^(?:::ffff:)?(\d+)\.(\d+)\.\d+\.\d+$/.exec(ip);
+  if (v4) return Number(v4[1]) === 100 && Number(v4[2]) >= 64 && Number(v4[2]) <= 127;
+  return ip.toLowerCase().startsWith('fd7a:115c:a1e0:');
 }
 
 /** What hlabs serves: the dashboard on `dashboardPort`, each app on its own port through Caddy (forward auth). */
@@ -200,6 +210,50 @@ export class RemoteService {
     await this.publish(ts, dashboardPort);
     this.audit(who, 'network.remote.connect', { tailnet: ts.tailnet, dashboardPort });
     return { state: 'connected', url: tailnetDashboardUrl(this.deps.db)! };
+  }
+
+  /** Rewrites the Serve config without hlabs's entries; everything else stays (D-103). */
+  private async unpublish() {
+    const owned = this.settings().serve;
+    if (!owned.length) return;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let current;
+      try {
+        current = await this.deps.tailscale.serveConfig();
+      } catch (err) {
+        if (err instanceof TailscaleError && err.kind === 'permission') throw hlabsError('TAILSCALE_PERMISSION_DENIED');
+        throw hlabsError('TAILSCALE_NOT_RUNNING');
+      }
+      try {
+        await this.deps.tailscale.setServeConfig(mergeServe(current.config, owned, []), current.etag);
+        return;
+      } catch (err) {
+        if (err instanceof TailscaleError && err.kind === 'conflict') continue;
+        if (err instanceof TailscaleError && err.kind === 'permission') throw hlabsError('TAILSCALE_PERMISSION_DENIED');
+        throw hlabsError('TAILSCALE_NOT_RUNNING');
+      }
+    }
+    throw hlabsError('INTERNAL', 'Serve config kept changing');
+  }
+
+  /**
+   * Disconnect (US-SYS-03): hlabs's Serve entries go (nobody else's), sessions that came over the tailnet end, and
+   * Tailscale's own log-in is left alone.
+   */
+  async disconnect(who: Who) {
+    await this.unpublish();
+    this.save({
+      mode: 'off',
+      state: 'off',
+      tailnetName: null,
+      nodeName: null,
+      serve: [],
+      dashboardPort: 443,
+      connectStartedAt: null,
+    });
+    this.loginUrl = null;
+    const ended = this.deps.sessions.revokeWhere((s) => isTailnetIp(s.ip));
+    this.audit(who, 'network.remote.disconnect', { sessionsEnded: ended.length });
   }
 
   /**

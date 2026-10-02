@@ -201,6 +201,10 @@ export const errorCopy = {
       title: 'Tailscale needs permission first',
       body: 'Run sudo tailscale set --operator=hlabs once on this computer, then try again.',
     }),
+    TAILSCALE_NOT_RUNNING: () => ({
+      title: "Tailscale isn't running",
+      body: 'Open Tailscale on this computer so hlabs can take its addresses off your tailnet, then try again.',
+    }),
     TAILSCALE_SERVE_CONFLICT: (d) => ({
       title:
         num(d, 'port') !== null

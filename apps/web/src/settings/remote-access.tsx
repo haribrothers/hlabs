@@ -8,6 +8,7 @@ import { Button, ListRow, ModalDialog, StatusDot } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { networkCopy as copy } from '../copy/network';
+import { confirm } from '../lib/confirm';
 import { errorCode, errorLine } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
@@ -168,6 +169,32 @@ function Problems({ problem, onRetry }: { problem: Problem; onRetry: () => void 
   return null;
 }
 
+/** Whether this page itself came over the tailnet (it stops working on disconnect, US-SYS-03). */
+export const viewingOverTailnet = (hostname = window.location.hostname) => hostname.endsWith('.ts.net');
+
+function DisconnectButton() {
+  const trpc = useTRPC();
+  const client = useTRPCClient();
+  const queryClient = useQueryClient();
+  const ask = () =>
+    void confirm({
+      title: copy.disconnectTitle,
+      body: viewingOverTailnet() ? `${copy.disconnectHere} ${copy.disconnectBody}` : copy.disconnectBody,
+      confirmLabel: copy.disconnect,
+      tone: 'danger',
+      onConfirm: async () => {
+        await client.network.remote.disconnect.mutate();
+        await queryClient.invalidateQueries({ queryKey: trpc.network.status.queryKey() });
+        showToast({ tone: 'success', title: copy.remoteOff });
+      },
+    });
+  return (
+    <Button variant="secondary" size="sm" onClick={ask}>
+      {copy.disconnect}
+    </Button>
+  );
+}
+
 const dateOf = (ms: number) => new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'long' });
 
 /** The Tailscale row, whatever state remote access is in. */
@@ -225,7 +252,12 @@ export function TailscaleRow({ remote }: { remote: RemoteStatus }) {
       break;
     case 'connected':
       subtitle = <span className="font-mono">{remote.url?.replace(/^https:\/\//, '')}</span>;
-      trailing = <StatusDot status="running">{copy.connected}</StatusDot>;
+      trailing = (
+        <span className="flex items-center gap-3">
+          <StatusDot status="running">{copy.connected}</StatusDot>
+          <DisconnectButton />
+        </span>
+      );
       break;
   }
   const expiring = remote.state === 'connected' && remote.keyExpiry !== null && remote.keyExpiry - now < KEY_WARNING_MS;

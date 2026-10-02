@@ -87,6 +87,8 @@ export const HLABS_ERRORS = {
   TAILSCALE_PERMISSION_DENIED: 'PRECONDITION_FAILED',
   /** A port hlabs would serve on the tailnet is served by something else (D-103); detail: `{ port }`. */
   TAILSCALE_SERVE_CONFLICT: 'CONFLICT',
+  /** Disconnecting needs Tailscale running, to take hlabs's Serve entries away (US-SYS-03). */
+  TAILSCALE_NOT_RUNNING: 'PRECONDITION_FAILED',
 
   // Backups and restore
   BACKUP_DEST_UNREACHABLE: 'BAD_GATEWAY',

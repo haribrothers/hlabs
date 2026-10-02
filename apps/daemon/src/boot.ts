@@ -191,9 +191,11 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   await network.sync();
   network.watch(bus);
   const tailscale = deps.tailscale ?? (config.devFakeTailscale ? new FakeTailscale() : new LocalApiTailscale());
+  const sessions = new SessionService(db, bus);
   const remote = new RemoteService({
     db,
     tailscale,
+    sessions,
     logger,
     dashboardUpstream: config.dashboardUpstream,
     routes: () => appService.routes(),
@@ -277,7 +279,6 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     print(`\n  Set up hlabs: open ${setupUrl}\n`);
   }
 
-  const sessions = new SessionService(db, bus);
   const totp = new TotpService(db, secrets);
   const notifications = new NotificationService(db, bus);
   watchEngine({

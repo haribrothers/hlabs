@@ -84,6 +84,12 @@ export class SessionService {
     return ended;
   }
 
+  /** Ends every live session that `match` picks (tailnet sessions on disconnect, US-SYS-03); returns their ids. */
+  revokeWhere(match: (s: typeof sessions.$inferSelect) => boolean, now = Date.now()): string[] {
+    const live = this.db.select().from(sessions).where(isNull(sessions.revokedAt)).all().filter(match);
+    return live.flatMap((s) => this.revoke({ sessionId: s.id }, now));
+  }
+
   create(opts: { userId: string; remember?: boolean; ip?: string | null; userAgent?: string | null; now?: number }) {
     const now = opts.now ?? Date.now();
     const raw = randomBytes(32).toString('base64url');

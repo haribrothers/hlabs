@@ -26,3 +26,8 @@ When it's connected, the dashboard is at `https://<name>.<tailnet>.ts.net` and e
 - **Sign-in timed out:** the log-in wasn't finished within 10 minutes. Choose Connect to start again.
 
 hlabs never turns on Tailscale Funnel, which would put hlabs on the public internet, and never changes Serve settings it didn't make.
+
+## Disconnect
+
+Choose **Disconnect** next to Tailscale. People away from home can't open hlabs or its apps until you connect again, and anyone using hlabs over Tailscale is logged out. If you're using it over Tailscale yourself, the page stops working. Tailscale itself stays signed in, and anything else you serve with it is left as it was. Tailscale needs to be running for hlabs to remove its addresses.
+
