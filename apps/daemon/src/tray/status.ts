@@ -118,6 +118,7 @@ export async function trayStatus(deps: TrayStatusDeps): Promise<TrayStatus> {
     },
     dashboardUrl: dashboardUrl(deps),
     backup: backup(db),
+    startAtLogin: getSetting(db, 'startup').startAtLogin,
     updateChannel: updates.channel,
     autoUpdate: updates.autoHlabs,
     exclusiveJobRunning: deps.jobs.exclusiveRunning(),

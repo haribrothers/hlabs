@@ -12,6 +12,7 @@ import { iconFor, useMenuBarIcon } from './icon';
 import { appsLine, formatCpu, formatFree, formatMemory } from './format';
 import { useOpenSetup, useSetupPending } from './setup';
 import { useQuickAction } from './quick-action';
+import { useStartAtLogin } from './start-at-login';
 import { useMenuOpen, useTrayStatus } from './status';
 import { trayCopy as t } from './copy';
 
@@ -63,6 +64,8 @@ export interface RunningActions {
   /** "Copy dashboard address" reads "Copied" for 1.5 s. */
   copied?: boolean;
   pauseAll?: () => void;
+  /** "Start at login": what the OS does now, and its toggle (US-INST-09). */
+  startAtLogin?: { checked: boolean; failed: boolean; toggle: () => void };
 }
 
 /**
@@ -76,7 +79,11 @@ export function runningItems(actions: RunningActions = {}): MenuItem[] {
     { label: actions.copied ? t.copied : t.copyAddress, onSelect: actions.copyAddress },
     ...(isFeatureEnabled('backups') ? [{ label: t.backUpNow }] : []),
     { separator: true },
-    { label: t.startAtLogin, checked: true },
+    {
+      label: actions.startAtLogin?.failed ? t.startAtLoginFailed : t.startAtLogin,
+      checked: actions.startAtLogin?.checked ?? true,
+      onSelect: actions.startAtLogin?.toggle,
+    },
     { label: t.pauseAll, onSelect: actions.pauseAll },
     { label: t.checkForUpdates },
     { label: t.resetPassword },
@@ -95,6 +102,8 @@ export function Menu() {
   const health = useHealth();
   const [status, refresh] = useTrayStatus(boot?.step === 'started' && access === 'ready', open);
   useMenuBarIcon(iconFor({ boot, access, health, status }));
+  // Applied even while the menu is closed, so a change in Settings reaches the OS (US-INST-09).
+  const startAtLogin = useStartAtLogin(status?.startAtLogin, refresh);
   // Nothing until the Rust side has said where things stand, so no state flashes by.
   if (boot === null || access === null) return null;
   // hlabs isn't answering (or didn't start within 60 s): "Can't reach hlabs"; nothing is opened in the browser.
@@ -112,7 +121,7 @@ export function Menu() {
   return status?.state === 'starting' ? (
     <StartingMenu status={status} />
   ) : (
-    <RunningMenu status={status} onChanged={refresh} />
+    <RunningMenu status={status} onChanged={refresh} startAtLogin={startAtLogin} />
   );
 }
 
@@ -253,7 +262,15 @@ export function runningLine(status: TrayStatus): string {
 }
 
 /** TrayMenu (US-INST-05): "Running · N apps" and CPU, memory and free space; dashes until tray.status answers. */
-export function RunningMenu({ status, onChanged }: { status: TrayStatus | null; onChanged?: () => void }) {
+export function RunningMenu({
+  status,
+  onChanged,
+  startAtLogin,
+}: {
+  status: TrayStatus | null;
+  onChanged?: () => void;
+  startAtLogin?: RunningActions['startAtLogin'];
+}) {
   const dashboard = useDashboardActions();
   const pause = useQuickAction('pauseAll', onChanged);
   const cpu = formatCpu(status?.cpuPercent);
@@ -275,6 +292,7 @@ export function RunningMenu({ status, onChanged }: { status: TrayStatus | null; 
         copyAddress: () => void dashboard.copy(),
         copied: dashboard.copied,
         pauseAll: pause.busy ? undefined : () => void pause.run(),
+        startAtLogin,
       })}
     />
   );

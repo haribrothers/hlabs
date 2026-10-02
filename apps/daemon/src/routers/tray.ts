@@ -1,4 +1,5 @@
 import { hlabsError, type AppHandlers } from '@hlabs/api';
+import { getSetting, setSetting } from '@hlabs/db';
 import type { DaemonContext } from '../context';
 import { lanAddresses } from '../mdns/publisher';
 import { diagnosticsReport } from '../tray/diagnostics';
@@ -14,6 +15,14 @@ export const tray: AppHandlers<DaemonContext>['tray'] = {
     const running = jobs.listActive().find((j) => j.kind === 'engine_start');
     if (running) return { jobId: running.id };
     return { jobId: jobs.start('engine_start', { payload: { userId: null, via: 'tray' } }) };
+  },
+
+  // US-INST-09: the tray changed start at login (or applied the saved choice); Settings shows the same (D-042). No
+  // startup.changeRequested: the tray made the change.
+  setStartAtLogin: ({ enabled }, ctx) => {
+    const { db } = ctx.services;
+    setSetting(db, 'startup', { ...getSetting(db, 'startup'), startAtLogin: enabled });
+    return { ok: true as const };
   },
 
   // US-INST-12: a redacted plain-text report for "Copy diagnostics".

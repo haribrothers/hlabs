@@ -44,3 +44,7 @@ Choose **Open Dashboard** (or press ⌘D while the menu is open) to open hlabs i
 On a laptop, choose **Pause all apps** to stop every app and save battery and memory. Nothing is deleted: your apps and their data stay exactly as they are. The menu then says **Paused · apps stopped**, and your apps stay stopped even if you restart the computer. The dashboard stays available and shows your apps as stopped.
 
 Choose **Resume apps** to start them again. Apps you had stopped yourself before pausing stay stopped.
+
+## Start at login
+
+**Start at login** has a check mark when hlabs starts by itself when you log in to this Mac. It's on when you install hlabs. Choose it to turn it off: hlabs keeps running now, but won't start next time you log in, so your apps won't be available until you open hlabs. The same switch is in Settings › Engine & startup in the dashboard; changing either one changes both. If your Mac doesn't allow the change (for example, a work profile manages login items), the item says **Couldn't change login setting** and nothing changes.

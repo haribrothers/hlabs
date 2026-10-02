@@ -52,6 +52,7 @@ export const trayCopy = {
   copied: 'Copied',
   backUpNow: 'Back up now',
   startAtLogin: 'Start at login',
+  startAtLoginFailed: "Couldn't change login setting",
   pauseAll: 'Pause all apps',
   checkForUpdates: 'Check for updates…',
   resetPassword: 'Reset a password…',

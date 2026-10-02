@@ -78,6 +78,8 @@ export const trayStatusSchema = z.object({
     progress: z.number().min(0).max(1).nullable(),
     lastFailed: z.boolean(),
   }),
+  /** The saved "Start at login" (Settings › Engine & startup); the tray applies it when the OS differs (D-042). */
+  startAtLogin: z.boolean(),
   updateChannel: z.enum(['stable', 'beta']),
   autoUpdate: z.boolean(),
   exclusiveJobRunning: z.boolean(),

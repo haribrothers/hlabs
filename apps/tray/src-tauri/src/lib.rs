@@ -261,6 +261,26 @@ fn copy_text(app: AppHandle, text: String) -> Result<(), DaemonError> {
         .map_err(|_| DaemonError::Protocol)
 }
 
+/// Start at login (US-INST-09): the tray's login item and, in an app with the daemon bundled, the
+/// LaunchAgent whose `RunAtLoad` goes with it.
+struct StartAtLogin {
+    login_item: Box<dyn bootstrap::LoginItem>,
+    plist: Option<std::path::PathBuf>,
+}
+
+/// Whether hlabs opens at login now (the OS's answer).
+#[tauri::command]
+fn start_at_login_state(state: State<'_, StartAtLogin>) -> Option<bool> {
+    state.login_item.enabled()
+}
+
+/// Turns start at login on or off; an error leaves it as it was ("Couldn't change login setting").
+#[tauri::command]
+fn set_start_at_login(state: State<'_, StartAtLogin>, enabled: bool) -> Result<bool, String> {
+    bootstrap::set_start_at_login(state.login_item.as_ref(), state.plist.as_deref(), enabled)?;
+    Ok(enabled)
+}
+
 /// The template icon the menu-bar glyph is drawn from.
 const BASE_ICON: &[u8] = include_bytes!("../icons/hlabsTemplate@2x.png");
 
@@ -488,7 +508,9 @@ pub fn run() {
             show_logs,
             copy_local_diagnostics,
             set_icon,
-            notify
+            notify,
+            start_at_login_state,
+            set_start_at_login
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]
@@ -507,6 +529,19 @@ pub fn run() {
                     eprintln!("hlabs tray: {err}");
                 }
             }
+            app.manage(match &boot {
+                #[cfg(target_os = "macos")]
+                Some(b) => StartAtLogin {
+                    login_item: Box::new(bootstrap::MainAppLoginItem),
+                    plist: Some(b.layout.plist_path()),
+                },
+                _ => StartAtLogin {
+                    login_item: Box::new(bootstrap::MemoryLoginItem(
+                        std::sync::atomic::AtomicBool::new(true),
+                    )),
+                    plist: None,
+                },
+            });
             // The token exists before the LaunchAgent starts the daemon that reads it.
             guard.start();
             app.manage(Daemon(Mutex::new(guard)));

@@ -88,6 +88,30 @@ pub fn plist(layout: &Layout) -> String {
     )
 }
 
+const RUN_AT_LOAD_ON: &str = "<key>RunAtLoad</key>\n  <true/>";
+const RUN_AT_LOAD_OFF: &str = "<key>RunAtLoad</key>\n  <false/>";
+
+/// The LaunchAgent's `RunAtLoad`, if the plist says (US-INST-09).
+pub fn run_at_load(plist: &str) -> Option<bool> {
+    if plist.contains(RUN_AT_LOAD_ON) {
+        Some(true)
+    } else if plist.contains(RUN_AT_LOAD_OFF) {
+        Some(false)
+    } else {
+        None
+    }
+}
+
+/// The plist with `RunAtLoad` set: off, the daemon doesn't start at login (it keeps running now).
+pub fn with_run_at_load(plist: &str, enabled: bool) -> String {
+    let (from, to) = if enabled {
+        (RUN_AT_LOAD_OFF, RUN_AT_LOAD_ON)
+    } else {
+        (RUN_AT_LOAD_ON, RUN_AT_LOAD_OFF)
+    };
+    plist.replace(from, to)
+}
+
 /// What this launch found.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -103,6 +127,9 @@ pub enum Launch {
 /// Registering the tray as a login item (`SMAppService.mainApp` on macOS).
 pub trait LoginItem: Send + Sync {
     fn register(&self) -> Result<(), String>;
+    fn unregister(&self) -> Result<(), String>;
+    /// Whether the tray opens at login now; `None` when it can't be told.
+    fn enabled(&self) -> Option<bool>;
 }
 
 pub struct Bootstrap<R: Runner> {
@@ -127,8 +154,10 @@ impl<R: Runner> Bootstrap<R> {
     /// becomes a login item.
     pub fn install(&self, first: bool) -> Result<Launch, String> {
         let path = self.layout.plist_path();
-        let wanted = plist(&self.layout);
         let current = std::fs::read_to_string(&path).ok();
+        // Start at login keeps what was chosen (US-INST-09); on by default.
+        let keep = current.as_deref().and_then(run_at_load).unwrap_or(true);
+        let wanted = with_run_at_load(&plist(&self.layout), keep);
         let target = service_target(self.layout.uid);
         let domain = format!("gui/{}", self.layout.uid);
         let launch = if current.as_deref() == Some(wanted.as_str()) {
@@ -275,6 +304,72 @@ impl LoginItem for MainAppLoginItem {
                 .map_err(|e| e.localizedDescription().to_string())
         }
     }
+
+    fn unregister(&self) -> Result<(), String> {
+        use objc2_service_management::SMAppService;
+        // SAFETY: as above.
+        unsafe {
+            SMAppService::mainAppService()
+                .unregisterAndReturnError()
+                .map_err(|e| e.localizedDescription().to_string())
+        }
+    }
+
+    fn enabled(&self) -> Option<bool> {
+        use objc2_service_management::{SMAppService, SMAppServiceStatus};
+        // SAFETY: as above.
+        let status = unsafe { SMAppService::mainAppService().status() };
+        Some(status == SMAppServiceStatus::Enabled)
+    }
+}
+
+/// Development and builds without a bundle: no real login item; it remembers the choice.
+pub struct MemoryLoginItem(pub std::sync::atomic::AtomicBool);
+
+impl LoginItem for MemoryLoginItem {
+    fn register(&self) -> Result<(), String> {
+        self.0.store(true, std::sync::atomic::Ordering::SeqCst);
+        Ok(())
+    }
+    fn unregister(&self) -> Result<(), String> {
+        self.0.store(false, std::sync::atomic::Ordering::SeqCst);
+        Ok(())
+    }
+    fn enabled(&self) -> Option<bool> {
+        Some(self.0.load(std::sync::atomic::Ordering::SeqCst))
+    }
+}
+
+/// Start at login (US-INST-09, D-042): the login item and the LaunchAgent's `RunAtLoad`, together.
+/// If either can't be changed, both stay as they were.
+pub fn set_start_at_login(
+    login_item: &dyn LoginItem,
+    plist_path: Option<&Path>,
+    enabled: bool,
+) -> Result<(), String> {
+    let before = login_item.enabled();
+    if enabled {
+        login_item.register()?;
+    } else {
+        login_item.unregister()?;
+    }
+    if let Some(path) = plist_path {
+        let written = std::fs::read_to_string(path)
+            .map_err(|e| e.to_string())
+            .and_then(|text| {
+                std::fs::write(path, with_run_at_load(&text, enabled)).map_err(|e| e.to_string())
+            });
+        if let Err(err) = written {
+            // Put the login item back as it was.
+            let _ = match before {
+                Some(true) => login_item.register(),
+                Some(false) => login_item.unregister(),
+                None => Ok(()),
+            };
+            return Err(err);
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -292,6 +387,66 @@ mod tests {
             self.0.fetch_add(1, Ordering::SeqCst);
             Ok(())
         }
+        fn unregister(&self) -> Result<(), String> {
+            Ok(())
+        }
+        fn enabled(&self) -> Option<bool> {
+            None
+        }
+    }
+
+    /// A login item the OS refuses to change (e.g. blocked by a profile).
+    struct RefusingLoginItem;
+    impl LoginItem for RefusingLoginItem {
+        fn register(&self) -> Result<(), String> {
+            Err("blocked".into())
+        }
+        fn unregister(&self) -> Result<(), String> {
+            Err("blocked".into())
+        }
+        fn enabled(&self) -> Option<bool> {
+            Some(true)
+        }
+    }
+
+    #[test]
+    fn us_inst_09_turning_it_off_unregisters_and_sets_run_at_load_false() {
+        let (b, _) = boot(ScriptedRunner::default());
+        b.install(true).unwrap();
+        let item = MemoryLoginItem(std::sync::atomic::AtomicBool::new(true));
+        set_start_at_login(&item, Some(&b.layout.plist_path()), false).unwrap();
+        assert_eq!(item.enabled(), Some(false));
+        let text = std::fs::read_to_string(b.layout.plist_path()).unwrap();
+        assert_eq!(run_at_load(&text), Some(false));
+        set_start_at_login(&item, Some(&b.layout.plist_path()), true).unwrap();
+        assert_eq!(item.enabled(), Some(true));
+        let text = std::fs::read_to_string(b.layout.plist_path()).unwrap();
+        assert_eq!(run_at_load(&text), Some(true));
+    }
+
+    #[test]
+    fn us_inst_09_a_refused_change_leaves_everything_as_it_was() {
+        let (b, _) = boot(ScriptedRunner::default());
+        b.install(true).unwrap();
+        assert!(
+            set_start_at_login(&RefusingLoginItem, Some(&b.layout.plist_path()), false).is_err()
+        );
+        let text = std::fs::read_to_string(b.layout.plist_path()).unwrap();
+        assert_eq!(run_at_load(&text), Some(true));
+    }
+
+    #[test]
+    fn us_inst_09_a_later_launch_keeps_start_at_login_off_without_reloading() {
+        let (b, _) = boot(ScriptedRunner::default());
+        std::fs::create_dir_all(&b.layout.launch_agents_dir).unwrap();
+        std::fs::write(
+            b.layout.plist_path(),
+            with_run_at_load(&plist(&b.layout), false),
+        )
+        .unwrap();
+        assert_eq!(b.install(false).unwrap(), Launch::Unchanged);
+        let text = std::fs::read_to_string(b.layout.plist_path()).unwrap();
+        assert_eq!(run_at_load(&text), Some(false));
     }
 
     /// Answers `launchctl` subcommands with the given codes (default 0).

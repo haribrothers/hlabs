@@ -11,6 +11,10 @@ export interface Answers {
   status?: unknown;
   /** The Rust side's health state. */
   health?: unknown;
+  /** Whether the OS opens hlabs at login now. */
+  startAtLogin?: boolean;
+  /** The OS refuses to change it. */
+  loginRefused?: boolean;
 }
 
 export const tauri = {
@@ -35,6 +39,11 @@ export function answer(a: Answers) {
       case 'set_icon':
       case 'notify':
         return null;
+      case 'start_at_login_state':
+        return a.startAtLogin ?? true;
+      case 'set_start_at_login':
+        if (a.loginRefused) throw new Error('blocked');
+        return (args as unknown as { enabled: boolean }).enabled;
       case 'open_setup':
         return true;
       case 'open_dashboard':
@@ -46,6 +55,7 @@ export function answer(a: Answers) {
         if (args?.path === 'tray.status') return a.status ?? null;
         if (args?.path === 'tray.startEngine') return { jobId: 'job1' };
         if (args?.path === 'tray.quickAction') return { jobId: 'job2' };
+        if (args?.path === 'tray.setStartAtLogin') return { ok: true };
         if (args?.path === 'tray.diagnostics') return { report: 'hlabs diagnostics' };
         return null;
       default:
