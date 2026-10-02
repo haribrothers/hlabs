@@ -22,6 +22,7 @@ import type { CatalogService } from './store/catalog';
 import type { StoreService } from './store/service';
 import type { InstallService } from './apps/install';
 import type { AppService } from './apps/service';
+import type { DnsService } from './network/dns';
 import type { RemoteService } from './network/remote';
 import type { NetworkService } from './network/service';
 import type { TailscaleClient } from './tailscale/types';
@@ -52,6 +53,8 @@ export interface Services {
   routing: NetworkService;
   /** Remote access with Tailscale (US-SYS-02…04). */
   remote: RemoteService;
+  /** The local DNS server hlabs keeps its names in (US-SYS-06). */
+  dns: DnsService;
   tailscale: TailscaleClient;
   /** Settles when the start-up reconcile has finished (tests). */
   reconciled: Promise<void>;

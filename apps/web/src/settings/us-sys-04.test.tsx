@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { fakeMe } from '../test/me';
 import { renderScreen } from '../test/render';
 import { SectionPage } from './section-page';
+import { fakeDns } from '../test/network';
 
 const app = (id: string, name: string, tailnet: string | null) => ({
   id,
@@ -35,7 +36,7 @@ const remote = (o: Record<string, unknown>) => ({
 function open(r: Record<string, unknown>, apps: unknown[]) {
   return renderScreen(() => <SectionPage id="network" shippedPhase={3} />, {
     'auth.me': fakeMe(),
-    'network.status': () => ({ home, remote: remote(r), ports: { https: 443, http: 80 } }),
+    'network.status': () => ({ home, remote: remote(r), dns: fakeDns(), ports: { https: 443, http: 80 } }),
     'apps.list': () => ({ apps }),
     'events.stream': () => new Promise(() => {}),
   });

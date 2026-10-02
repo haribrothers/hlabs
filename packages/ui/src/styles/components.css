@@ -326,6 +326,12 @@
   .hl-choice[aria-checked='true'] {
     border: 1.5px solid var(--accent);
   }
+  /* Can't be chosen: muted ink (not opacity, so the text keeps its contrast) and a dashed edge. */
+  .hl-choice:disabled {
+    border-style: dashed;
+    color: var(--ink-muted);
+    cursor: not-allowed;
+  }
   .hl-choice-icon {
     display: grid;
     place-items: center;

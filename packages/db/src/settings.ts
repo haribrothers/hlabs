@@ -102,9 +102,24 @@ export const settingsSchemas = {
   network: z
     .object({
       ports: z.object({ https: portSchema, http: portSchema }).default({ https: 443, http: 80 }),
-      piholeDns: z.boolean().default(false),
+      /** The local DNS server hlabs keeps its names in (US-SYS-06, D-106). */
+      dns: z
+        .object({
+          kind: z.enum(['none', 'adguard', 'pihole', 'manual']).default('none'),
+          /** Pi-hole's address (`http://192.168.1.2`); its app password is in the secret store. */
+          address: z.string().nullable().default(null),
+          /** What hlabs wrote, so only that is ever removed: rewrites `domain answer`, or dnsmasq lines. */
+          owned: z.array(z.string()).default([]),
+          lastSyncAt: z.number().int().nullable().default(null),
+          /** The last sync failed: `unreachable` or `auth`. */
+          problem: z.enum(['unreachable', 'auth']).nullable().default(null),
+        })
+        .default({ kind: 'none', address: null, owned: [], lastSyncAt: null, problem: null }),
     })
-    .default({ ports: { https: 443, http: 80 }, piholeDns: false }),
+    .default({
+      ports: { https: 443, http: 80 },
+      dns: { kind: 'none', address: null, owned: [], lastSyncAt: null, problem: null },
+    }),
   startup: z
     .object({
       startAtLogin: z.boolean().default(true),

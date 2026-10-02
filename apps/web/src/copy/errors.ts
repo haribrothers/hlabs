@@ -201,6 +201,14 @@ export const errorCopy = {
       title: 'Tailscale needs permission first',
       body: 'Run sudo tailscale set --operator=hlabs once on this computer, then try again.',
     }),
+    DNS_SERVER_UNREACHABLE: () => ({
+      title: "The DNS server isn't answering",
+      body: 'Check its address and that it is running, then try again.',
+    }),
+    DNS_SERVER_AUTH_FAILED: () => ({
+      title: 'Pi-hole refused the app password',
+      body: 'Make an app password in Pi-hole under Settings › Web interface / API, then paste it here.',
+    }),
     TAILSCALE_NOT_RUNNING: () => ({
       title: "Tailscale isn't running",
       body: 'Open Tailscale on this computer so hlabs can take its addresses off your tailnet, then try again.',

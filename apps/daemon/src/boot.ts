@@ -33,7 +33,8 @@ import { JobRunner } from './jobs/runner';
 import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
 import { ChildRegistry } from './platform/children';
-import { createMdnsPublisher } from './mdns/publisher';
+import { createMdnsPublisher, lanAddress } from './mdns/publisher';
+import { DNS_RETRY_MS, DnsService } from './network/dns';
 import { RemoteService } from './network/remote';
 import { FakeTailscale } from './tailscale/fake';
 import { LocalApiTailscale } from './tailscale/localapi';
@@ -200,10 +201,23 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     dashboardUpstream: config.dashboardUpstream,
     routes: () => appService.routes(),
   });
-  // Apps installed or uninstalled while remote access is on get or lose their tailnet address (US-SYS-04).
-  bus.on(({ event }) => {
-    if (event.type === 'app.stateChanged') void remote.reconcile();
+  const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);
+  const dns = new DnsService({
+    db,
+    secrets,
+    logger,
+    lanAddress: () => lanAddress(),
   });
+  // Apps installed or uninstalled get or lose their tailnet address (US-SYS-04) and DNS records (US-SYS-06).
+  bus.on(({ event }) => {
+    if (event.type !== 'app.stateChanged') return;
+    void remote.reconcile();
+    void dns.sync();
+  });
+  // A DNS server that didn't answer, or a LAN address that changed, is caught up with regularly.
+  const dnsTimer = setInterval(() => void dns.sync(), DNS_RETRY_MS);
+  dnsTimer.unref();
+  void dns.sync();
 
   // 4. The built-in store, then reconcile installed apps with the engine.
   readiness.step(3);
@@ -251,7 +265,6 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   });
   registerEngineStart({ jobs, engine, db, control: engineControl, appsBack });
   registerHomeFolderTrash({ jobs, db });
-  const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);
   const onboarding = new OnboardingService({
     db,
     secrets,
@@ -350,6 +363,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     routing: network,
     remote,
     tailscale,
+    dns,
     apps: appService,
     reconciled,
     onboarding,

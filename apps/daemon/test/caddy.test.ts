@@ -1,5 +1,5 @@
 // Caddy's config (02 §2.6, D-006), the NetworkService that applies it, and the admin socket path (D-073).
-import { openDb, setSetting } from '@hlabs/db';
+import { getSetting, openDb, setSetting } from '@hlabs/db';
 import { describe, expect, it } from 'vitest';
 import type { AppRoute } from '../src/apps/service';
 import { buildCaddyConfig, IDENTITY_HEADERS } from '../src/caddy/config';
@@ -163,7 +163,7 @@ describe('NetworkService', () => {
   it('applies the state from the database and publishes the names', async () => {
     const proxy = new NoopProxyManager();
     const t = setup(proxy);
-    setSetting(t.db, 'network', { ports: { https: 8443, http: 8080 }, piholeDns: false });
+    setSetting(t.db, 'network', { ...getSetting(t.db, 'network'), ports: { https: 8443, http: 8080 } });
     t.setRoutes([{ appId: 'immich', hostname: 'immich', port: 12000, auth: 'hlabs', embed: false }]);
     await t.network.sync();
     expect(proxy.last).toEqual({

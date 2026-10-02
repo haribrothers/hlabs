@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderScreen } from '../test/render';
 import { RemoteStep } from './remote-step';
+import { fakeDns } from '../test/network';
 
 const tab = { location: { href: '' }, close: vi.fn() };
 beforeEach(() => {
@@ -36,7 +37,7 @@ function step(connect: (input: unknown) => unknown, after: Record<string, unknow
     {
       'system.info': () => ({ hostname: 'hlabs', os: { headless: false } }),
       'onboarding.connectRemote': connect,
-      'network.status': () => ({ home, remote: remote(after), ports: { https: 443, http: 80 } }),
+      'network.status': () => ({ home, remote: remote(after), dns: fakeDns(), ports: { https: 443, http: 80 } }),
       'onboarding.setStep': () => ({ ok: true }),
       'onboarding.status': () => ({ completed: false, step: 'apps', hasUsers: true }),
     },
@@ -108,6 +109,7 @@ describe('US-ONB-17 · the finish screen', () => {
       'network.status': () => ({
         home,
         remote: remote({ state: 'connected', url: 'https://hlabs.tail1234.ts.net' }),
+        dns: fakeDns(),
         ports: { https: 443, http: 80 },
       }),
     });

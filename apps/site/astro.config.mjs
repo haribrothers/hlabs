@@ -34,6 +34,7 @@ export default defineConfig({
           label: 'Remote access',
           items: [
             { label: 'How to reach hlabs', link: '/help/remote-access/addresses/' },
+            { label: 'Use your own DNS server', link: '/help/remote-access/dns-server/' },
             { label: 'Reach hlabs from anywhere', link: '/help/remote-access/tailscale/' },
             { label: 'Add family to your tailnet', link: '/help/remote-access/family/' },
           ],

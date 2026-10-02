@@ -214,7 +214,8 @@ export const appRouter = router({
     caCertificate: q(p.admin, s.network.caCertificate),
     ports: q(p.admin, s.network.ports),
     setPorts: m(p.admin, s.network.setPorts),
-    setPiholeDns: m(p.admin, s.network.setPiholeDns),
+    setDnsServer: m(p.admin, s.network.setDnsServer),
+    testDnsServer: m(p.admin, s.network.testDnsServer),
   }),
 
   settings: router({

@@ -12,7 +12,7 @@ Open **Settings › Network & remote access** to see how hlabs is reached.
 
 **Local address** is the name to type in a browser at home, usually `hlabs.local`. Most computers and phones find it by themselves.
 
-Under it is a second name, `hlabs.home.arpa`. That one is for devices that ask your DNS server (such as Pi-hole or AdGuard Home) instead of finding names themselves. It works once hlabs keeps its names in that server.
+Under it is a second name, `hlabs.home.arpa`. That one is for devices that ask your DNS server (such as Pi-hole or AdGuard Home) instead of finding names themselves. It works once hlabs keeps its names in that server: see [Use your own DNS server](/help/remote-access/dns-server/).
 
 If hlabs can't announce its name on your network, the row says **Not published** and gives this computer's network address to use instead, such as `https://192.168.1.20`.
 

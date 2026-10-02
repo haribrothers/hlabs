@@ -62,9 +62,23 @@ export const remoteConnectResult = z.discriminatedUnion('state', [
   z.object({ state: z.literal('connected'), url: z.string() }),
 ]);
 
+/** The local DNS server hlabs keeps its names in (US-SYS-06, D-106). */
+export const dnsStatusSchema = z.object({
+  kind: z.enum(['none', 'adguard', 'pihole', 'manual']),
+  /** Pi-hole's address. */
+  address: z.string().nullable(),
+  adguardInstalled: z.boolean(),
+  lastSyncAt: z.number().nullable(),
+  /** The last sync failed: the server didn't answer, or refused the password. */
+  problem: z.enum(['unreachable', 'auth']).nullable(),
+  /** The records to add by hand ("Another DNS server"). */
+  records: z.array(z.object({ name: z.string(), type: z.literal('A'), value: z.string() })),
+});
+
 export const networkStatusSchema = z.object({
   home: homeNetworkSchema,
   remote: remoteStatusSchema,
+  dns: dnsStatusSchema,
   /** The web ports in use, after any fallback (D-016). */
   ports: z.object({ https: portSchema, http: portSchema }),
 });
@@ -101,5 +115,15 @@ export const network = {
     }),
   ),
   setPorts: io(z.object({ https: portSchema, http: portSchema }), ok),
-  setPiholeDns: io(z.object({ enabled: z.boolean() }), ok),
+  /** Choose the local DNS server (US-SYS-06): replaces the earlier `setPiholeDns`. */
+  setDnsServer: io(
+    z.object({
+      kind: z.enum(['none', 'adguard', 'pihole', 'manual']),
+      address: z.url().optional(),
+      appPassword: z.string().min(1).max(512).optional(),
+    }),
+    ok,
+  ),
+  /** Checks a Pi-hole's address and app password. */
+  testDnsServer: io(z.object({ address: z.url(), appPassword: z.string().min(1).max(512) }), ok),
 };

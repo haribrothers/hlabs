@@ -340,6 +340,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     setSetting(db, 'network', {
       ...getSetting(db, 'network'),
       ports: input.ports ?? settingsSchemas.network.parse(undefined).ports,
+      dns: settingsSchemas.network.parse(undefined).dns,
     });
     const userId = await createAdmin(db, { ...input, ip: null, phase: config.phase });
     let secret: string | null = null;

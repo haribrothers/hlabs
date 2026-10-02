@@ -89,6 +89,10 @@ export const HLABS_ERRORS = {
   TAILSCALE_SERVE_CONFLICT: 'CONFLICT',
   /** Disconnecting needs Tailscale running, to take hlabs's Serve entries away (US-SYS-03). */
   TAILSCALE_NOT_RUNNING: 'PRECONDITION_FAILED',
+  /** The local DNS server didn't answer (US-SYS-06). */
+  DNS_SERVER_UNREACHABLE: 'PRECONDITION_FAILED',
+  /** Pi-hole refused the app password (US-SYS-06). */
+  DNS_SERVER_AUTH_FAILED: 'BAD_REQUEST',
 
   // Backups and restore
   BACKUP_DEST_UNREACHABLE: 'BAD_GATEWAY',

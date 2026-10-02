@@ -14,7 +14,21 @@ export const network: AppHandlers<DaemonContext>['network'] = {
   status: async (input, ctx) => {
     const { routing, remote, db } = ctx.services;
     const remoteStatus = input?.probe === false ? remote.saved() : await remote.status();
-    return { home: routing.homeNetwork(), remote: remoteStatus, ports: getSetting(db, 'network').ports };
+    return {
+      home: routing.homeNetwork(),
+      remote: remoteStatus,
+      dns: ctx.services.dns.status(),
+      ports: getSetting(db, 'network').ports,
+    };
+  },
+  /** Choose the local DNS server (US-SYS-06); the earlier one loses what hlabs wrote. */
+  setDnsServer: async (input, ctx) => {
+    await ctx.services.dns.choose(input, who(ctx));
+    return { ok: true as const };
+  },
+  testDnsServer: async ({ address, appPassword }, ctx) => {
+    await ctx.services.dns.test(address, appPassword);
+    return { ok: true as const };
   },
   remote: {
     /** Connect with Tailscale (US-SYS-02); the dashboard opens the log-in page and asks status every 2 s. */

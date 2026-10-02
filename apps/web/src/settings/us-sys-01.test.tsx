@@ -5,6 +5,7 @@ import { fakeMe } from '../test/me';
 import { renderScreen } from '../test/render';
 import { portsLine } from './network-section';
 import { SectionPage } from './section-page';
+import { fakeDns } from '../test/network';
 
 const writeText = vi.fn(async () => undefined);
 beforeEach(() => Object.assign(navigator, { clipboard: { writeText } }));
@@ -49,6 +50,7 @@ function open(o: { home?: Record<string, unknown>; apps?: unknown[]; role?: 'adm
           loginUrl: null,
           keyExpiry: null,
         },
+        dns: fakeDns(),
         ports: { https: 443, http: 80 },
       }),
       'apps.list': () => ({

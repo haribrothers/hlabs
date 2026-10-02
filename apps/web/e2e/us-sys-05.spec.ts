@@ -15,7 +15,7 @@ test('US-SYS-05 a port another program holds is refused; free ports are saved', 
   try {
     await page.goto('/settings/network');
     const home = page.getByRole('group', { name: 'Home network' });
-    await home.getByRole('button', { name: 'Change' }).click();
+    await home.getByRole('button', { name: 'Change', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Change web ports' });
     await dialog.getByLabel('HTTPS port').fill(String(held));
     await dialog.getByRole('button', { name: 'Save' }).click();

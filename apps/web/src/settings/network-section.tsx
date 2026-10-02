@@ -1,5 +1,6 @@
 // Settings › Network & remote access, Home network (US-SYS-01): the local address (and its home.arpa name, D-105),
-// HTTPS, web ports, and every app's address. Follows app and system changes without polling.
+// HTTPS, web ports, the local DNS server (US-SYS-06) and every app's address. Follows app and system changes without
+// polling.
 import { AppLogo, appTileLook } from '@hlabs/icons';
 import type { NetworkStatus } from '@hlabs/api';
 import { isFeatureEnabled } from '@hlabs/shared';
@@ -13,6 +14,7 @@ import { networkCopy as copy } from '../copy/network';
 import type { HomeApp } from '../home/home-app';
 import { useTRPC } from '../lib/trpc';
 import { useIsDesktop } from '../lib/use-media';
+import { DnsServerRows } from './dns-server';
 import { TailscaleRow, useRemoteStatus } from './remote-access';
 import { WebPortsDialog } from './web-ports-dialog';
 
@@ -104,6 +106,7 @@ function HomeNetwork({
           </Button>
         }
       />
+      <DnsServerRows dns={status.dns} />
     </List>
   );
 }

@@ -517,7 +517,7 @@ The system half of Settings: how hlabs is reached on the home network and over T
 **As** an admin, **I want** a list of every outside service hlabs talks to, **so that** I can trust that nothing leaves the house unless I turned it on.
 
 **Acceptance criteria**
-- **Given** the Advanced page, **then** a "What hlabs connects to" row opens a list of: store sources (each URL), container registries used by installed apps, hlabs update server, Tailscale (if on), each backup destination (if configured) and the ntfy server (if configured, D-033).
+- **Given** the Advanced page, **then** a "What hlabs connects to" row opens a list of: store sources (each URL), container registries used by installed apps, hlabs update server, Tailscale (if on), each backup destination (if configured), the ntfy server (if configured, D-033) and the Pi-hole hlabs keeps its names in (if chosen, D-106).
 - **Given** each entry, **then** it shows the host, why ("Checks for app updates every 6 hours"), and when it was last contacted.
 - **Given** telemetry, **then** the list states "hlabs sends no usage data or crash reports."
 - **Given** a service is off (e.g. Tailscale disconnected), **then** it is listed as "Off".
