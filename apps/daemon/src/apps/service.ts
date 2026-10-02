@@ -382,8 +382,13 @@ export class AppService {
     return engine;
   }
 
-  /** A compose failure as the hlabsCode people see (a taken port, or the engine gone). */
+  /**
+   * A compose failure as the hlabsCode people see (a taken port, or the engine gone). What compose said goes to the
+   * daemon's log only, for whoever looks into it (never shown to people).
+   */
   private appError(error: unknown, appId: string) {
+    if (error instanceof ComposeError)
+      this.deps.logger.warn({ appId, output: error.output.slice(-4_000) }, error.message);
     if (error instanceof ComposeError && error.portInUse !== null) {
       return hlabsError('APP_PORT_IN_USE', error.message, { appId, port: error.portInUse });
     }
