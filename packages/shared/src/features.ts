@@ -3,7 +3,7 @@
 // phase when its first story starts (D-092), so dev and e2e never preview controls nobody has built yet.
 export const SHIPPED_PHASE = 3;
 /** The phase being built: the dashboard's dev server (pnpm dev, e2e) previews it (D-092). */
-export const BUILDING_PHASE = 3;
+export const BUILDING_PHASE = 4;
 
 /** Set by the dashboard's Vite dev server only (HLABS_PREVIEW_PHASE, else BUILDING_PHASE); never in a build. */
 declare const __HLABS_PREVIEW_PHASE__: number | null | undefined;

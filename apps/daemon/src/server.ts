@@ -4,6 +4,7 @@ import { fastifyTRPCPlugin, type FastifyTRPCPluginOptions } from '@trpc/server/a
 import Fastify, { type FastifyBaseLogger, type FastifyInstance, type FastifyRequest } from 'fastify';
 import type { DaemonConfig } from './config';
 import { readCookie, SESSION_COOKIE } from './auth/sessions';
+import { bearerToken, isLoopback, trayTokenSource, TrayTokens } from './auth/tray-token';
 import { DaemonContext, type Identity } from './context';
 import { dashboardOrigins } from './http/dashboard-origins';
 import { registerDevRoutes } from './http/dev';
@@ -21,10 +22,27 @@ export interface ServerDeps {
   logger: Logger;
   readiness: Readiness;
   holder: ServiceHolder;
+  /** The tray token check (US-INST-15); read from the keychain or token file by default. */
+  trayTokens?: TrayTokens;
 }
 
-/** The session cookie decides who is calling; without one, the development-only anonymous admin or nobody. */
-function identify(config: DaemonConfig, holder: ServiceHolder, req: FastifyRequest): Identity {
+/**
+ * The tray token (from loopback, never through Caddy) or the session cookie decides who is calling; without either,
+ * the development-only anonymous admin or nobody.
+ */
+async function identify(
+  config: DaemonConfig,
+  holder: ServiceHolder,
+  trayTokens: TrayTokens,
+  req: FastifyRequest,
+): Promise<Identity> {
+  const token = bearerToken(req.headers.authorization);
+  if (token !== null) {
+    // req.ip would follow X-Forwarded-For; the peer address is what matters here (US-INST-15).
+    const proxied = Object.keys(req.headers).some((name) => name.startsWith('x-forwarded-'));
+    if (!proxied && isLoopback(req.socket.remoteAddress) && (await trayTokens.verify(token))) return { kind: 'tray' };
+    return { kind: 'trayRejected' };
+  }
   const raw = readCookie(req.headers.cookie, SESSION_COOKIE);
   const services = holder.current;
   if (raw && services?.readiness.isReady) {
@@ -44,7 +62,15 @@ function identify(config: DaemonConfig, holder: ServiceHolder, req: FastifyReque
 
 const headerValue = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? null;
 
-export async function buildServer({ config, logger, readiness, holder }: ServerDeps): Promise<FastifyInstance> {
+export async function buildServer({
+  config,
+  logger,
+  readiness,
+  holder,
+  ...deps
+}: ServerDeps): Promise<FastifyInstance> {
+  const trayTokens = deps.trayTokens ?? new TrayTokens(trayTokenSource(config));
+  await trayTokens.load();
   const app = Fastify({
     loggerInstance: logger as FastifyBaseLogger,
     routerOptions: { maxParamLength: 5_000 },
@@ -65,8 +91,8 @@ export async function buildServer({ config, logger, readiness, holder }: ServerD
     logLevel: config.dev ? 'info' : 'warn',
     trpcOptions: {
       router: appRouter,
-      createContext: ({ req, res }) =>
-        new DaemonContext(holder, dispatcher, identify(config, holder, req), {
+      createContext: async ({ req, res }) =>
+        new DaemonContext(holder, dispatcher, await identify(config, holder, trayTokens, req), {
           ip: req.ip,
           userAgent: req.headers['user-agent'] ?? null,
           setupToken: headerValue(req.headers['x-hlabs-setup']),

@@ -3,6 +3,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
+import type { TrayTokens } from '../src/auth/tray-token';
 import { boot, shutdown, type BootDeps } from '../src/boot';
 import type { DaemonConfig } from '../src/config';
 import { silentLogger } from '../src/logger';
@@ -54,14 +55,20 @@ export const FAKE_SOCKET = '/fake/orbstack.sock';
 
 /** Starts a real daemon (HTTP + boot) on a random loopback port with a fake engine. */
 export async function startDaemon(
-  options: { config?: Partial<DaemonConfig>; engine?: FakeEngine; skipBoot?: boolean; boot?: Partial<BootDeps> } = {},
+  options: {
+    config?: Partial<DaemonConfig>;
+    engine?: FakeEngine;
+    skipBoot?: boolean;
+    boot?: Partial<BootDeps>;
+    trayTokens?: TrayTokens;
+  } = {},
 ) {
   const config = testConfig(options.config);
   const logger = silentLogger();
   const readiness = new Readiness();
   const holder = new ServiceHolder();
   const engine = options.engine ?? new FakeEngine();
-  const app = await buildServer({ config, logger, readiness, holder });
+  const app = await buildServer({ config, logger, readiness, holder, trayTokens: options.trayTokens });
   await app.listen({ host: '127.0.0.1', port: 0 });
   const url = `http://127.0.0.1:${(app.server.address() as AddressInfo).port}`;
   const bootDeps: BootDeps = {
