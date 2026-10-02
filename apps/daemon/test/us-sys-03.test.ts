@@ -38,7 +38,7 @@ async function connected() {
 describe('US-SYS-03', () => {
   it("removes only hlabs's Serve entries, leaves Tailscale signed in, and shows Not connected", async () => {
     const { d, ts } = await connected();
-    expect(Object.keys(ts.config.TCP!).sort()).toEqual(['12001', '3000', '443']);
+    expect(Object.keys(ts.config.TCP!).sort()).toEqual(['14001', '3000', '443']);
     expect((await d.mutate('network.remote.disconnect')).result?.data).toEqual({ ok: true });
     expect(ts.config).toEqual({
       TCP: { '3000': { HTTPS: true } },

@@ -45,8 +45,8 @@ function open(r: Record<string, unknown>, apps: unknown[]) {
 describe('US-SYS-04', () => {
   it('connected: the dashboard and each app, sorted by name, on the computer’s tailnet name', async () => {
     open({ state: 'connected', mode: 'tailscale', url: 'https://hari-home.tail9.ts.net' }, [
-      app('jellyfin', 'Jellyfin', 'https://hari-home.tail9.ts.net:12002'),
-      app('immich', 'Immich', 'https://hari-home.tail9.ts.net:12001'),
+      app('jellyfin', 'Jellyfin', 'https://hari-home.tail9.ts.net:14002'),
+      app('immich', 'Immich', 'https://hari-home.tail9.ts.net:14001'),
     ]);
     const group = await screen.findByRole('group', { name: 'Remote access' });
     const links = within(group)
@@ -54,8 +54,8 @@ describe('US-SYS-04', () => {
       .filter((l) => /ts\.net/.test(l.textContent ?? ''));
     expect(links.map((l) => l.textContent)).toEqual([
       'https://hari-home.tail9.ts.net',
-      'https://hari-home.tail9.ts.net:12001',
-      'https://hari-home.tail9.ts.net:12002',
+      'https://hari-home.tail9.ts.net:14001',
+      'https://hari-home.tail9.ts.net:14002',
     ]);
     expect(links[1]).toHaveAttribute('target', '_blank');
     expect(within(group).getAllByRole('button', { name: /Copy/ })).toHaveLength(3);

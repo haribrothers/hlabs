@@ -15,6 +15,7 @@ import { readCookie, SESSION_COOKIE } from '../auth/sessions';
 import type { ServiceHolder, Services } from '../services';
 import { StaticPages, type NoAccessPage } from './static-page';
 import { appHostnameIn, homeDomainOf, tailnetDashboardUrl, tailnetHost } from '../network/domains';
+import { TAILNET_PORT_OFFSET } from '@hlabs/shared';
 
 export const VERIFY_CACHE_MS = 10_000;
 
@@ -123,10 +124,12 @@ export class ForwardAuth {
   }
 }
 
-/** An app's own port (12000–12999, D-086) in a forwarded host, or null. */
+/** An app's own port (12000–12999, D-086) in a forwarded host, from its tailnet port too (14000–14999, D-110). */
 function appPortIn(forwardedHost: string): number | null {
   const port = Number(/:(\d+)$/.exec(forwardedHost)?.[1]);
-  return port >= APP_PORT_MIN && port <= APP_PORT_MAX ? port : null;
+  if (port >= APP_PORT_MIN && port <= APP_PORT_MAX) return port;
+  const own = port - TAILNET_PORT_OFFSET;
+  return own >= APP_PORT_MIN && own <= APP_PORT_MAX ? own : null;
 }
 
 /**

@@ -13,7 +13,7 @@ import { useTRPC, useTRPCClient } from '../lib/trpc';
 const MOVE_AFTER_MS = 1_500;
 
 const valid = (port: number, usual: number) =>
-  Number.isInteger(port) && (port === usual || (port >= 1024 && port <= 65535 && (port < 12000 || port > 13999)));
+  Number.isInteger(port) && (port === usual || (port >= 1024 && port <= 65535 && (port < 12000 || port > 14999)));
 
 /** This page at the new HTTPS port, or null when it isn't on HTTPS (development). */
 export function addressAfterPortChange(location: Pick<Location, 'protocol' | 'hostname' | 'pathname'>, https: number) {

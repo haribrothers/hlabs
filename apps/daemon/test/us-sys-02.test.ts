@@ -57,23 +57,23 @@ describe('US-SYS-02', () => {
       nodeName: 'hlabs',
     });
     expect(ts.config).toEqual({
-      TCP: { '443': { HTTPS: true }, '12001': { HTTPS: true } },
+      TCP: { '443': { HTTPS: true }, '14001': { HTTPS: true } },
       Web: {
         'hlabs.tail1234.ts.net:443': { Handlers: { '/': { Proxy: 'http://127.0.0.1:0' } } },
-        'hlabs.tail1234.ts.net:12001': { Handlers: { '/': { Proxy: 'https+insecure://127.0.0.1:12001' } } },
+        'hlabs.tail1234.ts.net:14001': { Handlers: { '/': { Proxy: 'https+insecure://127.0.0.1:12001' } } },
       },
     });
     expect(getSetting(d.services!.db, 'remote')).toMatchObject({
       mode: 'tailscale',
       state: 'connected',
-      serve: [443, 12001],
+      serve: [443, 14001],
     });
     expect(
       d.services!.db.select().from(auditLog).where(eq(auditLog.action, 'network.remote.connect')).get(),
     ).toBeDefined();
     // The app's tailnet address follows the computer's name.
     const listed = (await d.query('apps.list')).result!.data.apps as Array<{ urls: { tailnet: string | null } }>;
-    expect(listed[0]!.urls.tailnet).toBe('https://hlabs.tail1234.ts.net:12001');
+    expect(listed[0]!.urls.tailnet).toBe('https://hlabs.tail1234.ts.net:14001');
   });
 
   it('already signed in: names the tailnet and waits for a confirmation; the computer keeps its own name', async () => {
@@ -122,7 +122,7 @@ describe('US-SYS-02', () => {
     expect(ts.config.Web!['hari-home.tail9.ts.net:443']).toEqual({
       Handlers: { '/': { Proxy: 'http://127.0.0.1:3000' } },
     });
-    expect(Object.keys(ts.config.TCP!).sort()).toEqual(['12001', '443', '8443']);
+    expect(Object.keys(ts.config.TCP!).sort()).toEqual(['14001', '443', '8443']);
   });
 
   it('never turns on Funnel, and leaves Funnel someone set up alone', async () => {

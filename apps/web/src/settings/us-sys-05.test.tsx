@@ -37,7 +37,7 @@ describe('US-SYS-05', () => {
     const { calls } = open();
     await waitFor(() => expect(screen.getByLabelText('HTTPS port')).toHaveValue('443'));
     await set('500', '80');
-    expect(screen.getByText('Use 443 or 80, or a number from 1024 to 65535 outside 12000–13999.')).toBeInTheDocument();
+    expect(screen.getByText('Use 443 or 80, or a number from 1024 to 65535 outside 12000–14999.')).toBeInTheDocument();
     expect(calls.some((c) => c.path === 'network.setPorts')).toBe(false);
   });
 

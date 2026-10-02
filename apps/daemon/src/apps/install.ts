@@ -44,6 +44,7 @@ import { allocatePort, loopbackPort, loopbackPortFree } from './ports';
 import type { AppService } from './service';
 import { canTransition, stateDetail } from './state-machine';
 import { hostTimeZone } from '../platform/timezone';
+import { tailnetAppPort } from '@hlabs/shared';
 
 export interface InstallRequest {
   appId: string;
@@ -565,8 +566,10 @@ export class InstallService {
       folders: folderPaths(manifest, mounts, appData),
       hostname: `${hostname}.${domain}`,
       url: `https://${hostname}.${domain}`,
-      // Its tailnet address, while remote access is on (D-012, D-102).
-      tailnetUrl: tailnetHost(this.deps.db) ? `https://${tailnetHost(this.deps.db)}:${port}` : undefined,
+      // Its tailnet address, while remote access is on (D-012, D-102, D-110).
+      tailnetUrl: tailnetHost(this.deps.db)
+        ? `https://${tailnetHost(this.deps.db)}:${tailnetAppPort(port)}`
+        : undefined,
       tz: (this.deps.timeZone ?? hostTimeZone)(),
       puid: process.getuid?.() ?? 1000,
       pgid: process.getgid?.() ?? 1000,

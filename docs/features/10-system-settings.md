@@ -88,7 +88,7 @@ The system half of Settings: how hlabs is reached on the home network and over T
 **As** an admin, **I want** to see and copy the tailnet address of the dashboard and of each app, **so that** I can open them or share them with family away from home.
 
 **Acceptance criteria**
-- **Given** remote access is connected, **when** I view "Remote access", **then** it shows "Dashboard" with `https://<node>.<tailnet>.ts.net` (with `:8443` after a port clash, D-103) and, for each installed app (AppIcon + name, sorted by name), its address `https://<node>.<tailnet>.ts.net:<port>`, where `<port>` is the app's port in 12000–12999 (the same port as its LAN fallback, D-012, D-102).
+- **Given** remote access is connected, **when** I view "Remote access", **then** it shows "Dashboard" with `https://<node>.<tailnet>.ts.net` (with `:8443` after a port clash, D-103) and, for each installed app (AppIcon + name, sorted by name), its address `https://<node>.<tailnet>.ts.net:<port>`, where `<port>` is the app's tailnet port in 14000–14999 (its LAN fallback port + 2000, D-012, D-102, D-110).
 - **Given** an address row, **when** I click the copy icon button, **then** the address is copied and a Toast "Address copied" appears; clicking the address opens it in a new tab.
 - **Given** an app is installed or uninstalled while remote access is connected, **when** `app.stateChanged` arrives, **then** its Tailscale Serve entry is added or removed and the list updates within 10 s without reload.
 - **Given** remote access is not connected, **when** I view the page, **then** no tailnet addresses are shown, only the "Connect" row from US-SYS-02.

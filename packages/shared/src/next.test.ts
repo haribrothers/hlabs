@@ -29,8 +29,8 @@ describe('US-AUTH-18', () => {
     expect(safeNext('https://hlabs.local/files', allowed)).toBe('https://hlabs.local/files');
     expect(safeNext('https://jellyfin.hlabs.local/', allowed)).toBe('https://jellyfin.hlabs.local/');
     expect(safeNext('https://hlabs.tail1234.ts.net/settings', allowed)).toBe('https://hlabs.tail1234.ts.net/settings');
-    expect(safeNext('https://hlabs.tail1234.ts.net:12001/photos', allowed)).toBe(
-      'https://hlabs.tail1234.ts.net:12001/photos',
+    expect(safeNext('https://hlabs.tail1234.ts.net:14001/photos', allowed)).toBe(
+      'https://hlabs.tail1234.ts.net:14001/photos',
     );
     expect(safeNext('/files', allowed)).toBe('/files');
   });
@@ -46,6 +46,8 @@ describe('US-AUTH-18', () => {
       'https://immich.hlabs.local.evil.com/',
       'https://notinstalled.hlabs.local/',
       'https://hlabs.tail1234.ts.net:12002/',
+      // An app's own port isn't served on the tailnet name (D-110).
+      'https://hlabs.tail1234.ts.net:12001/',
       'http://immich.hlabs.local/',
       '//evil.com',
       'javascript:alert(1)',

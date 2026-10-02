@@ -21,7 +21,7 @@ export const networkCopy = {
   httpsPortHint: '443, or 1024–65535',
   httpPortHint: '80, or 1024–65535',
   portInUse: (port: number) => `Port ${port} is already in use by another program.`,
-  portInvalid: 'Use 443 or 80, or a number from 1024 to 65535 outside 12000–13999.',
+  portInvalid: 'Use 443 or 80, or a number from 1024 to 65535 outside 12000–14999.',
   portsSame: 'Choose two different ports.',
   appPortsTitle: 'Ports apps use',
   appPortLine: (app: string, label: string, protocol: string) => `${app} · ${label} · ${protocol.toUpperCase()}`,

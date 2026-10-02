@@ -99,7 +99,7 @@ Everything that happens after an app is installed: opening it, checking that it 
 
 **Acceptance criteria**
 - **Given** the Access section, **then** it shows the app URL (e.g. `https://vaultwarden.hlabs.local`) as a link that opens in a new tab, with "Copy".
-- **Given** remote access is on, **then** a second row "Also on your tailnet" shows the app's tailnet address `https://hlabs.<tailnet>.ts.net:<port>` (its own port on the dashboard's tailnet name, D-012) with "Copy"; **given** remote access is off, **then** this row is hidden.
+- **Given** remote access is on, **then** a second row "Also on your tailnet" shows the app's tailnet address `https://hlabs.<tailnet>.ts.net:<port + 2000>` (its tailnet port on the dashboard's tailnet name, D-012, D-110) with "Copy"; **given** remote access is off, **then** this row is hidden.
 - **Given** phase 3 (remote access) has not shipped, **then** the tailnet row is hidden until phase 3 ships (D-036).
 - **Given** the mDNS name can't be published, **then** the row shows the fallback `https://hlabs.local:<port>` instead.
 - **Given** I press "Copy", **then** the URL is copied and a Toast shows "Address copied".
@@ -269,7 +269,7 @@ Everything that happens after an app is installed: opening it, checking that it 
 - **Given** the Network section, **then** "Web address" shows a Subdomain TextField followed by ".hlabs.local" and the hint "Lowercase letters, numbers and dashes".
 - **Given** the subdomain doesn't match `^[a-z0-9-]{1,40}$` or is already used by another app or is `hlabs`, **then** an inline error shows and Save is disabled.
 - **Given** "Port on this computer", **then** it shows "App listens on <web.port> inside its container" and a Host port field showing "Auto" by default (hlabs picks a free port from 12000–12999 for the fallback address).
-- **Given** I enter a host port, **then** it must be in 12000–12999 and free; the same port is used for the app's tailnet address `https://hlabs.<tailnet>.ts.net:<port>` (D-012); a port outside that range shows "Choose a port from 12000 to 12999" and Save is disabled; if taken, saving fails with "Port <n> is already in use" (`APP_PORT_IN_USE`).
+- **Given** I enter a host port, **then** it must be in 12000–12999 and free; the app's tailnet address uses that port + 2000, `https://hlabs.<tailnet>.ts.net:<port + 2000>` (D-012, D-110); a port outside that range shows "Choose a port from 12000 to 12999" and Save is disabled; if taken, saving fails with "Port <n> is already in use" (`APP_PORT_IN_USE`).
 - **Given** the address changes and is saved, **then** the old address stops working, the new one is registered, and a Toast shows the new address with "Copy".
 
 **Implementation notes**

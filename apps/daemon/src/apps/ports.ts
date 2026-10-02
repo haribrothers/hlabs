@@ -1,6 +1,6 @@
-// Each app gets one port from 12000–12999: its LAN fallback and tailnet port (D-012), which Caddy serves. Its web
-// service is published for Caddy on 127.0.0.1:<port + 1000>, in 13000–13999, so Caddy can listen on the app's own port
-// on every address (D-049, D-086).
+// Each app gets one port from 12000–12999: its LAN fallback port, which Caddy serves (its tailnet port is 2000 above,
+// D-110). Its web service is published for Caddy on 127.0.0.1:<port + 1000>, in 13000–13999, so Caddy can listen on
+// the app's own port on every address (D-049, D-086).
 import { hlabsError } from '@hlabs/api';
 import { createServer } from 'node:net';
 

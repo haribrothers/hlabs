@@ -162,7 +162,7 @@ function AppAddresses({ apps }: { apps: readonly HomeApp[] }) {
 }
 
 /**
- * While connected (US-SYS-04): the dashboard's tailnet address and each app's, on its own port of the same name
+ * While connected (US-SYS-04): the dashboard's tailnet address and each app's, on its own tailnet port of the same name (D-110)
  * (D-012, D-102). No per-app names or sub-paths.
  */
 function TailnetAddresses({ dashboard, apps }: { dashboard: string; apps: readonly HomeApp[] }) {

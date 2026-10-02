@@ -28,7 +28,7 @@ test('US-SYS-04 the dashboard and apps on the tailnet; an app installed meanwhil
     data: { id: 'tailnet-demo', name: 'Tailnet demo', port: 12555 },
   });
   await expect(remote.getByText('Tailnet demo')).toBeVisible({ timeout: 10_000 });
-  await expect(remote.getByRole('link', { name: /^https:\/\/hari-home\.tail9\.ts\.net:12\d{3}$/ })).toBeVisible();
+  await expect(remote.getByRole('link', { name: /^https:\/\/hari-home\.tail9\.ts\.net:14555$/ })).toBeVisible();
 
   await removeFakeApps(request, FIRST_RUN_URL, ['tailnet-demo']);
   await expect(remote.getByText('Tailnet demo')).toHaveCount(0, { timeout: 10_000 });

@@ -12,6 +12,7 @@ import { onboardingCopy } from '../copy/onboarding';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { LOGIN_POLL_MS, Problems, useRemoteConnect } from '../settings/remote-access';
 import { StepFrame } from './step-frame';
+import { tailnetAppPort } from '@hlabs/shared';
 
 const copy = onboardingCopy.remote;
 
@@ -104,7 +105,7 @@ export function RemoteStep({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: nu
       {connected && remote.url ? (
         <div className="mt-4 rounded-md bg-surface-row px-4 py-3">
           <p className="m-0 text-body-sm text-ink-muted">{copy.appsOpenAt}</p>
-          <p className="m-0 font-mono text-mono text-ink">{`${remote.url.replace(/:\d+$/, '')}:12001`}</p>
+          <p className="m-0 font-mono text-mono text-ink">{`${remote.url.replace(/:\d+$/, '')}:${tailnetAppPort(12001)}`}</p>
         </div>
       ) : null}
       {later.isError ? (

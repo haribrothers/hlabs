@@ -62,8 +62,10 @@ export const appDetailSchema = homeAppSchema.extend({
   stateDetail: z.record(z.string(), z.unknown()).nullable(),
   /** e.g. `immich.hlabs.local` */
   address: z.string(),
-  /** The app's port (12000–12999): its LAN fallback and tailnet port. Its web service listens on 127.0.0.1 at this + 1000
-   * (D-086). */
+  /**
+   * The app's port (12000–12999): its LAN fallback port; its tailnet port is this + 2000 (D-110). Its web service
+   * listens on 127.0.0.1 at this + 1000 (D-086).
+   */
   webPort: z.number().int().nullable(),
   /** Its latest install job, for the progress page. */
   installJobId: z.string().nullable(),

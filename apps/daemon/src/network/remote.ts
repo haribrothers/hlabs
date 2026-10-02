@@ -10,6 +10,7 @@ import type { SessionService } from '../auth/sessions';
 import type { Logger } from '../logger';
 import { TailscaleError, type ServeConfig, type TailscaleClient, type TailscaleState } from '../tailscale/types';
 import { tailnetDashboardUrl } from './domains';
+import { tailnetAppPort } from '@hlabs/shared';
 
 /** A log-in that isn't finished by then is given up (US-SYS-02). */
 export const LOGIN_TIMEOUT_MS = 10 * 60_000;
@@ -64,7 +65,8 @@ export function isTailnetIp(ip: string | null): boolean {
 /** What hlabs serves: the dashboard on `dashboardPort`, each app on its own port through Caddy (forward auth). */
 export function desiredServe(host: string, dashboardPort: number, upstream: string, routes: readonly AppRoute[]) {
   const entries = new Map<number, string>([[dashboardPort, `http://${upstream}`]]);
-  for (const r of routes) entries.set(r.port, `https+insecure://127.0.0.1:${r.port}`);
+  // Each app on its tailnet port, to Caddy on its own port (D-110).
+  for (const r of routes) entries.set(tailnetAppPort(r.port), `https+insecure://127.0.0.1:${r.port}`);
   return [...entries].map(([port, proxy]) => ({ port, host: `${host}:${port}`, proxy }));
 }
 

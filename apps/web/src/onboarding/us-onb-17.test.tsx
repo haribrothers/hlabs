@@ -79,7 +79,7 @@ describe('US-ONB-17', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Connect' }));
     expect(await screen.findByText('hlabs.tail1234.ts.net')).toBeInTheDocument();
     expect(screen.getByText('After connecting, apps open at')).toBeInTheDocument();
-    expect(screen.getByText('https://hlabs.tail1234.ts.net:12001')).toBeInTheDocument();
+    expect(screen.getByText('https://hlabs.tail1234.ts.net:14001')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Set up later' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/setup/apps'));

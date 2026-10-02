@@ -39,8 +39,8 @@ describe('US-AUTH-18', () => {
       kind: 'ok',
       redirectTo: 'https://immich.hlabs.local/photos',
     });
-    expect(await login('https://hlabs.tail1234.ts.net:12001/photos')).toMatchObject({
-      redirectTo: 'https://hlabs.tail1234.ts.net:12001/photos',
+    expect(await login('https://hlabs.tail1234.ts.net:14001/photos')).toMatchObject({
+      redirectTo: 'https://hlabs.tail1234.ts.net:14001/photos',
     });
     expect(await login('/files')).toMatchObject({ redirectTo: '/files' });
     expect(await login('https://evil.com/')).toMatchObject({ redirectTo: '/' });

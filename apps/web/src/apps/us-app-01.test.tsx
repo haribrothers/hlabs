@@ -18,7 +18,7 @@ const jellyfin = appDetail({
   embed: true,
   ownLogin: false,
   address: 'jellyfin.hlabs.local',
-  urls: { local: 'https://jellyfin.hlabs.local', tailnet: 'https://hlabs.tail1234.ts.net:12004' },
+  urls: { local: 'https://jellyfin.hlabs.local', tailnet: 'https://hlabs.tail1234.ts.net:14004' },
   webPath: '/web/',
 });
 
@@ -49,7 +49,7 @@ describe('US-APP-01', () => {
   });
 
   it('on the tailnet name the frame uses the tailnet address (D-012)', () => {
-    expect(appBaseUrl(jellyfin, { hostname: 'hlabs.tail1234.ts.net' })).toBe('https://hlabs.tail1234.ts.net:12004');
+    expect(appBaseUrl(jellyfin, { hostname: 'hlabs.tail1234.ts.net' })).toBe('https://hlabs.tail1234.ts.net:14004');
     expect(appBaseUrl(jellyfin, { hostname: 'hlabs.local' })).toBe('https://jellyfin.hlabs.local');
   });
 

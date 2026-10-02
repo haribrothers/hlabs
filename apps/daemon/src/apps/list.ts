@@ -5,6 +5,7 @@ import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { visibleAppIds } from '../home/layout';
 import { tailnetHost } from '../network/domains';
+import { tailnetAppPort } from '@hlabs/shared';
 
 /** The few manifest fields Home needs; the full schema lives in @hlabs/app-manifest. */
 const manifestBits = z.object({
@@ -77,7 +78,7 @@ export function appSummary(
         isPublished(`${app.hostname}.${hostname}.local`) || app.portFallback === null
           ? `https://${app.hostname}.${hostname}.local`
           : `https://${hostname}.local:${app.portFallback}`,
-      tailnet: tailnet && app.portFallback !== null ? `https://${tailnet}:${app.portFallback}` : null,
+      tailnet: tailnet && app.portFallback !== null ? `https://${tailnet}:${tailnetAppPort(app.portFallback)}` : null,
     },
   };
 }

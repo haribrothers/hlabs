@@ -1,6 +1,6 @@
 // US-SYS-04 · See each app's tailnet address (server side): apps.list gives `https://<node>.<tailnet>:<port>` while
 // connected, and Serve follows installs and uninstalls.
-import { apps } from '@hlabs/db';
+import { apps, getSetting, setSetting } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { FakeTailscale } from '../src/tailscale/fake';
@@ -35,7 +35,7 @@ describe('US-SYS-04', () => {
       keyExpiry: null,
     };
     await d.mutate('network.remote.connect', { confirmTailnet: true });
-    expect(await tailnetUrls()).toEqual(['https://hari-home.tail9.ts.net:12001']);
+    expect(await tailnetUrls()).toEqual(['https://hari-home.tail9.ts.net:14001']);
   });
 
   it('an app installed or uninstalled while connected gets or loses its Serve entry', async () => {
@@ -55,16 +55,16 @@ describe('US-SYS-04', () => {
     add(d, 'jellyfin', 12002);
     bus.emit('app.stateChanged', { appId: 'jellyfin', state: 'running' } as never);
     await remote.reconcile();
-    expect(Object.keys(ts.config.TCP!).sort()).toEqual(['12001', '12002', '443']);
-    expect(ts.config.Web!['hari-home.tail9.ts.net:12002']).toEqual({
+    expect(Object.keys(ts.config.TCP!).sort()).toEqual(['14001', '14002', '443']);
+    expect(ts.config.Web!['hari-home.tail9.ts.net:14002']).toEqual({
       Handlers: { '/': { Proxy: 'https+insecure://127.0.0.1:12002' } },
     });
 
     db.delete(apps).where(eq(apps.id, 'immich')).run();
     bus.emit('app.stateChanged', { appId: 'immich', state: 'uninstalling' } as never);
     await remote.reconcile();
-    expect(Object.keys(ts.config.TCP!).sort()).toEqual(['12002', '443']);
-    expect(ts.config.Web!['hari-home.tail9.ts.net:12001']).toBeUndefined();
+    expect(Object.keys(ts.config.TCP!).sort()).toEqual(['14002', '443']);
+    expect(ts.config.Web!['hari-home.tail9.ts.net:14001']).toBeUndefined();
   });
 
   it('does nothing while remote access is off', async () => {
@@ -88,12 +88,44 @@ describe('US-SYS-04', () => {
     await d.mutate('network.remote.connect', { confirmTailnet: true });
     const res = await fetch(`${d.url}/auth/verify`, {
       redirect: 'manual',
-      headers: { 'x-forwarded-host': 'hari-home.tail9.ts.net:12002', 'x-forwarded-uri': '/', accept: 'text/html' },
+      headers: { 'x-forwarded-host': 'hari-home.tail9.ts.net:14002', 'x-forwarded-uri': '/', accept: 'text/html' },
     });
     expect(res.status).toBe(302);
     // Not hlabs.local: that name doesn't resolve away from home.
     expect(res.headers.get('location')).toBe(
-      `https://hari-home.tail9.ts.net/login?next=${encodeURIComponent('https://hari-home.tail9.ts.net:12002/')}`,
+      `https://hari-home.tail9.ts.net/login?next=${encodeURIComponent('https://hari-home.tail9.ts.net:14002/')}`,
     );
+  });
+
+  it("moves Serve entries made on apps' own ports to their tailnet ports, so Caddy can listen on its own (D-110)", async () => {
+    const d = await daemonWithAdmin(closers);
+    add(d, 'immich', 12001);
+    const ts = d.services!.tailscale as FakeTailscale;
+    ts.current = {
+      kind: 'running',
+      tailnet: 'tail9.ts.net',
+      nodeName: 'hari-home',
+      httpsEnabled: true,
+      keyExpiry: null,
+    };
+    // As connected before D-110: the app's own port on the tailnet.
+    ts.config = {
+      TCP: { '443': { HTTPS: true }, '12001': { HTTPS: true } },
+      Web: {
+        'hari-home.tail9.ts.net:443': { Handlers: { '/': { Proxy: 'http://127.0.0.1:5173' } } },
+        'hari-home.tail9.ts.net:12001': { Handlers: { '/': { Proxy: 'https+insecure://127.0.0.1:12001' } } },
+      },
+    };
+    setSetting(d.services!.db, 'remote', {
+      ...getSetting(d.services!.db, 'remote'),
+      mode: 'tailscale',
+      state: 'connected',
+      tailnetName: 'tail9.ts.net',
+      nodeName: 'hari-home',
+      serve: [443, 12001],
+    });
+    await d.services!.remote.reconcile();
+    expect(Object.keys(ts.config.TCP!).sort()).toEqual(['14001', '443']);
+    expect(getSetting(d.services!.db, 'remote').serve.sort()).toEqual([14001, 443]);
   });
 });

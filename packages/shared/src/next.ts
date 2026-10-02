@@ -1,6 +1,7 @@
 // Where to go after logging in (US-AUTH-03, US-AUTH-05, US-AUTH-18): a path on this dashboard, or an https address
 // whose origin the daemon allows (the dashboard, an installed app's hostname, the tailnet name or an app's tailnet
 // port). Never another site, never the log-in page itself. Shared by the daemon and the dashboard.
+import { tailnetAppPort } from './ports';
 export const NEXT_MAX_LENGTH = 2048;
 
 /**
@@ -30,7 +31,7 @@ export function nextOrigins(opts: {
   dashboardUrl: string;
   /** The machine's name: `hlabs` → `hlabs.local`. */
   hostname: string;
-  /** Installed apps: hostname label and tailnet/fallback port. */
+  /** Installed apps: hostname label and own port (the tailnet one is 2000 above, D-110). */
   apps: ReadonlyArray<{ hostname: string; port: number | null }>;
   /** The tailnet's DNS name (`tail1234` or `tail1234.ts.net`) when remote access is on. */
   tailnet: string | null;
@@ -61,7 +62,8 @@ export function nextOrigins(opts: {
     const tailnetHost = `${opts.tailnetNode ?? opts.hostname}.${opts.tailnet.replace(/\.ts\.net$/, '')}.ts.net`;
     const port = opts.tailnetDashboardPort ?? 443;
     origins.add(`https://${tailnetHost}${port === 443 ? '' : `:${port}`}`);
-    for (const app of opts.apps) if (app.port !== null) origins.add(`https://${tailnetHost}:${app.port}`);
+    for (const app of opts.apps)
+      if (app.port !== null) origins.add(`https://${tailnetHost}:${tailnetAppPort(app.port)}`);
   }
   return origins;
 }

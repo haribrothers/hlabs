@@ -6,6 +6,7 @@ import { ulid } from '@hlabs/shared';
 import { z } from 'zod';
 import { catalogManifest, catalogRow } from '../apps/list';
 import { APP_PORT_MAX, APP_PORT_MIN } from '../apps/ports';
+import { TAILNET_PORT_OFFSET } from '@hlabs/shared';
 
 const rawPorts = z.array(
   z.object({ host: z.number(), protocol: z.enum(['tcp', 'udp']).default('tcp'), label: z.string() }).passthrough(),
@@ -27,11 +28,14 @@ export function appRawPorts(db: HlabsDb) {
     .sort((a, b) => a.port - b.port);
 }
 
-/** 443 or 1024–65535 for HTTPS; 80 or 1024–65535 for HTTP; never an app's own port range (12000–13999, D-086). */
+/**
+ * 443 or 1024–65535 for HTTPS; 80 or 1024–65535 for HTTP; never the apps' ranges: their own ports, loopback ports and
+ * tailnet ports (12000–14999, D-086, D-110).
+ */
 function allowed(port: number, usual: number): boolean {
   if (port === usual) return true;
   if (port < 1024 || port > 65535) return false;
-  return port < APP_PORT_MIN || port > APP_PORT_MAX + 1000;
+  return port < APP_PORT_MIN || port > APP_PORT_MAX + TAILNET_PORT_OFFSET;
 }
 
 export async function setWebPorts(
