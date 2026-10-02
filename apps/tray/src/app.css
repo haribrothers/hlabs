@@ -9,6 +9,11 @@
     background: transparent;
     overflow: hidden;
     font-family: var(--font-sans);
+    /* A menu, not a page: nothing is selectable or draggable, and the pointer stays an arrow. */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    cursor: default;
   }
 }
 
