@@ -150,7 +150,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-SYS-04 · See each app's tailnet address (no built-in app uses HLABS_TAILNET_URL yet, so no restarts on connect or disconnect)
 - [x] US-SYS-05 · See and change web ports
 - [x] US-SYS-06 · Use a local DNS server (AdGuard Home and Pi-hole v6 are tested against stand-ins that answer as their APIs do, not live yet; a changed LAN address is picked up by the 10-minute sync, a renamed server by its rename in phase 9)
-- [ ] US-SYS-41 · Reach hlabs through a subnet router
+- [x] US-SYS-41 · Reach hlabs through a subnet router (hlabs can't see the router, so the mode shows the addresses without a Connected status)
 
 ## Phase 4 · Menu-bar app, monitoring and updates
 

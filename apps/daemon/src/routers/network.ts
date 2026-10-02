@@ -30,6 +30,11 @@ export const network: AppHandlers<DaemonContext>['network'] = {
     await ctx.services.dns.test(address, appPassword);
     return { ok: true as const };
   },
+  /** A subnet router reaches hlabs instead of Tailscale here (US-SYS-41), or back to Connect. */
+  setRemoteMode: async ({ mode }, ctx) => {
+    ctx.services.remote.setMode(mode, who(ctx));
+    return { ok: true as const };
+  },
   remote: {
     /** Connect with Tailscale (US-SYS-02); the dashboard opens the log-in page and asks status every 2 s. */
     connect: (input, ctx) => ctx.services.remote.connect(input ?? {}, who(ctx)),

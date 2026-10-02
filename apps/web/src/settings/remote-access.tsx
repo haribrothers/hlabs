@@ -291,7 +291,7 @@ export function TailscaleRow({ remote }: { remote: RemoteStatus }) {
               href={helpUrl('remote-access/family')}
               target="_blank"
               rel="noopener noreferrer"
-              className="hl-focus rounded-xs text-body-sm font-semibold text-accent-link no-underline"
+              className="hl-focus rounded-xs whitespace-nowrap text-body-sm font-semibold text-accent-link no-underline"
             >
               {copy.openHelp}
             </a>

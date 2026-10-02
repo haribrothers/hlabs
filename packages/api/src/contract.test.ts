@@ -80,7 +80,7 @@ const EXPECTED: Row[] = [
 
   ['network.status', 'q', 'admin'], ['network.setHostname', 'm', 'admin'], ['network.remote.connect', 'm', 'admin'],
   ['network.remote.disconnect', 'm', 'admin'], ['network.caCertificate', 'q', 'admin'], ['network.ports', 'q', 'admin'],
-  ['network.setPorts', 'm', 'admin'], ['network.setDnsServer', 'm', 'admin'], ['network.testDnsServer', 'm', 'admin'],
+  ['network.setPorts', 'm', 'admin'], ['network.setDnsServer', 'm', 'admin'], ['network.setRemoteMode', 'm', 'admin'], ['network.testDnsServer', 'm', 'admin'],
 
   ['settings.get', 'q', 'authed'], ['settings.appearance.update', 'm', 'authed'],
   ['settings.notifications.update', 'm', 'authed'], ['settings.notifications.test', 'm', 'admin'],

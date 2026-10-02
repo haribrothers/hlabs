@@ -124,6 +124,11 @@ export const network = {
     }),
     ok,
   ),
+  /**
+   * Reach hlabs through a subnet router (US-SYS-41, D-107): hlabs then leaves Tailscale on this computer alone.
+   * `off` goes back to the Connect flow. Tailscale mode is set by `remote.connect`.
+   */
+  setRemoteMode: io(z.object({ mode: z.enum(['off', 'subnetRouter']) }), ok),
   /** Checks a Pi-hole's address and app password. */
   testDnsServer: io(z.object({ address: z.url(), appPassword: z.string().min(1).max(512) }), ok),
 };

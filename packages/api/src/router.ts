@@ -215,6 +215,7 @@ export const appRouter = router({
     ports: q(p.admin, s.network.ports),
     setPorts: m(p.admin, s.network.setPorts),
     setDnsServer: m(p.admin, s.network.setDnsServer),
+    setRemoteMode: m(p.admin, s.network.setRemoteMode),
     testDnsServer: m(p.admin, s.network.testDnsServer),
   }),
 

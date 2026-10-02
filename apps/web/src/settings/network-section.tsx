@@ -16,6 +16,7 @@ import { useTRPC } from '../lib/trpc';
 import { useIsDesktop } from '../lib/use-media';
 import { DnsServerRows } from './dns-server';
 import { TailscaleRow, useRemoteStatus } from './remote-access';
+import { SubnetRouterOption, SubnetRouterRows } from './subnet-router';
 import { WebPortsDialog } from './web-ports-dialog';
 
 const LOGO = tokens.SPACE_7;
@@ -237,14 +238,26 @@ export function NetworkSection({ shippedPhase }: { shippedPhase?: number }) {
     );
   }
   if (!status.data) return null;
+  const remote = status.data.remote;
   return (
     <div className="flex flex-col gap-6">
       <HomeNetwork status={status.data} shippedPhase={shippedPhase} onChangePorts={() => setChanging(true)} />
       <List label={copy.remoteAccess}>
-        <TailscaleRow remote={status.data.remote} />
-        {status.data.remote.state === 'connected' && status.data.remote.url ? (
-          <TailnetAddresses dashboard={status.data.remote.url} apps={apps.data?.apps ?? []} />
-        ) : null}
+        {remote.mode === 'subnetRouter' ? (
+          <SubnetRouterRows status={status.data} />
+        ) : (
+          <>
+            <TailscaleRow remote={remote} />
+            {remote.state === 'connected' ? (
+              remote.url ? (
+                <TailnetAddresses dashboard={remote.url} apps={apps.data?.apps ?? []} />
+              ) : null
+            ) : remote.state !== 'waiting' ? (
+              // Or a subnet router elsewhere reaches the home network (US-SYS-41, D-107).
+              <SubnetRouterOption />
+            ) : null}
+          </>
+        )}
       </List>
       {apps.data ? <AppAddresses apps={apps.data.apps} /> : null}
       {changing ? <WebPortsDialog onClose={() => setChanging(false)} /> : null}

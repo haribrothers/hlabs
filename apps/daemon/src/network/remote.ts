@@ -277,6 +277,19 @@ export class RemoteService {
     this.audit(who, 'network.remote.disconnect', { sessionsEnded: ended.length });
   }
 
+  /**
+   * Reach hlabs through a subnet router instead (US-SYS-41, D-107), or go back to the Connect flow. Refused while
+   * connected with Tailscale here: that's disconnected first. A log-in in progress is given up.
+   */
+  setMode(mode: 'off' | 'subnetRouter', who: Who) {
+    const s = this.settings();
+    if (s.mode === 'tailscale' && s.state === 'connected')
+      throw hlabsError('VALIDATION_FAILED', 'Disconnect remote access first');
+    this.save({ mode, state: 'off', connectStartedAt: null });
+    this.loginUrl = null;
+    this.audit(who, 'network.remote.mode', { mode });
+  }
+
   /** Remote access as saved, without asking Tailscale. */
   saved(): RemoteStatus {
     const s = this.settings();
