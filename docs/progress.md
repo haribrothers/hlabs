@@ -128,10 +128,10 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-AUTH-24 · Create my account from an invite
 - [x] US-HOME-11 · See only my shared apps on a member Home (refusing a member's `home.saveLayout` with an app they can't open is tested when `home.saveLayout` is built with Home edit, phase 7)
 - [x] US-HOME-12 · See my files and shared-apps summary ("Last photo backup from your phone" stays hidden until hlabs reads Immich's API; My files opens Files once it ships in phase 5)
-- [x] US-ACCT-13 · See everyone who uses hlabs (Reset password and Delete… do nothing until US-ACCT-14 and US-ACCT-16)
+- [x] US-ACCT-13 · See everyone who uses hlabs (Reset password does nothing until US-ACCT-14)
 - [ ] US-ACCT-14 · Give a member a reset-password link
 - [x] US-ACCT-15 · Change role, disable or enable someone
-- [ ] US-ACCT-16 · Delete someone
+- [x] US-ACCT-16 · Delete someone (emptying the trash after 30 days comes with the Trash, phase 8; reusing a username with a kept Home folder is Q-14)
 - [x] US-ACCT-17 · Manage pending invites (a revoked link reads "This invite doesn't work anymore", US-AUTH-23's wording for that page, rather than "This invite is no longer valid")
 - [ ] US-ACCT-18 · Choose what the log-in screen shows
 - [ ] US-ACCT-19 · Require two-factor for everyone

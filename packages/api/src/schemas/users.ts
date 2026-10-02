@@ -64,13 +64,19 @@ export const users = {
       appIds: z.array(appIdSchema),
       canSeeShared: z.boolean(),
       canSeeUsage: z.boolean(),
+      /** Their Home folder's size; null while it's first being counted (US-ACCT-16). */
+      homeFolderBytes: z.number().nonnegative().nullable(),
     }),
   ),
   updateRole: io(userRef.extend({ role: roleSchema }), ok),
   disable: io(userRef, ok),
   enable: io(userRef, ok),
   resetPasswordLink: io(userRef, z.object({ url: z.string(), expiresAt: z.number() })),
-  delete: io(userRef.extend({ keepHomeFolder: z.boolean().default(false) }), ok),
+  /** `jobId` when their Home folder goes to the trash too (US-ACCT-16). */
+  delete: io(
+    userRef.extend({ deleteHomeFolder: z.boolean().default(false) }),
+    z.object({ jobId: idSchema.nullable() }),
+  ),
   setAppAccess: io(
     userRef.extend({
       appIds: z.array(appIdSchema),

@@ -26,6 +26,7 @@ import { useIsDesktop } from '../lib/use-media';
 import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
 import { AppsAccessDialog } from './apps-access-dialog';
+import { DeleteUserDialog } from './delete-user-dialog';
 import { InviteDialog } from './invite-dialog';
 
 const DAY = 86_400_000;
@@ -33,15 +34,16 @@ const DAY = 86_400_000;
 /** "@anu · 2FA on · last active yesterday · 4 apps": no last active on my own row, app count for members only. */
 export function userLine(u: UserSummary, isMe: boolean, now: number): string {
   const parts = [`@${u.username}`, u.totpEnabled ? copy.totpOn : copy.totpOff];
-  if (!isMe) parts.push(copy.lastActive(lastActive(u.lastActiveAt, now)));
+  if (!isMe) parts.push(lastActive(u.lastActiveAt, now));
   if (u.role === 'member') parts.push(copy.apps(u.appCount));
   return parts.join(' · ');
 }
 
+/** "last active yesterday", "active now" within 5 minutes, or "not logged in yet". */
 function lastActive(at: number | null, now: number): string {
   if (at === null) return copy.neverActive;
   if (now - at < 5 * 60_000) return copy.activeNow;
-  return now - at < DAY ? timeAgo(at, now) : daysAgo(at, now);
+  return copy.lastActive(now - at < DAY ? timeAgo(at, now) : daysAgo(at, now));
 }
 
 /** Whole days left, rounded up; a minute of clock difference doesn't turn a new invite's 7 days into 8. */
@@ -51,7 +53,7 @@ export function inviteLine(i: PendingInvite, now: number): string {
   return copy.inviteLine(daysAgo(i.createdAt, now), daysLeft(i.expiresAt, now), copy.roles[i.role]);
 }
 
-function MoreOptions({ user, size }: { user: UserSummary; size: 'sm' | 'md' }) {
+function MoreOptions({ user, size, onDelete }: { user: UserSummary; size: 'sm' | 'md'; onDelete: () => void }) {
   const client = useTRPCClient();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -105,7 +107,9 @@ function MoreOptions({ user, size }: { user: UserSummary; size: 'sm' | 'md' }) {
           {user.disabled ? copy.enable : copy.disable}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem danger>{copy.delete}</DropdownMenuItem>
+        <DropdownMenuItem danger onSelect={onDelete}>
+          {copy.delete}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -122,12 +126,14 @@ function UserRow({
   now,
   desktop,
   onAppsAccess,
+  onDelete,
 }: {
   user: UserSummary;
   isMe: boolean;
   now: number;
   desktop: boolean;
   onAppsAccess: () => void;
+  onDelete: () => void;
 }) {
   const size = desktop ? 'sm' : 'md';
   const disabled = user.disabled ? <Badge tone="warning">{copy.disabled}</Badge> : null;
@@ -144,7 +150,7 @@ function UserRow({
           </Button>
         </>
       ) : null}
-      <MoreOptions user={user} size={size} />
+      <MoreOptions user={user} size={size} onDelete={onDelete} />
     </>
   );
   return (
@@ -259,6 +265,7 @@ export function UsersSection() {
   const now = useNow().getTime();
   const desktop = useIsDesktop();
   const [accessFor, setAccessFor] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<UserSummary | null>(null);
   const people = useQuery({ ...trpc.users.list.queryOptions(), retry: false });
   const invites = useQuery({ ...trpc.invites.list.queryOptions(), retry: false });
 
@@ -304,6 +311,7 @@ export function UsersSection() {
             now={now}
             desktop={desktop}
             onAppsAccess={() => setAccessFor(u.id)}
+            onDelete={() => setDeleting(u)}
           />
         ))}
         {pending.map((i) => (
@@ -311,6 +319,7 @@ export function UsersSection() {
         ))}
       </List>
       {accessFor ? <AppsAccessDialog userId={accessFor} onClose={() => setAccessFor(null)} /> : null}
+      {deleting ? <DeleteUserDialog user={deleting} onClose={() => setDeleting(null)} /> : null}
     </div>
   );
 }

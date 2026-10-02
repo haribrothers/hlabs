@@ -62,3 +62,9 @@ Choose **•••** next to someone for more options:
 
 hlabs always needs at least one admin who can log in, so it won't let you disable or demote the last one.
 
+## Delete someone
+
+Choose **•••** › **Delete…** next to someone who no longer uses hlabs. They're logged out, and their account, two-factor login and app access are removed; their apps keep running for everyone else.
+
+Their Home folder is kept unless you tick **Also delete their Home folder**. Kept, it stays in `users/<username>`, where admins can see it in Files. Ticked, it goes to the trash and is emptied after 30 days. You can't delete the last admin.
+

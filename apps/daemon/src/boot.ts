@@ -6,6 +6,7 @@ import { KeepAwake, processSleepBlocker, type SleepBlocker } from './platform/ke
 import { eq } from 'drizzle-orm';
 import { registerEngineRestart } from './engine/restart-job';
 import { registerEngineStart } from './engine/start-job';
+import { registerHomeFolderTrash } from './users/home-trash-job';
 import { watchEngine } from './engine/watch';
 import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
 import { nextOrigins } from '@hlabs/shared';
@@ -229,6 +230,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     onResources: (resources) => setSetting(db, 'engine', { ...getSetting(db, 'engine'), resources }),
   });
   registerEngineStart({ jobs, engine, db, control: engineControl, appsBack });
+  registerHomeFolderTrash({ jobs, db });
   const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);
   const onboarding = new OnboardingService({
     db,

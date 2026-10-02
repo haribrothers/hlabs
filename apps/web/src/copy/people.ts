@@ -29,6 +29,16 @@ export const peopleCopy = {
   roleChanged: (name: string, role: string) => `${name} is now ${role === 'Admin' ? 'an admin' : 'a member'}`,
   disabledToast: (name: string) => `${name} is disabled`,
   enabledToast: (name: string) => `${name} can log in again`,
+  deleteTitle: (name: string) => `Delete ${name}?`,
+  deleteBody: (name: string) =>
+    `${name} is logged out and their account, two-factor login and app access are removed. Their apps keep running for everyone else.`,
+  deleteHomeFolder: (size: string) => `Also delete their Home folder (${size})`,
+  deleteHomeFolderCounting: 'Also delete their Home folder (counting…)',
+  keptHomeFolder: (username: string) =>
+    `Their Home folder stays in users/${username}, where admins can see it in Files.`,
+  trashedHomeFolder: 'Their Home folder goes to the trash and is emptied after 30 days.',
+  deleteConfirm: (name: string) => `Delete ${name}`,
+  deleted: (name: string) => `${name} was deleted`,
   actionFailed: "Couldn't make that change. Try again.",
   invitePending: 'Invite pending',
   inviteLine: (created: string, days: number, role: string) =>

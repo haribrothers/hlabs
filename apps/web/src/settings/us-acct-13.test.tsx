@@ -54,7 +54,7 @@ describe('US-ACCT-13', () => {
     expect(within(list).getByText('(you)')).toBeInTheDocument();
     expect(within(list).getByText('@hari · 2FA on')).toBeInTheDocument();
     expect(within(list).getByText('@anu · 2FA off · last active yesterday · 4 apps')).toBeInTheDocument();
-    expect(within(list).getByText('@ravi · 2FA off · last active not logged in yet · 1 app')).toBeInTheDocument();
+    expect(within(list).getByText('@ravi · 2FA off · not logged in yet · 1 app')).toBeInTheDocument();
     expect(within(list).getAllByText('Member')).toHaveLength(2);
     expect(within(list).getByText('Admin')).toBeInTheDocument();
   });

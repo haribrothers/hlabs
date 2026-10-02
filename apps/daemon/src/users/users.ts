@@ -4,6 +4,10 @@ import { appAccess, apps, auditLog, sessions, users, userTotp, type HlabsDb } fr
 import { ulid } from '@hlabs/shared';
 import { and, asc, count, eq, inArray, isNotNull, isNull, max, ne } from 'drizzle-orm';
 import type { SessionService } from '../auth/sessions';
+import { totpSecretRef } from '../auth/totp';
+import type { JobRunner } from '../jobs/runner';
+import type { SecretStore } from '../platform/secrets';
+import { homeFolderBytes, homeFolderPath } from '../storage/home-folder';
 import type { EventBus } from '../events/bus';
 
 /**
@@ -82,6 +86,7 @@ export function getUser(db: HlabsDb, userId: string) {
       .map((r) => r.appId),
     canSeeShared: user.canSeeShared,
     canSeeUsage: user.canSeeUsage,
+    homeFolderBytes: homeFolderBytes(db, user.username),
   };
 }
 
@@ -197,4 +202,38 @@ export function enableUser(db: HlabsDb, userId: string, who: Who, now = Date.now
     tx.update(users).set({ disabledAt: null }).where(eq(users.id, user.id)).run();
     audit(tx, who, 'users.enable', user.id, null, now);
   });
+}
+
+/**
+ * Delete someone (US-ACCT-16): their sessions end, then the account goes with its two-factor, recovery codes, app
+ * access and Home layout (foreign keys cascade) and their two-factor secret leaves the secret store. Their Home
+ * folder stays at `users/<username>/` unless asked; then it goes to the trash as a job. Never the last enabled admin.
+ */
+export async function deleteUser(
+  deps: { db: HlabsDb; sessions: SessionService; secrets: SecretStore; jobs: JobRunner },
+  input: { userId: string; deleteHomeFolder: boolean },
+  who: Who,
+  now = Date.now(),
+): Promise<{ jobId: string | null }> {
+  const { db } = deps;
+  const user = userRow(db, input.userId);
+  if (user.role === 'admin' && user.disabledAt === null && !db.transaction((tx) => anotherEnabledAdmin(tx, user.id))) {
+    throw hlabsError('LAST_ADMIN');
+  }
+  const homePath = homeFolderPath(db, user.username);
+  deps.sessions.revoke({ userId: user.id }, now);
+  db.transaction((tx) => {
+    if (user.role === 'admin' && user.disabledAt === null && !anotherEnabledAdmin(tx, user.id))
+      throw hlabsError('LAST_ADMIN');
+    tx.delete(users).where(eq(users.id, user.id)).run();
+    audit(tx, who, 'users.delete', user.id, { username: user.username, deleteHomeFolder: input.deleteHomeFolder }, now);
+  });
+  await deps.secrets.delete(totpSecretRef(user.id)).catch(() => undefined);
+  if (!input.deleteHomeFolder || !homePath) return { jobId: null };
+  return {
+    jobId: deps.jobs.start('home_folder_trash', {
+      target: user.username,
+      payload: { path: homePath, username: user.username, ownerUserId: who.userId },
+    }),
+  };
 }
