@@ -6,6 +6,7 @@ mod access;
 mod bootstrap;
 mod daemon;
 mod health;
+mod icon;
 mod launchd;
 mod logs;
 mod paths;
@@ -260,6 +261,87 @@ fn copy_text(app: AppHandle, text: String) -> Result<(), DaemonError> {
         .map_err(|_| DaemonError::Protocol)
 }
 
+/// The template icon the menu-bar glyph is drawn from.
+const BASE_ICON: &[u8] = include_bytes!("../icons/hlabsTemplate@2x.png");
+
+/// The running Starting pulse, if any.
+#[derive(Default)]
+struct IconPulse(Mutex<Option<tauri::async_runtime::JoinHandle<()>>>);
+
+/// What the menu-bar icon shows (US-INST-14), decided by the window, which knows the state.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct IconRequest {
+    /// `plain`, `starting`, `paused` or `dot`.
+    look: String,
+    /// The dot's colour (a design token) for `dot`.
+    dot: Option<String>,
+    /// "hlabs, Running · 11 apps": what VoiceOver reads.
+    tooltip: String,
+    reduce_motion: bool,
+    /// The menu bar is dark, so a drawn glyph is white.
+    dark: bool,
+}
+
+fn template_icon(tray: &tauri::tray::TrayIcon, rgba: Vec<u8>, w: u32, h: u32) -> tauri::Result<()> {
+    tray.set_icon(Some(tauri::image::Image::new_owned(rgba, w, h)))?;
+    tray.set_icon_as_template(true)
+}
+
+#[tauri::command]
+fn set_icon(app: AppHandle, request: IconRequest) -> Result<(), String> {
+    if let Some(pulse) = app.state::<IconPulse>().0.lock().expect("poisoned").take() {
+        pulse.abort();
+    }
+    let tray = app.tray_by_id("hlabs").ok_or("no tray icon")?;
+    let base = tauri::image::Image::from_bytes(BASE_ICON).map_err(|e| e.to_string())?;
+    let (rgba, w, h) = (base.rgba().to_vec(), base.width(), base.height());
+    let result = match request.look.as_str() {
+        "paused" => template_icon(&tray, icon::faded(&rgba, 0.5), w, h),
+        "starting" if !request.reduce_motion => {
+            let pulsing = tray.clone();
+            let handle = tauri::async_runtime::spawn(async move {
+                for factor in icon::PULSE.iter().cycle() {
+                    let _ = template_icon(&pulsing, icon::faded(&rgba, *factor), w, h);
+                    tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                }
+            });
+            *app.state::<IconPulse>().0.lock().expect("poisoned") = Some(handle);
+            Ok(())
+        }
+        "dot" => {
+            let dot = request
+                .dot
+                .as_deref()
+                .and_then(icon::parse_hex)
+                .ok_or("no dot colour")?;
+            let glyph = if request.dark { [255; 3] } else { [0; 3] };
+            tray.set_icon(Some(tauri::image::Image::new_owned(
+                icon::with_dot(&rgba, w, h, glyph, dot),
+                w,
+                h,
+            )))
+            .and_then(|_| tray.set_icon_as_template(false))
+        }
+        _ => template_icon(&tray, rgba, w, h),
+    };
+    result.map_err(|e| e.to_string())?;
+    tray.set_tooltip(Some(request.tooltip))
+        .map_err(|e| e.to_string())
+}
+
+/// One macOS notification (US-INST-14: "hlabs: your apps are offline").
+#[tauri::command]
+fn notify(app: AppHandle, title: String, body: String) -> Result<(), String> {
+    use tauri_plugin_notification::NotificationExt;
+    app.notification()
+        .builder()
+        .title(title)
+        .body(body)
+        .show()
+        .map_err(|e| e.to_string())
+}
+
 /// "Open setup": fetches `tray.setupUrl` again and opens it (US-INST-02).
 #[tauri::command]
 async fn open_setup(app: AppHandle) -> Result<bool, DaemonError> {
@@ -390,6 +472,8 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_notification::init())
+        .manage(IconPulse::default())
         .invoke_handler(tauri::generate_handler![
             daemon_call,
             tray_access,
@@ -402,7 +486,9 @@ pub fn run() {
             health_state,
             restart_daemon,
             show_logs,
-            copy_local_diagnostics
+            copy_local_diagnostics,
+            set_icon,
+            notify
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]

@@ -32,6 +32,8 @@ export function answer(a: Answers) {
       case 'restart_daemon':
       case 'show_logs':
       case 'copy_local_diagnostics':
+      case 'set_icon':
+      case 'notify':
         return null;
       case 'open_setup':
         return true;

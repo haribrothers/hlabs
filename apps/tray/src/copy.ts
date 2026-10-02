@@ -4,6 +4,10 @@ export const trayCopy = {
   /** US-INST-05: "Running · 11 apps". */
   runningApps: { none: 'Running · no apps', one: 'Running · 1 app', many: (n: number) => `Running · ${n} apps` },
   engineStopped: 'Container engine stopped',
+  /** US-INST-14: the notification after 60 s offline. */
+  offlineTitle: 'hlabs',
+  offlineBody: 'Your apps are offline.',
+  paused: 'Paused · apps stopped',
   /** US-INST-13, US-STATE-07. */
   restarting: 'Restarting…',
   updating: 'Updating hlabs…',

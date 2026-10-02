@@ -8,6 +8,7 @@ import { useBoot, type BootState } from './boot';
 import { useDashboardActions } from './dashboard';
 import { useCopyDiagnostics, useStartEngine } from './engine';
 import { useDaemonDownActions, useHealth, type DaemonHealth } from './health';
+import { iconFor, useMenuBarIcon } from './icon';
 import { appsLine, formatCpu, formatFree, formatMemory } from './format';
 import { useOpenSetup, useSetupPending } from './setup';
 import { useMenuOpen, useTrayStatus } from './status';
@@ -91,6 +92,7 @@ export function Menu() {
   const open = useMenuOpen();
   const health = useHealth();
   const status = useTrayStatus(boot?.step === 'started' && access === 'ready', open);
+  useMenuBarIcon(iconFor({ boot, access, health, status }));
   // Nothing until the Rust side has said where things stand, so no state flashes by.
   if (boot === null || access === null) return null;
   // hlabs isn't answering (or didn't start within 60 s): "Can't reach hlabs"; nothing is opened in the browser.

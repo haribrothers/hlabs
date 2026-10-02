@@ -8,6 +8,15 @@ For admins on the Mac that runs hlabs.
 
 Click the hlabs icon in the menu bar to open its menu. Click anywhere else, or press Esc, to close it. Use the Up and Down arrow keys to move between items and Return to choose one.
 
+## The icon
+
+The hlabs icon itself tells you how things are, without opening the menu:
+
+- **Plain:** hlabs and your apps are running.
+- **Pulsing:** hlabs is starting or bringing your apps back. (It stays still if you've turned on Reduce motion.)
+- **Faded:** your apps are paused.
+- **Red dot:** something needs you: an app couldn't start, the container engine has stopped, or hlabs isn't answering. If your apps have been offline for a minute, you also get one notification.
+
 ## Status at a glance
 
 The top of the menu says whether hlabs is running and how many of your apps are running right now, for example **Running · 11 apps**. Underneath, three tiles show how busy this computer is:
