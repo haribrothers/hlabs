@@ -1,7 +1,8 @@
 // US-SYS-41 · Reach hlabs through a subnet router (server side, D-107).
-import { auditLog, getSetting, users } from '@hlabs/db';
+import { auditLog, getSetting, setSetting, users } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { dashboardOrigins } from '../src/http/dashboard-origins';
 import type { FakeTailscale } from '../src/tailscale/fake';
 import { daemonWithAdmin } from './admin-session';
 
@@ -61,5 +62,13 @@ describe('US-SYS-41', () => {
     );
     d.services!.db.update(users).set({ role: 'member' }).where(eq(users.id, d.userId)).run();
     expect((await d.mutate('network.setRemoteMode', { mode: 'off' })).error?.data.hlabsCode).toBe('ACCESS_DENIED');
+  });
+
+  it("the dashboard's LAN address is an allowed origin, with the port when 443 was taken", async () => {
+    const d = await daemonWithAdmin(closers);
+    const { db } = d.services!;
+    expect(dashboardOrigins('https://hlabs.local', db, () => ['10.85.0.10'])).toContain('https://10.85.0.10');
+    setSetting(db, 'network', { ...getSetting(db, 'network'), ports: { https: 8443, http: 8080 } });
+    expect(dashboardOrigins('https://hlabs.local', db, () => ['10.85.0.10'])).toContain('https://10.85.0.10:8443');
   });
 });

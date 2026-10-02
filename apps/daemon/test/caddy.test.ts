@@ -127,6 +127,17 @@ describe('buildCaddyConfig', () => {
     ]);
   });
 
+  it("serves the dashboard on this computer's LAN address with a certificate for it (US-SYS-01, US-SYS-41)", () => {
+    const c = buildCaddyConfig(state({ lanAddresses: ['10.85.0.10'] }), paths) as Json;
+    const server = c.apps.http.servers.https;
+    expect(server.routes[1].match[0].host).toEqual(['hlabs.local', 'hlabs.home.arpa', '10.85.0.10']);
+    expect(c.apps.tls.automation.policies[0].subjects).toContain('10.85.0.10');
+    // A browser sends no name for an IP address: it gets that address's certificate.
+    expect(server.tls_connection_policies).toEqual([{ default_sni: '10.85.0.10' }]);
+    // Without one, nothing changes.
+    expect(config.apps.http.servers.https.tls_connection_policies).toBeUndefined();
+  });
+
   it('keeps the admin API on a unix socket', () => {
     expect(config.admin).toEqual({ listen: 'unix//data/caddy/admin.sock', config: { persist: false } });
   });
@@ -156,6 +167,7 @@ describe('NetworkService', () => {
       routes: () => routes,
       dashboardUpstream: '127.0.0.1:5173',
       daemon: '127.0.0.1:7474',
+      lanAddresses: () => ['192.168.1.20'],
     });
     return { db, mdns, network, errors, setRoutes: (r: AppRoute[]) => (routes = r) };
   }
@@ -173,6 +185,7 @@ describe('NetworkService', () => {
       dashboardUpstream: '127.0.0.1:5173',
       daemon: '127.0.0.1:7474',
       tailnetHost: null,
+      lanAddresses: ['192.168.1.20'],
       apps: [{ appId: 'immich', hostname: 'immich', port: 12000, auth: 'hlabs', embed: false }],
     });
     expect(t.mdns.names).toEqual(['hlabs.local', 'immich.hlabs.local']);

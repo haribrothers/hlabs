@@ -132,8 +132,11 @@ function appPortServer(app: AppRoute, hostname: string, daemon: string, ancestor
 export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { appPorts?: boolean } = {}) {
   // The dashboard and every app answer on `.local` (mDNS) and `.home.arpa` (DNS servers, D-105).
   const domains = homeDomains(state.hostname);
+  const lan = state.lanAddresses ?? [];
+  // The dashboard by name, and by this computer's address on the network (US-SYS-01, US-SYS-41).
+  const dashboardHosts = [...domains, ...lan];
   const appNames = state.apps.flatMap((a) => appHosts(a.hostname, state.hostname));
-  const hosts = [...domains, ...appNames];
+  const hosts = [...dashboardHosts, ...appNames];
   const httpsPort = state.ports.https === 443 ? '' : `:${state.ports.https}`;
   // Where the dashboard runs, the only pages that may frame an app.
   const ancestors = [
@@ -142,7 +145,7 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
   ];
 
   const dashboard = {
-    match: [{ host: domains }],
+    match: [{ host: dashboardHosts }],
     handle: [{ handler: 'headers', request: { delete: IDENTITY_HEADERS } }, proxyTo(state.dashboardUpstream)],
     terminal: true,
   };
@@ -201,7 +204,7 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
             // The CA certificate on the dashboard over HTTPS too, so "Trust hlabs on this device" can download it
             // from the page it's on (a plain-HTTP download from an HTTPS page is blocked; D-097).
             routes: [
-              { ...caCert, match: [{ host: domains, path: ['/ca.crt'] }] },
+              { ...caCert, match: [{ host: dashboardHosts, path: ['/ca.crt'] }] },
               dashboard,
               ...state.apps.map((a) => appRoute(a, state.hostname, state.daemon, ancestors)),
             ],
@@ -209,7 +212,7 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
             errors: {
               routes: [
                 {
-                  match: [{ host: domains }],
+                  match: [{ host: dashboardHosts }],
                   handle: [{ handler: 'subroute', ...fallbackErrorRoutes(paths.webFallbackDir) }],
                   terminal: true,
                 },
@@ -217,6 +220,8 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
               ],
             },
             automatic_https: { disable_redirects: true },
+            // A browser sends no name for an address like https://192.168.1.20; it gets that address's certificate.
+            ...(lan[0] ? { tls_connection_policies: [{ default_sni: lan[0] }] } : {}),
           },
           http: {
             listen: [`:${state.ports.http}`],

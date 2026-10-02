@@ -10,6 +10,7 @@ import {
   type ServerResponse,
 } from 'node:http';
 import { request } from 'node:https';
+import type { TLSSocket } from 'node:tls';
 import type { AddressInfo } from 'node:net';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -134,6 +135,8 @@ describe.skipIf(!existsSync(CADDY))('Caddy with the hlabs config', () => {
       dashboardUpstream: `127.0.0.1:${dashboardPort}`,
       daemon: `127.0.0.1:${daemonPort}`,
       tailnetHost: null,
+      // This computer's LAN address, as a browser reaches it with no name (US-SYS-01, US-SYS-41).
+      lanAddresses: ['127.0.0.1'],
       apps: [
         { appId: 'demo', hostname: 'demo', port: appPort - LOOPBACK_OFFSET, auth: 'hlabs', embed: false },
         { appId: 'open', hostname: 'open', port: appPort - LOOPBACK_OFFSET, auth: 'none', embed: false },
@@ -153,6 +156,24 @@ describe.skipIf(!existsSync(CADDY))('Caddy with the hlabs config', () => {
   afterAll(async () => {
     await proxy?.stop();
     for (const s of servers) s.close();
+  });
+
+  it('serves the dashboard on the LAN address, with a certificate for it when the browser sends no name', async () => {
+    const res = await new Promise<Reply>((resolve, reject) => {
+      const req = request(
+        { host: '127.0.0.1', port: state.ports.https, path: '/', rejectUnauthorized: false, agent: false },
+        (r) => {
+          let body = '';
+          r.on('data', (c: Buffer) => (body += c.toString()));
+          r.on('end', () => resolve({ status: r.statusCode!, headers: r.headers, body }));
+          const cert = (r.socket as TLSSocket).getPeerCertificate();
+          expect(cert.subjectaltname).toContain('IP Address:127.0.0.1');
+        },
+      );
+      req.on('error', reject);
+      req.end();
+    });
+    expect(res.body).toBe('dashboard user=-');
   });
 
   it('proxies the dashboard and drops identity headers the browser sent', async () => {

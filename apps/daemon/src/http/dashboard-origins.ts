@@ -2,6 +2,7 @@
 // name on the network and the web ports as they are now, so renaming hlabs during setup (D-098) or moving ports doesn't
 // leave the dashboard refused as a cross-site request.
 import { getSetting, type HlabsDb } from '@hlabs/db';
+import { lanAddresses } from '../mdns/publisher';
 import { homeDomains, tailnetDashboardUrl } from '../network/domains';
 
 const withPort = (scheme: 'https' | 'http', host: string, port: number) =>
@@ -14,9 +15,10 @@ export function lanDashboardOrigin(db: HlabsDb): string {
 
 /**
  * `configured` (HLABS_DASHBOARD_URL: the tray's loopback address, or Vite in development), hlabs's own name over HTTPS,
- * over plain HTTP while setup runs (D-013), and the tailnet address once remote access is on.
+ * over plain HTTP while setup runs (D-013), the tailnet address once remote access is on, and this computer's LAN
+ * addresses.
  */
-export function dashboardOrigins(configured: string, db: HlabsDb | null): string[] {
+export function dashboardOrigins(configured: string, db: HlabsDb | null, lan: () => string[] = lanAddresses): string[] {
   const origins = [new URL(configured).origin];
   if (!db) return origins;
   origins.push(lanDashboardOrigin(db));
@@ -27,5 +29,7 @@ export function dashboardOrigins(configured: string, db: HlabsDb | null): string
     origins.push(withPort('http', host, getSetting(db, 'network').ports.http));
   const tailnet = tailnetDashboardUrl(db);
   if (tailnet) origins.push(tailnet);
+  // This computer's address on the network (the fallback address, US-SYS-01; through a subnet router, US-SYS-41).
+  for (const ip of lan()) origins.push(withPort('https', ip, getSetting(db, 'network').ports.https));
   return [...new Set(origins)];
 }

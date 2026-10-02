@@ -15,6 +15,11 @@ export interface ProxyState {
   daemon: string;
   /** The dashboard's tailnet name (`hlabs.<tailnet>.ts.net`) when remote access is on, for app framing. */
   tailnetHost: string | null;
+  /**
+   * This computer's addresses on the home network: the dashboard answers on `https://<LAN IP>` too, with a
+   * certificate for each (the fallback address, US-SYS-01; through a subnet router, US-SYS-41).
+   */
+  lanAddresses?: string[];
   apps: AppRoute[];
 }
 

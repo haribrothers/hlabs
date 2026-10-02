@@ -38,6 +38,7 @@ export class NetworkService {
       dashboardUpstream: this.deps.dashboardUpstream,
       daemon: this.deps.daemon,
       tailnetHost: tailnetHost(db),
+      lanAddresses: (this.deps.lanAddresses ?? lanAddresses)(),
       apps: this.deps.routes(),
     };
   }

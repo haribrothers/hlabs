@@ -216,8 +216,12 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   });
   // At start too: a tailnet that changed while hlabs was off, or Serve entries from before D-110, are brought up to date.
   void remote.reconcile();
-  // A DNS server that didn't answer, or a LAN address that changed, is caught up with regularly.
-  const dnsTimer = setInterval(() => void dns.sync(), DNS_RETRY_MS);
+  // A DNS server that didn't answer, or a LAN address that changed, is caught up with regularly: the records, and
+  // Caddy's certificates for the LAN address (sync applies only when something changed).
+  const dnsTimer = setInterval(() => {
+    void dns.sync();
+    void network.sync();
+  }, DNS_RETRY_MS);
   dnsTimer.unref();
   void dns.sync();
 
