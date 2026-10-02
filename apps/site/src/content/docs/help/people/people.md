@@ -76,3 +76,5 @@ hlabs doesn't use email, so you give them a link instead. In **Settings › User
 
 Under **Log-in screen**, **Show the list of users** decides whether the log-in screen shows everyone's name and picture to choose from. Turn it off and everyone types their username instead. That's a good idea if hlabs can be reached away from home with Tailscale, so people who aren't family can't see who lives there.
 
+**Require two-factor for everyone** makes everyone use two-factor login. Anyone who hasn't set it up is asked to the next time they log in, and nobody can turn theirs off while it's required. You need two-factor on your own account before you can turn this on.
+

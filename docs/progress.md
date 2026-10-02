@@ -134,7 +134,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ACCT-16 · Delete someone (emptying the trash after 30 days comes with the Trash, phase 8; reusing a username with a kept Home folder is Q-14)
 - [x] US-ACCT-17 · Manage pending invites (a revoked link reads "This invite doesn't work anymore", US-AUTH-23's wording for that page, rather than "This invite is no longer valid")
 - [x] US-ACCT-18 · Choose what the log-in screen shows (the "reachable over Tailscale" warning appears with network.status in US-SYS-02)
-- [ ] US-ACCT-19 · Require two-factor for everyone
+- [x] US-ACCT-19 · Require two-factor for everyone
 - [ ] US-ACCT-20 · Decide what members can do
 - [x] US-ACCT-21 · Create an invite link
 - [x] US-ACCT-22 · Choose the invitee's role and apps (copying the choices to the new account is tested with US-AUTH-24)
