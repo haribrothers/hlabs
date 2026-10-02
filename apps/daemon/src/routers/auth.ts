@@ -139,6 +139,14 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
   },
 
   /** The signed-in user and the CSRF token for mutations. Needs a real session (07 §7.3). */
+  continue: ({ next }, ctx) => {
+    const id = ctx.identity;
+    if (id.kind !== 'user' || !id.session) throw hlabsError('AUTH_REQUIRED');
+    const row = ctx.services.db.select().from(sessions).where(eq(sessions.id, id.session.id)).get();
+    if (!row) throw hlabsError('AUTH_REQUIRED');
+    setSessionCookie(ctx, { raw: id.session.raw, remember: id.session.remember, expiresAt: row.expiresAt });
+    return { redirectTo: ctx.services.login.redirectFor(next) };
+  },
   me: (_input, ctx) => {
     const id = ctx.identity;
     if (id.kind !== 'user' || !id.session) throw hlabsError('AUTH_REQUIRED');

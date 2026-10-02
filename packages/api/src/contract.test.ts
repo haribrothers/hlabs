@@ -24,7 +24,7 @@ const EXPECTED: Row[] = [
   ['onboarding.restoreFromBackup', 'm', 'setup'], ['onboarding.complete', 'm', 'setup'],
 
   ['auth.listLoginUsers', 'q', 'public'], ['auth.login', 'm', 'public'], ['auth.verifyTotp', 'm', 'public'],
-  ['auth.useRecoveryCode', 'm', 'public'], ['auth.resetPassword', 'm', 'public'], ['auth.logout', 'm', 'authed'],
+  ['auth.useRecoveryCode', 'm', 'public'], ['auth.resetPassword', 'm', 'public'], ['auth.logout', 'm', 'authed'], ['auth.continue', 'm', 'authed'],
   ['auth.me', 'q', 'authed'], ['auth.listSessions', 'q', 'authed'], ['auth.revokeSession', 'm', 'authed'],
 
   ['account.get', 'q', 'authed'], ['account.update', 'm', 'authed'], ['account.changePassword', 'm', 'authed'],

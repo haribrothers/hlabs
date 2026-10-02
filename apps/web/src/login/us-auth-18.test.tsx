@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { browser } from '../lib/browser';
+import { Route as LoginIndexRoute } from '../routes/login.index';
 import { renderScreen } from '../test/render';
 import { chooseLoginView } from './choose';
 import { CodeView } from './code-view';
@@ -32,6 +33,18 @@ describe('US-AUTH-18', () => {
     for (let i = 0; i < 6; i++)
       fireEvent.change(await screen.findByLabelText(`Digit ${i + 1}`), { target: { value: '1' } });
     await waitFor(() => expect(assign).toHaveBeenCalledWith('https://immich.hlabs.local/photos'));
+  });
+
+  it('already signed in on the way to an app: the cookie is set again for this name, then the app loads (D-105)', async () => {
+    const assign = vi.spyOn(browser, 'assign').mockImplementation(() => {});
+    vi.spyOn(LoginIndexRoute, 'useSearch').mockReturnValue({ next: 'https://immich.hlabs.home.arpa/' } as never);
+    const { calls } = renderScreen(LoginIndexRoute.options.component!, {
+      'auth.me': me,
+      'auth.listLoginUsers': () => ({ users: [] }),
+      'auth.continue': () => ({ redirectTo: 'https://immich.hlabs.home.arpa/' }),
+    });
+    await waitFor(() => expect(assign).toHaveBeenCalledWith('https://immich.hlabs.home.arpa/'));
+    expect(calls.find((c) => c.path === 'auth.continue')?.input).toEqual({ next: 'https://immich.hlabs.home.arpa/' });
   });
 
   it('a path stays in the dashboard', async () => {

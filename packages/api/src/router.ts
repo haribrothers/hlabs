@@ -44,6 +44,7 @@ export const appRouter = router({
     useRecoveryCode: m(p.public, s.auth.useRecoveryCode),
     resetPassword: m(p.public, s.auth.resetPassword),
     logout: m(p.authed, s.auth.logout),
+    continue: m(p.authed, s.auth.continue),
     me: q(p.authed, s.auth.me),
     listSessions: q(p.authed, s.auth.listSessions),
     revokeSession: m(p.authed, s.auth.revokeSession),
