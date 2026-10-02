@@ -128,11 +128,11 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-AUTH-24 · Create my account from an invite
 - [ ] US-HOME-11 · See only my shared apps on a member Home
 - [ ] US-HOME-12 · See my files and shared-apps summary
-- [x] US-ACCT-13 · See everyone who uses hlabs (the row buttons and menu items do nothing until their stories: US-ACCT-14…17, US-ACCT-24)
+- [x] US-ACCT-13 · See everyone who uses hlabs (the row buttons and menu items do nothing until their stories: US-ACCT-14…16, US-ACCT-24)
 - [ ] US-ACCT-14 · Give a member a reset-password link
 - [ ] US-ACCT-15 · Change role, disable or enable someone
 - [ ] US-ACCT-16 · Delete someone
-- [ ] US-ACCT-17 · Manage pending invites
+- [x] US-ACCT-17 · Manage pending invites (a revoked link reads "This invite doesn't work anymore", US-AUTH-23's wording for that page, rather than "This invite is no longer valid")
 - [ ] US-ACCT-18 · Choose what the log-in screen shows
 - [ ] US-ACCT-19 · Require two-factor for everyone
 - [ ] US-ACCT-20 · Decide what members can do

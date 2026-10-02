@@ -36,3 +36,7 @@ To check what they'll see, choose **Preview what they see**. Their page opens in
 
 Choose **Done** when you've shared it. The invite then waits under **People** until it's used. If you choose **Close** without copying the link, the invite is cancelled; once you've copied it, it's kept, because you may already have sent it.
 
+## Copy or cancel an invite
+
+Each invite that hasn't been used yet shows when its link was made, how many days it has left and the role it gives. Choose **Copy link** to copy the same link again, for example if they lost your message. Choose **Revoke** to cancel it: the link stops working straight away, and anyone who opens it is told it doesn't work anymore.
+

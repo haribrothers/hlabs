@@ -15,11 +15,13 @@ import {
   List,
   ListRow,
 } from '@hlabs/ui';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { peopleCopy as copy } from '../copy/people';
 import { daysAgo, timeAgo } from '../lib/relative-time';
-import { useTRPC } from '../lib/trpc';
+import { confirm } from '../lib/confirm';
+import { showToast } from '../lib/toasts';
+import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useIsDesktop } from '../lib/use-media';
 import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
@@ -122,13 +124,35 @@ function UserRow({ user, isMe, now, desktop }: { user: UserSummary; isMe: boolea
 }
 
 function InviteRow({ invite, now, desktop }: { invite: PendingInvite; now: number; desktop: boolean }) {
+  const client = useTRPCClient();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const size = desktop ? 'sm' : 'md';
+  const copyLink = () => {
+    if (!invite.url) return;
+    navigator.clipboard.writeText(invite.url).then(
+      () => showToast({ tone: 'success', title: copy.linkCopied }),
+      () => showToast({ tone: 'danger', title: copy.copyFailed }),
+    );
+  };
+  const revoke = () =>
+    void confirm({
+      title: copy.revokeTitle,
+      body: copy.revokeBody,
+      confirmLabel: copy.revoke,
+      tone: 'danger',
+      onConfirm: async () => {
+        await client.invites.revoke.mutate({ inviteId: invite.id });
+        await queryClient.invalidateQueries({ queryKey: trpc.invites.list.queryKey() });
+        showToast({ tone: 'success', title: copy.revoked });
+      },
+    });
   const actions = (
     <RowActions>
-      <Button variant="secondary" size={size}>
+      <Button variant="secondary" size={size} disabled={!invite.url} onClick={copyLink}>
         {copy.copyLink}
       </Button>
-      <Button variant="secondary" size={size} className="text-danger">
+      <Button variant="secondary" size={size} className="text-danger" onClick={revoke}>
         {copy.revoke}
       </Button>
     </RowActions>

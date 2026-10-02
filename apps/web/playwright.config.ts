@@ -21,7 +21,7 @@ if (process.env.TEST_WORKER_INDEX === undefined) {
 }
 // Specs that need a known admin they create themselves (all onboarding and log-in stories, and a few later ones).
 // Signed-out browsers need them too: the main instance answers cookie-less requests as its development admin.
-const FIRST_RUN_SPECS = /(d-098-server-name|us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-2])|us-sys-(1[89]|20))\.spec\.ts/;
+const FIRST_RUN_SPECS = /(d-098-server-name|us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-2]|17)|us-sys-(1[89]|20))\.spec\.ts/;
 // Specs that change the main instance for everyone, run after the desktop and phone specs, one at a time: those that
 // really install store apps (the D-071 smoke set, and uninstalling one) or leave failed installs, and those that report
 // the engine as stopped (US-STATE-08…10).

@@ -23,6 +23,10 @@ export const peopleCopy = {
   inviteLine: (created: string, days: number, role: string) =>
     `Link created ${created} · expires in ${days === 1 ? '1 day' : `${days} days`} · ${role}`,
   copyLink: 'Copy link',
+  linkCopied: 'Link copied',
+  revokeTitle: 'Revoke this invite?',
+  revokeBody: "The link stops working straight away. Anyone who opens it is told it doesn't work anymore.",
+  revoked: 'Invite revoked',
   revoke: 'Revoke',
   inviteTitle: 'Invite someone',
   theirName: 'Their name (optional)',
