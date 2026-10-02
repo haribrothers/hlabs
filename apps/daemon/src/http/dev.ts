@@ -5,6 +5,7 @@ import {
   appSources,
   catalogApps,
   getSetting,
+  type HlabsDb,
   invites,
   jobs,
   loginAttempts,
@@ -13,7 +14,7 @@ import {
   storageLocations,
   users,
 } from '@hlabs/db';
-import { ulid } from '@hlabs/shared';
+import { type OnboardingStep, ulid } from '@hlabs/shared';
 import { and, eq } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
@@ -28,6 +29,24 @@ import { z } from 'zod';
 import type { ServiceHolder } from '../services';
 
 /** Development-only routes. Never registered in production. */
+/**
+ * What a fresh install has, whatever an earlier e2e spec on this instance changed: no users (so no sessions) or log-in
+ * attempts, onboarding at `step`, the startup switches on (US-SYS-20), the people policy and no invites
+ * (US-ACCT-18…21), remote access off (US-SYS-02…41), web ports as given or the defaults (US-SYS-05), and no local DNS
+ * server (US-SYS-06).
+ */
+function asFreshInstall(db: HlabsDb, step: OnboardingStep, ports?: { https: number; http: number }) {
+  db.delete(users).run();
+  db.delete(loginAttempts).run();
+  setSetting(db, 'onboarding', { ...getSetting(db, 'onboarding'), completedAt: null, step });
+  setSetting(db, 'startup', settingsSchemas.startup.parse(undefined));
+  setSetting(db, 'people', settingsSchemas.people.parse(undefined));
+  setSetting(db, 'remote', settingsSchemas.remote.parse(undefined));
+  db.delete(invites).run();
+  const fresh = settingsSchemas.network.parse(undefined);
+  setSetting(db, 'network', { ...getSetting(db, 'network'), ports: ports ?? fresh.ports, dns: fresh.dns });
+}
+
 export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): void {
   const body = z
     .object({ message: z.string().max(200).default('Hello from hlabsd') })
@@ -65,19 +84,14 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     return { url: await services.onboarding.setupUrl() };
   });
 
-  // Puts onboarding back at a step, as a fresh first run: users (and so their sessions) and log-in attempts are
-  // removed, and the
-  // setup token is kept or made again (e2e specs start from a known state).
+  // Puts onboarding back at a step, as a fresh install (`asFreshInstall`), with the setup token kept or made again
+  // (e2e specs start from a known state).
   const resetBody = z.object({ step: onboardingStepSchema.default('welcome') }).default({ step: 'welcome' });
   app.post('/dev/reset-onboarding', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
     const { step } = resetBody.parse(req.body ?? undefined);
-    services.db.delete(users).run();
-    services.db.delete(loginAttempts).run();
-    setSetting(services.db, 'onboarding', { ...getSetting(services.db, 'onboarding'), completedAt: null, step });
-    // As a fresh install: setup leaves the startup switches on (US-SYS-20), whatever an earlier run changed.
-    setSetting(services.db, 'startup', settingsSchemas.startup.parse(undefined));
+    asFreshInstall(services.db, step);
     // And the default name on the network (D-098).
     setSetting(services.db, 'hostname', settingsSchemas.hostname.parse(undefined));
     return { url: await services.onboarding.prepareSetupToken() };
@@ -327,21 +341,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
     const input = seedBody.parse(req.body);
     const { db, totp, onboarding, config } = services;
-    db.delete(users).run();
-    db.delete(loginAttempts).run();
-    setSetting(db, 'onboarding', { ...getSetting(db, 'onboarding'), completedAt: null, step: 'account' });
-    // As a fresh install: setup leaves the startup switches on (US-SYS-20), whatever an earlier run changed.
-    setSetting(db, 'startup', settingsSchemas.startup.parse(undefined));
-    // Nor the people policy (US-ACCT-18…20) or invites left by an earlier run.
-    setSetting(db, 'people', settingsSchemas.people.parse(undefined));
-    setSetting(db, 'remote', settingsSchemas.remote.parse(undefined));
-    db.delete(invites).run();
-    // Web ports as given, else a fresh install's (an earlier spec may have changed them, US-SYS-05).
-    setSetting(db, 'network', {
-      ...getSetting(db, 'network'),
-      ports: input.ports ?? settingsSchemas.network.parse(undefined).ports,
-      dns: settingsSchemas.network.parse(undefined).dns,
-    });
+    asFreshInstall(db, 'account', input.ports);
     const userId = await createAdmin(db, { ...input, ip: null, phase: config.phase });
     let secret: string | null = null;
     let recoveryCodes: string[] = [];
