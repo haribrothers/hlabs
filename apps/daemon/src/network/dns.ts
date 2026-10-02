@@ -82,10 +82,15 @@ export const adguard = {
   },
 };
 
-/** Pi-hole v6: a session from the app password, then PUT/DELETE on `misc.dnsmasq_lines`. */
+/**
+ * Pi-hole v6: a session from the app password, then `misc.dnsmasq_lines` read and written as a whole with PATCH (its
+ * one-line PUT/DELETE can't take a line with slashes, and `address=/name/ip` has them). Sessions are few, so each one
+ * is ended after use.
+ */
 export const pihole = {
+  base: (address: string) => address.replace(/\/+$/, ''),
   async session(address: string, password: string): Promise<string> {
-    const res = await call(`${address.replace(/\/+$/, '')}/api/auth`, {
+    const res = await call(`${pihole.base(address)}/api/auth`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ password }),
@@ -94,11 +99,41 @@ export const pihole = {
     if (!sid?.valid || !sid.sid) throw new DnsError('auth');
     return sid.sid;
   },
-  async line(address: string, sid: string, method: 'PUT' | 'DELETE', line: string) {
-    await call(`${address.replace(/\/+$/, '')}/api/config/misc/dnsmasq_lines/${encodeURIComponent(line)}`, {
-      method,
+  async end(address: string, sid: string) {
+    await fetch(`${pihole.base(address)}/api/auth`, {
+      method: 'DELETE',
       headers: { sid },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    }).catch(() => undefined);
+  },
+  async lines(address: string, sid: string): Promise<string[]> {
+    const res = await call(`${pihole.base(address)}/api/config/misc/dnsmasq_lines`, { headers: { sid } });
+    const body = (await res.json()) as { config?: { misc?: { dnsmasq_lines?: string[] } } };
+    return body.config?.misc?.dnsmasq_lines ?? [];
+  },
+  async setLines(address: string, sid: string, lines: string[]) {
+    await call(`${pihole.base(address)}/api/config`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', sid },
+      body: JSON.stringify({ config: { misc: { dnsmasq_lines: lines } } }),
     });
+  },
+  /** Logs in, swaps hlabs's old lines (`remove`) for `add`, keeps everyone else's, and logs out. */
+  async update(address: string, password: string, remove: readonly string[], add: readonly string[]) {
+    const sid = await pihole.session(address, password);
+    try {
+      const current = await pihole.lines(address, sid);
+      const kept = current.filter((l) => !remove.includes(l));
+      const next = [...kept, ...add.filter((l) => !kept.includes(l))];
+      if (next.length !== current.length || next.some((l, i) => l !== current[i]))
+        await pihole.setLines(address, sid, next);
+    } finally {
+      await pihole.end(address, sid);
+    }
+  },
+  /** Checks the address and app password, ending the session it made. */
+  async check(address: string, password: string) {
+    await pihole.end(address, await pihole.session(address, password));
   },
 };
 
@@ -158,7 +193,7 @@ export class DnsService {
   /** Checks a Pi-hole's address and app password (US-SYS-06 "Test"). */
   async test(address: string, password: string) {
     try {
-      await pihole.session(address, password);
+      await pihole.check(address, password);
     } catch (err) {
       throw hlabsError(
         err instanceof DnsError && err.kind === 'auth' ? 'DNS_SERVER_AUTH_FAILED' : 'DNS_SERVER_UNREACHABLE',
@@ -183,11 +218,8 @@ export class DnsService {
     if (kind === 'pihole' && address) {
       const password = await this.deps.secrets.get(PIHOLE_SECRET_REF);
       if (!password) throw new DnsError('auth');
-      const sid = await pihole.session(address, password);
       const wanted = lan ? piholeLines(hostname, lan) : [];
-      for (const line of owned)
-        if (!wanted.includes(line)) await pihole.line(address, sid, 'DELETE', line).catch(() => undefined);
-      for (const line of wanted) if (!owned.includes(line)) await pihole.line(address, sid, 'PUT', line);
+      await pihole.update(address, password, owned, wanted);
       return wanted;
     }
     return [];
@@ -202,10 +234,7 @@ export class DnsService {
       if (base) for (const entry of s.owned) await adguard.remove(base, entry).catch(() => undefined);
     } else if (s.kind === 'pihole' && s.address) {
       const password = await this.deps.secrets.get(PIHOLE_SECRET_REF);
-      if (password) {
-        const sid = await pihole.session(s.address, password).catch(() => null);
-        if (sid) for (const line of s.owned) await pihole.line(s.address, sid, 'DELETE', line).catch(() => undefined);
-      }
+      if (password) await pihole.update(s.address, password, s.owned, []).catch(() => undefined);
     }
     this.save({ owned: [] });
   }

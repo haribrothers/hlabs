@@ -44,21 +44,37 @@ function fakeAdguard() {
   return { server, rewrites };
 }
 
-/** Pi-hole v6: a session for the right app password, then dnsmasq lines with that session. */
+/**
+ * Pi-hole v6 as it answers: a session for the right app password (ended with DELETE /api/auth), `misc.dnsmasq_lines`
+ * read with GET and written whole with PATCH /api/config, and 404 for a one-line PUT whose line has slashes.
+ */
 function fakePihole() {
-  const lines = new Set(['address=/printer.lan/192.168.1.9']);
+  let lines = ['address=/printer.lan/192.168.1.9'];
+  const sessions = new Set<string>();
+  let next = 0;
   const server = createServer(async (req, res) => {
-    if (req.url === '/api/auth') {
+    if (req.url === '/api/auth' && req.method === 'POST') {
       const ok = (JSON.parse(await body(req)) as { password: string }).password === 'app-pass';
-      return res.end(JSON.stringify({ session: ok ? { valid: true, sid: 's1' } : { valid: false } }));
+      const sid = `s${++next}`;
+      if (ok) sessions.add(sid);
+      return res.end(JSON.stringify({ session: ok ? { valid: true, sid } : { valid: false } }));
     }
-    if (req.headers.sid !== 's1') return res.writeHead(401).end();
-    const line = decodeURIComponent((req.url ?? '').replace('/api/config/misc/dnsmasq_lines/', ''));
-    if (req.method === 'PUT') lines.add(line);
-    if (req.method === 'DELETE') lines.delete(line);
-    res.end();
+    const sid = String(req.headers.sid ?? '');
+    if (!sessions.has(sid)) return res.writeHead(401).end();
+    if (req.url === '/api/auth' && req.method === 'DELETE') {
+      sessions.delete(sid);
+      return res.writeHead(204).end();
+    }
+    if (req.url === '/api/config/misc/dnsmasq_lines' && req.method === 'GET')
+      return res.end(JSON.stringify({ config: { misc: { dnsmasq_lines: lines } } }));
+    if (req.url === '/api/config' && req.method === 'PATCH') {
+      lines = (JSON.parse(await body(req)) as { config: { misc: { dnsmasq_lines: string[] } } }).config.misc
+        .dnsmasq_lines;
+      return res.end('{}');
+    }
+    res.writeHead(404).end();
   });
-  return { server, lines };
+  return { server, lines: () => lines, sessions };
 }
 
 async function setup() {
@@ -114,7 +130,7 @@ describe('US-SYS-06', () => {
     const address = `http://127.0.0.1:${await listen(ph.server)}`;
     await expect(dns.test(address, 'wrong')).rejects.toMatchObject({ cause: { hlabsCode: 'DNS_SERVER_AUTH_FAILED' } });
     await dns.choose({ kind: 'pihole', address, appPassword: 'app-pass' }, who);
-    expect([...ph.lines].sort()).toEqual([
+    expect([...ph.lines()].sort()).toEqual([
       `address=/hlabs.home.arpa/${LAN}`,
       `address=/hlabs.local/${LAN}`,
       'address=/printer.lan/192.168.1.9',
@@ -123,7 +139,9 @@ describe('US-SYS-06', () => {
     expect(JSON.stringify(getSetting(db, 'network'))).not.toContain('app-pass');
 
     await dns.choose({ kind: 'manual' }, who);
-    expect([...ph.lines]).toEqual(['address=/printer.lan/192.168.1.9']);
+    expect(ph.lines()).toEqual(['address=/printer.lan/192.168.1.9']);
+    // Every session hlabs opened was ended (Pi-hole has few).
+    expect(ph.sessions.size).toBe(0);
     expect(await secrets.get(PIHOLE_SECRET_REF)).toBeNull();
   });
 

@@ -17,19 +17,32 @@ const body = (req: IncomingMessage) =>
   });
 
 function fakePihole() {
-  const lines = new Set<string>();
+  let lines: string[] = [];
+  const sessions = new Set<string>();
+  let next = 0;
   const server = createServer(async (req, res) => {
-    if (req.url === '/api/auth') {
+    if (req.url === '/api/auth' && req.method === 'POST') {
       const ok = (JSON.parse(await body(req)) as { password: string }).password === 'app-pass';
-      return res.end(JSON.stringify({ session: ok ? { valid: true, sid: 's1' } : { valid: false } }));
+      const sid = `s${++next}`;
+      if (ok) sessions.add(sid);
+      return res.end(JSON.stringify({ session: ok ? { valid: true, sid } : { valid: false } }));
     }
-    if (req.headers.sid !== 's1') return res.writeHead(401).end();
-    const line = decodeURIComponent((req.url ?? '').replace('/api/config/misc/dnsmasq_lines/', ''));
-    if (req.method === 'PUT') lines.add(line);
-    if (req.method === 'DELETE') lines.delete(line);
-    res.end();
+    const sid = String(req.headers.sid ?? '');
+    if (!sessions.has(sid)) return res.writeHead(401).end();
+    if (req.url === '/api/auth' && req.method === 'DELETE') {
+      sessions.delete(sid);
+      return res.writeHead(204).end();
+    }
+    if (req.url === '/api/config/misc/dnsmasq_lines' && req.method === 'GET')
+      return res.end(JSON.stringify({ config: { misc: { dnsmasq_lines: lines } } }));
+    if (req.url === '/api/config' && req.method === 'PATCH') {
+      lines = (JSON.parse(await body(req)) as { config: { misc: { dnsmasq_lines: string[] } } }).config.misc
+        .dnsmasq_lines;
+      return res.end('{}');
+    }
+    res.writeHead(404).end();
   });
-  return { server, lines };
+  return { server, lines: () => lines };
 }
 
 test('US-SYS-06 Pi-hole is tested and kept in sync; another DNS server lists the records; None removes them', async ({
@@ -62,7 +75,7 @@ test('US-SYS-06 Pi-hole is tested and kept in sync; another DNS server lists the
     await expect(home.getByText(`Pi-hole at ${address}`)).toBeVisible();
     // One wildcard per domain, to this computer's address on the network.
     await expect
-      .poll(() => [...pihole.lines].map((l) => l.replace(/\/[^/]+$/, '')))
+      .poll(() => pihole.lines().map((l) => l.replace(/\/[^/]+$/, '')))
       .toEqual(expect.arrayContaining([expect.stringMatching(/^address=\/[^/]+\.home\.arpa$/)]));
 
     await home.getByRole('button', { name: 'Change local DNS server' }).click();
@@ -72,7 +85,7 @@ test('US-SYS-06 Pi-hole is tested and kept in sync; another DNS server lists the
     await expect(home.getByText(/\.home\.arpa · A · /).first()).toBeVisible();
     await expect(home.getByRole('button', { name: 'Copy records' })).toBeVisible();
     // Only what hlabs wrote is removed.
-    expect([...pihole.lines]).toEqual([]);
+    expect(pihole.lines()).toEqual([]);
 
     await home.getByRole('button', { name: 'Change local DNS server' }).click();
     await dialog.getByRole('radio', { name: /None/ }).click();
