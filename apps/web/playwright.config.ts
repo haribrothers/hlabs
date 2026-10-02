@@ -27,6 +27,9 @@ const FIRST_RUN_SPECS =
 // really install store apps (the D-071 smoke set, and uninstalling one) or leave failed installs, and those that report
 // the engine as stopped (US-STATE-08…10).
 const SERIAL_SPECS = /(us-store-1[1-4]|us-store-17-rollback|us-app-12|us-state-(0[89]|10))\.spec\.ts/;
+// CI runs each project in a job of its own (HLABS_E2E_SPLIT, .github/workflows/ci.yml): the serial specs then have a
+// main instance to themselves and needn't wait for the desktop and phone specs.
+const SPLIT = !!process.env.HLABS_E2E_SPLIT;
 
 // HLABS_DEV_NO_ENGINE_INSTALL: a run on a machine with no engine must never download Colima (11: tests don't
 // reach the internet).
@@ -72,7 +75,7 @@ export default defineConfig({
       workers: 1,
       fullyParallel: false,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, storageState: MAIN_STORAGE_STATE },
-      dependencies: ['desktop', 'phone'],
+      dependencies: SPLIT ? ['setup'] : ['desktop', 'phone'],
     },
     // Each worker resets its own first-run instance, so these run in parallel.
     {
