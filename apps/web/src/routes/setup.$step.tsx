@@ -6,6 +6,7 @@ import { AccountStep } from '../onboarding/account-step';
 import { AppsStep } from '../onboarding/apps-step';
 import { DoneStep } from '../onboarding/done-step';
 import { StepFrame } from '../onboarding/step-frame';
+import { RemoteStep } from '../onboarding/remote-step';
 import { StorageStep } from '../onboarding/storage-step';
 import { SystemStep } from '../onboarding/system-step';
 import { TwoFactorStep } from '../onboarding/two-factor-step';
@@ -21,6 +22,7 @@ const SCREENS: Partial<Record<OnboardingStep, ComponentType>> = {
   account: AccountStep,
   twoFactor: TwoFactorStep,
   storage: StorageStep,
+  remote: RemoteStep,
   apps: AppsStep,
   done: DoneStep,
 };

@@ -2,7 +2,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
-import { createAdminInUi, skipTwoFactor } from './onboarding';
+import { createAdminInUi, skipTwoFactor, remoteLater } from './onboarding';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
@@ -10,7 +10,7 @@ test('US-ONB-14 keep data on this computer, finish setup, and a reload goes home
   await createAdminInUi(page, request);
   await skipTwoFactor(page);
 
-  await expect(page.getByRole('navigation', { name: 'Setup progress' })).toContainText('Step 4 of 5');
+  await expect(page.getByRole('navigation', { name: 'Setup progress' })).toContainText('Step 4 of 6');
   await expect(page.getByRole('heading', { level: 1, name: 'Where should your data live?' })).toBeFocused();
   const local = page.getByRole('radio', { name: /This computer/ });
   await expect(local).toHaveAttribute('aria-checked', 'true');
@@ -29,7 +29,7 @@ test('US-ONB-14 keep data on this computer, finish setup, and a reload goes home
   await expect(local).toHaveAttribute('aria-checked', 'true');
 
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/apps`);
+  await remoteLater(page);
   await page.getByRole('button', { name: 'Skip' }).click();
   await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/done`);
   await expect(page.getByRole('heading', { level: 1, name: "You're all set" })).toBeVisible();

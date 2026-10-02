@@ -1,7 +1,7 @@
 ---
 title: Set up hlabs
 description: Open setup the first time hlabs starts, and finish it on the computer running hlabs.
-features: [F-ONB-01]
+features: [F-ONB-01, F-ONB-06]
 ---
 
 For admins: the person who installed hlabs.
@@ -100,6 +100,12 @@ Choose **Network storage (NAS)**, pick **SMB** or **NFS**, and enter the address
 On a Mac, the share appears in Finder while hlabs uses it.
 
 App databases always stay on this computer for speed, wherever your files go.
+
+## Reach hlabs from anywhere
+
+Next, hlabs shows the address it already has on your home network, ready to use. You can also reach it from your phone or laptop away from home with Tailscale, a free private network, with nothing exposed to the internet.
+
+To do that later, choose **Set up later**. Nothing is set up, and the finish screen says remote access is for your home network only. You can turn it on at any time in **Settings › Network & remote access**.
 
 ## Pick a few apps to start
 

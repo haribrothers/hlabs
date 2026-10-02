@@ -1,5 +1,6 @@
 // OnbDone (US-ONB-21): what was set up. Laid out like the welcome screen, with no Stepper. "Installing N apps" lists
-// the starter apps picked (US-ONB-19; none after Skip, US-ONB-20); the remote access row waits for phase 3 (D-036).
+// the starter apps picked (US-ONB-19; none after Skip, US-ONB-20); remote access says "Home network only" after Set up
+// later (US-ONB-18).
 // "Open dashboard" goes Home (US-ONB-22).
 import { isFeatureEnabled, VISIBLE_PHASE } from '@hlabs/shared';
 import { ArrowRight, Check, iconDefaults, Loader2 } from '@hlabs/icons';
@@ -66,6 +67,7 @@ export function DoneStep({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: numb
         <List label={<span className="sr-only">{copy.summary}</span>}>
           {row(copy.admin, me.data ? copy.adminDetail(me.data.username, me.data.totpEnabled) : undefined)}
           {row(copy.storage, root?.name)}
+          {isFeatureEnabled('remoteAccess', shippedPhase) ? row(copy.remote, copy.homeNetworkOnly) : null}
           {appsPicked ? (
             <ListRow
               title={copy.installing(picked.length)}

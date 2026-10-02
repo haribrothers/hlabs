@@ -14,7 +14,7 @@ async function typeCode(page: Page, code: string) {
 test.describe('US-ONB-11', () => {
   test('scan or enter the key, confirm a code and get recovery codes', async ({ page, request }) => {
     await createAdminInUi(page, request);
-    await expect(page.getByRole('navigation', { name: 'Setup progress' })).toContainText('Step 3 of 5');
+    await expect(page.getByRole('navigation', { name: 'Setup progress' })).toContainText('Step 3 of 6');
     await expect(page.getByRole('heading', { level: 1, name: 'Add two-factor login' })).toBeVisible();
     await expect(page.getByText('Recommended')).toBeVisible();
     await expect(page.getByAltText('QR code for your authenticator app')).toBeVisible();

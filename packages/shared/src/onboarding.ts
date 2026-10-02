@@ -40,10 +40,10 @@ export function nextOnboardingStep(step: OnboardingStep, shippedPhase: number = 
 }
 
 /**
- * Steps `onboarding.setStep` may move past without an action of their own: welcome (Get started), and two-factor
- * (Continue after it's on, US-ONB-12, or Skip for now, US-ONB-13). Others join as their stories ship.
+ * Steps `onboarding.setStep` may move past without an action of their own: welcome (Get started), two-factor
+ * (Continue after it's on, US-ONB-12, or Skip for now, US-ONB-13) and remote access (Set up later, US-ONB-18).
  */
-export const SKIPPABLE_ONBOARDING_STEPS: readonly OnboardingStep[] = ['welcome', 'twoFactor'];
+export const SKIPPABLE_ONBOARDING_STEPS: readonly OnboardingStep[] = ['welcome', 'twoFactor', 'remote'];
 
 /** The starter apps OnbApps offers, in its order (US-ONB-19): built-in store app ids. */
 export const STARTER_APP_IDS = [

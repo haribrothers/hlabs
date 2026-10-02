@@ -2,7 +2,7 @@
 // installs nothing and the finish screen has no Installing row. Home's empty state is US-HOME-15 (phase 7).
 import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
-import { createAdminInUi, skipTwoFactor } from './onboarding';
+import { createAdminInUi, remoteLater, skipTwoFactor } from './onboarding';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
@@ -11,14 +11,17 @@ test('US-ONB-20 Back returns to storage; Skip finishes with no apps', async ({ p
   await skipTwoFactor(page);
   await page.getByRole('radio', { name: /This computer/ }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/apps`);
+  await remoteLater(page);
 
-  // Back: storage, as it was saved (remote access waits for phase 3).
+  // Back: remote access, then storage, as it was saved.
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/remote`);
+  if (process.env.HLABS_SHOTS) await page.screenshot({ path: `${process.env.HLABS_SHOTS}/onb-remote.png` });
   await page.getByRole('button', { name: 'Back' }).click();
   await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/storage`);
   await expect(page.getByRole('radio', { name: /This computer/ })).toHaveAttribute('aria-checked', 'true');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(`${FIRST_RUN_URL}/setup/apps`);
+  await remoteLater(page);
 
   // A tile picked, then Skip anyway: nothing installs.
   await page.getByRole('list', { name: 'Starter apps' }).getByRole('button').first().click();

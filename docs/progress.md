@@ -123,7 +123,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 ## Phase 3 · Remote access and family
 
 - [ ] US-ONB-17 · Connect Tailscale for remote access
-- [ ] US-ONB-18 · Set up remote access later
+- [x] US-ONB-18 · Set up remote access later (done early so onboarding e2e can walk the remote step; the Connect row, its example address and stopping a login poll come with US-ONB-17)
 - [x] US-AUTH-23 · Open an invite link
 - [ ] US-AUTH-24 · Create my account from an invite
 - [ ] US-HOME-11 · See only my shared apps on a member Home
