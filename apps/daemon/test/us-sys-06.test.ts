@@ -46,13 +46,17 @@ function fakeAdguard() {
 
 /**
  * Pi-hole v6 as it answers: a session for the right app password (ended with DELETE /api/auth), `misc.dnsmasq_lines`
- * read with GET and written whole with PATCH /api/config, and 404 for a one-line PUT whose line has slashes.
+ * read with GET and written whole with PATCH /api/config, 404 for a one-line PUT whose line has slashes, and no answer
+ * for a moment after each change while its resolver restarts.
  */
 function fakePihole() {
   let lines = ['address=/printer.lan/192.168.1.9'];
   const sessions = new Set<string>();
   let next = 0;
+  let restartingUntil = 0;
+  let changes = 0;
   const server = createServer(async (req, res) => {
+    if (Date.now() < restartingUntil) return req.socket.destroy();
     if (req.url === '/api/auth' && req.method === 'POST') {
       const ok = (JSON.parse(await body(req)) as { password: string }).password === 'app-pass';
       const sid = `s${++next}`;
@@ -70,17 +74,21 @@ function fakePihole() {
     if (req.url === '/api/config' && req.method === 'PATCH') {
       lines = (JSON.parse(await body(req)) as { config: { misc: { dnsmasq_lines: string[] } } }).config.misc
         .dnsmasq_lines;
+      changes++;
+      // Its sessions live in the resolver's memory: a restart ends them.
+      sessions.clear();
+      restartingUntil = Date.now() + 100;
       return res.end('{}');
     }
     res.writeHead(404).end();
   });
-  return { server, lines: () => lines, sessions };
+  return { server, lines: () => lines, sessions, changes: () => changes };
 }
 
 async function setup() {
   const d = await daemonWithAdmin(closers);
   const { db, secrets, logger } = d.services!;
-  const dns = new DnsService({ db, secrets, logger, lanAddress: () => LAN });
+  const dns = new DnsService({ db, secrets, logger, lanAddress: () => LAN, piholeRetryMs: 50 });
   const who = { userId: d.userId, ip: null };
   return { d, db, secrets, dns, who };
 }
@@ -143,6 +151,20 @@ describe('US-SYS-06', () => {
     // Every session hlabs opened was ended (Pi-hole has few).
     expect(ph.sessions.size).toBe(0);
     expect(await secrets.get(PIHOLE_SECRET_REF)).toBeNull();
+  });
+
+  it('saving the same Pi-hole again keeps its records and changes them at most once, through its restart', async () => {
+    const { dns, who } = await setup();
+    const ph = fakePihole();
+    const address = `http://127.0.0.1:${await listen(ph.server)}`;
+    await dns.choose({ kind: 'pihole', address, appPassword: 'app-pass' }, who);
+    expect(ph.changes()).toBe(1);
+    // Straight away, while it restarts.
+    await dns.choose({ kind: 'pihole', address }, who);
+    expect(ph.changes()).toBe(1);
+    expect(ph.lines()).toContain(`address=/hlabs.home.arpa/${LAN}`);
+    expect(dns.status().problem).toBeNull();
+    expect(ph.sessions.size).toBe(0);
   });
 
   it("a server that doesn't answer is a problem, tried again on the next sync", async () => {

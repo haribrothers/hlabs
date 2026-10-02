@@ -14,6 +14,9 @@ export const PIHOLE_SECRET_REF = 'dns:pihole';
 /** A sync that failed is tried again on the next change and at least this often. */
 export const DNS_RETRY_MS = 10 * 60_000;
 const TIMEOUT_MS = 5_000;
+/** Pi-hole's API is down for a few seconds while its resolver restarts after a change: tries and the wait between. */
+const PIHOLE_RETRIES = 4;
+const PIHOLE_RETRY_MS = 3_000;
 
 export type DnsKind = 'none' | 'adguard' | 'pihole' | 'manual';
 
@@ -118,9 +121,26 @@ export const pihole = {
       body: JSON.stringify({ config: { misc: { dnsmasq_lines: lines } } }),
     });
   },
+  /** Logs in, trying again while Pi-hole's API is down for a restart after a change. */
+  async login(address: string, password: string, retryMs = PIHOLE_RETRY_MS): Promise<string> {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await pihole.session(address, password);
+      } catch (err) {
+        if (!(err instanceof DnsError) || err.kind !== 'unreachable' || attempt >= PIHOLE_RETRIES) throw err;
+        await new Promise((r) => setTimeout(r, retryMs));
+      }
+    }
+  },
   /** Logs in, swaps hlabs's old lines (`remove`) for `add`, keeps everyone else's, and logs out. */
-  async update(address: string, password: string, remove: readonly string[], add: readonly string[]) {
-    const sid = await pihole.session(address, password);
+  async update(
+    address: string,
+    password: string,
+    remove: readonly string[],
+    add: readonly string[],
+    retryMs = PIHOLE_RETRY_MS,
+  ) {
+    const sid = await pihole.login(address, password, retryMs);
     try {
       const current = await pihole.lines(address, sid);
       const kept = current.filter((l) => !remove.includes(l));
@@ -132,8 +152,8 @@ export const pihole = {
     }
   },
   /** Checks the address and app password, ending the session it made. */
-  async check(address: string, password: string) {
-    await pihole.end(address, await pihole.session(address, password));
+  async check(address: string, password: string, retryMs = PIHOLE_RETRY_MS) {
+    await pihole.end(address, await pihole.login(address, password, retryMs));
   },
 };
 
@@ -143,6 +163,8 @@ export interface DnsDeps {
   logger: Logger;
   lanAddress: () => string | null;
   now?: () => number;
+  /** The wait between Pi-hole log-in tries while it restarts (tests make it short). */
+  piholeRetryMs?: number;
 }
 
 export class DnsService {
@@ -190,10 +212,14 @@ export class DnsService {
     };
   }
 
-  /** Checks a Pi-hole's address and app password (US-SYS-06 "Test"). */
-  async test(address: string, password: string) {
+  /**
+   * Checks a Pi-hole's address and app password (US-SYS-06 "Test" answers at once). Saving waits out a restart after
+   * an earlier change (`waitForRestart`).
+   */
+  async test(address: string, password: string, { waitForRestart = false } = {}) {
     try {
-      await pihole.check(address, password);
+      if (waitForRestart) await pihole.check(address, password, this.deps.piholeRetryMs);
+      else await pihole.end(address, await pihole.session(address, password));
     } catch (err) {
       throw hlabsError(
         err instanceof DnsError && err.kind === 'auth' ? 'DNS_SERVER_AUTH_FAILED' : 'DNS_SERVER_UNREACHABLE',
@@ -219,7 +245,7 @@ export class DnsService {
       const password = await this.deps.secrets.get(PIHOLE_SECRET_REF);
       if (!password) throw new DnsError('auth');
       const wanted = lan ? piholeLines(hostname, lan) : [];
-      await pihole.update(address, password, owned, wanted);
+      await pihole.update(address, password, owned, wanted, this.deps.piholeRetryMs);
       return wanted;
     }
     return [];
@@ -234,7 +260,8 @@ export class DnsService {
       if (base) for (const entry of s.owned) await adguard.remove(base, entry).catch(() => undefined);
     } else if (s.kind === 'pihole' && s.address) {
       const password = await this.deps.secrets.get(PIHOLE_SECRET_REF);
-      if (password) await pihole.update(s.address, password, s.owned, []).catch(() => undefined);
+      if (password)
+        await pihole.update(s.address, password, s.owned, [], this.deps.piholeRetryMs).catch(() => undefined);
     }
     this.save({ owned: [] });
   }
@@ -267,16 +294,20 @@ export class DnsService {
       if (!input.address) throw hlabsError('VALIDATION_FAILED', 'Pi-hole address needed', { address: true });
       const password = input.appPassword ?? (await this.deps.secrets.get(PIHOLE_SECRET_REF));
       if (!password) throw hlabsError('VALIDATION_FAILED', 'Pi-hole app password needed', { appPassword: true });
-      await this.test(input.address, password);
+      await this.test(input.address, password, { waitForRestart: true });
       await this.deps.secrets.set(PIHOLE_SECRET_REF, password);
     }
     await this.queue;
-    await this.clear().catch((err: unknown) => this.deps.logger.warn({ err }, "couldn't clear the old DNS records"));
+    // The same server again keeps what hlabs wrote there: the sync below swaps it in one change.
+    const before = this.settings();
+    const same = before.kind === input.kind && (input.kind !== 'pihole' || before.address === input.address);
+    if (!same)
+      await this.clear().catch((err: unknown) => this.deps.logger.warn({ err }, "couldn't clear the old DNS records"));
     if (input.kind !== 'pihole') await this.deps.secrets.delete(PIHOLE_SECRET_REF).catch(() => undefined);
     this.save({
       kind: input.kind,
       address: input.kind === 'pihole' ? input.address! : null,
-      owned: [],
+      owned: same ? before.owned : [],
       problem: null,
       lastSyncAt: null,
     });

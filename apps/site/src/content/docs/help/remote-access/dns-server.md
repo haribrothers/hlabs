@@ -28,6 +28,15 @@ hlabs keeps the app password with its other secrets (the keychain on a Mac), nev
 
 For a router or DNS server hlabs can't change itself, choose **Another DNS server**. The page lists the records to add by hand, with **Copy records**. They point at this computer's network address, so update them if that address changes. Giving this computer a fixed address in your router avoids that.
 
+## Devices that use Tailscale
+
+A phone or computer with Tailscale on uses Tailscale's DNS first, and Tailscale doesn't pass `home.arpa` names on to your DNS server. On those devices `hlabs.home.arpa` won't open until you add **split DNS** in the Tailscale admin console:
+
+1. Open **DNS** in the [Tailscale admin console](https://login.tailscale.com/admin/dns).
+2. Under **Nameservers**, choose **Add nameserver › Custom**, enter your DNS server's address (such as your Pi-hole's `192.168.1.10`), turn on **Restrict to domain** and enter `home.arpa`.
+
+Away from home, this works only if your tailnet can reach that address, for example through a subnet router. Otherwise use the tailnet address, such as `https://hlabs.tail1234.ts.net`.
+
 ## If the server stops answering
 
 The row shows **Pi-hole isn't answering** (or AdGuard Home). hlabs tries again whenever an app changes and every 10 minutes. Check the server is on and its address is right. If it says **Pi-hole refused the password**, make a new app password and enter it again.
