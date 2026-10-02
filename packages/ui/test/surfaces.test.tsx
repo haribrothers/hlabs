@@ -18,6 +18,7 @@ import {
   Stepper,
   Toast,
   TrayMenu,
+  TraySetup,
 } from '../src/index';
 
 describe('GlassCard, List, ListRow', () => {
@@ -218,6 +219,26 @@ describe('TrayMenu and Stepper', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('hlabs needs Keychain access to work.');
     screen.getByRole('button', { name: 'Try again' }).click();
     expect(onSelect).toHaveBeenCalledOnce();
+  });
+
+  it("TraySetup: the first-launch checklist says each step's state in words", () => {
+    render(
+      <TraySetup
+        title="Setting up hlabs"
+        subtitle="This happens once"
+        steps={[
+          { label: 'Starting background service', state: 'done' },
+          { label: 'Opening setup in your browser…', state: 'working' },
+        ]}
+        stateLabels={{ done: 'done', working: 'in progress', pending: 'not started' }}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'Setting up hlabs' })).toHaveTextContent('This happens once');
+    expect(screen.getByText('(done)', { exact: false })).toBeInTheDocument();
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]).toHaveTextContent('Starting background service (done)');
+    expect(items[1]).toHaveTextContent('Opening setup in your browser… (in progress)');
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '75');
   });
 
   it('says which step of how many, with the current step marked', () => {

@@ -22,7 +22,9 @@ describe('US-INST-16 · Recover from a missing or mismatched tray token', () => 
   });
 
   it('asks for Keychain access with "Try again", which reads the token again', async () => {
-    invoke.mockImplementation(async (cmd: string) => (cmd === 'tray_access' ? 'keychainDenied' : 'ready'));
+    invoke.mockImplementation(async (cmd: string) =>
+      cmd === 'tray_access' ? 'keychainDenied' : cmd === 'boot_state' ? null : 'ready',
+    );
     render(<Menu />);
     expect(await screen.findByRole('alert')).toHaveTextContent('hlabs needs Keychain access to work.');
     expect(screen.getByRole('menu', { name: 'hlabs' })).toHaveTextContent('Needs Keychain access');

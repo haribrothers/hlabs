@@ -12,6 +12,8 @@ export const ignores = [
   '**/coverage/**',
   '**/.dev-data/**',
   '**/src-tauri/target/**',
+  // The daemon bundle scripts/bundle-app.ts assembles for the app (D-113).
+  '**/src-tauri/resources/**',
   '**/playwright-report/**',
   '**/test-results/**',
   '**/routeTree.gen.ts',

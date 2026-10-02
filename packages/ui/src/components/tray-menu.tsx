@@ -1,8 +1,9 @@
-import { iconDefaults, LogoMark, TriangleAlert } from '@hlabs/icons';
+import { Check, Circle, iconDefaults, LoaderCircle, LogoMark, TriangleAlert } from '@hlabs/icons';
 import type { ReactNode } from 'react';
 import { cn } from '../lib/cn';
 import { Button } from './button';
 import { Menu, type MenuItem } from './menu';
+import { Progress } from './progress';
 import { StatusDot, type Status } from './status-dot';
 
 export interface TrayMenuProps {
@@ -82,4 +83,59 @@ export function TrayMenu({
     </>
   );
   return <Menu label="hlabs" width={width} header={header} items={items} />;
+}
+
+export type TraySetupStepState = 'done' | 'working' | 'pending';
+
+export interface TraySetupProps {
+  title: string;
+  subtitle: string;
+  steps: { label: string; state: TraySetupStepState }[];
+  /** Words for each state, for screen readers ("done", "in progress", "not started"). */
+  stateLabels: Record<TraySetupStepState, string>;
+  action?: { label: string; onSelect: () => void; disabled?: boolean };
+  width?: number;
+}
+
+/** The tray's first-launch window (TrayStates "First launch", US-INST-01): a checklist with progress. */
+export function TraySetup({ title, subtitle, steps, stateLabels, action, width = TRAY_WIDTH }: TraySetupProps) {
+  const done = steps.filter((s) => s.state === 'done').length;
+  const working = steps.some((s) => s.state === 'working') ? 0.5 : 0;
+  const value = steps.length ? ((done + working) / steps.length) * 100 : 0;
+  return (
+    <section className="hl-menu hl-glass hl-glass-3 hl-tray-setup" style={{ width }} aria-label={title}>
+      <div className="hl-tray-head">
+        <span className="hl-tray-logo">
+          <LogoMark size={TRAY_LOGO} title="" simplified={false} />
+        </span>
+        <span className="hl-tray-id">
+          <b>{title}</b>
+          <span className="hl-tray-subtitle">{subtitle}</span>
+        </span>
+      </div>
+      <ul className="hl-tray-steps">
+        {steps.map((step) => (
+          <li key={step.label} className={`hl-tray-step hl-tray-step-${step.state}`}>
+            {step.state === 'done' ? (
+              <Check aria-hidden {...iconDefaults} />
+            ) : step.state === 'working' ? (
+              <LoaderCircle aria-hidden className="hl-spin" {...iconDefaults} />
+            ) : (
+              <Circle aria-hidden {...iconDefaults} />
+            )}
+            <span>
+              {step.label}
+              <span className="hl-sr"> ({stateLabels[step.state]})</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <Progress value={value} aria-label={title} className="hl-tray-progress" />
+      {action ? (
+        <Button className="hl-tray-action" onClick={action.onSelect} disabled={action.disabled}>
+          {action.label}
+        </Button>
+      ) : null}
+    </section>
+  );
 }

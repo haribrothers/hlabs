@@ -14,4 +14,10 @@ export const trayCopy = {
   tryAgain: 'Try again',
   /** US-INST-13 / US-INST-16: the daemon can't be reached, or still refuses the tray after a repair. */
   unreachableStatus: "Can't reach hlabs",
+  /** US-INST-01: the first-launch window (TrayStates "First launch"). */
+  setupTitle: 'Setting up hlabs',
+  setupSubtitle: 'This happens once',
+  stepService: 'Starting background service',
+  stepBrowser: 'Opening setup in your browser…',
+  stepStates: { done: 'done', working: 'in progress', pending: 'not started' },
 } as const;

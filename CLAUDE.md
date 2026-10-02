@@ -48,7 +48,7 @@ pnpm + Turborepo · TypeScript strict, ESM · Node 22 · Fastify + tRPC v11 (SSE
 - Accessibility is required: keyboard, focus rings, 4.5:1 text contrast in glass and solid themes, reduce motion, no colour-only state, 44px touch targets on phone.
 
 ## Commands
-`pnpm dev` · `pnpm dev:full` (with Caddy/mDNS) · `pnpm fetch-binaries` · `pnpm dev:tray` · `pnpm test` · `pnpm test:e2e` · `pnpm lint` · `pnpm typecheck` · `pnpm db:generate` · `pnpm store:lint` · `pnpm build`
+`pnpm dev` · `pnpm dev:full` (with Caddy/mDNS) · `pnpm fetch-binaries` · `pnpm dev:tray` · `pnpm build:tray` (unsigned .app with hlabsd bundled) · `pnpm test` · `pnpm test:e2e` · `pnpm lint` · `pnpm typecheck` · `pnpm db:generate` · `pnpm store:lint` · `pnpm build`
 
 ## Where things are
 `apps/daemon` hlabsd · `apps/web` dashboard · `apps/tray` Tauri · `apps/cli` `hlabs` command · `apps/site` website + help (Astro/Starlight) · `packages/{api,db,app-manifest,ui,icons,shared,config}` · `store/` built-in apps · `scripts/` install and release · `docs/` spec.

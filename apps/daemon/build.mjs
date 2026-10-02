@@ -2,7 +2,9 @@
 // npm packages stay external and ship in node_modules (native modules and pino transports need their files).
 // The db migrations folder is copied next to the bundle.
 import { build } from 'esbuild';
-import { cpSync } from 'node:fs';
+import { cpSync, readFileSync } from 'node:fs';
+
+const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
 
 await build({
   entryPoints: ['src/main.ts'],
@@ -12,7 +14,7 @@ await build({
   target: 'node22',
   format: 'esm',
   sourcemap: true,
-  define: { __HLABS_BUNDLE__: 'true' },
+  define: { __HLABS_BUNDLE__: 'true', __HLABS_VERSION__: JSON.stringify(version) },
   logLevel: 'info',
   plugins: [
     {

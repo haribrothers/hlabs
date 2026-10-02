@@ -42,6 +42,11 @@ impl TokenGuard {
         }
     }
 
+    /// Whether a token is stored already (no token and no LaunchAgent means a first launch, US-INST-01).
+    pub fn has_stored_token(&self) -> bool {
+        matches!(self.store.get(), Ok(Some(_)))
+    }
+
     pub fn access(&self) -> Access {
         self.access
     }

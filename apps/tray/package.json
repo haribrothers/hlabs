@@ -9,7 +9,8 @@
     "build": "vite build",
     "tauri": "tauri",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:app": "node ../../scripts/bundle-app.ts && tauri build --config src-tauri/tauri.bundle.json --bundles app"
   },
   "dependencies": {
     "@hlabs/api": "workspace:*",

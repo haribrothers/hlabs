@@ -3,11 +3,12 @@
 //
 //   pnpm fetch-binaries                      # this computer's platform, into .bin/
 //   pnpm fetch-binaries --target linux-x64 --out dist/bin
+//   pnpm fetch-binaries --packaging          # also the node runtime the app bundle runs hlabsd with
 //
-// restic and node join with their phases (backups, packaging). Bump a version by changing it and its checksums here.
+// restic joins with backups (phase 5). Bump a version by changing it and its checksums here.
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -20,12 +21,21 @@ interface Binary {
   url: (target: Target) => string;
   /** Pinned per target: `sha256:` or `sha512:` of the downloaded file. */
   checksums: Record<Target, string>;
-  /** Tarballs: the file to take out. Plain downloads are the binary itself. */
-  extract?: string;
+  /** Tarballs: the file to take out (it lands in the output folder under `name`). Plain downloads are the binary. */
+  extract?: (target: Target) => string;
+  /** Only for the app bundle (`--packaging`), not development. */
+  packaging?: boolean;
 }
 
 const CADDY_VERSION = '2.11.4';
 const COMPOSE_VERSION = '5.5.1';
+/** The Node.js the app bundle runs hlabsd with (D-113); the major matches .nvmrc. */
+const NODE_VERSION = '22.23.3';
+
+const nodeDir = (t: Target) => {
+  const [os, arch] = t.split('-') as [string, string];
+  return `node-v${NODE_VERSION}-${os === 'mac' ? 'darwin' : 'linux'}-${arch}`;
+};
 
 const BINARIES: Binary[] = [
   {
@@ -35,7 +45,7 @@ const BINARIES: Binary[] = [
       const [os, arch] = t.split('-') as [string, string];
       return `https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_${os}_${arch === 'x64' ? 'amd64' : 'arm64'}.tar.gz`;
     },
-    extract: 'caddy',
+    extract: () => 'caddy',
     checksums: {
       'mac-arm64':
         'sha512:3190ae0df98b59ab4b6021556fa35adc3c526a4f3e138776b0eaec8a037cc26121cbbb1ad53453f565551b47d37d5ba4755e2c2c3652256737fe2ce9e53c8ec0',
@@ -59,6 +69,19 @@ const BINARIES: Binary[] = [
       'mac-x64': 'sha256:a264d61e824bf08a78867e59cdf32eb09f0aee9ecdf9f6ebfa43f76dc52880f1',
       'linux-arm64': 'sha256:732e3a84c1a0f67256ce80bc2598a24546b10ca05f9faa97efceb1171ece2ef7',
       'linux-x64': 'sha256:db1889184726840f75c4f9c001048430d4f25b3be3cb084d3ddd762bc0aed576',
+    },
+  },
+  {
+    name: 'node',
+    version: NODE_VERSION,
+    url: (t) => `https://nodejs.org/dist/v${NODE_VERSION}/${nodeDir(t)}.tar.gz`,
+    extract: (t) => `${nodeDir(t)}/bin/node`,
+    packaging: true,
+    checksums: {
+      'mac-arm64': 'sha256:23b25245dcfb9af7262f8ff142e9e2e0af025368117329e7a7458a51e5922f53',
+      'mac-x64': 'sha256:8a677b0219178efd6eb0e475457c4afb452b521a92f6e67845a73bd85727f2a8',
+      'linux-arm64': 'sha256:5ced2d48d1d7198739b7f86804de0171aefb6823b684b12341d3321afc3cb0b2',
+      'linux-x64': 'sha256:1084aa36196bba4c3a5e69a1ee388a6e4ff729dad09445fbcd434b28fe3c24af',
     },
   },
 ];
@@ -85,7 +108,9 @@ function verify(data: Buffer, expected: string, what: string) {
 
 const say = (line: string) => void process.stdout.write(`${line}\n`);
 
-const { values } = parseArgs({ options: { target: { type: 'string' }, out: { type: 'string' } } });
+const { values } = parseArgs({
+  options: { target: { type: 'string' }, out: { type: 'string' }, packaging: { type: 'boolean' } },
+});
 const target = (values.target ?? currentTarget()) as Target;
 const out = resolve(values.out ?? '.bin');
 mkdirSync(out, { recursive: true });
@@ -95,7 +120,7 @@ const installed: Record<string, string> = existsSync(manifestPath)
   ? (JSON.parse(readFileSync(manifestPath, 'utf8')) as Record<string, string>)
   : {};
 
-for (const binary of BINARIES) {
+for (const binary of BINARIES.filter((b) => values.packaging || !b.packaging)) {
   const key = `${binary.name}@${target}`;
   const dest = join(out, binary.name);
   if (installed[key] === binary.version && existsSync(dest)) {
@@ -107,12 +132,18 @@ for (const binary of BINARIES) {
   const data = await download(url);
   verify(data, binary.checksums[target], url);
   if (binary.extract) {
+    const member = binary.extract(target);
     const tmp = join(tmpdir(), `hlabs-${binary.name}-${process.pid}.tar.gz`);
+    const unpacked = join(tmpdir(), `hlabs-${binary.name}-${process.pid}`);
     writeFileSync(tmp, data);
     try {
-      execFileSync('tar', ['-xzf', tmp, '-C', out, binary.extract]);
+      mkdirSync(unpacked, { recursive: true });
+      execFileSync('tar', ['-xzf', tmp, '-C', unpacked, member]);
+      // Copied, not renamed: the temp folder may be on another disk.
+      copyFileSync(join(unpacked, member), dest);
     } finally {
       rmSync(tmp, { force: true });
+      rmSync(unpacked, { recursive: true, force: true });
     }
   } else {
     writeFileSync(dest, data);
