@@ -32,5 +32,7 @@ You can type their name. It's shown on the page they open, and fills in their na
 
 Your choices save as you make them, and the link stays the same, so it's fine to copy it first. Whatever is set when they accept the invite is what they get.
 
+To check what they'll see, choose **Preview what they see**. Their page opens in a new tab, marked as a preview; nothing can be sent from it, and it doesn't use up the invite.
+
 Choose **Done** when you've shared it. The invite then waits under **People** until it's used. If you choose **Close** without copying the link, the invite is cancelled; once you've copied it, it's kept, because you may already have sent it.
 

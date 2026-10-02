@@ -1,4 +1,5 @@
-// AcceptInvite (US-AUTH-23, US-AUTH-24): who invited me and what I'll get, and the form to make my account. A link that no longer works
+// AcceptInvite (US-AUTH-23, US-AUTH-24): who invited me and what I'll get, and the form to make my account. In preview
+// (US-ACCT-23) the admin sees the same page with a banner, the form disabled and nothing about their own session. A link that no longer works
 // says so and points to log in. Signed in already: say who as, with a way to log out first.
 import { Avatar, avatarColorFor, Button, GlassCard } from '@hlabs/ui';
 import type { InviteInspect } from '@hlabs/api';
@@ -51,7 +52,7 @@ function SignedInNote({ username }: { username: string }) {
   );
 }
 
-export function AcceptInvite({ token }: { token: string }) {
+export function AcceptInvite({ token, preview = false }: { token: string; preview?: boolean }) {
   const trpc = useTRPC();
   const invite = useQuery({ ...trpc.invites.inspect.queryOptions({ token }), retry: false });
   const me = useMe();
@@ -95,6 +96,11 @@ export function AcceptInvite({ token }: { token: string }) {
   const inviter = data.inviterName;
   return (
     <LoginLayout>
+      {preview ? (
+        <p role="status" className="m-0 rounded-pill bg-accent-wash px-4 py-2 text-body-sm font-semibold text-ink">
+          {copy.previewBanner}
+        </p>
+      ) : null}
       <Card>
         <div className="flex items-center gap-3">
           {inviter ? (
@@ -111,8 +117,13 @@ export function AcceptInvite({ token }: { token: string }) {
           <h1 className="m-0 text-title-1">{copy.title}</h1>
           <p className="m-0 text-body text-ink-muted">{inviteLead(data)}</p>
         </div>
-        {me.isSuccess ? <SignedInNote username={me.data.username} /> : null}
-        <JoinForm token={token} initialName={data.displayName} onInvalid={() => void invite.refetch()} />
+        {me.isSuccess && !preview ? <SignedInNote username={me.data.username} /> : null}
+        <JoinForm
+          token={token}
+          initialName={data.displayName}
+          preview={preview}
+          onInvalid={() => void invite.refetch()}
+        />
       </Card>
     </LoginLayout>
   );

@@ -37,6 +37,8 @@ export const peopleCopy = {
   copy: 'Copy',
   copied: 'Copied',
   worksOnce: 'Works once · expires in 7 days ·',
+  preview: 'Preview what they see',
+  previewNewTab: 'Preview what they see (opens in a new tab)',
   close: 'Close',
   done: 'Done',
   creatingLink: 'Making a link…',

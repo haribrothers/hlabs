@@ -16,6 +16,9 @@ const NAME_SAVE_DELAY_MS = 500;
 /** How long the Copy button says "Copied". */
 const COPIED_MS = 2_000;
 
+/** The invite page in preview, on this dashboard's own address (the link itself names the home network one). */
+export const previewHref = (url: string) => `${new URL(url).pathname}?preview=1`;
+
 export function InviteDialog({ onClose }: { onClose: () => void }) {
   const client = useTRPCClient();
   const trpc = useTRPC();
@@ -198,7 +201,20 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
                   {copied ? copy.copied : copy.copy}
                 </Button>
               </div>
-              <p className="m-0 text-footnote text-ink-muted">{copy.worksOnce}</p>
+              <p className="m-0 text-footnote text-ink-muted">
+                {copy.worksOnce}{' '}
+                {invite ? (
+                  <a
+                    href={previewHref(invite.url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={copy.previewNewTab}
+                    className="hl-focus rounded-xs font-semibold text-accent-link no-underline"
+                  >
+                    {copy.preview}
+                  </a>
+                ) : null}
+              </p>
             </>
           )}
         </section>

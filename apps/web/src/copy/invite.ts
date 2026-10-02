@@ -28,6 +28,7 @@ export const inviteCopy = {
   worksOnce: 'This invite link works once and expires in 7 days.',
   joinFailed: "Couldn't create your account. Try again.",
   locked: (minutes: number) => `Too many tries. Try again in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}.`,
+  previewBanner: "Preview. This won't use up the invite.",
   loadFailed: "Couldn't open this invite. Check your connection and try again.",
   tryAgain: 'Try again',
 } as const;
