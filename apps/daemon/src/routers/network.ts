@@ -1,11 +1,29 @@
-import type { AppHandlers } from '@hlabs/api';
+import { hlabsError, type AppHandlers } from '@hlabs/api';
 import { getSetting } from '@hlabs/db';
 import type { DaemonContext } from '../context';
+import { appRawPorts, setWebPorts } from '../network/ports';
+
+const who = (ctx: DaemonContext) => {
+  const id = ctx.identity;
+  if (id.kind !== 'user') throw hlabsError('AUTH_REQUIRED');
+  return { userId: id.userId, ip: ctx.request.ip };
+};
 
 export const network: AppHandlers<DaemonContext>['network'] = {
   /** How hlabs is reached (US-SYS-01): its home-network addresses and web ports. */
   status: (_input, ctx) => {
     const { routing, db } = ctx.services;
     return { home: routing.homeNetwork(), ports: getSetting(db, 'network').ports };
+  },
+  ports: (_input, ctx) => ({ ...getSetting(ctx.services.db, 'network').ports, appPorts: appRawPorts(ctx.services.db) }),
+  /** New web ports, checked free; Caddy listens on them straight away (US-SYS-05). */
+  setPorts: async (input, ctx) => {
+    const { db, system, routing } = ctx.services;
+    await setWebPorts(
+      { db, portInUse: (port) => system.portInUse(port), apply: () => routing.sync({ force: true }) },
+      input,
+      who(ctx),
+    );
+    return { ok: true as const };
   },
 };

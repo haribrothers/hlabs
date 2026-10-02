@@ -34,7 +34,23 @@ export const network = {
     disconnect: io(empty, ok),
   },
   caCertificate: io(empty, z.object({ pem: z.string(), fingerprint: z.string() })),
-  ports: io(empty, z.object({ https: portSchema, http: portSchema })),
+  /** The web ports, and the raw ports apps publish, listed so a change doesn't clash (US-SYS-05). */
+  ports: io(
+    empty,
+    z.object({
+      https: portSchema,
+      http: portSchema,
+      appPorts: z.array(
+        z.object({
+          appId: z.string(),
+          appName: z.string(),
+          port: portSchema,
+          protocol: z.enum(['tcp', 'udp']),
+          label: z.string(),
+        }),
+      ),
+    }),
+  ),
   setPorts: io(z.object({ https: portSchema, http: portSchema }), ok),
   setPiholeDns: io(z.object({ enabled: z.boolean() }), ok),
 };

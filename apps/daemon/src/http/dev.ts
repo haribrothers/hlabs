@@ -289,7 +289,11 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     // Nor the people policy (US-ACCT-18…20) or invites left by an earlier run.
     setSetting(db, 'people', settingsSchemas.people.parse(undefined));
     db.delete(invites).run();
-    if (input.ports) setSetting(db, 'network', { ...getSetting(db, 'network'), ports: input.ports });
+    // Web ports as given, else a fresh install's (an earlier spec may have changed them, US-SYS-05).
+    setSetting(db, 'network', {
+      ...getSetting(db, 'network'),
+      ports: input.ports ?? settingsSchemas.network.parse(undefined).ports,
+    });
     const userId = await createAdmin(db, { ...input, ip: null, phase: config.phase });
     let secret: string | null = null;
     let recoveryCodes: string[] = [];

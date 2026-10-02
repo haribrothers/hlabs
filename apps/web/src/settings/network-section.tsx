@@ -7,11 +7,13 @@ import { Badge, Button, List, ListRow, tokens } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useSubscription } from '@trpc/tanstack-react-query';
+import { useState } from 'react';
 import { CopyAddress } from '../apps/app-access';
 import { networkCopy as copy } from '../copy/network';
 import type { HomeApp } from '../home/home-app';
 import { useTRPC } from '../lib/trpc';
 import { useIsDesktop } from '../lib/use-media';
+import { WebPortsDialog } from './web-ports-dialog';
 
 const LOGO = tokens.SPACE_7;
 /** Fallback ports (D-016): when hlabs is on one of these, the usual one was taken. */
@@ -42,7 +44,15 @@ function AddressLink({ url }: { url: string }) {
   );
 }
 
-function HomeNetwork({ status, shippedPhase }: { status: NetworkStatus; shippedPhase?: number }) {
+function HomeNetwork({
+  status,
+  shippedPhase,
+  onChangePorts,
+}: {
+  status: NetworkStatus;
+  shippedPhase?: number;
+  onChangePorts: () => void;
+}) {
   const { home, ports } = status;
   return (
     <List label={copy.homeNetwork}>
@@ -84,7 +94,15 @@ function HomeNetwork({ status, shippedPhase }: { status: NetworkStatus; shippedP
           ) : null
         }
       />
-      <ListRow title={copy.webPorts} subtitle={portsLine(ports)} />
+      <ListRow
+        title={copy.webPorts}
+        subtitle={portsLine(ports)}
+        trailing={
+          <Button variant="secondary" size="sm" onClick={onChangePorts}>
+            {copy.change}
+          </Button>
+        }
+      />
     </List>
   );
 }
@@ -142,6 +160,7 @@ export function NetworkSection({ shippedPhase }: { shippedPhase?: number }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const status = useQuery({ ...trpc.network.status.queryOptions(), retry: false });
+  const [changing, setChanging] = useState(false);
   const apps = useQuery({ ...trpc.apps.list.queryOptions(), retry: false });
   // Installs, uninstalls and the server coming back change the addresses (no polling).
   useSubscription(
@@ -169,8 +188,9 @@ export function NetworkSection({ shippedPhase }: { shippedPhase?: number }) {
   if (!status.data) return null;
   return (
     <div className="flex flex-col gap-6">
-      <HomeNetwork status={status.data} shippedPhase={shippedPhase} />
+      <HomeNetwork status={status.data} shippedPhase={shippedPhase} onChangePorts={() => setChanging(true)} />
       {apps.data ? <AppAddresses apps={apps.data.apps} /> : null}
+      {changing ? <WebPortsDialog onClose={() => setChanging(false)} /> : null}
     </div>
   );
 }
