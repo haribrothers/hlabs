@@ -48,10 +48,28 @@ export const settingsSchemas = {
     .default({ channel: 'stable', autoHlabs: true, autoApps: false, backupBeforeUpdate: true }),
   remote: z
     .object({
+      /** How hlabs is reached from away (D-107): not at all, Tailscale on this computer, or a subnet router. */
+      mode: z.enum(['off', 'tailscale', 'subnetRouter']).default('off'),
       state: z.enum(['off', 'connecting', 'connected', 'error']).default('off'),
+      /** The tailnet's DNS suffix (`tail1234.ts.net`) and this computer's name on it (D-102). */
       tailnetName: z.string().nullable().default(null),
+      nodeName: z.string().nullable().default(null),
+      /** The dashboard's tailnet port: 443, or 8443 when 443 was taken (D-103). */
+      dashboardPort: z.number().int().default(443),
+      /** The Serve ports hlabs created; only these are ever changed or removed (D-103). */
+      serve: z.array(z.number().int()).default([]),
+      /** When a log-in was started (10-minute limit, US-SYS-02). */
+      connectStartedAt: z.number().int().nullable().default(null),
     })
-    .default({ state: 'off', tailnetName: null }),
+    .default({
+      mode: 'off',
+      state: 'off',
+      tailnetName: null,
+      nodeName: null,
+      dashboardPort: 443,
+      serve: [],
+      connectStartedAt: null,
+    }),
   paused: z
     .object({ at: z.number().int(), appIds: z.array(z.string()) })
     .nullable()

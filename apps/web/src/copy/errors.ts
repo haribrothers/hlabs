@@ -197,6 +197,17 @@ export const errorCopy = {
     FILES_NAME_EXISTS: () => ({ title: 'That name is taken', body: 'Choose another name.' }),
     FILES_INVALID_PATH: () => ({ title: "That place doesn't exist", body: 'It may have been moved or removed.' }),
     FILES_INVALID_NAME: () => ({ title: "That name won't work", body: 'Names can’t contain / or be empty.' }),
+    TAILSCALE_PERMISSION_DENIED: () => ({
+      title: 'Tailscale needs permission first',
+      body: 'Run sudo tailscale set --operator=hlabs once on this computer, then try again.',
+    }),
+    TAILSCALE_SERVE_CONFLICT: (d) => ({
+      title:
+        num(d, 'port') !== null
+          ? `Port ${num(d, 'port')} is already served on your tailnet`
+          : 'A port is already served',
+      body: 'Something else on this computer uses it with Tailscale Serve. Choose another port or stop that first.',
+    }),
     NETWORK_PORT_IN_USE: (d) => ({
       title: num(d, 'port') !== null ? `Port ${num(d, 'port')} is in use` : 'That port is in use',
       body: 'Another program is using it. Choose another port or close that program.',

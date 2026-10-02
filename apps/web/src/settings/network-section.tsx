@@ -13,6 +13,7 @@ import { networkCopy as copy } from '../copy/network';
 import type { HomeApp } from '../home/home-app';
 import { useTRPC } from '../lib/trpc';
 import { useIsDesktop } from '../lib/use-media';
+import { TailscaleRow, useRemoteStatus } from './remote-access';
 import { WebPortsDialog } from './web-ports-dialog';
 
 const LOGO = tokens.SPACE_7;
@@ -159,7 +160,7 @@ function AppAddresses({ apps }: { apps: readonly HomeApp[] }) {
 export function NetworkSection({ shippedPhase }: { shippedPhase?: number }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const status = useQuery({ ...trpc.network.status.queryOptions(), retry: false });
+  const status = useRemoteStatus();
   const [changing, setChanging] = useState(false);
   const apps = useQuery({ ...trpc.apps.list.queryOptions(), retry: false });
   // Installs, uninstalls and the server coming back change the addresses (no polling).
@@ -189,6 +190,9 @@ export function NetworkSection({ shippedPhase }: { shippedPhase?: number }) {
   return (
     <div className="flex flex-col gap-6">
       <HomeNetwork status={status.data} shippedPhase={shippedPhase} onChangePorts={() => setChanging(true)} />
+      <List label={copy.remoteAccess}>
+        <TailscaleRow remote={status.data.remote} />
+      </List>
       {apps.data ? <AppAddresses apps={apps.data.apps} /> : null}
       {changing ? <WebPortsDialog onClose={() => setChanging(false)} /> : null}
     </div>

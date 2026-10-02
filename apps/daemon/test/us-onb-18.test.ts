@@ -16,7 +16,7 @@ describe('US-ONB-18', () => {
     setSetting(db, 'onboarding', { ...getSetting(db, 'onboarding'), step: 'remote' });
     expect((await d.mutate('onboarding.setStep', { step: 'apps' })).result?.data).toEqual({ ok: true });
     expect(getSetting(db, 'onboarding').step).toBe('apps');
-    expect(getSetting(db, 'remote')).toEqual({ state: 'off', tailnetName: null });
+    expect(getSetting(db, 'remote')).toMatchObject({ mode: 'off', state: 'off', tailnetName: null, serve: [] });
   });
 
   it('can only move to the next step, not past apps', async () => {

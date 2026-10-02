@@ -145,7 +145,7 @@ Tick a story when its acceptance criteria pass and its tests are green. Claude C
 - [x] US-ACCT-27 · Member sees a limited Settings (Appearance, Notifications and About join the sidebar in phases 7, 9 and 8; the note is above Account as the story says, not at the foot of the sidebar as drawn)
 - [x] US-ACCT-28 · Member's account page (the Home folder size shows once Files ships in phase 5)
 - [x] US-SYS-01 · See how hlabs is reached on the home network (Rename and Get certificate appear in phase 9; home.arpa names added, D-105)
-- [ ] US-SYS-02 · Connect remote access with Tailscale
+- [x] US-SYS-02 · Connect remote access with Tailscale (checked live on macOS standalone Tailscale; the App Store variant and Linux are untested live, R-12)
 - [ ] US-SYS-03 · Disconnect remote access
 - [ ] US-SYS-04 · See each app's tailnet address
 - [x] US-SYS-05 · See and change web ports

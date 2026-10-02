@@ -8,7 +8,7 @@ import type { EventBus } from '../events/bus';
 import type { Logger } from '../logger';
 import type { MdnsPublisher } from '../mdns/index';
 import { lanAddresses } from '../mdns/publisher';
-import { homeDomains } from './domains';
+import { homeDomains, tailnetHost } from './domains';
 
 export interface NetworkServiceDeps {
   db: HlabsDb;
@@ -21,12 +21,6 @@ export interface NetworkServiceDeps {
   daemon: string;
   /** This computer's LAN IPv4 addresses, best first. */
   lanAddresses?: () => string[];
-}
-
-/** `<hostname>.<tailnet>.ts.net` when remote access is set up (D-012). */
-export function tailnetHost(db: HlabsDb): string | null {
-  const tailnet = getSetting(db, 'remote').tailnetName?.replace(/\.ts\.net$/, '');
-  return tailnet ? `${getSetting(db, 'hostname')}.${tailnet}.ts.net` : null;
 }
 
 export class NetworkService {

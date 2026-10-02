@@ -22,7 +22,9 @@ import type { CatalogService } from './store/catalog';
 import type { StoreService } from './store/service';
 import type { InstallService } from './apps/install';
 import type { AppService } from './apps/service';
+import type { RemoteService } from './network/remote';
 import type { NetworkService } from './network/service';
+import type { TailscaleClient } from './tailscale/types';
 import type { AppLogs } from './apps/logs';
 import type { UpdateService } from './apps/update';
 
@@ -48,6 +50,9 @@ export interface Services {
   logs: AppLogs;
   /** Caddy and mDNS names (02 §2.6). */
   routing: NetworkService;
+  /** Remote access with Tailscale (US-SYS-02…04). */
+  remote: RemoteService;
+  tailscale: TailscaleClient;
   /** Settles when the start-up reconcile has finished (tests). */
   reconciled: Promise<void>;
   onboarding: OnboardingService;

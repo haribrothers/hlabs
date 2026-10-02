@@ -22,6 +22,7 @@ import { hashPassword } from '../auth/passwords';
 import { createAdmin } from '../onboarding/create-admin';
 import { prepareStorageRoot, setStorageRoot } from '../onboarding/storage';
 import { cookieDomain, sessionCookie } from '../auth/sessions';
+import { FakeTailscale } from '../tailscale/fake';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { ServiceHolder } from '../services';
@@ -163,6 +164,48 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     return { state: status.state };
   });
 
+  // The pretend Tailscale (HLABS_DEV_FAKE_TAILSCALE): e2e sets what it reports (US-SYS-02…04, US-ONB-17).
+  const tailscaleBody = z.object({
+    state: z.enum(['not_installed', 'stopped', 'needs_login', 'running']),
+    tailnet: z.string().default('tail1234.ts.net'),
+    nodeName: z.string().default('hlabs'),
+    httpsEnabled: z.boolean().default(true),
+    /** Log-ins finish at once, as if the person completed them in the other tab. */
+    autoComplete: z.boolean().default(false),
+    /** Writes refused, as without the Linux operator setting (D-104). */
+    denyWrites: z.boolean().default(false),
+    /** Ports something else already serves (D-103). */
+    servedPorts: z.array(z.number().int()).default([]),
+    /** The log-in page a log-in gives (e2e: never a real Tailscale page). */
+    authUrl: z.string().default('about:blank'),
+    /** Start remote access afresh (false: a log-in in progress finishes, as when the person signs in). */
+    reset: z.boolean().default(true),
+  });
+  app.post('/dev/tailscale', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    if (!(services.tailscale instanceof FakeTailscale))
+      return reply.code(409).send({ reason: 'not the fake Tailscale' });
+    const b = tailscaleBody.parse(req.body);
+    const ts = services.tailscale;
+    ts.current =
+      b.state === 'running'
+        ? { kind: 'running', tailnet: b.tailnet, nodeName: b.nodeName, httpsEnabled: b.httpsEnabled, keyExpiry: null }
+        : b.state === 'needs_login'
+          ? { kind: 'needs_login', authUrl: null }
+          : { kind: b.state };
+    ts.autoComplete = b.autoComplete ? { tailnet: b.tailnet } : null;
+    ts.denyWrites = b.denyWrites;
+    ts.authUrl = b.authUrl;
+    if (!b.reset) return { ok: true };
+    ts.config = b.servedPorts.length
+      ? { TCP: Object.fromEntries(b.servedPorts.map((p) => [String(p), { HTTPS: true }])) }
+      : {};
+    // A fresh start for remote access too.
+    setSetting(services.db, 'remote', settingsSchemas.remote.parse(undefined));
+    return { ok: true };
+  });
+
   app.post('/dev/fake-app', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
@@ -288,6 +331,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     setSetting(db, 'startup', settingsSchemas.startup.parse(undefined));
     // Nor the people policy (US-ACCT-18…20) or invites left by an earlier run.
     setSetting(db, 'people', settingsSchemas.people.parse(undefined));
+    setSetting(db, 'remote', settingsSchemas.remote.parse(undefined));
     db.delete(invites).run();
     // Web ports as given, else a fresh install's (an earlier spec may have changed them, US-SYS-05).
     setSetting(db, 'network', {

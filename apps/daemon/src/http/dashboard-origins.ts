@@ -2,8 +2,7 @@
 // name on the network and the web ports as they are now, so renaming hlabs during setup (D-098) or moving ports doesn't
 // leave the dashboard refused as a cross-site request.
 import { getSetting, type HlabsDb } from '@hlabs/db';
-import { homeDomains } from '../network/domains';
-import { tailnetHost } from '../network/service';
+import { homeDomains, tailnetDashboardUrl } from '../network/domains';
 
 const withPort = (scheme: 'https' | 'http', host: string, port: number) =>
   `${scheme}://${host}${port === (scheme === 'https' ? 443 : 80) ? '' : `:${port}`}`;
@@ -26,7 +25,7 @@ export function dashboardOrigins(configured: string, db: HlabsDb | null): string
   const host = `${getSetting(db, 'hostname')}.local`;
   if (getSetting(db, 'onboarding').completedAt === null)
     origins.push(withPort('http', host, getSetting(db, 'network').ports.http));
-  const tailnet = tailnetHost(db);
-  if (tailnet) origins.push(`https://${tailnet}`);
+  const tailnet = tailnetDashboardUrl(db);
+  if (tailnet) origins.push(tailnet);
   return [...new Set(origins)];
 }

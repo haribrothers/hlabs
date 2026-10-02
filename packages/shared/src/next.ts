@@ -34,6 +34,10 @@ export function nextOrigins(opts: {
   apps: ReadonlyArray<{ hostname: string; port: number | null }>;
   /** The tailnet's DNS name (`tail1234` or `tail1234.ts.net`) when remote access is on. */
   tailnet: string | null;
+  /** This computer's name on the tailnet (D-102); the machine's name when not given. */
+  tailnetNode?: string | null;
+  /** The dashboard's tailnet port: 443, or 8443 after a clash (D-103). */
+  tailnetDashboardPort?: number;
 }): Set<string> {
   const origins = new Set<string>();
   const local = `${opts.hostname}.local`;
@@ -48,8 +52,9 @@ export function nextOrigins(opts: {
   // Its own port, the address it falls back to when its name isn't published (US-APP-05, D-086).
   for (const app of opts.apps) if (app.port !== null) origins.add(`https://${local}:${app.port}`);
   if (opts.tailnet) {
-    const tailnetHost = `${opts.hostname}.${opts.tailnet.replace(/\.ts\.net$/, '')}.ts.net`;
-    origins.add(`https://${tailnetHost}`);
+    const tailnetHost = `${opts.tailnetNode ?? opts.hostname}.${opts.tailnet.replace(/\.ts\.net$/, '')}.ts.net`;
+    const port = opts.tailnetDashboardPort ?? 443;
+    origins.add(`https://${tailnetHost}${port === 443 ? '' : `:${port}`}`);
     for (const app of opts.apps) if (app.port !== null) origins.add(`https://${tailnetHost}:${app.port}`);
   }
   return origins;

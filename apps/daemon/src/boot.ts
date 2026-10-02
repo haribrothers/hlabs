@@ -34,6 +34,10 @@ import type { Logger } from './logger';
 import { NoopMdnsPublisher, type MdnsPublisher } from './mdns/index';
 import { ChildRegistry } from './platform/children';
 import { createMdnsPublisher } from './mdns/publisher';
+import { RemoteService } from './network/remote';
+import { FakeTailscale } from './tailscale/fake';
+import { LocalApiTailscale } from './tailscale/localapi';
+import type { TailscaleClient } from './tailscale/types';
 import { AppDiskUsage } from './apps/disk';
 import { AppLogs } from './apps/logs';
 import { UpdateService } from './apps/update';
@@ -64,6 +68,8 @@ export interface BootDeps {
   engine?: Partial<EngineServiceDeps>;
   proxy?: ProxyManager;
   mdns?: MdnsPublisher;
+  /** The Tailscale on this computer (a fake in tests, and with HLABS_DEV_FAKE_TAILSCALE). */
+  tailscale?: TailscaleClient;
   secrets?: SecretStore;
   system?: SystemProbe;
   drives?: DriveProbe;
@@ -184,6 +190,14 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   });
   await network.sync();
   network.watch(bus);
+  const tailscale = deps.tailscale ?? (config.devFakeTailscale ? new FakeTailscale() : new LocalApiTailscale());
+  const remote = new RemoteService({
+    db,
+    tailscale,
+    logger,
+    dashboardUpstream: config.dashboardUpstream,
+    routes: () => appService.routes(),
+  });
 
   // 4. The built-in store, then reconcile installed apps with the engine.
   readiness.step(3);
@@ -329,6 +343,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     updates,
     logs: new AppLogs({ engine, project: (appId) => appService.project(appId).name }),
     routing: network,
+    remote,
+    tailscale,
     apps: appService,
     reconciled,
     onboarding,
@@ -340,6 +356,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
         hostname: getSetting(db, 'hostname'),
         apps: db.select({ hostname: apps.hostname, port: apps.portFallback }).from(apps).all(),
         tailnet: getSetting(db, 'remote').tailnetName,
+        tailnetNode: getSetting(db, 'remote').nodeName,
+        tailnetDashboardPort: getSetting(db, 'remote').dashboardPort,
       }),
     ),
     notifications,

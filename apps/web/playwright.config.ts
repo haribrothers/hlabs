@@ -22,7 +22,7 @@ if (process.env.TEST_WORKER_INDEX === undefined) {
 // Specs that need a known admin they create themselves (all onboarding and log-in stories, and a few later ones).
 // Signed-out browsers need them too: the main instance answers cookie-less requests as its development admin.
 const FIRST_RUN_SPECS =
-  /(d-098-server-name|us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-24-9]|2[0678])|us-home-1[12]|us-sys-(05|1[89]|20))\.spec\.ts/;
+  /(d-098-server-name|us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-24-9]|2[0678])|us-home-1[12]|us-sys-(0[2-5]|1[89]|20))\.spec\.ts/;
 // Specs that change the main instance for everyone, run after the desktop and phone specs, one at a time: those that
 // really install store apps (the D-071 smoke set, and uninstalling one) or leave failed installs, and those that report
 // the engine as stopped (US-STATE-08…10).
@@ -34,6 +34,8 @@ const daemonEnv = {
   NODE_ENV: 'development',
   HLABS_DEV_NO_ENGINE_INSTALL: '1',
   HLABS_DEV_NO_ENGINE_CONTROL: '1',
+  // A pretend Tailscale: e2e never touches the real one (CI has none).
+  HLABS_DEV_FAKE_TAILSCALE: '1',
   HLABS_DEV_ANONYMOUS_ADMIN: '1',
   HLABS_LOG_LEVEL: 'warn',
   // Its own compose projects, never a dev instance's apps (D-090).

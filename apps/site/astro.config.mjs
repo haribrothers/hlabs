@@ -32,7 +32,11 @@ export default defineConfig({
         },
         {
           label: 'Remote access',
-          items: [{ label: 'How to reach hlabs', link: '/help/remote-access/addresses/' }],
+          items: [
+            { label: 'How to reach hlabs', link: '/help/remote-access/addresses/' },
+            { label: 'Reach hlabs from anywhere', link: '/help/remote-access/tailscale/' },
+            { label: 'Add family to your tailnet', link: '/help/remote-access/family/' },
+          ],
         },
         {
           label: 'People and family',

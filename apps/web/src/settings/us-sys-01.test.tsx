@@ -38,7 +38,19 @@ function open(o: { home?: Record<string, unknown>; apps?: unknown[]; role?: 'adm
     ),
     {
       'auth.me': fakeMe({ role: o.role ?? 'admin' }),
-      'network.status': () => ({ home: home(o.home), ports: { https: 443, http: 80 } }),
+      'network.status': () => ({
+        home: home(o.home),
+        remote: {
+          mode: 'off',
+          state: 'off',
+          tailnet: null,
+          nodeName: null,
+          url: null,
+          loginUrl: null,
+          keyExpiry: null,
+        },
+        ports: { https: 443, http: 80 },
+      }),
       'apps.list': () => ({
         apps: o.apps ?? [app('jellyfin', 'Jellyfin'), app('immich', 'Immich', 'https://hlabs.local:12001')],
       }),

@@ -37,6 +37,7 @@ export default defineConfig(({ command }) => ({
       '/dev/revoke-sessions': DAEMON,
       '/dev/fake-app': DAEMON,
       '/dev/engine': DAEMON,
+      '/dev/tailscale': DAEMON,
       '/dev/remove-app': DAEMON,
       '/dev/rolled-back': DAEMON,
       '/dev/sync-store': DAEMON,

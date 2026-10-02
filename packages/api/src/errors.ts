@@ -83,6 +83,10 @@ export const HLABS_ERRORS = {
   FILES_INVALID_NAME: 'BAD_REQUEST',
   NETWORK_PORT_IN_USE: 'CONFLICT',
   TAILSCALE_HTTPS_DISABLED: 'PRECONDITION_FAILED',
+  /** Linux: the daemon's user isn't Tailscale's operator (D-104). Not FORBIDDEN: that would mean "no access". */
+  TAILSCALE_PERMISSION_DENIED: 'PRECONDITION_FAILED',
+  /** A port hlabs would serve on the tailnet is served by something else (D-103); detail: `{ port }`. */
+  TAILSCALE_SERVE_CONFLICT: 'CONFLICT',
 
   // Backups and restore
   BACKUP_DEST_UNREACHABLE: 'BAD_GATEWAY',
