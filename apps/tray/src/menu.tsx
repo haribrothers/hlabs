@@ -96,7 +96,44 @@ export function Menu() {
   // Until onboarding is complete (also when hlabs restarts before it is, or the window was closed).
   const inSetup = setupPending === true || (boot.firstLaunch && setupPending === null);
   if (inSetup) return <FirstLaunch boot={boot} onOpenSetup={() => void openSetup()} />;
-  return <RunningMenu status={status} />;
+  // Waiting for /healthz after a launch: Starting, without counts yet (US-INST-11).
+  if (boot.step === 'starting') return <StartingMenu status={null} />;
+  return status?.state === 'starting' ? <StartingMenu status={status} /> : <RunningMenu status={status} />;
+}
+
+/** TrayStates "Starting" (US-INST-11): "Starting · 4 of 11 apps" with a bar, Open Dashboard, Show startup log, Quit. */
+export function StartingMenu({ status }: { status: TrayStatus | null }) {
+  const dashboard = useDashboardActions();
+  const counted = status !== null && status.appsExpected > 0;
+  const logPath = status?.startupLogAppId ? `/apps/${status.startupLogAppId}/logs` : '/';
+  return (
+    <TrayMenu
+      status="working"
+      statusText={counted ? t.startingApps(status.appsRunning, status.appsExpected) : t.starting}
+      progress={
+        counted
+          ? {
+              value: status.appsRunning / status.appsExpected,
+              label: t.startingApps(status.appsRunning, status.appsExpected),
+            }
+          : undefined
+      }
+      items={[
+        { separator: true },
+        { label: t.openDashboard, shortcut: '⌘D', onSelect: () => void dashboard.open() },
+        { label: t.showStartupLog, onSelect: () => void dashboard.open(logPath) },
+        { separator: true },
+        { label: t.quit, shortcut: '⌘Q' },
+      ]}
+    />
+  );
+}
+
+/** The status line while running: "Running · 11 apps", or "Running · 10 of 11 apps · 1 needs attention". */
+export function runningLine(status: TrayStatus): string {
+  return status.appsNeedAttention > 0
+    ? t.runningWithAttention(status.appsRunning, status.appsExpected, status.appsNeedAttention)
+    : appsLine(status.appsRunning, t.runningApps);
 }
 
 /** TrayMenu (US-INST-05): "Running · N apps" and CPU, memory and free space; dashes until tray.status answers. */
@@ -106,10 +143,11 @@ export function RunningMenu({ status }: { status: TrayStatus | null }) {
   const memory = formatMemory(status?.memoryUsedBytes);
   const free = formatFree(status?.freeBytes);
   const stopped = status?.state === 'engineStopped';
+  const attention = (status?.appsNeedAttention ?? 0) > 0;
   return (
     <TrayMenu
-      status={stopped ? 'failed' : 'running'}
-      statusText={stopped ? t.engineStopped : status ? appsLine(status.appsRunning, t.runningApps) : t.running}
+      status={stopped || attention ? 'failed' : 'running'}
+      statusText={stopped ? t.engineStopped : status ? runningLine(status) : t.running}
       stats={[
         { label: t.cpu, value: cpu, spoken: t.cpuSpoken(cpu) },
         { label: t.memory, value: memory, spoken: t.memorySpoken(memory) },

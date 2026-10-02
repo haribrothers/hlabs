@@ -59,6 +59,8 @@ export interface Services {
   tailscale: TailscaleClient;
   /** Settles when the start-up reconcile has finished (tests). */
   reconciled: Promise<void>;
+  /** Apps are being brought up (at start, or after the engine came back) (US-INST-11). */
+  isReconciling(): boolean;
   onboarding: OnboardingService;
   sessions: SessionService;
   totp: TotpService;

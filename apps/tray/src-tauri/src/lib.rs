@@ -123,11 +123,13 @@ async fn dashboard_url(app: &AppHandle, action: &str) -> Result<String, DaemonEr
     daemon::web_url(&data).ok_or(DaemonError::Protocol)
 }
 
-/// "Open Dashboard" (⌘D): opens the dashboard in the default browser and closes the menu.
+/// "Open Dashboard" (⌘D), or a page of it such as an app's logs for "Show startup log" (US-INST-11):
+/// opens it in the default browser and closes the menu.
 #[tauri::command]
-async fn open_dashboard(app: AppHandle) -> Result<(), DaemonError> {
+async fn open_dashboard(app: AppHandle, path: Option<String>) -> Result<(), DaemonError> {
     use tauri_plugin_opener::OpenerExt;
-    let url = dashboard_url(&app, "openDashboard").await?;
+    let base = dashboard_url(&app, "openDashboard").await?;
+    let url = daemon::dashboard_page(&base, path.as_deref()).ok_or(DaemonError::Protocol)?;
     app.opener()
         .open_url(&url, None::<&str>)
         .map_err(|_| DaemonError::Protocol)?;

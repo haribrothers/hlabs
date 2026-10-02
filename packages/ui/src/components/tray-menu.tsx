@@ -15,6 +15,8 @@ export interface TrayMenuProps {
   stats?: { label: string; value: string; spoken?: string }[];
   /** A short explanation under the header (Paused, Error and Update states). */
   note?: { title?: string; body: ReactNode };
+  /** Determinate progress under the header, 0–1 (Starting: apps running of those that should run). */
+  progress?: { value: number; label: string };
   /** The state's one primary button ("Resume apps", "Start engine", "Try again"…). */
   action?: { label: string; onSelect: () => void; busy?: boolean; disabled?: boolean };
   items: MenuItem[];
@@ -31,6 +33,7 @@ export function TrayMenu({
   tone = 'default',
   stats,
   note,
+  progress,
   action,
   items,
   width = TRAY_WIDTH,
@@ -66,6 +69,13 @@ export function TrayMenu({
           </span>
         ) : null}
       </div>
+      {progress ? (
+        <Progress
+          value={progress.value * 100}
+          aria-label={progress.label}
+          className={cn('hl-tray-progress', status === 'working' && 'hl-tray-progress-working')}
+        />
+      ) : null}
       {note || action ? (
         <div className="hl-tray-body">
           {note ? (

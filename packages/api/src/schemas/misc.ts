@@ -44,12 +44,16 @@ export const ai = {
 
 /** What the tray shows (US-INST-05; 05 "From 01 · Install & menu-bar app"). */
 export const trayStatusSchema = z.object({
-  /** `starting` (US-INST-11) and `paused` (US-INST-08) come with their stories. */
+  /** `starting`: apps are being brought up (US-INST-11); `paused` comes with US-INST-08. */
   state: z.enum(['starting', 'running', 'paused', 'engineStopped']),
   /** Installed apps in state `running`. */
   appsRunning: z.number().int().nonnegative(),
   /** Installed apps that should be running (not stopped on purpose). */
   appsExpected: z.number().int().nonnegative(),
+  /** Apps in `error` (US-INST-11: "· 1 needs attention"). */
+  appsNeedAttention: z.number().int().nonnegative(),
+  /** The first app that should run but isn't, for "Show startup log"; null when all are running. */
+  startupLogAppId: appIdSchema.nullable(),
   paused: z.boolean(),
   /** Host CPU in use, 0–100; null when it can't be read. */
   cpuPercent: z.number().min(0).max(100).nullable(),

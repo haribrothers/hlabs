@@ -18,6 +18,8 @@ The top of the menu says whether hlabs is running and how many of your apps are 
 
 The numbers refresh every few seconds while the menu is open. Until hlabs answers, the tiles show a dash instead of a number.
 
+While hlabs starts, or brings your apps back after the container engine restarted, the menu says **Starting** with how many apps are up so far, for example **Starting · 4 of 11 apps**, and a bar that fills as they come up. Choose **Show startup log** to see the log of the first app that isn't running yet. When every app is up, the menu goes back to **Running**. If an app couldn't start, the menu says so, for example **Running · 10 of 11 apps · 1 needs attention**; open the dashboard to see which one.
+
 If the menu says **Container engine stopped**, the program that runs your apps (such as OrbStack, Docker Desktop or Colima) isn't running, so your apps are offline.
 
 ## Open the dashboard

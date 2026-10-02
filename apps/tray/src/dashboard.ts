@@ -11,7 +11,8 @@ export function useDashboardActions() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 
-  const open = useCallback(() => invoke('open_dashboard').catch(() => {}), []);
+  /** The dashboard, or one of its pages (`/apps/jellyfin/logs`). */
+  const open = useCallback((path?: string) => invoke('open_dashboard', { path: path ?? null }).catch(() => {}), []);
   const copy = useCallback(async () => {
     try {
       await invoke('copy_dashboard_address');

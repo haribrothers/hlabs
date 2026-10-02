@@ -164,7 +164,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [ ] US-INST-08 · Pause and resume all apps
 - [ ] US-INST-09 · Start at login
 - [ ] US-INST-10 · Quit hlabs
-- [ ] US-INST-11 · Starting state
+- [x] US-INST-11 · Starting state (the count follows tray.status, asked every 5 s while the menu is open, rather than app.stateChanged; "starting" means a reconcile is running or an app that should run is starting or restarting; the needs-attention dot on the icon is US-INST-14)
 - [ ] US-INST-12 · Container engine stopped
 - [ ] US-INST-13 · Can't reach hlabs
 - [ ] US-INST-14 · Menu-bar icon reflects state

@@ -1600,6 +1600,17 @@
     min-width: 0;
     padding: 0 var(--space-2);
   }
+  /* TrayStates: a thin bar under the header. */
+  .hl-tray-progress .hl-progress-track {
+    height: 4px;
+  }
+  .hl-tray-progress {
+    margin-bottom: var(--space-2);
+  }
+  /* Starting: the bar takes the status dot's colour. */
+  .hl-tray-progress-working .hl-progress-fill {
+    background: var(--warning);
+  }
 
   /* File item */
   .hl-file {

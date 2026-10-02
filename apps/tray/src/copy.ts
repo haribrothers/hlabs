@@ -4,6 +4,12 @@ export const trayCopy = {
   /** US-INST-05: "Running · 11 apps". */
   runningApps: { none: 'Running · no apps', one: 'Running · 1 app', many: (n: number) => `Running · ${n} apps` },
   engineStopped: 'Container engine stopped',
+  /** US-INST-11. */
+  starting: 'Starting…',
+  startingApps: (running: number, expected: number) => `Starting · ${running} of ${expected} apps`,
+  runningWithAttention: (running: number, expected: number, attention: number) =>
+    `Running · ${running} of ${expected} apps · ${attention} ${attention === 1 ? 'needs' : 'need'} attention`,
+  showStartupLog: 'Show startup log',
   cpuSpoken: (v: string) => (v === '–' ? 'CPU usage not known yet' : `CPU usage ${v.replace('%', ' percent')}`),
   memorySpoken: (v: string) => (v === '–' ? 'Memory in use not known yet' : `Memory in use ${v}`),
   freeSpoken: (v: string) => (v === '–' ? 'Free space not known yet' : `Free space ${v}`),

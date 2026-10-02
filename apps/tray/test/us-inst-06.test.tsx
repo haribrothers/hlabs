@@ -16,13 +16,13 @@ describe('US-INST-06 · Open the dashboard and copy its address', () => {
   it('"Open Dashboard" asks the Rust side to open the current address', async () => {
     render(<RunningMenu status={null} />);
     await userEvent.click(screen.getByRole('menuitem', { name: /Open Dashboard/ }));
-    expect(tauri.invoke).toHaveBeenCalledWith('open_dashboard');
+    expect(tauri.invoke).toHaveBeenCalledWith('open_dashboard', { path: null });
   });
 
   it('⌘D opens the dashboard too', async () => {
     render(<RunningMenu status={null} />);
     await userEvent.keyboard('{Meta>}d{/Meta}');
-    expect(tauri.invoke).toHaveBeenCalledWith('open_dashboard');
+    expect(tauri.invoke).toHaveBeenCalledWith('open_dashboard', { path: null });
   });
 
   it('"Copy dashboard address" copies it and reads "Copied" for 1.5 s', async () => {

@@ -19,7 +19,11 @@ import type { NetworkService } from '../network/service';
 import type { HostStats } from '../platform/host-stats';
 import type { SystemProbe } from '../platform/system';
 
+/** An app on its way up. */
+const COMING_UP = new Set(['starting', 'restarting']);
+
 export interface TrayStatusDeps {
+  isReconciling(): boolean;
   config: DaemonConfig;
   db: HlabsDb;
   engine: EngineService;
@@ -84,16 +88,23 @@ function reduceTransparency(db: HlabsDb): boolean {
 export async function trayStatus(deps: TrayStatusDeps): Promise<TrayStatus> {
   const { db } = deps;
   const engine = deps.engine.status;
-  const installed = db.select({ state: apps.state, autostart: apps.autostart }).from(apps).all();
+  const installed = db
+    .select({ id: apps.id, state: apps.state, autostart: apps.autostart })
+    .from(apps)
+    .orderBy(asc(apps.id))
+    .all();
   const autostartAll = getSetting(db, 'startup').autostartApps;
+  const expected = installed.filter((a) => a.state === 'running' || (autostartAll && a.autostart));
   const appsRunning = installed.filter((a) => a.state === 'running').length;
-  const appsExpected = installed.filter((a) => a.state === 'running' || (autostartAll && a.autostart)).length;
+  const starting = engine.state === 'running' && (deps.isReconciling() || expected.some((a) => COMING_UP.has(a.state)));
   const updates = getSetting(db, 'updates');
   const [cpu, memory, free] = await Promise.all([deps.host.cpuPercent(), deps.host.memoryUsedBytes(), freeBytes(deps)]);
   return {
-    state: engine.state === 'running' ? 'running' : 'engineStopped',
+    state: engine.state !== 'running' ? 'engineStopped' : starting ? 'starting' : 'running',
     appsRunning,
-    appsExpected,
+    appsExpected: expected.length,
+    appsNeedAttention: installed.filter((a) => a.state === 'error').length,
+    startupLogAppId: expected.find((a) => a.state !== 'running')?.id ?? null,
     paused: false,
     cpuPercent: cpu === null ? null : Math.min(100, Math.max(0, cpu)),
     memoryUsedBytes: memory,

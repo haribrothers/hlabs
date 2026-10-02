@@ -34,6 +34,7 @@ describe('US-INST-05 · See status at a glance', () => {
       boot: { host },
     });
     close = d.close;
+    await d.services!.reconciled;
     return d;
   }
 

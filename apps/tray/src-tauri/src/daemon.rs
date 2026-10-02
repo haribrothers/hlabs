@@ -148,6 +148,24 @@ pub fn web_url(data: &Value) -> Option<String> {
         .map(str::to_owned)
 }
 
+/// The dashboard's address with a page path (`/apps/jellyfin/logs`); only plain paths are allowed.
+pub fn dashboard_page(base: &str, path: Option<&str>) -> Option<String> {
+    let base = base.trim_end_matches('/');
+    match path {
+        None => Some(base.to_owned()),
+        Some(p)
+            if p.starts_with('/')
+                && !p.contains("//")
+                && !p.contains("..")
+                && p.chars()
+                    .all(|c| c.is_ascii_alphanumeric() || "/-_.".contains(c)) =>
+        {
+            Some(format!("{base}{p}"))
+        }
+        Some(_) => None,
+    }
+}
+
 fn parse(status: u16, body: &str) -> Result<Value, DaemonError> {
     let envelope: Envelope = serde_json::from_str(body).map_err(|_| DaemonError::Protocol)?;
     if let Some(error) = envelope.error {
@@ -285,6 +303,22 @@ mod tests {
             None
         );
         assert_eq!(web_url(&serde_json::json!({ "ok": true })), None);
+    }
+
+    #[test]
+    fn us_inst_11_dashboard_pages_are_plain_paths() {
+        let base = "https://hlabs.local/";
+        assert_eq!(
+            dashboard_page(base, None).as_deref(),
+            Some("https://hlabs.local")
+        );
+        assert_eq!(
+            dashboard_page(base, Some("/apps/jellyfin/logs")).as_deref(),
+            Some("https://hlabs.local/apps/jellyfin/logs")
+        );
+        for bad in ["apps", "//evil.com", "/../x", "/a?b", "/a#b", "/a b"] {
+            assert_eq!(dashboard_page(base, Some(bad)), None, "{bad}");
+        }
     }
 
     #[test]

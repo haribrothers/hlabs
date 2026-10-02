@@ -235,13 +235,20 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   const { synced, skipped } = catalog.syncBuiltin();
   logger.info({ apps: synced.length, skipped: skipped.length }, 'built-in store loaded');
   // Health waits take up to minutes, so apps come up in the background; /healthz doesn't wait for them.
-  const reconciled = appService.reconcile().catch((err: unknown) => logger.error({ err }, 'reconciling apps failed'));
+  // How many reconciles are waiting or running: while any is, the tray says "Starting" (US-INST-11).
+  let pendingReconciles = 1;
+  const reconcileOnce = () =>
+    appService
+      .reconcile()
+      .catch((err: unknown) => logger.error({ err }, 'reconciling apps failed'))
+      .finally(() => pendingReconciles--);
+  const reconciled = reconcileOnce();
   // Later reconciles (the engine came back, US-STATE-09, US-STATE-10) run one after another, after this one.
   let reconciling: Promise<void> = reconciled;
-  const appsBack = () =>
-    (reconciling = reconciling
-      .then(() => appService.reconcile())
-      .catch((err: unknown) => logger.error({ err }, 'reconciling apps failed')));
+  const appsBack = () => {
+    pendingReconciles++;
+    return (reconciling = reconciling.then(reconcileOnce));
+  };
 
   // 5. Scheduler: backups, update checks, health probes, usage sampling (added by their phases).
   readiness.step(4);
@@ -376,6 +383,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     dns,
     apps: appService,
     reconciled,
+    isReconciling: () => pendingReconciles > 0,
     onboarding,
     sessions,
     totp,
