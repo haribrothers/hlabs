@@ -1,7 +1,7 @@
 ---
 title: Log in
 description: Choose your account or type your username, then enter your password.
-features: [F-AUTH-01, F-AUTH-02, F-AUTH-03, F-AUTH-04, F-AUTH-07, F-AUTH-09]
+features: [F-AUTH-01, F-AUTH-02, F-AUTH-03, F-AUTH-04, F-AUTH-07, F-AUTH-08, F-AUTH-09]
 ---
 
 For everyone who uses hlabs.
@@ -80,3 +80,13 @@ If someone who runs hlabs invites you, they send you a link. Open it to see who 
 To make your account, enter your name, a username and a password, then choose **Join hlabs**. Usernames are lowercase letters, numbers and dashes (3 to 32, starting with a letter), and can't be changed later. Passwords need at least 12 characters. You're then logged in and see your Home screen. If your admin requires two-factor login, you set that up first.
 
 If you open the link while you're logged in to hlabs as someone else, choose **Log out and continue** first.
+
+## Forgot your password?
+
+hlabs doesn't use email, so a forgotten password is reset at home. Choose **Forgot password?** on the log-in screen to see the ways:
+
+- **Ask your admin.** If you're a family member, your admin can make a one-time reset link for you in Settings › Users.
+- **On the computer running hlabs (Mac or Linux desktop).** An admin opens the hlabs icon in the menu bar and chooses **Reset a password…**; that computer's own login confirms it.
+- **On a Linux server.** An admin connects to the server and runs `sudo hlabs reset-password <username>`.
+
+Recovery codes can't reset a password. They only replace the two-factor code when you've lost your phone, and you still need your password.

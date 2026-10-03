@@ -174,7 +174,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [x] US-INST-18 · Confirm with the OS and apply the reset (the macOS prompt itself can't run in automated tests; it's part of the phase's manual check; the Linux polkit prompt comes with the Linux tray, phase 6)
 - [ ] US-INST-19 · Check for hlabs updates
 - [ ] US-INST-20 · Restart to update
-- [ ] US-AUTH-20 · Understand how to reset a forgotten password
+- [x] US-AUTH-20 · Understand how to reset a forgotten password (the desktop option names the menu item as it reads, "Reset a password…", rather than the story's "Reset password…"; `hlabs reset-password` itself is the CLI's, phase 6)
 - [ ] US-AUTH-21 · Recovery codes never reset a password
 - [ ] US-AUTH-22 · Set a new password from an admin's reset link
 - [ ] US-USE-01 · See host CPU, memory, storage and network at a glance

@@ -22,6 +22,7 @@ import { Route as DevUiRouteImport } from './routes/dev/ui'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as LoginCodeRouteImport } from './routes/login.code'
+import { Route as LoginForgotRouteImport } from './routes/login.forgot'
 import { Route as LoginLockedRouteImport } from './routes/login.locked'
 import { Route as LoginPasswordRouteImport } from './routes/login.password'
 import { Route as LoginUsernameRouteImport } from './routes/login.username'
@@ -103,6 +104,11 @@ const LoginIndexRoute = LoginIndexRouteImport.update({
 const LoginCodeRoute = LoginCodeRouteImport.update({
   id: '/login/code',
   path: '/login/code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginForgotRoute = LoginForgotRouteImport.update({
+  id: '/login/forgot',
+  path: '/login/forgot',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginLockedRoute = LoginLockedRouteImport.update({
@@ -206,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/dev/ui': typeof DevUiRoute
   '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
+  '/login/forgot': typeof LoginForgotRoute
   '/login/locked': typeof LoginLockedRoute
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
@@ -235,6 +242,7 @@ export interface FileRoutesByTo {
   '/dev/ui': typeof DevUiRoute
   '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
+  '/login/forgot': typeof LoginForgotRoute
   '/login/locked': typeof LoginLockedRoute
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
@@ -268,6 +276,7 @@ export interface FileRoutesById {
   '/dev/ui': typeof DevUiRoute
   '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
+  '/login/forgot': typeof LoginForgotRoute
   '/login/locked': typeof LoginLockedRoute
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
@@ -302,6 +311,7 @@ export interface FileRouteTypes {
     | '/dev/ui'
     | '/invite/$token'
     | '/login/code'
+    | '/login/forgot'
     | '/login/locked'
     | '/login/password'
     | '/login/username'
@@ -331,6 +341,7 @@ export interface FileRouteTypes {
     | '/dev/ui'
     | '/invite/$token'
     | '/login/code'
+    | '/login/forgot'
     | '/login/locked'
     | '/login/password'
     | '/login/username'
@@ -363,6 +374,7 @@ export interface FileRouteTypes {
     | '/dev/ui'
     | '/invite/$token'
     | '/login/code'
+    | '/login/forgot'
     | '/login/locked'
     | '/login/password'
     | '/login/username'
@@ -396,6 +408,7 @@ export interface RootRouteChildren {
   DevUiRoute: typeof DevUiRoute
   InviteTokenRoute: typeof InviteTokenRoute
   LoginCodeRoute: typeof LoginCodeRoute
+  LoginForgotRoute: typeof LoginForgotRoute
   LoginLockedRoute: typeof LoginLockedRoute
   LoginPasswordRoute: typeof LoginPasswordRoute
   LoginUsernameRoute: typeof LoginUsernameRoute
@@ -498,6 +511,13 @@ declare module '@tanstack/react-router' {
       path: '/login/code'
       fullPath: '/login/code'
       preLoaderRoute: typeof LoginCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/forgot': {
+      id: '/login/forgot'
+      path: '/login/forgot'
+      fullPath: '/login/forgot'
+      preLoaderRoute: typeof LoginForgotRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login/locked': {
@@ -679,6 +699,7 @@ const rootRouteChildren: RootRouteChildren = {
   DevUiRoute: DevUiRoute,
   InviteTokenRoute: InviteTokenRoute,
   LoginCodeRoute: LoginCodeRoute,
+  LoginForgotRoute: LoginForgotRoute,
   LoginLockedRoute: LoginLockedRoute,
   LoginPasswordRoute: LoginPasswordRoute,
   LoginUsernameRoute: LoginUsernameRoute,
