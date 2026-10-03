@@ -41,6 +41,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     // Exactly the viewport: pages scroll inside main, and windows (Settings) can fill it without the page scrolling.
+    // .hl-window-fill (packages/ui components.css) undoes main's desktop padding to make a window app-window tall.
     <div className={`${wallpaperClass(appearance?.wallpaper)} relative flex h-dvh flex-col`}>
       <a
         href="#main"

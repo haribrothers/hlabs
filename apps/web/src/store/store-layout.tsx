@@ -43,7 +43,7 @@ export function StoreLayout() {
   return (
     <GlassCard
       level={2}
-      className="mx-auto grid min-h-0 w-full max-w-window flex-1 grid-cols-[240px_1fr] overflow-hidden p-0"
+      className="hl-window-fill mx-auto grid min-h-0 w-full max-w-window flex-1 grid-cols-[240px_1fr] overflow-hidden p-0"
     >
       <div className="flex min-h-0 flex-col border-r border-hairline">
         <ScrollPane

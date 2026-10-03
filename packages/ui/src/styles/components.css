@@ -1000,6 +1000,12 @@
     .hl-window-layer {
       padding: 20px 20px 105px;
     }
+    /* An area window (Settings, the Store, Live usage) as tall as an app window: it reaches out of the shell's main padding (md:pt-14,
+       md:pb-40 in apps/web/src/shell/shell.tsx) to the app window's 20px top and 105px bottom. */
+    .hl-window-fill {
+      margin-top: calc(20px - 3.5rem);
+      margin-bottom: calc(105px - 10rem);
+    }
   }
   .hl-nav-desktop {
     position: fixed;

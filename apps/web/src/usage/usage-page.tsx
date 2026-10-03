@@ -62,9 +62,12 @@ export function UsagePage() {
   }, []);
 
   return (
-    // Like Settings and the Store: a window that fills the space above the Dock and never makes the page scroll; the
+    // Like Settings and the Store, as tall as an app window: a window that fills the space above the Dock and never makes the page scroll; the
     // title and the time range stay put while the rest scrolls under them.
-    <GlassCard level={2} className="mx-auto flex min-h-0 w-full max-w-window flex-1 flex-col overflow-hidden p-0">
+    <GlassCard
+      level={2}
+      className="hl-window-fill mx-auto flex min-h-0 w-full max-w-window flex-1 flex-col overflow-hidden p-0"
+    >
       <ScrollPane
         className="flex-1"
         // The body sits inside the scroller's right margin (mr-2) and its scrollbar gutter (8px), so the header's right
