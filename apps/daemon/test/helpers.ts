@@ -92,6 +92,8 @@ export async function startDaemon(
     engineControl: new FakeEngineControl(),
     sleepBlocker: new FakeSleepBlocker(),
     host: new FakeHostStats(),
+    // Usage tests take samples themselves; nothing else wants a sample every 5 s.
+    sampleUsage: false,
     ...options.boot,
   };
   const services = options.skipBoot ? null : await boot(bootDeps);

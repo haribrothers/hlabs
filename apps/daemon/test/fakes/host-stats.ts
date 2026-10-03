@@ -1,4 +1,4 @@
-import type { HostStats } from '../../src/platform/host-stats';
+import type { HostCounters, HostStats } from '../../src/platform/host-stats';
 
 /** A computer that's 18% busy with 9.4 GB of memory in use, unless a test says otherwise. */
 export class FakeHostStats implements HostStats {
@@ -11,5 +11,10 @@ export class FakeHostStats implements HostStats {
   }
   async memoryUsedBytes() {
     return this.memory;
+  }
+  /** Totals a test moves forward; null makes them unreadable. */
+  totals: HostCounters | null = { netRxBytes: 0, netTxBytes: 0, diskReadBytes: 0, diskWriteBytes: 0 };
+  async counters() {
+    return this.totals && { ...this.totals };
   }
 }

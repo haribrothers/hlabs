@@ -1,6 +1,7 @@
 // Typed events on the daemon's bus, forwarded through `events.stream` (docs/prd/02-architecture.md §2.12).
 import { z } from 'zod';
 import { hlabsCodeSchema } from './schemas/common';
+import { usageSampleSchema } from './schemas/usage';
 import {
   appStateSchema,
   engineKindSchema,
@@ -66,10 +67,7 @@ export const eventSchemas = {
   'notification.created': notificationSchema.omit({ id: true, readAt: true }).extend({ notificationId: z.string() }),
   /** Marked read in one session; the others drop its toast. */
   'notification.read': z.object({ ids: z.array(z.string()).min(1) }),
-  'usage.sample': z.object({
-    ts: z.number(),
-    host: z.object({ cpu: z.number(), memBytes: z.number(), netRx: z.number(), netTx: z.number() }),
-  }),
+  'usage.sample': usageSampleSchema,
   'update.available': z.object({ version: z.string(), channel: z.enum(['stable', 'beta']) }),
   'session.revoked': z.object({ sessionId: z.string() }),
   /** Sent by `events.stream` itself (not the bus) when it can't resume from the client's lastEventId, such as after

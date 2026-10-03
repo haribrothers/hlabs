@@ -24,6 +24,18 @@ export interface ContainerState {
   exitCode: number | null;
 }
 
+/** One container's usage right now (US-USE-08). Network and disk are totals since it started; rates come from two. */
+export interface ContainerStats {
+  /** Its share of the whole host's CPU, 0–100 (the same scale as the host CPU tile). */
+  cpuPercent: number;
+  /** Memory in use without the file cache. */
+  memBytes: number;
+  netRxBytes: number;
+  netTxBytes: number;
+  diskReadBytes: number;
+  diskWriteBytes: number;
+}
+
 /** Bytes of an image pull so far, summed over its layers. `total` grows as layers report their size. */
 export interface PullProgress {
   current: number;
@@ -50,6 +62,8 @@ export interface ContainerEngine {
     containerId: string,
     opts: { tail?: number; since?: number; until?: number; follow?: boolean; signal?: AbortSignal },
   ): AsyncIterable<ContainerLogLine>;
+  /** One container's usage now (`docker stats` once, without streaming). */
+  containerStats(containerId: string, signal?: AbortSignal): Promise<ContainerStats>;
   /** An image's size on disk (`sha256:…` or a reference), or null when it isn't here. */
   imageSize(image: string): Promise<number | null>;
   /**

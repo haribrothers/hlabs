@@ -14,6 +14,7 @@ import type { OnboardingService } from './onboarding/service';
 import type { DriveProbe } from './platform/drives';
 import type { KeepAwake } from './platform/keep-awake';
 import type { HostStats } from './platform/host-stats';
+import type { UsageSampler } from './usage/sampler';
 import type { SystemProbe } from './platform/system';
 import type { NotificationService } from './notifications/service';
 import type { NetworkStorage } from './storage/network';
@@ -70,6 +71,8 @@ export interface Services {
   system: SystemProbe;
   /** CPU and memory in use right now (US-INST-05). */
   host: HostStats;
+  /** Usage every 5 s, the last hour in memory (US-USE-08). */
+  usage: UsageSampler;
   /** Holds off sleep while apps run, when the setting is on (US-SYS-20). */
   keepAwake: KeepAwake;
   network: NetworkStorage;

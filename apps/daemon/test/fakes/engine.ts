@@ -3,6 +3,7 @@ import type { ContainerLogLine } from '../../src/engine/log-frames';
 import type {
   ContainerEngine,
   ContainerState,
+  ContainerStats,
   EngineCandidate,
   EngineInfo,
   PullProgress,
@@ -59,6 +60,31 @@ export class FakeEngine implements ContainerEngine {
     if (signal?.aborted) throw new Error('aborted');
     onProgress({ current: total, total });
     this.images.add(ref);
+  }
+
+  /** Container id → its stats (a quiet container otherwise); `slowStats` makes a call hang, `statsErrors` fail. */
+  readonly stats = new Map<string, ContainerStats>();
+  readonly slowStats = new Set<string>();
+  readonly statsErrors = new Set<string>();
+  statsCalls = 0;
+
+  async containerStats(containerId: string, signal?: AbortSignal): Promise<ContainerStats> {
+    this.assertRunning();
+    this.statsCalls++;
+    if (this.statsErrors.has(containerId)) throw new Error(`no stats for ${containerId}`);
+    if (this.slowStats.has(containerId)) {
+      await new Promise((_resolve, reject) => signal?.addEventListener('abort', () => reject(new Error('aborted'))));
+    }
+    return (
+      this.stats.get(containerId) ?? {
+        cpuPercent: 0,
+        memBytes: 0,
+        netRxBytes: 0,
+        netTxBytes: 0,
+        diskReadBytes: 0,
+        diskWriteBytes: 0,
+      }
+    );
   }
 
   async projectContainers(project: string) {

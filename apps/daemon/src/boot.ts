@@ -51,6 +51,7 @@ import { NodeDriveProbe, type DriveProbe } from './platform/drives';
 import { LinuxNetworkMounter, MacNetworkMounter, type NetworkMounter } from './platform/network-mount';
 import { NetworkStorage } from './storage/network';
 import { SystemHostStats, type HostStats } from './platform/host-stats';
+import { UsageSampler } from './usage/sampler';
 import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
@@ -76,6 +77,8 @@ export interface BootDeps {
   secrets?: SecretStore;
   system?: SystemProbe;
   host?: HostStats;
+  /** Tests that drive the sampler themselves turn the 5 s timer off. */
+  sampleUsage?: boolean;
   drives?: DriveProbe;
   mounter?: NetworkMounter;
   /** Downloads, tar and colima for the engine install (US-ONB-05). */
@@ -256,6 +259,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
 
   // First run: keep the setup token ready and print the setup URL (US-ONB-01, D-041).
   const probe = deps.system ?? new NodeSystemProbe();
+  const host = deps.host ?? new SystemHostStats();
   registerEngineInstall({
     jobs,
     engine,
@@ -404,7 +408,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     notifications,
     drives: deps.drives ?? new NodeDriveProbe(),
     system: probe,
-    host: deps.host ?? new SystemHostStats(),
+    host,
+    usage: new UsageSampler({ db, bus, engine, host, logger, composePrefix: config.composePrefix }),
     keepAwake: new KeepAwake(deps.sleepBlocker ?? processSleepBlocker(), () => ({
       keepAwake: getSetting(db, 'startup').keepAwake,
       appsRunning: db.select({ id: apps.id }).from(apps).where(eq(apps.state, 'running')).all().length,
@@ -428,8 +433,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   });
   services.login.startPruning();
 
-  // 6. Ready.
+  // 6. Ready; usage sampling starts (US-USE-08).
   readiness.ready();
+  if (deps.sampleUsage !== false) services.usage.start();
   bus.emit('system.status', { state: 'ready' });
   logger.info({ version: config.version, port: config.port }, 'hlabsd is ready');
   return services;
@@ -438,6 +444,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
 export async function shutdown(services: Services | null): Promise<void> {
   if (!services) return;
   services.engine.stop();
+  services.usage.stop();
   services.login.stop();
   services.keepAwake.stop();
   await services.jobs.shutdown();

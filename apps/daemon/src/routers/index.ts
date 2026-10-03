@@ -17,6 +17,7 @@ import { store } from './store';
 import { settings } from './settings';
 import { system } from './system';
 import { tray } from './tray';
+import { usage } from './usage';
 import { users } from './users';
 
 export const handlers: AppHandlers<DaemonContext> = {
@@ -36,6 +37,7 @@ export const handlers: AppHandlers<DaemonContext> = {
   invites,
   network,
   tray,
+  usage,
 };
 
 type Fn = (input: unknown, ctx: DaemonContext, signal: AbortSignal | undefined) => unknown;

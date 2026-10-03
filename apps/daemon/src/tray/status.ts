@@ -18,6 +18,7 @@ import type { JobRunner } from '../jobs/runner';
 import type { NetworkService } from '../network/service';
 import type { HostStats } from '../platform/host-stats';
 import type { SystemProbe } from '../platform/system';
+import type { UsageSampler } from '../usage/sampler';
 
 /** An app on its way up. */
 const COMING_UP = new Set(['starting', 'restarting']);
@@ -31,6 +32,7 @@ export interface TrayStatusDeps {
   routing: NetworkService;
   system: SystemProbe;
   host: HostStats;
+  usage?: Pick<UsageSampler, 'latest'>;
 }
 
 /** The dashboard's address now: hlabs's `.local` name, or the LAN address while it can't be published; without Caddy
@@ -99,7 +101,13 @@ export async function trayStatus(deps: TrayStatusDeps): Promise<TrayStatus> {
   const starting = engine.state === 'running' && (deps.isReconciling() || expected.some((a) => COMING_UP.has(a.state)));
   const updates = getSetting(db, 'updates');
   const paused = getSetting(db, 'paused') !== null;
-  const [cpu, memory, free] = await Promise.all([deps.host.cpuPercent(), deps.host.memoryUsedBytes(), freeBytes(deps)]);
+  // The sampler's latest reading (US-USE-08), or read now before its first.
+  const sampled = deps.usage?.latest()?.host;
+  const [cpu, memory, free] = await Promise.all([
+    sampled ? sampled.cpu : deps.host.cpuPercent(),
+    sampled ? sampled.memBytes : deps.host.memoryUsedBytes(),
+    freeBytes(deps),
+  ]);
   return {
     state: engine.state !== 'running' ? 'engineStopped' : paused ? 'paused' : starting ? 'starting' : 'running',
     appsRunning,

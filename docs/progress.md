@@ -184,7 +184,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [ ] US-USE-05 · Use the charts with a keyboard and screen reader
 - [ ] US-USE-06 · Sort the per-app table
 - [ ] US-USE-07 · See stopped and failing apps in the table
-- [ ] US-USE-08 · Sample host and app usage every 5 seconds
+- [x] US-USE-08 · Sample host and app usage every 5 seconds (host CPU and memory from systeminformation; network from real interfaces only; an app's CPU is its share of the whole host; the CPU budget is checked against the fake engine, so it measures the sampler, not Docker)
 - [ ] US-USE-09 · Keep usage history at the right resolution
 - [ ] US-SYS-23 · Update hlabs
 - [ ] US-SYS-24 · Check for updates now
