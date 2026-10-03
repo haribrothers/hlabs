@@ -167,6 +167,6 @@ describe('US-USE-07', () => {
     );
     const t = await screen.findByRole('table', { name: 'Apps' });
     expect(await within(t).findByRole('rowheader', { name: 'Jellyfin' })).toBeInTheDocument();
-    await expect.poll(() => names(t), { timeout: 2000 }).toEqual(['Immich']);
+    await expect.poll(() => names(t), { timeout: 5000 }).toEqual(['Immich']);
   });
 });

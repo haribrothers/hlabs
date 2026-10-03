@@ -38,7 +38,7 @@ describe('US-SYS-24', () => {
     const { calls } = renderScreen(UpdatesSection, {
       'settings.updates.get': () => status(),
       'settings.updates.check': check as never,
-      'store.listUpdates': () => ({ updates: [] }),
+      'store.listUpdates': () => ({ pending: [], rolledBack: [], lastCheckedAt: null }),
     });
     const button = await screen.findByRole('button', { name: 'Check now' });
     fireEvent.click(button);

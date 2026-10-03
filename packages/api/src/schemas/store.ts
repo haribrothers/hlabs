@@ -1,7 +1,38 @@
 import { STORE_CATEGORY_GROUP_IDS } from '@hlabs/shared';
 import { z } from 'zod';
 import { io } from '../trpc';
-import { appIdSchema, appRefSchema, empty, idSchema, ok, pageInputSchema, pending } from './common';
+import { homeAppSchema } from './apps';
+import { appIdSchema, appRefSchema, appStateSchema, empty, idSchema, ok, pageInputSchema, pending } from './common';
+
+/** App updates (US-SYS-25): installed apps with a newer store version, and updates that rolled back. */
+export const storeUpdatesSchema = z.object({
+  pending: z.array(
+    z.object({
+      appId: z.string(),
+      name: z.string(),
+      icon: homeAppSchema.shape.icon,
+      state: appStateSchema,
+      fromVersion: z.string(),
+      toVersion: z.string(),
+      /** The new version's "What's new" (Markdown, the manifest's `releaseNotes`); null without notes. */
+      releaseNotes: z.string().nullable(),
+    }),
+  ),
+  /** Updates that didn't start and were rolled back, until an admin dismisses them (US-STORE-17). */
+  rolledBack: z.array(
+    z.object({
+      appId: z.string(),
+      name: z.string(),
+      fromVersion: z.string(),
+      toVersion: z.string(),
+      /** False: going back failed too. */
+      restored: z.boolean(),
+    }),
+  ),
+  /** The last check (the store index is refreshed with hlabs's update check). */
+  lastCheckedAt: z.number().nullable(),
+});
+export type StoreUpdates = z.infer<typeof storeUpdatesSchema>;
 
 export const storeCategoryGroupSchema = z.enum(STORE_CATEGORY_GROUP_IDS);
 
@@ -158,7 +189,7 @@ export const store = {
     empty,
     z.object({ categories: z.array(z.object({ id: storeCategoryGroupSchema, count: z.number().int().positive() })) }),
   ),
-  listUpdates: io(empty, pending),
+  listUpdates: io(empty, storeUpdatesSchema),
   sources: {
     list: io(empty, pending),
     inspect: io(z.object({ url: z.string().url() }), pending),

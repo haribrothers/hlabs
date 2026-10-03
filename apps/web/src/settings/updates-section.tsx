@@ -13,6 +13,7 @@ import { showToast } from '../lib/toasts';
 import { useNow } from '../lib/use-now';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useEventStream } from '../lib/use-event-stream';
+import { AppUpdates } from './app-updates';
 
 const LOGO = 32;
 
@@ -20,6 +21,7 @@ export function UpdatesSection() {
   return (
     <div className="flex flex-col gap-7">
       <HlabsUpdate />
+      <AppUpdates />
       <AutomaticUpdates />
     </div>
   );
@@ -67,10 +69,7 @@ function AutomaticUpdates() {
     />
   );
   return (
-    <section aria-labelledby="automatic-updates" className="flex flex-col gap-2">
-      <h2 id="automatic-updates" className="m-0 text-body-sm font-semibold">
-        {copy.automatic}
-      </h2>
+    <section aria-label={copy.automatic}>
       <List label={copy.automatic}>
         {row('hlabs', copy.autoHlabs, copy.autoHlabsNote)}
         {row('apps', copy.autoApps, copy.autoAppsNote)}

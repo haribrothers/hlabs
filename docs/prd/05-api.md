@@ -102,7 +102,7 @@ These were added while writing user stories and are **part of the API contract**
 - `store.sources.inspect` (admin query): url → `{ kind, format, name, appCount, signed, keyFingerprint }` before adding.
 - `apps.retryInstall` (admin mutation): `{ appId, portOverrides? }` → `{ jobId }`; only from `install_failed`.
 - `apps.updateAll` (admin mutation): queues updates for all pending apps → `{ jobIds }`.
-- `store.listApps` gains `sort`, `installedOnly`, `arm64Only`; `store.listUpdates` returns pending, recent (14 days), `rolledBack` and last check time.
+- `store.listApps` gains `sort`, `installedOnly`, `arm64Only`; `store.listUpdates` (admin, US-SYS-25) → `{ pending [{ appId, name, icon, state, fromVersion, toVersion, releaseNotes | null }], rolledBack [{ appId, name, fromVersion, toVersion, restored }], lastCheckedAt }` (`storeUpdatesSchema`): installed apps whose store listing has another version, the new version's manifest `releaseNotes`, and updates that rolled back until dismissed; "recent (14 days)" joins it with the App Store's updates list (phase 7).
 
 ### From [06 · Using & managing apps](../features/06-apps.md)
 

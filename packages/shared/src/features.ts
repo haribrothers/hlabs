@@ -40,6 +40,8 @@ export const FEATURE_PHASE = {
   notifications: 7,
   /** The App Store updates list (F-STORE-08) and the Dock's update badge (US-HOME-05). */
   appUpdates: 7,
+  /** "Update all" in Settings › Updates (US-SYS-25). */
+  updateAll: 7,
   homeEdit: 7,
   widgets: 7,
   storeSources: 7,

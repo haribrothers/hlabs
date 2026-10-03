@@ -188,7 +188,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [x] US-USE-09 · Keep usage history at the right resolution (network and disk are stored as average bytes/s; the 1h point is written within a minute after its hour ends)
 - [x] US-SYS-23 · Update hlabs (the daemon side and Settings card; the tray applying it is US-INST-19/20, the full-screen updating state and reload US-STATE-01/02, which the 'switches to SysUpdating' criterion is tested with; headless Linux is tested against a temp folder until install.sh creates /opt/hlabs in phase 6, D-118, R-13)
 - [x] US-SYS-24 · Check for updates now (the manifest is the Tauri updater's `latest.json` on GitHub Releases, D-117; "syncs all enabled store sources" refreshes the built-in store until sources ship in phase 7)
-- [ ] US-SYS-25 · Update apps from Settings
+- [x] US-SYS-25 · Update apps from Settings (store.listUpdates; "Update all" hidden until phase 7 with the updateAll flag; "Rolled back" links to the app's page, where US-STORE-17's banner is; the row buttons are secondary, one white primary per view)
 - [x] US-SYS-26 · Choose automatic updates ("Back up app data before updating" stays hidden until backups ship in phase 5, and its snapshot with it)
 - [ ] US-STATE-01 · Show a full-screen updating state
 - [ ] US-STATE-02 · Reconnect automatically when the update finishes

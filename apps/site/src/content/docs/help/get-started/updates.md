@@ -18,6 +18,12 @@ hlabs only installs updates it can verify were made by the hlabs project. If an 
 
 If hlabs is busy with something that can't be interrupted, such as a restore, **Update now** waits and says what for. Try again when it's done.
 
+## Update your apps
+
+Under **App updates**, each app with a newer version shows the version you have and the new one, for example **1.2 → 1.3**. Choose **What's new** to read what changed, and **Update** to install it; the row shows how far the update has got, and goes away when it's done. Your app's data stays as it is.
+
+If an app's new version doesn't start, hlabs puts the version you had back and the row says **Rolled back**. Choose it to see what happened and try again. When there's nothing to update, it says **All apps are up to date**.
+
 ## Update automatically
 
 Under **Automatic updates**:
