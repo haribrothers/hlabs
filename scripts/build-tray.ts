@@ -8,7 +8,8 @@
 //
 // Updates are signed with the development key (~/.tauri/hlabs-dev.key, or TAURI_SIGNING_PRIVATE_KEY). Serve
 // dist/updates (e.g. `python3 -m http.server 8090 -d dist/updates`) and start the app with
-// HLABS_UPDATE_ENDPOINT=http://127.0.0.1:8090/latest.json; HLABS_UPDATE_BASE changes the archive's address.
+// HLABS_UPDATE_ENDPOINT=http://127.0.0.1:8090/latest.json; HLABS_UPDATE_BASE changes the archive's address. Builds
+// from here may check over plain http (the Tauri updater refuses it otherwise in a release build).
 import { execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
@@ -49,7 +50,13 @@ run(
     '--config',
     'src-tauri/tauri.bundle.json',
     '--config',
-    JSON.stringify({ version, bundle: { createUpdaterArtifacts: update } }),
+    // These builds check a local server over http (the release pipeline, phase 6, builds without this); what they
+    // download must still be signed with the hlabs key.
+    JSON.stringify({
+      version,
+      bundle: { createUpdaterArtifacts: update },
+      plugins: { updater: { dangerousInsecureTransportProtocol: true } },
+    }),
     '--bundles',
     'app',
   ],
