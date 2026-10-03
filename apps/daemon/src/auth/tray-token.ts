@@ -74,16 +74,23 @@ export function trayTokenSource(config: DaemonConfig, platform: NodeJS.Platform 
 
 const sha256 = (value: string) => createHash('sha256').update(value, 'utf8').digest();
 
-/** How often a token that doesn't match makes the daemon read the source again (D-112). */
-const RELOAD_MS = 5_000;
+/** How soon a token that doesn't match makes the daemon read the source again (D-112)… */
+export const RELOAD_MS = 5_000;
+/**
+ * …doubling, up to this, while reading it again finds the same token: a tray with the wrong token (another hlabs, a
+ * development build) must not make the keychain ask for the password every few seconds. A tray that makes a new token
+ * restarts the daemon anyway (US-INST-16).
+ */
+export const MAX_RELOAD_MS = 5 * 60_000;
 
 /**
- * Checks tray tokens against the hash of the stored one. A token that doesn't match makes it read the source again
- * at most every 5 s, so a token the tray just regenerated (US-INST-16) works without a restart.
+ * Checks tray tokens against the hash of the stored one. A token that doesn't match makes it read the source again,
+ * at most every 5 s and less often while that finds nothing new (MAX_RELOAD_MS).
  */
 export class TrayTokens {
   private hash: Buffer | null = null;
   private loadedAt = Number.NEGATIVE_INFINITY;
+  private wait = RELOAD_MS;
 
   constructor(
     private readonly source: TrayTokenSource,
@@ -91,7 +98,9 @@ export class TrayTokens {
   ) {}
 
   async load(): Promise<void> {
+    const first = this.loadedAt === Number.NEGATIVE_INFINITY;
     this.loadedAt = this.now();
+    const before = this.hash;
     try {
       const token = await this.source.read();
       this.hash = token ? sha256(token) : null;
@@ -99,13 +108,18 @@ export class TrayTokens {
       // The keychain refused or the file is unreadable: no tray access until it can be read.
       this.hash = null;
     }
+    const same = before === null ? this.hash === null : this.hash !== null && before.equals(this.hash);
+    this.wait = same && !first ? Math.min(this.wait * 2, MAX_RELOAD_MS) : RELOAD_MS;
   }
 
   async verify(token: string): Promise<boolean> {
     if (token === '') return false;
     const candidate = sha256(token);
-    if (this.matches(candidate)) return true;
-    if (this.now() - this.loadedAt < RELOAD_MS) return false;
+    if (this.matches(candidate)) {
+      this.wait = RELOAD_MS;
+      return true;
+    }
+    if (this.now() - this.loadedAt < this.wait) return false;
     await this.load();
     return this.matches(candidate);
   }

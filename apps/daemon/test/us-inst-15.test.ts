@@ -186,6 +186,23 @@ describe('US-INST-15 · Tray authenticates to the daemon with a local token', ()
     expect(await tokens.verify(TOKEN)).toBe(false);
   });
 
+  it('a tray with the wrong token makes it read the source less and less often (no keychain prompt every 5 s)', async () => {
+    let now = 0;
+    const source = new StaticSource(TOKEN);
+    const tokens = new TrayTokens(source, () => now);
+    await tokens.load();
+    const wrong = newTrayToken();
+    // Asked every second by a tray holding another token: reads at 5 s, then 15 s (10 s later), then 35 s (20 s).
+    for (now = 1_000; now <= 40_000; now += 1_000) await tokens.verify(wrong);
+    expect(source.reads).toBe(1 + 3);
+    // The right token resets it; a regenerated one is picked up again within 5 s.
+    expect(await tokens.verify(TOKEN)).toBe(true);
+    const next = newTrayToken();
+    source.token = next;
+    now += 5_000;
+    expect(await tokens.verify(next)).toBe(true);
+  });
+
   it('gives no tray access when the token is missing or unreadable', async () => {
     const tokens = new TrayTokens(new StaticSource(null));
     await tokens.load();
