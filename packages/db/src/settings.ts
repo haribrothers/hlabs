@@ -99,7 +99,12 @@ export const settingsSchemas = {
       connectStartedAt: null,
     }),
   paused: z
-    .object({ at: z.number().int(), appIds: z.array(z.string()) })
+    .object({
+      at: z.number().int(),
+      appIds: z.array(z.string()),
+      /** Stopped by "Quit hlabs" (US-INST-10, D-120): the next start resumes them, unlike a pause. */
+      untilRestart: z.boolean().default(false),
+    })
     .nullable()
     .default(null),
   notifications: z

@@ -90,6 +90,15 @@ export const trayCopy = {
   resetPassword: 'Reset a password…',
   uninstall: 'Uninstall hlabs…',
   quit: 'Quit hlabs',
+  /** US-INST-10 (D-120): the warning before quitting stops hlabs and every app. */
+  quitTitle: 'Quit hlabs?',
+  quitBody:
+    'Your apps will stop, and nobody can reach them or the dashboard, at home or away, until you open hlabs again. Your data stays as it is.',
+  cancel: 'Cancel',
+  ok: 'OK',
+  quitBusyTitle: 'hlabs is busy',
+  quitBusyBody: "An update or a restore is running and can't be interrupted. Quit hlabs when it's done.",
+  stoppingApps: 'Stopping apps…',
   /** US-INST-16: the keychain refused access to the tray token. */
   keychainStatus: 'Needs Keychain access',
   keychainNote: 'hlabs needs Keychain access to work.',

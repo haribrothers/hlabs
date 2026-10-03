@@ -4,6 +4,7 @@ import type { TrayStatus } from '@hlabs/api';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { invoke } from '@tauri-apps/api/core';
 import { TrayMenu, TraySetup, type MenuItem } from '@hlabs/ui';
+import { useEffect } from 'react';
 import { useAccess, type Access } from './access';
 import { useBoot, type BootState } from './boot';
 import { useDashboardActions } from './dashboard';
@@ -12,7 +13,7 @@ import { useDaemonDownActions, useHealth, type DaemonHealth } from './health';
 import { iconFor, useMenuBarIcon } from './icon';
 import { appsLine, formatCpu, formatFree, formatMemory } from './format';
 import { useOpenSetup, useSetupPending } from './setup';
-import { quitTray } from './quit';
+import { quitTray, setQuitBusy, useStopping } from './quit';
 import { useQuickAction } from './quick-action';
 import { useApplyUpdate, useUpdateCheck, type CheckFeedback } from './updates';
 import { useStartAtLogin } from './start-at-login';
@@ -79,7 +80,7 @@ const CHECK_LABEL: Record<Exclude<CheckFeedback, null>, string> = {
   failed: t.checkFailed,
 };
 
-/** "Quit hlabs" (⌘Q, US-INST-10): quits only the menu-bar app; hlabs and your apps keep running (D-015). */
+/** "Quit hlabs" (⌘Q, US-INST-10): after a warning, stops hlabs and every app, then quits (D-120). */
 export const quitItem: MenuItem = { label: t.quit, shortcut: '⌘Q', onSelect: () => void quitTray() };
 
 /**
@@ -125,8 +126,12 @@ export function Menu() {
   const updates = useUpdateCheck(channel);
   const applying = useApplyUpdate(channel, status?.updateRequested ?? null);
   useMenuBarIcon(iconFor({ boot, access, health, status, updateAvailable: updates.found !== null }));
+  const stopping = useStopping();
+  useEffect(() => setQuitBusy(status?.exclusiveJobRunning === true), [status?.exclusiveJobRunning]);
   // Nothing until the Rust side has said where things stand, so no state flashes by.
   if (boot === null || access === null) return null;
+  // Quitting: the apps are being stopped (US-INST-10).
+  if (stopping) return <TrayMenu status="working" statusText={t.stoppingApps} items={[]} />;
   // hlabs isn't answering (or didn't start within 60 s): "Can't reach hlabs"; nothing is opened in the browser.
   if (health?.state === 'down' || health?.state === 'restarting' || health?.state === 'updating')
     return <DaemonDownMenu health={health} />;

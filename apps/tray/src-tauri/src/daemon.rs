@@ -60,6 +60,15 @@ pub enum CallKind {
     Mutation,
 }
 
+fn http_client(timeout: Duration) -> reqwest::Client {
+    reqwest::Client::builder()
+        .timeout(timeout)
+        // Loopback only; never a system proxy.
+        .no_proxy()
+        .build()
+        .expect("the HTTP client could not be built")
+}
+
 /// The token is checked by the daemon only; it is never logged or formatted (US-INST-16).
 #[derive(Clone)]
 pub struct DaemonClient {
@@ -79,17 +88,17 @@ impl std::fmt::Debug for DaemonClient {
 
 impl DaemonClient {
     pub fn new(base_url: impl Into<String>, token: impl Into<String>) -> Self {
-        let http = reqwest::Client::builder()
-            .timeout(Duration::from_secs(15))
-            // Loopback only; never a system proxy.
-            .no_proxy()
-            .build()
-            .expect("the HTTP client could not be built");
         Self {
             base_url: base_url.into().trim_end_matches('/').to_owned(),
             token: token.into(),
-            http,
+            http: http_client(Duration::from_secs(15)),
         }
+    }
+
+    /// The same client with a longer wait, for a call that takes a while (stopping every app, US-INST-10).
+    pub fn with_timeout(mut self, timeout: Duration) -> Self {
+        self.http = http_client(timeout);
+        self
     }
 
     /// Calls `tray.*` procedure `path` with `input` (tRPC v11, no transformer).

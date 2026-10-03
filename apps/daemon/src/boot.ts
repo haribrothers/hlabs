@@ -6,7 +6,7 @@ import { KeepAwake, processSleepBlocker, type SleepBlocker } from './platform/ke
 import { eq } from 'drizzle-orm';
 import { registerEngineRestart } from './engine/restart-job';
 import { registerEngineStart } from './engine/start-job';
-import { registerPause } from './apps/pause';
+import { registerPause, resumeAfterQuit } from './apps/pause';
 import { registerHomeFolderTrash } from './users/home-trash-job';
 import { watchEngine } from './engine/watch';
 import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
@@ -337,6 +337,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   registerEngineStart({ jobs, engine, db, control: engineControl, appsBack });
   registerHomeFolderTrash({ jobs, db });
   registerPause({ jobs, db, apps: appService, logger });
+  // Starting after "Quit hlabs" (D-120): once reconciled, the apps it stopped start again.
+  void reconciled.then(() => resumeAfterQuit({ db, jobs }));
   const onboarding = new OnboardingService({
     db,
     secrets,

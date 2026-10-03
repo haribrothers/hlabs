@@ -1,7 +1,8 @@
 // Pause and resume all apps from the menu bar (US-INST-08). Pausing remembers which apps were up (`settings.paused`)
 // before stopping them (`compose stop`, data untouched), so an install that finishes meanwhile is stopped too and a
 // restart keeps them stopped (reconcile skips autostart while paused). Resuming starts exactly those apps again.
-// Caddy and the dashboard keep running. A backup in progress makes the pause wait (with backups, phase 5).
+// Caddy and the dashboard keep running. A backup in progress makes the pause wait (with backups, phase 5). "Quit hlabs"
+// (D-120) stops the apps the same way, but only until hlabs starts again: then they're resumed.
 import { apps, auditLog, clearSetting, getSetting, setSetting, type HlabsDb } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { inArray } from 'drizzle-orm';
@@ -25,9 +26,11 @@ export interface PauseDeps {
 
 export interface PausePayload {
   via?: 'tray';
+  /** "Quit hlabs" (D-120): stopped until hlabs starts again, then resumed; an earlier pause stays a pause. */
+  untilRestart?: boolean;
 }
 
-function audit(db: HlabsDb, action: 'system.pause' | 'system.resume', appIds: string[], via?: 'tray') {
+function audit(db: HlabsDb, action: 'system.pause' | 'system.resume' | 'system.quit', appIds: string[], via?: 'tray') {
   db.insert(auditLog)
     .values({
       id: ulid(),
@@ -67,8 +70,9 @@ export function registerPause(deps: PauseDeps): void {
       const earlier = getSetting(deps.db, 'paused');
       const appIds = [...new Set([...(earlier?.appIds ?? []), ...up])];
       // Recorded first, so a restart midway keeps them stopped and resume knows what to start.
-      setSetting(deps.db, 'paused', { at: earlier?.at ?? Date.now(), appIds });
-      audit(deps.db, 'system.pause', up, payload.via);
+      const untilRestart = Boolean(payload.untilRestart) && (!earlier || earlier.untilRestart);
+      setSetting(deps.db, 'paused', { at: earlier?.at ?? Date.now(), appIds, untilRestart });
+      audit(deps.db, payload.untilRestart ? 'system.quit' : 'system.pause', up, payload.via);
       for (const [i, appId] of up.entries()) {
         const deadline = Date.now() + (deps.settleMs ?? SETTLE_MS);
         // An app on its way up is let finish, then stopped.
@@ -103,4 +107,10 @@ export function registerPause(deps: PauseDeps): void {
       );
     },
   });
+}
+
+/** Starting after "Quit hlabs" (D-120): the apps it stopped come back, as after a restart. */
+export function resumeAfterQuit(deps: Pick<PauseDeps, 'db' | 'jobs'>): string | null {
+  if (!getSetting(deps.db, 'paused')?.untilRestart) return null;
+  return deps.jobs.start<PausePayload>('resume_all', { payload: {} });
 }

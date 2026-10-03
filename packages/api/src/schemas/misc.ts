@@ -114,6 +114,12 @@ export const tray = {
     z.union([ok, jobRefSchema, z.object({ url: z.string() })]),
   ),
   resetPassword: io(z.object({ username: usernameSchema, newPassword: z.string(), disableTotp: z.boolean() }), ok),
+  /**
+   * "Quit hlabs" (US-INST-10, D-120): stops every app (data untouched) and answers once they're stopped; the tray then
+   * stops the daemon. The next start brings back the apps that were up. JOB_EXCLUSIVE_RUNNING during an update or a
+   * restore.
+   */
+  quit: io(empty, ok),
   setStartAtLogin: io(z.object({ enabled: z.boolean() }), ok),
   appLogs: io(
     z.object({

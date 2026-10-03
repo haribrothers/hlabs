@@ -52,6 +52,14 @@ export const tray: AppHandlers<DaemonContext>['tray'] = {
     throw hlabsError('NOT_IMPLEMENTED', `tray.quickAction ${action} is not implemented yet`);
   },
 
+  // US-INST-10 (D-120): "Quit hlabs" stops every app, answering once they're stopped; the tray then stops the daemon.
+  quit: async (_input, ctx) => {
+    const { jobs } = ctx.services;
+    const jobId = jobs.start('pause_all', { payload: { via: 'tray', untilRestart: true } });
+    await jobs.settled(jobId).catch(() => undefined);
+    return { ok: true as const };
+  },
+
   // US-INST-02: the tokenised setup URL the tray opens; null once onboarding is complete (D-013, D-035).
   setupUrl: async (_input, ctx) => {
     const { onboarding, config } = ctx.services;

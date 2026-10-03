@@ -21,6 +21,10 @@ export interface Answers {
   update?: { version: string; notes: string | null } | null | 'fail';
   /** apply_update fails (US-INST-20); otherwise it never returns, as the tray relaunches. */
   applyFails?: boolean;
+  /** The answer to a native confirm dialog (US-INST-10): true for its OK button. */
+  confirm?: boolean;
+  /** quit_hlabs: what it does (it never returns when it quits). */
+  quit?: () => Promise<unknown>;
 }
 
 export const tauri = {
@@ -54,6 +58,10 @@ export function answer(a: Answers) {
         return (args as unknown as { enabled: boolean }).enabled;
       case 'open_setup':
         return true;
+      case 'confirm_dialog':
+        return a.confirm ?? false;
+      case 'quit_hlabs':
+        return a.quit ? a.quit() : new Promise(() => {});
       case 'apply_update':
         if (a.applyFails) throw new Error('disk full');
         return new Promise(() => {});

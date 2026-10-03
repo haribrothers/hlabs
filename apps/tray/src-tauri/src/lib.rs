@@ -11,6 +11,7 @@ mod launchd;
 mod logs;
 mod os_confirm;
 mod paths;
+mod quit;
 mod token;
 mod updates;
 mod window;
@@ -374,6 +375,31 @@ fn quit_tray(app: AppHandle) {
     app.exit(0);
 }
 
+/// "Quit hlabs" after the dialog (US-INST-10, D-120): the daemon stops every app (it answers once they're stopped, so
+/// this waits up to 5 minutes), then the background service is stopped and the menu-bar app exits. An update or a
+/// restore running refuses it (JOB_EXCLUSIVE_RUNNING) and nothing quits; a daemon that doesn't answer is stopped anyway.
+#[tauri::command]
+async fn quit_hlabs(app: AppHandle, daemon: State<'_, Daemon>) -> Result<(), DaemonError> {
+    let token = daemon.lock().token().map(str::to_owned);
+    if let Some(token) = token {
+        let stopped = DaemonClient::new(DEFAULT_BASE_URL, token)
+            .with_timeout(std::time::Duration::from_secs(300))
+            .call(CallKind::Mutation, "tray.quit", &Value::Null)
+            .await;
+        if let Err(err @ DaemonError::Api { .. }) = stopped {
+            if matches!(&err, DaemonError::Api { hlabs_code, .. } if hlabs_code == "JOB_EXCLUSIVE_RUNNING")
+            {
+                return Err(err);
+            }
+        }
+    }
+    if let Err(err) = launchd::default_service().stop() {
+        eprintln!("hlabs tray: couldn't stop the background service: {err}");
+    }
+    app.exit(0);
+    Ok(())
+}
+
 /// Start at login (US-INST-09): the tray's login item and, in an app with the daemon bundled, the
 /// LaunchAgent whose `RunAtLoad` goes with it.
 struct StartAtLogin {
@@ -607,6 +633,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
         .manage(IconPulse::default())
         .invoke_handler(tauri::generate_handler![
             daemon_call,
@@ -629,7 +656,9 @@ pub fn run() {
             open_reset_window,
             reset_password,
             updates::check_update,
-            updates::apply_update
+            updates::apply_update,
+            quit::confirm_dialog,
+            quit_hlabs
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]

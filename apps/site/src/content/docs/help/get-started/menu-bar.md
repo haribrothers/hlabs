@@ -49,9 +49,13 @@ Choose **Resume apps** to start them again. Apps you had stopped yourself before
 
 **Start at login** has a check mark when hlabs starts by itself when you log in to this Mac. It's on when you install hlabs. Choose it to turn it off: hlabs keeps running now, but won't start next time you log in, so your apps won't be available until you open hlabs. The same switch is in Settings › Engine & startup in the dashboard; changing either one changes both. If your Mac doesn't allow the change (for example, a work profile manages login items), the item says **Couldn't change login setting** and nothing changes.
 
-## Quit the menu-bar app
+## Quit hlabs
 
-**Quit hlabs** (or ⌘Q while the menu is open) closes only the menu-bar app. hlabs and your apps keep running in the background, so nothing is asked first. To bring the icon back, open hlabs from your Applications folder; it also comes back when you log in if **Start at login** is on. To stop your apps, use **Pause all apps** instead.
+**Quit hlabs** (or ⌘Q while the menu is open) stops hlabs and all your apps, then closes the menu-bar app, like quitting OrbStack or Docker Desktop. hlabs asks first, because nobody can reach your apps or the dashboard, at home or away, until you open hlabs again. Your data stays as it is, and your container engine keeps running.
+
+To start everything again, open hlabs from your Applications folder; it also starts when you log in if **Start at login** is on. The apps that were running start again by themselves. If hlabs is busy with an update or a restore, it asks you to quit when that's done.
+
+To stop your apps but keep hlabs running, use **Pause all apps** instead: paused apps stay stopped until you resume them.
 
 ## Reset a password
 

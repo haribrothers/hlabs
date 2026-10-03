@@ -102,7 +102,7 @@ const EXPECTED: Row[] = [
   ['ai.tokens.revoke', 'm', 'admin'],
 
   ['tray.status', 'q', 'tray'], ['tray.listUsers', 'q', 'tray'], ['tray.quickAction', 'm', 'tray'],
-  ['tray.resetPassword', 'm', 'tray'], ['tray.setStartAtLogin', 'm', 'tray'], ['tray.appLogs', 'q', 'tray'],
+  ['tray.resetPassword', 'm', 'tray'], ['tray.quit', 'm', 'tray'], ['tray.setStartAtLogin', 'm', 'tray'], ['tray.appLogs', 'q', 'tray'],
   ['tray.startEngine', 'm', 'tray'], ['tray.diagnostics', 'q', 'tray'], ['tray.uninstallInfo', 'q', 'tray'],
   ['tray.uninstall', 'm', 'tray'], ['tray.setupUrl', 'q', 'tray'],
 
