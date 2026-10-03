@@ -77,6 +77,8 @@ export function HealthGate({
 
   // The version this page was loaded with, for after an update (US-STATE-02).
   useEffect(() => {
+    // Offline there's nothing to ask (US-STATE-19); the regular checks note it once back.
+    if (!navigator.onLine) return;
     void check().then((result) => {
       if (result.ok && result.version) noteVersion(result.version);
     });
