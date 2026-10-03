@@ -190,7 +190,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [x] US-SYS-24 · Check for updates now (the manifest is the Tauri updater's `latest.json` on GitHub Releases, D-117; "syncs all enabled store sources" refreshes the built-in store until sources ship in phase 7)
 - [x] US-SYS-25 · Update apps from Settings (store.listUpdates; "Update all" hidden until phase 7 with the updateAll flag; "Rolled back" links to the app's page, where US-STORE-17's banner is; the row buttons are secondary, one white primary per view)
 - [x] US-SYS-26 · Choose automatic updates ("Back up app data before updating" stays hidden until backups ship in phase 5, and its snapshot with it)
-- [ ] US-STATE-01 · Show a full-screen updating state
+- [x] US-STATE-01 · Show a full-screen updating state (the event reaches signed-in pages through SessionWatch's stream; signed-out ones see it from /healthz; 'Go to Home' is a link-style button, as the screen shows it)
 - [ ] US-STATE-02 · Reconnect automatically when the update finishes
 - [ ] US-STATE-03 · Handle a failed or stuck update
 - [x] US-STATE-07 · Show the daemon-down state in the tray (built with US-INST-13: one health watch in the tray's Rust side, /healthz every 5 s)

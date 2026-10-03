@@ -169,7 +169,7 @@ These were added while writing user stories and are **part of the API contract**
 ### From [11 · System states](../features/11-system-states.md)
 
 - `settings.engine.start` — admin mutation, no input, returns `{ jobId }` (job kind `engine_start`); returns the existing job id if one is already running; errors `ENGINE_START_FAILED`, `JOB_EXCLUSIVE_RUNNING`.
-- `GET /healthz` 503 body schema: `{ reason: "starting" | "updating" | "migration_failed" | "storage_unavailable" | "daemon_unreachable", step?: number, steps?: number, stepLabel?: string }`; `daemon_unreachable` is produced by Caddy's error handler, not the daemon. Schema lives in `packages/api/src/health.ts`.
+- `GET /healthz` 503 body schema: `{ reason: "starting" | "updating" | "migration_failed" | "storage_unavailable" | "daemon_unreachable", step?: number, steps?: number, stepLabel?: string }`; `daemon_unreachable` is produced by Caddy's error handler, not the daemon. Schema lives in `packages/api/src/health.ts`. While a daemon starts with `<dataDir>/update-state.json` (written by the tray before it replaces hlabs, `{ fromVersion, toVersion, startedAt }`), the reason is `updating` with `step` 2–4 of `steps` 4 and `stepLabel` "Restarting apps" (booting), "Checking apps" (waiting up to 120 s for apps), "Finishing up"; step 1 "Installing update" is while it's down. The marker is removed once ready, and a daemon stopping while it's there (or a `system_update` job runs) first emits `system.status { state: 'updating' }` (US-STATE-01).
 - `system.health` (public) response includes `version`.
 - `system.status` event payload gains `state: "ready" | "updating"`.
 - `events.stream` uses tracked event ids and accepts `lastEventId` for resume (last 500 events buffered).

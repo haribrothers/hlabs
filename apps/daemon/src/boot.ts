@@ -53,6 +53,7 @@ import {
   type SystemUpdateDeps,
 } from './updates/install';
 import { UPDATE_PUBLIC_KEY } from './updates/key';
+import { clearUpdateMarker, readUpdateMarker } from './updates/marker';
 import { HttpUpdateSource, type UpdateSource } from './updates/source';
 import { AppLogs } from './apps/logs';
 import { UpdateService } from './apps/update';
@@ -101,6 +102,8 @@ export interface BootDeps {
   headlessHost?: HeadlessHost;
   /** How long the tray has to take an update over (tests make it short). */
   trayTakeoverMs?: number;
+  /** How long a start after an update waits for apps (tests make it short). */
+  updateHealthWaitMs?: number;
   drives?: DriveProbe;
   mounter?: NetworkMounter;
   /** Downloads, tar and colima for the engine install (US-ONB-05). */
@@ -122,11 +125,18 @@ export interface BootDeps {
   print?: (line: string) => void;
 }
 
+/** How long a start after an update waits for its apps before saying it's ready. */
+export const UPDATE_HEALTH_WAIT_MS = 120_000;
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms).unref());
+
 export async function boot(deps: BootDeps): Promise<Services | null> {
   const { config, logger, readiness, holder } = deps;
 
   // 1. Config, database, migrations.
   readiness.step(0);
+  // Starting after the tray replaced hlabs (US-STATE-01): /healthz says "updating", step 2 of 4, until ready.
+  const updateMarker = readUpdateMarker(config.paths.dataDir);
+  if (updateMarker) readiness.updating(2);
   try {
     mkdirSync(config.paths.dataDir, { recursive: true });
   } catch (err) {
@@ -278,6 +288,13 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     pendingReconciles++;
     return (reconciling = reconciling.then(reconcileOnce));
   };
+
+  // After an update, apps get up to 2 minutes to come back before hlabs says it's ready (US-STATE-01, step 3).
+  if (updateMarker) {
+    readiness.updating(3);
+    await Promise.race([reconciled, delay(deps.updateHealthWaitMs ?? UPDATE_HEALTH_WAIT_MS)]);
+    readiness.updating(4);
+  }
 
   // 5. Scheduler: backups, update checks, health probes, usage sampling (added by their phases).
   readiness.step(4);
@@ -520,6 +537,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       actions: [{ kind: 'navigate', to: '/settings/updates' }],
     });
   }
+  // The update is done: the next start is an ordinary one (US-STATE-01).
+  if (updateMarker) clearUpdateMarker(config.paths.dataDir);
   // Headless: this version is ready, so its switch stays (the start check won't switch back, US-SYS-23).
   if (config.headless) confirmHeadlessSwitch(config.installRoot, config.version);
   bus.emit('system.status', { state: 'ready' });

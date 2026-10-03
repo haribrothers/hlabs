@@ -9,6 +9,9 @@ export const BOOT_STEPS = [
   'Starting the scheduler',
 ] as const;
 
+/** While a daemon starts after an update (US-STATE-01): step 1 is the tray replacing files, before it starts. */
+export const UPDATE_STEPS = ['Installing update', 'Restarting apps', 'Checking apps', 'Finishing up'] as const;
+
 type State =
   | { kind: 'starting'; step: number }
   | { kind: 'ready' }
@@ -16,6 +19,13 @@ type State =
 
 export class Readiness {
   private state: State = { kind: 'starting', step: 0 };
+  /** Starting after an update: the update step (2–4) /healthz reports instead of the boot steps. */
+  private updateStep: number | null = null;
+
+  /** This start finishes an update: report `updating` with this step (2–4) until ready. */
+  updating(step: number): void {
+    this.updateStep = step;
+  }
 
   step(step: number): void {
     this.state = { kind: 'starting', step };
@@ -41,6 +51,14 @@ export class Readiness {
       case 'failed':
         return { reason: this.state.reason };
       case 'starting':
+        if (this.updateStep !== null) {
+          return {
+            reason: 'updating',
+            step: this.updateStep,
+            steps: UPDATE_STEPS.length,
+            stepLabel: UPDATE_STEPS[this.updateStep - 1] ?? UPDATE_STEPS[1],
+          };
+        }
         return {
           reason: 'starting',
           step: this.state.step + 1,

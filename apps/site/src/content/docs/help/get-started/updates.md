@@ -8,6 +8,10 @@ For admins.
 
 Open **Settings › Updates** to see which version of hlabs you have. The card at the top says **hlabs is up to date**, or, when a newer version is out, its version number and what's new in it.
 
+## While hlabs updates
+
+During an update, every open dashboard, on any device, shows **Updating hlabs** and the step it's on: installing the update, restarting your apps, checking them and finishing up. You don't need to do anything, and you don't need to stay signed in to see it. The page reloads by itself when the update is done. **Go to Home** takes you to the start page, which shows the same thing until then.
+
 ## Install an update
 
 When a newer version is out, the card says so, for example **hlabs 1.5.0 is available**, with what's new in it. Choose **Full release notes** to read everything that changed.

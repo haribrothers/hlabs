@@ -8,6 +8,7 @@ import { buildServer } from './server';
 import { ServiceHolder } from './services';
 import { switchBackIfStale } from './updates/headless';
 import { updateUnderway } from './updates/install';
+import { hasUpdateMarker } from './updates/marker';
 
 if (process.argv.includes('--update-watchdog')) {
   const root = process.env.HLABS_INSTALL_ROOT ?? '/opt/hlabs';
@@ -35,7 +36,9 @@ async function stop(signal: string) {
   stopping = true;
   logger.info({ signal }, 'shutting down');
   // Stopping for an update: every open page shows "Updating hlabs" rather than "Can't reach hlabs" (US-STATE-01).
-  if (services && updateUnderway(services.db)) services.bus.emit('system.status', { state: 'updating' });
+  if (services && (updateUnderway(services.db) || hasUpdateMarker(config.paths.dataDir))) {
+    services.bus.emit('system.status', { state: 'updating' });
+  }
   // Caddy and the mDNS publishers must be stopped whatever the server does, before anything can kill this process.
   await Promise.race([app.close(), new Promise((resolve) => setTimeout(resolve, CLOSE_TIMEOUT_MS).unref())]);
   await shutdown(services);

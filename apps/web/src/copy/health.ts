@@ -33,3 +33,13 @@ export const reasonCopy: Record<string, string | null> = {
 
 /** The line for a reason; unknown reasons get none. */
 export const reasonLine = (reason: string | null): string | null => (reason ? (reasonCopy[reason] ?? null) : null);
+
+/** SysUpdating (US-STATE-01): the full-screen state while hlabs updates. */
+export const updatingCopy = {
+  title: 'Updating hlabs',
+  /** The four steps; step 1 happens while hlabs is down, so the page knows its label itself. */
+  steps: ['Installing update', 'Restarting apps', 'Checking apps', 'Finishing up'],
+  stepLine: (step: number, steps: number, label: string) => `Step ${step} of ${steps} · ${label}`,
+  body: 'This page reloads by itself when the update finishes.',
+  goHome: 'Go to Home',
+} as const;
