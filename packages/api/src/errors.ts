@@ -107,6 +107,12 @@ export const HLABS_ERRORS = {
 
   // Updates
   UPDATE_SIGNATURE_INVALID: 'BAD_REQUEST',
+  /** "Update now" with no newer version found by the last check (US-SYS-23). */
+  UPDATE_NOT_AVAILABLE: 'PRECONDITION_FAILED',
+  /** The update itself couldn't be downloaded (headless Linux, US-SYS-23). */
+  UPDATE_DOWNLOAD_FAILED: 'BAD_GATEWAY',
+  /** The menu-bar app didn't apply the update in time, or isn't running (US-SYS-23). */
+  UPDATE_NOT_APPLIED: 'INTERNAL_SERVER_ERROR',
   /** The update manifest couldn't be reached (offline, or the release server is down) (US-SYS-24). */
   UPDATE_CHECK_FAILED: 'BAD_GATEWAY',
 } as const satisfies Record<string, TRPC_ERROR_CODE_KEY>;

@@ -19,6 +19,11 @@ export interface JobDefinition<P = unknown> {
   run(ctx: JobContext<P>): Promise<void>;
   /** Whether jobs.cancel may abort it (default false). */
   cancellable?: boolean;
+  /**
+   * Left `running` when the daemon stops, for the next start to settle (an hlabs update, whose last step is the
+   * daemon being stopped and started again, US-SYS-23).
+   */
+  survivesShutdown?: boolean;
 }
 
 const ACTIVE = ['queued', 'running'] as const;
@@ -37,6 +42,8 @@ export class JobRunner {
   private readonly running = new Map<string, { controller: AbortController; done: Promise<void> }>();
   /** The end of the app-job queue. */
   private serialTail: Promise<void> = Promise.resolve();
+  /** The daemon is stopping (shutdown). */
+  private stopping = false;
 
   constructor(
     private readonly db: HlabsDb,
@@ -69,17 +76,22 @@ export class JobRunner {
       .some((j) => EXCLUSIVE.has(j.kind));
   }
 
-  /** Throws JOB_EXCLUSIVE_RUNNING when D-020 wouldn't let a job of this kind start now (check before other work). */
-  assertCanStart(kind: JobKind): void {
+  /** The kind of the job that wouldn't let a job of `kind` start now (D-020), or null when it could. */
+  blocker(kind: JobKind): string | null {
     const active = this.db
       .select({ kind: jobs.kind })
       .from(jobs)
       .where(inArray(jobs.state, [...ACTIVE]))
       .all();
     const exclusiveActive = active.find((j) => EXCLUSIVE.has(j.kind));
-    if (exclusiveActive || (EXCLUSIVE.has(kind) && active.length > 0)) {
-      throw hlabsError('JOB_EXCLUSIVE_RUNNING', undefined, { runningKind: (exclusiveActive ?? active[0]!).kind });
-    }
+    if (exclusiveActive || (EXCLUSIVE.has(kind) && active.length > 0)) return (exclusiveActive ?? active[0]!).kind;
+    return null;
+  }
+
+  /** Throws JOB_EXCLUSIVE_RUNNING when D-020 wouldn't let a job of this kind start now (check before other work). */
+  assertCanStart(kind: JobKind): void {
+    const runningKind = this.blocker(kind);
+    if (runningKind) throw hlabsError('JOB_EXCLUSIVE_RUNNING', undefined, { runningKind });
   }
 
   /** Queue a job and start it. Throws JOB_EXCLUSIVE_RUNNING when D-020 forbids it. */
@@ -165,6 +177,7 @@ export class JobRunner {
   }
 
   async shutdown(): Promise<void> {
+    this.stopping = true;
     for (const { controller } of this.running.values()) controller.abort();
     await Promise.allSettled([...this.running.values()].map((r) => r.done));
   }
@@ -201,6 +214,7 @@ export class JobRunner {
       }
       if (controller.signal.aborted) state = 'cancelled';
     } catch (error) {
+      if (controller.signal.aborted && this.stopping && definition.survivesShutdown) return;
       if (controller.signal.aborted) {
         state = 'cancelled';
       } else {
@@ -209,6 +223,7 @@ export class JobRunner {
         this.logger.error({ err: error, jobId: id, kind }, 'job failed');
       }
     }
+    if (state === 'cancelled' && this.stopping && definition.survivesShutdown) return;
     this.db
       .update(jobs)
       .set({

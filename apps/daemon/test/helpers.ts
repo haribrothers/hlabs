@@ -31,6 +31,8 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
     host: '127.0.0.1',
     port: 0,
     paths: { dataDir, appDataDir: join(dataDir, 'app-data'), storageRootDefault: join(dataDir, 'storage') },
+    // Headless updates (US-SYS-23) install beside the data, never in /opt.
+    installRoot: join(dataDir, 'opt-hlabs'),
     // An empty store unless a test points it at one (store/ in the repo, or a fixture).
     resources: {
       storeDir: join(dataDir, 'store'),

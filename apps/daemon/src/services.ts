@@ -24,6 +24,7 @@ import type { Readiness } from './readiness';
 import type { CatalogService } from './store/catalog';
 import type { StoreService } from './store/service';
 import type { AppDiskUsage } from './apps/disk';
+import type { SystemUpdateDeps } from './updates/install';
 import type { HlabsUpdates } from './updates/service';
 import type { InstallService } from './apps/install';
 import type { AppService } from './apps/service';
@@ -55,6 +56,8 @@ export interface Services {
   updates: UpdateService;
   /** hlabs's own updates: the update manifest, checked now and every 6 h (US-SYS-24). */
   hlabsUpdates: HlabsUpdates;
+  /** "Update now" (US-SYS-23): who applies it here and how. */
+  systemUpdate: SystemUpdateDeps;
   apps: AppService;
   /** Apps' container logs (US-APP-08…10). */
   logs: AppLogs;

@@ -4,6 +4,7 @@ import { homedir } from 'node:os';
 import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { DaemonContext } from '../context';
+import { startSystemUpdate } from '../updates/install';
 import { engineDir } from '../engine/install-job';
 import { currentColima, engineOverview, resourceLimits, resourcesProblem } from '../engine/overview';
 
@@ -57,6 +58,9 @@ export const settings: AppHandlers<DaemonContext>['settings'] = {
     // US-SYS-24: what the last check found, and a check now (the update manifest and the store index).
     get: (_input, ctx) => ctx.services.hlabsUpdates.status(),
     check: (_input, ctx) => ctx.services.hlabsUpdates.check(),
+    // US-SYS-23: "Update now" starts the exclusive system_update job (the tray, or headless the daemon, applies it).
+    install: (_input, ctx) =>
+      startSystemUpdate(ctx.services.systemUpdate, ctx.identity.kind === 'user' ? ctx.identity.userId : null),
   },
   engine: {
     restart: (_input, ctx) => restartEngine(ctx),

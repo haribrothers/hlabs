@@ -19,6 +19,8 @@ export interface HlabsUpdatesDeps {
   version: string;
   /** Refreshes the store index (built-in store; other sources from phase 7). */
   syncStore: () => void;
+  /** The job "Update now" would have to wait for (D-020), or null. */
+  blocker?: () => string | null;
   now?: () => number;
 }
 
@@ -39,6 +41,7 @@ export class HlabsUpdates {
       backupBeforeUpdate: u.backupBeforeUpdate,
       lastCheckedAt: u.lastCheckedAt,
       available: latest,
+      blockedBy: this.deps.blocker?.() ?? null,
     };
   }
 

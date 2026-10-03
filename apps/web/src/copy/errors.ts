@@ -34,6 +34,8 @@ export const jobNames: Record<string, string> = {
   engine_install: 'the engine install',
   engine_start: 'the engine start',
   engine_restart: 'the engine restart',
+  pause_all: 'pausing apps',
+  resume_all: 'resuming apps',
   prune_images: 'the clean-up',
   files_move: 'the file move',
   diagnostics: 'the diagnostics bundle',
@@ -264,6 +266,15 @@ export const errorCopy = {
     }),
     // Updates
     UPDATE_CHECK_FAILED: () => ({ title: "Couldn't check for updates", body: 'Check your internet connection.' }),
+    UPDATE_NOT_AVAILABLE: () => ({ title: 'hlabs is up to date', body: 'There is no newer version to install.' }),
+    UPDATE_DOWNLOAD_FAILED: () => ({
+      title: "The update couldn't be downloaded",
+      body: 'Nothing was changed. Check your internet connection and try again.',
+    }),
+    UPDATE_NOT_APPLIED: () => ({
+      title: "The update didn't start",
+      body: 'Make sure the hlabs menu-bar app is running on the computer, then try again.',
+    }),
     UPDATE_SIGNATURE_INVALID: () => ({
       title: "This update couldn't be verified",
       body: "It wasn't installed. Try again later.",

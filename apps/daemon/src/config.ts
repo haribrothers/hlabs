@@ -19,6 +19,8 @@ const envSchema = z.object({
   HLABS_PORT: z.coerce.number().int().min(0).max(65535).default(7474),
   HLABS_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
   HLABS_HEADLESS: flag,
+  /** Headless Linux: where hlabs versions live side by side with a `current` link (US-SYS-23, D-118). */
+  HLABS_INSTALL_ROOT: z.string().default('/opt/hlabs'),
   /** Development only: the phase to preview (D-092), as the dashboard's dev server does. */
   HLABS_PREVIEW_PHASE: z.coerce.number().int().min(0).optional(),
   HLABS_DEV_ANONYMOUS_ADMIN: flag,
@@ -100,6 +102,8 @@ export interface DaemonConfig {
   dashboardUpstream: string;
   /** Linux system service without a desktop session. */
   headless: boolean;
+  /** Headless Linux: the install root (`/opt/hlabs`) with each version and the `current` link. */
+  installRoot: string;
   /** Where the dashboard is opened from this computer; the setup URL is built from it (D-041). */
   dashboardUrl: string;
   /** macOS: the NetFS helper for SMB (D-060). */
@@ -169,6 +173,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
     dashboardUpstream: e.HLABS_DASHBOARD_UPSTREAM ?? `127.0.0.1:${e.HLABS_PORT}`,
     composePrefix: e.HLABS_COMPOSE_PREFIX,
     headless: e.HLABS_HEADLESS,
+    installRoot: resolve(e.HLABS_INSTALL_ROOT),
     netmountHelper: e.HLABS_NETMOUNT_BIN ?? fileURLToPath(new URL('../native/.build/hlabs-netmount', import.meta.url)),
     privHelper: e.HLABS_PRIV_HELPER ?? '/usr/lib/hlabs/hlabs-priv',
     dashboardUrl: (e.HLABS_DASHBOARD_URL ?? `http://127.0.0.1:${e.HLABS_PORT}`).replace(/\/+$/, ''),

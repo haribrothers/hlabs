@@ -13,8 +13,18 @@ const TIMEOUT_MS = 15_000;
 
 export type Channel = 'stable' | 'beta';
 
+/** One platform's download in the manifest: the Tauri updater's `url` and `signature`, plus `sha256` for hlabsd. */
+export interface PlatformDownload {
+  url: string;
+  /** base64 minisign signature (Tauri updater format). */
+  signature: string;
+  sha256?: string;
+}
+
 export interface Release {
   version: string;
+  /** By platform: Tauri's (`darwin-aarch64`, `linux-x86_64`…) and headless hlabsd's (`hlabsd-linux-x86_64`…, D-118). */
+  platforms: Record<string, PlatformDownload>;
   /** The release notes (Markdown). */
   notes: string;
   /** The release page. */
@@ -26,8 +36,14 @@ export interface UpdateSource {
   latest(channel: Channel): Promise<Release>;
 }
 
-/** The parts of a Tauri updater manifest hlabs reads (the platforms and signatures are the tray's, US-INST-19). */
-const manifestSchema = z.object({ version: z.string().min(1), notes: z.string().optional() });
+/** The parts of a Tauri updater manifest hlabs reads. */
+const manifestSchema = z.object({
+  version: z.string().min(1),
+  notes: z.string().optional(),
+  platforms: z
+    .record(z.string(), z.object({ url: z.string().url(), signature: z.string(), sha256: z.string().optional() }))
+    .default({}),
+});
 
 export function releaseUrl(version: string): string {
   return `${RELEASES}/tag/v${version.replace(/^v/, '')}`;
@@ -58,6 +74,6 @@ export class HttpUpdateSource implements UpdateSource {
     const parsed = manifestSchema.safeParse(body);
     if (!parsed.success) throw hlabsError('UPDATE_CHECK_FAILED', 'unreadable update manifest');
     const version = parsed.data.version.replace(/^v/, '');
-    return { version, notes: parsed.data.notes ?? '', url: releaseUrl(version) };
+    return { version, notes: parsed.data.notes ?? '', url: releaseUrl(version), platforms: parsed.data.platforms };
   }
 }

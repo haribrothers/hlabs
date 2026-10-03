@@ -1,5 +1,7 @@
 // Settings › Updates (SettingsUpdates): hlabs's own version and whether a newer one is out (US-SYS-24). "Check now"
-// asks the update manifest and refreshes the store index; offline, a toast says so and the last result stays.
+// asks the update manifest and refreshes the store index; offline, a toast says so and the last result stays. A newer
+// version has its notes, "Full release notes" and "Update now" (US-SYS-23), which starts the update unless another
+// job has to finish first ("Wait for … to finish"); the page then shows that hlabs is updating (US-STATE-01).
 import { LogoMark } from '@hlabs/icons';
 import { Button } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,6 +10,7 @@ import { handledGlobally, pageQuery, showErrorToast } from '../lib/error-copy';
 import { timeAgo } from '../lib/relative-time';
 import { useNow } from '../lib/use-now';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { useEventStream } from '../lib/use-event-stream';
 
 const LOGO = 32;
 
@@ -25,6 +28,19 @@ function HlabsUpdate() {
   const queryClient = useQueryClient();
   const now = useNow();
   const status = useQuery({ ...trpc.settings.updates.get.queryOptions(), retry: false, ...pageQuery });
+  // A job starting or finishing can block or free "Update now".
+  useEventStream((event) => {
+    if (event.type === 'job.finished' || (event.type === 'job.progress' && event.data.progress === 0)) {
+      void queryClient.invalidateQueries({ queryKey: trpc.settings.updates.get.queryKey() });
+    }
+  });
+  const install = useMutation({
+    mutationFn: () => client.settings.updates.install.mutate(),
+    onError: (err) => {
+      if (!handledGlobally(err)) showErrorToast(err);
+      void queryClient.invalidateQueries({ queryKey: trpc.settings.updates.get.queryKey() });
+    },
+  });
   const check = useMutation({
     mutationFn: () => client.settings.updates.check.mutate(),
     onSuccess: (next) => {
@@ -69,11 +85,41 @@ function HlabsUpdate() {
             ))}
           </ul>
         ) : null}
-        <p className="m-0 mt-1 text-caption text-ink-muted">{checked}</p>
+        <p className="m-0 mt-1 flex flex-wrap gap-x-3 text-caption text-ink-muted">
+          <span>{checked}</span>
+          {available ? (
+            <a
+              href={available.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hl-focus rounded-xs text-accent-link underline-offset-2 hover:underline"
+            >
+              {copy.fullNotes}
+            </a>
+          ) : null}
+        </p>
       </div>
-      <Button variant="secondary" busy={check.isPending} onClick={() => check.mutate()}>
-        {check.isPending ? copy.checking : copy.checkNow}
-      </Button>
+      {available ? (
+        <div className="flex flex-col items-end gap-2">
+          <Button
+            busy={install.isPending || install.isSuccess}
+            disabled={!!s.blockedBy}
+            aria-describedby={s.blockedBy ? 'hlabs-update-wait' : undefined}
+            onClick={() => install.mutate()}
+          >
+            {install.isPending || install.isSuccess ? copy.starting : copy.updateNow}
+          </Button>
+          {s.blockedBy ? (
+            <p id="hlabs-update-wait" className="m-0 text-caption text-ink-muted">
+              {copy.waitFor(copy.jobName(s.blockedBy))}
+            </p>
+          ) : null}
+        </div>
+      ) : (
+        <Button variant="secondary" busy={check.isPending} onClick={() => check.mutate()}>
+          {check.isPending ? copy.checking : copy.checkNow}
+        </Button>
+      )}
     </section>
   );
 }

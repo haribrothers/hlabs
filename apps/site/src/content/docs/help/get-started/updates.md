@@ -8,6 +8,16 @@ For admins.
 
 Open **Settings › Updates** to see which version of hlabs you have. The card at the top says **hlabs is up to date**, or, when a newer version is out, its version number and what's new in it.
 
+## Install an update
+
+When a newer version is out, the card says so, for example **hlabs 1.5.0 is available**, with what's new in it. Choose **Full release notes** to read everything that changed.
+
+Choose **Update now** to install it. Your apps restart for about a minute while hlabs updates; your files and app data stay as they are. On a Mac or a Linux desktop, the hlabs menu-bar app installs the update, so it needs to be running. On a Linux server without a desktop, hlabs installs it by itself, and goes back to the version you had if the new one doesn't start.
+
+hlabs only installs updates it can verify were made by the hlabs project. If an update can't be verified, it isn't installed.
+
+If hlabs is busy with something that can't be interrupted, such as a restore, **Update now** waits and says what for. Try again when it's done.
+
 ## Check for updates
 
 hlabs checks for a newer version by itself every 6 hours. To check now, choose **Check now**. It also refreshes the App Store, so new apps and app updates show up. When it's done, the card shows what it found and **Last checked just now**.

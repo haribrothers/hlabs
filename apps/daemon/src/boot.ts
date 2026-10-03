@@ -42,6 +42,15 @@ import { LocalApiTailscale } from './tailscale/localapi';
 import type { TailscaleClient } from './tailscale/types';
 import { AppDiskUsage } from './apps/disk';
 import { HlabsUpdates } from './updates/service';
+import type { HeadlessHost } from './updates/headless';
+import { nodeHeadlessHost } from './updates/headless-host';
+import {
+  confirmHeadlessSwitch,
+  registerSystemUpdate,
+  settleSystemUpdate,
+  type SystemUpdateDeps,
+} from './updates/install';
+import { UPDATE_PUBLIC_KEY } from './updates/key';
 import { HttpUpdateSource, type UpdateSource } from './updates/source';
 import { AppLogs } from './apps/logs';
 import { UpdateService } from './apps/update';
@@ -86,6 +95,10 @@ export interface BootDeps {
   updateSource?: UpdateSource;
   /** Tests turn the 6-hour update check off. */
   checkUpdates?: boolean;
+  /** Headless updates' downloads, tar and restart; tests pass a fake. */
+  headlessHost?: HeadlessHost;
+  /** How long the tray has to take an update over (tests make it short). */
+  trayTakeoverMs?: number;
   drives?: DriveProbe;
   mounter?: NetworkMounter;
   /** Downloads, tar and colima for the engine install (US-ONB-05). */
@@ -130,6 +143,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   }
   const bus = new EventBus();
   const jobs = new JobRunner(db, bus, logger);
+  // An update that was under way finished if this is the version it was updating to (US-SYS-23).
+  const updated = settleSystemUpdate(db, config.version);
+  if (updated) logger.info({ from: updated.fromVersion, to: updated.version }, 'hlabs updated');
   jobs.recover();
   if (config.dev || config.env === 'test') {
     jobs.register<{ steps?: number }>('noop', {
@@ -375,6 +391,28 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     probes: deps.healthProbes,
   });
   updates.register();
+  const updateSource = deps.updateSource ?? new HttpUpdateSource();
+  const hlabsUpdates = new HlabsUpdates({
+    db,
+    bus,
+    logger,
+    source: updateSource,
+    version: config.version,
+    syncStore: () => catalog.syncBuiltin(),
+    blocker: () => jobs.blocker('system_update'),
+  });
+  const systemUpdate: SystemUpdateDeps = {
+    db,
+    bus,
+    jobs,
+    updates: hlabsUpdates,
+    source: updateSource,
+    version: config.version,
+    mode: config.headless ? 'headless' : 'tray',
+    headless: { root: config.installRoot, host: deps.headlessHost ?? nodeHeadlessHost(), publicKey: UPDATE_PUBLIC_KEY },
+    trayTakeoverMs: deps.trayTakeoverMs,
+  };
+  registerSystemUpdate(systemUpdate);
   const services: Services = {
     config,
     logger,
@@ -391,14 +429,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     installer,
     appDisk: disk,
     updates,
-    hlabsUpdates: new HlabsUpdates({
-      db,
-      bus,
-      logger,
-      source: deps.updateSource ?? new HttpUpdateSource(),
-      version: config.version,
-      syncStore: () => catalog.syncBuiltin(),
-    }),
+    hlabsUpdates,
+    systemUpdate,
     logs: new AppLogs({ engine, project: (appId) => appService.project(appId).name }),
     routing: network,
     remote,
@@ -458,6 +490,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     services.usageHistory.start();
   }
   if (deps.checkUpdates !== false) services.hlabsUpdates.start();
+  // Headless: this version is ready, so its switch stays (the start check won't switch back, US-SYS-23).
+  if (config.headless) confirmHeadlessSwitch(config.installRoot, config.version);
   bus.emit('system.status', { state: 'ready' });
   logger.info({ version: config.version, port: config.port }, 'hlabsd is ready');
   return services;

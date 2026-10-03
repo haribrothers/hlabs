@@ -25,6 +25,8 @@ export const updateStatusSchema = z.object({
   lastCheckedAt: z.number().nullable(),
   /** A newer version, or null when up to date. */
   available: z.object({ version: z.string(), notes: z.array(z.string()), url: z.string() }).nullable(),
+  /** The job kind "Update now" has to wait for (an exclusive job, or any job, D-020); null when it can start. */
+  blockedBy: z.string().nullable(),
 });
 export type UpdateStatus = z.infer<typeof updateStatusSchema>;
 

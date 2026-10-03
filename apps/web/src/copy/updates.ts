@@ -1,3 +1,5 @@
+import { jobNames } from './errors';
+
 // Settings › Updates (docs/features/10-system-settings.md US-SYS-23…26, SettingsUpdates). Sentence case, plain words.
 export const updatesCopy = {
   hlabs: 'hlabs',
@@ -10,4 +12,9 @@ export const updatesCopy = {
   checkNow: 'Check now',
   checking: 'Checking…',
   fullNotes: 'Full release notes',
+  updateNow: 'Update now',
+  starting: 'Starting update…',
+  /** "Update now" waits for another job (D-020). */
+  waitFor: (job: string) => `Wait for ${job} to finish`,
+  jobName: (kind: string) => jobNames[kind] ?? 'what hlabs is doing',
 };
