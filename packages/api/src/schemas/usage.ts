@@ -40,16 +40,43 @@ export const usageSampleSchema = z.object({
 export type UsageSample = z.infer<typeof usageSampleSchema>;
 export type AppSample = z.infer<typeof appSampleSchema>;
 
+export const usageMetricSchema = z.enum(['cpu', 'memBytes', 'netRx', 'netTx', 'diskRead', 'diskWrite']);
+
+/** A point in a scope's history (US-USE-09): a 5 s sample, or a 1m or 1h average. */
+export const usagePointSchema = z.object({
+  ts: z.number(),
+  cpu: reading,
+  memBytes: reading,
+  netRx: reading,
+  netTx: reading,
+  diskRead: reading,
+  diskWrite: reading,
+});
+export type UsagePoint = z.infer<typeof usagePointSchema>;
+
+export const usageHistorySchema = z.object({
+  scope: z.string(),
+  range: usageRangeSchema,
+  /** 1 hour: 5 s samples (1m points before the daemon started); 24 hours: 1m; 7 and 30 days: 1h. */
+  resolution: z.enum(['5s', '1m', '1h']),
+  points: z.array(usagePointSchema),
+  /** The highest value of the metric asked for in the range (US-USE-04); null without data. */
+  peak: z.object({ ts: z.number(), value: z.number() }).nullable(),
+});
+export type UsageHistory = z.infer<typeof usageHistorySchema>;
+
 export const usage = {
   /** The latest sample; null before the first one. */
   current: io(empty, usageSampleSchema.nullable()),
   history: io(
     z.object({
-      scope: z.union([z.literal('host'), z.string()]),
+      /** `host` or an appId. */
+      scope: z.string().min(1),
       range: usageRangeSchema,
-      metric: z.string().optional(),
+      /** Which metric `peak` is for; CPU when left out. */
+      metric: usageMetricSchema.optional(),
     }),
-    pending,
+    usageHistorySchema,
   ),
   topApps: io(z.object({ limit: z.number().int().min(1).max(50).default(5) }).optional(), pending),
   appDetail: io(appRefSchema, pending),

@@ -51,6 +51,7 @@ import { NodeDriveProbe, type DriveProbe } from './platform/drives';
 import { LinuxNetworkMounter, MacNetworkMounter, type NetworkMounter } from './platform/network-mount';
 import { NetworkStorage } from './storage/network';
 import { SystemHostStats, type HostStats } from './platform/host-stats';
+import { UsageHistory } from './usage/history';
 import { UsageSampler } from './usage/sampler';
 import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
@@ -260,6 +261,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   // First run: keep the setup token ready and print the setup URL (US-ONB-01, D-041).
   const probe = deps.system ?? new NodeSystemProbe();
   const host = deps.host ?? new SystemHostStats();
+  const sampler = new UsageSampler({ db, bus, engine, host, logger, composePrefix: config.composePrefix });
   registerEngineInstall({
     jobs,
     engine,
@@ -409,7 +411,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     drives: deps.drives ?? new NodeDriveProbe(),
     system: probe,
     host,
-    usage: new UsageSampler({ db, bus, engine, host, logger, composePrefix: config.composePrefix }),
+    usage: sampler,
+    usageHistory: new UsageHistory({ db, recent: () => sampler.recent(), logger }),
     keepAwake: new KeepAwake(deps.sleepBlocker ?? processSleepBlocker(), () => ({
       keepAwake: getSetting(db, 'startup').keepAwake,
       appsRunning: db.select({ id: apps.id }).from(apps).where(eq(apps.state, 'running')).all().length,
@@ -435,7 +438,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
 
   // 6. Ready; usage sampling starts (US-USE-08).
   readiness.ready();
-  if (deps.sampleUsage !== false) services.usage.start();
+  if (deps.sampleUsage !== false) {
+    services.usage.start();
+    services.usageHistory.start();
+  }
   bus.emit('system.status', { state: 'ready' });
   logger.info({ version: config.version, port: config.port }, 'hlabsd is ready');
   return services;
@@ -445,6 +451,13 @@ export async function shutdown(services: Services | null): Promise<void> {
   if (!services) return;
   services.engine.stop();
   services.usage.stop();
+  services.usageHistory.stop();
+  // The last finished minute is written before stopping, so a restart loses at most the minute in progress.
+  try {
+    services.usageHistory.flush();
+  } catch {
+    // Shutting down anyway.
+  }
   services.login.stop();
   services.keepAwake.stop();
   await services.jobs.shutdown();

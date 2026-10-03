@@ -14,6 +14,7 @@ import type { OnboardingService } from './onboarding/service';
 import type { DriveProbe } from './platform/drives';
 import type { KeepAwake } from './platform/keep-awake';
 import type { HostStats } from './platform/host-stats';
+import type { UsageHistory } from './usage/history';
 import type { UsageSampler } from './usage/sampler';
 import type { SystemProbe } from './platform/system';
 import type { NotificationService } from './notifications/service';
@@ -73,6 +74,8 @@ export interface Services {
   host: HostStats;
   /** Usage every 5 s, the last hour in memory (US-USE-08). */
   usage: UsageSampler;
+  /** 1m and 1h points in SQLite, and history ranges (US-USE-09). */
+  usageHistory: UsageHistory;
   /** Holds off sleep while apps run, when the setting is on (US-SYS-20). */
   keepAwake: KeepAwake;
   network: NetworkStorage;

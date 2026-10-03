@@ -52,7 +52,7 @@ Secrets never go in SQLite in plain text: passwords are Argon2id hashes, TOTP se
 | `jobs` | `id`, `kind`, `target`, `state` (`queued`\|`running`\|`succeeded`\|`failed`\|`cancelled`), `progress` (0–100), `message`, `error_code` (hlabsCode when failed), `payload_json`, `created_at`, `finished_at` | All long-running work. Jobs left `queued` or `running` by a crash are marked `failed` with `error_code = INTERNAL` on the next start. |
 | `notifications` | `id`, `user_id` (null = all admins), `kind`, `target` (what it's about, such as an app id; nullable, US-STATE-16), `severity` (`info`\|`success`\|`warning`\|`critical`), `title`, `body`, `action_json` (up to two actions, 05 Canonical names), `created_at`, `read_at` | HomeNotifications. |
 | `audit_log` | `id`, `at`, `user_id`, `action`, `target`, `detail_json`, `ip` | Security-relevant actions (logins, role changes, uninstall, restore, factory reset, settings changes). Kept 180 days. |
-| `usage_samples` | `ts`, `resolution` (`1m`\|`1h`), `scope` (`host` or appId), `cpu`, `mem_bytes`, `net_rx`, `net_tx`, `disk_read`, `disk_write` | Downsampled history. |
+| `usage_samples` | `ts`, `resolution` (`1m`\|`1h`), `scope` (`host` or appId), `cpu`, `mem_bytes`, `net_rx`, `net_tx`, `disk_read`, `disk_write` | Downsampled history (US-USE-09): averages over the minute or hour starting at `ts`; network and disk are bytes/s; a column is null when no sample in the period had it. 1m points kept 7 days, 1h points 90 days. |
 | `mcp_tokens` | `id`, `name`, `token_hash`, `scopes_json`, `created_at`, `last_used_at`, `revoked_at` | SettingsAI (P3). |
 
 The value shape and default of every `settings` key are the Zod schemas in `packages/db/src/settings.ts`; reads fall back to the default when a row is missing or invalid.
