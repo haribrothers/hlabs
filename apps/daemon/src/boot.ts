@@ -41,6 +41,8 @@ import { FakeTailscale } from './tailscale/fake';
 import { LocalApiTailscale } from './tailscale/localapi';
 import type { TailscaleClient } from './tailscale/types';
 import { AppDiskUsage } from './apps/disk';
+import { HlabsUpdates } from './updates/service';
+import { HttpUpdateSource, type UpdateSource } from './updates/source';
 import { AppLogs } from './apps/logs';
 import { UpdateService } from './apps/update';
 import { SessionService } from './auth/sessions';
@@ -80,6 +82,10 @@ export interface BootDeps {
   host?: HostStats;
   /** Tests that drive the sampler themselves turn the 5 s timer off. */
   sampleUsage?: boolean;
+  /** Where hlabs's update manifest comes from (US-SYS-24); tests pass a fake. */
+  updateSource?: UpdateSource;
+  /** Tests turn the 6-hour update check off. */
+  checkUpdates?: boolean;
   drives?: DriveProbe;
   mounter?: NetworkMounter;
   /** Downloads, tar and colima for the engine install (US-ONB-05). */
@@ -385,6 +391,14 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     installer,
     appDisk: disk,
     updates,
+    hlabsUpdates: new HlabsUpdates({
+      db,
+      bus,
+      logger,
+      source: deps.updateSource ?? new HttpUpdateSource(),
+      version: config.version,
+      syncStore: () => catalog.syncBuiltin(),
+    }),
     logs: new AppLogs({ engine, project: (appId) => appService.project(appId).name }),
     routing: network,
     remote,
@@ -443,6 +457,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     services.usage.start();
     services.usageHistory.start();
   }
+  if (deps.checkUpdates !== false) services.hlabsUpdates.start();
   bus.emit('system.status', { state: 'ready' });
   logger.info({ version: config.version, port: config.port }, 'hlabsd is ready');
   return services;
@@ -453,6 +468,7 @@ export async function shutdown(services: Services | null): Promise<void> {
   services.engine.stop();
   services.usage.stop();
   services.usageHistory.stop();
+  services.hlabsUpdates.stop();
   // The last finished minute is written before stopping, so a restart loses at most the minute in progress.
   try {
     services.usageHistory.flush();

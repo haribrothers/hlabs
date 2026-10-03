@@ -14,6 +14,7 @@ import { FakeEngine, fakeMachine } from './fakes/engine';
 import { FakeEngineControl } from './fakes/engine-control';
 import { FakeHostStats } from './fakes/host-stats';
 import { FakeSleepBlocker } from './fakes/sleep-blocker';
+import { FakeUpdateSource } from './fakes/update-source';
 import { FakeSystemProbe } from './fakes/system';
 
 export function tempDir(prefix = 'hlabsd-'): string {
@@ -94,6 +95,9 @@ export async function startDaemon(
     host: new FakeHostStats(),
     // Usage tests take samples themselves; nothing else wants a sample every 5 s.
     sampleUsage: false,
+    // No update checks on a timer; tests that check pass a source.
+    checkUpdates: false,
+    updateSource: new FakeUpdateSource(),
     ...options.boot,
   };
   const services = options.skipBoot ? null : await boot(bootDeps);

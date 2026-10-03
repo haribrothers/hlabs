@@ -263,6 +263,7 @@ export const errorCopy = {
       body: 'Stopping it here could damage your data. It will finish soon.',
     }),
     // Updates
+    UPDATE_CHECK_FAILED: () => ({ title: "Couldn't check for updates", body: 'Check your internet connection.' }),
     UPDATE_SIGNATURE_INVALID: () => ({
       title: "This update couldn't be verified",
       body: "It wasn't installed. Try again later.",

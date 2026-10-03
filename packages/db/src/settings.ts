@@ -44,8 +44,31 @@ export const settingsSchemas = {
       autoHlabs: z.boolean().default(true),
       autoApps: z.boolean().default(false),
       backupBeforeUpdate: z.boolean().default(true),
+      /** The last check that reached the update manifest (US-SYS-24); null before the first. */
+      lastCheckedAt: z.number().nullable().default(null),
+      /** A newer hlabs found by that check, or null when hlabs is up to date. */
+      latest: z
+        .object({
+          version: z.string(),
+          /** Up to 5 bullets from the release notes. */
+          notes: z.array(z.string()),
+          /** The release page ("Full release notes"). */
+          url: z.string(),
+        })
+        .nullable()
+        .default(null),
+      /** The newest version `update.available` has been emitted for, so each version is announced once. */
+      announced: z.string().nullable().default(null),
     })
-    .default({ channel: 'stable', autoHlabs: true, autoApps: false, backupBeforeUpdate: true }),
+    .default({
+      channel: 'stable',
+      autoHlabs: true,
+      autoApps: false,
+      backupBeforeUpdate: true,
+      lastCheckedAt: null,
+      latest: null,
+      announced: null,
+    }),
   remote: z
     .object({
       /** How hlabs is reached from away (D-107): not at all, Tailscale on this computer, or a subnet router. */

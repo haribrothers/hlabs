@@ -158,6 +158,7 @@ These were added while writing user stories and are **part of the API contract**
 - `files.emptyTrash` input adds `allUsers?: boolean` (admin only).
 - `settings.engine.restart` (admin mutation → job).
 - `settings.engine.planSwitch` (admin query): target → version, sizes, estimates, removable size.
+- `settings.updates.get` (admin) and `settings.updates.check` (admin mutation) → `{ version, channel, autoHlabs, autoApps, backupBeforeUpdate, lastCheckedAt, available { version, notes[] (≤ 5 bullets), url } | null }` (`updateStatusSchema`, US-SYS-24). `check` reads the update manifest on the channel (D-117) and refreshes the store index; it fails with `UPDATE_CHECK_FAILED` when the manifest can't be reached (offline), keeping the previous result; the daemon also checks every 6 h, and `update.available` goes to admins once per newer version.
 - `settings.updates.install` (admin mutation → job `system_update`). Named `install`, not `apply`, because tRPC reserves `apply`, `call` and `then` as procedure names.
 - `settings.updates.setAuto` input: `{ hlabs, apps, backupBeforeUpdate }`.
 - `system.logs` (admin query): `{ source: 'daemon' | 'proxy' | 'installs', since?, limit }`.

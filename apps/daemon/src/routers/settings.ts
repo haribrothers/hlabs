@@ -53,6 +53,11 @@ export const settings: AppHandlers<DaemonContext>['settings'] = {
       return { ok: true as const };
     },
   },
+  updates: {
+    // US-SYS-24: what the last check found, and a check now (the update manifest and the store index).
+    get: (_input, ctx) => ctx.services.hlabsUpdates.status(),
+    check: (_input, ctx) => ctx.services.hlabsUpdates.check(),
+  },
   engine: {
     restart: (_input, ctx) => restartEngine(ctx),
     start: (_input, ctx) => startEngine(ctx),

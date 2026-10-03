@@ -21,6 +21,7 @@ export default defineConfig({
             { label: 'Engine and startup', link: '/help/get-started/engine/' },
             { label: 'The menu-bar app', link: '/help/get-started/menu-bar/' },
             { label: 'Live usage', link: '/help/get-started/live-usage/' },
+            { label: 'Update hlabs', link: '/help/get-started/updates/' },
             { label: "Can't reach hlabs", link: '/help/get-started/cant-reach/' },
             { label: 'Confirmations and notices', link: '/help/get-started/confirmations/' },
           ],

@@ -107,6 +107,8 @@ export const HLABS_ERRORS = {
 
   // Updates
   UPDATE_SIGNATURE_INVALID: 'BAD_REQUEST',
+  /** The update manifest couldn't be reached (offline, or the release server is down) (US-SYS-24). */
+  UPDATE_CHECK_FAILED: 'BAD_GATEWAY',
 } as const satisfies Record<string, TRPC_ERROR_CODE_KEY>;
 
 export type HlabsCode = keyof typeof HLABS_ERRORS;

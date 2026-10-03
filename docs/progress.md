@@ -187,7 +187,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [x] US-USE-08 · Sample host and app usage every 5 seconds (host CPU and memory from systeminformation; network from real interfaces only; an app's CPU is its share of the whole host; the CPU budget is checked against the fake engine, so it measures the sampler, not Docker)
 - [x] US-USE-09 · Keep usage history at the right resolution (network and disk are stored as average bytes/s; the 1h point is written within a minute after its hour ends)
 - [ ] US-SYS-23 · Update hlabs
-- [ ] US-SYS-24 · Check for updates now
+- [x] US-SYS-24 · Check for updates now (the manifest is the Tauri updater's `latest.json` on GitHub Releases, D-117; "syncs all enabled store sources" refreshes the built-in store until sources ship in phase 7)
 - [ ] US-SYS-25 · Update apps from Settings
 - [ ] US-SYS-26 · Choose automatic updates
 - [ ] US-STATE-01 · Show a full-screen updating state

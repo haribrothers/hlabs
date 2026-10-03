@@ -162,6 +162,9 @@ describe('settings', () => {
       autoHlabs: true,
       autoApps: false,
       backupBeforeUpdate: true,
+      lastCheckedAt: null,
+      latest: null,
+      announced: null,
     });
   });
 

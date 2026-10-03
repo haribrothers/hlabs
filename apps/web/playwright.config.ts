@@ -39,6 +39,8 @@ const daemonEnv = {
   HLABS_DEV_NO_ENGINE_CONTROL: '1',
   // A pretend Tailscale: e2e never touches the real one (CI has none).
   HLABS_DEV_FAKE_TAILSCALE: '1',
+  // Update checks go to a closed local port, never GitHub: "Check now" answers "Couldn't check for updates".
+  HLABS_UPDATE_ENDPOINT: 'http://127.0.0.1:9/{channel}.json',
   HLABS_DEV_ANONYMOUS_ADMIN: '1',
   HLABS_LOG_LEVEL: 'warn',
   // Its own compose projects, never a dev instance's apps (D-090).
