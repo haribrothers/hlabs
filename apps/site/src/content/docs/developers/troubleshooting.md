@@ -39,6 +39,8 @@ A development hlabs with real Tailscale (`HLABS_DEV_FAKE_TAILSCALE=0`) leaves Se
 
 The first visit after a code change waits for Vite to prepare the page, which can take 15 to 30 seconds. The tests allow for it; run them again if a cold run times out.
 
+The full suite runs five hlabs instances, each with its own Vite, plus a browser per worker. On a busy computer (antivirus scanning, Spotlight indexing, a container engine running real apps) pages and requests can take longer than the tests wait, and many "first-run" specs fail together while each passes on its own. Run one project at a time (`pnpm --filter @hlabs/web exec playwright test --project=first-run`), lower the workers (`--workers=2`), or rely on CI, which runs each project on a machine of its own.
+
 ## Where to look
 
 - Development: the terminal running `pnpm dev`.

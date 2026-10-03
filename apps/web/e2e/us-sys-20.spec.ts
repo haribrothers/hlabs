@@ -13,8 +13,8 @@ test('US-SYS-20 startup switches are on after setup and a change is kept', async
   const awake = startup.getByRole('switch', { name: 'Keep this computer awake' });
   await expect(autostart).toBeChecked();
   await expect(awake).toBeChecked();
-  // The tray applies start at login; it arrives in phase 4.
-  await expect(startup.getByRole('switch', { name: 'Start hlabs when I log in' })).toHaveCount(0);
+  // The menu-bar app applies start at login (phase 4, US-INST-09).
+  await expect(startup.getByRole('switch', { name: 'Start hlabs when I log in' })).toBeVisible();
 
   await awake.click();
   await expect(awake).not.toBeChecked();

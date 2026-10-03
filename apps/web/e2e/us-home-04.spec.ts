@@ -17,9 +17,9 @@ test.describe('US-HOME-04', () => {
     await settings.hover();
     await expect(settings.locator('.hl-dock-tip')).toHaveCSS('opacity', '1');
     await expect(tile).toHaveCSS('transform', /matrix\(1\.35/);
-    // Its neighbour grows a little (App Store, with phase 2 previewed, D-092).
-    const store = dock.getByRole('button', { name: 'App Store' }).locator('.hl-dock-tile');
-    await expect(store).toHaveCSS('transform', /matrix\(1\.14/);
+    // Its neighbour grows a little (Usage, from phase 4).
+    const usage = dock.getByRole('button', { name: 'Usage' }).locator('.hl-dock-tile');
+    await expect(usage).toHaveCSS('transform', /matrix\(1\.14/);
   });
 
   test('with Reduce motion the tile keeps its size but still shows its name', async ({ page }) => {
