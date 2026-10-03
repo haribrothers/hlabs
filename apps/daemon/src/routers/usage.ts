@@ -3,31 +3,33 @@ import { storageLocations } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
 import { cpus, totalmem } from 'node:os';
 import type { DaemonContext } from '../context';
+import { byUseDeps, storageByUse } from '../storage/by-use';
 import { onlyApps, usageAppsFor } from '../usage/members';
-
-/** The storage root's disk by use (US-USE-04); apps and files are counted from their phases, so far the rest is system. */
-function storageByUse(disk: { totalBytes: number; freeBytes: number }) {
-  const usedBytes = Math.max(0, disk.totalBytes - disk.freeBytes);
-  return { usedBytes, totalBytes: disk.totalBytes, appsBytes: 0, filesBytes: 0, systemBytes: usedBytes };
-}
 
 export const usage: AppHandlers<DaemonContext>['usage'] = {
   // US-USE-01: CPU model and cores, total memory, the storage root's disk and the engine's allocation.
   overview: async (_input, ctx) => {
-    const { engine, system, db, config } = ctx.services;
+    const { engine, db, config } = ctx.services;
     const root = db
       .select({ path: storageLocations.path })
       .from(storageLocations)
       .where(eq(storageLocations.isRoot, true))
       .get();
-    const disk = await system.diskSpace(root?.path ?? config.paths.dataDir).catch(() => null);
+    // The storage root's disk by use (US-USE-04): the same split as storage.summary, for anyone who may see usage.
+    const disk = await storageByUse(byUseDeps(ctx.services), root?.path ?? config.paths.dataDir).catch(() => null);
     const status = engine.status;
     const list = cpus();
     return {
       cpuModel: list[0]?.model.trim() ?? '',
       cores: list.length,
       memTotalBytes: totalmem(),
-      storage: disk ? storageByUse(disk) : null,
+      storage: disk && {
+        usedBytes: disk.usedBytes,
+        totalBytes: disk.totalBytes,
+        appsBytes: disk.appsBytes,
+        filesBytes: disk.filesBytes,
+        systemBytes: disk.systemBytes,
+      },
       engine: {
         kind: status.state === 'missing' ? null : status.candidate.kind,
         running: status.state === 'running',

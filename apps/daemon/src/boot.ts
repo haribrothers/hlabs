@@ -383,6 +383,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     catalog,
     store,
     installer,
+    appDisk: disk,
     updates,
     logs: new AppLogs({ engine, project: (appId) => appService.project(appId).name }),
     routing: network,

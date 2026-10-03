@@ -1,7 +1,7 @@
 // Facts about this computer for the onboarding system check (US-ONB-04). Behind an interface so tests use a fake.
 import type { EngineKind } from '@hlabs/api';
 import { constants } from 'node:fs';
-import { access, readFile, statfs } from 'node:fs/promises';
+import { access, readFile, stat, statfs } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { arch, cpus, homedir, release, totalmem } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -23,6 +23,10 @@ export interface SystemProbe {
   freeBytes(path: string): Promise<number>;
   /** Size and free space of the volume holding `path` (US-HOME-02). */
   diskSpace(path: string): Promise<{ totalBytes: number; freeBytes: number }>;
+  /** Which volume holds `path` (or its nearest existing parent), to tell whether two paths share a disk; null if unknown. */
+  diskId(path: string): Promise<string | null>;
+  /** Where an engine keeps its images: a VM's disk lives in the home folder; Docker Engine uses /var/lib/docker. */
+  engineStoragePath(kind: EngineKind): string;
   /** Another process is listening on the port (all interfaces). */
   portInUse(port: number): Promise<boolean>;
   /** This account may read and write the socket (false: e.g. not in the `docker` group). */
@@ -82,6 +86,20 @@ export class NodeSystemProbe implements SystemProbe {
         if ((err as NodeJS.ErrnoException).code !== 'ENOENT' || dirname(dir) === dir) throw err;
       }
     }
+  }
+
+  async diskId(path: string): Promise<string | null> {
+    for (let dir = path; ; dir = dirname(dir)) {
+      try {
+        return String((await stat(dir)).dev);
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code !== 'ENOENT' || dirname(dir) === dir) return null;
+      }
+    }
+  }
+
+  engineStoragePath(kind: EngineKind): string {
+    return kind === 'docker-engine' ? '/var/lib/docker' : homedir();
   }
 
   canAccess(socketPath: string): Promise<boolean> {

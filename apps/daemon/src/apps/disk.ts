@@ -14,6 +14,8 @@ export interface AppDisk {
   dataBytes: number;
   /** Its images' layers. */
   imageBytes: number;
+  /** Each image and its size, so a total over several apps counts an image they share once (US-HOME-02). */
+  images: Array<{ id: string; bytes: number }>;
 }
 
 export interface AppDiskUsageDeps {
@@ -68,11 +70,11 @@ export class AppDiskUsage {
 
   private count(appId: string): Promise<AppDisk> {
     const run = (async () => {
-      const [dataBytes, imageBytes] = await Promise.all([
+      const [dataBytes, images] = await Promise.all([
         folderBytes(join(this.deps.appDataDir, appId)),
-        this.imageBytes(appId),
+        this.images(appId),
       ]);
-      const disk = { dataBytes, imageBytes };
+      const disk = { dataBytes, imageBytes: images.reduce((sum, i) => sum + i.bytes, 0), images };
       this.cache.set(appId, { at: (this.deps.now ?? Date.now)(), disk });
       return disk;
     })().finally(() => this.counting.delete(appId));
@@ -80,15 +82,16 @@ export class AppDiskUsage {
     return run;
   }
 
-  private async imageBytes(appId: string): Promise<number> {
+  private async images(appId: string): Promise<AppDisk['images']> {
     const engine = this.deps.engine.client;
-    if (!engine) return 0;
+    if (!engine) return [];
     try {
       const containers = await engine.projectContainers(this.deps.project(appId));
-      const sizes = await Promise.all([...new Set(containers.map((c) => c.imageId))].map((i) => engine.imageSize(i)));
-      return sizes.reduce<number>((sum, size) => sum + (size ?? 0), 0);
+      const ids = [...new Set(containers.map((c) => c.imageId))];
+      const sizes = await Promise.all(ids.map((id) => engine.imageSize(id)));
+      return ids.map((id, i) => ({ id, bytes: sizes[i] ?? 0 }));
     } catch {
-      return 0;
+      return [];
     }
   }
 }

@@ -62,7 +62,11 @@ describe('US-APP-07', () => {
       project: (id) => `hlabs-${id}`,
       now: () => now,
     });
-    expect(await disk.get('vaultwarden')).toEqual({ dataBytes: 5000, imageBytes: 90_000 });
+    expect(await disk.get('vaultwarden')).toEqual({
+      dataBytes: 5000,
+      imageBytes: 90_000,
+      images: [{ id: 'sha256:a', bytes: 90_000 }],
+    });
     writeFileSync(join(root, 'vaultwarden', 'more.bin'), Buffer.alloc(2000));
     now = DISK_CACHE_MS - 1;
     expect((await disk.get('vaultwarden'))?.dataBytes).toBe(5000);
@@ -82,7 +86,7 @@ describe('US-APP-07', () => {
     expect(await disk.get('immich')).toBeNull();
     release();
     await new Promise((r) => setTimeout(r, 20));
-    expect(await disk.get('immich')).toEqual({ dataBytes: 0, imageBytes: 0 });
+    expect(await disk.get('immich')).toEqual({ dataBytes: 0, imageBytes: 0, images: [] });
   });
 
   it("a folder that doesn't exist counts as 0", async () => {

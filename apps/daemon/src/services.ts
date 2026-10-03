@@ -23,6 +23,7 @@ import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 import type { CatalogService } from './store/catalog';
 import type { StoreService } from './store/service';
+import type { AppDiskUsage } from './apps/disk';
 import type { InstallService } from './apps/install';
 import type { AppService } from './apps/service';
 import type { DnsService } from './network/dns';
@@ -47,6 +48,8 @@ export interface Services {
   store: StoreService;
   /** Installs apps (US-STORE-08…14). */
   installer: InstallService;
+  /** Each app's data folder and images (US-APP-07), counted at most every 10 minutes. */
+  appDisk: AppDiskUsage;
   /** Updates and their rollback (US-STORE-17). */
   updates: UpdateService;
   apps: AppService;
