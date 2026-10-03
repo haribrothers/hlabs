@@ -5,6 +5,7 @@ import type { TrayUser } from '@hlabs/api';
 import { Eye, EyeOff, iconDefaults, LogoMark } from '@hlabs/icons';
 import { passwordIssue } from '@hlabs/shared';
 import { Button, TextField } from '@hlabs/ui';
+import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useEffect, useId, useState, type FormEvent } from 'react';
 import { trayCopy } from './copy';
@@ -13,8 +14,11 @@ import { daemon } from './daemon';
 const c = trayCopy.reset;
 const LOGO = 28;
 
+/** How a reset ended when it didn't (the Rust side's ResetError). */
+export type ResetFailure = { kind: 'cancelled' } | { kind: 'notFound' } | { kind: 'failed' };
+
 export interface ResetPasswordProps {
-  /** Runs the OS check and the reset (US-INST-18); resolves when the window may close. */
+  /** Runs the OS check and the reset (US-INST-18); rejects with a ResetFailure. */
   onSubmit?: (input: { username: string; newPassword: string; disableTotp: boolean }) => Promise<void>;
   onCancel?: () => void;
 }
@@ -26,6 +30,8 @@ export function ResetPassword({ onSubmit, onCancel }: ResetPasswordProps) {
   const [shown, setShown] = useState(false);
   const [disableTotp, setDisableTotp] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
   const accountId = useId();
 
   useEffect(() => {
@@ -36,7 +42,7 @@ export function ResetPassword({ onSubmit, onCancel }: ResetPasswordProps) {
         setUsername((current) => current || (list[0]?.username ?? ''));
       })
       .catch(() => setUsers([]));
-  }, []);
+  }, [reload]);
 
   const selected = users?.find((u) => u.username === username);
   const issue = password === '' ? null : passwordIssue(password);
@@ -46,8 +52,19 @@ export function ResetPassword({ onSubmit, onCancel }: ResetPasswordProps) {
     e.preventDefault();
     if (!valid || !onSubmit) return;
     setBusy(true);
+    setProblem(null);
     try {
       await onSubmit({ username, newPassword: password, disableTotp: selected.totpEnabled && disableTotp });
+    } catch (err) {
+      const kind = (err as Partial<ResetFailure> | null)?.kind;
+      // Cancelled at the macOS prompt: nothing changed and what was typed stays.
+      if (kind === 'notFound') {
+        setProblem(c.accountGone);
+        setUsername('');
+        setReload((n) => n + 1);
+      } else if (kind !== 'cancelled') {
+        setProblem(c.failed);
+      }
     } finally {
       setBusy(false);
     }
@@ -118,6 +135,12 @@ export function ResetPassword({ onSubmit, onCancel }: ResetPasswordProps) {
         </label>
       ) : null}
 
+      {problem ? (
+        <p className="tray-dialog-problem" role="alert">
+          {problem}
+        </p>
+      ) : null}
+
       <p className="tray-dialog-note">{c.osConfirm}</p>
 
       <div className="tray-dialog-actions">
@@ -132,8 +155,8 @@ export function ResetPassword({ onSubmit, onCancel }: ResetPasswordProps) {
   );
 }
 
-/** The window itself: Cancel or Esc closes it. */
+/** The window itself: the Rust side asks macOS, resets and closes it on success; Cancel or Esc closes it. */
 export function ResetPasswordWindow() {
   const close = () => void getCurrentWindow().close();
-  return <ResetPassword onCancel={close} />;
+  return <ResetPassword onCancel={close} onSubmit={(input) => invoke('reset_password', input)} />;
 }

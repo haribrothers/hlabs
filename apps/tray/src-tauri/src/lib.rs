@@ -9,6 +9,7 @@ mod health;
 mod icon;
 mod launchd;
 mod logs;
+mod os_confirm;
 mod paths;
 mod token;
 mod window;
@@ -299,6 +300,73 @@ fn open_reset_window(app: AppHandle) -> Result<(), String> {
     .map_err(|e| e.to_string())
 }
 
+/// How a reset ended, for the window (US-INST-18).
+#[derive(Debug, serde::Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+enum ResetError {
+    /// The person cancelled the OS prompt: nothing changed, the window keeps what they typed.
+    Cancelled,
+    /// The account was deleted or disabled meanwhile: "This account no longer exists".
+    NotFound,
+    /// Anything else (hlabs not answering, the OS couldn't ask).
+    Failed,
+}
+
+/// "Reset password": the OS confirms first, then `tray.resetPassword`; on success a notification says
+/// "Password reset for @username" and the window closes.
+#[tauri::command]
+async fn reset_password(
+    app: AppHandle,
+    daemon: State<'_, Daemon>,
+    username: String,
+    new_password: String,
+    disable_totp: bool,
+) -> Result<(), ResetError> {
+    let confirmed = tauri::async_runtime::spawn_blocking(|| {
+        os_confirm::default_confirm().confirm(os_confirm::REASON)
+    })
+    .await
+    .map_err(|_| ResetError::Failed)?;
+    match confirmed {
+        Ok(true) => {}
+        Ok(false) => return Err(ResetError::Cancelled),
+        Err(_) => return Err(ResetError::Failed),
+    }
+    let token = daemon
+        .lock()
+        .token()
+        .map(str::to_owned)
+        .ok_or(ResetError::Failed)?;
+    let input = serde_json::json!({
+        "username": username,
+        "newPassword": new_password,
+        "disableTotp": disable_totp,
+    });
+    match DaemonClient::new(DEFAULT_BASE_URL, token)
+        .call(CallKind::Mutation, "tray.resetPassword", &input)
+        .await
+    {
+        Ok(_) => {}
+        Err(DaemonError::Api { hlabs_code, .. }) if hlabs_code == "NOT_FOUND" => {
+            return Err(ResetError::NotFound)
+        }
+        Err(_) => return Err(ResetError::Failed),
+    }
+    {
+        use tauri_plugin_notification::NotificationExt;
+        let _ = app
+            .notification()
+            .builder()
+            .title("hlabs")
+            .body(format!("Password reset for @{username}"))
+            .show();
+    }
+    if let Some(window) = app.get_webview_window("reset") {
+        let _ = window.close();
+    }
+    Ok(())
+}
+
 /// "Quit hlabs" (US-INST-10, D-015): only the menu-bar app quits; the daemon is the LaunchAgent's.
 #[tauri::command]
 fn quit_tray(app: AppHandle) {
@@ -556,7 +624,8 @@ pub fn run() {
             start_at_login_state,
             set_start_at_login,
             quit_tray,
-            open_reset_window
+            open_reset_window,
+            reset_password
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]

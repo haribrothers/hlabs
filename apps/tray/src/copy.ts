@@ -21,6 +21,8 @@ export const trayCopy = {
     cancel: 'Cancel',
     submit: 'Reset password',
     loading: 'Loading accounts…',
+    accountGone: 'This account no longer exists.',
+    failed: "The password wasn't reset. Check that hlabs is running and try again.",
   },
   /** US-INST-14: the notification after 60 s offline. */
   offlineTitle: 'hlabs',

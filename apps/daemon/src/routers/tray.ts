@@ -4,11 +4,18 @@ import type { DaemonContext } from '../context';
 import { lanAddresses } from '../mdns/publisher';
 import { diagnosticsReport } from '../tray/diagnostics';
 import { dashboardUrl, trayStatus } from '../tray/status';
+import { trayResetPassword } from '../tray/reset-password';
 import { trayUsers } from '../tray/users';
 
 export const tray: AppHandlers<DaemonContext>['tray'] = {
   // US-INST-05: state, apps, CPU, memory, free space and the dashboard's address.
   status: (_input, ctx) => trayStatus(ctx.services),
+
+  // US-INST-18: the reset itself, after the tray had the Mac's login confirm it.
+  resetPassword: async (input, ctx) => {
+    await trayResetPassword(ctx.services, input);
+    return { ok: true as const };
+  },
 
   // US-INST-17: the accounts "Reset a password…" offers.
   listUsers: (_input, ctx) => ({ users: trayUsers(ctx.services.db) }),
