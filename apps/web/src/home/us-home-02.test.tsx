@@ -27,11 +27,11 @@ describe('US-HOME-02', () => {
   });
 
   it('Storage shows free space as the big figure, and Apps and System in a bar; it opens Usage', async () => {
-    const { router } = renderScreen(() => <WidgetsRow ids={DEFAULT} />, { 'storage.summary': summary });
+    // Live usage has its own test (us-home-02-live-usage); which widgets show is checked above.
+    const { router } = renderScreen(() => <WidgetsRow ids={['storage']} />, { 'storage.summary': summary });
     const link = await screen.findByRole('link', { name: /^Storage ?142 GB ?left of 256 GB/ });
     expect(screen.getAllByText('142 GB')[0]).toHaveClass('tabular-nums');
     expect(screen.getByRole('img')).toHaveAccessibleName(/^Apps 77 GB, System 37 GB/);
-    expect(screen.queryByText('Live usage')).toBeNull();
     fireEvent.click(link);
     await waitFor(() => expect(router.state.location.pathname).toBe('/usage'));
   });
