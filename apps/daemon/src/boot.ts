@@ -582,6 +582,7 @@ export async function shutdown(services: Services | null): Promise<void> {
   } catch {
     // Shutting down anyway.
   }
+  services.routing.stop();
   services.login.stop();
   services.keepAwake.stop();
   await services.jobs.shutdown();

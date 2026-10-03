@@ -21,11 +21,21 @@ export interface NetworkServiceDeps {
   daemon: string;
   /** This computer's LAN IPv4 addresses, best first. */
   lanAddresses?: () => string[];
+  /** How soon a config that couldn't be applied is tried again (doubling up to RETRY_MAX_MS). */
+  retryMs?: number;
 }
+
+/** A config that couldn't be applied (Caddy couldn't start: another program had port 443) is tried again soon… */
+export const RETRY_MS = 30_000;
+/** …and then less often, up to this. */
+export const RETRY_MAX_MS = 10 * 60_000;
 
 export class NetworkService {
   private applied: string | null = null;
   private queue: Promise<void> = Promise.resolve();
+  private retryTimer: NodeJS.Timeout | null = null;
+  private retryWait: number | null = null;
+  private stopped = false;
 
   constructor(private readonly deps: NetworkServiceDeps) {}
 
@@ -98,8 +108,32 @@ export class NetworkService {
       await this.deps.proxy.apply(state);
       await this.deps.mdns.sync(NetworkService.names(state));
       this.applied = key;
+      this.retryWait = null;
     } catch (err) {
       this.deps.logger.error({ err }, 'could not apply the network config');
+      this.retryLater();
     }
+  }
+
+  /**
+   * Tries again after 30 s, then less often: whatever held the port (another hlabs, another web server) may let go,
+   * and the dashboard shouldn't stay unreachable until the next periodic sync.
+   */
+  private retryLater(): void {
+    if (this.stopped || this.retryTimer) return;
+    const base = this.deps.retryMs ?? RETRY_MS;
+    this.retryWait = this.retryWait === null ? base : Math.min(this.retryWait * 2, RETRY_MAX_MS);
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
+      if (!this.stopped) void this.sync({ force: true });
+    }, this.retryWait);
+    this.retryTimer.unref();
+  }
+
+  /** Shutting down: no more retries. */
+  stop(): void {
+    this.stopped = true;
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+    this.retryTimer = null;
   }
 }
