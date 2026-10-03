@@ -4,6 +4,8 @@ export interface HealthCheck {
   ok: boolean;
   /** The 503 body's reason (starting, migration_failed, …), or null when there was no answer. */
   reason: string | null;
+  /** When ready: the version answering (US-STATE-02). */
+  version?: string;
   /** While starting or updating: which step of how many, and its label. */
   step?: number;
   steps?: number;
@@ -14,7 +16,10 @@ export interface HealthCheck {
 export async function checkHealth(url = '/healthz', timeoutMs = 4_000): Promise<HealthCheck> {
   try {
     const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(timeoutMs) });
-    if (res.ok) return { ok: true, reason: null };
+    if (res.ok) {
+      const body = (await res.json().catch(() => null)) as { version?: unknown } | null;
+      return { ok: true, reason: null, ...(typeof body?.version === 'string' ? { version: body.version } : {}) };
+    }
     const body = (await res.json().catch(() => null)) as {
       reason?: unknown;
       step?: unknown;

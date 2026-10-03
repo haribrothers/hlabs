@@ -71,7 +71,7 @@ describe('US-STATE-01', () => {
 
   it('marking it keeps the flag for the next load; it needs no session', () => {
     markUpdating(1234);
-    expect(JSON.parse(sessionStorage.getItem(UPDATING_KEY)!)).toEqual({ since: 1234 });
+    expect(JSON.parse(sessionStorage.getItem(UPDATING_KEY)!)).toEqual({ since: 1234, fromVersion: null });
     clearUpdating();
     expect(sessionStorage.getItem(UPDATING_KEY)).toBeNull();
   });

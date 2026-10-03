@@ -10,7 +10,7 @@ Open **Settings › Updates** to see which version of hlabs you have. The card a
 
 ## While hlabs updates
 
-During an update, every open dashboard, on any device, shows **Updating hlabs** and the step it's on: installing the update, restarting your apps, checking them and finishing up. You don't need to do anything, and you don't need to stay signed in to see it. The page reloads by itself when the update is done. **Go to Home** takes you to the start page, which shows the same thing until then.
+During an update, every open dashboard, on any device, shows **Updating hlabs** and the step it's on: installing the update, restarting your apps, checking them and finishing up. You don't need to do anything, and you don't need to stay signed in to see it. The page reloads by itself when the update is done, on the same page you were on, and you stay signed in; a message says **hlabs is up to date** with the new version. **Go to Home** takes you to the start page, which shows the same thing until then.
 
 ## Install an update
 

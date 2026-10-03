@@ -6,18 +6,37 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { checkHealth, DaemonDownController, POLL_MS, type HealthCheck } from './daemon-down';
 import { DaemonDownView } from './daemon-down-view';
-import { clearUpdating, markUpdating, useUpdating } from './updating';
+import { updatingCopy } from '../copy/health';
+import { showToast } from '../lib/toasts';
+import { finishUpdating, firstToastFor, markUpdating, noteVersion, takeUpdateResult, useUpdating } from './updating';
 import { UpdatingView } from './updating-view';
 
 /** How long /healthz may fail before the page says so. */
 export const DOWN_AFTER_MS = 10_000;
 
+/** The version answering, through the API (system.health is public), to confirm hlabs really is back. */
+async function systemVersion(): Promise<string | null> {
+  try {
+    const res = await fetch('/trpc/system.health', { cache: 'no-store' });
+    const body = (await res.json()) as { result?: { data?: { version?: unknown } } };
+    const version = body.result?.data?.version;
+    return typeof version === 'string' ? version : null;
+  } catch {
+    return null;
+  }
+}
+
 export function HealthGate({
   children,
   check = checkHealth,
+  confirmVersion = systemVersion,
+  reload = () => window.location.reload(),
 }: {
   children: ReactNode;
   check?: () => Promise<HealthCheck>;
+  /** The version system.health reports, or null when it doesn't answer (US-STATE-02). */
+  confirmVersion?: () => Promise<string | null>;
+  reload?: () => void;
 }) {
   const queryClient = useQueryClient();
   const updating = useUpdating();
@@ -43,6 +62,7 @@ export function HealthGate({
       }
       if (result.ok) {
         failingSince.current = null;
+        if (result.version) noteVersion(result.version);
         return;
       }
       failingSince.current ??= Date.now();
@@ -55,14 +75,37 @@ export function HealthGate({
     };
   }, [down, updating, check]);
 
-  // The update is over when hlabs answers again (US-STATE-02 reloads the page for the new version).
+  // The version this page was loaded with, for after an update (US-STATE-02).
+  useEffect(() => {
+    void check().then((result) => {
+      if (result.ok && result.version) noteVersion(result.version);
+    });
+  }, [check]);
+
+  // After a reload for an update: "hlabs is up to date", once per browser session (US-STATE-02).
+  useEffect(() => {
+    const result = takeUpdateResult();
+    if (result && result.to !== result.from && firstToastFor(result.to)) {
+      showToast({ tone: 'success', title: updatingCopy.doneTitle, body: updatingCopy.doneBody(result.to) });
+    }
+  }, []);
+
+  // The update is over when /healthz answers and system.health confirms it (one 200 alone may flap): reload the
+  // route, so the new version's dashboard loads (US-STATE-02).
+  const confirming = useRef(false);
   const onAnswer = useCallback(
     (result: HealthCheck) => {
-      if (!result.ok) return;
-      clearUpdating();
-      void queryClient.invalidateQueries();
+      if (!result.ok || confirming.current) return;
+      confirming.current = true;
+      void confirmVersion()
+        .then((version) => {
+          if (!version) return;
+          finishUpdating(version);
+          reload();
+        })
+        .finally(() => (confirming.current = false));
     },
-    [queryClient],
+    [confirmVersion, reload],
   );
 
   const controller = useMemo(

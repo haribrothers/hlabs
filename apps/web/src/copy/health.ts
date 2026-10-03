@@ -42,4 +42,7 @@ export const updatingCopy = {
   stepLine: (step: number, steps: number, label: string) => `Step ${step} of ${steps} · ${label}`,
   body: 'This page reloads by itself when the update finishes.',
   goHome: 'Go to Home',
+  /** US-STATE-02: once per browser session, after the reload. */
+  doneTitle: 'hlabs is up to date',
+  doneBody: (version: string) => `Version ${version}`,
 } as const;

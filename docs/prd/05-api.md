@@ -37,7 +37,7 @@ One tRPC v11 router tree in `packages/api`, implemented in `apps/daemon`. Every 
 ## Non-tRPC HTTP
 | Route | Purpose |
 | --- | --- |
-| `GET /healthz` | 200 when ready; 503 with `{ reason }` otherwise. |
+| `GET /healthz` | 200 when ready (`{ status: 'ok', version }`, the version the dashboard compares after an update, US-STATE-02); 503 with `{ reason }` otherwise. |
 | `GET /auth/verify` | Caddy forward_auth. Reads session cookie + `X-Forwarded-Host`; 200 with `X-Hlabs-User`, `X-Hlabs-Role` or 302 to login / 403 "no access" page. |
 | `POST /api/files/upload` (tus-style chunks) | Resumable uploads, 8 MB chunks. |
 | `GET /api/files/download?path=` | Range support, zip for folders (streamed). |
