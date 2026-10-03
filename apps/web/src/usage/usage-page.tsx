@@ -8,6 +8,7 @@ import { usageCopy as copy } from '../copy/usage';
 import { pageQuery } from '../lib/error-copy';
 import { useTRPC } from '../lib/trpc';
 import { formatMemory } from './format';
+import { AppTable } from './app-table';
 import { MainChart } from './main-chart';
 import { RANGES, useUsageRange, type UsageRange } from './range';
 import { UsageTiles, type TileId } from './tiles';
@@ -28,7 +29,7 @@ export function UsagePage() {
   const [range, setRange] = useUsageRange();
   // A member who may not see usage gets "You don't have access to this" (US-USE-02, US-STATE-20).
   const overview = useQuery({ ...trpc.usage.overview.queryOptions(), ...pageQuery, retry: false });
-  const { current, hour: hostHour } = useLiveUsage({ withHistory: true });
+  const { current, hour: hostHour, apps } = useLiveUsage({ withHistory: true, withApps: true });
   // 1 hour follows the live samples; 24 hours and 7 days are fetched again every minute (US-USE-03).
   const longer = useQuery({
     ...trpc.usage.history.queryOptions({ scope: 'host', range }),
@@ -86,6 +87,7 @@ export function UsagePage() {
         storage={overview.data?.storage}
         memTotalBytes={overview.data?.memTotalBytes ?? current.data?.host.memTotalBytes ?? 0}
       />
+      {apps.data ? <AppTable apps={apps.data.apps} current={current.data ?? null} /> : null}
     </GlassCard>
   );
 }

@@ -18,3 +18,6 @@ export function formatMemory(bytes: number): string {
 export function formatRate(bytesPerSecond: number): string {
   return bytesPerSecond < 1 ? '0 KB/s' : `${formatBytes(bytesPerSecond)}/s`;
 }
+
+/** An app's CPU in the table (US-USE-06): its share of the whole computer, one decimal ("7.2%"). */
+export const formatAppCpu = (v: number) => `${(Math.round(v * 10) / 10).toFixed(1)}%`;

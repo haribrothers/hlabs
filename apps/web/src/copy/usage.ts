@@ -1,4 +1,6 @@
 // Live usage (docs/features/08-usage-backups.md, LiveUsage). Sentence case, plain words.
+import type { AppState } from '@hlabs/api';
+
 export const usageCopy = {
   title: 'Live usage',
   docTitle: 'Live usage · hlabs',
@@ -41,6 +43,25 @@ export const usageCopy = {
   dockerEngine: 'Docker Engine · uses the whole computer',
   noEngine: 'Container engine stopped',
   noValue: '—',
+  /** The per-app table (US-USE-06, US-USE-07). */
+  appsTable: 'Apps',
+  columns: { app: 'App', cpu: 'CPU', memory: 'Memory', network: 'Network', status: 'Status' },
+  /** Said after a sorted header's name. */
+  sortedDown: '↓',
+  sortedUp: '↑',
+  appStatus: {
+    running: 'Running',
+    starting: 'Starting',
+    restarting: 'Restarting',
+    stopping: 'Stopping',
+    stopped: 'Stopped',
+    updating: 'Updating',
+    rolling_back: 'Rolling back',
+    error: 'Error',
+    uninstalling: 'Uninstalling',
+    installing: 'Installing',
+    install_failed: 'Install failed',
+  } satisfies Record<AppState, string>,
   loading: 'Loading usage…',
   couldntLoad: "Usage couldn't be loaded.",
   retry: 'Try again',

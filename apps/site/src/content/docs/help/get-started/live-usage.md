@@ -30,6 +30,12 @@ The numbers update by themselves every few seconds. The Live usage widget on Hom
 
 Family members only see Usage if their admin turned on **See live usage** for members in Settings › Users and for them in their apps access; they then see the computer's tiles and only the apps shared with them.
 
+## See which app uses the most
+
+Below the chart, a table lists your apps with their **CPU**, **Memory**, **Network** and **Status**. CPU is each app's share of the whole computer, on the same scale as the CPU tile; Network is data in and out together.
+
+The table starts with the app using the most memory at the top. Choose a column's name to sort by it, most first (App and Status go A to Z); choose it again to reverse the order. hlabs remembers your choice on this browser. Numbers update every few seconds, but the rows only change places every 10 seconds, so they don't move while you're reading. On a phone, the table shows the app, the column you sorted by and its status.
+
 ## Read the charts with a keyboard or screen reader
 
 Press Tab to reach a chart, then use the **Left** and **Right** arrow keys to move from one point to the next; **Home** and **End** jump to the first and last. Each point is read out, for example "16:32, CPU 46%". In the memory chart, **Up** and **Down** move between the apps in the same column. Screen readers also find a table with the same values next to each chart. Over long ranges the chart steps through up to 200 points, always keeping the highest ones.
