@@ -17,6 +17,8 @@ export interface Answers {
   loginRefused?: boolean;
   /** tray.listUsers. */
   users?: unknown[];
+  /** check_update: a newer version, null when up to date, 'fail' when the check fails (US-INST-19). */
+  update?: { version: string; notes: string | null } | null | 'fail';
 }
 
 export const tauri = {
@@ -50,6 +52,9 @@ export function answer(a: Answers) {
         return (args as unknown as { enabled: boolean }).enabled;
       case 'open_setup':
         return true;
+      case 'check_update':
+        if (a.update === 'fail') throw new Error('offline');
+        return a.update ?? null;
       case 'open_dashboard':
       case 'copy_dashboard_address':
       case 'copy_text':

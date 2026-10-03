@@ -1667,6 +1667,26 @@
     color: var(--ink);
     background: color-mix(in srgb, var(--danger-fill) 22%, transparent);
   }
+  .hl-tray-note-update {
+    background: var(--accent-wash);
+  }
+  .hl-tray-note-update .hl-tray-action {
+    margin-top: var(--space-2);
+  }
+  .hl-tray-logo-dot {
+    position: relative;
+  }
+  /* "Update available": a dot on the logo, as on the menu-bar icon (US-INST-14). */
+  .hl-tray-logo-dot::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
   .hl-tray-action {
     width: 100%;
   }

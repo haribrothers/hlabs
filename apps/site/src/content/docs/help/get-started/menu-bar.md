@@ -56,3 +56,9 @@ Choose **Resume apps** to start them again. Apps you had stopped yourself before
 ## Reset a password
 
 If someone in your household forgets their hlabs password, choose **Reset a password…** on the Mac that runs hlabs. Pick their account, type a new password (at least 12 characters, and not a common one), and choose **Reset password**. If their account uses two-factor, you can also turn that off, for example when they've lost their phone. Only people who can log in to this Mac can do this: macOS asks for the Mac's login password (or Touch ID) first. If you cancel that, nothing changes. Once it's done you get a notification, **Password reset for @username**; the person is signed out everywhere and logs in with the new password. If they were locked out after too many tries, that ends too.
+
+## Updates
+
+The menu-bar app looks for a new version of hlabs by itself, a couple of minutes after it starts and then every few hours. To look now, choose **Check for updates…**: it says **Checking…**, then **hlabs is up to date**, or **Couldn't check for updates** if it can't reach the internet.
+
+When a new version is ready, the icon gets a dot and the menu says **Version … is ready**. Choose **What's new** to read about it in Settings › Updates. Apps restart for about a minute while hlabs updates.

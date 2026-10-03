@@ -14,6 +14,7 @@ import { appsLine, formatCpu, formatFree, formatMemory } from './format';
 import { useOpenSetup, useSetupPending } from './setup';
 import { quitTray } from './quit';
 import { useQuickAction } from './quick-action';
+import { useUpdateCheck, type CheckFeedback, type FoundUpdate } from './updates';
 import { useStartAtLogin } from './start-at-login';
 import { useMenuOpen, useTrayStatus } from './status';
 import { trayCopy as t } from './copy';
@@ -68,7 +69,15 @@ export interface RunningActions {
   pauseAll?: () => void;
   /** "Start at login": what the OS does now, and its toggle (US-INST-09). */
   startAtLogin?: { checked: boolean; failed: boolean; toggle: () => void };
+  /** "Check for updates…" and what it says while and after checking (US-INST-19). */
+  checkUpdates?: { feedback: CheckFeedback; run: () => void };
 }
+
+const CHECK_LABEL: Record<Exclude<CheckFeedback, null>, string> = {
+  checking: t.checking,
+  upToDate: t.upToDate,
+  failed: t.checkFailed,
+};
 
 /** "Quit hlabs" (⌘Q, US-INST-10): quits only the menu-bar app; hlabs and your apps keep running (D-015). */
 export const quitItem: MenuItem = { label: t.quit, shortcut: '⌘Q', onSelect: () => void quitTray() };
@@ -90,7 +99,10 @@ export function runningItems(actions: RunningActions = {}): MenuItem[] {
       onSelect: actions.startAtLogin?.toggle,
     },
     { label: t.pauseAll, onSelect: actions.pauseAll },
-    { label: t.checkForUpdates },
+    {
+      label: actions.checkUpdates?.feedback ? CHECK_LABEL[actions.checkUpdates.feedback] : t.checkForUpdates,
+      onSelect: actions.checkUpdates?.feedback ? undefined : actions.checkUpdates?.run,
+    },
     { label: t.resetPassword, onSelect: () => void invoke('open_reset_window').catch(() => {}) },
     { separator: true },
     ...(isFeatureEnabled('uninstall') ? [{ label: t.uninstall }] : []),
@@ -106,9 +118,11 @@ export function Menu() {
   const open = useMenuOpen();
   const health = useHealth();
   const [status, refresh] = useTrayStatus(boot?.step === 'started' && access === 'ready', open);
-  useMenuBarIcon(iconFor({ boot, access, health, status }));
   // Applied even while the menu is closed, so a change in Settings reaches the OS (US-INST-09).
   const startAtLogin = useStartAtLogin(status?.startAtLogin, refresh);
+  // Checks run while hlabs answers; the channel is the one chosen in Settings › Updates (US-INST-19).
+  const updates = useUpdateCheck(access === 'ready' && status ? status.updateChannel : null);
+  useMenuBarIcon(iconFor({ boot, access, health, status, updateAvailable: updates.found !== null }));
   // Nothing until the Rust side has said where things stand, so no state flashes by.
   if (boot === null || access === null) return null;
   // hlabs isn't answering (or didn't start within 60 s): "Can't reach hlabs"; nothing is opened in the browser.
@@ -123,10 +137,38 @@ export function Menu() {
   if (boot.step === 'starting' || health?.state === 'starting') return <StartingMenu status={null} />;
   if (status?.state === 'engineStopped') return <EngineStoppedMenu status={status} />;
   if (status?.state === 'paused') return <PausedMenu onChanged={refresh} />;
-  return status?.state === 'starting' ? (
-    <StartingMenu status={status} />
-  ) : (
-    <RunningMenu status={status} onChanged={refresh} startAtLogin={startAtLogin} />
+  if (status?.state === 'starting') return <StartingMenu status={status} />;
+  if (updates.found) return <UpdateAvailableMenu status={status} update={updates.found} />;
+  return (
+    <RunningMenu
+      status={status}
+      onChanged={refresh}
+      startAtLogin={startAtLogin}
+      checkUpdates={{ feedback: updates.feedback, run: updates.checkNow }}
+    />
+  );
+}
+
+/**
+ * TrayStates "Update available" (US-INST-19): "Version <next> is ready", that apps restart for about a minute, "Restart
+ * to update" (US-INST-20) and "What's new" (the dashboard's Settings › Updates).
+ */
+export function UpdateAvailableMenu({ status, update }: { status: TrayStatus | null; update: FoundUpdate }) {
+  const dashboard = useDashboardActions();
+  return (
+    <TrayMenu
+      tone="update"
+      status="running"
+      statusText={status ? runningLine(status) : t.running}
+      note={{ title: t.versionReady(update.version), body: t.restartNote }}
+      action={{ label: t.restartToUpdate, onSelect: () => {} }}
+      items={[
+        { label: t.whatsNew, onSelect: () => void dashboard.open('/settings/updates') },
+        { separator: true },
+        { label: t.openDashboard, shortcut: '⌘D', onSelect: () => void dashboard.open() },
+        quitItem,
+      ]}
+    />
   );
 }
 
@@ -271,10 +313,12 @@ export function RunningMenu({
   status,
   onChanged,
   startAtLogin,
+  checkUpdates,
 }: {
   status: TrayStatus | null;
   onChanged?: () => void;
   startAtLogin?: RunningActions['startAtLogin'];
+  checkUpdates?: RunningActions['checkUpdates'];
 }) {
   const dashboard = useDashboardActions();
   const pause = useQuickAction('pauseAll', onChanged);
@@ -298,6 +342,7 @@ export function RunningMenu({
         copied: dashboard.copied,
         pauseAll: pause.busy ? undefined : () => void pause.run(),
         startAtLogin,
+        checkUpdates,
       })}
     />
   );

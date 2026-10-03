@@ -75,6 +75,15 @@ export const trayCopy = {
   startAtLoginFailed: "Couldn't change login setting",
   pauseAll: 'Pause all apps',
   checkForUpdates: 'Check for updates…',
+  /** US-INST-19: "Check for updates…" while checking, and for 3 s after. */
+  checking: 'Checking…',
+  upToDate: 'hlabs is up to date',
+  checkFailed: "Couldn't check for updates",
+  /** TrayStates "Update available". */
+  versionReady: (version: string) => `Version ${version} is ready`,
+  restartNote: 'Apps restart for about a minute during the update.',
+  restartToUpdate: 'Restart to update',
+  whatsNew: "What's new",
   resetPassword: 'Reset a password…',
   uninstall: 'Uninstall hlabs…',
   quit: 'Quit hlabs',

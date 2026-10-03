@@ -12,6 +12,7 @@ mod logs;
 mod os_confirm;
 mod paths;
 mod token;
+mod updates;
 mod window;
 
 use access::{Access, TokenGuard};
@@ -605,6 +606,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(IconPulse::default())
         .invoke_handler(tauri::generate_handler![
             daemon_call,
@@ -625,7 +627,8 @@ pub fn run() {
             set_start_at_login,
             quit_tray,
             open_reset_window,
-            reset_password
+            reset_password,
+            updates::check_update
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]

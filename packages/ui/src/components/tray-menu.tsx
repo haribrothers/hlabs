@@ -9,8 +9,11 @@ import { StatusDot, type Status } from './status-dot';
 export interface TrayMenuProps {
   status?: Status;
   statusText: string;
-  /** 'danger' for the error states (TrayStates "Error"): a warning in place of the logo, the status in danger. */
-  tone?: 'default' | 'danger';
+  /**
+   * 'danger' for the error states (TrayStates "Error"): a warning in place of the logo, the status in danger.
+   * 'update' for "Update available": the note is accented and holds the action, and the logo has a dot.
+   */
+  tone?: 'default' | 'danger' | 'update';
   /** CPU, memory, free space. `spoken` replaces both for screen readers ("CPU usage 18 percent"). */
   stats?: { label: string; value: string; spoken?: string }[];
   /** A short explanation under the header (Paused, Error and Update states). */
@@ -39,10 +42,22 @@ export function TrayMenu({
   width = TRAY_WIDTH,
 }: TrayMenuProps) {
   const danger = tone === 'danger';
+  const update = tone === 'update';
+  const button = action ? (
+    <Button
+      size="sm"
+      className="hl-tray-action"
+      onClick={action.onSelect}
+      busy={action.busy}
+      disabled={action.disabled}
+    >
+      {action.label}
+    </Button>
+  ) : null;
   const header = (
     <>
       <div className="hl-tray-head">
-        <span className={cn('hl-tray-logo', danger && 'hl-tray-logo-danger')}>
+        <span className={cn('hl-tray-logo', danger && 'hl-tray-logo-danger', update && 'hl-tray-logo-dot')}>
           {danger ? (
             <TriangleAlert aria-hidden {...iconDefaults} />
           ) : (
@@ -79,22 +94,16 @@ export function TrayMenu({
       {note || action ? (
         <div className="hl-tray-body">
           {note ? (
-            <div className={cn('hl-tray-note', danger && 'hl-tray-note-danger')} role={danger ? 'alert' : undefined}>
+            <div
+              className={cn('hl-tray-note', danger && 'hl-tray-note-danger', update && 'hl-tray-note-update')}
+              role={danger ? 'alert' : undefined}
+            >
               {note.title ? <b>{note.title}</b> : null}
               <span>{note.body}</span>
+              {update ? button : null}
             </div>
           ) : null}
-          {action ? (
-            <Button
-              size="sm"
-              className="hl-tray-action"
-              onClick={action.onSelect}
-              busy={action.busy}
-              disabled={action.disabled}
-            >
-              {action.label}
-            </Button>
-          ) : null}
+          {update ? null : button}
         </div>
       ) : null}
     </>
