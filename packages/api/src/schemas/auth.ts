@@ -98,5 +98,12 @@ export const auth = {
     }),
   ),
   revokeSession: io(z.object({ sessionId: idSchema }), ok),
-  resetPassword: io(z.object({ token: z.string().min(1), newPassword: passwordSchema }), ok),
+  /**
+   * A new password from an admin's one-time link (US-AUTH-22). Signs them in on this device, unless they have two-factor:
+   * then they log in with the new password and their code (D-114).
+   */
+  resetPassword: io(
+    z.object({ token: z.string().min(1), newPassword: passwordSchema }),
+    z.object({ loggedIn: z.boolean(), username: usernameSchema }),
+  ),
 };

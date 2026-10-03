@@ -9,10 +9,19 @@ import type { DaemonContext } from '../context';
 import { resetPassword } from '../users/reset-link';
 
 export const auth: AppHandlers<DaemonContext>['auth'] = {
-  /** A new password from an admin's one-time link (US-ACCT-14; its page is US-AUTH-22). Signs them out everywhere. */
+  /**
+   * A new password from an admin's one-time link (US-ACCT-14, US-AUTH-22). Signs them out everywhere, then in on this
+   * device, unless they have two-factor: a link alone mustn't skip it, so they log in with the new password (D-114).
+   */
   resetPassword: async (input, ctx) => {
-    await resetPassword(ctx.services, input, ctx.request.ip);
-    return { ok: true as const };
+    const { origin, allowedOrigins, ip, userAgent } = ctx.request;
+    if (origin !== null && !allowedOrigins.includes(origin)) throw hlabsError('CSRF_REJECTED');
+    const { userId } = await resetPassword(ctx.services, input, ip);
+    const { db, sessions: service, totp } = ctx.services;
+    const username = db.select({ username: users.username }).from(users).where(eq(users.id, userId)).get()!.username;
+    if (totp.isEnabled(userId)) return { loggedIn: false, username };
+    setSessionCookie(ctx, service.create({ userId, remember: false, ip, userAgent }));
+    return { loggedIn: true, username };
   },
   /**
    * Sign out one of my devices (US-ACCT-05): only my own sessions; already ended ones are fine (idempotent). The

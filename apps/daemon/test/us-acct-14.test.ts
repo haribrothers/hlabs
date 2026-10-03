@@ -64,15 +64,22 @@ describe('US-ACCT-14', () => {
     const { d, anu, link, reset } = await setup();
     const { token } = await link();
     expect((await reset(token, 'short')).error?.data.hlabsCode).toBe('PASSWORD_TOO_SHORT');
+    const before = d
+      .services!.db.select({ id: sessions.id })
+      .from(sessions)
+      .where(and(eq(sessions.userId, anu.userId), isNull(sessions.revokedAt)))
+      .all();
+    expect(before.length).toBeGreaterThan(0);
     expect((await reset(token)).result).toBeDefined();
     const { db } = d.services!;
-    expect(
-      db
-        .select()
-        .from(sessions)
-        .where(and(eq(sessions.userId, anu.userId), isNull(sessions.revokedAt)))
-        .all(),
-    ).toEqual([]);
+    // Every earlier session ended; the only one left is the new one on the device that used the link (US-AUTH-22).
+    const live = db
+      .select({ id: sessions.id })
+      .from(sessions)
+      .where(and(eq(sessions.userId, anu.userId), isNull(sessions.revokedAt)))
+      .all();
+    expect(live).toHaveLength(1);
+    expect(before.map((s) => s.id)).not.toContain(live[0]!.id);
     expect(db.select().from(users).where(eq(users.id, anu.userId)).get()!.passwordChangedAt).not.toBeNull();
     expect((await reset(token)).error?.data.hlabsCode).toBe('AUTH_RESET_EXPIRED');
     const login = await fetch(`${d.url}/trpc/auth.login`, {

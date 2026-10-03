@@ -27,6 +27,7 @@ import { Route as LoginLockedRouteImport } from './routes/login.locked'
 import { Route as LoginPasswordRouteImport } from './routes/login.password'
 import { Route as LoginUsernameRouteImport } from './routes/login.username'
 import { Route as LoginUsersRouteImport } from './routes/login.users'
+import { Route as ResetTokenRouteImport } from './routes/reset.$token'
 import { Route as SettingsIndexRouteImport } from './routes/settings.index'
 import { Route as SettingsSectionRouteImport } from './routes/settings.$section'
 import { Route as SetupIndexRouteImport } from './routes/setup.index'
@@ -131,6 +132,11 @@ const LoginUsersRoute = LoginUsersRouteImport.update({
   path: '/login/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetTokenRoute = ResetTokenRouteImport.update({
+  id: '/reset/$token',
+  path: '/reset/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -217,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
   '/login/users': typeof LoginUsersRoute
+  '/reset/$token': typeof ResetTokenRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/store/search': typeof StoreSearchRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
   '/login/users': typeof LoginUsersRoute
+  '/reset/$token': typeof ResetTokenRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/store/search': typeof StoreSearchRoute
@@ -281,6 +289,7 @@ export interface FileRoutesById {
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
   '/login/users': typeof LoginUsersRoute
+  '/reset/$token': typeof ResetTokenRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/store/search': typeof StoreSearchRoute
@@ -316,6 +325,7 @@ export interface FileRouteTypes {
     | '/login/password'
     | '/login/username'
     | '/login/users'
+    | '/reset/$token'
     | '/settings/$section'
     | '/setup/$step'
     | '/store/search'
@@ -346,6 +356,7 @@ export interface FileRouteTypes {
     | '/login/password'
     | '/login/username'
     | '/login/users'
+    | '/reset/$token'
     | '/settings/$section'
     | '/setup/$step'
     | '/store/search'
@@ -379,6 +390,7 @@ export interface FileRouteTypes {
     | '/login/password'
     | '/login/username'
     | '/login/users'
+    | '/reset/$token'
     | '/settings/$section'
     | '/setup/$step'
     | '/store/search'
@@ -413,6 +425,7 @@ export interface RootRouteChildren {
   LoginPasswordRoute: typeof LoginPasswordRoute
   LoginUsernameRoute: typeof LoginUsernameRoute
   LoginUsersRoute: typeof LoginUsersRoute
+  ResetTokenRoute: typeof ResetTokenRoute
   LoginIndexRoute: typeof LoginIndexRoute
   AppsAppIdLogsRoute: typeof AppsAppIdLogsRoute
   AppsAppIdSettingsRoute: typeof AppsAppIdSettingsRoute
@@ -546,6 +559,13 @@ declare module '@tanstack/react-router' {
       path: '/login/users'
       fullPath: '/login/users'
       preLoaderRoute: typeof LoginUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset/$token': {
+      id: '/reset/$token'
+      path: '/reset/$token'
+      fullPath: '/reset/$token'
+      preLoaderRoute: typeof ResetTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/': {
@@ -704,6 +724,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginPasswordRoute: LoginPasswordRoute,
   LoginUsernameRoute: LoginUsernameRoute,
   LoginUsersRoute: LoginUsersRoute,
+  ResetTokenRoute: ResetTokenRoute,
   LoginIndexRoute: LoginIndexRoute,
   AppsAppIdLogsRoute: AppsAppIdLogsRoute,
   AppsAppIdSettingsRoute: AppsAppIdSettingsRoute,
