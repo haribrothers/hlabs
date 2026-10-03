@@ -154,6 +154,9 @@ importers:
       astro:
         specifier: ^5.18.2
         version: 5.18.2(@types/node@24.19.0)(jiti@2.7.0)(lightningcss@1.33.0)(rollup@4.63.5)(tsx@4.23.15)(typescript@5.9.3)(yaml@2.9.1)
+      starlight-sidebar-topics:
+        specifier: ~0.6.2
+        version: 0.6.2(@astrojs/starlight@0.37.7(astro@5.18.2(@types/node@24.19.0)(jiti@2.7.0)(lightningcss@1.33.0)(rollup@4.63.5)(tsx@4.23.15)(typescript@5.9.3)(yaml@2.9.1)))
 
   apps/tray:
     dependencies:
@@ -5288,6 +5291,12 @@ packages:
   ssh2@1.17.0:
     resolution: {integrity: sha512-wPldCk3asibAjQ/kziWQQt1Wh3PgDFpC0XpwclzKcdT1vql6KeYxf5LIt4nlFkUeR8WuphYMKqUA56X4rjbfgQ==}
     engines: {node: '>=10.16.0'}
+
+  starlight-sidebar-topics@0.6.2:
+    resolution: {integrity: sha512-SNCTUZS/hcVor0ZcaXbaSVU37+V+qtvzNirkvnOg3Mqu/awuGpthkH5+uKpiZqWxLffp6TrOlsv5E5QsxrndNg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@astrojs/starlight': '>=0.32.0'
 
   std-env@4.2.0:
     resolution: {integrity: sha512-oCUKSupKTHX53EyjDtuZQ64pjLJ6yYCtpmEw0goYxtjG9KpbRe8KAsl2tBUGU9DyMcJ0RwJ8GqJAFzMXcXW1Rw==}
@@ -10997,6 +11006,11 @@ snapshots:
     optionalDependencies:
       cpu-features: 0.0.10
       nan: 2.29.0
+
+  starlight-sidebar-topics@0.6.2(@astrojs/starlight@0.37.7(astro@5.18.2(@types/node@24.19.0)(jiti@2.7.0)(lightningcss@1.33.0)(rollup@4.63.5)(tsx@4.23.15)(typescript@5.9.3)(yaml@2.9.1))):
+    dependencies:
+      '@astrojs/starlight': 0.37.7(astro@5.18.2(@types/node@24.19.0)(jiti@2.7.0)(lightningcss@1.33.0)(rollup@4.63.5)(tsx@4.23.15)(typescript@5.9.3)(yaml@2.9.1))
+      picomatch: 4.0.7
 
   std-env@4.2.0: {}
 

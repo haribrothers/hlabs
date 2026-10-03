@@ -16,6 +16,7 @@ hlabs is a home cloud OS for macOS and Linux (umbrelOS-like): a Node daemon that
 - If a story, a screen and the architecture disagree: the story wins over the screen; the architecture and decisions win over the story. If it's still unclear, stop and ask; add the question to `docs/prd/13-risks-open-questions.md`.
 - Controls that depend on a later phase are hidden behind flags in `packages/shared/src/features.ts` until that phase ships (D-036).
 - User-facing help lives in `apps/site/src/content/docs`, not in `docs/` (that's the spec). When a story changes what people see, update its help page in the same change, and link to help only through `helpUrl()`.
+- Developer docs live in `apps/site/src/content/docs/developers` (the site's Developers section, D-123). When a change affects how people build, run, test or sign hlabs from source (commands, ports, prerequisites, data locations, keys), update them in the same change.
 - Don't build beyond the story. Non-goals in `docs/prd/00-overview.md` are out of scope.
 
 ## Stack (don't substitute)
@@ -51,4 +52,4 @@ pnpm + Turborepo · TypeScript strict, ESM · Node 22 · Fastify + tRPC v11 (SSE
 `pnpm dev` · `pnpm dev:full` (with Caddy/mDNS) · `pnpm fetch-binaries` · `pnpm dev:tray` · `pnpm build:tray` (unsigned .app with hlabsd bundled) · `pnpm test` · `pnpm test:e2e` · `pnpm lint` · `pnpm typecheck` · `pnpm db:generate` · `pnpm store:lint` · `pnpm build`
 
 ## Where things are
-`apps/daemon` hlabsd · `apps/web` dashboard · `apps/tray` Tauri · `apps/cli` `hlabs` command · `apps/site` website + help (Astro/Starlight) · `packages/{api,db,app-manifest,ui,icons,shared,config}` · `store/` built-in apps · `scripts/` install and release · `docs/` spec.
+`apps/daemon` hlabsd · `apps/web` dashboard · `apps/tray` Tauri · `apps/cli` `hlabs` command · `apps/site` website, help and developer docs (Astro/Starlight) · `packages/{api,db,app-manifest,ui,icons,shared,config}` · `store/` built-in apps · `scripts/` install and release · `docs/` spec.
