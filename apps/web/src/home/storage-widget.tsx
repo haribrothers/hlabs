@@ -55,6 +55,7 @@ export function StorageWidget() {
         ]}
         total={s.totalBytes}
         formatValue={formatBytes}
+        interactive={false}
       />
     </Link>
   );

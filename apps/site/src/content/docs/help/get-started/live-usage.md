@@ -24,10 +24,16 @@ Below the tiles, a chart shows how busy the processor has been, and its highest 
 - **Storage:** one bar of the disk by use: apps, files, system and what's free.
 - **Network:** data coming **In** and going **Out**; the peak says which was higher.
 
-Point at the chart, or select it and use the arrow keys, to read the time and values. Choose **1 hour**, **24 hours** or **7 days** at the top right to change how far back it goes; hlabs remembers your choice on this browser. The last hour keeps moving as new readings arrive; the longer ranges refresh every minute. If hlabs hasn't been running that long, the chart shows what it has.
+Point at the chart to read the time and values. Choose **1 hour**, **24 hours** or **7 days** at the top right to change how far back it goes; hlabs remembers your choice on this browser. The last hour keeps moving as new readings arrive; the longer ranges refresh every minute. If hlabs hasn't been running that long, the chart shows what it has.
 
 The numbers update by themselves every few seconds. The Live usage widget on Home shows CPU and memory too; choose it to open this page.
 
 Family members only see Usage if their admin turned on **See live usage** for members in Settings › Users and for them in their apps access; they then see the computer's tiles and only the apps shared with them.
+
+## Read the charts with a keyboard or screen reader
+
+Press Tab to reach a chart, then use the **Left** and **Right** arrow keys to move from one point to the next; **Home** and **End** jump to the first and last. Each point is read out, for example "16:32, CPU 46%". In the memory chart, **Up** and **Down** move between the apps in the same column. Screen readers also find a table with the same values next to each chart. Over long ranges the chart steps through up to 200 points, always keeping the highest ones.
+
+With high-contrast or forced colours turned on, each line has its own style (solid, dashed, dotted) and each part of a bar its own pattern, so you can tell them apart without colour.
 
 If the processor stays at 90% or more, or memory is 90% full, the tile says **High**. A busy computer can make apps slow; the per-app table below shows which app is using the most.

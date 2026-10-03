@@ -181,7 +181,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [x] US-USE-02 · Tiles update live and respect who may see them (each usage.sample goes to admins whole and to each allowed member with only their apps; the Home Live usage widget, US-HOME-02's phase 4 part, uses the same live data)
 - [x] US-USE-03 · Change the time range (the main chart shows CPU here; choosing another metric and the peak caption are US-USE-04)
 - [x] US-USE-04 · Read a metric's history and its peak (memory by app is `usage.memoryByApp`; storage by use comes from `usage.overview.storage`, which members may see, rather than the admin-only `storage.summary`; apps and files count 0 until phase 5)
-- [ ] US-USE-05 · Use the charts with a keyboard and screen reader
+- [x] US-USE-05 · Use the charts with a keyboard and screen reader
 - [ ] US-USE-06 · Sort the per-app table
 - [ ] US-USE-07 · See stopped and failing apps in the table
 - [x] US-USE-08 · Sample host and app usage every 5 seconds (host CPU and memory from systeminformation; network from real interfaces only; an app's CPU is its share of the whole host; the CPU budget is checked against the fake engine, so it measures the sampler, not Docker)

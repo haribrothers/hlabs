@@ -28,15 +28,13 @@ describe('LineChart', () => {
     const plot = screen.getByRole('img', { name: /CPU\. Use left and right arrow keys/ });
     plot.focus();
     await userEvent.keyboard('{ArrowRight}');
-    let tip = screen.getByRole('status');
-    expect(tip).toHaveTextContent('10:00');
-    expect(tip).toHaveTextContent('Immich10%');
+    expect(screen.getByRole('status')).toHaveTextContent('10:00, Immich 10%, Jellyfin 5%');
+    expect(document.querySelector('.hl-chart-tip')).toHaveTextContent('Immich10%');
     await userEvent.keyboard('{ArrowRight}');
-    tip = screen.getByRole('status');
-    expect(tip).toHaveTextContent('10:05');
-    expect(tip).toHaveTextContent('Jellyfin8%');
+    expect(screen.getByRole('status')).toHaveTextContent('10:05, Immich 40%, Jellyfin 8%');
     await userEvent.keyboard('{Escape}');
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    expect(document.querySelector('.hl-chart-tip')).toBeNull();
   });
 
   it('has a legend for two or more series and a hidden data table', () => {
@@ -85,7 +83,9 @@ describe('StackedBar and Sparkline', () => {
         ]}
       />,
     );
-    expect(screen.getByRole('img', { name: 'Apps 120 GB, Files 300 GB, free 580 GB' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: /^Storage\. Apps 120 GB, Files 300 GB, Free 580 GB\./ }),
+    ).toBeInTheDocument();
     expect(screen.getByText('420 GB of 1,000 GB')).toBeInTheDocument();
   });
 
@@ -125,15 +125,13 @@ describe('LineChart peak note and StackedColumns', () => {
     expect(figure.querySelector('.hl-chart-legend')).toHaveTextContent('Immich');
     expect(figure.querySelector('.hl-chart-legend')).toHaveTextContent('Other');
     // Two columns of two parts, coloured chart-1 then chart-2.
-    const rects = figure.querySelectorAll('rect');
+    const rects = figure.querySelectorAll('rect.hl-chart-fill');
     expect(rects).toHaveLength(4);
     expect(rects[0]).toHaveStyle({ fill: 'var(--chart-1)' });
     expect(rects[1]).toHaveStyle({ fill: 'var(--chart-2)' });
     screen.getByRole('img', { name: /Memory\. Use left and right/ }).focus();
     await userEvent.keyboard('{ArrowLeft}');
-    const tip = screen.getByRole('status');
-    expect(tip).toHaveTextContent('10:01');
-    expect(tip).toHaveTextContent('Immich3 GB');
+    expect(screen.getByRole('status')).toHaveTextContent('10:01, Immich 3 GB, Other 4 GB');
     const table = screen.getByRole('table', { hidden: true });
     expect(within(table).getAllByRole('row')).toHaveLength(3);
   });

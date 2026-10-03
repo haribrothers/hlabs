@@ -1381,6 +1381,112 @@
     border-radius: var(--radius-pill);
     overflow: hidden;
   }
+  .hl-stack:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+  .hl-chart-swatch-free {
+    background: var(--surface-control);
+  }
+  .hl-chart-key[data-focused],
+  .hl-chart-tip-row[data-focused] {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .hl-chart-fill[data-focused] {
+    stroke: var(--ink);
+    stroke-width: 2px;
+  }
+  /* Forced colours (US-USE-05): series stay apart by line style or fill pattern, not colour alone. */
+  @media (forced-colors: active) {
+    .hl-chart-plot svg,
+    .hl-chart-swatch,
+    .hl-stack-seg,
+    .hl-stack-free {
+      forced-color-adjust: none;
+    }
+    .hl-chart-axis {
+      fill: CanvasText;
+    }
+    .hl-chart-grid,
+    .hl-chart-cross {
+      stroke: GrayText;
+    }
+    .hl-chart-area {
+      display: none;
+    }
+    .hl-chart-line {
+      stroke: CanvasText !important;
+      stroke-dasharray: var(--hl-dash);
+    }
+    .hl-chart-dot {
+      fill: Canvas !important;
+      stroke: CanvasText !important;
+    }
+    .hl-chart-fill {
+      fill: var(--hl-pattern) !important;
+      stroke: CanvasText;
+      stroke-width: 1px;
+    }
+    .hl-chart-swatch,
+    .hl-stack-seg {
+      border: 1px solid CanvasText;
+    }
+    .hl-chart-swatch-free,
+    .hl-stack-free {
+      background: Canvas !important;
+      border: 1px solid CanvasText;
+    }
+    [data-series='0'] {
+      background: CanvasText !important;
+    }
+    [data-series='1'] {
+      background: repeating-linear-gradient(45deg, CanvasText 0 1.5px, Canvas 1.5px 4px) !important;
+    }
+    [data-series='2'] {
+      background:
+        repeating-linear-gradient(45deg, CanvasText 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(-45deg, CanvasText 0 1px, Canvas 1px 4px) !important;
+    }
+    [data-series='3'] {
+      background: radial-gradient(CanvasText 1px, Canvas 1.5px) 0 0 / 4px 4px !important;
+    }
+    [data-series='4'] {
+      background: repeating-linear-gradient(0deg, CanvasText 0 1.5px, Canvas 1.5px 4px) !important;
+    }
+    [data-series='5'] {
+      background: repeating-linear-gradient(90deg, CanvasText 0 1.5px, Canvas 1.5px 4px) !important;
+    }
+    /* A line's key shows its dashes. */
+    .hl-chart-swatch-line {
+      border: 0;
+      height: 3px;
+    }
+    .hl-chart-swatch-line[data-series='0'] {
+      background: CanvasText !important;
+    }
+    .hl-chart-swatch-line[data-series='1'] {
+      background: repeating-linear-gradient(90deg, CanvasText 0 4px, Canvas 4px 6px) !important;
+    }
+    .hl-chart-swatch-line[data-series='2'] {
+      background: repeating-linear-gradient(90deg, CanvasText 0 1.5px, Canvas 1.5px 3px) !important;
+    }
+    .hl-chart-swatch-line[data-series='3'] {
+      background: repeating-linear-gradient(
+        90deg,
+        CanvasText 0 4px,
+        Canvas 4px 5.5px,
+        CanvasText 5.5px 6.5px,
+        Canvas 6.5px 8px
+      ) !important;
+    }
+    .hl-chart-swatch-line[data-series='4'] {
+      background: repeating-linear-gradient(90deg, CanvasText 0 7px, Canvas 7px 9px) !important;
+    }
+    .hl-chart-swatch-line[data-series='5'] {
+      background: repeating-linear-gradient(90deg, CanvasText 0 1px, Canvas 1px 4px) !important;
+    }
+  }
   .hl-stack-seg {
     display: block;
     min-width: 4px;
