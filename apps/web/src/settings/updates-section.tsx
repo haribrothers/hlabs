@@ -3,11 +3,13 @@
 // version has its notes, "Full release notes" and "Update now" (US-SYS-23), which starts the update unless another
 // job has to finish first ("Wait for … to finish"); the page then shows that hlabs is updating (US-STATE-01).
 import { LogoMark } from '@hlabs/icons';
-import { Button } from '@hlabs/ui';
+import { isFeatureEnabled } from '@hlabs/shared';
+import { Button, List, ListRow, Switch } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { updatesCopy as copy } from '../copy/updates';
 import { handledGlobally, pageQuery, showErrorToast } from '../lib/error-copy';
 import { timeAgo } from '../lib/relative-time';
+import { showToast } from '../lib/toasts';
 import { useNow } from '../lib/use-now';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useEventStream } from '../lib/use-event-stream';
@@ -18,7 +20,63 @@ export function UpdatesSection() {
   return (
     <div className="flex flex-col gap-7">
       <HlabsUpdate />
+      <AutomaticUpdates />
     </div>
+  );
+}
+
+type Auto = { hlabs: boolean; apps: boolean; backupBeforeUpdate: boolean };
+
+/**
+ * The overnight switches (US-SYS-26): hlabs, and apps that allow it, between 3 and 5 am. "Back up app data before
+ * updating" waits for backups (phase 5, D-036). A switch that fails to save flips back and says so.
+ */
+function AutomaticUpdates() {
+  const trpc = useTRPC();
+  const client = useTRPCClient();
+  const queryClient = useQueryClient();
+  const key = trpc.settings.updates.get.queryKey();
+  const status = useQuery({ ...trpc.settings.updates.get.queryOptions(), retry: false });
+  const save = useMutation({
+    mutationFn: (next: Auto) => client.settings.updates.setAuto.mutate(next),
+    onMutate: async (next) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const before = queryClient.getQueryData(key);
+      queryClient.setQueryData(key, (old) =>
+        old ? { ...old, autoHlabs: next.hlabs, autoApps: next.apps, backupBeforeUpdate: next.backupBeforeUpdate } : old,
+      );
+      return { before };
+    },
+    onError: (err, _next, context) => {
+      queryClient.setQueryData(key, context?.before);
+      if (!handledGlobally(err)) showToast({ tone: 'danger', title: copy.saveFailed });
+    },
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: key }),
+  });
+
+  const s = status.data;
+  if (!s) return null;
+  const current: Auto = { hlabs: s.autoHlabs, apps: s.autoApps, backupBeforeUpdate: s.backupBeforeUpdate };
+  const row = (k: keyof Auto, title: string, note: string) => (
+    <ListRow
+      title={title}
+      subtitle={note}
+      trailing={
+        <Switch checked={current[k]} aria-label={title} onChange={(on) => save.mutate({ ...current, [k]: on })} />
+      }
+    />
+  );
+  return (
+    <section aria-labelledby="automatic-updates" className="flex flex-col gap-2">
+      <h2 id="automatic-updates" className="m-0 text-body-sm font-semibold">
+        {copy.automatic}
+      </h2>
+      <List label={copy.automatic}>
+        {row('hlabs', copy.autoHlabs, copy.autoHlabsNote)}
+        {row('apps', copy.autoApps, copy.autoAppsNote)}
+        {isFeatureEnabled('backups') ? row('backupBeforeUpdate', copy.backupFirst, copy.backupFirstNote) : null}
+      </List>
+    </section>
   );
 }
 

@@ -23,4 +23,6 @@ test('US-SYS-23 an available update shows its notes and "Update now"', async ({ 
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.getByRole('button', { name: 'Update now' }).click();
   await expect(page.getByText('There is no newer version to install.')).toBeVisible({ timeout: 15_000 });
+  // The page refetches the status as jobs come and go; stop answering for the daemon before the test ends.
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
 });

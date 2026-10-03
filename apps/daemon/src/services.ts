@@ -24,6 +24,7 @@ import type { Readiness } from './readiness';
 import type { CatalogService } from './store/catalog';
 import type { StoreService } from './store/service';
 import type { AppDiskUsage } from './apps/disk';
+import type { AutoUpdates } from './updates/auto';
 import type { SystemUpdateDeps } from './updates/install';
 import type { HlabsUpdates } from './updates/service';
 import type { InstallService } from './apps/install';
@@ -58,6 +59,8 @@ export interface Services {
   hlabsUpdates: HlabsUpdates;
   /** "Update now" (US-SYS-23): who applies it here and how. */
   systemUpdate: SystemUpdateDeps;
+  /** The overnight window for hlabs and app updates (US-SYS-26). */
+  autoUpdates: AutoUpdates;
   apps: AppService;
   /** Apps' container logs (US-APP-08…10). */
   logs: AppLogs;

@@ -44,9 +44,11 @@ import { AppDiskUsage } from './apps/disk';
 import { HlabsUpdates } from './updates/service';
 import type { HeadlessHost } from './updates/headless';
 import { nodeHeadlessHost } from './updates/headless-host';
+import { AUTO_UPDATED_KIND, AutoUpdates } from './updates/auto';
 import {
   confirmHeadlessSwitch,
   registerSystemUpdate,
+  startSystemUpdate,
   settleSystemUpdate,
   type SystemUpdateDeps,
 } from './updates/install';
@@ -413,6 +415,19 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     trayTakeoverMs: deps.trayTakeoverMs,
   };
   registerSystemUpdate(systemUpdate);
+  const autoUpdates = new AutoUpdates({
+    db,
+    bus,
+    jobs,
+    catalog,
+    notifications,
+    logger,
+    hlabs: {
+      available: () => hlabsUpdates.status().available?.version ?? null,
+      install: () => void startSystemUpdate(systemUpdate, null),
+    },
+    updateApp: (appId) => updates.update({ userId: null }, appId).jobId,
+  });
   const services: Services = {
     config,
     logger,
@@ -431,6 +446,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     updates,
     hlabsUpdates,
     systemUpdate,
+    autoUpdates,
     logs: new AppLogs({ engine, project: (appId) => appService.project(appId).name }),
     routing: network,
     remote,
@@ -489,7 +505,21 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     services.usage.start();
     services.usageHistory.start();
   }
-  if (deps.checkUpdates !== false) services.hlabsUpdates.start();
+  if (deps.checkUpdates !== false) {
+    services.hlabsUpdates.start();
+    services.autoUpdates.start();
+  }
+  // An automatic hlabs update finished overnight: say so (US-SYS-26).
+  if (updated && updated.userId === null) {
+    services.notifications.create({
+      userId: null,
+      kind: AUTO_UPDATED_KIND,
+      severity: 'success',
+      title: `hlabs updated to ${updated.version} overnight`,
+      body: `It was ${updated.fromVersion}.`,
+      actions: [{ kind: 'navigate', to: '/settings/updates' }],
+    });
+  }
   // Headless: this version is ready, so its switch stays (the start check won't switch back, US-SYS-23).
   if (config.headless) confirmHeadlessSwitch(config.installRoot, config.version);
   bus.emit('system.status', { state: 'ready' });
@@ -503,6 +533,7 @@ export async function shutdown(services: Services | null): Promise<void> {
   services.usage.stop();
   services.usageHistory.stop();
   services.hlabsUpdates.stop();
+  services.autoUpdates.stop();
   // The last finished minute is written before stopping, so a restart loses at most the minute in progress.
   try {
     services.usageHistory.flush();

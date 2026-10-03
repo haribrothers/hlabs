@@ -165,6 +165,7 @@ describe('settings', () => {
       lastCheckedAt: null,
       latest: null,
       announced: null,
+      autoNight: { hlabs: null, apps: null },
     });
   });
 

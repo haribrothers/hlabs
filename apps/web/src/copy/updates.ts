@@ -16,5 +16,13 @@ export const updatesCopy = {
   starting: 'Starting update…',
   /** "Update now" waits for another job (D-020). */
   waitFor: (job: string) => `Wait for ${job} to finish`,
+  automatic: 'Automatic updates',
+  autoHlabs: 'Update hlabs automatically',
+  autoHlabsNote: 'Installs overnight between 3 and 5 am',
+  autoApps: 'Update apps automatically',
+  autoAppsNote: "Only apps you've allowed in their settings",
+  backupFirst: 'Back up app data before updating',
+  backupFirstNote: 'Each app is backed up to your backup destination first',
+  saveFailed: "Couldn't save that. Try again.",
   jobName: (kind: string) => jobNames[kind] ?? 'what hlabs is doing',
 };

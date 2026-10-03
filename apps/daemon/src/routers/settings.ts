@@ -1,8 +1,9 @@
 import { hlabsError, type AppHandlers } from '@hlabs/api';
-import { getSetting, setSetting } from '@hlabs/db';
+import { auditLog, getSetting, setSetting } from '@hlabs/db';
 import { homedir } from 'node:os';
 import { access } from 'node:fs/promises';
 import { join } from 'node:path';
+import { ulid } from '@hlabs/shared';
 import type { DaemonContext } from '../context';
 import { startSystemUpdate } from '../updates/install';
 import { engineDir } from '../engine/install-job';
@@ -58,6 +59,29 @@ export const settings: AppHandlers<DaemonContext>['settings'] = {
     // US-SYS-24: what the last check found, and a check now (the update manifest and the store index).
     get: (_input, ctx) => ctx.services.hlabsUpdates.status(),
     check: (_input, ctx) => ctx.services.hlabsUpdates.check(),
+    // US-SYS-26: the overnight switches (backing up first is phase 5's, but its value is kept).
+    setAuto: (input, ctx) => {
+      const { db } = ctx.services;
+      const before = getSetting(db, 'updates');
+      setSetting(db, 'updates', {
+        ...before,
+        autoHlabs: input.hlabs,
+        autoApps: input.apps,
+        backupBeforeUpdate: input.backupBeforeUpdate,
+      });
+      db.insert(auditLog)
+        .values({
+          id: ulid(),
+          at: Date.now(),
+          userId: ctx.identity.kind === 'user' ? ctx.identity.userId : null,
+          action: 'settings.updates.auto',
+          target: 'updates',
+          detailJson: { ...input },
+          ip: ctx.request.ip,
+        })
+        .run();
+      return { ok: true as const };
+    },
     // US-SYS-23: "Update now" starts the exclusive system_update job (the tray, or headless the daemon, applies it).
     install: (_input, ctx) =>
       startSystemUpdate(ctx.services.systemUpdate, ctx.identity.kind === 'user' ? ctx.identity.userId : null),

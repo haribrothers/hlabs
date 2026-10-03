@@ -18,6 +18,15 @@ hlabs only installs updates it can verify were made by the hlabs project. If an 
 
 If hlabs is busy with something that can't be interrupted, such as a restore, **Update now** waits and says what for. Try again when it's done.
 
+## Update automatically
+
+Under **Automatic updates**:
+
+- **Update hlabs automatically** installs a new version of hlabs overnight, between 3 and 5 am. It's on to begin with.
+- **Update apps automatically** updates apps overnight too, but only the apps you've allowed in their own settings.
+
+hlabs updates itself first, then your apps. If a backup or something else that can't be interrupted is running, it waits for it to finish; if that takes past 5 am, it tries again the next night. In the morning, a notification says what was updated, and anything that was rolled back because it didn't start.
+
 ## Check for updates
 
 hlabs checks for a newer version by itself every 6 hours. To check now, choose **Check now**. It also refreshes the App Store, so new apps and app updates show up. When it's done, the card shows what it found and **Last checked just now**.

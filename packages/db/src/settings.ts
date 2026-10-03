@@ -59,6 +59,10 @@ export const settingsSchemas = {
         .default(null),
       /** The newest version `update.available` has been emitted for, so each version is announced once. */
       announced: z.string().nullable().default(null),
+      /** The nights (local date the window opened, YYYY-MM-DD) automatic updates last ran, once a night (US-SYS-26). */
+      autoNight: z
+        .object({ hlabs: z.string().nullable().default(null), apps: z.string().nullable().default(null) })
+        .default({ hlabs: null, apps: null }),
     })
     .default({
       channel: 'stable',
@@ -68,6 +72,7 @@ export const settingsSchemas = {
       lastCheckedAt: null,
       latest: null,
       announced: null,
+      autoNight: { hlabs: null, apps: null },
     }),
   remote: z
     .object({
