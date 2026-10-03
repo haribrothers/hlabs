@@ -45,6 +45,9 @@ function render(opts: { host?: object; engine?: object; cpu?: number[] } = {}) {
   });
 }
 
+/** The four tiles: values also appear in the chart's hidden table. */
+const tiles = async () => within(await screen.findByRole('group', { name: 'Summary' }));
+
 describe('US-USE-01', () => {
   it('shows the title, the engine, the time range and the four tiles', async () => {
     render();
@@ -56,30 +59,32 @@ describe('US-USE-01', () => {
         .getAllByRole('radio')
         .map((r) => r.textContent),
     ).toEqual(['1 hour', '24 hours', '7 days']);
-    expect(await screen.findByText('18%')).toBeInTheDocument();
-    expect(screen.getByText('Apple M1 · 8 cores')).toBeInTheDocument();
-    expect(screen.getByText('9.4 GB')).toBeInTheDocument();
-    expect(screen.getByText('of 16 GB · 5.1 GB by apps')).toBeInTheDocument();
-    expect(screen.getByText('114 GB')).toBeInTheDocument();
-    expect(screen.getByText('of 256 GB used')).toBeInTheDocument();
-    expect(screen.getByText('2.1 MB/s')).toBeInTheDocument();
-    expect(screen.getByText('↓ in · 300 KB/s ↑ out')).toBeInTheDocument();
+    const t = await tiles();
+    expect(await t.findByText('18%')).toBeInTheDocument();
+    expect(t.getByText('Apple M1 · 8 cores')).toBeInTheDocument();
+    expect(t.getByText('9.4 GB')).toBeInTheDocument();
+    expect(t.getByText('of 16 GB · 5.1 GB by apps')).toBeInTheDocument();
+    expect(t.getByText('114 GB')).toBeInTheDocument();
+    expect(t.getByText('of 256 GB used')).toBeInTheDocument();
+    expect(t.getByText('2.1 MB/s')).toBeInTheDocument();
+    expect(t.getByText('↓ in · 300 KB/s ↑ out')).toBeInTheDocument();
   });
 
   it('no traffic reads 0 KB/s', async () => {
     render({ host: { netRx: 0, netTx: 0 } });
-    expect(await screen.findByText('0 KB/s')).toBeInTheDocument();
+    expect(await (await tiles()).findByText('0 KB/s')).toBeInTheDocument();
   });
 
   it('says "High" in words when CPU is 90% or more for 3 samples, or memory is 90% of the total', async () => {
     render({ cpu: [50, 91, 95, 93], host: { cpu: 93 } });
-    expect(await screen.findAllByText('High')).toHaveLength(1);
+    expect(await (await tiles()).findAllByText('High')).toHaveLength(1);
   });
 
   it('two high CPU samples are not yet "High"; memory near full is', async () => {
     render({ cpu: [50, 91, 95], host: { cpu: 95, memBytes: 15 * GIB } });
-    await screen.findByText('95%');
-    expect(screen.getAllByText('High')).toHaveLength(1);
+    const t = await tiles();
+    await t.findByText('95%');
+    expect(t.getAllByText('High')).toHaveLength(1);
   });
 
   it('names the engine and what it may use', () => {

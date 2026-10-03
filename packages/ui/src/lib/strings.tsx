@@ -21,6 +21,8 @@ export interface UiStrings {
   setupProgress: string;
   chartHint: string;
   chartData: string;
+  /** The first column of a chart's hidden table. */
+  chartTime: string;
   value: string;
   free: string;
   failed: string;
@@ -48,6 +50,7 @@ export const defaultStrings: UiStrings = {
   setupProgress: 'Setup progress',
   chartHint: 'Use left and right arrow keys to read values.',
   chartData: 'Chart data',
+  chartTime: 'Time',
   value: 'Value',
   free: 'Free',
   failed: 'Failed',

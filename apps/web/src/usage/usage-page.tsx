@@ -2,16 +2,16 @@
 // range, four tiles (CPU, memory, storage, network), the main chart and the per-app table.
 import type { UsageOverview } from '@hlabs/api';
 import { GlassCard, Segmented } from '@hlabs/ui';
-import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { usageCopy as copy } from '../copy/usage';
 import { pageQuery } from '../lib/error-copy';
 import { useTRPC } from '../lib/trpc';
 import { formatMemory } from './format';
+import { MainChart } from './main-chart';
+import { RANGES, useUsageRange, type UsageRange } from './range';
 import { UsageTiles } from './tiles';
 import { useLiveUsage } from './use-live-usage';
-
-export type UsageRange = '1h' | '24h' | '7d';
 
 /** "Container VM (Colima) · 4 CPUs · 8 GB allocated", "Docker Engine · uses the whole computer". */
 export function engineLine(engine: UsageOverview['engine']): string {
@@ -25,10 +25,21 @@ export function engineLine(engine: UsageOverview['engine']): string {
 
 export function UsagePage() {
   const trpc = useTRPC();
-  const [range, setRange] = useState<UsageRange>('1h');
+  const [range, setRange] = useUsageRange();
   // A member who may not see usage gets "You don't have access to this" (US-USE-02, US-STATE-20).
   const overview = useQuery({ ...trpc.usage.overview.queryOptions(), ...pageQuery, retry: false });
   const { current, hour: hostHour } = useLiveUsage({ withHistory: true });
+  // 1 hour follows the live samples; 24 hours and 7 days are fetched again every minute (US-USE-03).
+  const longer = useQuery({
+    ...trpc.usage.history.queryOptions({ scope: 'host', range }),
+    enabled: range !== '1h',
+    placeholderData: keepPreviousData,
+    refetchInterval: 60_000,
+    retry: false,
+  });
+  const history = range === '1h' ? hostHour : longer;
+  const points = history.data?.points ?? [];
+  const switching = range !== '1h' ? longer.isPlaceholderData || longer.isPending : false;
 
   useEffect(() => {
     document.title = copy.docTitle;
@@ -45,14 +56,11 @@ export function UsagePage() {
           aria-label={copy.range}
           value={range}
           onChange={(v) => setRange(v as UsageRange)}
-          options={(['1h', '24h', '7d'] as const).map((value) => ({ value, label: copy.ranges[value] }))}
+          options={RANGES.map((value) => ({ value, label: copy.ranges[value] }))}
         />
       </header>
-      <UsageTiles
-        current={current.data ?? null}
-        overview={overview.data ?? null}
-        points={hostHour.data?.points ?? []}
-      />
+      <UsageTiles current={current.data ?? null} overview={overview.data ?? null} points={points} />
+      <MainChart points={points} range={range} loading={switching} />
     </GlassCard>
   );
 }

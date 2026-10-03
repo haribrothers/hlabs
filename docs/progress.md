@@ -179,7 +179,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [x] US-AUTH-22 · Set a new password from an admin's reset link (with two-factor on they log in instead of being signed in, D-114; the design's "For @username" line isn't shown, since the story doesn't ask for a lookup of the link)
 - [x] US-USE-01 · See host CPU, memory, storage and network at a glance (usage.overview gives the tiles' context under the same access as usage.*, since members may see host tiles but not storage.summary; memory reads in 1024-based GB like macOS and the menu bar, so a 16 GB Mac says 16 GB)
 - [x] US-USE-02 · Tiles update live and respect who may see them (each usage.sample goes to admins whole and to each allowed member with only their apps; the Home Live usage widget, US-HOME-02's phase 4 part, uses the same live data)
-- [ ] US-USE-03 · Change the time range
+- [x] US-USE-03 · Change the time range (the main chart shows CPU here; choosing another metric and the peak caption are US-USE-04)
 - [ ] US-USE-04 · Read a metric's history and its peak
 - [ ] US-USE-05 · Use the charts with a keyboard and screen reader
 - [ ] US-USE-06 · Sort the per-app table

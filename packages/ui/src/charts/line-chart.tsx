@@ -168,7 +168,7 @@ export function LineChart({
       </div>
       <SrTable
         caption={title ?? t.chartData}
-        columns={['', ...series.map((s) => s.name)]}
+        columns={[t.chartTime, ...series.map((s) => s.name)]}
         rows={labels.map((l, i) => [l, ...series.map((s) => fmt(s.values[i] ?? 0))])}
       />
     </figure>

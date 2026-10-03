@@ -142,7 +142,7 @@ export function BarChart({
       </div>
       <SrTable
         caption={title ?? t.chartData}
-        columns={['', label]}
+        columns={[t.chartTime, label]}
         rows={data.map((d) => [d.label, fmt(d.value) + (d.status === 'failed' ? ` (${t.failed.toLowerCase()})` : '')])}
       />
     </figure>

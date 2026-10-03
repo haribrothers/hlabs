@@ -53,7 +53,7 @@ export function UsageTiles({
 }: {
   current: UsageSample | null;
   overview: UsageOverview | null;
-  /** The last hour of host points, for the trends and the CPU "High" rule. */
+  /** The chosen range's host points, for the trends and the CPU "High" rule. */
   points: UsagePoint[];
 }) {
   const host = current?.host;
@@ -66,7 +66,7 @@ export function UsageTiles({
   const storage = overview?.storage;
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div role="group" aria-label={copy.summary} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <Tile
         label={copy.cpu}
         value={host?.cpu != null ? formatPercent(host.cpu) : copy.noValue}

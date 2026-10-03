@@ -15,6 +15,10 @@ Four tiles sum it up:
 - **Storage:** space used on the disk where hlabs keeps your files (an external drive, if that's where they are).
 - **Network:** data coming in each second, and going out.
 
+## Look back in time
+
+Below the tiles, a chart shows how busy the processor has been. Choose **1 hour**, **24 hours** or **7 days** at the top right to change how far back it goes; hlabs remembers your choice on this browser. The last hour keeps moving as new readings arrive; the longer ranges refresh every minute. If hlabs hasn't been running that long, the chart shows what it has.
+
 The numbers update by themselves every few seconds. The Live usage widget on Home shows CPU and memory too; choose it to open this page.
 
 Family members only see Usage if their admin turned on **See live usage** for members in Settings › Users and for them in their apps access; they then see the computer's tiles and only the apps shared with them.

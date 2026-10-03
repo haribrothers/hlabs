@@ -4,7 +4,12 @@ export const usageCopy = {
   docTitle: 'Live usage · hlabs',
   range: 'Time range',
   ranges: { '1h': '1 hour', '24h': '24 hours', '7d': '7 days' },
+  summary: 'Summary',
   cpu: 'CPU',
+  /** US-USE-03, US-USE-04: the main chart's heading. */
+  over: { '1h': 'over the last hour', '24h': 'over the last 24 hours', '7d': 'over the last 7 days' },
+  chartTitle: (metric: string, over: string) => `${metric} ${over}`,
+  noData: 'No usage recorded yet',
   memory: 'Memory',
   storage: 'Storage',
   network: 'Network',
