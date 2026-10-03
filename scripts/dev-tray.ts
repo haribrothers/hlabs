@@ -4,10 +4,22 @@
 // "Quit hlabs"), what's left of its group is stopped too, so its Vite server never stays behind holding port 5174.
 //
 //   node scripts/dev-tray.ts [tauri dev options]
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 
 const tray = resolve(import.meta.dirname, '../apps/tray');
+
+// An installed hlabs (hlabs.app's background service) holds port 7474, so the development tray would talk to it
+// rather than to `pnpm dev`: wrong token, keychain prompts, "Can't reach hlabs". Say so before starting.
+if (process.platform === 'darwin') {
+  const target = `gui/${process.getuid?.()}/dev.hlabs.daemon`;
+  if (spawnSync('/bin/launchctl', ['print', target], { stdio: 'ignore' }).status === 0) {
+    process.stderr.write(
+      `\nAn installed hlabs is running (${target}); stop it while developing:\n  launchctl bootout ${target}\n` +
+        'It starts again the next time you open hlabs.app.\n\n',
+    );
+  }
+}
 const child = spawn(join(tray, 'node_modules/.bin/tauri'), ['dev', ...process.argv.slice(2)], {
   cwd: tray,
   stdio: 'inherit',
