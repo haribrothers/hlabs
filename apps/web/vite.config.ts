@@ -46,10 +46,15 @@ export default defineConfig(({ command }) => ({
       '/dev/notify': DAEMON,
     },
   },
-  // lucide-react/dynamic (AppLogo) pre-bundled with lucide-react splits every icon into a chunk of its own that the
-  // icons then load at once: about 1,900 requests on every page, which left e2e pages blank. Served as it is, it
-  // loads only the icons a page names, and lucide-react stays one file.
-  optimizeDeps: { exclude: ['lucide-react/dynamic'] },
+  // lucide-react/dynamic (AppLogo) pre-bundled with lucide-react split every icon into a chunk of its own that the
+  // icons then loaded at once: about 1,900 requests on every page, which left e2e pages blank. One chunk for them all.
+  optimizeDeps: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: { groups: [{ name: 'lucide-icons', test: /lucide-react[\\/]dist[\\/]esm[\\/]icons[\\/]/ }] },
+      },
+    },
+  },
   build: { target: 'es2022', sourcemap: true },
   test: {
     environment: 'jsdom',
