@@ -2,6 +2,7 @@
 // (US-INST-05…).
 import type { TrayStatus } from '@hlabs/api';
 import { isFeatureEnabled } from '@hlabs/shared';
+import { invoke } from '@tauri-apps/api/core';
 import { TrayMenu, TraySetup, type MenuItem } from '@hlabs/ui';
 import { useAccess, type Access } from './access';
 import { useBoot, type BootState } from './boot';
@@ -90,7 +91,7 @@ export function runningItems(actions: RunningActions = {}): MenuItem[] {
     },
     { label: t.pauseAll, onSelect: actions.pauseAll },
     { label: t.checkForUpdates },
-    { label: t.resetPassword },
+    { label: t.resetPassword, onSelect: () => void invoke('open_reset_window').catch(() => {}) },
     { separator: true },
     ...(isFeatureEnabled('uninstall') ? [{ label: t.uninstall }] : []),
     quitItem,

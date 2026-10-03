@@ -15,6 +15,8 @@ export interface Answers {
   startAtLogin?: boolean;
   /** The OS refuses to change it. */
   loginRefused?: boolean;
+  /** tray.listUsers. */
+  users?: unknown[];
 }
 
 export const tauri = {
@@ -39,6 +41,7 @@ export function answer(a: Answers) {
       case 'set_icon':
       case 'notify':
       case 'quit_tray':
+      case 'open_reset_window':
         return null;
       case 'start_at_login_state':
         return a.startAtLogin ?? true;
@@ -57,6 +60,7 @@ export function answer(a: Answers) {
         if (args?.path === 'tray.startEngine') return { jobId: 'job1' };
         if (args?.path === 'tray.quickAction') return { jobId: 'job2' };
         if (args?.path === 'tray.setStartAtLogin') return { ok: true };
+        if (args?.path === 'tray.listUsers') return { users: a.users ?? [] };
         if (args?.path === 'tray.diagnostics') return { report: 'hlabs diagnostics' };
         return null;
       default:

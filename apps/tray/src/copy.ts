@@ -4,6 +4,24 @@ export const trayCopy = {
   /** US-INST-05: "Running · 11 apps". */
   runningApps: { none: 'Running · no apps', one: 'Running · 1 app', many: (n: number) => `Running · ${n} apps` },
   engineStopped: 'Container engine stopped',
+  /** US-INST-17, US-INST-18: the "Reset a password" window (TrayResetPassword). */
+  reset: {
+    title: 'Reset a password',
+    note: 'Only people who can log in to this Mac can do this.',
+    account: 'Account',
+    accountOption: (displayName: string, username: string, admin: boolean) =>
+      `${displayName} (@${username}) · ${admin ? 'Admin' : 'Member'}`,
+    newPassword: 'New password',
+    tooShort: 'Use at least 12 characters',
+    tooCommon: 'This password is too common',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
+    turnOffTwoFactor: 'Also turn off two-factor for this account',
+    osConfirm: "Next, macOS asks for this Mac's login password to confirm it's you.",
+    cancel: 'Cancel',
+    submit: 'Reset password',
+    loading: 'Loading accounts…',
+  },
   /** US-INST-14: the notification after 60 s offline. */
   offlineTitle: 'hlabs',
   offlineBody: 'Your apps are offline.',

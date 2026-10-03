@@ -89,9 +89,20 @@ export const trayStatusSchema = z.object({
 });
 export type TrayStatus = z.infer<typeof trayStatusSchema>;
 
+/** An account the tray can reset (US-INST-17). */
+export const trayUserSchema = z.object({
+  id: idSchema,
+  username: usernameSchema,
+  displayName: z.string(),
+  role: z.enum(['admin', 'member']),
+  totpEnabled: z.boolean(),
+});
+export type TrayUser = z.infer<typeof trayUserSchema>;
+
 export const tray = {
   status: io(empty, trayStatusSchema),
-  listUsers: io(empty, pending),
+  /** Enabled accounts, admins first, then by name (US-INST-17). */
+  listUsers: io(empty, z.object({ users: z.array(trayUserSchema) })),
   quickAction: io(
     z.object({ action: z.enum(['openDashboard', 'copyAddress', 'backupNow', 'pauseAll', 'resumeAll']) }),
     z.union([ok, jobRefSchema, z.object({ url: z.string() })]),

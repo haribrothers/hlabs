@@ -261,6 +261,44 @@ fn copy_text(app: AppHandle, text: String) -> Result<(), DaemonError> {
         .map_err(|_| DaemonError::Protocol)
 }
 
+/// "Reset a password…" (US-INST-17): its own small window, centred on the screen; opening it again
+/// brings the one already open forward. The menu closes.
+#[tauri::command]
+fn open_reset_window(app: AppHandle) -> Result<(), String> {
+    if let Some(menu) = app.get_webview_window(window::MENU_WINDOW) {
+        let _ = menu.hide();
+    }
+    if let Some(existing) = app.get_webview_window("reset") {
+        return existing.set_focus().map_err(|e| e.to_string());
+    }
+    use tauri::utils::{config::WindowEffectsConfig, WindowEffect, WindowEffectState};
+    tauri::WebviewWindowBuilder::new(
+        &app,
+        "reset",
+        tauri::WebviewUrl::App("index.html?view=reset".into()),
+    )
+    .title(app.package_info().name.clone())
+    .inner_size(420.0, 400.0)
+    .resizable(false)
+    .decorations(false)
+    .transparent(true)
+    .shadow(false)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .center()
+    .effects(WindowEffectsConfig {
+        effects: vec![WindowEffect::HudWindow],
+        state: Some(WindowEffectState::Active),
+        radius: Some(14.0),
+        color: None,
+        interactive: false,
+    })
+    .focused(true)
+    .build()
+    .map(|_| ())
+    .map_err(|e| e.to_string())
+}
+
 /// "Quit hlabs" (US-INST-10, D-015): only the menu-bar app quits; the daemon is the LaunchAgent's.
 #[tauri::command]
 fn quit_tray(app: AppHandle) {
@@ -517,7 +555,8 @@ pub fn run() {
             notify,
             start_at_login_state,
             set_start_at_login,
-            quit_tray
+            quit_tray,
+            open_reset_window
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]

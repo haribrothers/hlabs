@@ -170,7 +170,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [x] US-INST-14 · Menu-bar icon reflects state (a dot can't be part of a macOS template image, so dotted icons are drawn in the menu bar's text colour with the dot cut out of the glyph; the dot colours are the danger-fill and accent-strong tokens; the accent dot for an update arrives with US-INST-19; VoiceOver reads the icon's tooltip)
 - [x] US-INST-15 · Tray authenticates to the daemon with a local token (where the token lives per platform and how the daemon picks up a new one: D-112; the `audit_log` rows with `via: "tray"` are written and tested by each tray action as it's built: pause/resume US-INST-08, start engine US-INST-12, reset password US-INST-18, backup in phase 5, uninstall in phase 6)
 - [x] US-INST-16 · Recover from a missing or mismatched tray token (the daemon also reads a regenerated token by itself within 5 s, D-112, so the restart is belt and braces; in development there is no LaunchAgent to restart. The tray's own diagnostics redact Bearer values: the tray client never prints its token and the daemon's log redacts `Authorization`; "Copy diagnostics" itself is US-INST-12)
-- [ ] US-INST-17 · Choose an account and a new password
+- [x] US-INST-17 · Choose an account and a new password (its own window from the menu; the account picker is a native select, as in Settings; the primary button is white as the design system says, not violet as drawn)
 - [ ] US-INST-18 · Confirm with the OS and apply the reset
 - [ ] US-INST-19 · Check for hlabs updates
 - [ ] US-INST-20 · Restart to update

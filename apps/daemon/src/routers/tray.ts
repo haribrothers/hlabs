@@ -4,10 +4,14 @@ import type { DaemonContext } from '../context';
 import { lanAddresses } from '../mdns/publisher';
 import { diagnosticsReport } from '../tray/diagnostics';
 import { dashboardUrl, trayStatus } from '../tray/status';
+import { trayUsers } from '../tray/users';
 
 export const tray: AppHandlers<DaemonContext>['tray'] = {
   // US-INST-05: state, apps, CPU, memory, free space and the dashboard's address.
   status: (_input, ctx) => trayStatus(ctx.services),
+
+  // US-INST-17: the accounts "Reset a password…" offers.
+  listUsers: (_input, ctx) => ({ users: trayUsers(ctx.services.db) }),
 
   // US-INST-12: the same engine_start job as the dashboard's "Start engine" (US-STATE-09); a second press gets it again.
   startEngine: (_input, ctx) => {

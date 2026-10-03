@@ -52,3 +52,7 @@ Choose **Resume apps** to start them again. Apps you had stopped yourself before
 ## Quit the menu-bar app
 
 **Quit hlabs** (or ⌘Q while the menu is open) closes only the menu-bar app. hlabs and your apps keep running in the background, so nothing is asked first. To bring the icon back, open hlabs from your Applications folder; it also comes back when you log in if **Start at login** is on. To stop your apps, use **Pause all apps** instead.
+
+## Reset a password
+
+If someone in your household forgets their hlabs password, choose **Reset a password…** on the Mac that runs hlabs. Pick their account, type a new password (at least 12 characters, and not a common one), and choose **Reset password**. If their account uses two-factor, you can also turn that off, for example when they've lost their phone. Only people who can log in to this Mac can do this: macOS asks for the Mac's login password (or Touch ID) first.
