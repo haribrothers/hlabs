@@ -25,7 +25,7 @@
     "store:build": "pnpm --filter @hlabs/app-manifest store:build",
     "ui:tokens": "pnpm --filter @hlabs/ui tokens",
     "dev:tray": "node scripts/dev-tray.ts",
-    "build:tray": "pnpm --filter @hlabs/tray build:app",
+    "build:tray": "node scripts/build-tray.ts",
     "dev:site": "pnpm --filter @hlabs/site dev",
     "site:build": "pnpm --filter @hlabs/site site:build",
     "test:e2e": "pnpm --filter @hlabs/web test:e2e"

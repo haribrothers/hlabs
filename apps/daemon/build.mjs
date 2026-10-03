@@ -4,7 +4,8 @@
 import { build } from 'esbuild';
 import { cpSync, readFileSync } from 'node:fs';
 
-const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
+// HLABS_BUILD_VERSION: the version `pnpm build:tray --version` builds (the signed test update, phase 4).
+const version = process.env.HLABS_BUILD_VERSION ?? JSON.parse(readFileSync('package.json', 'utf8')).version;
 
 await build({
   entryPoints: ['src/main.ts'],
