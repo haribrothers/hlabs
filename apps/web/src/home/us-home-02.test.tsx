@@ -19,7 +19,9 @@ const DEFAULT = ['live-usage', 'storage', 'remote-access', 'backups'];
 describe('US-HOME-02', () => {
   it('keeps the saved order, hides widgets whose phase has not shipped, and shows at most four', () => {
     expect(visibleWidgets(DEFAULT, 1)).toEqual(['storage']);
-    expect(visibleWidgets(DEFAULT, 5)).toEqual(['storage']); // the others arrive with their stories
+    // Live usage from phase 4; Remote access and Backups arrive with their stories.
+    expect(visibleWidgets(DEFAULT, 4)).toEqual(['live-usage', 'storage']);
+    expect(visibleWidgets(DEFAULT, 5)).toEqual(['live-usage', 'storage']);
     expect(visibleWidgets(['storage', 'storage', 'storage', 'storage', 'storage'], 1)).toHaveLength(4);
     expect(visibleWidgets(['unknown'], 9)).toEqual([]);
   });

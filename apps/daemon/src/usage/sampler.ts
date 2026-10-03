@@ -13,6 +13,7 @@ import type { ContainerStats } from '../engine/types';
 import type { EventBus } from '../events/bus';
 import type { Logger } from '../logger';
 import type { HostCounters, HostStats } from '../platform/host-stats';
+import { onlyApps, usageMembers } from './members';
 
 export const SAMPLE_MS = 5_000;
 /** One hour at 5 s. */
@@ -120,7 +121,11 @@ export class UsageSampler {
     const sample: UsageSample = { ts: at, host, apps: appSamples };
     this.ring.push(sample);
     if (this.ring.length > RING_SIZE) this.ring.splice(0, this.ring.length - RING_SIZE);
-    this.deps.bus.emit('usage.sample', sample);
+    // Admins get every app; each member allowed to see usage gets the host and only their apps (US-USE-02).
+    this.deps.bus.emit('usage.sample', sample, { kind: 'admins' });
+    for (const member of usageMembers(this.deps.db)) {
+      this.deps.bus.emit('usage.sample', onlyApps(sample, member.apps), { kind: 'user', userId: member.userId });
+    }
     return sample;
   }
 

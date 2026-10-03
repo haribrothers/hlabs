@@ -5,9 +5,11 @@ import { GlassCard, Segmented } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { usageCopy as copy } from '../copy/usage';
+import { pageQuery } from '../lib/error-copy';
 import { useTRPC } from '../lib/trpc';
 import { formatMemory } from './format';
 import { UsageTiles } from './tiles';
+import { useLiveUsage } from './use-live-usage';
 
 export type UsageRange = '1h' | '24h' | '7d';
 
@@ -24,9 +26,9 @@ export function engineLine(engine: UsageOverview['engine']): string {
 export function UsagePage() {
   const trpc = useTRPC();
   const [range, setRange] = useState<UsageRange>('1h');
-  const overview = useQuery({ ...trpc.usage.overview.queryOptions(), retry: false });
-  const current = useQuery({ ...trpc.usage.current.queryOptions(), retry: false });
-  const hostHour = useQuery({ ...trpc.usage.history.queryOptions({ scope: 'host', range: '1h' }), retry: false });
+  // A member who may not see usage gets "You don't have access to this" (US-USE-02, US-STATE-20).
+  const overview = useQuery({ ...trpc.usage.overview.queryOptions(), ...pageQuery, retry: false });
+  const { current, hour: hostHour } = useLiveUsage({ withHistory: true });
 
   useEffect(() => {
     document.title = copy.docTitle;

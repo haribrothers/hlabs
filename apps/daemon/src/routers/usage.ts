@@ -1,8 +1,9 @@
-import type { AppHandlers } from '@hlabs/api';
+import { hlabsError, type AppHandlers } from '@hlabs/api';
 import { storageLocations } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
 import { cpus, totalmem } from 'node:os';
 import type { DaemonContext } from '../context';
+import { onlyApps, usageAppsFor } from '../usage/members';
 
 export const usage: AppHandlers<DaemonContext>['usage'] = {
   // US-USE-01: CPU model and cores, total memory, the storage root's disk and the engine's allocation.
@@ -31,7 +32,15 @@ export const usage: AppHandlers<DaemonContext>['usage'] = {
   },
 
   // US-USE-08: the latest sample (members' access is checked in DaemonContext.authorize, D-029).
-  current: (_input, ctx) => ctx.services.usage.latest(),
+  current: (_input, ctx) => {
+    const latest = ctx.services.usage.latest();
+    return latest && onlyApps(latest, usageAppsFor(ctx));
+  },
   // US-USE-09: points at the right resolution and the metric's peak.
-  history: ({ scope, range, metric }, ctx) => ctx.services.usageHistory.history(scope, range, metric),
+  history: ({ scope, range, metric }, ctx) => {
+    // A member only sees the history of apps shared with them (US-USE-02).
+    const allowed = usageAppsFor(ctx);
+    if (scope !== 'host' && allowed !== null && !allowed.has(scope)) throw hlabsError('ACCESS_DENIED');
+    return ctx.services.usageHistory.history(scope, range, metric);
+  },
 };
