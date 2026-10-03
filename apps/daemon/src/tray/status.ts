@@ -1,6 +1,6 @@
 // What the tray shows at a glance (US-INST-05): hlabs's state, how many apps run, how busy this computer is and the
 // dashboard's address. The tray asks every 5 s while its menu is open and every 30 s otherwise.
-import type { TrayStatus } from '@hlabs/api';
+import { EXCLUSIVE_JOB_KINDS, type TrayStatus } from '@hlabs/api';
 import {
   apps,
   backupDestinations,
@@ -129,8 +129,19 @@ export async function trayStatus(deps: TrayStatusDeps): Promise<TrayStatus> {
     startAtLogin: getSetting(db, 'startup').startAtLogin,
     updateChannel: updates.channel,
     autoUpdate: updates.autoHlabs,
-    exclusiveJobRunning: deps.jobs.exclusiveRunning(),
+    exclusiveJobRunning: deps.jobs.listActive().some((j) => j.kind !== 'system_update' && EXCLUSIVE.has(j.kind)),
+    updateRequested: updateRequested(deps.jobs),
     onboardingComplete: getSetting(db, 'onboarding').completedAt !== null,
     reduceTransparency: reduceTransparency(db),
   };
+}
+
+const EXCLUSIVE = new Set<string>(EXCLUSIVE_JOB_KINDS);
+
+/** The update the tray should apply: the running system_update job and its version (US-INST-20). */
+function updateRequested(jobs: JobRunner): { jobId: string; version: string } | null {
+  const job = jobs.listActive().find((j) => j.kind === 'system_update');
+  if (!job) return null;
+  const row = jobs.payload<{ version?: string }>(job.id);
+  return row?.version ? { jobId: job.id, version: row.version } : null;
 }

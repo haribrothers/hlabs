@@ -84,6 +84,9 @@ export const trayCopy = {
   restartNote: 'Apps restart for about a minute during the update.',
   restartToUpdate: 'Restart to update',
   whatsNew: "What's new",
+  /** US-INST-20: another task (a restore, moving data…) has to finish first. */
+  finishTaskFirst: 'Finish the running task first',
+  installFailed: "The update couldn't be installed. Try again.",
   resetPassword: 'Reset a password…',
   uninstall: 'Uninstall hlabs…',
   quit: 'Quit hlabs',

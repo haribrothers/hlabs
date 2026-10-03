@@ -14,7 +14,7 @@ import { appsLine, formatCpu, formatFree, formatMemory } from './format';
 import { useOpenSetup, useSetupPending } from './setup';
 import { quitTray } from './quit';
 import { useQuickAction } from './quick-action';
-import { useUpdateCheck, type CheckFeedback, type FoundUpdate } from './updates';
+import { useApplyUpdate, useUpdateCheck, type CheckFeedback } from './updates';
 import { useStartAtLogin } from './start-at-login';
 import { useMenuOpen, useTrayStatus } from './status';
 import { trayCopy as t } from './copy';
@@ -121,7 +121,9 @@ export function Menu() {
   // Applied even while the menu is closed, so a change in Settings reaches the OS (US-INST-09).
   const startAtLogin = useStartAtLogin(status?.startAtLogin, refresh);
   // Checks run while hlabs answers; the channel is the one chosen in Settings › Updates (US-INST-19).
-  const updates = useUpdateCheck(access === 'ready' && status ? status.updateChannel : null);
+  const channel = access === 'ready' && status ? status.updateChannel : null;
+  const updates = useUpdateCheck(channel);
+  const applying = useApplyUpdate(channel, status?.updateRequested ?? null);
   useMenuBarIcon(iconFor({ boot, access, health, status, updateAvailable: updates.found !== null }));
   // Nothing until the Rust side has said where things stand, so no state flashes by.
   if (boot === null || access === null) return null;
@@ -138,7 +140,9 @@ export function Menu() {
   if (status?.state === 'engineStopped') return <EngineStoppedMenu status={status} />;
   if (status?.state === 'paused') return <PausedMenu onChanged={refresh} />;
   if (status?.state === 'starting') return <StartingMenu status={status} />;
-  if (updates.found) return <UpdateAvailableMenu status={status} update={updates.found} />;
+  // An update found here, or one the dashboard asked for (US-INST-20).
+  const version = updates.found?.version ?? status?.updateRequested?.version ?? null;
+  if (version) return <UpdateAvailableMenu status={status} version={version} apply={applying} />;
   return (
     <RunningMenu
       status={status}
@@ -153,15 +157,31 @@ export function Menu() {
  * TrayStates "Update available" (US-INST-19): "Version <next> is ready", that apps restart for about a minute, "Restart
  * to update" (US-INST-20) and "What's new" (the dashboard's Settings › Updates).
  */
-export function UpdateAvailableMenu({ status, update }: { status: TrayStatus | null; update: FoundUpdate }) {
+export function UpdateAvailableMenu({
+  status,
+  version,
+  apply,
+}: {
+  status: TrayStatus | null;
+  version: string;
+  apply: { state: 'idle' | 'applying' | 'failed'; apply: () => void };
+}) {
   const dashboard = useDashboardActions();
+  // A restore or a data move can't be interrupted: "Restart to update" waits for it (US-INST-20).
+  const blocked = status?.exclusiveJobRunning === true;
+  const body = blocked ? t.finishTaskFirst : apply.state === 'failed' ? t.installFailed : t.restartNote;
   return (
     <TrayMenu
       tone="update"
       status="running"
       statusText={status ? runningLine(status) : t.running}
-      note={{ title: t.versionReady(update.version), body: t.restartNote }}
-      action={{ label: t.restartToUpdate, onSelect: () => {} }}
+      note={{ title: t.versionReady(version), body }}
+      action={{
+        label: t.restartToUpdate,
+        onSelect: apply.apply,
+        busy: apply.state === 'applying',
+        disabled: blocked || apply.state === 'applying',
+      }}
       items={[
         { label: t.whatsNew, onSelect: () => void dashboard.open('/settings/updates') },
         { separator: true },

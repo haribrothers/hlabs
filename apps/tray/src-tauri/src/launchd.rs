@@ -37,9 +37,18 @@ impl Runner for SystemRunner {
     }
 }
 
-/// Restarting the daemon, e.g. so it loads a new tray token (US-INST-16).
+/// Restarting the daemon, e.g. so it loads a new tray token (US-INST-16), or stopping it while hlabs updates and
+/// starting it again (US-INST-20).
 pub trait DaemonService: Send + Sync {
     fn restart(&self) -> Result<(), String>;
+    /// Stops the daemon and unloads it so launchd doesn't start it again (`launchctl bootout`).
+    fn stop(&self) -> Result<(), String> {
+        Ok(())
+    }
+    /// Loads it again from its LaunchAgent (`launchctl bootstrap`), which starts it.
+    fn start(&self) -> Result<(), String> {
+        Ok(())
+    }
     /// What the OS says about the service, for "Copy diagnostics" (US-INST-13).
     fn describe(&self) -> String;
 }
@@ -53,6 +62,8 @@ pub fn service_target(uid: u32) -> String {
 pub struct LaunchAgent<R: Runner> {
     pub runner: R,
     pub uid: u32,
+    /// `~/Library/LaunchAgents/dev.hlabs.daemon.plist`.
+    pub plist: std::path::PathBuf,
 }
 
 impl<R: Runner> DaemonService for LaunchAgent<R> {
@@ -65,6 +76,32 @@ impl<R: Runner> DaemonService for LaunchAgent<R> {
             Ok(())
         } else {
             Err(format!("launchctl kickstart failed: {}", ran.stderr.trim()))
+        }
+    }
+
+    fn stop(&self) -> Result<(), String> {
+        let ran = self
+            .runner
+            .run("/bin/launchctl", &["bootout", &service_target(self.uid)])?;
+        // 3: not loaded, so already stopped.
+        if ran.ok() || ran.code == Some(3) {
+            Ok(())
+        } else {
+            Err(format!("launchctl bootout failed: {}", ran.stderr.trim()))
+        }
+    }
+
+    fn start(&self) -> Result<(), String> {
+        let domain = format!("gui/{}", self.uid);
+        let plist = self.plist.to_string_lossy();
+        let ran = self
+            .runner
+            .run("/bin/launchctl", &["bootstrap", &domain, &plist])?;
+        // 5: already loaded (it came back by itself).
+        if ran.ok() || ran.code == Some(5) {
+            Ok(())
+        } else {
+            Err(format!("launchctl bootstrap failed: {}", ran.stderr.trim()))
         }
     }
 
@@ -101,9 +138,15 @@ pub fn default_service() -> Box<dyn DaemonService> {
     if !cfg!(debug_assertions) {
         // SAFETY: getuid has no preconditions and can't fail.
         let uid = unsafe { libc::getuid() };
+        let home = std::env::var_os("HOME")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_default();
         return Box::new(LaunchAgent {
             runner: SystemRunner,
             uid,
+            plist: home
+                .join("Library/LaunchAgents")
+                .join(format!("{LAUNCH_AGENT_LABEL}.plist")),
         });
     }
     Box::new(NoService)
@@ -143,6 +186,7 @@ pub mod tests {
         let agent = LaunchAgent {
             runner: FakeRunner::default(),
             uid: 501,
+            plist: "/p.plist".into(),
         };
         agent.restart().unwrap();
         assert_eq!(
@@ -159,7 +203,26 @@ pub mod tests {
                 ..Default::default()
             },
             uid: 501,
+            plist: "/p.plist".into(),
         };
         assert!(agent.restart().unwrap_err().contains("boom"));
+    }
+
+    #[test]
+    fn us_inst_20_stop_boots_out_and_start_bootstraps_the_agent() {
+        let agent = LaunchAgent {
+            runner: FakeRunner::default(),
+            uid: 501,
+            plist: "/Users/a/Library/LaunchAgents/dev.hlabs.daemon.plist".into(),
+        };
+        agent.stop().unwrap();
+        agent.start().unwrap();
+        assert_eq!(
+            *agent.runner.calls.lock().unwrap(),
+            vec![
+                "/bin/launchctl bootout gui/501/dev.hlabs.daemon",
+                "/bin/launchctl bootstrap gui/501 /Users/a/Library/LaunchAgents/dev.hlabs.daemon.plist"
+            ]
+        );
     }
 }

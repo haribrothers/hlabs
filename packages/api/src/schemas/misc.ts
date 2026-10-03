@@ -82,7 +82,13 @@ export const trayStatusSchema = z.object({
   startAtLogin: z.boolean(),
   updateChannel: z.enum(['stable', 'beta']),
   autoUpdate: z.boolean(),
+  /** A job that "Restart to update" must wait for (restore, move all data…; not the update itself, US-INST-20). */
   exclusiveJobRunning: z.boolean(),
+  /**
+   * An update the dashboard asked for ("Update now", or the overnight window): the tray applies it (US-INST-20). The
+   * tray polls this rather than keeping an event stream open; `update.applyRequested` is emitted too.
+   */
+  updateRequested: z.object({ jobId: z.string(), version: z.string() }).nullable(),
   onboardingComplete: z.boolean(),
   /** The first admin's "Reduce transparency" (Settings › Appearance). */
   reduceTransparency: z.boolean(),

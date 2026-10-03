@@ -19,6 +19,8 @@ export interface Answers {
   users?: unknown[];
   /** check_update: a newer version, null when up to date, 'fail' when the check fails (US-INST-19). */
   update?: { version: string; notes: string | null } | null | 'fail';
+  /** apply_update fails (US-INST-20); otherwise it never returns, as the tray relaunches. */
+  applyFails?: boolean;
 }
 
 export const tauri = {
@@ -52,6 +54,9 @@ export function answer(a: Answers) {
         return (args as unknown as { enabled: boolean }).enabled;
       case 'open_setup':
         return true;
+      case 'apply_update':
+        if (a.applyFails) throw new Error('disk full');
+        return new Promise(() => {});
       case 'check_update':
         if (a.update === 'fail') throw new Error('offline');
         return a.update ?? null;

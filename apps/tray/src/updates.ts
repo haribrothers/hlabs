@@ -55,3 +55,27 @@ export function useUpdateCheck(channel: 'stable' | 'beta' | null) {
 
   return { found, feedback, checkNow: () => void check(true) };
 }
+
+/**
+ * Applying an update (US-INST-20): "Restart to update", or one the dashboard asked for (tray.status.updateRequested,
+ * applied once per job). The Rust side replaces the app and relaunches the tray, so success never comes back here.
+ */
+export function useApplyUpdate(channel: 'stable' | 'beta' | null, requested: { jobId: string } | null) {
+  const [state, setState] = useState<'idle' | 'applying' | 'failed'>('idle');
+  const handled = useRef<string | null>(null);
+  const apply = useCallback(async () => {
+    if (!channel) return;
+    setState('applying');
+    try {
+      await invoke('apply_update', { channel });
+    } catch {
+      setState('failed');
+    }
+  }, [channel]);
+  useEffect(() => {
+    if (!requested || handled.current === requested.jobId) return;
+    handled.current = requested.jobId;
+    void apply();
+  }, [requested, apply]);
+  return { state, apply: () => void apply() };
+}

@@ -1,5 +1,5 @@
 // US-USE-07 · See stopped and failing apps in the table.
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { HomeApp } from '../home/home-app';
 import { fakeMe } from '../test/me';
@@ -32,7 +32,6 @@ const sample = (apps: ReturnType<typeof usage>[]) => ({
   host: { cpu: 18, memBytes: 9 * GB, memTotalBytes: 16 * GB, netRx: 0, netTx: 0, diskRead: 0, diskWrite: 0 },
   apps,
 });
-const later = <T,>(value: T, ms = 30) => new Promise<T>((resolve) => setTimeout(() => resolve(value), ms));
 
 const base = (apps: () => { apps: HomeApp[] }, extra: Record<string, unknown> = {}) => ({
   'usage.overview': () => ({
@@ -146,27 +145,25 @@ describe('US-USE-07', () => {
 
   it('an app uninstalled while the page is open goes on the next app.stateChanged', async () => {
     let lists = 0;
+    // The event goes out only once the page shows Jellyfin, however slow the machine is.
+    let send!: (event: unknown) => void;
     renderScreen(
       UsagePage,
       base(
         () => ({
           apps: lists++ === 0 ? [app('immich', 'Immich'), app('jellyfin', 'Jellyfin')] : [app('immich', 'Immich')],
         }),
-        {
-          'events.stream': () =>
-            later(
-              {
-                id: 'e1',
-                data: { type: 'app.stateChanged', data: { appId: 'jellyfin', state: 'uninstalling', detail: null } },
-              },
-              100,
-            ),
-        },
+        { 'events.stream': () => new Promise((resolve) => (send = resolve)) },
       ),
       { path: '/usage' },
     );
     const t = await screen.findByRole('table', { name: 'Apps' });
     expect(await within(t).findByRole('rowheader', { name: 'Jellyfin' })).toBeInTheDocument();
+    await waitFor(() => expect(send).toBeDefined());
+    send({
+      id: 'e1',
+      data: { type: 'app.stateChanged', data: { appId: 'jellyfin', state: 'uninstalling', detail: null } },
+    });
     await expect.poll(() => names(t), { timeout: 5000 }).toEqual(['Immich']);
   });
 });

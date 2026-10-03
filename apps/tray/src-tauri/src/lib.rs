@@ -628,7 +628,8 @@ pub fn run() {
             quit_tray,
             open_reset_window,
             reset_password,
-            updates::check_update
+            updates::check_update,
+            updates::apply_update
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]

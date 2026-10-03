@@ -151,6 +151,12 @@ export class JobRunner {
     return row ? toJob(row) : null;
   }
 
+  /** A job's payload, as it was started; null without one. */
+  payload<P>(id: string): P | null {
+    const row = this.db.select({ payload: jobs.payloadJson }).from(jobs).where(eq(jobs.id, id)).get();
+    return (row?.payload as P | undefined) ?? null;
+  }
+
   listActive(): Job[] {
     return this.db
       .select()
