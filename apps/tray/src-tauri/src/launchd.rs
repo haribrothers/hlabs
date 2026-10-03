@@ -59,6 +59,7 @@ pub fn service_target(uid: u32) -> String {
 }
 
 /// The LaunchAgent, through `launchctl` (macOS).
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub struct LaunchAgent<R: Runner> {
     pub runner: R,
     pub uid: u32,
