@@ -1,7 +1,7 @@
 // Live usage (US-USE-01…07, LiveUsage): how busy this computer is. The title and the engine it runs apps in, a time
 // range, four tiles (CPU, memory, storage, network), the main chart and the per-app table.
 import type { UsageOverview } from '@hlabs/api';
-import { GlassCard, Segmented } from '@hlabs/ui';
+import { GlassCard, ScrollPane, Segmented } from '@hlabs/ui';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
@@ -62,42 +62,57 @@ export function UsagePage() {
   }, []);
 
   return (
-    <GlassCard level={2} className="mx-auto flex w-full max-w-window flex-col gap-5 p-7">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="m-0 text-title-1">{copy.title}</h1>
-          <p className="m-0 text-body-sm text-ink-muted">{overview.data ? engineLine(overview.data.engine) : ' '}</p>
-        </div>
-        <Segmented
-          aria-label={copy.range}
-          value={range}
-          onChange={(v) => setRange(v as UsageRange)}
-          options={RANGES.map((value) => ({ value, label: copy.ranges[value] }))}
-        />
-      </header>
-      <UsageTiles
-        current={current.data ?? null}
-        overview={overview.data ?? null}
-        points={points}
-        selected={metric}
-        onSelect={setMetric}
-      />
-      <MainChart
-        metric={metric}
-        points={points}
-        range={range}
-        loading={switching}
-        memory={memory.data}
-        storage={overview.data?.storage}
-        memTotalBytes={overview.data?.memTotalBytes ?? current.data?.host.memTotalBytes ?? 0}
-      />
-      {apps.data ? (
-        <AppTable
-          apps={apps.data.apps}
+    // Like Settings and the Store: a window that fills the space above the Dock and never makes the page scroll; the
+    // title and the time range stay put while the rest scrolls under them.
+    <GlassCard level={2} className="mx-auto flex min-h-0 w-full max-w-window flex-1 flex-col overflow-hidden p-0">
+      <ScrollPane
+        className="flex-1"
+        // The body sits inside the scroller's right margin (mr-2) and its scrollbar gutter (8px), so the header's right
+        // padding adds both: the time range lines up with the tiles below.
+        headerClassName="pl-7 pr-11 pt-7 pb-4"
+        scrollClassName="mr-2 mb-5"
+        bodyClassName="flex flex-col gap-5 px-7 pb-2"
+        header={
+          <header className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex min-w-0 flex-col gap-1">
+              <h1 className="m-0 text-title-1">{copy.title}</h1>
+              <p className="m-0 text-body-sm text-ink-muted">
+                {overview.data ? engineLine(overview.data.engine) : ' '}
+              </p>
+            </div>
+            <Segmented
+              aria-label={copy.range}
+              value={range}
+              onChange={(v) => setRange(v as UsageRange)}
+              options={RANGES.map((value) => ({ value, label: copy.ranges[value] }))}
+            />
+          </header>
+        }
+      >
+        <UsageTiles
           current={current.data ?? null}
-          onBrowseStore={me.data?.canInstallApps ? () => void navigate({ to: '/store' }) : undefined}
+          overview={overview.data ?? null}
+          points={points}
+          selected={metric}
+          onSelect={setMetric}
         />
-      ) : null}
+        <MainChart
+          metric={metric}
+          points={points}
+          range={range}
+          loading={switching}
+          memory={memory.data}
+          storage={overview.data?.storage}
+          memTotalBytes={overview.data?.memTotalBytes ?? current.data?.host.memTotalBytes ?? 0}
+        />
+        {apps.data ? (
+          <AppTable
+            apps={apps.data.apps}
+            current={current.data ?? null}
+            onBrowseStore={me.data?.canInstallApps ? () => void navigate({ to: '/store' }) : undefined}
+          />
+        ) : null}
+      </ScrollPane>
     </GlassCard>
   );
 }

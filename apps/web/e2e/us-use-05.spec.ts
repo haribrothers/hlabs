@@ -6,7 +6,7 @@ test('US-USE-05 the main chart can be read with the keyboard alone, and in force
   await page.goto('/usage');
   // The first visit can wait on the dev server compiling the page.
   const cpu = page.getByRole('button', { name: /^CPU/ });
-  await expect(page.locator('figcaption').first()).toContainText('Peak', { timeout: 15_000 });
+  await expect(page.locator('figcaption').first()).toContainText('Peak', { timeout: 30_000 });
 
   // From the CPU tile, Tab past the other three tiles to the chart.
   await cpu.focus();

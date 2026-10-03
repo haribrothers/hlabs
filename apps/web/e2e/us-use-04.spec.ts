@@ -6,9 +6,9 @@ test('US-USE-04 the tiles pick the main chart, from the keyboard too', async ({ 
   await page.goto('/usage');
   // The first visit can wait on the dev server compiling the page.
   const cpu = page.getByRole('button', { name: /^CPU/ });
-  await expect(cpu).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 });
+  await expect(cpu).toHaveAttribute('aria-pressed', 'true', { timeout: 30_000 });
   await expect(page.locator('figcaption').first()).toContainText(/CPU over the last hour\s*Peak \d+% at \d\d:\d\d/, {
-    timeout: 15_000,
+    timeout: 30_000,
   });
 
   const storage = page.getByRole('button', { name: /^Storage/ });

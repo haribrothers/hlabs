@@ -9,7 +9,7 @@ test('US-USE-07 no apps yet offers the App Store; otherwise every app says its s
   // The first visit can wait on the dev server compiling the page.
   const empty = page.getByRole('heading', { name: 'No apps yet' });
   const table = page.getByRole('table', { name: 'Apps' });
-  await expect(empty.or(table)).toBeVisible({ timeout: 15_000 });
+  await expect(empty.or(table)).toBeVisible({ timeout: 30_000 });
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   if (await empty.isVisible()) {
     await page.getByRole('button', { name: 'Browse the App Store' }).click();
