@@ -19,6 +19,8 @@ export default defineConfig({
             { label: 'Your Home screen', link: '/help/get-started/home/' },
             { label: 'Settings', link: '/help/get-started/settings/' },
             { label: 'Engine and startup', link: '/help/get-started/engine/' },
+            { label: 'The menu-bar app', link: '/help/get-started/menu-bar/' },
+            { label: 'Live usage', link: '/help/get-started/live-usage/' },
             { label: "Can't reach hlabs", link: '/help/get-started/cant-reach/' },
             { label: 'Confirmations and notices', link: '/help/get-started/confirmations/' },
           ],

@@ -1,0 +1,31 @@
+// Live usage (docs/features/08-usage-backups.md, LiveUsage). Sentence case, plain words.
+export const usageCopy = {
+  title: 'Live usage',
+  docTitle: 'Live usage · hlabs',
+  range: 'Time range',
+  ranges: { '1h': '1 hour', '24h': '24 hours', '7d': '7 days' },
+  cpu: 'CPU',
+  memory: 'Memory',
+  storage: 'Storage',
+  network: 'Network',
+  high: 'High',
+  cores: (model: string, cores: number) => (model ? `${model} · ${cores} cores` : `${cores} cores`),
+  memoryOf: (total: string, apps: string) => `of ${total} · ${apps} by apps`,
+  storageOf: (total: string) => `of ${total} used`,
+  networkDetail: (out: string) => `↓ in · ${out} ↑ out`,
+  engineNames: {
+    orbstack: 'OrbStack',
+    'docker-desktop': 'Docker Desktop',
+    colima: 'Colima',
+    'docker-engine': 'Docker Engine',
+  } as Record<string, string>,
+  /** The subtitle: the engine and what it may use (US-USE-01). */
+  colimaVm: (cpus: number, memory: string) => `Container VM (Colima) · ${cpus} CPUs · ${memory} allocated`,
+  engineLimits: (name: string, cpus: number, memory: string) => `${name} · ${cpus} CPUs · ${memory} allocated`,
+  dockerEngine: 'Docker Engine · uses the whole computer',
+  noEngine: 'Container engine stopped',
+  noValue: '—',
+  loading: 'Loading usage…',
+  couldntLoad: "Usage couldn't be loaded.",
+  retry: 'Try again',
+};

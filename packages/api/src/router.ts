@@ -176,6 +176,7 @@ export const appRouter = router({
 
   usage: router({
     // Members only when D-029 allows; enforced in UsageService.
+    overview: q(p.authed, s.usage.overview),
     current: q(p.authed, s.usage.current),
     history: q(p.authed, s.usage.history),
     topApps: q(p.authed, s.usage.topApps),

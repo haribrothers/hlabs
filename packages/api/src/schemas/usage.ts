@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { io } from '../trpc';
-import { appRefSchema, empty, pending } from './common';
+import { appRefSchema, empty, engineKindSchema, pending } from './common';
 
 export const usageRangeSchema = z.enum(['1h', '24h', '7d', '30d']);
 
@@ -65,7 +65,25 @@ export const usageHistorySchema = z.object({
 });
 export type UsageHistory = z.infer<typeof usageHistorySchema>;
 
+/** What the Usage page says about this computer (US-USE-01): the tiles' context and the subtitle. */
+export const usageOverviewSchema = z.object({
+  cpuModel: z.string(),
+  cores: z.number().int().nonnegative(),
+  memTotalBytes: z.number().nonnegative(),
+  /** The disk the storage root is on (an external drive when it's there); null when it can't be read. */
+  storage: z.object({ usedBytes: z.number().nonnegative(), totalBytes: z.number().nonnegative() }).nullable(),
+  engine: z.object({
+    kind: engineKindSchema.nullable(),
+    running: z.boolean(),
+    /** What the engine may use (a VM's allocation; the whole computer for Docker Engine on Linux). */
+    cpus: z.number().int().nonnegative().nullable(),
+    memoryBytes: z.number().nonnegative().nullable(),
+  }),
+});
+export type UsageOverview = z.infer<typeof usageOverviewSchema>;
+
 export const usage = {
+  overview: io(empty, usageOverviewSchema),
   /** The latest sample; null before the first one. */
   current: io(empty, usageSampleSchema.nullable()),
   history: io(

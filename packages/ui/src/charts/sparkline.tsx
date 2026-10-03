@@ -7,12 +7,14 @@ export interface SparklineProps {
   height?: number;
   /** Accessible description; defaults to "Trend, latest <value>". */
   label?: string;
+  /** Hidden from screen readers when the value beside it already says it (a stat tile, US-USE-05). */
+  decorative?: boolean;
 }
 
 const PAD = 5;
 
 /** A tiny trend line without axes; the latest point is accent. Pair it with the value as text. */
-export function Sparkline({ values, width = 120, height = 32, label }: SparklineProps) {
+export function Sparkline({ values, width = 120, height = 32, label, decorative = false }: SparklineProps) {
   const t = useUiStrings();
   const n = values.length;
   const lo = Math.min(...values);
@@ -27,8 +29,9 @@ export function Sparkline({ values, width = 120, height = 32, label }: Sparkline
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
-      role="img"
-      aria-label={label ?? t.trend(last === undefined ? '—' : formatNumber(last))}
+      {...(decorative
+        ? { 'aria-hidden': true }
+        : { role: 'img', 'aria-label': label ?? t.trend(last === undefined ? '—' : formatNumber(last)) })}
     >
       <path d={d} fill="none" className="hl-spark-line" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
       {last !== undefined ? (
