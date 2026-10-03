@@ -3,14 +3,15 @@
 import type { UsageSample } from '@hlabs/api';
 import { users, type HlabsDb } from '@hlabs/db';
 import { and, eq, isNull } from 'drizzle-orm';
-import type { DaemonContext } from '../context';
 import { memberSeesUsage, visibleAppIds } from '../home/layout';
 
-/** The apps the caller may see usage for; null means all of them (an admin). */
-export function usageAppsFor(ctx: DaemonContext): Set<string> | null {
-  const id = ctx.identity;
-  if (id.kind !== 'user' || id.role === 'admin') return null;
-  return new Set(visibleAppIds(ctx.services.db, { id: id.userId, role: id.role }));
+/** Who is asking, as far as usage cares (the request's identity). */
+export type UsageViewer = { kind: 'user'; userId: string; role: 'admin' | 'member' } | { kind: string };
+
+/** The apps the caller may see usage for; null means all of them (an admin, or the tray). */
+export function usageAppsFor(db: HlabsDb, viewer: UsageViewer): Set<string> | null {
+  if (viewer.kind !== 'user' || !('role' in viewer) || viewer.role === 'admin') return null;
+  return new Set(visibleAppIds(db, { id: viewer.userId, role: viewer.role }));
 }
 
 export function onlyApps(sample: UsageSample, allowed: Set<string> | null): UsageSample {

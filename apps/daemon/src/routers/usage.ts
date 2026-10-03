@@ -34,12 +34,12 @@ export const usage: AppHandlers<DaemonContext>['usage'] = {
   // US-USE-08: the latest sample (members' access is checked in DaemonContext.authorize, D-029).
   current: (_input, ctx) => {
     const latest = ctx.services.usage.latest();
-    return latest && onlyApps(latest, usageAppsFor(ctx));
+    return latest && onlyApps(latest, usageAppsFor(ctx.services.db, ctx.identity));
   },
   // US-USE-09: points at the right resolution and the metric's peak.
   history: ({ scope, range, metric }, ctx) => {
     // A member only sees the history of apps shared with them (US-USE-02).
-    const allowed = usageAppsFor(ctx);
+    const allowed = usageAppsFor(ctx.services.db, ctx.identity);
     if (scope !== 'host' && allowed !== null && !allowed.has(scope)) throw hlabsError('ACCESS_DENIED');
     return ctx.services.usageHistory.history(scope, range, metric);
   },
