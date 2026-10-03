@@ -36,6 +36,8 @@ Below the chart, a table lists your apps with their **CPU**, **Memory**, **Netwo
 
 The table starts with the app using the most memory at the top. Choose a column's name to sort by it, most first (App and Status go A to Z); choose it again to reverse the order. hlabs remembers your choice on this browser. Numbers update every few seconds, but the rows only change places every 10 seconds, so they don't move while you're reading. On a phone, the table shows the app, the column you sorted by and its status.
 
+Apps that aren't running show **—** instead of numbers and always sit below the running ones. Their status says why: **Stopped**, **Starting**, **Restarting**, **Updating**, or **Error** if the app isn't responding (see [Manage an app](/help/apps/manage-apps/) to restart it or read its logs). If you haven't installed any apps yet, the table says **No apps yet**; choose **Browse the App Store** to find some.
+
 ## Read the charts with a keyboard or screen reader
 
 Press Tab to reach a chart, then use the **Left** and **Right** arrow keys to move from one point to the next; **Home** and **End** jump to the first and last. Each point is read out, for example "16:32, CPU 46%". In the memory chart, **Up** and **Down** move between the apps in the same column. Screen readers also find a table with the same values next to each chart. Over long ranges the chart steps through up to 200 points, always keeping the highest ones.

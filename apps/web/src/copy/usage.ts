@@ -46,6 +46,8 @@ export const usageCopy = {
   /** The per-app table (US-USE-06, US-USE-07). */
   appsTable: 'Apps',
   columns: { app: 'App', cpu: 'CPU', memory: 'Memory', network: 'Network', status: 'Status' },
+  noApps: 'No apps yet',
+  browseStore: 'Browse the App Store',
   /** Said after a sorted header's name. */
   sortedDown: '↓',
   sortedUp: '↑',

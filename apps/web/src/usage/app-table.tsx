@@ -1,10 +1,12 @@
 // The per-app table (US-USE-06, US-USE-07, LiveUsage): each app this person can see with its CPU (its share of the
 // whole computer, the same scale as the CPU tile), memory and network (in + out), and its status. Sorted by memory,
 // most first, until another column is chosen; the order is re-evaluated at most every 10 s so rows don't jump while
-// someone reads them. On a phone only App, the sorted column and Status show.
+// someone reads them. On a phone only App, the sorted column and Status show. An app that isn't running has no usage
+// ("—") and sorts below every running app whichever way the table is sorted; its status says why, with a matching dot.
 import type { UsageSample } from '@hlabs/api';
 import { AppLogo, appTileLook } from '@hlabs/icons';
-import { StatusDot, tokens } from '@hlabs/ui';
+import type { AppState } from '@hlabs/api';
+import { Button, StatusDot, tokens, type Status } from '@hlabs/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { usageCopy as copy } from '../copy/usage';
 import type { HomeApp } from '../home/home-app';
@@ -27,13 +29,29 @@ export interface AppRow {
 export function appRows(apps: HomeApp[], sample: UsageSample | null): AppRow[] {
   const byId = new Map((sample?.apps ?? []).map((a) => [a.appId, a]));
   return apps.map((app) => {
-    const s = byId.get(app.id);
+    // Only running apps have usage; a stopped app's last values would mislead.
+    const s = app.state === 'running' ? byId.get(app.id) : undefined;
     const net = s && s.netRx !== null && s.netTx !== null ? s.netRx + s.netTx : null;
     return { app, cpu: s?.cpu ?? null, memory: s?.memBytes ?? null, network: net };
   });
 }
 
 const statusText = (row: AppRow) => copy.appStatus[row.app.state];
+
+/** The dot beside each status (US-USE-07): green running, amber on its way, red failed, grey stopped. */
+export const STATUS_DOT: Record<AppState, Status> = {
+  running: 'running',
+  starting: 'working',
+  restarting: 'working',
+  stopping: 'working',
+  updating: 'working',
+  rolling_back: 'working',
+  installing: 'working',
+  uninstalling: 'working',
+  error: 'failed',
+  install_failed: 'failed',
+  stopped: 'stopped',
+};
 
 function byColumn(sort: Sort, a: AppRow, b: AppRow): number {
   const sign = sort.dir === 'asc' ? 1 : -1;
@@ -45,9 +63,11 @@ function byColumn(sort: Sort, a: AppRow, b: AppRow): number {
   return sign * (x - y);
 }
 
-/** Compares two rows by the sort; values not known sort last either way, then by name. */
+const notRunning = (row: AppRow) => (row.app.state === 'running' ? 0 : 1);
+
+/** Compares two rows: running apps first either way, then by the sort (values not known last), then by name. */
 export const compareRows = (sort: Sort) => (a: AppRow, b: AppRow) =>
-  byColumn(sort, a, b) || a.app.name.localeCompare(b.app.name);
+  notRunning(a) - notRunning(b) || byColumn(sort, a, b) || a.app.name.localeCompare(b.app.name);
 
 const sortedIds = (rows: AppRow[], sort: Sort) => [...rows].sort(compareRows(sort)).map((r) => r.app.id);
 
@@ -92,7 +112,16 @@ function AppName({ app }: { app: HomeApp }) {
   );
 }
 
-export function AppTable({ apps, current }: { apps: HomeApp[]; current: UsageSample | null }) {
+export function AppTable({
+  apps,
+  current,
+  onBrowseStore,
+}: {
+  apps: HomeApp[];
+  current: UsageSample | null;
+  /** "Browse the App Store" when there are no apps, for someone who may install them. */
+  onBrowseStore?: () => void;
+}) {
   const [sort, choose] = useTableSort();
   const rows = useSteadyOrder(
     useMemo(() => appRows(apps, current), [apps, current]),
@@ -103,6 +132,15 @@ export function AppTable({ apps, current }: { apps: HomeApp[]; current: UsageSam
   const phoneMetric = METRICS.has(sort.column) ? sort.column : 'memory';
   const cell = (column: SortColumn) =>
     `px-4 py-3 ${METRICS.has(column) && column !== phoneMetric ? 'max-md:hidden' : ''}`;
+
+  if (apps.length === 0) {
+    return (
+      <section className="flex flex-col items-center gap-3 rounded-lg bg-surface-row px-4 py-10 text-center">
+        <h2 className="m-0 text-body font-semibold">{copy.noApps}</h2>
+        {onBrowseStore ? <Button onClick={onBrowseStore}>{copy.browseStore}</Button> : null}
+      </section>
+    );
+  }
 
   return (
     <section className="overflow-hidden rounded-lg bg-surface-row">
@@ -117,7 +155,7 @@ export function AppTable({ apps, current }: { apps: HomeApp[]; current: UsageSam
                   key={column}
                   scope="col"
                   aria-sort={sorted ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
-                  className={`${cell(column)} font-semibold text-ink-muted`}
+                  className={`${cell(column)} text-caption font-semibold text-ink-muted`}
                 >
                   <button
                     type="button"
@@ -165,7 +203,7 @@ export function AppTable({ apps, current }: { apps: HomeApp[]; current: UsageSam
                 {row.network === null ? copy.noValue : formatRate(row.network)}
               </td>
               <td className={cell('status')}>
-                <StatusDot status={row.app.state === 'running' ? 'running' : 'stopped'}>{statusText(row)}</StatusDot>
+                <StatusDot status={STATUS_DOT[row.app.state]}>{statusText(row)}</StatusDot>
               </td>
             </tr>
           ))}

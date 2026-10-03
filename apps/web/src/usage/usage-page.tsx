@@ -3,9 +3,11 @@
 import type { UsageOverview } from '@hlabs/api';
 import { GlassCard, Segmented } from '@hlabs/ui';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { usageCopy as copy } from '../copy/usage';
 import { pageQuery } from '../lib/error-copy';
+import { useMe } from '../lib/use-me';
 import { useTRPC } from '../lib/trpc';
 import { formatMemory } from './format';
 import { AppTable } from './app-table';
@@ -27,6 +29,8 @@ export function engineLine(engine: UsageOverview['engine']): string {
 export function UsagePage() {
   const trpc = useTRPC();
   const [range, setRange] = useUsageRange();
+  const me = useMe();
+  const navigate = useNavigate();
   // A member who may not see usage gets "You don't have access to this" (US-USE-02, US-STATE-20).
   const overview = useQuery({ ...trpc.usage.overview.queryOptions(), ...pageQuery, retry: false });
   const { current, hour: hostHour, apps } = useLiveUsage({ withHistory: true, withApps: true });
@@ -87,7 +91,13 @@ export function UsagePage() {
         storage={overview.data?.storage}
         memTotalBytes={overview.data?.memTotalBytes ?? current.data?.host.memTotalBytes ?? 0}
       />
-      {apps.data ? <AppTable apps={apps.data.apps} current={current.data ?? null} /> : null}
+      {apps.data ? (
+        <AppTable
+          apps={apps.data.apps}
+          current={current.data ?? null}
+          onBrowseStore={me.data?.canInstallApps ? () => void navigate({ to: '/store' }) : undefined}
+        />
+      ) : null}
     </GlassCard>
   );
 }
