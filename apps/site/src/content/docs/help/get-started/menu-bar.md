@@ -67,4 +67,4 @@ The menu-bar app looks for a new version of hlabs by itself, a couple of minutes
 
 When a new version is ready, the icon gets a dot and the menu says **Version … is ready**. Choose **What's new** to read about it in Settings › Updates, and **Restart to update** to install it. hlabs checks the update is genuine, stops for a moment, puts the new version in place and starts again; your apps restart for about a minute and your data stays as it is. If you choose **Update now** in the dashboard instead, the menu-bar app does the same, so it needs to be running.
 
-If hlabs is busy with something that can't be interrupted, such as a restore, the menu says **Finish the running task first**. If the new version can't be installed, hlabs keeps the version you have and the menu says so; try again later.
+If hlabs is busy with something that can't be interrupted, such as a restore, the menu says **Finish the running task first**. If the new version can't be installed, hlabs keeps the version you have, the menu goes back to normal and says **The update couldn't be installed**. hlabs won't offer that version again on its own; choose **Check for updates…** to try it again.

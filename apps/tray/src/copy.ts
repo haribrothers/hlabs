@@ -86,7 +86,8 @@ export const trayCopy = {
   whatsNew: "What's new",
   /** US-INST-20: another task (a restore, moving data…) has to finish first. */
   finishTaskFirst: 'Finish the running task first',
-  installFailed: "The update couldn't be installed. Try again.",
+  /** US-INST-20: the update was refused or didn't install; nothing changed. Shown in place of "Check for updates…". */
+  installFailed: "The update couldn't be installed",
   resetPassword: 'Reset a password…',
   uninstall: 'Uninstall hlabs…',
   quit: 'Quit hlabs',

@@ -1,10 +1,11 @@
 // US-INST-20 · Restart to update: "Restart to update" applies it (the Rust side: download and check, stop the daemon,
 // replace the app, start it again, relaunch); an update the dashboard asked for is applied the same way; a running
-// restore or data move makes it wait.
-import { render, screen, waitFor } from '@testing-library/react';
+// restore or data move makes it wait. One that can't be installed sends the menu back to normal, saying so.
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Menu } from '../src/menu';
+import { INSTALL_FAILED_MS } from '../src/updates';
 import { answer, reset, tauri } from './tauri';
 
 const started = { firstLaunch: false, step: 'started', reason: null, setupOpened: false };
@@ -63,11 +64,38 @@ describe('US-INST-20 · Restart to update', () => {
     await waitFor(() => expect(applies()).toEqual([{ channel: 'stable' }]));
   });
 
-  it("if it can't be installed, the menu says so and it can be tried again", async () => {
+  it("if it can't be installed (refused or broken), the menu goes back to normal and says so", async () => {
     answer({ boot: started, status: status(), update: found, applyFails: true });
     const restart = await openUpdateMenu();
     await userEvent.click(restart);
-    expect(await screen.findByText("The update couldn't be installed. Try again.")).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Restart to update' })).toBeEnabled();
+    expect(await screen.findByRole('menuitem', { name: "The update couldn't be installed" })).toBeInTheDocument();
+    expect(screen.queryByText('Version 1.5.0 is ready')).not.toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Pause all apps' })).toBeInTheDocument();
+  });
+
+  it('after a failure, "Check for updates…" offers that version again', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      answer({ boot: started, status: status(), update: found, applyFails: true });
+      await userEvent.click(await openUpdateMenu());
+      await screen.findByRole('menuitem', { name: "The update couldn't be installed" });
+      await act(async () => vi.advanceTimersByTime(INSTALL_FAILED_MS));
+      await userEvent.click(await screen.findByRole('menuitem', { name: 'Check for updates…' }));
+      expect(await screen.findByText('Version 1.5.0 is ready')).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('an update the dashboard asked for that fails is not shown again', async () => {
+    answer({
+      boot: started,
+      status: status({ updateRequested: { jobId: 'job9', version: '1.5.0' } }),
+      applyFails: true,
+    });
+    render(<Menu />);
+    expect(await screen.findByRole('menuitem', { name: "The update couldn't be installed" })).toBeInTheDocument();
+    expect(screen.queryByText('Version 1.5.0 is ready')).not.toBeInTheDocument();
+    expect(applies()).toHaveLength(1);
   });
 });

@@ -79,6 +79,7 @@ const CHECK_LABEL: Record<Exclude<CheckFeedback, null>, string> = {
   checking: t.checking,
   upToDate: t.upToDate,
   failed: t.checkFailed,
+  installFailed: t.installFailed,
 };
 
 /** "Quit hlabs" (⌘Q, US-INST-10): after a warning, stops hlabs and every app, then quits (D-120). */
@@ -125,7 +126,7 @@ export function Menu() {
   // Checks run while hlabs answers; the channel is the one chosen in Settings › Updates (US-INST-19).
   const channel = access === 'ready' && status ? status.updateChannel : null;
   const updates = useUpdateCheck(channel);
-  const applying = useApplyUpdate(channel, status?.updateRequested ?? null);
+  const applying = useApplyUpdate(channel, status?.updateRequested ?? null, updates.installFailed);
   useMenuBarIcon(iconFor({ boot, access, health, status, updateAvailable: updates.found !== null }));
   const stopping = useStopping();
   useEffect(() => setQuitBusy(status?.exclusiveJobRunning === true), [status?.exclusiveJobRunning]);
@@ -148,7 +149,9 @@ export function Menu() {
   if (status?.state === 'paused') return <PausedMenu onChanged={refresh} />;
   if (status?.state === 'starting') return <StartingMenu status={status} />;
   // An update found here, or one the dashboard asked for (US-INST-20).
-  const version = updates.found?.version ?? status?.updateRequested?.version ?? null;
+  // One that couldn't be installed isn't shown again (the dashboard's request ends with its job).
+  const requested = status?.updateRequested?.version;
+  const version = updates.found?.version ?? (requested && !updates.failed.has(requested) ? requested : null);
   if (version) return <UpdateAvailableMenu status={status} version={version} apply={applying} />;
   return (
     <RunningMenu
@@ -171,12 +174,12 @@ export function UpdateAvailableMenu({
 }: {
   status: TrayStatus | null;
   version: string;
-  apply: { state: 'idle' | 'applying' | 'failed'; apply: () => void };
+  apply: { applying: boolean; apply: (version: string) => void };
 }) {
   const dashboard = useDashboardActions();
   // A restore or a data move can't be interrupted: "Restart to update" waits for it (US-INST-20).
   const blocked = status?.exclusiveJobRunning === true;
-  const body = blocked ? t.finishTaskFirst : apply.state === 'failed' ? t.installFailed : t.restartNote;
+  const body = blocked ? t.finishTaskFirst : t.restartNote;
   return (
     <TrayMenu
       tone="update"
@@ -185,9 +188,9 @@ export function UpdateAvailableMenu({
       note={{ title: t.versionReady(version), body }}
       action={{
         label: t.restartToUpdate,
-        onSelect: apply.apply,
-        busy: apply.state === 'applying',
-        disabled: blocked || apply.state === 'applying',
+        onSelect: () => apply.apply(version),
+        busy: apply.applying,
+        disabled: blocked || apply.applying,
       }}
       items={[
         { label: t.whatsNew, onSelect: () => void dashboard.open('/settings/updates') },

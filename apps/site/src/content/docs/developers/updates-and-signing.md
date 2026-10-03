@@ -39,7 +39,7 @@ An open dashboard shows "Updating hlabs", reloads, and says "hlabs is up to date
 
 Two more builds check that bad updates don't get in:
 
-- `pnpm build:tray --version 0.0.3 --update --broken`: signed, but it won't install. hlabs goes back to the version you had and says "The update didn't install".
-- `pnpm build:tray --version 0.0.4 --update --bad-signature`: signed with another key. It's refused and nothing changes.
+- `pnpm build:tray --version 0.0.3 --update --broken`: signed, but it won't install. The menu says "The update couldn't be installed" and goes back to normal, and hlabs keeps the version you had. Your apps restart, and the dashboard says "The update didn't install".
+- `pnpm build:tray --version 0.0.4 --update --bad-signature`: signed with another key. It's refused before anything stops; the menu says "The update couldn't be installed" and goes back to normal.
 
 Builds from `pnpm build:tray` may fetch updates over plain `http` from your own server; the update must still be signed with your key. The dashboard's "Check now" comes from the background service, which doesn't see `HLABS_UPDATE_ENDPOINT` when started by launchd, so test with the menu-bar app.
