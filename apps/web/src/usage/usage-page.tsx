@@ -3,14 +3,14 @@
 import type { UsageOverview } from '@hlabs/api';
 import { GlassCard, Segmented } from '@hlabs/ui';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usageCopy as copy } from '../copy/usage';
 import { pageQuery } from '../lib/error-copy';
 import { useTRPC } from '../lib/trpc';
 import { formatMemory } from './format';
 import { MainChart } from './main-chart';
 import { RANGES, useUsageRange, type UsageRange } from './range';
-import { UsageTiles } from './tiles';
+import { UsageTiles, type TileId } from './tiles';
 import { useLiveUsage } from './use-live-usage';
 
 /** "Container VM (Colima) · 4 CPUs · 8 GB allocated", "Docker Engine · uses the whole computer". */
@@ -37,9 +37,20 @@ export function UsagePage() {
     refetchInterval: 60_000,
     retry: false,
   });
+  const [metric, setMetric] = useState<TileId>('cpu');
+  // Memory by app (US-USE-04), only while the memory chart shows.
+  const memory = useQuery({
+    ...trpc.usage.memoryByApp.queryOptions({ range }),
+    enabled: metric === 'memory',
+    placeholderData: keepPreviousData,
+    refetchInterval: range === '1h' ? 10_000 : 60_000,
+    retry: false,
+  });
   const history = range === '1h' ? hostHour : longer;
   const points = history.data?.points ?? [];
-  const switching = range !== '1h' ? longer.isPlaceholderData || longer.isPending : false;
+  const switching =
+    (range !== '1h' && (longer.isPlaceholderData || longer.isPending)) ||
+    (metric === 'memory' && (memory.isPlaceholderData || memory.isPending));
 
   useEffect(() => {
     document.title = copy.docTitle;
@@ -59,8 +70,22 @@ export function UsagePage() {
           options={RANGES.map((value) => ({ value, label: copy.ranges[value] }))}
         />
       </header>
-      <UsageTiles current={current.data ?? null} overview={overview.data ?? null} points={points} />
-      <MainChart points={points} range={range} loading={switching} />
+      <UsageTiles
+        current={current.data ?? null}
+        overview={overview.data ?? null}
+        points={points}
+        selected={metric}
+        onSelect={setMetric}
+      />
+      <MainChart
+        metric={metric}
+        points={points}
+        range={range}
+        loading={switching}
+        memory={memory.data}
+        storage={overview.data?.storage}
+        memTotalBytes={overview.data?.memTotalBytes ?? current.data?.host.memTotalBytes ?? 0}
+      />
     </GlassCard>
   );
 }

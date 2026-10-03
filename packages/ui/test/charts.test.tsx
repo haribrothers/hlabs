@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { BarChart, LineChart, niceMax, seriesColor, Sparkline, StackedBar } from '../src/index';
+import { BarChart, LineChart, niceMax, seriesColor, Sparkline, StackedBar, StackedColumns } from '../src/index';
 
 describe('chart helpers', () => {
   it('picks clean axis maxima and fixed series colours', () => {
@@ -92,5 +92,49 @@ describe('StackedBar and Sparkline', () => {
   it('describes the latest value', () => {
     render(<Sparkline values={[1, 3, 2, 12]} />);
     expect(screen.getByRole('img', { name: 'Trend, latest 12' })).toBeInTheDocument();
+  });
+});
+
+describe('LineChart peak note and StackedColumns', () => {
+  it('shows a note beside the title', () => {
+    render(
+      <LineChart
+        title="CPU over the last hour"
+        aside="Peak 46% at 16:32"
+        labels={['a', 'b']}
+        series={[{ name: 'CPU', values: [1, 46] }]}
+      />,
+    );
+    expect(document.querySelector('figcaption')).toHaveTextContent('CPU over the last hourPeak 46% at 16:32');
+  });
+
+  it('stacks the series per column, names each in a legend, and steps with arrow keys', async () => {
+    const fmt = (v: number) => `${v} GB`;
+    render(
+      <StackedColumns
+        title="Memory"
+        labels={['10:00', '10:01']}
+        formatValue={fmt}
+        series={[
+          { name: 'Immich', values: [2, 3] },
+          { name: 'Other', values: [5, 4] },
+        ]}
+      />,
+    );
+    const figure = screen.getByRole('figure');
+    expect(figure.querySelector('.hl-chart-legend')).toHaveTextContent('Immich');
+    expect(figure.querySelector('.hl-chart-legend')).toHaveTextContent('Other');
+    // Two columns of two parts, coloured chart-1 then chart-2.
+    const rects = figure.querySelectorAll('rect');
+    expect(rects).toHaveLength(4);
+    expect(rects[0]).toHaveStyle({ fill: 'var(--chart-1)' });
+    expect(rects[1]).toHaveStyle({ fill: 'var(--chart-2)' });
+    screen.getByRole('img', { name: /Memory\. Use left and right/ }).focus();
+    await userEvent.keyboard('{ArrowLeft}');
+    const tip = screen.getByRole('status');
+    expect(tip).toHaveTextContent('10:01');
+    expect(tip).toHaveTextContent('Immich3 GB');
+    const table = screen.getByRole('table', { hidden: true });
+    expect(within(table).getAllByRole('row')).toHaveLength(3);
   });
 });

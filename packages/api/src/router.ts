@@ -179,6 +179,7 @@ export const appRouter = router({
     overview: q(p.authed, s.usage.overview),
     current: q(p.authed, s.usage.current),
     history: q(p.authed, s.usage.history),
+    memoryByApp: q(p.authed, s.usage.memoryByApp),
     topApps: q(p.authed, s.usage.topApps),
     appDetail: q(p.admin, s.usage.appDetail),
   }),

@@ -5,6 +5,12 @@ import { cpus, totalmem } from 'node:os';
 import type { DaemonContext } from '../context';
 import { onlyApps, usageAppsFor } from '../usage/members';
 
+/** The storage root's disk by use (US-USE-04); apps and files are counted from their phases, so far the rest is system. */
+function storageByUse(disk: { totalBytes: number; freeBytes: number }) {
+  const usedBytes = Math.max(0, disk.totalBytes - disk.freeBytes);
+  return { usedBytes, totalBytes: disk.totalBytes, appsBytes: 0, filesBytes: 0, systemBytes: usedBytes };
+}
+
 export const usage: AppHandlers<DaemonContext>['usage'] = {
   // US-USE-01: CPU model and cores, total memory, the storage root's disk and the engine's allocation.
   overview: async (_input, ctx) => {
@@ -21,7 +27,7 @@ export const usage: AppHandlers<DaemonContext>['usage'] = {
       cpuModel: list[0]?.model.trim() ?? '',
       cores: list.length,
       memTotalBytes: totalmem(),
-      storage: disk ? { usedBytes: Math.max(0, disk.totalBytes - disk.freeBytes), totalBytes: disk.totalBytes } : null,
+      storage: disk ? storageByUse(disk) : null,
       engine: {
         kind: status.state === 'missing' ? null : status.candidate.kind,
         running: status.state === 'running',
@@ -35,6 +41,15 @@ export const usage: AppHandlers<DaemonContext>['usage'] = {
   current: (_input, ctx) => {
     const latest = ctx.services.usage.latest();
     return latest && onlyApps(latest, usageAppsFor(ctx.services.db, ctx.identity));
+  },
+  // US-USE-04: the five apps using the most memory over the range, and the rest; a member only their apps.
+  memoryByApp: ({ range }, ctx) => {
+    const { usageHistory, catalog } = ctx.services;
+    const result = usageHistory.memoryByApp(range, usageAppsFor(ctx.services.db, ctx.identity));
+    return {
+      ...result,
+      series: result.series.map((s) => ({ ...s, name: catalog.get(s.appId)?.manifest.name ?? s.appId })),
+    };
   },
   // US-USE-09: points at the right resolution and the metric's peak.
   history: ({ scope, range, metric }, ctx) => {

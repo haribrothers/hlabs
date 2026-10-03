@@ -17,7 +17,14 @@ Four tiles sum it up:
 
 ## Look back in time
 
-Below the tiles, a chart shows how busy the processor has been. Choose **1 hour**, **24 hours** or **7 days** at the top right to change how far back it goes; hlabs remembers your choice on this browser. The last hour keeps moving as new readings arrive; the longer ranges refresh every minute. If hlabs hasn't been running that long, the chart shows what it has.
+Below the tiles, a chart shows how busy the processor has been, and its highest point, for example **Peak 46% at 16:32**. Choose a tile to chart that instead:
+
+- **CPU:** the processor, from 0 to 100%.
+- **Memory:** columns split into the five apps using the most memory and **Other** (every other app, hlabs and the computer itself). An app you uninstalled still shows under its name for the time it was there.
+- **Storage:** one bar of the disk by use: apps, files, system and what's free.
+- **Network:** data coming **In** and going **Out**; the peak says which was higher.
+
+Point at the chart, or select it and use the arrow keys, to read the time and values. Choose **1 hour**, **24 hours** or **7 days** at the top right to change how far back it goes; hlabs remembers your choice on this browser. The last hour keeps moving as new readings arrive; the longer ranges refresh every minute. If hlabs hasn't been running that long, the chart shows what it has.
 
 The numbers update by themselves every few seconds. The Live usage widget on Home shows CPU and memory too; choose it to open this page.
 

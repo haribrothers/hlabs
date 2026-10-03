@@ -178,6 +178,57 @@ export class UsageHistory {
     return { scope, range, resolution, points, peak };
   }
 
+  /** Every app that has points in the range (uninstalled ones too, until they age out). */
+  appScopes(range: UsageRange): string[] {
+    const now = this.now();
+    const from = now - RANGE_MS[range];
+    const scopes = new Set<string>();
+    if (range === '1h') {
+      for (const s of this.deps.recent()) if (s.ts >= from) for (const a of s.apps) scopes.add(a.appId);
+    }
+    const resolution = range === '1h' || range === '24h' ? '1m' : '1h';
+    for (const r of this.deps.db
+      .selectDistinct({ scope: usageSamples.scope })
+      .from(usageSamples)
+      .where(and(eq(usageSamples.resolution, resolution), gte(usageSamples.ts, from)))
+      .all()) {
+      if (r.scope !== 'host') scopes.add(r.scope);
+    }
+    return [...scopes].sort();
+  }
+
+  /**
+   * Memory by app over a range (US-USE-04): the five apps using the most memory in the range, each on the host's
+   * timestamps, and "Other" for the rest of the host's memory (other apps, hlabs and the system). `allowed` limits the
+   * apps to those a member may see (null: all).
+   */
+  memoryByApp(range: UsageRange, allowed: Set<string> | null) {
+    const host = this.history('host', range, 'memBytes');
+    const ts = host.points.map((p) => p.ts);
+    const apps = this.appScopes(range)
+      .filter((id) => allowed === null || allowed.has(id))
+      .map((appId) => {
+        const byTs = new Map(this.history(appId, range, 'memBytes').points.map((p) => [p.ts, p.memBytes ?? 0]));
+        // Points line up with the host's; a 1h range's 5 s samples share timestamps with the host's exactly.
+        const values = ts.map((t) => byTs.get(t) ?? 0);
+        return { appId, values, total: values.reduce((a, b) => a + b, 0) };
+      })
+      .filter((a) => a.total > 0)
+      .sort((a, b) => b.total - a.total);
+    const top = apps.slice(0, 5);
+    const other = host.points.map((p, i) =>
+      Math.max(0, (p.memBytes ?? 0) - top.reduce((sum, a) => sum + (a.values[i] ?? 0), 0)),
+    );
+    return {
+      range,
+      resolution: host.resolution,
+      ts,
+      series: top.map(({ appId, values }) => ({ appId, values })),
+      other,
+      peak: host.peak,
+    };
+  }
+
   private stored(scope: string, resolution: '1m' | '1h', from: number, to: number): UsagePoint[] {
     return this.deps.db
       .select()

@@ -10,6 +10,17 @@ export const usageCopy = {
   over: { '1h': 'over the last hour', '24h': 'over the last 24 hours', '7d': 'over the last 7 days' },
   chartTitle: (metric: string, over: string) => `${metric} ${over}`,
   noData: 'No usage recorded yet',
+  /** US-USE-04: the highest point in the range, "Peak 46% at 16:32" or "Peak 61% on Tue 14:00" for 7 days. */
+  peak: (value: string, when: string, withDay: boolean) => `Peak ${value} ${withDay ? 'on' : 'at'} ${when}`,
+  /** Network's peak names the direction: "Peak 750 KB/s out at 11:22". */
+  peakDirection: (value: string, direction: 'in' | 'out') => `${value} ${direction}`,
+  netIn: 'In',
+  netOut: 'Out',
+  other: 'Other',
+  storageByUse: 'Storage by use',
+  apps: 'Apps',
+  files: 'Files',
+  system: 'System',
   memory: 'Memory',
   storage: 'Storage',
   network: 'Network',

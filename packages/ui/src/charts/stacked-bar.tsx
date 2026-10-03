@@ -34,19 +34,22 @@ export function StackedBar({ segments, total, title, unit, formatValue }: Stacke
           ', ',
         )}
       >
-        {segments.map((s, i) => (
-          <span
-            key={s.label}
-            className="hl-stack-seg"
-            style={{
-              flexBasis: `${sum > 0 ? (s.value / sum) * 100 : 0}%`,
-              background: seriesColor(i),
-              opacity: idx === null || idx === i ? 1 : 0.55,
-            }}
-            onMouseEnter={() => setIdx(i)}
-            onMouseLeave={() => setIdx(null)}
-          />
-        ))}
+        {/* An empty part has no sliver in the bar; the legend still names it. */}
+        {segments.map((s, i) =>
+          s.value > 0 ? (
+            <span
+              key={s.label}
+              className="hl-stack-seg"
+              style={{
+                flexBasis: `${sum > 0 ? (s.value / sum) * 100 : 0}%`,
+                background: seriesColor(i),
+                opacity: idx === null || idx === i ? 1 : 0.55,
+              }}
+              onMouseEnter={() => setIdx(i)}
+              onMouseLeave={() => setIdx(null)}
+            />
+          ) : null,
+        )}
         <span className="hl-stack-free" />
       </div>
       <div className="hl-chart-legend">

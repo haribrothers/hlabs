@@ -68,7 +68,7 @@ const EXPECTED: Row[] = [
   ['storage.locations.eject', 'm', 'admin'], ['storage.moveAllPlan', 'q', 'admin'], ['storage.moveAll', 'm', 'admin'],
   ['storage.pruneImages', 'm', 'admin'],
 
-  ['usage.overview', 'q', 'authed'], ['usage.current', 'q', 'authed'], ['usage.history', 'q', 'authed'], ['usage.topApps', 'q', 'authed'],
+  ['usage.overview', 'q', 'authed'], ['usage.current', 'q', 'authed'], ['usage.history', 'q', 'authed'], ['usage.memoryByApp', 'q', 'authed'], ['usage.topApps', 'q', 'authed'],
   ['usage.appDetail', 'q', 'admin'],
 
   ['backups.overview', 'q', 'admin'], ['backups.destinations.list', 'q', 'admin'], ['backups.destinations.test', 'm', 'admin'],

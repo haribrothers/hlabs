@@ -2,56 +2,51 @@ import { useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { useUiStrings } from '../lib/strings';
 import { formatNumber, Legend, niceMax, seriesColor, showLabel, SrTable } from './shared';
 
-export interface LineChartProps {
-  /** One to six series; one series gets an area wash and no legend. */
+export interface StackedColumnsProps {
+  /** Up to six series, stacked bottom to top in chart order (chart-1…chart-6). */
   series: { name: string; values: number[] }[];
-  /** One x label per value. */
+  /** One x label per column. */
   labels: string[];
   title?: string;
-  /** A note beside the title, e.g. "Peak 46% at 16:32". */
+  /** A note beside the title, e.g. "Peak 9.4 GB at 16:32". */
   aside?: string;
-  /** Appended to values: '%', ' GB', ' MB/s'. */
-  unit?: string;
-  /** Fixed y max (100 for percentages). */
+  /** Fixed y max (a total, e.g. the computer's memory). */
   max?: number;
-  area?: boolean;
   width?: number;
   height?: number;
   formatValue?: (v: number) => string;
 }
 
-const PAD = { left: 44, right: 16, top: 10, bottom: 26 };
+const PAD = { left: 52, right: 16, top: 10, bottom: 26 };
 
-/** Values over time. Crosshair and tooltip on hover or arrow keys; a hidden table for screen readers. */
-export function LineChart({
+/** Parts of a whole over time: one stacked column per point. Tooltip on hover or arrow keys; a hidden table. */
+export function StackedColumns({
   series,
   labels,
   title,
   aside,
-  unit = '',
   max,
-  area = true,
   width = 560,
   height = 200,
   formatValue,
-}: LineChartProps) {
+}: StackedColumnsProps) {
   const t = useUiStrings();
   const [idx, setIdx] = useState<number | null>(null);
   const n = labels.length;
-  const fmt = formatValue ?? ((v: number) => formatNumber(v) + unit);
-  const hi = Math.max(0, ...series.flatMap((s) => s.values));
-  const top = max ?? niceMax(hi);
+  const fmt = formatValue ?? formatNumber;
+  const totals = labels.map((_, i) => series.reduce((sum, s) => sum + (s.values[i] ?? 0), 0));
+  const top = max ?? niceMax(Math.max(0, ...totals));
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => f * top);
-  const step = (width - PAD.left - PAD.right) / Math.max(1, n - 1);
-  const x = (i: number) => PAD.left + (n <= 1 ? 0 : i * step);
-  const y = (v: number) => PAD.top + (height - PAD.top - PAD.bottom) * (1 - v / top);
+  const slot = (width - PAD.left - PAD.right) / Math.max(1, n);
+  const gap = slot > 6 ? 2 : slot > 2 ? 1 : 0;
+  const x = (i: number) => PAD.left + i * slot;
+  const y = (v: number) => PAD.top + (height - PAD.top - PAD.bottom) * (1 - Math.min(v, top) / top);
   const every = Math.max(1, Math.ceil(n / 6));
-  const single = series.length === 1;
 
   const onMove = (e: MouseEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const px = ((e.clientX - r.left) * width) / (r.width || width);
-    setIdx(Math.max(0, Math.min(n - 1, Math.round((px - PAD.left) / step))));
+    setIdx(Math.max(0, Math.min(n - 1, Math.floor((px - PAD.left) / slot))));
   };
   const onKey = (e: KeyboardEvent<SVGSVGElement>) => {
     if (e.key === 'ArrowRight') setIdx(idx === null ? 0 : Math.min(n - 1, idx + 1));
@@ -60,6 +55,7 @@ export function LineChart({
     else return;
     e.preventDefault();
   };
+  const tipX = idx === null ? 0 : x(idx) + slot / 2;
 
   return (
     <figure className="hl-chart">
@@ -69,9 +65,7 @@ export function LineChart({
           {aside ? <span className="hl-chart-sub">{aside}</span> : null}
         </figcaption>
       ) : null}
-      {series.length > 1 ? (
-        <Legend line items={series.map((s, i) => ({ name: s.name, color: seriesColor(i) }))} />
-      ) : null}
+      <Legend items={series.map((s, i) => ({ name: s.name, color: seriesColor(i) }))} />
       <div className="hl-chart-plot">
         <svg
           viewBox={`0 0 ${width} ${height}`}
@@ -103,7 +97,7 @@ export function LineChart({
             showLabel(i, n, every) ? (
               <text
                 key={`x${i}`}
-                x={x(i)}
+                x={x(i) + slot / 2}
                 y={height - 6}
                 textAnchor={i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}
                 className="hl-chart-axis"
@@ -112,55 +106,37 @@ export function LineChart({
               </text>
             ) : null,
           )}
-          {series.map((s, si) => {
-            const d = s.values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
-            const color = seriesColor(si);
+          {labels.map((_, i) => {
+            let base = 0;
             return (
-              <g key={s.name}>
-                {single && area ? (
-                  <path d={`${d} L${x(n - 1)} ${y(0)} L${x(0)} ${y(0)} Z`} style={{ fill: color }} opacity={0.12} />
-                ) : null}
-                <path
-                  d={d}
-                  fill="none"
-                  style={{ stroke: color }}
-                  strokeWidth={2}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                />
+              <g key={`c${i}`} opacity={idx === null || idx === i ? 1 : 0.55}>
+                {series.map((s, si) => {
+                  const v = s.values[i] ?? 0;
+                  const y0 = y(base);
+                  base += v;
+                  const y1 = y(base);
+                  return v > 0 ? (
+                    <rect
+                      key={s.name}
+                      x={x(i) + gap / 2}
+                      y={y1}
+                      width={Math.max(0.5, slot - gap)}
+                      height={Math.max(0, y0 - y1)}
+                      style={{ fill: seriesColor(si) }}
+                    />
+                  ) : null;
+                })}
               </g>
             );
           })}
-          {idx !== null ? (
-            <g data-testid="crosshair">
-              <line
-                x1={x(idx)}
-                x2={x(idx)}
-                y1={PAD.top}
-                y2={height - PAD.bottom}
-                className="hl-chart-cross"
-                strokeWidth={1}
-              />
-              {series.map((s, si) => (
-                <circle
-                  key={s.name}
-                  cx={x(idx)}
-                  cy={y(s.values[idx] ?? 0)}
-                  r={4.5}
-                  style={{ fill: seriesColor(si), stroke: 'var(--hl-chart-ring)' }}
-                  strokeWidth={2}
-                />
-              ))}
-            </g>
-          ) : null}
         </svg>
         {idx !== null ? (
           <div
             className="hl-chart-tip"
             role="status"
             style={{
-              left: `${(x(idx) / width) * 100}%`,
-              transform: `translateX(${x(idx) > width * 0.6 ? 'calc(-100% - 12px)' : '12px'})`,
+              left: `${(tipX / width) * 100}%`,
+              transform: `translateX(${tipX > width * 0.6 ? 'calc(-100% - 12px)' : '12px'})`,
             }}
           >
             <div className="hl-chart-tip-title">{labels[idx]}</div>

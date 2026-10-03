@@ -71,7 +71,16 @@ export const usageOverviewSchema = z.object({
   cores: z.number().int().nonnegative(),
   memTotalBytes: z.number().nonnegative(),
   /** The disk the storage root is on (an external drive when it's there); null when it can't be read. */
-  storage: z.object({ usedBytes: z.number().nonnegative(), totalBytes: z.number().nonnegative() }).nullable(),
+  storage: z
+    .object({
+      usedBytes: z.number().nonnegative(),
+      totalBytes: z.number().nonnegative(),
+      /** "Storage by use" (US-USE-04): apps and files are counted from their phases (until then 0); system is the rest. */
+      appsBytes: z.number().nonnegative(),
+      filesBytes: z.number().nonnegative(),
+      systemBytes: z.number().nonnegative(),
+    })
+    .nullable(),
   engine: z.object({
     kind: engineKindSchema.nullable(),
     running: z.boolean(),
@@ -81,6 +90,19 @@ export const usageOverviewSchema = z.object({
   }),
 });
 export type UsageOverview = z.infer<typeof usageOverviewSchema>;
+
+/** Memory by app over a range (US-USE-04): the top five apps and "Other", on the host's timestamps. */
+export const memoryByAppSchema = z.object({
+  range: usageRangeSchema,
+  resolution: z.enum(['5s', '1m', '1h']),
+  ts: z.array(z.number()),
+  series: z.array(z.object({ appId: z.string(), name: z.string(), values: z.array(z.number()) })).max(5),
+  /** The rest of the host's memory: other apps, hlabs and the system. */
+  other: z.array(z.number()),
+  /** The host's memory peak in the range. */
+  peak: z.object({ ts: z.number(), value: z.number() }).nullable(),
+});
+export type MemoryByApp = z.infer<typeof memoryByAppSchema>;
 
 export const usage = {
   overview: io(empty, usageOverviewSchema),
@@ -96,6 +118,7 @@ export const usage = {
     }),
     usageHistorySchema,
   ),
+  memoryByApp: io(z.object({ range: usageRangeSchema }), memoryByAppSchema),
   topApps: io(z.object({ limit: z.number().int().min(1).max(50).default(5) }).optional(), pending),
   appDetail: io(appRefSchema, pending),
 };
