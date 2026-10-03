@@ -42,7 +42,8 @@ hlabs serves the dashboard and your apps on port 443, the usual port for secure 
 
 You can:
 
-- choose **Use port 8443** in the menu-bar app (or change the port in Settings › Network). hlabs's addresses then end in `:8443`, for example `https://hlabs.local:8443`; update any bookmarks.
+- choose **Use port 8443** in the menu-bar app. hlabs's addresses then end in `:8443`, for example `https://hlabs.local:8443`. The next time hlabs starts and port 443 is free, it goes back to 443 by itself.
+- or choose a port yourself in Settings › Network. hlabs keeps the port you choose.
 - or stop the other program. hlabs notices within a few minutes and uses port 443 again by itself.
 
 Until then, **Open Dashboard** in the menu-bar app still opens the dashboard on the computer running hlabs.

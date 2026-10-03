@@ -164,6 +164,7 @@ The system half of Settings: how hlabs is reached on the home network and over T
 - **Given** that state, **then** "Open Dashboard" opens the dashboard on this computer (`http://127.0.0.1:7474`), which still works.
 - **Given** that state, **then** admins get a critical notification "hlabs can't use port 443" saying what holds it and what to do, with "Change port" (Settings › Network); it's marked read once hlabs serves again.
 - **Given** the other program lets go of the port, **then** hlabs serves on it again by itself within a minute or so (it keeps trying, 30 s doubling to 10 minutes), and the menu goes back to normal.
+- **Given** hlabs moved to 8443 with "Use port 8443", **when** hlabs starts again (quit and opened, or at login) and 443 is free, **then** it goes back to 443 (audited); if 443 is still in use it stays on 8443 and tries again at the next start. A port chosen in Settings › Network is never changed back.
 - **Given** the port is held by Tailscale Serve entries hlabs made itself, **then** this doesn't apply: hlabs moves its own entries aside while Caddy starts (D-111).
 
 **Implementation notes**

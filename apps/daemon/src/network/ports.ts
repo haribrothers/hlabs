@@ -59,7 +59,12 @@ export async function setWebPorts(
   }
   db.transaction((tx) => {
     const inTx = tx as unknown as HlabsDb;
-    setSetting(inTx, 'network', { ...getSetting(inTx, 'network'), ports: { https: input.https, http: input.http } });
+    // A change made here is the admin's choice: nothing to go back to later (US-SYS-42).
+    setSetting(inTx, 'network', {
+      ...getSetting(inTx, 'network'),
+      ports: { https: input.https, http: input.http },
+      returnTo: null,
+    });
     tx.insert(auditLog)
       .values({
         id: ulid(),

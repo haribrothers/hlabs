@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NoopProxyManager, type ProxyManager } from './caddy/index';
 import { CaddyProxy } from './caddy/proxy';
-import { notifyPortProblem, tailscaleServeHolds } from './network/port-problem';
+import { notifyPortProblem, returnToPorts, tailscaleServeHolds } from './network/port-problem';
 import { NetworkService, type PortProblem } from './network/service';
 import type { DaemonConfig } from './config';
 import type { InstallerHost } from './engine/colima-installer';
@@ -253,6 +253,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     heldBy: (port) => tailscaleServeHolds(port, { db, tailscale }),
     onPortProblem: (problem) => onPortProblem(problem),
   });
+  // Moved off 443 because another program held it (US-SYS-42)? Back to it now if it's free.
+  if (await returnToPorts({ db, portInUse: (port) => (deps.system ?? new NodeSystemProbe()).portInUse(port) })) {
+    logger.info({ ports: getSetting(db, 'network').ports }, 'back on the usual web ports');
+  }
   await network.sync();
   network.watch(bus);
   const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);

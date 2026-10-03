@@ -135,6 +135,11 @@ export const settingsSchemas = {
   network: z
     .object({
       ports: z.object({ https: portSchema, http: portSchema }).default({ https: 443, http: 80 }),
+      /**
+       * The ports "Use port 8443" moved away from because another program held them (US-SYS-42): the next start goes
+       * back to them when they're free. A change made in Settings forgets them.
+       */
+      returnTo: z.object({ https: portSchema, http: portSchema }).nullable().default(null),
       /** The local DNS server hlabs keeps its names in (US-SYS-06, D-106). */
       dns: z
         .object({
@@ -151,6 +156,7 @@ export const settingsSchemas = {
     })
     .default({
       ports: { https: 443, http: 80 },
+      returnTo: null,
       dns: { kind: 'none', address: null, owned: [], lastSyncAt: null, problem: null },
     }),
   startup: z

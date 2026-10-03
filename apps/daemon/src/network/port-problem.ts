@@ -1,6 +1,7 @@
 // When another program holds hlabs's web port (US-SYS-42, D-122): what holds it, when hlabs can tell; a critical
 // notification for admins while it lasts; and moving hlabs to the other port in one step.
-import { getSetting, type HlabsDb } from '@hlabs/db';
+import { auditLog, getSetting, setSetting, type HlabsDb } from '@hlabs/db';
+import { ulid } from '@hlabs/shared';
 import type { NotificationService } from '../notifications/service';
 import { FALLBACK_PORTS } from '../onboarding/system-check';
 import type { TailscaleClient } from '../tailscale/types';
@@ -56,5 +57,39 @@ export async function useOtherPort(
   const ports = getSetting(deps.db, 'network').ports;
   const other = fallbackPortFor(deps.db, problem.port);
   const next = problem.port === ports.http ? { ...ports, http: other } : { ...ports, https: other };
+  // Back to the usual ports at a later start, when they're free (an earlier move's are kept).
+  const returnTo = getSetting(deps.db, 'network').returnTo ?? ports;
   await setWebPorts(deps, next, { userId: null, ip: null });
+  setSetting(deps.db, 'network', { ...getSetting(deps.db, 'network'), returnTo });
+}
+
+/**
+ * On start (US-SYS-42): hlabs moved off its ports because another program held them; when they're free again it goes
+ * back to them, so its usual addresses work again. Returns whether it did.
+ */
+export function returnToPorts(deps: { db: HlabsDb; portInUse: (port: number) => Promise<boolean> }): Promise<boolean> {
+  return (async () => {
+    const network = getSetting(deps.db, 'network');
+    const target = network.returnTo;
+    if (!target) return false;
+    for (const port of [target.https, target.http]) {
+      if (port !== network.ports.https && port !== network.ports.http && (await deps.portInUse(port))) return false;
+    }
+    deps.db.transaction((tx) => {
+      const inTx = tx as unknown as HlabsDb;
+      setSetting(inTx, 'network', { ...getSetting(inTx, 'network'), ports: target, returnTo: null });
+      tx.insert(auditLog)
+        .values({
+          id: ulid(),
+          at: Date.now(),
+          userId: null,
+          action: 'network.setPorts',
+          target: 'network',
+          detailJson: { from: network.ports, to: target, returned: true },
+          ip: null,
+        })
+        .run();
+    });
+    return true;
+  })();
 }

@@ -11,6 +11,8 @@ import { NotificationService } from '../src/notifications/service';
 import { notifyPortProblem, PORT_IN_USE_KIND, tailscaleServeHolds } from '../src/network/port-problem';
 import { EventBus } from '../src/events/bus';
 import { FakeTailscale } from '../src/tailscale/fake';
+import { shutdown } from '../src/boot';
+import { FakeSystemProbe } from './fakes/system';
 import { startDaemon } from './helpers';
 
 const closers: Array<() => Promise<void>> = [];
@@ -121,5 +123,62 @@ describe('US-SYS-42 · See why hlabs can’t serve its address', () => {
     proxy.held = null;
     await d.services!.routing.sync({ force: true });
     expect(d.services!.routing.portProblem()).toBeNull();
+  });
+
+  describe('back to 443 at the next start, when it is free', () => {
+    async function movedTo8443(system = new FakeSystemProbe()) {
+      const proxy = new HeldProxy();
+      const d = await startDaemon({
+        config: { devAnonymousAdmin: false, proxy: 'caddy' },
+        trayTokens: new TrayTokens({ read: async () => TOKEN }),
+        boot: { proxy, tailscale: new FakeTailscale(), system },
+      });
+      closers.push(d.close);
+      await tray(d.url, 'tray.useOtherPort', true);
+      expect(getSetting(d.services!.db, 'network')).toMatchObject({
+        ports: { https: 8443, http: 80 },
+        returnTo: { https: 443, http: 80 },
+      });
+      return { d, proxy, system };
+    }
+
+    it('the other program let go: hlabs is on 443 again, and says so in the audit log', async () => {
+      const { d, proxy } = await movedTo8443();
+      proxy.held = null;
+      await shutdown(d.services!);
+      const s2 = (await d.boot())!;
+      closers.push(() => shutdown(s2));
+      expect(getSetting(s2.db, 'network')).toMatchObject({ ports: { https: 443, http: 80 }, returnTo: null });
+      expect(s2.routing.portProblem()).toBeNull();
+      const audits = s2.db.select().from(auditLog).where(eq(auditLog.action, 'network.setPorts')).all();
+      expect(audits.at(-1)?.detailJson).toEqual({
+        from: { https: 8443, http: 80 },
+        to: { https: 443, http: 80 },
+        returned: true,
+      });
+    });
+
+    it('443 still in use: it stays on 8443 and keeps waiting', async () => {
+      const { d, system } = await movedTo8443();
+      system.portsInUse.add(443);
+      await shutdown(d.services!);
+      const s2 = (await d.boot())!;
+      closers.push(() => shutdown(s2));
+      expect(getSetting(s2.db, 'network')).toMatchObject({
+        ports: { https: 8443, http: 80 },
+        returnTo: { https: 443, http: 80 },
+      });
+    });
+
+    it('a port chosen in Settings is kept: nothing to go back to', async () => {
+      const { d } = await movedTo8443();
+      const { setWebPorts } = await import('../src/network/ports');
+      await setWebPorts(
+        { db: d.services!.db, portInUse: async () => false, apply: async () => {} },
+        { https: 9443, http: 80 },
+        { userId: null, ip: null },
+      );
+      expect(getSetting(d.services!.db, 'network')).toMatchObject({ ports: { https: 9443 }, returnTo: null });
+    });
   });
 });
