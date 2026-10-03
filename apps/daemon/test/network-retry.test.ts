@@ -20,6 +20,7 @@ async function service(failures: number) {
       applies++;
       if (applies <= failures) throw new Error('caddy exited at start: listen tcp :443: bind: address already in use');
     }),
+    problem: () => null,
   };
   const network = new NetworkService({
     db: d.services!.db,

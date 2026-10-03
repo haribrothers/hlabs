@@ -25,6 +25,8 @@ export interface Answers {
   confirm?: boolean;
   /** quit_hlabs: what it does (it never returns when it quits). */
   quit?: () => Promise<unknown>;
+  /** tray.useOtherPort finds the other port taken too (US-SYS-42). */
+  otherPortTaken?: boolean;
 }
 
 export const tauri = {
@@ -80,6 +82,10 @@ export function answer(a: Answers) {
         if (args?.path === 'tray.setStartAtLogin') return { ok: true };
         if (args?.path === 'tray.listUsers') return { users: a.users ?? [] };
         if (args?.path === 'tray.diagnostics') return { report: 'hlabs diagnostics' };
+        if (args?.path === 'tray.useOtherPort') {
+          if (a.otherPortTaken) throw { hlabsCode: 'NETWORK_PORT_IN_USE', status: 409 };
+          return { ok: true };
+        }
         return null;
       default:
         throw new Error(`unexpected command ${cmd}`);

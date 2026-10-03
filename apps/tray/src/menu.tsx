@@ -4,9 +4,10 @@ import type { TrayStatus } from '@hlabs/api';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { invoke } from '@tauri-apps/api/core';
 import { TrayMenu, TraySetup, type MenuItem } from '@hlabs/ui';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAccess, type Access } from './access';
 import { useBoot, type BootState } from './boot';
+import { daemon } from './daemon';
 import { useDashboardActions } from './dashboard';
 import { useCopyDiagnostics, useStartEngine } from './engine';
 import { useDaemonDownActions, useHealth, type DaemonHealth } from './health';
@@ -142,6 +143,7 @@ export function Menu() {
   if (inSetup) return <FirstLaunch boot={boot} onOpenSetup={() => void openSetup()} />;
   // Waiting for /healthz after a launch, or it says hlabs is starting: Starting, without counts yet (US-INST-11).
   if (boot.step === 'starting' || health?.state === 'starting') return <StartingMenu status={null} />;
+  if (status?.portProblem) return <PortProblemMenu problem={status.portProblem} onChanged={refresh} />;
   if (status?.state === 'engineStopped') return <EngineStoppedMenu status={status} />;
   if (status?.state === 'paused') return <PausedMenu onChanged={refresh} />;
   if (status?.state === 'starting') return <StartingMenu status={status} />;
@@ -369,6 +371,49 @@ export function RunningMenu({
         startAtLogin,
         checkUpdates,
       })}
+    />
+  );
+}
+
+/**
+ * US-SYS-42: another program holds hlabs's web port, so other devices can't reach it. What holds it, "Use port 8443",
+ * and Open Dashboard, which opens the dashboard on this computer meanwhile.
+ */
+export function PortProblemMenu({
+  problem,
+  onChanged,
+}: {
+  problem: NonNullable<TrayStatus['portProblem']>;
+  onChanged?: () => void;
+}) {
+  const dashboard = useDashboardActions();
+  const [moving, setMoving] = useState<'idle' | 'busy' | 'taken'>('idle');
+  const move = async () => {
+    setMoving('busy');
+    try {
+      await daemon.mutate('useOtherPort');
+      setMoving('idle');
+      onChanged?.();
+    } catch {
+      setMoving('taken');
+    }
+  };
+  return (
+    <TrayMenu
+      tone="danger"
+      statusText={t.portInUseStatus(problem.port)}
+      note={{
+        body:
+          moving === 'taken'
+            ? t.otherPortTaken(problem.fallbackPort)
+            : t.portHeld(problem.port, problem.heldBy === 'tailscaleServe'),
+      }}
+      action={{ label: t.useOtherPort(problem.fallbackPort), onSelect: () => void move(), busy: moving === 'busy' }}
+      items={[
+        { separator: true },
+        { label: t.openDashboard, shortcut: '⌘D', onSelect: () => void dashboard.open() },
+        quitItem,
+      ]}
     />
   );
 }

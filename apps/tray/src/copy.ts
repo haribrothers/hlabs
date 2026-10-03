@@ -99,6 +99,12 @@ export const trayCopy = {
   quitBusyTitle: 'hlabs is busy',
   quitBusyBody: "An update or a restore is running and can't be interrupted. Quit hlabs when it's done.",
   stoppingApps: 'Stopping apps…',
+  /** US-SYS-42: another program holds hlabs's web port. */
+  portInUseStatus: (port: number) => `Can't use port ${port}`,
+  portHeld: (port: number, byServe: boolean) =>
+    `Port ${port} is in use by ${byServe ? 'Tailscale Serve' : 'another program'}, so other devices can't reach hlabs.`,
+  useOtherPort: (port: number) => `Use port ${port}`,
+  otherPortTaken: (port: number) => `Port ${port} is in use too. Choose another in Settings › Network.`,
   /** US-INST-16: the keychain refused access to the tray token. */
   keychainStatus: 'Needs Keychain access',
   keychainNote: 'hlabs needs Keychain access to work.',

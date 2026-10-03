@@ -41,7 +41,8 @@ function allowed(port: number, usual: number): boolean {
 export async function setWebPorts(
   deps: { db: HlabsDb; portInUse: (port: number) => Promise<boolean>; apply: () => Promise<void> },
   input: { https: number; http: number },
-  who: { userId: string; ip: string | null },
+  /** userId null: from the menu-bar app (US-SYS-42). */
+  who: { userId: string | null; ip: string | null },
   now = Date.now(),
 ) {
   const { db } = deps;

@@ -1,6 +1,7 @@
 // What the tray shows at a glance (US-INST-05): hlabs's state, how many apps run, how busy this computer is and the
 // dashboard's address. The tray asks every 5 s while its menu is open and every 30 s otherwise.
 import { EXCLUSIVE_JOB_KINDS, type TrayStatus } from '@hlabs/api';
+import { fallbackPortFor } from '../network/port-problem';
 import {
   apps,
   backupDestinations,
@@ -39,6 +40,8 @@ export interface TrayStatusDeps {
  * (development) the configured one. */
 export function dashboardUrl(deps: Pick<TrayStatusDeps, 'config' | 'routing'>): string {
   if (deps.config.proxy !== 'caddy') return deps.config.dashboardUrl;
+  // Caddy isn't serving (another program holds its port, US-SYS-42): the daemon's own address still works here.
+  if (deps.routing.portProblem()) return `http://127.0.0.1:${deps.config.port}`;
   const home = deps.routing.homeNetwork();
   return home.published ? home.localAddress : (home.fallbackAddress ?? home.localAddress);
 }
@@ -131,6 +134,7 @@ export async function trayStatus(deps: TrayStatusDeps): Promise<TrayStatus> {
     autoUpdate: updates.autoHlabs,
     exclusiveJobRunning: deps.jobs.listActive().some((j) => j.kind !== 'system_update' && EXCLUSIVE.has(j.kind)),
     updateRequested: updateRequested(deps.jobs),
+    portProblem: portProblem(deps),
     onboardingComplete: getSetting(db, 'onboarding').completedAt !== null,
     reduceTransparency: reduceTransparency(db),
   };
@@ -144,4 +148,9 @@ function updateRequested(jobs: JobRunner): { jobId: string; version: string } | 
   if (!job) return null;
   const row = jobs.payload<{ version?: string }>(job.id);
   return row?.version ? { jobId: job.id, version: row.version } : null;
+}
+
+function portProblem(deps: TrayStatusDeps): TrayStatus['portProblem'] {
+  const problem = deps.routing.portProblem();
+  return problem ? { ...problem, fallbackPort: fallbackPortFor(deps.db, problem.port) } : null;
 }

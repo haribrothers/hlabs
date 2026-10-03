@@ -78,6 +78,8 @@ export class CaddyProxy implements ProxyManager {
   /** The app ports that couldn't be served last time (`12000,12003`), or null. */
   private blockedPorts: string | null = null;
   private retryTimer: NodeJS.Timeout | null = null;
+  /** The web port another program held the last time Caddy tried to start (US-SYS-42). */
+  private heldPort: number | null = null;
   /** The ports last warned about, so a retry that fails the same way stays quiet. */
   private warnedPorts: string | null = null;
   private queue: Promise<void> = Promise.resolve();
@@ -144,6 +146,10 @@ export class CaddyProxy implements ProxyManager {
     await this.load(buildCaddyConfig(state, this.paths, { appPorts: false }));
   }
 
+  problem() {
+    return this.heldPort === null ? null : { port: this.heldPort };
+  }
+
   private async load(config: unknown): Promise<void> {
     if (!this.child || this.child.exitCode !== null) {
       await this.spawn(config);
@@ -190,11 +196,15 @@ export class CaddyProxy implements ProxyManager {
 
     const deadline = Date.now() + 15_000;
     for (;;) {
-      if (child.exitCode !== null) throw new Error(`caddy exited at start: ${stderr.slice(-1_000)}`);
+      if (child.exitCode !== null) {
+        this.heldPort = portInUse(stderr);
+        throw new Error(`caddy exited at start: ${stderr.slice(-1_000)}`);
+      }
       try {
         await adminRequest(this.paths.adminSocket, 'GET', '/config/');
         chmodSync(this.paths.adminSocket, 0o600);
         running = true;
+        this.heldPort = null;
         this.deps.logger.info({ pid: child.pid }, 'caddy is running');
         return;
       } catch {
@@ -218,4 +228,10 @@ export class CaddyProxy implements ProxyManager {
   private logFailure(err: unknown) {
     this.deps.logger.error({ err }, 'caddy could not be started');
   }
+}
+
+/** The port Caddy couldn't listen on because it's in use (`listen tcp :443: bind: address already in use`), or null. */
+export function portInUse(stderr: string): number | null {
+  const match = /listen tcp [^\s]*?:(\d+): bind: address already in use/.exec(stderr);
+  return match ? Number(match[1]) : null;
 }

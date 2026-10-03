@@ -42,6 +42,10 @@ export function iconFor(s: {
     return { look: 'starting', dot: null, line, offline: false };
   }
   if (!s.status) return { look: 'plain', dot: null, line: t.running, offline: false };
+  // Other devices can't reach hlabs: another program holds its web port (US-SYS-42).
+  if (s.status.portProblem) {
+    return { look: 'dot', dot: 'danger', line: t.portInUseStatus(s.status.portProblem.port), offline: false };
+  }
   if (s.status.appsNeedAttention > 0) {
     const line = t.runningWithAttention(s.status.appsRunning, s.status.appsExpected, s.status.appsNeedAttention);
     return { look: 'dot', dot: 'danger', line, offline: false };

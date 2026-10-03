@@ -1,6 +1,7 @@
 import { hlabsError, type AppHandlers } from '@hlabs/api';
 import { getSetting, setSetting } from '@hlabs/db';
 import type { DaemonContext } from '../context';
+import { useOtherPort } from '../network/port-problem';
 import { lanAddresses } from '../mdns/publisher';
 import { diagnosticsReport } from '../tray/diagnostics';
 import { dashboardUrl, trayStatus } from '../tray/status';
@@ -57,6 +58,19 @@ export const tray: AppHandlers<DaemonContext>['tray'] = {
     const { jobs } = ctx.services;
     const jobId = jobs.start('pause_all', { payload: { via: 'tray', untilRestart: true } });
     await jobs.settled(jobId).catch(() => undefined);
+    return { ok: true as const };
+  },
+
+  // US-SYS-42: "Use port 8443" while another program holds hlabs's web port.
+  useOtherPort: async (_input, ctx) => {
+    const { db, system, routing } = ctx.services;
+    const problem = routing.portProblem();
+    if (problem) {
+      await useOtherPort(
+        { db, portInUse: (port) => system.portInUse(port), apply: () => routing.sync({ force: true }) },
+        problem,
+      );
+    }
     return { ok: true as const };
   },
 

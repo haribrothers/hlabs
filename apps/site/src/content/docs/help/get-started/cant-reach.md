@@ -35,3 +35,17 @@ During an update the menu says **Updating hlabs…** instead; wait for it to fin
 On a Mac, the hlabs menu-bar app keeps a private key in your Keychain so it can talk to hlabs without you logging in. If macOS asks whether hlabs may use it and you choose **Deny**, the menu says **hlabs needs Keychain access to work**. Choose **Try again**, then **Allow** (or **Always Allow**) when macOS asks.
 
 If the key goes missing, for example after you reset your Keychain, the menu-bar app makes a new one and restarts hlabs's background service by itself. Your apps and data aren't affected. If the menu still says **Can't reach hlabs** afterwards, quit hlabs and open it again.
+
+## Another program is using port 443
+
+hlabs serves the dashboard and your apps on port 443, the usual port for secure web pages. If another program already uses it, such as another web server, a container that publishes port 443, or Tailscale Serve, other devices can't reach hlabs. The menu-bar app then says **Can't use port 443**, with what's using it when hlabs can tell, and admins get a message.
+
+You can:
+
+- choose **Use port 8443** in the menu-bar app (or change the port in Settings › Network). hlabs's addresses then end in `:8443`, for example `https://hlabs.local:8443`; update any bookmarks.
+- or stop the other program. hlabs notices within a few minutes and uses port 443 again by itself.
+
+Until then, **Open Dashboard** in the menu-bar app still opens the dashboard on the computer running hlabs.
+
+If it's Tailscale Serve, check `tailscale serve status` for an entry on port 443 that you made yourself, and turn it off with `tailscale serve --https=443 off` if you don't need it. hlabs never removes Serve entries it didn't make.
+

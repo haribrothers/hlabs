@@ -105,7 +105,10 @@ describe('US-INST-05 · See status at a glance', () => {
   it("uses the current dashboard address: the .local name, or the LAN address while it can't be published", () => {
     const config = { proxy: 'caddy', dashboardUrl: 'http://127.0.0.1:7474' } as never;
     const home = (published: boolean, fallbackAddress: string | null) =>
-      ({ homeNetwork: () => ({ published, localAddress: 'https://den.local', fallbackAddress }) }) as never;
+      ({
+        homeNetwork: () => ({ published, localAddress: 'https://den.local', fallbackAddress }),
+        portProblem: () => null,
+      }) as never;
     expect(dashboardUrl({ config, routing: home(true, null) })).toBe('https://den.local');
     expect(dashboardUrl({ config, routing: home(false, 'https://192.168.1.40') })).toBe('https://192.168.1.40');
     // Without Caddy (development) it's the configured address.

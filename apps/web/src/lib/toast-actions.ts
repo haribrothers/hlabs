@@ -18,6 +18,8 @@ const DESTINATIONS: ReadonlyArray<{
   { path: /^\/apps\/[^/]+\/logs$/, action: { label: copy.viewLogs, admin: true, feature: 'apps' } },
   // SettingsUpdates (phase 4): an update that didn't install (US-STATE-03), automatic updates (US-SYS-26).
   { path: /^\/settings\/updates$/, action: { label: copy.viewDetails, admin: true, feature: 'hlabsUpdates' } },
+  // SettingsNetwork (phase 3): another program holds hlabs's web port (US-SYS-42).
+  { path: /^\/settings\/network$/, action: { label: copy.changePort, admin: true, feature: 'remoteAccess' } },
   // SettingsStorage (phase 7).
   { path: /^\/settings\/storage$/, action: { label: copy.manageStorage, admin: true, feature: 'storageSettings' } },
 ];

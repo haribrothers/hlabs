@@ -284,6 +284,7 @@ export const appRouter = router({
     quickAction: m(p.tray, s.tray.quickAction),
     resetPassword: m(p.tray, s.tray.resetPassword),
     quit: m(p.tray, s.tray.quit),
+    useOtherPort: m(p.tray, s.tray.useOtherPort),
     setStartAtLogin: m(p.tray, s.tray.setStartAtLogin),
     appLogs: q(p.tray, s.tray.appLogs),
     startEngine: m(p.tray, s.tray.startEngine),

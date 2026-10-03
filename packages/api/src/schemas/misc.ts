@@ -89,6 +89,13 @@ export const trayStatusSchema = z.object({
    * tray polls this rather than keeping an event stream open; `update.applyRequested` is emitted too.
    */
   updateRequested: z.object({ jobId: z.string(), version: z.string() }).nullable(),
+  /**
+   * Another program holds hlabs's web port, so other devices can't reach it (US-SYS-42): which port, what holds it
+   * when hlabs can tell, and the port "Use port 8443" moves to.
+   */
+  portProblem: z
+    .object({ port: z.number().int(), heldBy: z.enum(['tailscaleServe']).nullable(), fallbackPort: z.number().int() })
+    .nullable(),
   onboardingComplete: z.boolean(),
   /** The first admin's "Reduce transparency" (Settings › Appearance). */
   reduceTransparency: z.boolean(),
@@ -120,6 +127,8 @@ export const tray = {
    * restore.
    */
   quit: io(empty, ok),
+  /** "Use port 8443" (US-SYS-42): moves hlabs off the port another program holds; NETWORK_PORT_IN_USE if that's taken too. */
+  useOtherPort: io(empty, ok),
   setStartAtLogin: io(z.object({ enabled: z.boolean() }), ok),
   appLogs: io(
     z.object({

@@ -23,6 +23,17 @@ export interface NetworkServiceDeps {
   lanAddresses?: () => string[];
   /** How soon a config that couldn't be applied is tried again (doubling up to RETRY_MAX_MS). */
   retryMs?: number;
+  /** What holds a web port hlabs couldn't get, when hlabs can tell (US-SYS-42). */
+  heldBy?: (port: number) => Promise<PortHolder>;
+  /** The port problem started (or changed), or ended (null). */
+  onPortProblem?: (problem: PortProblem | null) => void;
+}
+
+export type PortHolder = 'tailscaleServe' | null;
+/** hlabs couldn't serve on one of its web ports because another program holds it (US-SYS-42). */
+export interface PortProblem {
+  port: number;
+  heldBy: PortHolder;
 }
 
 /** A config that couldn't be applied (Caddy couldn't start: another program had port 443) is tried again soon… */
@@ -36,6 +47,7 @@ export class NetworkService {
   private retryTimer: NodeJS.Timeout | null = null;
   private retryWait: number | null = null;
   private stopped = false;
+  private problem: PortProblem | null = null;
 
   constructor(private readonly deps: NetworkServiceDeps) {}
 
@@ -113,6 +125,25 @@ export class NetworkService {
       this.deps.logger.error({ err }, 'could not apply the network config');
       this.retryLater();
     }
+    await this.followProblem();
+  }
+
+  /** The port another program holds, while hlabs can't serve on it (US-SYS-42); null otherwise. */
+  portProblem(): PortProblem | null {
+    return this.problem;
+  }
+
+  private async followProblem(): Promise<void> {
+    const port = this.deps.proxy.problem()?.port ?? null;
+    if (port === (this.problem?.port ?? null)) return;
+    if (port === null) {
+      this.problem = null;
+    } else {
+      const heldBy = await (this.deps.heldBy?.(port) ?? Promise.resolve(null)).catch(() => null);
+      this.problem = { port, heldBy };
+      this.deps.logger.warn(this.problem, "another program holds hlabs's web port");
+    }
+    this.deps.onPortProblem?.(this.problem);
   }
 
   /**

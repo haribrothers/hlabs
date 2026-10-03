@@ -154,6 +154,22 @@ The system half of Settings: how hlabs is reached on the home network and over T
 - Data: `settings.remote.mode`; `audit_log` action `network.remote.mode`.
 - UI: ListRow, Button, copy Button, help link via `helpUrl()`.
 
+### US-SYS-42 · See why hlabs can't serve its address
+**Feature:** F-SYS-01 · **Priority:** P1 · **Phase:** 4 · **Screens:** `TrayMenu`, `SettingsNetwork`
+**As** an admin, **I want** to be told when another program holds the port hlabs serves its dashboard and apps on, and to move hlabs off it in one step, **so that** hlabs isn't silently unreachable (D-122).
+
+**Acceptance criteria**
+- **Given** hlabs's web proxy can't start because its HTTPS (or HTTP) port is in use, **then** the menu-bar app says "Can't use port 443" with "Port 443 is in use by Tailscale Serve, so other devices can't reach hlabs." (or "by another program" when hlabs can't tell), a "Use port 8443" button, and the icon's red dot.
+- **Given** that state, **when** I choose "Use port 8443", **then** hlabs moves to 8443 (8080 for HTTP), as Settings › Network › web ports would (US-SYS-05: checked free first, audited), and its addresses carry the port.
+- **Given** that state, **then** "Open Dashboard" opens the dashboard on this computer (`http://127.0.0.1:7474`), which still works.
+- **Given** that state, **then** admins get a critical notification "hlabs can't use port 443" saying what holds it and what to do, with "Change port" (Settings › Network); it's marked read once hlabs serves again.
+- **Given** the other program lets go of the port, **then** hlabs serves on it again by itself within a minute or so (it keeps trying, 30 s doubling to 10 minutes), and the menu goes back to normal.
+- **Given** the port is held by Tailscale Serve entries hlabs made itself, **then** this doesn't apply: hlabs moves its own entries aside while Caddy starts (D-111).
+
+**Implementation notes**
+- API: `tray.status.portProblem { port, heldBy: 'tailscaleServe' | null, fallbackPort } | null`; `tray.useOtherPort`; notification kind `network.port_in_use`.
+- "Held by Tailscale Serve" means Serve has an entry on that port that hlabs didn't create (`settings.remote.serve`, D-103). hlabs never removes it.
+
 ### US-SYS-07 · Pick a new server name
 **Feature:** F-SYS-02 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `RenameHostname`
 **As** an admin, **I want** to rename hlabs on my network and see exactly which addresses change, **so that** I can pick a name without surprises.

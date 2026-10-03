@@ -23,10 +23,17 @@ export interface ProxyState {
   apps: AppRoute[];
 }
 
+/** Caddy couldn't start because another program holds one of hlabs's web ports (US-SYS-42). */
+export interface ProxyProblem {
+  port: number;
+}
+
 export interface ProxyManager {
   /** Starts Caddy on first use, then replaces its config. */
   apply(state: ProxyState): Promise<void>;
   stop(): Promise<void>;
+  /** Why Caddy isn't serving, when it's a port another program holds; null while it serves (US-SYS-42). */
+  problem(): ProxyProblem | null;
 }
 
 export class NoopProxyManager implements ProxyManager {
@@ -35,4 +42,7 @@ export class NoopProxyManager implements ProxyManager {
     this.last = state;
   }
   async stop() {}
+  problem() {
+    return null;
+  }
 }

@@ -17,7 +17,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NoopProxyManager, type ProxyManager } from './caddy/index';
 import { CaddyProxy } from './caddy/proxy';
-import { NetworkService } from './network/service';
+import { notifyPortProblem, tailscaleServeHolds } from './network/port-problem';
+import { NetworkService, type PortProblem } from './network/service';
 import type { DaemonConfig } from './config';
 import type { InstallerHost } from './engine/colima-installer';
 import { engineDir, registerEngineInstall } from './engine/install-job';
@@ -239,6 +240,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     (config.mdns
       ? createMdnsPublisher(logger, () => getSetting(db, 'network').ports.https, children)
       : new NoopMdnsPublisher());
+  // A port another program holds (US-SYS-42): told to admins once notifications exist (below).
+  let onPortProblem: (problem: PortProblem | null) => void = () => {};
   const network = new NetworkService({
     db,
     proxy,
@@ -247,6 +250,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     routes: () => appService.routes(),
     dashboardUpstream: config.dashboardUpstream,
     daemon: `127.0.0.1:${config.port}`,
+    heldBy: (port) => tailscaleServeHolds(port, { db, tailscale }),
+    onPortProblem: (problem) => onPortProblem(problem),
   });
   await network.sync();
   network.watch(bus);
@@ -372,6 +377,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
 
   const totp = new TotpService(db, secrets);
   const notifications = new NotificationService(db, bus);
+  onPortProblem = (problem) => notifyPortProblem({ db, notifications }, problem);
+  if (network.portProblem()) onPortProblem(network.portProblem());
   watchEngine({
     bus,
     engine,
