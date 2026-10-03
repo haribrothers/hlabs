@@ -42,18 +42,19 @@ import { LocalApiTailscale } from './tailscale/localapi';
 import type { TailscaleClient } from './tailscale/types';
 import { AppDiskUsage } from './apps/disk';
 import { HlabsUpdates } from './updates/service';
-import type { HeadlessHost } from './updates/headless';
+import { takeSwitchedBack, type HeadlessHost } from './updates/headless';
 import { nodeHeadlessHost } from './updates/headless-host';
 import { AUTO_UPDATED_KIND, AutoUpdates } from './updates/auto';
 import {
   confirmHeadlessSwitch,
   registerSystemUpdate,
+  reportFailedUpdate,
   startSystemUpdate,
   settleSystemUpdate,
   type SystemUpdateDeps,
 } from './updates/install';
 import { UPDATE_PUBLIC_KEY } from './updates/key';
-import { clearUpdateMarker, readUpdateMarker } from './updates/marker';
+import { clearUpdateMarker, markUpdateFailed, readUpdateMarker } from './updates/marker';
 import { HttpUpdateSource, type UpdateSource } from './updates/source';
 import { AppLogs } from './apps/logs';
 import { UpdateService } from './apps/update';
@@ -136,7 +137,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   readiness.step(0);
   // Starting after the tray replaced hlabs (US-STATE-01): /healthz says "updating", step 2 of 4, until ready.
   const updateMarker = readUpdateMarker(config.paths.dataDir);
-  if (updateMarker) readiness.updating(2);
+  // The marker names the version being installed: this is it, or the update didn't take (US-STATE-03).
+  const finishingUpdate = updateMarker !== null && updateMarker.toVersion === config.version;
+  if (finishingUpdate) readiness.updating(2);
   try {
     mkdirSync(config.paths.dataDir, { recursive: true });
   } catch (err) {
@@ -151,12 +154,15 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     logger.fatal({ err }, err instanceof SchemaTooNewError ? 'database is newer than this hlabs' : 'migration failed');
     if (err instanceof MigrationFailedError || err instanceof SchemaTooNewError) readiness.fail('migration_failed');
     else readiness.fail('storage_unavailable');
+    // A new version that can't start: the next start (the old one, after a rollback) reports it (US-STATE-03).
+    if (updateMarker) markUpdateFailed(config.paths.dataDir, 'migration_failed');
     return null;
   }
   const bus = new EventBus();
   const jobs = new JobRunner(db, bus, logger);
   // An update that was under way finished if this is the version it was updating to (US-SYS-23).
-  const updated = settleSystemUpdate(db, config.version);
+  const settled = settleSystemUpdate(db, config.version);
+  const updated = settled?.outcome === 'succeeded' ? settled.payload : null;
   if (updated) logger.info({ from: updated.fromVersion, to: updated.version }, 'hlabs updated');
   jobs.recover();
   if (config.dev || config.env === 'test') {
@@ -290,7 +296,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   };
 
   // After an update, apps get up to 2 minutes to come back before hlabs says it's ready (US-STATE-01, step 3).
-  if (updateMarker) {
+  if (finishingUpdate) {
     readiness.updating(3);
     await Promise.race([reconciled, delay(deps.updateHealthWaitMs ?? UPDATE_HEALTH_WAIT_MS)]);
     readiness.updating(4);
@@ -537,7 +543,22 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       actions: [{ kind: 'navigate', to: '/settings/updates' }],
     });
   }
-  // The update is done: the next start is an ordinary one (US-STATE-01).
+  // An update that didn't install (US-STATE-03): the marker names another version, the job didn't settle on its
+  // version, or a headless switch was undone. Reported once, whichever says so.
+  const switchedBack = config.headless ? takeSwitchedBack(config.installRoot) : null;
+  const failure =
+    updateMarker && !finishingUpdate
+      ? { from: config.version, to: updateMarker.toVersion, reason: updateMarker.failedReason ?? null }
+      : settled?.outcome === 'failed'
+        ? { from: config.version, to: settled.payload.version, reason: null, userId: settled.payload.userId }
+        : switchedBack
+          ? { from: switchedBack.from, to: switchedBack.to, reason: 'not_ready' }
+          : null;
+  if (failure) {
+    logger.warn(failure, "hlabs update didn't install");
+    reportFailedUpdate(db, services.notifications, failure);
+  }
+  // The update is over either way: the next start is an ordinary one (US-STATE-01).
   if (updateMarker) clearUpdateMarker(config.paths.dataDir);
   // Headless: this version is ready, so its switch stays (the start check won't switch back, US-SYS-23).
   if (config.headless) confirmHeadlessSwitch(config.installRoot, config.version);

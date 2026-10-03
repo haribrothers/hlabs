@@ -7,6 +7,8 @@ import { useSyncExternalStore } from 'react';
 export const UPDATING_KEY = 'hlabs.updating';
 /** How often the updating page asks /healthz (US-STATE-02). */
 export const UPDATE_POLL_MS = 2_000;
+/** An update that takes longer than this is stuck (US-STATE-03): "Can't reach hlabs" with `update_stuck`. */
+export const STUCK_AFTER_MS = 10 * 60_000;
 
 export interface Updating {
   /** When this page first knew (ms). */

@@ -3,6 +3,7 @@ import type { ToastMutation } from '@hlabs/shared';
 
 export const toastCopy = {
   viewLogs: 'View logs',
+  viewDetails: 'View details',
   manageStorage: 'Manage storage',
   open: 'Open',
   /** The success toast after a Retry (or other mutation) from a toast works (D-066). */

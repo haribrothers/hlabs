@@ -16,6 +16,8 @@ const DESTINATIONS: ReadonlyArray<{
 }> = [
   // AppLogs (phase 2).
   { path: /^\/apps\/[^/]+\/logs$/, action: { label: copy.viewLogs, admin: true, feature: 'apps' } },
+  // SettingsUpdates (phase 4): an update that didn't install (US-STATE-03), automatic updates (US-SYS-26).
+  { path: /^\/settings\/updates$/, action: { label: copy.viewDetails, admin: true, feature: 'hlabsUpdates' } },
   // SettingsStorage (phase 7).
   { path: /^\/settings\/storage$/, action: { label: copy.manageStorage, admin: true, feature: 'storageSettings' } },
 ];

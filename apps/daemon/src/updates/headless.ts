@@ -141,3 +141,15 @@ export async function applyHeadless(input: ApplyHeadlessInput): Promise<void> {
     rmSync(work, { recursive: true, force: true });
   }
 }
+
+/** A switch the start check undid (switchBackIfStale), once: read and removed. */
+export function takeSwitchedBack(root: string): SwitchMarker | null {
+  const file = join(root, 'switched-back.json');
+  try {
+    const marker = JSON.parse(readFileSync(file, 'utf8')) as SwitchMarker;
+    rmSync(file, { force: true });
+    return marker;
+  } catch {
+    return null;
+  }
+}

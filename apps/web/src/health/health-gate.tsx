@@ -1,14 +1,25 @@
 // The dashboard's side of "Can't reach hlabs" (US-STATE-04): /healthz is asked every 5 seconds; after 10 seconds of
 // no good answer (and not while hlabs is updating) the page shows SysDaemonDown. When hlabs answers again the same
 // route comes back and every query refetches. While hlabs updates (US-STATE-01) every route gives way to
-// SysUpdating instead: /healthz saying "updating", the system.status event (SessionWatch) or the page's own flag.
+// SysUpdating instead: /healthz saying "updating", the system.status event (SessionWatch) or the page's own flag; an
+// update stuck for 10 minutes, or whose migrations failed, ends in "Can't reach hlabs" with that reason (US-STATE-03).
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { checkHealth, DaemonDownController, POLL_MS, type HealthCheck } from './daemon-down';
 import { DaemonDownView } from './daemon-down-view';
 import { updatingCopy } from '../copy/health';
 import { showToast } from '../lib/toasts';
-import { finishUpdating, firstToastFor, markUpdating, noteVersion, takeUpdateResult, useUpdating } from './updating';
+import {
+  clearUpdating,
+  finishUpdating,
+  firstToastFor,
+  markUpdating,
+  noteVersion,
+  STUCK_AFTER_MS,
+  takeUpdateResult,
+  updatingNow,
+  useUpdating,
+} from './updating';
 import { UpdatingView } from './updating-view';
 
 /** How long /healthz may fail before the page says so. */
@@ -97,6 +108,13 @@ export function HealthGate({
   const confirming = useRef(false);
   const onAnswer = useCallback(
     (result: HealthCheck) => {
+      // It won't finish by waiting (US-STATE-03): a migration failed, or 10 minutes passed without hlabs back.
+      const since = updatingNow()?.since ?? Date.now();
+      if (result.reason === 'migration_failed' || (!result.ok && Date.now() - since >= STUCK_AFTER_MS)) {
+        clearUpdating();
+        setDown({ reason: result.reason === 'migration_failed' ? 'migration_failed' : 'update_stuck' });
+        return;
+      }
       if (!result.ok || confirming.current) return;
       confirming.current = true;
       void confirmVersion()

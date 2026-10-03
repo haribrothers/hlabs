@@ -192,7 +192,7 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 - [x] US-SYS-26 · Choose automatic updates ("Back up app data before updating" stays hidden until backups ship in phase 5, and its snapshot with it)
 - [x] US-STATE-01 · Show a full-screen updating state (the event reaches signed-in pages through SessionWatch's stream; signed-out ones see it from /healthz; 'Go to Home' is a link-style button, as the screen shows it)
 - [x] US-STATE-02 · Reconnect automatically when the update finishes (the version the page loaded with comes from /healthz's 200 body)
-- [ ] US-STATE-03 · Handle a failed or stuck update
+- [x] US-STATE-03 · Handle a failed or stuck update (the danger toast is the admins' critical notification, so members never get it; a failing migration notes it in the update marker and the next start reports it)
 - [x] US-STATE-07 · Show the daemon-down state in the tray (built with US-INST-13: one health watch in the tray's Rust side, /healthz every 5 s)
 
 ## Phase 5 · Backups and Files

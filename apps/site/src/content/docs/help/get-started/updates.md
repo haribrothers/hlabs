@@ -12,6 +12,12 @@ Open **Settings › Updates** to see which version of hlabs you have. The card a
 
 During an update, every open dashboard, on any device, shows **Updating hlabs** and the step it's on: installing the update, restarting your apps, checking them and finishing up. You don't need to do anything, and you don't need to stay signed in to see it. The page reloads by itself when the update is done, on the same page you were on, and you stay signed in; a message says **hlabs is up to date** with the new version. **Go to Home** takes you to the start page, which shows the same thing until then.
 
+## If an update doesn't finish
+
+If the new version can't start, hlabs goes back to the version you had: your apps and data are as they were. Admins see a message, **The update didn't install**; choose **View details** to see Settings › Updates and try again later.
+
+If an update takes more than 10 minutes, or hlabs can't update its database, the page says **Can't reach hlabs** and why. Open the hlabs app on the computer running hlabs to see more.
+
 ## Install an update
 
 When a newer version is out, the card says so, for example **hlabs 1.5.0 is available**, with what's new in it. Choose **Full release notes** to read everything that changed.

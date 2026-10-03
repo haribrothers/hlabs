@@ -11,6 +11,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import type { EventBus } from '../events/bus';
 import type { JobRunner } from '../jobs/runner';
 import { applyHeadless, confirmSwitch, headlessPlatform, readMarker, type HeadlessHost } from './headless';
+import type { NotificationService } from '../notifications/service';
 import type { HlabsUpdates } from './service';
 import type { UpdateSource } from './source';
 
@@ -85,22 +86,58 @@ export function startSystemUpdate(deps: SystemUpdateDeps, userId: string | null)
 
 /**
  * On start, before interrupted jobs are failed: an update that was under way finished if hlabs now runs the version
- * it was updating to. Returns the settled job's payload, if any.
+ * it was updating to, and didn't otherwise (the tray rolled back, or the old version is back). Returns what happened.
  */
-export function settleSystemUpdate(db: HlabsDb, version: string): SystemUpdatePayload | null {
+export function settleSystemUpdate(
+  db: HlabsDb,
+  version: string,
+): { outcome: 'succeeded' | 'failed'; payload: SystemUpdatePayload } | null {
   const row = db
     .select()
     .from(jobsTable)
     .where(and(eq(jobsTable.kind, 'system_update'), inArray(jobsTable.state, ['queued', 'running'])))
     .get();
   const payload = row?.payloadJson as SystemUpdatePayload | null | undefined;
-  if (!row || !payload || payload.version !== version) return null;
+  if (!row || !payload) return null;
+  const succeeded = payload.version === version;
   db.update(jobsTable)
-    .set({ state: 'succeeded', progress: 100, message: null, finishedAt: Date.now() })
+    .set(
+      succeeded
+        ? { state: 'succeeded', progress: 100, message: null, finishedAt: Date.now() }
+        : { state: 'failed', errorCode: 'UPDATE_NOT_APPLIED', message: null, finishedAt: Date.now() },
+    )
     .where(eq(jobsTable.id, row.id))
     .run();
-  audit(db, 'system.update_finished', payload.userId, { from: payload.fromVersion, to: payload.version });
-  return payload;
+  if (succeeded) {
+    audit(db, 'system.update_finished', payload.userId, { from: payload.fromVersion, to: payload.version });
+  }
+  return { outcome: succeeded ? 'succeeded' : 'failed', payload };
+}
+
+export const UPDATE_FAILED_KIND = 'system.update_failed';
+
+/**
+ * An update didn't install (US-STATE-03): the tray rolled it back, its migrations failed, or a headless switch was
+ * undone. Written to the audit log, and a critical notification for every admin ("View details": Settings › Updates).
+ */
+export function reportFailedUpdate(
+  db: HlabsDb,
+  notifications: Pick<NotificationService, 'create'>,
+  failure: { from: string; to: string; reason: string | null; userId?: string | null },
+): void {
+  audit(db, 'system.update_failed', failure.userId ?? null, {
+    from: failure.from,
+    to: failure.to,
+    ...(failure.reason ? { reason: failure.reason } : {}),
+  });
+  notifications.create({
+    userId: null,
+    kind: UPDATE_FAILED_KIND,
+    severity: 'critical',
+    title: "The update didn't install",
+    body: `hlabs is still on ${failure.from}; ${failure.to} didn't start, so nothing changed.`,
+    actions: [{ kind: 'navigate', to: '/settings/updates' }],
+  });
 }
 
 /** Headless: the new version is ready, so its switch stays (the start check won't switch back). */
