@@ -41,6 +41,7 @@ import type { AppDiskUsage } from './disk';
 import { appSummary, catalogManifest, catalogRow } from './list';
 import { tailnetHost } from '../network/domains';
 import { allocatePort, loopbackPort, loopbackPortFree } from './ports';
+import { stopIfPaused } from './pause';
 import type { AppService } from './service';
 import { canTransition, stateDetail } from './state-machine';
 import { hostTimeZone } from '../platform/timezone';
@@ -468,6 +469,8 @@ export class InstallService {
       await this.deps.network.sync();
       this.deps.apps.transition(appId, 'running');
       report('network', 1, { address });
+      // Paused from the menu bar while it installed: it finishes, then stops with the others (US-INST-08).
+      await stopIfPaused(this.deps, appId);
     } catch (error) {
       const failure = error instanceof StepFailure ? error : new StepFailure(current, error);
       const code = hlabsCodeOf(failure.error);

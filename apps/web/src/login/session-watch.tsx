@@ -9,6 +9,7 @@ import { loginCopy } from '../copy/login';
 import { setCsrfToken } from '../lib/csrf';
 import { NotificationFeed } from '../lib/notification-feed';
 import { useReconnectWhenVisible } from '../lib/stream-status';
+import { markUpdating } from '../health/updating';
 import { dismissNotificationToasts, showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 
@@ -45,7 +46,7 @@ export function SessionWatch() {
   );
   useSubscription(
     trpc.events.stream.subscriptionOptions(
-      { types: ['session.revoked', 'access.changed', 'notification.created', 'notification.read'] },
+      { types: ['session.revoked', 'access.changed', 'notification.created', 'notification.read', 'system.status'] },
       {
         onStarted: () => void feed.onConnected(),
         onConnectionStateChange: (state) => {
@@ -59,6 +60,8 @@ export function SessionWatch() {
           else if (event.type === 'access.changed') void queryClient.invalidateQueries();
           else if (event.type === 'notification.created') feed.onCreated(event);
           else if (event.type === 'notification.read') feed.onRead(event);
+          // hlabs is about to stop for an update: every route gives way to "Updating hlabs" (US-STATE-01).
+          else if (event.type === 'system.status' && event.data.state === 'updating') markUpdating();
         },
       },
     ),

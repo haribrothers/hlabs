@@ -44,8 +44,36 @@ export const settingsSchemas = {
       autoHlabs: z.boolean().default(true),
       autoApps: z.boolean().default(false),
       backupBeforeUpdate: z.boolean().default(true),
+      /** The last check that reached the update manifest (US-SYS-24); null before the first. */
+      lastCheckedAt: z.number().nullable().default(null),
+      /** A newer hlabs found by that check, or null when hlabs is up to date. */
+      latest: z
+        .object({
+          version: z.string(),
+          /** Up to 5 bullets from the release notes. */
+          notes: z.array(z.string()),
+          /** The release page ("Full release notes"). */
+          url: z.string(),
+        })
+        .nullable()
+        .default(null),
+      /** The newest version `update.available` has been emitted for, so each version is announced once. */
+      announced: z.string().nullable().default(null),
+      /** The nights (local date the window opened, YYYY-MM-DD) automatic updates last ran, once a night (US-SYS-26). */
+      autoNight: z
+        .object({ hlabs: z.string().nullable().default(null), apps: z.string().nullable().default(null) })
+        .default({ hlabs: null, apps: null }),
     })
-    .default({ channel: 'stable', autoHlabs: true, autoApps: false, backupBeforeUpdate: true }),
+    .default({
+      channel: 'stable',
+      autoHlabs: true,
+      autoApps: false,
+      backupBeforeUpdate: true,
+      lastCheckedAt: null,
+      latest: null,
+      announced: null,
+      autoNight: { hlabs: null, apps: null },
+    }),
   remote: z
     .object({
       /** How hlabs is reached from away (D-107): not at all, Tailscale on this computer, or a subnet router. */
@@ -71,7 +99,12 @@ export const settingsSchemas = {
       connectStartedAt: null,
     }),
   paused: z
-    .object({ at: z.number().int(), appIds: z.array(z.string()) })
+    .object({
+      at: z.number().int(),
+      appIds: z.array(z.string()),
+      /** Stopped by "Quit hlabs" (US-INST-10, D-120): the next start resumes them, unlike a pause. */
+      untilRestart: z.boolean().default(false),
+    })
     .nullable()
     .default(null),
   notifications: z
@@ -102,6 +135,11 @@ export const settingsSchemas = {
   network: z
     .object({
       ports: z.object({ https: portSchema, http: portSchema }).default({ https: 443, http: 80 }),
+      /**
+       * The ports "Use port 8443" moved away from because another program held them (US-SYS-42): the next start goes
+       * back to them when they're free. A change made in Settings forgets them.
+       */
+      returnTo: z.object({ https: portSchema, http: portSchema }).nullable().default(null),
       /** The local DNS server hlabs keeps its names in (US-SYS-06, D-106). */
       dns: z
         .object({
@@ -118,6 +156,7 @@ export const settingsSchemas = {
     })
     .default({
       ports: { https: 443, http: 80 },
+      returnTo: null,
       dns: { kind: 'none', address: null, owned: [], lastSyncAt: null, problem: null },
     }),
   startup: z
@@ -184,6 +223,11 @@ export function setSetting<K extends SettingKey>(db: HlabsDb, key: K, value: z.i
   const parsed = settingsSchemas[key].parse(value) as SettingValue<K>;
   writeRaw(db, key, parsed);
   return parsed;
+}
+
+/** Removes a setting, so it reads as its default again (e.g. `paused` back to null). */
+export function clearSetting(db: HlabsDb, key: SettingKey): void {
+  db.delete(settings).where(eq(settings.key, key)).run();
 }
 
 export function getUserSetting<K extends UserSettingKey>(db: HlabsDb, key: K, userId: string): UserSettingValue<K> {

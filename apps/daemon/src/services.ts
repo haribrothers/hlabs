@@ -13,6 +13,9 @@ import type { LoginService } from './auth/login';
 import type { OnboardingService } from './onboarding/service';
 import type { DriveProbe } from './platform/drives';
 import type { KeepAwake } from './platform/keep-awake';
+import type { HostStats } from './platform/host-stats';
+import type { UsageHistory } from './usage/history';
+import type { UsageSampler } from './usage/sampler';
 import type { SystemProbe } from './platform/system';
 import type { NotificationService } from './notifications/service';
 import type { NetworkStorage } from './storage/network';
@@ -20,6 +23,10 @@ import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 import type { CatalogService } from './store/catalog';
 import type { StoreService } from './store/service';
+import type { AppDiskUsage } from './apps/disk';
+import type { AutoUpdates } from './updates/auto';
+import type { SystemUpdateDeps } from './updates/install';
+import type { HlabsUpdates } from './updates/service';
 import type { InstallService } from './apps/install';
 import type { AppService } from './apps/service';
 import type { DnsService } from './network/dns';
@@ -44,8 +51,16 @@ export interface Services {
   store: StoreService;
   /** Installs apps (US-STORE-08…14). */
   installer: InstallService;
+  /** Each app's data folder and images (US-APP-07), counted at most every 10 minutes. */
+  appDisk: AppDiskUsage;
   /** Updates and their rollback (US-STORE-17). */
   updates: UpdateService;
+  /** hlabs's own updates: the update manifest, checked now and every 6 h (US-SYS-24). */
+  hlabsUpdates: HlabsUpdates;
+  /** "Update now" (US-SYS-23): who applies it here and how. */
+  systemUpdate: SystemUpdateDeps;
+  /** The overnight window for hlabs and app updates (US-SYS-26). */
+  autoUpdates: AutoUpdates;
   apps: AppService;
   /** Apps' container logs (US-APP-08…10). */
   logs: AppLogs;
@@ -58,6 +73,8 @@ export interface Services {
   tailscale: TailscaleClient;
   /** Settles when the start-up reconcile has finished (tests). */
   reconciled: Promise<void>;
+  /** Apps are being brought up (at start, or after the engine came back) (US-INST-11). */
+  isReconciling(): boolean;
   onboarding: OnboardingService;
   sessions: SessionService;
   totp: TotpService;
@@ -65,6 +82,12 @@ export interface Services {
   drives: DriveProbe;
   /** CPU, memory and disk of this computer. */
   system: SystemProbe;
+  /** CPU and memory in use right now (US-INST-05). */
+  host: HostStats;
+  /** Usage every 5 s, the last hour in memory (US-USE-08). */
+  usage: UsageSampler;
+  /** 1m and 1h points in SQLite, and history ranges (US-USE-09). */
+  usageHistory: UsageHistory;
   /** Holds off sleep while apps run, when the setting is on (US-SYS-20). */
   keepAwake: KeepAwake;
   network: NetworkStorage;

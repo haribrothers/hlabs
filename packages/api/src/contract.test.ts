@@ -68,7 +68,7 @@ const EXPECTED: Row[] = [
   ['storage.locations.eject', 'm', 'admin'], ['storage.moveAllPlan', 'q', 'admin'], ['storage.moveAll', 'm', 'admin'],
   ['storage.pruneImages', 'm', 'admin'],
 
-  ['usage.current', 'q', 'authed'], ['usage.history', 'q', 'authed'], ['usage.topApps', 'q', 'authed'],
+  ['usage.overview', 'q', 'authed'], ['usage.current', 'q', 'authed'], ['usage.history', 'q', 'authed'], ['usage.memoryByApp', 'q', 'authed'], ['usage.topApps', 'q', 'authed'],
   ['usage.appDetail', 'q', 'admin'],
 
   ['backups.overview', 'q', 'admin'], ['backups.destinations.list', 'q', 'admin'], ['backups.destinations.test', 'm', 'admin'],
@@ -102,7 +102,7 @@ const EXPECTED: Row[] = [
   ['ai.tokens.revoke', 'm', 'admin'],
 
   ['tray.status', 'q', 'tray'], ['tray.listUsers', 'q', 'tray'], ['tray.quickAction', 'm', 'tray'],
-  ['tray.resetPassword', 'm', 'tray'], ['tray.setStartAtLogin', 'm', 'tray'], ['tray.appLogs', 'q', 'tray'],
+  ['tray.resetPassword', 'm', 'tray'], ['tray.quit', 'm', 'tray'], ['tray.useOtherPort', 'm', 'tray'], ['tray.setStartAtLogin', 'm', 'tray'], ['tray.appLogs', 'q', 'tray'],
   ['tray.startEngine', 'm', 'tray'], ['tray.diagnostics', 'q', 'tray'], ['tray.uninstallInfo', 'q', 'tray'],
   ['tray.uninstall', 'm', 'tray'], ['tray.setupUrl', 'q', 'tray'],
 

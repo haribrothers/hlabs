@@ -12,6 +12,7 @@
   "dependencies": {
     "@astrojs/starlight": "~0.37.7",
     "@hlabs/ui": "workspace:*",
-    "astro": "^5.18.2"
+    "astro": "^5.18.2",
+    "starlight-sidebar-topics": "~0.6.2"
   }
 }

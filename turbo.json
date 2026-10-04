@@ -16,12 +16,14 @@
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": ["HLABS_DEV_FAKE_TAILSCALE"]
     },
     "dev:full": {
       "dependsOn": ["^build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": ["HLABS_DEV_FAKE_TAILSCALE"]
     }
   }
 }

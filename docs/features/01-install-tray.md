@@ -169,15 +169,19 @@ This module gets hlabs onto a computer and keeps it running: the macOS `.dmg` an
 
 ### US-INST-10 · Quit hlabs
 **Feature:** F-INST-03 · **Priority:** P1 · **Phase:** 4 · **Screens:** `TrayMenu`, `TrayStates`
-**As** an admin, **I want** to quit the menu-bar app, **so that** it gets out of my menu bar when I don't need it.
+**As** an admin, **I want** quitting hlabs to stop it and my apps, like quitting OrbStack or Docker Desktop, **so that** nothing keeps running when I've closed it (D-120, replacing D-015).
 
 **Acceptance criteria**
-- **Given** any tray state, **when** I choose "Quit hlabs" or press ⌘Q with the menu open, **then** the menu-bar app quits; the daemon and apps keep running (they are owned by the LaunchAgent).
-- **Given** the tray quit, **when** I open hlabs from Applications or log in again with "Start at login" on, **then** the menu-bar icon returns without re-running first-launch setup.
-- **Given** "Quit hlabs", **when** it runs, **then** no confirmation is shown, because nothing stops.
+- **Given** any tray state, **when** I choose "Quit hlabs" or press ⌘Q with the menu open, **then** a warning dialog "Quit hlabs?" says "Your apps will stop, and nobody can reach them or the dashboard, at home or away, until you open hlabs again. Your data stays as it is." with "Quit hlabs" and "Cancel" (always asked; no "don't ask again").
+- **Given** I choose "Quit hlabs", **then** the menu says "Stopping apps…" while every app is stopped (`compose stop`, data untouched), then the background service is stopped (`launchctl bootout`) and the menu-bar app quits. The container engine keeps running.
+- **Given** "Cancel", **then** nothing changes.
+- **Given** an update or a restore is running, **when** I choose "Quit hlabs", **then** a dialog "hlabs is busy" says to quit when it's done, and nothing stops.
+- **Given** hlabs was quit, **when** I open hlabs from Applications or log in again with "Start at login" on, **then** hlabs starts and the apps that were running start again; apps paused with "Pause all apps" before quitting stay paused.
+- **Given** "Quit hlabs", **then** it's audited as `system.quit` with the apps it stopped.
 
 **Implementation notes**
-- To stop apps, users use "Pause all apps"; to remove everything, "Uninstall hlabs…". See Open questions.
+- API: `tray.quit` (stops the apps as the `pause_all` job with `untilRestart`, answering once they're stopped; `JOB_EXCLUSIVE_RUNNING` during an update or restore); `settings.paused.untilRestart` makes the next start resume them.
+- To keep apps stopped across restarts, users use "Pause all apps"; to remove everything, "Uninstall hlabs…".
 
 ### US-INST-11 · Starting state
 **Feature:** F-INST-04 · **Priority:** P1 · **Phase:** 4 · **Screens:** `TrayStates`, `AppLogs`

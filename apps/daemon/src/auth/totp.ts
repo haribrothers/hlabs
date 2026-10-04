@@ -162,6 +162,21 @@ export class TotpService {
     this.lastStep.delete(userId);
   }
 
+  /**
+   * Turns two-factor off without a code: only the tray's password reset does this, after the Mac's login confirmed the
+   * person at the computer (US-INST-18). The secret, the two-factor row and every recovery code go; the reset's own
+   * audit row records it.
+   */
+  async remove(userId: string): Promise<void> {
+    this.db.transaction((tx) => {
+      tx.delete(recoveryCodes).where(eq(recoveryCodes.userId, userId)).run();
+      tx.delete(userTotp).where(eq(userTotp.userId, userId)).run();
+    });
+    await this.secrets.delete(totpSecretRef(userId)).catch(() => undefined);
+    this.lastStep.delete(userId);
+    this.pending.delete(userId);
+  }
+
   discard(userId: string): void {
     this.pending.delete(userId);
   }

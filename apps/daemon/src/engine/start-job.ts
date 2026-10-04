@@ -20,7 +20,7 @@ export function registerEngineStart(deps: {
   startWithinMs?: number;
   pollMs?: number;
 }): void {
-  deps.jobs.register<{ userId: string | null }>('engine_start', {
+  deps.jobs.register<{ userId: string | null; via?: 'tray' }>('engine_start', {
     async run({ payload, signal, report }) {
       const status = deps.engine.status;
       const candidate = status.state === 'missing' ? deps.engine.lastCandidate : status.candidate;
@@ -33,7 +33,8 @@ export function registerEngineStart(deps: {
           userId: payload.userId,
           action: 'engine.start',
           target: candidate.kind,
-          detailJson: null,
+          // From the menu-bar app, which has no signed-in person (US-INST-15).
+          detailJson: payload.via ? { via: payload.via } : null,
           ip: null,
         })
         .run();

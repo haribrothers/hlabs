@@ -90,8 +90,10 @@ test.describe('US-ACCT-02 window', () => {
     const area = (await scroll.boundingBox())!;
     expect(window.x + window.width - (area.x + area.width)).toBeGreaterThanOrEqual(16);
     expect(window.y + window.height - (area.y + area.height)).toBeGreaterThanOrEqual(16);
+    // As tall as an app window: it ends 105px above the bottom, just clear of the Dock.
     const dock = (await page.getByRole('navigation', { name: 'Dock' }).boundingBox())!;
-    expect(dock.y - (window.y + window.height)).toBeGreaterThanOrEqual(16);
+    expect(Math.round(page.viewportSize()!.height - (window.y + window.height))).toBe(105);
+    expect(dock.y).toBeGreaterThan(window.y + window.height);
   });
 });
 

@@ -1000,6 +1000,12 @@
     .hl-window-layer {
       padding: 20px 20px 105px;
     }
+    /* An area window (Settings, the Store, Live usage) as tall as an app window: it reaches out of the shell's main padding (md:pt-14,
+       md:pb-40 in apps/web/src/shell/shell.tsx) to the app window's 20px top and 105px bottom. */
+    .hl-window-fill {
+      margin-top: calc(20px - 3.5rem);
+      margin-bottom: calc(105px - 10rem);
+    }
   }
   .hl-nav-desktop {
     position: fixed;
@@ -1381,6 +1387,112 @@
     border-radius: var(--radius-pill);
     overflow: hidden;
   }
+  .hl-stack:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+  .hl-chart-swatch-free {
+    background: var(--surface-control);
+  }
+  .hl-chart-key[data-focused],
+  .hl-chart-tip-row[data-focused] {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .hl-chart-fill[data-focused] {
+    stroke: var(--ink);
+    stroke-width: 2px;
+  }
+  /* Forced colours (US-USE-05): series stay apart by line style or fill pattern, not colour alone. */
+  @media (forced-colors: active) {
+    .hl-chart-plot svg,
+    .hl-chart-swatch,
+    .hl-stack-seg,
+    .hl-stack-free {
+      forced-color-adjust: none;
+    }
+    .hl-chart-axis {
+      fill: CanvasText;
+    }
+    .hl-chart-grid,
+    .hl-chart-cross {
+      stroke: GrayText;
+    }
+    .hl-chart-area {
+      display: none;
+    }
+    .hl-chart-line {
+      stroke: CanvasText !important;
+      stroke-dasharray: var(--hl-dash);
+    }
+    .hl-chart-dot {
+      fill: Canvas !important;
+      stroke: CanvasText !important;
+    }
+    .hl-chart-fill {
+      fill: var(--hl-pattern) !important;
+      stroke: CanvasText;
+      stroke-width: 1px;
+    }
+    .hl-chart-swatch,
+    .hl-stack-seg {
+      border: 1px solid CanvasText;
+    }
+    .hl-chart-swatch-free,
+    .hl-stack-free {
+      background: Canvas !important;
+      border: 1px solid CanvasText;
+    }
+    [data-series='0'] {
+      background: CanvasText !important;
+    }
+    [data-series='1'] {
+      background: repeating-linear-gradient(45deg, CanvasText 0 1.5px, Canvas 1.5px 4px) !important;
+    }
+    [data-series='2'] {
+      background:
+        repeating-linear-gradient(45deg, CanvasText 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(-45deg, CanvasText 0 1px, Canvas 1px 4px) !important;
+    }
+    [data-series='3'] {
+      background: radial-gradient(CanvasText 1px, Canvas 1.5px) 0 0 / 4px 4px !important;
+    }
+    [data-series='4'] {
+      background: repeating-linear-gradient(0deg, CanvasText 0 1.5px, Canvas 1.5px 4px) !important;
+    }
+    [data-series='5'] {
+      background: repeating-linear-gradient(90deg, CanvasText 0 1.5px, Canvas 1.5px 4px) !important;
+    }
+    /* A line's key shows its dashes. */
+    .hl-chart-swatch-line {
+      border: 0;
+      height: 3px;
+    }
+    .hl-chart-swatch-line[data-series='0'] {
+      background: CanvasText !important;
+    }
+    .hl-chart-swatch-line[data-series='1'] {
+      background: repeating-linear-gradient(90deg, CanvasText 0 4px, Canvas 4px 6px) !important;
+    }
+    .hl-chart-swatch-line[data-series='2'] {
+      background: repeating-linear-gradient(90deg, CanvasText 0 1.5px, Canvas 1.5px 3px) !important;
+    }
+    .hl-chart-swatch-line[data-series='3'] {
+      background: repeating-linear-gradient(
+        90deg,
+        CanvasText 0 4px,
+        Canvas 4px 5.5px,
+        CanvasText 5.5px 6.5px,
+        Canvas 6.5px 8px
+      ) !important;
+    }
+    .hl-chart-swatch-line[data-series='4'] {
+      background: repeating-linear-gradient(90deg, CanvasText 0 7px, Canvas 7px 9px) !important;
+    }
+    .hl-chart-swatch-line[data-series='5'] {
+      background: repeating-linear-gradient(90deg, CanvasText 0 1px, Canvas 1px 4px) !important;
+    }
+  }
   .hl-stack-seg {
     display: block;
     min-width: 4px;
@@ -1513,7 +1625,123 @@
   }
   .hl-tray-stat b {
     font-size: 13px;
+    line-height: 16px;
     color: var(--ink);
+  }
+  /* TrayMenu design: the label and value sit close; the status line is quieter than the name above it. */
+  .hl-tray-stat {
+    line-height: 14px;
+  }
+  .hl-tray-id .hl-status {
+    font: 500 12px/16px var(--hl-font-sans);
+  }
+  .hl-tray-logo-danger {
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger-fill) 30%, transparent);
+  }
+  .hl-tray-status-danger {
+    color: var(--danger);
+    font-size: 13px;
+  }
+  .hl-tray-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: 0 0 var(--space-2);
+  }
+  .hl-tray-note {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px var(--space-3);
+    border-radius: 10px;
+    background: var(--surface-row);
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+  .hl-tray-note b {
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .hl-tray-note-danger {
+    color: var(--ink);
+    background: color-mix(in srgb, var(--danger-fill) 22%, transparent);
+  }
+  .hl-tray-note-update {
+    background: var(--accent-wash);
+  }
+  .hl-tray-note-update .hl-tray-action {
+    margin-top: var(--space-2);
+  }
+  .hl-tray-logo-dot {
+    position: relative;
+  }
+  /* "Update available": a dot on the logo, as on the menu-bar icon (US-INST-14). */
+  .hl-tray-logo-dot::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .hl-tray-action {
+    width: 100%;
+  }
+  .hl-tray-setup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-bottom: var(--space-3);
+  }
+  .hl-tray-subtitle {
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+  .hl-tray-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0 var(--space-2);
+    list-style: none;
+    font-size: 13px;
+  }
+  .hl-tray-step {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .hl-tray-step svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  .hl-tray-step-done svg {
+    color: var(--success);
+  }
+  .hl-tray-step-working svg {
+    color: var(--warning);
+  }
+  .hl-tray-step-pending {
+    color: var(--ink-muted);
+  }
+  .hl-tray-progress {
+    min-width: 0;
+    padding: 0 var(--space-2);
+  }
+  /* TrayStates: a thin bar under the header. */
+  .hl-tray-progress .hl-progress-track {
+    height: 4px;
+  }
+  .hl-tray-progress {
+    margin-bottom: var(--space-2);
+  }
+  /* Starting: the bar takes the status dot's colour. */
+  .hl-tray-progress-working .hl-progress-fill {
+    background: var(--warning);
   }
 
   /* File item */

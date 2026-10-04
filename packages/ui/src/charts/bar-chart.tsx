@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { StatusDot } from '../components/status-dot';
 import { useUiStrings } from '../lib/strings';
 import { formatNumber, niceMax, showLabel, SrTable } from './shared';
@@ -37,6 +37,7 @@ export function BarChart({
   formatValue,
 }: BarChartProps) {
   const t = useUiStrings();
+  const tableId = useId();
   const [idx, setIdx] = useState<number | null>(null);
   const n = data.length;
   const fmt = formatValue ?? ((v: number) => formatNumber(v) + unit);
@@ -52,7 +53,13 @@ export function BarChart({
     <figure className="hl-chart">
       {title ? <figcaption className="hl-chart-title">{title}</figcaption> : null}
       <div className="hl-chart-plot">
-        <svg viewBox={`0 0 ${width} ${height}`} width="100%" aria-label={title ?? t.chartData}>
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          width="100%"
+          role="group"
+          aria-label={title ?? t.chartData}
+          aria-describedby={tableId}
+        >
           {[0, 0.5, 1].map((f, i) => (
             <g key={`g${i}`}>
               <line
@@ -141,8 +148,9 @@ export function BarChart({
         ) : null}
       </div>
       <SrTable
+        id={tableId}
         caption={title ?? t.chartData}
-        columns={['', label]}
+        columns={[t.chartTime, label]}
         rows={data.map((d) => [d.label, fmt(d.value) + (d.status === 'failed' ? ` (${t.failed.toLowerCase()})` : '')])}
       />
     </figure>

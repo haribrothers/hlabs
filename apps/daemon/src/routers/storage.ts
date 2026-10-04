@@ -1,19 +1,21 @@
 import type { AppHandlers } from '@hlabs/api';
 import { storageLocations } from '@hlabs/db';
 import type { DaemonContext } from '../context';
+import { byUseDeps, storageByUse } from '../storage/by-use';
 
 export const storage: AppHandlers<DaemonContext>['storage'] = {
-  /** The data dir's disk (US-HOME-02); apps (phase 2) and files (phase 5) are counted when they arrive. */
+  /** The data dir's disk by use (US-HOME-02): apps' data and images, files (from phase 5) and the rest. */
   summary: async (_input, ctx) => {
-    const { totalBytes, freeBytes } = await ctx.services.system.diskSpace(ctx.services.config.paths.dataDir);
-    const appsBytes = 0;
-    const filesBytes = 0;
+    const { totalBytes, freeBytes, appsBytes, filesBytes, systemBytes } = await storageByUse(
+      byUseDeps(ctx.services),
+      ctx.services.config.paths.dataDir,
+    );
     return {
       totalBytes,
       freeBytes,
       appsBytes,
       filesBytes,
-      systemBytes: Math.max(0, totalBytes - freeBytes - appsBytes - filesBytes),
+      systemBytes,
       hlabsBytes: 0,
       backupCacheBytes: 0,
       reclaimableImageBytes: 0,

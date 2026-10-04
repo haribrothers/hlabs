@@ -1,0 +1,70 @@
+// Live usage (docs/features/08-usage-backups.md, LiveUsage). Sentence case, plain words.
+import type { AppState } from '@hlabs/api';
+
+export const usageCopy = {
+  title: 'Live usage',
+  docTitle: 'Live usage · hlabs',
+  range: 'Time range',
+  ranges: { '1h': '1 hour', '24h': '24 hours', '7d': '7 days' },
+  summary: 'Summary',
+  cpu: 'CPU',
+  /** US-USE-03, US-USE-04: the main chart's heading. */
+  over: { '1h': 'over the last hour', '24h': 'over the last 24 hours', '7d': 'over the last 7 days' },
+  chartTitle: (metric: string, over: string) => `${metric} ${over}`,
+  noData: 'No usage recorded yet',
+  /** US-USE-04: the highest point in the range, "Peak 46% at 16:32" or "Peak 61% on Tue 14:00" for 7 days. */
+  peak: (value: string, when: string, withDay: boolean) => `Peak ${value} ${withDay ? 'on' : 'at'} ${when}`,
+  /** Network's peak names the direction: "Peak 750 KB/s out at 11:22". */
+  peakDirection: (value: string, direction: 'in' | 'out') => `${value} ${direction}`,
+  netIn: 'In',
+  netOut: 'Out',
+  other: 'Other',
+  storageByUse: 'Storage by use',
+  apps: 'Apps',
+  files: 'Files',
+  system: 'System',
+  memory: 'Memory',
+  storage: 'Storage',
+  network: 'Network',
+  high: 'High',
+  cores: (model: string, cores: number) => (model ? `${model} · ${cores} cores` : `${cores} cores`),
+  memoryOf: (total: string, apps: string) => `of ${total} · ${apps} by apps`,
+  storageOf: (total: string) => `of ${total} used`,
+  networkDetail: (out: string) => `↓ in · ${out} ↑ out`,
+  engineNames: {
+    orbstack: 'OrbStack',
+    'docker-desktop': 'Docker Desktop',
+    colima: 'Colima',
+    'docker-engine': 'Docker Engine',
+  } as Record<string, string>,
+  /** The subtitle: the engine and what it may use (US-USE-01). */
+  colimaVm: (cpus: number, memory: string) => `Container VM (Colima) · ${cpus} CPUs · ${memory} allocated`,
+  engineLimits: (name: string, cpus: number, memory: string) => `${name} · ${cpus} CPUs · ${memory} allocated`,
+  dockerEngine: 'Docker Engine · uses the whole computer',
+  noEngine: 'Container engine stopped',
+  noValue: '—',
+  /** The per-app table (US-USE-06, US-USE-07). */
+  appsTable: 'Apps',
+  columns: { app: 'App', cpu: 'CPU', memory: 'Memory', network: 'Network', status: 'Status' },
+  noApps: 'No apps yet',
+  browseStore: 'Browse the App Store',
+  /** Said after a sorted header's name. */
+  sortedDown: '↓',
+  sortedUp: '↑',
+  appStatus: {
+    running: 'Running',
+    starting: 'Starting',
+    restarting: 'Restarting',
+    stopping: 'Stopping',
+    stopped: 'Stopped',
+    updating: 'Updating',
+    rolling_back: 'Rolling back',
+    error: 'Error',
+    uninstalling: 'Uninstalling',
+    installing: 'Installing',
+    install_failed: 'Install failed',
+  } satisfies Record<AppState, string>,
+  loading: 'Loading usage…',
+  couldntLoad: "Usage couldn't be loaded.",
+  retry: 'Try again',
+};

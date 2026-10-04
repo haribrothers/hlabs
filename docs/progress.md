@@ -156,44 +156,48 @@ Shipped 2 Oct 2026 (`SHIPPED_PHASE = 3`). "Done when" checked by hand on macOS w
 
 ## Phase 4 · Menu-bar app, monitoring and updates
 
-- [ ] US-INST-01 · First launch installs the background service
-- [ ] US-INST-02 · First launch hands off to onboarding in the browser
-- [ ] US-INST-05 · See status at a glance
-- [ ] US-INST-06 · Open the dashboard and copy its address
-- [ ] US-INST-07 · Back up now from the menu
-- [ ] US-INST-08 · Pause and resume all apps
-- [ ] US-INST-09 · Start at login
-- [ ] US-INST-10 · Quit hlabs
-- [ ] US-INST-11 · Starting state
-- [ ] US-INST-12 · Container engine stopped
-- [ ] US-INST-13 · Can't reach hlabs
-- [ ] US-INST-14 · Menu-bar icon reflects state
-- [ ] US-INST-15 · Tray authenticates to the daemon with a local token
-- [ ] US-INST-16 · Recover from a missing or mismatched tray token
-- [ ] US-INST-17 · Choose an account and a new password
-- [ ] US-INST-18 · Confirm with the OS and apply the reset
-- [ ] US-INST-19 · Check for hlabs updates
-- [ ] US-INST-20 · Restart to update
-- [ ] US-AUTH-20 · Understand how to reset a forgotten password
-- [ ] US-AUTH-21 · Recovery codes never reset a password
-- [ ] US-AUTH-22 · Set a new password from an admin's reset link
-- [ ] US-USE-01 · See host CPU, memory, storage and network at a glance
-- [ ] US-USE-02 · Tiles update live and respect who may see them
-- [ ] US-USE-03 · Change the time range
-- [ ] US-USE-04 · Read a metric's history and its peak
-- [ ] US-USE-05 · Use the charts with a keyboard and screen reader
-- [ ] US-USE-06 · Sort the per-app table
-- [ ] US-USE-07 · See stopped and failing apps in the table
-- [ ] US-USE-08 · Sample host and app usage every 5 seconds
-- [ ] US-USE-09 · Keep usage history at the right resolution
-- [ ] US-SYS-23 · Update hlabs
-- [ ] US-SYS-24 · Check for updates now
-- [ ] US-SYS-25 · Update apps from Settings
-- [ ] US-SYS-26 · Choose automatic updates
-- [ ] US-STATE-01 · Show a full-screen updating state
-- [ ] US-STATE-02 · Reconnect automatically when the update finishes
-- [ ] US-STATE-03 · Handle a failed or stuck update
-- [ ] US-STATE-07 · Show the daemon-down state in the tray
+Shipped 3 Oct 2026 (`SHIPPED_PHASE = 4`). "Done when" checked by hand on macOS with built apps (`pnpm build:tray`): #1, the menu-bar app showed the right state through a daemon restart, an engine stop and start, and an update; #2, with the dev key (D-118) and a local server through `HLABS_UPDATE_ENDPOINT` (D-117), a signed 0.0.2 installed over 0.0.1 (the dashboard showed "Updating hlabs", reloaded and said it was up to date), a broken but signed 0.0.3 went back to 0.0.2 ("The update didn't install", `system.update_failed` in `audit_log`) and an 0.0.4 signed with another key was refused with nothing stopped; after either failure the menu went back to normal. Automated part of #1: `apps/daemon/test/phase-4-done-when-1.test.ts` drives `tray.status` through an engine stop, a daemon restart and an update. Not checked live: the headless Linux updater (phase 6 creates its layout), a signed and notarised release (phase 6). Known gap: when an update started from the dashboard can't be installed by the menu-bar app, the dashboard learns only when the job times out (10 minutes).
+
+- [x] US-INST-01 · First launch installs the background service (the app bundle and `pnpm build:tray`, D-113; tested with a fake launchctl and login item and against the bundled daemon's /healthz; opening a built .app for real is part of the phase's manual check, since it installs the LaunchAgent and a production hlabs on the computer; the "Opening setup in your browser…" step and "Open setup" are US-INST-02; reusing kept data is the daemon's as before, and not reopening onboarding when it's complete is US-INST-02's)
+- [x] US-INST-02 · First launch hands off to onboarding in the browser (the daemon now serves the dashboard's build, so the setup URL opens at http://127.0.0.1:7474 without Vite; the tray opens setup by itself once per launch whenever onboarding is incomplete, not only on a first launch, as "Open setup is shown again" needs; checked live with a built .app as part of the phase's manual check)
+- [x] US-INST-05 · See status at a glance (the tray asks tray.status every 5 s while the menu is open and every 30 s while it's closed rather than listening to events; CPU and memory are read when asked until the sampler, US-USE-08, keeps them; following Reduce transparency in the tray is left with the reduceTransparency field until the tray has a solid look, which the design doesn't draw)
+- [x] US-INST-06 · Open the dashboard and copy its address (the tray's Rust side opens the browser and writes the clipboard, so the window needs neither permission)
+- [x] US-INST-07 · Back up now from the menu (hidden until backups ship in phase 5, D-036; phase 4 checks it's absent and that tray.quickAction backupNow is refused; its criteria are built and tested with backups)
+- [x] US-INST-08 · Pause and resume all apps (pause_all and resume_all jobs; settings.paused is written before stopping, so an install that finishes meanwhile is stopped and resumed with the others; waiting for a running backup comes with backups, phase 5)
+- [x] US-INST-09 · Start at login (the tray reads the saved choice from tray.status, asked every 30 s while the menu is closed, rather than listening for startup.changeRequested, so a change in Settings reaches the OS within 30 s or when the tray next starts; in development the login item is pretended)
+- [x] US-SYS-42 · See why hlabs can't serve its address (added 3 Oct 2026 after Tailscale Serve held 443 on Hari's Mac, D-122; `pnpm dev` no longer touches the real Tailscale, D-121)
+- Developer docs (D-123, 3 Oct 2026): the site gains a Developers section beside Help (`apps/site/src/content/docs/developers`: overview, getting started, menu-bar app, building, updates and signing, troubleshooting) and a root `README.md`. Testing and How we work pages to come.
+- [x] US-INST-10 · Quit hlabs (changed 3 Oct 2026 at Hari's request, D-120: quitting stops hlabs and every app after a warning, like OrbStack; the next start resumes them)
+- [x] US-INST-11 · Starting state (the count follows tray.status, asked every 5 s while the menu is open, rather than app.stateChanged; "starting" means a reconcile is running or an app that should run is starting or restarting; the needs-attention dot on the icon is US-INST-14)
+- [x] US-INST-12 · Container engine stopped (Start engine runs the dashboard's engine_start job, audited with via: tray; the menu moves on when tray.status says the engine runs; Troubleshoot… opens the dashboard's Home, where the engine-stopped banner and checklist are, US-STATE-08)
+- [x] US-INST-13 · Can't reach hlabs (the red dot on the icon is US-INST-14; with a reason, Open Dashboard opens the last address hlabs gave, where Caddy shows the "Can't reach hlabs" page; the Linux restart and journal are for the Linux tray, phase 6)
+- [x] US-INST-14 · Menu-bar icon reflects state (a dot can't be part of a macOS template image, so dotted icons are drawn in the menu bar's text colour with the dot cut out of the glyph; the dot colours are the danger-fill and accent-strong tokens; the accent dot for an update arrives with US-INST-19; VoiceOver reads the icon's tooltip)
+- [x] US-INST-15 · Tray authenticates to the daemon with a local token (where the token lives per platform and how the daemon picks up a new one: D-112; the `audit_log` rows with `via: "tray"` are written and tested by each tray action as it's built: pause/resume US-INST-08, start engine US-INST-12, reset password US-INST-18, backup in phase 5, uninstall in phase 6)
+- [x] US-INST-16 · Recover from a missing or mismatched tray token (the daemon also reads a regenerated token by itself within 5 s, D-112, so the restart is belt and braces; in development there is no LaunchAgent to restart. The tray's own diagnostics redact Bearer values: the tray client never prints its token and the daemon's log redacts `Authorization`; "Copy diagnostics" itself is US-INST-12)
+- [x] US-INST-17 · Choose an account and a new password (its own window from the menu; the account picker is a native select, as in Settings; the primary button is white as the design system says, not violet as drawn)
+- [x] US-INST-18 · Confirm with the OS and apply the reset (the macOS prompt itself can't run in automated tests; it's part of the phase's manual check; the Linux polkit prompt comes with the Linux tray, phase 6)
+- [x] US-INST-19 · Check for hlabs updates (tauri-plugin-updater with the D-118 key; "Restart to update" does its work in US-INST-20)
+- [x] US-INST-20 · Restart to update (the tray polls tray.status.updateRequested, D-119; the bundle replacement itself is checked by hand with the built .app, the signed test update, at phase end; the dashboard's updating screen is US-STATE-01)
+- [x] US-AUTH-20 · Understand how to reset a forgotten password (the desktop option names the menu item as it reads, "Reset a password…", rather than the story's "Reset password…"; `hlabs reset-password` itself is the CLI's, phase 6)
+- [x] US-AUTH-21 · Recovery codes never reset a password (tests: ForgotPassword has no recovery-code option, auth.resetPassword refuses anything but a live admin link and changes nothing, recovery codes still replace only the two-factor step)
+- [x] US-AUTH-22 · Set a new password from an admin's reset link (with two-factor on they log in instead of being signed in, D-114; the design's "For @username" line isn't shown, since the story doesn't ask for a lookup of the link)
+- [x] US-USE-01 · See host CPU, memory, storage and network at a glance (usage.overview gives the tiles' context under the same access as usage.*, since members may see host tiles but not storage.summary; memory reads in 1024-based GB like macOS and the menu bar, so a 16 GB Mac says 16 GB)
+- [x] US-USE-02 · Tiles update live and respect who may see them (each usage.sample goes to admins whole and to each allowed member with only their apps; the Home Live usage widget, US-HOME-02's phase 4 part, uses the same live data)
+- [x] US-USE-03 · Change the time range (the main chart shows CPU here; choosing another metric and the peak caption are US-USE-04)
+- [x] US-USE-04 · Read a metric's history and its peak (memory by app is `usage.memoryByApp`; storage by use comes from `usage.overview.storage`, which members may see, rather than the admin-only `storage.summary`, split the same way; apps are counted (D-116), files from phase 5)
+- [x] US-USE-05 · Use the charts with a keyboard and screen reader
+- [x] US-USE-06 · Sort the per-app table (from `usage.current` and `apps.list`; `usage.topApps` stays unused and `pending`)
+- [x] US-USE-07 · See stopped and failing apps in the table (every app not running sorts below the running ones, not only stopped ones; "Browse the App Store" shows to people who may install apps)
+- [x] US-USE-08 · Sample host and app usage every 5 seconds (host CPU and memory from systeminformation; network from real interfaces only; an app's CPU is its share of the whole host; the CPU budget is checked against the fake engine, so it measures the sampler, not Docker)
+- [x] US-USE-09 · Keep usage history at the right resolution (network and disk are stored as average bytes/s; the 1h point is written within a minute after its hour ends)
+- [x] US-SYS-23 · Update hlabs (the daemon side and Settings card; the tray applying it is US-INST-19/20, the full-screen updating state and reload US-STATE-01/02, which the 'switches to SysUpdating' criterion is tested with; headless Linux is tested against a temp folder until install.sh creates /opt/hlabs in phase 6, D-118, R-13)
+- [x] US-SYS-24 · Check for updates now (the manifest is the Tauri updater's `latest.json` on GitHub Releases, D-117; "syncs all enabled store sources" refreshes the built-in store until sources ship in phase 7)
+- [x] US-SYS-25 · Update apps from Settings (store.listUpdates; "Update all" hidden until phase 7 with the updateAll flag; "Rolled back" links to the app's page, where US-STORE-17's banner is; the row buttons are secondary, one white primary per view)
+- [x] US-SYS-26 · Choose automatic updates ("Back up app data before updating" stays hidden until backups ship in phase 5, and its snapshot with it)
+- [x] US-STATE-01 · Show a full-screen updating state (the event reaches signed-in pages through SessionWatch's stream; signed-out ones see it from /healthz; 'Go to Home' is a link-style button, as the screen shows it)
+- [x] US-STATE-02 · Reconnect automatically when the update finishes (the version the page loaded with comes from /healthz's 200 body)
+- [x] US-STATE-03 · Handle a failed or stuck update (the danger toast is the admins' critical notification, so members never get it; a failing migration notes it in the update marker and the next start reports it)
+- [x] US-STATE-07 · Show the daemon-down state in the tray (built with US-INST-13: one health watch in the tray's Rust side, /healthz every 5 s)
 
 ## Phase 5 · Backups and Files
 

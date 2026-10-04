@@ -90,4 +90,5 @@ export async function resetPassword(
     return used.userId;
   });
   deps.sessions.revoke({ userId }, now);
+  return { userId };
 }

@@ -206,7 +206,7 @@ describe('NetworkService', () => {
 
   it('only applies again when something changed, and follows app state changes', async () => {
     let applies = 0;
-    const t = setup({ apply: async () => void applies++, stop: async () => {} });
+    const t = setup({ apply: async () => void applies++, stop: async () => {}, problem: () => null });
     const bus = new EventBus();
     t.network.watch(bus);
     await t.network.sync();
@@ -227,6 +227,7 @@ describe('NetworkService', () => {
         if (fail) throw new Error('caddy missing');
       },
       stop: async () => {},
+      problem: () => null,
     });
     await t.network.sync();
     expect(t.errors).toHaveLength(1);

@@ -5,6 +5,12 @@ import type { DaemonConfig } from './config';
 
 export type { Logger };
 
+/** What never reaches a log: cookies, the tray token's Authorization header (US-INST-16), the setup token, passwords. */
+export const LOG_REDACT: pino.LoggerOptions['redact'] = {
+  paths: ['req.headers.cookie', 'req.headers.authorization', 'req.headers["x-hlabs-setup"]', '*.password'],
+  censor: '[redacted]',
+};
+
 export function createLogger(config: DaemonConfig): Logger {
   const targets: pino.TransportTargetOptions[] = [
     {
@@ -23,10 +29,7 @@ export function createLogger(config: DaemonConfig): Logger {
     {
       level: config.logLevel,
       base: { v: config.version },
-      redact: {
-        paths: ['req.headers.cookie', 'req.headers.authorization', 'req.headers["x-hlabs-setup"]', '*.password'],
-        censor: '[redacted]',
-      },
+      redact: LOG_REDACT,
     },
     pino.transport({ targets }),
   );

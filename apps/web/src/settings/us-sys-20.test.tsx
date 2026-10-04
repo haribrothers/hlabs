@@ -12,7 +12,7 @@ beforeEach(() => {
 });
 
 describe('US-SYS-20', () => {
-  it('start apps automatically and keep this computer awake; start at login waits for the tray (phase 4)', async () => {
+  it('start apps automatically and keep this computer awake; start at login only once hlabs says it has a desktop', async () => {
     const update = vi.fn((change: Record<string, boolean>) => {
       startup = { ...startup, ...change };
       return { ok: true };

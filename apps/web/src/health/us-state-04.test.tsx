@@ -59,6 +59,8 @@ describe('US-STATE-04', () => {
       </QueryClientProvider>,
     );
     await act(async () => vi.advanceTimersByTime(30_000));
-    expect(screen.getByText('dashboard')).toBeInTheDocument();
+    // Updating is its own state (US-STATE-01), never "Can't reach hlabs".
+    expect(screen.queryByRole('heading', { name: "Can't reach hlabs" })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Updating hlabs' })).toBeInTheDocument();
   });
 });

@@ -92,7 +92,15 @@ export function PasswordView({ username, next, reason }: { username: string; nex
         >
           {copy.notYou(user.displayName)}
         </Link>
-        {isFeatureEnabled('forgotPassword') ? <span>{copy.forgot}</span> : null}
+        {isFeatureEnabled('forgotPassword') ? (
+          <Link
+            to="/login/forgot"
+            search={{ from: 'password', user: user.username, ...withNext(next) }}
+            className="hl-focus rounded-xs text-ink no-underline"
+          >
+            {copy.forgot}
+          </Link>
+        ) : null}
       </div>
     </LoginLayout>
   );

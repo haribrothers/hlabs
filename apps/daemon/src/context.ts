@@ -7,12 +7,14 @@ import type { Services } from './services';
 
 /**
  * Who made the request. A signed-in user comes from the session cookie (`session` holds its raw id, for CSRF);
- * without `session` it is the development-only anonymous admin. The tray token arrives in phase 4.
+ * without `session` it is the development-only anonymous admin. `tray` is the tray token from loopback (US-INST-15);
+ * `trayRejected` a Bearer token that isn't it, or that came through Caddy or from another address.
  */
 export type Identity =
   | { kind: 'anonymous' }
   | { kind: 'user'; userId: string; role: 'admin' | 'member'; session?: { id: string; raw: string; remember: boolean } }
-  | { kind: 'tray' };
+  | { kind: 'tray' }
+  | { kind: 'trayRejected' };
 
 export interface RequestInfo {
   ip: string;
@@ -74,8 +76,14 @@ export class DaemonContext implements ApiContext {
   }
 
   authorize(access: readonly Access[], path: string): void {
-    if (access.includes('public')) return;
     const id = this.identity;
+    if (id.kind === 'trayRejected') throw hlabsError('TRAY_TOKEN_REJECTED');
+    // The tray token works on tray procedures only, public ones included (US-INST-15).
+    if (id.kind === 'tray') {
+      if (access.includes('tray')) return;
+      throw hlabsError('ACCESS_DENIED');
+    }
+    if (access.includes('public')) return;
     if (access.includes('setup')) {
       const { onboarding } = this.services;
       if (onboarding.completed) throw hlabsError('ONBOARDING_COMPLETE');
@@ -91,10 +99,6 @@ export class DaemonContext implements ApiContext {
       if (id.role !== 'admin') throw hlabsError('ACCESS_DENIED');
       this.checkCsrf(path);
       return;
-    }
-    if (id.kind === 'tray') {
-      if (access.includes('tray')) return;
-      throw hlabsError('ACCESS_DENIED');
     }
     if (id.kind === 'user') {
       const allowed = access.includes('authed') || (access.includes('admin') && id.role === 'admin');

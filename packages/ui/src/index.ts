@@ -4,6 +4,7 @@ export * from './charts/bar-chart';
 export * from './charts/line-chart';
 export * from './charts/sparkline';
 export * from './charts/stacked-bar';
+export * from './charts/stacked-columns';
 export { formatNumber, niceMax, seriesColor } from './charts/shared';
 export * from './components/app-icon';
 export * from './components/areas';

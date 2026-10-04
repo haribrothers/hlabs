@@ -1,0 +1,156 @@
+// What the tray shows at a glance (US-INST-05): hlabs's state, how many apps run, how busy this computer is and the
+// dashboard's address. The tray asks every 5 s while its menu is open and every 30 s otherwise.
+import { EXCLUSIVE_JOB_KINDS, type TrayStatus } from '@hlabs/api';
+import { fallbackPortFor } from '../network/port-problem';
+import {
+  apps,
+  backupDestinations,
+  backupRuns,
+  getSetting,
+  getUserSetting,
+  storageLocations,
+  users,
+  type HlabsDb,
+} from '@hlabs/db';
+import { and, asc, desc, eq, isNull } from 'drizzle-orm';
+import type { DaemonConfig } from '../config';
+import type { EngineService } from '../engine/service';
+import type { JobRunner } from '../jobs/runner';
+import type { NetworkService } from '../network/service';
+import type { HostStats } from '../platform/host-stats';
+import type { SystemProbe } from '../platform/system';
+import type { UsageSampler } from '../usage/sampler';
+
+/** An app on its way up. */
+const COMING_UP = new Set(['starting', 'restarting']);
+
+export interface TrayStatusDeps {
+  isReconciling(): boolean;
+  config: DaemonConfig;
+  db: HlabsDb;
+  engine: EngineService;
+  jobs: JobRunner;
+  routing: NetworkService;
+  system: SystemProbe;
+  host: HostStats;
+  usage?: Pick<UsageSampler, 'latest'>;
+}
+
+/** The dashboard's address now: hlabs's `.local` name, or the LAN address while it can't be published; without Caddy
+ * (development) the configured one. */
+export function dashboardUrl(deps: Pick<TrayStatusDeps, 'config' | 'routing'>): string {
+  if (deps.config.proxy !== 'caddy') return deps.config.dashboardUrl;
+  // Caddy isn't serving (another program holds its port, US-SYS-42): the daemon's own address still works here.
+  if (deps.routing.portProblem()) return `http://127.0.0.1:${deps.config.port}`;
+  const home = deps.routing.homeNetwork();
+  return home.published ? home.localAddress : (home.fallbackAddress ?? home.localAddress);
+}
+
+async function freeBytes(deps: TrayStatusDeps): Promise<number | null> {
+  const root = deps.db
+    .select({ path: storageLocations.path })
+    .from(storageLocations)
+    .where(eq(storageLocations.isRoot, true))
+    .get();
+  try {
+    return await deps.system.freeBytes(root?.path ?? deps.config.paths.dataDir);
+  } catch {
+    return null;
+  }
+}
+
+function backup(db: HlabsDb): TrayStatus['backup'] {
+  const configured = db.select({ id: backupDestinations.id }).from(backupDestinations).limit(1).get() !== undefined;
+  const last = db.select().from(backupRuns).orderBy(desc(backupRuns.startedAt)).limit(1).get();
+  const lastSucceeded = db
+    .select({ finishedAt: backupRuns.finishedAt })
+    .from(backupRuns)
+    .where(eq(backupRuns.status, 'succeeded'))
+    .orderBy(desc(backupRuns.finishedAt))
+    .limit(1)
+    .get();
+  return {
+    configured,
+    lastSucceededAt: lastSucceeded?.finishedAt ?? null,
+    running: last?.status === 'running',
+    progress: null,
+    lastFailed: last?.status === 'failed',
+  };
+}
+
+/** The first enabled admin's "Reduce transparency" (the tray has no signed-in person). */
+function reduceTransparency(db: HlabsDb): boolean {
+  const admin = db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.role, 'admin'), isNull(users.disabledAt)))
+    .orderBy(asc(users.createdAt))
+    .limit(1)
+    .get();
+  return admin ? getUserSetting(db, 'appearance', admin.id).reduceTransparency : false;
+}
+
+export async function trayStatus(deps: TrayStatusDeps): Promise<TrayStatus> {
+  const { db } = deps;
+  const engine = deps.engine.status;
+  const installed = db
+    .select({ id: apps.id, state: apps.state, autostart: apps.autostart })
+    .from(apps)
+    .orderBy(asc(apps.id))
+    .all();
+  const autostartAll = getSetting(db, 'startup').autostartApps;
+  const expected = installed.filter((a) => a.state === 'running' || (autostartAll && a.autostart));
+  const appsRunning = installed.filter((a) => a.state === 'running').length;
+  const starting = engine.state === 'running' && (deps.isReconciling() || expected.some((a) => COMING_UP.has(a.state)));
+  const updates = getSetting(db, 'updates');
+  const paused = getSetting(db, 'paused') !== null;
+  // The sampler's latest reading (US-USE-08), or read now before its first.
+  const sampled = deps.usage?.latest()?.host;
+  const [cpu, memory, free] = await Promise.all([
+    sampled ? sampled.cpu : deps.host.cpuPercent(),
+    sampled ? sampled.memBytes : deps.host.memoryUsedBytes(),
+    freeBytes(deps),
+  ]);
+  return {
+    state: engine.state !== 'running' ? 'engineStopped' : paused ? 'paused' : starting ? 'starting' : 'running',
+    appsRunning,
+    appsExpected: expected.length,
+    appsNeedAttention: installed.filter((a) => a.state === 'error').length,
+    startupLogAppId: expected.find((a) => a.state !== 'running')?.id ?? null,
+    paused,
+    cpuPercent: cpu === null ? null : Math.min(100, Math.max(0, cpu)),
+    memoryUsedBytes: memory,
+    freeBytes: free,
+    engine: {
+      name: engine.state === 'missing' ? null : engine.candidate.kind,
+      running: engine.state === 'running',
+      managedByHlabs: engine.state === 'missing' ? false : engine.candidate.managedByHlabs,
+      canStart: engine.state !== 'missing' && engine.candidate.kind !== 'docker-engine',
+    },
+    dashboardUrl: dashboardUrl(deps),
+    backup: backup(db),
+    startAtLogin: getSetting(db, 'startup').startAtLogin,
+    updateChannel: updates.channel,
+    autoUpdate: updates.autoHlabs,
+    exclusiveJobRunning: deps.jobs.listActive().some((j) => j.kind !== 'system_update' && EXCLUSIVE.has(j.kind)),
+    updateRequested: updateRequested(deps.jobs),
+    portProblem: portProblem(deps),
+    onboardingComplete: getSetting(db, 'onboarding').completedAt !== null,
+    reduceTransparency: reduceTransparency(db),
+  };
+}
+
+const EXCLUSIVE = new Set<string>(EXCLUSIVE_JOB_KINDS);
+
+/** The update the tray should apply: the running system_update job and its version (US-INST-20). */
+function updateRequested(jobs: JobRunner): { jobId: string; version: string } | null {
+  const job = jobs.listActive().find((j) => j.kind === 'system_update');
+  if (!job) return null;
+  const row = jobs.payload<{ version?: string }>(job.id);
+  return row?.version ? { jobId: job.id, version: row.version } : null;
+}
+
+function portProblem(deps: TrayStatusDeps): TrayStatus['portProblem'] {
+  const problem = deps.routing.portProblem();
+  return problem ? { ...problem, fallbackPort: fallbackPortFor(deps.db, problem.port) } : null;
+}

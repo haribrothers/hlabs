@@ -100,6 +100,9 @@ export const jobKindSchema = z.enum([
   'engine_install',
   'engine_start',
   'engine_restart',
+  /** Pause and resume all apps from the menu bar (US-INST-08). */
+  'pause_all',
+  'resume_all',
   'prune_images',
   'files_move',
   /** A deleted person's Home folder going to the trash (US-ACCT-16). */

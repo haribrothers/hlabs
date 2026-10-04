@@ -176,8 +176,10 @@ export const appRouter = router({
 
   usage: router({
     // Members only when D-029 allows; enforced in UsageService.
+    overview: q(p.authed, s.usage.overview),
     current: q(p.authed, s.usage.current),
     history: q(p.authed, s.usage.history),
+    memoryByApp: q(p.authed, s.usage.memoryByApp),
     topApps: q(p.authed, s.usage.topApps),
     appDetail: q(p.admin, s.usage.appDetail),
   }),
@@ -281,6 +283,8 @@ export const appRouter = router({
     listUsers: q(p.tray, s.tray.listUsers),
     quickAction: m(p.tray, s.tray.quickAction),
     resetPassword: m(p.tray, s.tray.resetPassword),
+    quit: m(p.tray, s.tray.quit),
+    useOtherPort: m(p.tray, s.tray.useOtherPort),
     setStartAtLogin: m(p.tray, s.tray.setStartAtLogin),
     appLogs: q(p.tray, s.tray.appLogs),
     startEngine: m(p.tray, s.tray.startEngine),

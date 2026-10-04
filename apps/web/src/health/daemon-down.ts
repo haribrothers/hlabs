@@ -4,15 +4,35 @@ export interface HealthCheck {
   ok: boolean;
   /** The 503 body's reason (starting, migration_failed, …), or null when there was no answer. */
   reason: string | null;
+  /** When ready: the version answering (US-STATE-02). */
+  version?: string;
+  /** While starting or updating: which step of how many, and its label. */
+  step?: number;
+  steps?: number;
+  stepLabel?: string;
 }
 
 /** One /healthz request; no answer within 4 seconds counts as no answer. */
 export async function checkHealth(url = '/healthz', timeoutMs = 4_000): Promise<HealthCheck> {
   try {
     const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(timeoutMs) });
-    if (res.ok) return { ok: true, reason: null };
-    const body = (await res.json().catch(() => null)) as { reason?: unknown } | null;
-    return { ok: false, reason: typeof body?.reason === 'string' ? body.reason : null };
+    if (res.ok) {
+      const body = (await res.json().catch(() => null)) as { version?: unknown } | null;
+      return { ok: true, reason: null, ...(typeof body?.version === 'string' ? { version: body.version } : {}) };
+    }
+    const body = (await res.json().catch(() => null)) as {
+      reason?: unknown;
+      step?: unknown;
+      steps?: unknown;
+      stepLabel?: unknown;
+    } | null;
+    return {
+      ok: false,
+      reason: typeof body?.reason === 'string' ? body.reason : null,
+      ...(typeof body?.step === 'number' ? { step: body.step } : {}),
+      ...(typeof body?.steps === 'number' ? { steps: body.steps } : {}),
+      ...(typeof body?.stepLabel === 'string' ? { stepLabel: body.stepLabel } : {}),
+    };
   } catch {
     return { ok: false, reason: null };
   }

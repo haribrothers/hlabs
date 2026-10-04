@@ -42,14 +42,93 @@ export const ai = {
   },
 };
 
+/** What the tray shows (US-INST-05; 05 "From 01 · Install & menu-bar app"). */
+export const trayStatusSchema = z.object({
+  /** `starting`: apps are being brought up (US-INST-11); `paused` comes with US-INST-08. */
+  state: z.enum(['starting', 'running', 'paused', 'engineStopped']),
+  /** Installed apps in state `running`. */
+  appsRunning: z.number().int().nonnegative(),
+  /** Installed apps that should be running (not stopped on purpose). */
+  appsExpected: z.number().int().nonnegative(),
+  /** Apps in `error` (US-INST-11: "· 1 needs attention"). */
+  appsNeedAttention: z.number().int().nonnegative(),
+  /** The first app that should run but isn't, for "Show startup log"; null when all are running. */
+  startupLogAppId: appIdSchema.nullable(),
+  paused: z.boolean(),
+  /** Host CPU in use, 0–100; null when it can't be read. */
+  cpuPercent: z.number().min(0).max(100).nullable(),
+  /** Host memory in use, bytes. */
+  memoryUsedBytes: z.number().nonnegative().nullable(),
+  /** Free space on the storage root, bytes. */
+  freeBytes: z.number().nonnegative().nullable(),
+  engine: z.object({
+    /** The engine kind (`orbstack`, `colima`, `docker-desktop`, `docker-engine`); null when none was found. */
+    name: z.string().nullable(),
+    running: z.boolean(),
+    managedByHlabs: z.boolean(),
+    /** "Start engine" is offered (not for Docker Engine on Linux, US-INST-12). */
+    canStart: z.boolean(),
+  }),
+  /** The dashboard's current address (the renamed name, or the LAN address when mDNS fell back). */
+  dashboardUrl: z.string(),
+  backup: z.object({
+    configured: z.boolean(),
+    lastSucceededAt: timestampSchema.nullable(),
+    running: z.boolean(),
+    progress: z.number().min(0).max(1).nullable(),
+    lastFailed: z.boolean(),
+  }),
+  /** The saved "Start at login" (Settings › Engine & startup); the tray applies it when the OS differs (D-042). */
+  startAtLogin: z.boolean(),
+  updateChannel: z.enum(['stable', 'beta']),
+  autoUpdate: z.boolean(),
+  /** A job that "Restart to update" must wait for (restore, move all data…; not the update itself, US-INST-20). */
+  exclusiveJobRunning: z.boolean(),
+  /**
+   * An update the dashboard asked for ("Update now", or the overnight window): the tray applies it (US-INST-20). The
+   * tray polls this rather than keeping an event stream open; `update.applyRequested` is emitted too.
+   */
+  updateRequested: z.object({ jobId: z.string(), version: z.string() }).nullable(),
+  /**
+   * Another program holds hlabs's web port, so other devices can't reach it (US-SYS-42): which port, what holds it
+   * when hlabs can tell, and the port "Use port 8443" moves to.
+   */
+  portProblem: z
+    .object({ port: z.number().int(), heldBy: z.enum(['tailscaleServe']).nullable(), fallbackPort: z.number().int() })
+    .nullable(),
+  onboardingComplete: z.boolean(),
+  /** The first admin's "Reduce transparency" (Settings › Appearance). */
+  reduceTransparency: z.boolean(),
+});
+export type TrayStatus = z.infer<typeof trayStatusSchema>;
+
+/** An account the tray can reset (US-INST-17). */
+export const trayUserSchema = z.object({
+  id: idSchema,
+  username: usernameSchema,
+  displayName: z.string(),
+  role: z.enum(['admin', 'member']),
+  totpEnabled: z.boolean(),
+});
+export type TrayUser = z.infer<typeof trayUserSchema>;
+
 export const tray = {
-  status: io(empty, pending),
-  listUsers: io(empty, pending),
+  status: io(empty, trayStatusSchema),
+  /** Enabled accounts, admins first, then by name (US-INST-17). */
+  listUsers: io(empty, z.object({ users: z.array(trayUserSchema) })),
   quickAction: io(
     z.object({ action: z.enum(['openDashboard', 'copyAddress', 'backupNow', 'pauseAll', 'resumeAll']) }),
     z.union([ok, jobRefSchema, z.object({ url: z.string() })]),
   ),
   resetPassword: io(z.object({ username: usernameSchema, newPassword: z.string(), disableTotp: z.boolean() }), ok),
+  /**
+   * "Quit hlabs" (US-INST-10, D-120): stops every app (data untouched) and answers once they're stopped; the tray then
+   * stops the daemon. The next start brings back the apps that were up. JOB_EXCLUSIVE_RUNNING during an update or a
+   * restore.
+   */
+  quit: io(empty, ok),
+  /** "Use port 8443" (US-SYS-42): moves hlabs off the port another program holds; NETWORK_PORT_IN_USE if that's taken too. */
+  useOtherPort: io(empty, ok),
   setStartAtLogin: io(z.object({ enabled: z.boolean() }), ok),
   appLogs: io(
     z.object({

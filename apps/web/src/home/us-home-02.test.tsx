@@ -19,17 +19,19 @@ const DEFAULT = ['live-usage', 'storage', 'remote-access', 'backups'];
 describe('US-HOME-02', () => {
   it('keeps the saved order, hides widgets whose phase has not shipped, and shows at most four', () => {
     expect(visibleWidgets(DEFAULT, 1)).toEqual(['storage']);
-    expect(visibleWidgets(DEFAULT, 5)).toEqual(['storage']); // the others arrive with their stories
+    // Live usage from phase 4; Remote access and Backups arrive with their stories.
+    expect(visibleWidgets(DEFAULT, 4)).toEqual(['live-usage', 'storage']);
+    expect(visibleWidgets(DEFAULT, 5)).toEqual(['live-usage', 'storage']);
     expect(visibleWidgets(['storage', 'storage', 'storage', 'storage', 'storage'], 1)).toHaveLength(4);
     expect(visibleWidgets(['unknown'], 9)).toEqual([]);
   });
 
   it('Storage shows free space as the big figure, and Apps and System in a bar; it opens Usage', async () => {
-    const { router } = renderScreen(() => <WidgetsRow ids={DEFAULT} />, { 'storage.summary': summary });
+    // Live usage has its own test (us-home-02-live-usage); which widgets show is checked above.
+    const { router } = renderScreen(() => <WidgetsRow ids={['storage']} />, { 'storage.summary': summary });
     const link = await screen.findByRole('link', { name: /^Storage ?142 GB ?left of 256 GB/ });
     expect(screen.getAllByText('142 GB')[0]).toHaveClass('tabular-nums');
     expect(screen.getByRole('img')).toHaveAccessibleName(/^Apps 77 GB, System 37 GB/);
-    expect(screen.queryByText('Live usage')).toBeNull();
     fireEvent.click(link);
     await waitFor(() => expect(router.state.location.pathname).toBe('/usage'));
   });

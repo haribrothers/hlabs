@@ -20,7 +20,13 @@ export interface UiStrings {
   digit: (n: number) => string;
   setupProgress: string;
   chartHint: string;
+  /** Stacked columns: also Up and Down between the parts of a column. */
+  chartHintSeries: string;
+  /** A one-bar chart's hidden table: its first column. */
+  chartPart: string;
   chartData: string;
+  /** The first column of a chart's hidden table. */
+  chartTime: string;
   value: string;
   free: string;
   failed: string;
@@ -47,7 +53,10 @@ export const defaultStrings: UiStrings = {
   digit: (n) => `Digit ${n}`,
   setupProgress: 'Setup progress',
   chartHint: 'Use left and right arrow keys to read values.',
+  chartHintSeries: 'Use left and right arrow keys to read values, up and down to move between parts.',
+  chartPart: 'Part',
   chartData: 'Chart data',
+  chartTime: 'Time',
   value: 'Value',
   free: 'Free',
   failed: 'Failed',

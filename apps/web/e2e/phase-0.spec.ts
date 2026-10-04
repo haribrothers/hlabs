@@ -4,10 +4,10 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
 // Areas whose phase hasn't shipped are hidden (D-036, US-HOME-04). The e2e dev server previews the phase being
-// built (D-092): in phase 2, Home, App Store and Settings, then Search in the Dock.
-const AREAS = ['Home', 'App Store', 'Settings'];
+// built (D-092): from phase 4, Home, App Store, Usage and Settings, then Search in the Dock.
+const AREAS = ['Home', 'App Store', 'Usage', 'Settings'];
 // The phone tab bar's shorter names (D-054).
-const TABS = ['Home', 'Apps', 'Settings'];
+const TABS = ['Home', 'Apps', 'Usage', 'Settings'];
 
 test('GET /healthz returns 200 when the daemon is ready', async ({ request }) => {
   const res = await request.get('/healthz');

@@ -24,6 +24,15 @@ export class FakeSystemProbe implements SystemProbe {
   async diskSpace() {
     return { totalBytes: this.totalSpace, freeBytes: this.freeSpace };
   }
+  /** Path prefix → disk; anything else is on 'disk1' (one disk, unless a test adds a drive). */
+  disks = new Map<string, string>();
+  async diskId(path: string) {
+    for (const [prefix, id] of this.disks) if (path === prefix || path.startsWith(`${prefix}/`)) return id;
+    return 'disk1';
+  }
+  engineStoragePath(kind: EngineKind) {
+    return kind === 'docker-engine' ? '/var/lib/docker' : '/Users/hari';
+  }
   async portInUse(port: number) {
     return this.portsInUse.has(port);
   }

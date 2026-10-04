@@ -3,6 +3,7 @@
 import { isFeatureEnabled, type Feature } from '@hlabs/shared';
 import type { ComponentType } from 'react';
 import { homeCopy } from '../copy/home';
+import { LiveUsageWidget } from './live-usage-widget';
 import { MyFilesWidget, SharedAppsWidget } from './member-widgets';
 import { StorageWidget } from './storage-widget';
 
@@ -15,7 +16,7 @@ interface WidgetDef {
 export const WIDGETS: Record<string, WidgetDef> = {
   'my-files': { component: MyFilesWidget },
   'shared-apps': { component: SharedAppsWidget },
-  'live-usage': { feature: 'liveUsage' },
+  'live-usage': { component: LiveUsageWidget, feature: 'liveUsage' },
   storage: { component: StorageWidget },
   'remote-access': { feature: 'remoteAccess' },
   backups: { feature: 'backups' },

@@ -2,7 +2,7 @@
 import { isFeatureEnabled } from '@hlabs/shared';
 import { Button, Switch, TextField } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { loginCopy } from '../copy/login';
 import { useTRPC } from '../lib/trpc';
@@ -88,7 +88,15 @@ export function UsernameView({ next, reason }: { next?: string; reason?: 'timeou
           {copy.logIn}
         </Button>
       </form>
-      {isFeatureEnabled('forgotPassword') ? <p className="m-0 text-body-sm">{copy.forgot}</p> : null}
+      {isFeatureEnabled('forgotPassword') ? (
+        <Link
+          to="/login/forgot"
+          search={{ from: 'username', ...(username.trim() ? { user: username.trim() } : {}), ...withNext(next) }}
+          className="hl-focus rounded-xs text-body-sm text-ink no-underline"
+        >
+          {copy.forgot}
+        </Link>
+      ) : null}
     </LoginLayout>
   );
 }

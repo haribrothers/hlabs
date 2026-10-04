@@ -21,3 +21,5 @@ apps/web/e2e/.auth/
 .astro/
 
 apps/daemon/native/.build/
+
+apps/tray/src-tauri/resources/

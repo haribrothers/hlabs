@@ -49,6 +49,7 @@ export async function installDaemon(
         storeDir: opts.storeDir ?? storeFixture({ amd64Only: opts.amd64Only }),
         binDir: '/none',
         webFallbackDir: '/none',
+        webDir: '/none',
       },
       ...(opts.phase === undefined ? {} : { phase: opts.phase }),
     } as never,

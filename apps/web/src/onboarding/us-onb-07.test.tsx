@@ -68,7 +68,7 @@ describe('US-ONB-07', () => {
   });
 
   it('hides the start-at-login switch until the tray ships (phase 4, D-042)', async () => {
-    renderScreen(SystemStep, { 'onboarding.checkSystem': () => check(running) });
+    renderScreen(() => <SystemStep shippedPhase={3} />, { 'onboarding.checkSystem': () => check(running) });
     await screen.findByText('Docker Engine 29.0.1');
     expect(screen.queryByRole('switch', { name: 'Start hlabs when I log in' })).toBeNull();
   });

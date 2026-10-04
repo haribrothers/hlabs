@@ -40,7 +40,8 @@ function home(apps: HomeApp[], handlers: Handlers = {}, role: 'admin' | 'member'
   return { ...rendered, changed };
 }
 
-const tile = (name: RegExp | string) => screen.findByRole('button', { name });
+// The first render loads Home's widgets too, which can take more than a second on CI.
+const tile = (name: RegExp | string) => screen.findByRole('button', { name }, { timeout: 5_000 });
 const menuItems = (menu: HTMLElement) =>
   within(menu)
     .getAllByRole('menuitem')

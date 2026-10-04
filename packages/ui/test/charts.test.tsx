@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { BarChart, LineChart, niceMax, seriesColor, Sparkline, StackedBar } from '../src/index';
+import { BarChart, LineChart, niceMax, seriesColor, Sparkline, StackedBar, StackedColumns } from '../src/index';
 
 describe('chart helpers', () => {
   it('picks clean axis maxima and fixed series colours', () => {
@@ -28,15 +28,13 @@ describe('LineChart', () => {
     const plot = screen.getByRole('img', { name: /CPU\. Use left and right arrow keys/ });
     plot.focus();
     await userEvent.keyboard('{ArrowRight}');
-    let tip = screen.getByRole('status');
-    expect(tip).toHaveTextContent('10:00');
-    expect(tip).toHaveTextContent('Immich10%');
+    expect(screen.getByRole('status')).toHaveTextContent('10:00, Immich 10%, Jellyfin 5%');
+    expect(document.querySelector('.hl-chart-tip')).toHaveTextContent('Immich10%');
     await userEvent.keyboard('{ArrowRight}');
-    tip = screen.getByRole('status');
-    expect(tip).toHaveTextContent('10:05');
-    expect(tip).toHaveTextContent('Jellyfin8%');
+    expect(screen.getByRole('status')).toHaveTextContent('10:05, Immich 40%, Jellyfin 8%');
     await userEvent.keyboard('{Escape}');
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    expect(document.querySelector('.hl-chart-tip')).toBeNull();
   });
 
   it('has a legend for two or more series and a hidden data table', () => {
@@ -85,12 +83,56 @@ describe('StackedBar and Sparkline', () => {
         ]}
       />,
     );
-    expect(screen.getByRole('img', { name: 'Apps 120 GB, Files 300 GB, free 580 GB' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: /^Storage\. Apps 120 GB, Files 300 GB, Free 580 GB\./ }),
+    ).toBeInTheDocument();
     expect(screen.getByText('420 GB of 1,000 GB')).toBeInTheDocument();
   });
 
   it('describes the latest value', () => {
     render(<Sparkline values={[1, 3, 2, 12]} />);
     expect(screen.getByRole('img', { name: 'Trend, latest 12' })).toBeInTheDocument();
+  });
+});
+
+describe('LineChart peak note and StackedColumns', () => {
+  it('shows a note beside the title', () => {
+    render(
+      <LineChart
+        title="CPU over the last hour"
+        aside="Peak 46% at 16:32"
+        labels={['a', 'b']}
+        series={[{ name: 'CPU', values: [1, 46] }]}
+      />,
+    );
+    expect(document.querySelector('figcaption')).toHaveTextContent('CPU over the last hourPeak 46% at 16:32');
+  });
+
+  it('stacks the series per column, names each in a legend, and steps with arrow keys', async () => {
+    const fmt = (v: number) => `${v} GB`;
+    render(
+      <StackedColumns
+        title="Memory"
+        labels={['10:00', '10:01']}
+        formatValue={fmt}
+        series={[
+          { name: 'Immich', values: [2, 3] },
+          { name: 'Other', values: [5, 4] },
+        ]}
+      />,
+    );
+    const figure = screen.getByRole('figure');
+    expect(figure.querySelector('.hl-chart-legend')).toHaveTextContent('Immich');
+    expect(figure.querySelector('.hl-chart-legend')).toHaveTextContent('Other');
+    // Two columns of two parts, coloured chart-1 then chart-2.
+    const rects = figure.querySelectorAll('rect.hl-chart-fill');
+    expect(rects).toHaveLength(4);
+    expect(rects[0]).toHaveStyle({ fill: 'var(--chart-1)' });
+    expect(rects[1]).toHaveStyle({ fill: 'var(--chart-2)' });
+    screen.getByRole('img', { name: /Memory\. Use left and right/ }).focus();
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(screen.getByRole('status')).toHaveTextContent('10:01, Immich 3 GB, Other 4 GB');
+    const table = screen.getByRole('table', { hidden: true });
+    expect(within(table).getAllByRole('row')).toHaveLength(3);
   });
 });

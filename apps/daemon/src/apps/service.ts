@@ -257,6 +257,8 @@ export class AppService {
    */
   async reconcile(signal?: AbortSignal): Promise<void> {
     const autostartAll = getSetting(this.deps.db, 'startup').autostartApps;
+    // While paused from the menu bar, apps stay stopped until resumed (US-INST-08).
+    const paused = getSetting(this.deps.db, 'paused') !== null;
     // In engine-stopped mode only the leftover states are settled; the rest waits for the engine (US-STATE-10).
     const engineUp = this.deps.engine.client !== null;
     if (engineUp) {
@@ -300,7 +302,7 @@ export class AppService {
       }).catch(() => ({ ready: false }));
       if (check.ready) {
         if (app.state !== 'running') this.settle(app.id, 'running');
-      } else if (autostartAll && app.autostart) {
+      } else if (autostartAll && app.autostart && !paused) {
         this.settle(app.id, 'starting');
         pending.push(this.bringUp(app.id, 'up', signal).catch(() => undefined));
       } else {

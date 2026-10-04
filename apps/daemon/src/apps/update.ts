@@ -30,7 +30,8 @@ export const RESTORE_FAILED_KIND = 'app.update_restore_failed';
 
 interface UpdatePayload {
   appId: string;
-  userId: string;
+  /** Null: an automatic update (US-SYS-26). */
+  userId: string | null;
   fromVersion: string;
   toVersion: string;
 }
@@ -58,7 +59,7 @@ export class UpdateService {
   }
 
   /** `apps.update`: a running app to the store's newer version, as a job; the one already going if there is one. */
-  update(user: { userId: string }, appId: string): { jobId: string } {
+  update(user: { userId: string | null }, appId: string): { jobId: string } {
     const { db, jobs, catalog } = this.deps;
     const app = db.select().from(apps).where(eq(apps.id, appId)).get();
     if (!app) throw hlabsError('NOT_FOUND');
@@ -281,7 +282,7 @@ export class UpdateService {
     );
   }
 
-  private audit(userId: string, action: string, target: string, detail: Record<string, unknown>) {
+  private audit(userId: string | null, action: string, target: string, detail: Record<string, unknown>) {
     this.deps.db
       .insert(auditLog)
       .values({ id: ulid(), at: Date.now(), userId, action, target, detailJson: detail, ip: null })

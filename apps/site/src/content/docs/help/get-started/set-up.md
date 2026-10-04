@@ -1,16 +1,22 @@
 ---
 title: Set up hlabs
 description: Open setup the first time hlabs starts, and finish it on the computer running hlabs.
-features: [F-ONB-01, F-ONB-06]
+features: [F-ONB-01, F-ONB-06, F-INST-01]
 ---
 
 For admins: the person who installed hlabs.
+
+## The first time you open hlabs on a Mac
+
+Open hlabs from your Applications folder. A small window under the hlabs icon in the menu bar says **Setting up hlabs** while it starts its background service, the part that keeps your apps running even when the menu-bar app is closed. This happens once and usually takes under a minute. hlabs also adds itself to your login items so it starts when you log in.
+
+If the background service doesn't start within a minute, the window says **Can't reach hlabs**: see [Can't reach hlabs](../cant-reach/).
 
 ## Open setup
 
 The first time hlabs starts, it makes a one-time setup address. Open it in a browser on the computer running hlabs to begin.
 
-- **Menu-bar app (Mac and Linux desktop):** it opens setup in your browser by itself. If you close the tab, choose **Open setup** from the menu.
+- **Menu-bar app (Mac and Linux desktop):** once its background service is running, it opens setup in your browser by itself. If you close the tab, click the hlabs icon in the menu bar and choose **Open setup**. It keeps offering **Open setup** until setup is finished, and then shows its usual menu.
 - **Linux server:** the installer prints the address at the end. Run `hlabs setup-url` to see it again.
 
 Setup opens on a welcome screen. It takes about five minutes: press **Get started** to check this computer, then follow the steps.

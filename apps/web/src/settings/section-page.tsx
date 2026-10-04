@@ -10,6 +10,7 @@ import { AccountSection } from './account-section';
 import { EngineSection, EngineStatus } from './engine-section';
 import { NetworkSection } from './network-section';
 import { sectionAccess, type SectionId } from './sections';
+import { UpdatesSection } from './updates-section';
 import { InviteButton, UsersSection } from './users-section';
 
 const CONTENT: Partial<
@@ -19,6 +20,7 @@ const CONTENT: Partial<
   users: UsersSection,
   network: NetworkSection,
   engine: EngineSection,
+  updates: UpdatesSection,
 };
 
 /** Something shown next to a section's title, such as the engine's state. */

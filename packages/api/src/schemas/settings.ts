@@ -13,6 +13,23 @@ export const startupSchema = z.object({
   keepAwake: z.boolean(),
 });
 
+/** hlabs's version and its updates (US-SYS-23, US-SYS-24, US-SYS-26). */
+export const updateStatusSchema = z.object({
+  /** The version running now. */
+  version: z.string(),
+  channel: z.enum(['stable', 'beta']),
+  autoHlabs: z.boolean(),
+  autoApps: z.boolean(),
+  backupBeforeUpdate: z.boolean(),
+  /** The last check that reached the update manifest; null before the first. */
+  lastCheckedAt: z.number().nullable(),
+  /** A newer version, or null when up to date. */
+  available: z.object({ version: z.string(), notes: z.array(z.string()), url: z.string() }).nullable(),
+  /** The job kind "Update now" has to wait for (an exclusive job, or any job, D-020); null when it can start. */
+  blockedBy: z.string().nullable(),
+});
+export type UpdateStatus = z.infer<typeof updateStatusSchema>;
+
 export const settings = {
   /** Global settings shown in Settings; more keys join with their sections. */
   get: io(empty, z.object({ startup: startupSchema })),
@@ -94,8 +111,8 @@ export const settings = {
     ),
   },
   updates: {
-    get: io(empty, pending),
-    check: io(empty, pending),
+    get: io(empty, updateStatusSchema),
+    check: io(empty, updateStatusSchema),
     setChannel: io(z.object({ channel: z.enum(['stable', 'beta']) }), ok),
     setAuto: io(z.object({ hlabs: z.boolean(), apps: z.boolean(), backupBeforeUpdate: z.boolean() }), ok),
     install: io(empty, jobRefSchema),

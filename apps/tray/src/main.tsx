@@ -1,26 +1,29 @@
-// Phase 0 skeleton: renders the TrayMenu. Status, stats and actions arrive in phase 4 (US-INST-05…).
-import { TrayMenu } from '@hlabs/ui';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './app.css';
-import { trayCopy as t } from './copy';
+import { FitWindow } from './fit-window';
+import { Menu } from './menu';
+import { quitTray } from './quit';
+import { ResetPasswordWindow } from './reset-password';
+
+// No page context menu (Reload, Inspect…) in the menu; development keeps it for the inspector.
+if (import.meta.env.PROD) document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+/** The "Reset a password" window (US-INST-17) loads the same page with ?view=reset. */
+const resetWindow = new URLSearchParams(location.search).get('view') === 'reset';
+
+// Esc closes the menu, as a native menu does (US-INST-05), or the reset window; ⌘Q quits the menu-bar app (US-INST-10).
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') void (resetWindow ? getCurrentWindow().close() : getCurrentWindow().hide());
+  if (e.metaKey && e.key.toLowerCase() === 'q') {
+    e.preventDefault();
+    void quitTray();
+  }
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <TrayMenu
-      statusText={t.running}
-      stats={[
-        { label: t.cpu, value: '—' },
-        { label: t.memory, value: '—' },
-        { label: t.free, value: '—' },
-      ]}
-      items={[
-        { label: t.openDashboard },
-        { label: t.copyAddress },
-        { label: t.backUpNow },
-        { separator: true },
-        { label: t.quit },
-      ]}
-    />
+    <FitWindow>{resetWindow ? <ResetPasswordWindow /> : <Menu />}</FitWindow>
   </StrictMode>,
 );

@@ -41,7 +41,8 @@ function allowed(port: number, usual: number): boolean {
 export async function setWebPorts(
   deps: { db: HlabsDb; portInUse: (port: number) => Promise<boolean>; apply: () => Promise<void> },
   input: { https: number; http: number },
-  who: { userId: string; ip: string | null },
+  /** userId null: from the menu-bar app (US-SYS-42). */
+  who: { userId: string | null; ip: string | null },
   now = Date.now(),
 ) {
   const { db } = deps;
@@ -58,7 +59,12 @@ export async function setWebPorts(
   }
   db.transaction((tx) => {
     const inTx = tx as unknown as HlabsDb;
-    setSetting(inTx, 'network', { ...getSetting(inTx, 'network'), ports: { https: input.https, http: input.http } });
+    // A change made here is the admin's choice: nothing to go back to later (US-SYS-42).
+    setSetting(inTx, 'network', {
+      ...getSetting(inTx, 'network'),
+      ports: { https: input.https, http: input.http },
+      returnTo: null,
+    });
     tx.insert(auditLog)
       .values({
         id: ulid(),

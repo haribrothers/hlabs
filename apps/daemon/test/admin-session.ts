@@ -48,7 +48,9 @@ export async function daemonWithAdmin(
     const res = await fetch(`${d.url}/trpc/${path}`, { method: 'POST', headers, body: JSON.stringify(input) });
     return (await res.json()) as Reply;
   };
-  const query = async (path: string): Promise<Reply> =>
-    (await (await fetch(`${d.url}/trpc/${path}`, { headers })).json()) as Reply;
+  const query = async (path: string, input?: unknown): Promise<Reply> => {
+    const search = input === undefined ? '' : `?input=${encodeURIComponent(JSON.stringify(input))}`;
+    return (await (await fetch(`${d.url}/trpc/${path}${search}`, { headers })).json()) as Reply;
+  };
   return { ...d, token, userId, cookie, csrf, mutate, query };
 }

@@ -22,10 +22,12 @@ import { Route as DevUiRouteImport } from './routes/dev/ui'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as LoginCodeRouteImport } from './routes/login.code'
+import { Route as LoginForgotRouteImport } from './routes/login.forgot'
 import { Route as LoginLockedRouteImport } from './routes/login.locked'
 import { Route as LoginPasswordRouteImport } from './routes/login.password'
 import { Route as LoginUsernameRouteImport } from './routes/login.username'
 import { Route as LoginUsersRouteImport } from './routes/login.users'
+import { Route as ResetTokenRouteImport } from './routes/reset.$token'
 import { Route as SettingsIndexRouteImport } from './routes/settings.index'
 import { Route as SettingsSectionRouteImport } from './routes/settings.$section'
 import { Route as SetupIndexRouteImport } from './routes/setup.index'
@@ -105,6 +107,11 @@ const LoginCodeRoute = LoginCodeRouteImport.update({
   path: '/login/code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginForgotRoute = LoginForgotRouteImport.update({
+  id: '/login/forgot',
+  path: '/login/forgot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginLockedRoute = LoginLockedRouteImport.update({
   id: '/login/locked',
   path: '/login/locked',
@@ -123,6 +130,11 @@ const LoginUsernameRoute = LoginUsernameRouteImport.update({
 const LoginUsersRoute = LoginUsersRouteImport.update({
   id: '/login/users',
   path: '/login/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetTokenRoute = ResetTokenRouteImport.update({
+  id: '/reset/$token',
+  path: '/reset/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
@@ -206,10 +218,12 @@ export interface FileRoutesByFullPath {
   '/dev/ui': typeof DevUiRoute
   '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
+  '/login/forgot': typeof LoginForgotRoute
   '/login/locked': typeof LoginLockedRoute
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
   '/login/users': typeof LoginUsersRoute
+  '/reset/$token': typeof ResetTokenRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/store/search': typeof StoreSearchRoute
@@ -235,10 +249,12 @@ export interface FileRoutesByTo {
   '/dev/ui': typeof DevUiRoute
   '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
+  '/login/forgot': typeof LoginForgotRoute
   '/login/locked': typeof LoginLockedRoute
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
   '/login/users': typeof LoginUsersRoute
+  '/reset/$token': typeof ResetTokenRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/store/search': typeof StoreSearchRoute
@@ -268,10 +284,12 @@ export interface FileRoutesById {
   '/dev/ui': typeof DevUiRoute
   '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
+  '/login/forgot': typeof LoginForgotRoute
   '/login/locked': typeof LoginLockedRoute
   '/login/password': typeof LoginPasswordRoute
   '/login/username': typeof LoginUsernameRoute
   '/login/users': typeof LoginUsersRoute
+  '/reset/$token': typeof ResetTokenRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/store/search': typeof StoreSearchRoute
@@ -302,10 +320,12 @@ export interface FileRouteTypes {
     | '/dev/ui'
     | '/invite/$token'
     | '/login/code'
+    | '/login/forgot'
     | '/login/locked'
     | '/login/password'
     | '/login/username'
     | '/login/users'
+    | '/reset/$token'
     | '/settings/$section'
     | '/setup/$step'
     | '/store/search'
@@ -331,10 +351,12 @@ export interface FileRouteTypes {
     | '/dev/ui'
     | '/invite/$token'
     | '/login/code'
+    | '/login/forgot'
     | '/login/locked'
     | '/login/password'
     | '/login/username'
     | '/login/users'
+    | '/reset/$token'
     | '/settings/$section'
     | '/setup/$step'
     | '/store/search'
@@ -363,10 +385,12 @@ export interface FileRouteTypes {
     | '/dev/ui'
     | '/invite/$token'
     | '/login/code'
+    | '/login/forgot'
     | '/login/locked'
     | '/login/password'
     | '/login/username'
     | '/login/users'
+    | '/reset/$token'
     | '/settings/$section'
     | '/setup/$step'
     | '/store/search'
@@ -396,10 +420,12 @@ export interface RootRouteChildren {
   DevUiRoute: typeof DevUiRoute
   InviteTokenRoute: typeof InviteTokenRoute
   LoginCodeRoute: typeof LoginCodeRoute
+  LoginForgotRoute: typeof LoginForgotRoute
   LoginLockedRoute: typeof LoginLockedRoute
   LoginPasswordRoute: typeof LoginPasswordRoute
   LoginUsernameRoute: typeof LoginUsernameRoute
   LoginUsersRoute: typeof LoginUsersRoute
+  ResetTokenRoute: typeof ResetTokenRoute
   LoginIndexRoute: typeof LoginIndexRoute
   AppsAppIdLogsRoute: typeof AppsAppIdLogsRoute
   AppsAppIdSettingsRoute: typeof AppsAppIdSettingsRoute
@@ -500,6 +526,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login/forgot': {
+      id: '/login/forgot'
+      path: '/login/forgot'
+      fullPath: '/login/forgot'
+      preLoaderRoute: typeof LoginForgotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login/locked': {
       id: '/login/locked'
       path: '/login/locked'
@@ -526,6 +559,13 @@ declare module '@tanstack/react-router' {
       path: '/login/users'
       fullPath: '/login/users'
       preLoaderRoute: typeof LoginUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset/$token': {
+      id: '/reset/$token'
+      path: '/reset/$token'
+      fullPath: '/reset/$token'
+      preLoaderRoute: typeof ResetTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/': {
@@ -679,10 +719,12 @@ const rootRouteChildren: RootRouteChildren = {
   DevUiRoute: DevUiRoute,
   InviteTokenRoute: InviteTokenRoute,
   LoginCodeRoute: LoginCodeRoute,
+  LoginForgotRoute: LoginForgotRoute,
   LoginLockedRoute: LoginLockedRoute,
   LoginPasswordRoute: LoginPasswordRoute,
   LoginUsernameRoute: LoginUsernameRoute,
   LoginUsersRoute: LoginUsersRoute,
+  ResetTokenRoute: ResetTokenRoute,
   LoginIndexRoute: LoginIndexRoute,
   AppsAppIdLogsRoute: AppsAppIdLogsRoute,
   AppsAppIdSettingsRoute: AppsAppIdSettingsRoute,

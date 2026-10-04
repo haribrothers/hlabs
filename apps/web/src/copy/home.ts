@@ -6,6 +6,11 @@ export const homeCopy = {
   openApp: (name: string) => `Open ${name}`,
   installApp: 'Install app',
   storage: 'Storage',
+  /** The Live usage widget (US-HOME-02, phase 4). */
+  liveUsage: 'Live usage',
+  cpu: 'CPU',
+  memory: 'Memory',
+  memoryUsedOf: (used: string, total: string) => `${used} / ${total}`,
   leftOf: (total: string) => `left of ${total}`,
   appsUsage: 'Apps',
   system: 'System',

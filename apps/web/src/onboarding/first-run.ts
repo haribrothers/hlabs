@@ -29,8 +29,12 @@ export const isSetupPath = (pathname: string) => pathname === SETUP_PATH || path
 /** `/login` and its views. */
 export const isLoginPath = (pathname: string) => pathname === '/login' || pathname.startsWith('/login/');
 
-/** Pages anyone may open without the Dock or a session: the log-in screens and invite links (US-AUTH-23). */
-export const isPlainPath = (pathname: string) => isLoginPath(pathname) || pathname.startsWith('/invite/');
+/**
+ * Pages anyone may open without the Dock or a session: the log-in screens, invite links (US-AUTH-23) and reset-password
+ * links (US-AUTH-22).
+ */
+export const isPlainPath = (pathname: string) =>
+  isLoginPath(pathname) || pathname.startsWith('/invite/') || pathname.startsWith('/reset/');
 
 export function firstRunView(opts: {
   pathname: string;

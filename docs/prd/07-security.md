@@ -49,7 +49,7 @@ hlabs holds a household's photos, passwords and documents. Security rules here a
 Enforced in the daemon (procedure middleware + service checks) **and** at Caddy via `/auth/verify` for app hostnames. The UI hides what a user can't do but never relies on hiding.
 
 ## 7.5 Tray and local access
-- The tray token is 32 random bytes, generated at first run, stored in the OS keychain (on headless Linux, the plain file of D-035; on a Linux desktop without Secret Service, the same 0600 file in the user's data dir), sent as `Authorization: Bearer` and accepted only from loopback on `/trpc` `tray.*` procedures.
+- The tray token is 32 random bytes, generated at first run, stored in the OS keychain (on headless Linux, the plain file of D-035; on a Linux desktop without Secret Service, the same 0600 file in the user's data dir), sent as `Authorization: Bearer` and accepted only from loopback on `/trpc` `tray.*` procedures (in development, `.dev-data/tray.token`; details in D-112).
 - Password reset from the tray requires the OS to confirm the local user (macOS: `LocalAuthentication` / Touch ID or the account password; Linux: polkit prompt).
 
 ## 7.6 Apps and containers

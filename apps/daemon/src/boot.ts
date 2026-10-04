@@ -6,6 +6,7 @@ import { KeepAwake, processSleepBlocker, type SleepBlocker } from './platform/ke
 import { eq } from 'drizzle-orm';
 import { registerEngineRestart } from './engine/restart-job';
 import { registerEngineStart } from './engine/start-job';
+import { registerPause, resumeAfterQuit } from './apps/pause';
 import { registerHomeFolderTrash } from './users/home-trash-job';
 import { watchEngine } from './engine/watch';
 import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
@@ -16,7 +17,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NoopProxyManager, type ProxyManager } from './caddy/index';
 import { CaddyProxy } from './caddy/proxy';
-import { NetworkService } from './network/service';
+import { notifyPortProblem, returnToPorts, tailscaleServeHolds } from './network/port-problem';
+import { NetworkService, type PortProblem } from './network/service';
 import type { DaemonConfig } from './config';
 import type { InstallerHost } from './engine/colima-installer';
 import { engineDir, registerEngineInstall } from './engine/install-job';
@@ -40,6 +42,21 @@ import { FakeTailscale } from './tailscale/fake';
 import { LocalApiTailscale } from './tailscale/localapi';
 import type { TailscaleClient } from './tailscale/types';
 import { AppDiskUsage } from './apps/disk';
+import { HlabsUpdates } from './updates/service';
+import { takeSwitchedBack, type HeadlessHost } from './updates/headless';
+import { nodeHeadlessHost } from './updates/headless-host';
+import { AUTO_UPDATED_KIND, AutoUpdates } from './updates/auto';
+import {
+  confirmHeadlessSwitch,
+  registerSystemUpdate,
+  reportFailedUpdate,
+  startSystemUpdate,
+  settleSystemUpdate,
+  type SystemUpdateDeps,
+} from './updates/install';
+import { UPDATE_PUBLIC_KEY } from './updates/key';
+import { clearUpdateMarker, markUpdateFailed, readUpdateMarker } from './updates/marker';
+import { HttpUpdateSource, type UpdateSource } from './updates/source';
 import { AppLogs } from './apps/logs';
 import { UpdateService } from './apps/update';
 import { SessionService } from './auth/sessions';
@@ -49,6 +66,9 @@ import { OnboardingService } from './onboarding/service';
 import { NodeDriveProbe, type DriveProbe } from './platform/drives';
 import { LinuxNetworkMounter, MacNetworkMounter, type NetworkMounter } from './platform/network-mount';
 import { NetworkStorage } from './storage/network';
+import { SystemHostStats, type HostStats } from './platform/host-stats';
+import { UsageHistory } from './usage/history';
+import { UsageSampler } from './usage/sampler';
 import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
@@ -73,6 +93,19 @@ export interface BootDeps {
   tailscale?: TailscaleClient;
   secrets?: SecretStore;
   system?: SystemProbe;
+  host?: HostStats;
+  /** Tests that drive the sampler themselves turn the 5 s timer off. */
+  sampleUsage?: boolean;
+  /** Where hlabs's update manifest comes from (US-SYS-24); tests pass a fake. */
+  updateSource?: UpdateSource;
+  /** Tests turn the 6-hour update check off. */
+  checkUpdates?: boolean;
+  /** Headless updates' downloads, tar and restart; tests pass a fake. */
+  headlessHost?: HeadlessHost;
+  /** How long the tray has to take an update over (tests make it short). */
+  trayTakeoverMs?: number;
+  /** How long a start after an update waits for apps (tests make it short). */
+  updateHealthWaitMs?: number;
   drives?: DriveProbe;
   mounter?: NetworkMounter;
   /** Downloads, tar and colima for the engine install (US-ONB-05). */
@@ -94,11 +127,20 @@ export interface BootDeps {
   print?: (line: string) => void;
 }
 
+/** How long a start after an update waits for its apps before saying it's ready. */
+export const UPDATE_HEALTH_WAIT_MS = 120_000;
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms).unref());
+
 export async function boot(deps: BootDeps): Promise<Services | null> {
   const { config, logger, readiness, holder } = deps;
 
   // 1. Config, database, migrations.
   readiness.step(0);
+  // Starting after the tray replaced hlabs (US-STATE-01): /healthz says "updating", step 2 of 4, until ready.
+  const updateMarker = readUpdateMarker(config.paths.dataDir);
+  // The marker names the version being installed: this is it, or the update didn't take (US-STATE-03).
+  const finishingUpdate = updateMarker !== null && updateMarker.toVersion === config.version;
+  if (finishingUpdate) readiness.updating(2);
   try {
     mkdirSync(config.paths.dataDir, { recursive: true });
   } catch (err) {
@@ -113,10 +155,16 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     logger.fatal({ err }, err instanceof SchemaTooNewError ? 'database is newer than this hlabs' : 'migration failed');
     if (err instanceof MigrationFailedError || err instanceof SchemaTooNewError) readiness.fail('migration_failed');
     else readiness.fail('storage_unavailable');
+    // A new version that can't start: the next start (the old one, after a rollback) reports it (US-STATE-03).
+    if (updateMarker) markUpdateFailed(config.paths.dataDir, 'migration_failed');
     return null;
   }
   const bus = new EventBus();
   const jobs = new JobRunner(db, bus, logger);
+  // An update that was under way finished if this is the version it was updating to (US-SYS-23).
+  const settled = settleSystemUpdate(db, config.version);
+  const updated = settled?.outcome === 'succeeded' ? settled.payload : null;
+  if (updated) logger.info({ from: updated.fromVersion, to: updated.version }, 'hlabs updated');
   jobs.recover();
   if (config.dev || config.env === 'test') {
     jobs.register<{ steps?: number }>('noop', {
@@ -192,6 +240,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     (config.mdns
       ? createMdnsPublisher(logger, () => getSetting(db, 'network').ports.https, children)
       : new NoopMdnsPublisher());
+  // A port another program holds (US-SYS-42): told to admins once notifications exist (below).
+  let onPortProblem: (problem: PortProblem | null) => void = () => {};
   const network = new NetworkService({
     db,
     proxy,
@@ -200,7 +250,13 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     routes: () => appService.routes(),
     dashboardUpstream: config.dashboardUpstream,
     daemon: `127.0.0.1:${config.port}`,
+    heldBy: (port) => tailscaleServeHolds(port, { db, tailscale }),
+    onPortProblem: (problem) => onPortProblem(problem),
   });
+  // Moved off 443 because another program held it (US-SYS-42)? Back to it now if it's free.
+  if (await returnToPorts({ db, portInUse: (port) => (deps.system ?? new NodeSystemProbe()).portInUse(port) })) {
+    logger.info({ ports: getSetting(db, 'network').ports }, 'back on the usual web ports');
+  }
   await network.sync();
   network.watch(bus);
   const secrets = deps.secrets ?? createSecretStore(config.secretStore, config.paths.dataDir);
@@ -233,19 +289,35 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   const { synced, skipped } = catalog.syncBuiltin();
   logger.info({ apps: synced.length, skipped: skipped.length }, 'built-in store loaded');
   // Health waits take up to minutes, so apps come up in the background; /healthz doesn't wait for them.
-  const reconciled = appService.reconcile().catch((err: unknown) => logger.error({ err }, 'reconciling apps failed'));
+  // How many reconciles are waiting or running: while any is, the tray says "Starting" (US-INST-11).
+  let pendingReconciles = 1;
+  const reconcileOnce = () =>
+    appService
+      .reconcile()
+      .catch((err: unknown) => logger.error({ err }, 'reconciling apps failed'))
+      .finally(() => pendingReconciles--);
+  const reconciled = reconcileOnce();
   // Later reconciles (the engine came back, US-STATE-09, US-STATE-10) run one after another, after this one.
   let reconciling: Promise<void> = reconciled;
-  const appsBack = () =>
-    (reconciling = reconciling
-      .then(() => appService.reconcile())
-      .catch((err: unknown) => logger.error({ err }, 'reconciling apps failed')));
+  const appsBack = () => {
+    pendingReconciles++;
+    return (reconciling = reconciling.then(reconcileOnce));
+  };
+
+  // After an update, apps get up to 2 minutes to come back before hlabs says it's ready (US-STATE-01, step 3).
+  if (finishingUpdate) {
+    readiness.updating(3);
+    await Promise.race([reconciled, delay(deps.updateHealthWaitMs ?? UPDATE_HEALTH_WAIT_MS)]);
+    readiness.updating(4);
+  }
 
   // 5. Scheduler: backups, update checks, health probes, usage sampling (added by their phases).
   readiness.step(4);
 
   // First run: keep the setup token ready and print the setup URL (US-ONB-01, D-041).
   const probe = deps.system ?? new NodeSystemProbe();
+  const host = deps.host ?? new SystemHostStats();
+  const sampler = new UsageSampler({ db, bus, engine, host, logger, composePrefix: config.composePrefix });
   registerEngineInstall({
     jobs,
     engine,
@@ -273,6 +345,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   });
   registerEngineStart({ jobs, engine, db, control: engineControl, appsBack });
   registerHomeFolderTrash({ jobs, db });
+  registerPause({ jobs, db, apps: appService, logger });
+  // Starting after "Quit hlabs" (D-120): once reconciled, the apps it stopped start again.
+  void reconciled.then(() => resumeAfterQuit({ db, jobs }));
   const onboarding = new OnboardingService({
     db,
     secrets,
@@ -306,6 +381,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
 
   const totp = new TotpService(db, secrets);
   const notifications = new NotificationService(db, bus);
+  onPortProblem = (problem) => notifyPortProblem({ db, notifications }, problem);
+  if (network.portProblem()) onPortProblem(network.portProblem());
   watchEngine({
     bus,
     engine,
@@ -352,6 +429,41 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     probes: deps.healthProbes,
   });
   updates.register();
+  const updateSource = deps.updateSource ?? new HttpUpdateSource();
+  const hlabsUpdates = new HlabsUpdates({
+    db,
+    bus,
+    logger,
+    source: updateSource,
+    version: config.version,
+    syncStore: () => catalog.syncBuiltin(),
+    blocker: () => jobs.blocker('system_update'),
+  });
+  const systemUpdate: SystemUpdateDeps = {
+    db,
+    bus,
+    jobs,
+    updates: hlabsUpdates,
+    source: updateSource,
+    version: config.version,
+    mode: config.headless ? 'headless' : 'tray',
+    headless: { root: config.installRoot, host: deps.headlessHost ?? nodeHeadlessHost(), publicKey: UPDATE_PUBLIC_KEY },
+    trayTakeoverMs: deps.trayTakeoverMs,
+  };
+  registerSystemUpdate(systemUpdate);
+  const autoUpdates = new AutoUpdates({
+    db,
+    bus,
+    jobs,
+    catalog,
+    notifications,
+    logger,
+    hlabs: {
+      available: () => hlabsUpdates.status().available?.version ?? null,
+      install: () => void startSystemUpdate(systemUpdate, null),
+    },
+    updateApp: (appId) => updates.update({ userId: null }, appId).jobId,
+  });
   const services: Services = {
     config,
     logger,
@@ -366,7 +478,11 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     catalog,
     store,
     installer,
+    appDisk: disk,
     updates,
+    hlabsUpdates,
+    systemUpdate,
+    autoUpdates,
     logs: new AppLogs({ engine, project: (appId) => appService.project(appId).name }),
     routing: network,
     remote,
@@ -374,6 +490,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     dns,
     apps: appService,
     reconciled,
+    isReconciling: () => pendingReconciles > 0,
     onboarding,
     sessions,
     totp,
@@ -392,6 +509,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     notifications,
     drives: deps.drives ?? new NodeDriveProbe(),
     system: probe,
+    host,
+    usage: sampler,
+    usageHistory: new UsageHistory({ db, recent: () => sampler.recent(), logger }),
     keepAwake: new KeepAwake(deps.sleepBlocker ?? processSleepBlocker(), () => ({
       keepAwake: getSetting(db, 'startup').keepAwake,
       appsRunning: db.select({ id: apps.id }).from(apps).where(eq(apps.state, 'running')).all().length,
@@ -415,8 +535,46 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   });
   services.login.startPruning();
 
-  // 6. Ready.
+  // 6. Ready; usage sampling starts (US-USE-08).
   readiness.ready();
+  if (deps.sampleUsage !== false) {
+    services.usage.start();
+    services.usageHistory.start();
+  }
+  if (deps.checkUpdates !== false) {
+    services.hlabsUpdates.start();
+    services.autoUpdates.start();
+  }
+  // An automatic hlabs update finished overnight: say so (US-SYS-26).
+  if (updated && updated.userId === null) {
+    services.notifications.create({
+      userId: null,
+      kind: AUTO_UPDATED_KIND,
+      severity: 'success',
+      title: `hlabs updated to ${updated.version} overnight`,
+      body: `It was ${updated.fromVersion}.`,
+      actions: [{ kind: 'navigate', to: '/settings/updates' }],
+    });
+  }
+  // An update that didn't install (US-STATE-03): the marker names another version, the job didn't settle on its
+  // version, or a headless switch was undone. Reported once, whichever says so.
+  const switchedBack = config.headless ? takeSwitchedBack(config.installRoot) : null;
+  const failure =
+    updateMarker && !finishingUpdate
+      ? { from: config.version, to: updateMarker.toVersion, reason: updateMarker.failedReason ?? null }
+      : settled?.outcome === 'failed'
+        ? { from: config.version, to: settled.payload.version, reason: null, userId: settled.payload.userId }
+        : switchedBack
+          ? { from: switchedBack.from, to: switchedBack.to, reason: 'not_ready' }
+          : null;
+  if (failure) {
+    logger.warn(failure, "hlabs update didn't install");
+    reportFailedUpdate(db, services.notifications, failure);
+  }
+  // The update is over either way: the next start is an ordinary one (US-STATE-01).
+  if (updateMarker) clearUpdateMarker(config.paths.dataDir);
+  // Headless: this version is ready, so its switch stays (the start check won't switch back, US-SYS-23).
+  if (config.headless) confirmHeadlessSwitch(config.installRoot, config.version);
   bus.emit('system.status', { state: 'ready' });
   logger.info({ version: config.version, port: config.port }, 'hlabsd is ready');
   return services;
@@ -425,6 +583,17 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
 export async function shutdown(services: Services | null): Promise<void> {
   if (!services) return;
   services.engine.stop();
+  services.usage.stop();
+  services.usageHistory.stop();
+  services.hlabsUpdates.stop();
+  services.autoUpdates.stop();
+  // The last finished minute is written before stopping, so a restart loses at most the minute in progress.
+  try {
+    services.usageHistory.flush();
+  } catch {
+    // Shutting down anyway.
+  }
+  services.routing.stop();
   services.login.stop();
   services.keepAwake.stop();
   await services.jobs.shutdown();

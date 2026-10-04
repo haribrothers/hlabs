@@ -1,6 +1,6 @@
 import Docker from 'dockerode';
 import { LogFrames, type ContainerLogLine } from './log-frames';
-import type { ContainerEngine, ContainerState, EngineInfo, PullProgress } from './types';
+import type { ContainerEngine, ContainerStats, ContainerState, EngineInfo, PullProgress } from './types';
 
 /** The real engine, over its unix socket (D-003: dockerode for everything but compose up/down). */
 export class DockerodeEngine implements ContainerEngine {
@@ -121,6 +121,13 @@ export class DockerodeEngine implements ContainerEngine {
     }
   }
 
+  async containerStats(containerId: string, signal?: AbortSignal): Promise<ContainerStats> {
+    const raw = (await this.docker
+      .getContainer(containerId)
+      .stats({ stream: false, abortSignal: signal } as never)) as unknown as DockerStats;
+    return parseDockerStats(raw);
+  }
+
   async imageSize(image: string): Promise<number | null> {
     try {
       return (await this.docker.getImage(image).inspect()).Size;
@@ -153,6 +160,38 @@ export class DockerodeEngine implements ContainerEngine {
       }),
     );
   }
+}
+
+/** The parts of `GET /containers/{id}/stats?stream=false` hlabs reads. */
+export interface DockerStats {
+  cpu_stats?: { cpu_usage?: { total_usage?: number }; system_cpu_usage?: number; online_cpus?: number };
+  precpu_stats?: { cpu_usage?: { total_usage?: number }; system_cpu_usage?: number };
+  memory_stats?: { usage?: number; stats?: { inactive_file?: number; total_inactive_file?: number; cache?: number } };
+  networks?: Record<string, { rx_bytes?: number; tx_bytes?: number }>;
+  blkio_stats?: { io_service_bytes_recursive?: Array<{ op?: string; value?: number }> | null };
+}
+
+/**
+ * CPU as a share of the whole host (Docker's own percent is per CPU, up to 100 × cores), memory without the file
+ * cache (as `docker stats` shows it), and network and disk totals.
+ */
+export function parseDockerStats(s: DockerStats): ContainerStats {
+  const cpuDelta = (s.cpu_stats?.cpu_usage?.total_usage ?? 0) - (s.precpu_stats?.cpu_usage?.total_usage ?? 0);
+  const systemDelta = (s.cpu_stats?.system_cpu_usage ?? 0) - (s.precpu_stats?.system_cpu_usage ?? 0);
+  const cpuPercent = cpuDelta > 0 && systemDelta > 0 ? Math.min(100, (cpuDelta / systemDelta) * 100) : 0;
+  const mem = s.memory_stats;
+  const cache = mem?.stats?.inactive_file ?? mem?.stats?.total_inactive_file ?? mem?.stats?.cache ?? 0;
+  const networks = Object.values(s.networks ?? {});
+  const io = s.blkio_stats?.io_service_bytes_recursive ?? [];
+  const sumIo = (op: string) => io.filter((e) => e.op?.toLowerCase() === op).reduce((n, e) => n + (e.value ?? 0), 0);
+  return {
+    cpuPercent,
+    memBytes: Math.max(0, (mem?.usage ?? 0) - cache),
+    netRxBytes: networks.reduce((n, x) => n + (x.rx_bytes ?? 0), 0),
+    netTxBytes: networks.reduce((n, x) => n + (x.tx_bytes ?? 0), 0),
+    diskReadBytes: sumIo('read'),
+    diskWriteBytes: sumIo('write'),
+  };
 }
 
 interface PullEvent {

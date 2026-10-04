@@ -39,7 +39,9 @@ describe('US-ONB-19', () => {
   it("the daemon's onboarding follows the shipped phase, and the previewed one in development (D-092)", () => {
     expect(loadConfig({ NODE_ENV: 'production' }).phase).toBe(SHIPPED_PHASE);
     expect(loadConfig({ NODE_ENV: 'development' }).phase).toBe(Math.max(SHIPPED_PHASE, BUILDING_PHASE));
-    expect(loadConfig({ NODE_ENV: 'development', HLABS_PREVIEW_PHASE: '3' }).phase).toBe(3);
+    expect(loadConfig({ NODE_ENV: 'development', HLABS_PREVIEW_PHASE: String(SHIPPED_PHASE + 1) }).phase).toBe(
+      SHIPPED_PHASE + 1,
+    );
   });
 
   it('choosing storage on phase 2 moves on to the apps step', async () => {

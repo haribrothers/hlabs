@@ -1,9 +1,9 @@
 // Phase gating (D-036): a control that needs a later phase is hidden until that phase ships.
 // Bump SHIPPED_PHASE when a phase's "Done when" list is true (docs/prd/10-phases.md); BUILDING_PHASE moves to the next
 // phase when its first story starts (D-092), so dev and e2e never preview controls nobody has built yet.
-export const SHIPPED_PHASE = 3;
+export const SHIPPED_PHASE = 4;
 /** The phase being built: the dashboard's dev server (pnpm dev, e2e) previews it (D-092). */
-export const BUILDING_PHASE = 3;
+export const BUILDING_PHASE = 4;
 
 /** Set by the dashboard's Vite dev server only (HLABS_PREVIEW_PHASE, else BUILDING_PHASE); never in a build. */
 declare const __HLABS_PREVIEW_PHASE__: number | null | undefined;
@@ -34,10 +34,14 @@ export const FEATURE_PHASE = {
   liveUsage: 4,
   hlabsUpdates: 4,
   backups: 5,
+  /** "Uninstall hlabs…" in the tray (US-INST-21, US-INST-22). */
+  uninstall: 6,
   files: 5,
   notifications: 7,
   /** The App Store updates list (F-STORE-08) and the Dock's update badge (US-HOME-05). */
   appUpdates: 7,
+  /** "Update all" in Settings › Updates (US-SYS-25). */
+  updateAll: 7,
   homeEdit: 7,
   widgets: 7,
   storeSources: 7,

@@ -19,6 +19,8 @@ const envSchema = z.object({
   HLABS_PORT: z.coerce.number().int().min(0).max(65535).default(7474),
   HLABS_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
   HLABS_HEADLESS: flag,
+  /** Headless Linux: where hlabs versions live side by side with a `current` link (US-SYS-23, D-118). */
+  HLABS_INSTALL_ROOT: z.string().default('/opt/hlabs'),
   /** Development only: the phase to preview (D-092), as the dashboard's dev server does. */
   HLABS_PREVIEW_PHASE: z.coerce.number().int().min(0).optional(),
   HLABS_DEV_ANONYMOUS_ADMIN: flag,
@@ -33,6 +35,7 @@ const envSchema = z.object({
   HLABS_STORE_DIR: z.string().optional(),
   HLABS_BIN_DIR: z.string().optional(),
   HLABS_WEB_FALLBACK_DIR: z.string().optional(),
+  HLABS_WEB_DIR: z.string().optional(),
   HLABS_PROXY: z.enum(['caddy', 'none']).optional(),
   HLABS_MDNS: z.enum(['0', '1', 'true', 'false']).optional(),
   HLABS_DASHBOARD_UPSTREAM: z.string().optional(),
@@ -52,6 +55,8 @@ export interface ResourcePaths {
   storeDir: string;
   binDir: string;
   webFallbackDir: string;
+  /** The dashboard's build, served by the daemon when it's there (`pnpm dev` uses Vite instead). */
+  webDir: string;
 }
 
 function defaultResources(): ResourcePaths {
@@ -61,6 +66,7 @@ function defaultResources(): ResourcePaths {
       storeDir: resolve(here, 'store'),
       binDir: resolve(here, 'bin'),
       webFallbackDir: resolve(here, 'web-fallback'),
+      webDir: resolve(here, 'web'),
     };
   }
   const repo = fileURLToPath(new URL('../../../', import.meta.url));
@@ -68,6 +74,7 @@ function defaultResources(): ResourcePaths {
     storeDir: resolve(repo, 'store'),
     binDir: resolve(repo, '.bin'),
     webFallbackDir: resolve(repo, 'apps/web/dist-fallback'),
+    webDir: resolve(repo, 'apps/web/dist'),
   };
 }
 
@@ -95,6 +102,8 @@ export interface DaemonConfig {
   dashboardUpstream: string;
   /** Linux system service without a desktop session. */
   headless: boolean;
+  /** Headless Linux: the install root (`/opt/hlabs`) with each version and the `current` link. */
+  installRoot: string;
   /** Where the dashboard is opened from this computer; the setup URL is built from it (D-041). */
   dashboardUrl: string;
   /** macOS: the NetFS helper for SMB (D-060). */
@@ -157,12 +166,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
       storeDir: e.HLABS_STORE_DIR ? resolve(e.HLABS_STORE_DIR) : resources.storeDir,
       binDir: e.HLABS_BIN_DIR ? resolve(e.HLABS_BIN_DIR) : resources.binDir,
       webFallbackDir: e.HLABS_WEB_FALLBACK_DIR ? resolve(e.HLABS_WEB_FALLBACK_DIR) : resources.webFallbackDir,
+      webDir: e.HLABS_WEB_DIR ? resolve(e.HLABS_WEB_DIR) : resources.webDir,
     },
     proxy: e.HLABS_PROXY ?? (production ? 'caddy' : 'none'),
     mdns: e.HLABS_MDNS === undefined ? production : e.HLABS_MDNS === '1' || e.HLABS_MDNS === 'true',
     dashboardUpstream: e.HLABS_DASHBOARD_UPSTREAM ?? `127.0.0.1:${e.HLABS_PORT}`,
     composePrefix: e.HLABS_COMPOSE_PREFIX,
     headless: e.HLABS_HEADLESS,
+    installRoot: resolve(e.HLABS_INSTALL_ROOT),
     netmountHelper: e.HLABS_NETMOUNT_BIN ?? fileURLToPath(new URL('../native/.build/hlabs-netmount', import.meta.url)),
     privHelper: e.HLABS_PRIV_HELPER ?? '/usr/lib/hlabs/hlabs-priv',
     dashboardUrl: (e.HLABS_DASHBOARD_URL ?? `http://127.0.0.1:${e.HLABS_PORT}`).replace(/\/+$/, ''),

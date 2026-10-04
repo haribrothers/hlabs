@@ -30,7 +30,11 @@ const MENU_WIDTH = 240;
 /** A menu surface with arrow-key movement. For a positioned dropdown use DropdownMenu. */
 export function Menu({ label, items, width = MENU_WIDTH, header, className }: MenuProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const hasChecks = items.some((it) => it.checked !== undefined);
+  // The check column starts with the group that holds the first checkable item and runs to the end, so labels line up
+  // from there (TrayMenu: Open Dashboard stays flush, Start at login… and Quit share the column).
+  const firstCheck = items.findIndex((it) => it.checked !== undefined);
+  const checksFrom =
+    firstCheck < 0 ? items.length : items.slice(0, firstCheck).findLastIndex((it) => it.separator === true) + 1;
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End'];
@@ -77,7 +81,7 @@ export function Menu({ label, items, width = MENU_WIDTH, header, className }: Me
         };
         const inner = (
           <>
-            {hasChecks ? (
+            {i >= checksFrom ? (
               <span className="hl-menu-check" aria-hidden="true">
                 {it.checked ? <Check size={14} strokeWidth={2} /> : null}
               </span>

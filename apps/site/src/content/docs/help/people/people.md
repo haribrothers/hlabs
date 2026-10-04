@@ -85,3 +85,7 @@ Under **What members can do**:
 - **Install apps from the App Store** lets family members install apps themselves, from hlabs's own App Store and only apps that don't ask for risky access. An app they install is shared with them straight away. Off, they can only open the apps you share.
 - **See live usage** lets members see the Usage page, but only those you've also turned it on for in **Apps access**.
 
+
+## When someone forgets their password
+
+hlabs doesn't use email, so an admin makes a one-time reset link: in Settings › Users, choose **Reset password** next to their name and send them the link. It works once, for 15 minutes. When they open it, they choose a new password and are signed in; their other devices are signed out. If their account has two-factor on, they then log in with the new password and their code.

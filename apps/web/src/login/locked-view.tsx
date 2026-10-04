@@ -82,7 +82,11 @@ export function LockedView({ user, until, next }: { user?: string; until?: numbe
       </Button>
       <div className="mt-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-body-sm">
         {isFeatureEnabled('forgotPassword') ? (
-          <Link to="/login" search={withNext(next)} className="hl-focus rounded-xs text-ink no-underline">
+          <Link
+            to="/login/forgot"
+            search={{ from: 'locked', ...(user ? { user } : {}), ...withNext(next) }}
+            className="hl-focus rounded-xs text-ink no-underline"
+          >
             {copy.forgot}
           </Link>
         ) : null}
