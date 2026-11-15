@@ -45,6 +45,37 @@ export const appsCopy = {
   askToStart: 'Ask an admin to start it.',
   notResponding: (app: string) => `${app} isn't responding.`,
   stoppedWorking: (app: string) => `${app} stopped working`,
+  /** The settings header of an app that stopped working (US-APP-24): "Stopped working · it quit unexpectedly". */
+  stoppedWorkingStatus: (reason: string) =>
+    `Stopped working · ${reason.charAt(0).toLowerCase()}${reason.slice(1).replace(/\.$/, '')}`,
+  // Reinstall (US-APP-24, US-APP-25)
+  fixHint: "Restart it, or reinstall it if that doesn't help. Its data is kept either way.",
+  reinstallEllipsis: 'Reinstall…',
+  reinstall: 'Reinstall',
+  reinstallTitle: (app: string) => `Reinstall ${app}?`,
+  reinstallBody: (app: string, version: string, size: string | null) =>
+    `hlabs downloads ${app} ${version} again${size ? ` (about ${size})` : ''} and sets it up from scratch.`,
+  keptTitle: 'Kept as they are',
+  kept: [
+    'Its data and settings',
+    'Passwords it created',
+    'Folder access and who it’s shared with',
+    'Its place on Home and in the Dock',
+  ],
+  startsWhenDone: 'It starts when it’s done.',
+  reinstallBlocked: (app: string) =>
+    `hlabs can't find ${app}'s saved settings, so reinstalling would reset its passwords. To start over, uninstall it and install it again.`,
+  resumeFirst: 'Resume apps first',
+  waitFor: (job: string) => `Wait for ${job} to finish`,
+  reinstalling: (app: string) => `Reinstalling ${app}`,
+  beingReinstalled: (app: string) => `${app} is being reinstalled`,
+  reinstallStep: {
+    stopping: 'Stopping',
+    removing: 'Removing old containers',
+    pulling: (app: string, version: string) => `Downloading ${app} ${version}`,
+    starting: 'Starting',
+    health: 'Checking it works',
+  },
   askToRestart: 'Ask an admin to restart it.',
 
   // App settings (US-APP-04…07)

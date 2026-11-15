@@ -77,7 +77,10 @@ export class ReinstallService {
     const app = this.deps.db.select().from(apps).where(eq(apps.id, appId)).get();
     if (!app) return null;
     const disk = await this.deps.disk?.get(appId).catch(() => null);
-    return { version: app.version, downloadBytes: disk?.imageBytes ?? null, blocked: this.check(appId).blocked };
+    // Paused from the menu bar: the dashboard says "Resume apps first" (only the tray knows otherwise).
+    const blocked: Blocked | 'paused' | null =
+      this.check(appId).blocked ?? (getSetting(this.deps.db, 'paused') !== null ? 'paused' : null);
+    return { version: app.version, downloadBytes: disk?.imageBytes ?? null, blocked };
   }
 
   /**

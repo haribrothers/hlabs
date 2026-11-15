@@ -53,6 +53,7 @@ export const homeCopy = {
     stop: 'Stop',
     start: 'Start',
     uninstall: 'Uninstall…',
+    reinstall: 'Reinstall…',
     restarted: (app: string) => `${app} restarted`,
     started: (app: string) => `${app} started`,
     stopped: (app: string) => `${app} stopped`,

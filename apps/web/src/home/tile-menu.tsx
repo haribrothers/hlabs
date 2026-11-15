@@ -10,6 +10,7 @@ import {
   Square,
   TextAlignStart,
   Trash2,
+  Wrench,
 } from '@hlabs/icons';
 import {
   DropdownMenu,
@@ -23,6 +24,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useId, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { UninstallDialog } from '../apps/uninstall-dialog';
+import { ReinstallDialog } from '../apps/reinstall';
 import { homeCopy } from '../copy/home';
 import { useTRPC } from '../lib/trpc';
 import type { HomeApp } from './home-app';
@@ -44,6 +46,7 @@ const MOVING = new Set<HomeApp['state']>([
   'restarting',
   'stopping',
   'rolling_back',
+  'reinstalling',
 ]);
 
 const icon = (Glyph: typeof ExternalLink) => <Glyph {...iconDefaults} className="size-4" />;
@@ -67,6 +70,7 @@ export function TileMenu({
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [uninstalling, setUninstalling] = useState(false);
+  const [reinstallOpen, setReinstallOpen] = useState(false);
   const holder = useRef<HTMLDivElement>(null);
   const labelId = useId();
   const press = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number } | null>(null);
@@ -138,6 +142,8 @@ export function TileMenu({
       items.push(<DropdownMenuSeparator key="sep-commands" />);
       item('restart', copy.restart, RotateCw, () => onCommand('restart'));
       if (app.state === 'running') item('stop', copy.stop, Square, () => onCommand('stop'));
+      // A broken app can be rebuilt, keeping its data (US-APP-24).
+      if (app.state === 'error') item('reinstall', copy.reinstall, Wrench, () => setReinstallOpen(true));
     } else if (app.state === 'stopped') {
       items.push(<DropdownMenuSeparator key="sep-commands" />);
       item('start', copy.start, Play, () => onCommand('start'));
@@ -190,6 +196,7 @@ export function TileMenu({
         </DropdownMenuContent>
       </DropdownMenu>
       {uninstalling ? <UninstallFor appId={app.id} onClose={() => setUninstalling(false)} /> : null}
+      {reinstallOpen ? <ReinstallFor appId={app.id} onClose={() => setReinstallOpen(false)} /> : null}
     </div>
   );
 }
@@ -200,4 +207,12 @@ function UninstallFor({ appId, onClose }: { appId: string; onClose: () => void }
   const { data: app } = useQuery({ ...trpc.apps.get.queryOptions({ appId }), retry: false });
   if (!app) return null;
   return <UninstallDialog app={app} open onOpenChange={(next) => (next ? undefined : onClose())} />;
+}
+
+/** "Reinstall…" from a broken tile: the same dialog as App settings (US-APP-24). */
+function ReinstallFor({ appId, onClose }: { appId: string; onClose: () => void }) {
+  const trpc = useTRPC();
+  const { data: app } = useQuery({ ...trpc.apps.get.queryOptions({ appId }), retry: false });
+  if (!app) return null;
+  return <ReinstallDialog app={app} open onOpenChange={(next) => (next ? undefined : onClose())} />;
 }

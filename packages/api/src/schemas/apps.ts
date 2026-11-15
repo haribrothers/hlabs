@@ -113,13 +113,14 @@ export const appDetailSchema = homeAppSchema.extend({
   custom: z.boolean(),
   /**
    * What a reinstall would do (US-APP-24): the version it installs again (the installed one), about how much it
-   * downloads (null while counted) and why it can't run. Null for members.
+   * downloads (null while counted) and why it can't run (its settings or manifest are gone, or apps are paused from
+   * the menu bar). Null for members.
    */
   reinstall: z
     .object({
       version: z.string(),
       downloadBytes: z.number().int().nullable(),
-      blocked: z.enum(['settings_missing', 'manifest_missing']).nullable(),
+      blocked: z.enum(['settings_missing', 'manifest_missing', 'paused']).nullable(),
     })
     .nullable(),
 });

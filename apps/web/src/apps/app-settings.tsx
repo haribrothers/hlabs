@@ -28,6 +28,8 @@ import { UpdateButton, useAppUpdate } from './app-update';
 import { statusDot } from './status-dot';
 import { appBaseUrl, useApp } from './use-app';
 import { UninstallDialog } from './uninstall-dialog';
+import { ReinstallButton, ReinstallDialog, ReinstallProgress } from './reinstall';
+import { failureReason } from '../store/install-progress';
 import { useAppCommands } from './use-app-commands';
 
 const copy = appsCopy;
@@ -35,6 +37,8 @@ const copy = appsCopy;
 const SETTINGS_LOGO = 64;
 /** States a command ends in: Start, Stop and Restart wait for one (US-APP-04). */
 const SETTLED = new Set<AppState>(['running', 'stopped', 'error']);
+/** What hlabs says when it noticed a running app stop working (US-APP-26). */
+const CRASHED: ReadonlySet<string> = new Set(['APP_CRASHED', 'APP_UNHEALTHY']);
 
 type Tab = keyof typeof copy.tabs;
 /** The sections and the feature each needs; those not built yet are hidden (D-036). */
@@ -77,6 +81,7 @@ function AppSettingsView({ appId, onClose, onOpenLogs }: SettingsProps) {
   const back = onClose ?? goBack;
   const [tab, setTab] = useState<Tab>('overview');
   const [uninstalling, setUninstalling] = useState(false);
+  const [reinstalling, setReinstalling] = useState(false);
   useEffect(() => {
     if (app) document.title = copy.docTitle(copy.settingsTitle(app.name));
   }, [app]);
@@ -109,9 +114,10 @@ function AppSettingsView({ appId, onClose, onOpenLogs }: SettingsProps) {
           <X aria-hidden {...iconDefaults} className="size-4" />
         </IconButton>
       </header>
+      {app.state === 'reinstalling' ? <ReinstallProgress app={app} /> : null}
       <SectionTabs aria-label={copy.sections} tabs={tabs} active={tab} onSelect={(id) => setTab(id as Tab)} />
       <div role="tabpanel" aria-label={copy.tabs[tab]} className="flex flex-col gap-6">
-        <Actions app={app} onOpenLogs={onOpenLogs} />
+        <Actions app={app} onOpenLogs={onOpenLogs} onReinstall={() => setReinstalling(true)} />
         <AppAccess app={app} />
         <AppBehaviour app={app} />
         <AppStorage app={app} />
@@ -120,11 +126,23 @@ function AppSettingsView({ appId, onClose, onOpenLogs }: SettingsProps) {
             <AppVersion app={app} />
             <UpdateButton app={app} />
           </div>
-          <Button variant="link" className="text-danger" onClick={() => setUninstalling(true)}>
-            {copy.uninstallEllipsis}
-          </Button>
+          <div className="flex items-center gap-5">
+            {/* A broken app has it among its actions (US-APP-24). */}
+            {app.state === 'error' ? null : (
+              <ReinstallButton app={app} variant="link" icon={false} onOpen={() => setReinstalling(true)} />
+            )}
+            <Button
+              variant="link"
+              className="text-danger"
+              disabled={app.state === 'reinstalling'}
+              onClick={() => setUninstalling(true)}
+            >
+              {copy.uninstallEllipsis}
+            </Button>
+          </div>
         </footer>
         <UninstallDialog app={app} open={uninstalling} onOpenChange={setUninstalling} />
+        <ReinstallDialog app={app} open={reinstalling} onOpenChange={setReinstalling} />
       </div>
     </GlassCard>
   );
@@ -153,30 +171,55 @@ function StatusLine({ app }: { app: AppDetail }) {
   const { progress } = useAppUpdate(app.id, app.state === 'updating');
   // An update says how far it has got (US-APP-07).
   if (app.state === 'updating' && progress !== null) return copy.updating(progress);
+  // An app hlabs noticed stop working says why (US-APP-24, US-APP-26).
+  if (app.state === 'error' && CRASHED.has(String(app.stateDetail?.code))) {
+    return copy.stoppedWorkingStatus(failureReason(app.stateDetail, app.name, 'macos'));
+  }
   const label = copy.status[app.state];
   if (app.state !== 'running' || app.startedAt === null) return label;
   return `${label} · ${copy.upFor(now.getTime() - app.startedAt)}`;
 }
 
-/** Open, Restart, Stop (Start when stopped) and Logs (US-APP-04). */
-function Actions({ app, onOpenLogs }: { app: AppDetail; onOpenLogs?: () => void }) {
+/**
+ * Open, Restart, Stop (Start when stopped) and Logs (US-APP-04); a broken app: Restart, Reinstall… and Logs
+ * (US-APP-24).
+ */
+function Actions({
+  app,
+  onOpenLogs,
+  onReinstall,
+}: {
+  app: AppDetail;
+  onOpenLogs?: () => void;
+  onReinstall: () => void;
+}) {
   const navigate = useNavigate();
   const { start, stop, restart, pending } = useAppCommands(app, app.id);
   // Until the command settles (app.stateChanged), all three wait; without the engine none can run (US-STATE-08).
   const waiting = pending || !SETTLED.has(app.state) || !app.engineRunning;
   const hint = app.engineRunning ? undefined : copy.engineFirst;
   const icon = 'size-4';
+  const broken = app.state === 'error';
   return (
     <div className="flex flex-wrap gap-2.5">
-      <Button onClick={() => browser.open(appBaseUrl(app))}>
-        <ExternalLink aria-hidden {...iconDefaults} className={icon} />
-        {copy.open}
-      </Button>
-      <Button variant="secondary" disabled={waiting} title={hint} onClick={() => restart.mutate()}>
+      {broken ? null : (
+        <Button disabled={app.state === 'reinstalling'} onClick={() => browser.open(appBaseUrl(app))}>
+          <ExternalLink aria-hidden {...iconDefaults} className={icon} />
+          {copy.open}
+        </Button>
+      )}
+      <Button
+        variant={broken ? 'primary' : 'secondary'}
+        disabled={waiting}
+        title={hint}
+        onClick={() => restart.mutate()}
+      >
         <RotateCw aria-hidden {...iconDefaults} className={icon} />
         {copy.restart}
       </Button>
-      {app.state === 'stopped' ? (
+      {broken ? (
+        <ReinstallButton app={app} variant="secondary" onOpen={onReinstall} />
+      ) : app.state === 'stopped' ? (
         <Button variant="secondary" disabled={waiting} title={hint} onClick={() => start.mutate()}>
           <Play aria-hidden {...iconDefaults} className={icon} />
           {copy.start}

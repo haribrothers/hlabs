@@ -141,6 +141,9 @@ describe('US-APP-25', () => {
     setSetting(t.s.db, 'paused', { at: 1, appIds: ['immich'], untilRestart: false });
     expect((await t.reinstall()).error?.data.hlabsCode).toBe('APP_BUSY');
     expect(t.state()).toBe('stopped');
+    // The dashboard says "Resume apps first".
+    const got = (await t.d.query('apps.get', { appId: 'immich' })) as Reply;
+    expect(got.result!.data.reinstall).toMatchObject({ blocked: 'paused' });
   });
 
   it('refused with ENGINE_UNAVAILABLE without the engine', async () => {

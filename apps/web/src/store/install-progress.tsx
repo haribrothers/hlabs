@@ -98,7 +98,8 @@ export function failureReason(detail: Record<string, unknown> | null, appName: s
     case 'ENGINE_UNAVAILABLE':
       return r.ENGINE_UNAVAILABLE;
     default:
-      return detail?.reason === 'restarted' ? r.restarted : r.other;
+      if (detail?.reason === 'restarted') return detail.reinstall ? r.restartedReinstall : r.restarted;
+      return r.other;
   }
 }
 

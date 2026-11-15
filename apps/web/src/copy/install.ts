@@ -85,6 +85,7 @@ export const installCopy = {
     APP_UNHEALTHY: 'It stopped answering.',
     ENGINE_UNAVAILABLE: 'The container engine stopped.',
     restarted: 'hlabs restarted during the install.',
+    restartedReinstall: 'hlabs restarted during the reinstall.',
     other: 'Something went wrong while installing.',
   },
   useDifferentPort: 'Use a different port',

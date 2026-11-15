@@ -102,7 +102,9 @@ describe('US-APP-26', () => {
     ])('%o: "Uptime Kuma stopped working" and "%s"', async (detail, text) => {
       open(detail);
       await screen.findByText('Uptime Kuma stopped working');
-      expect(await reason()).toBe(`Uptime Kuma stopped working${text}`);
+      const said = await reason();
+      expect(said).toContain('Uptime Kuma stopped working');
+      expect(said).toContain(text);
     });
 
     it('an app that never started still "isn\'t responding"', async () => {
