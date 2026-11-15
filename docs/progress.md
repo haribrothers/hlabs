@@ -206,7 +206,7 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 - [x] US-APP-08 · Back from Logs never loops with App settings (D-124; the history state `fromSettings` marks Logs opened from that app's settings, whose Back steps back; from anywhere else Back replaces Logs with the settings)
 - [x] US-APP-26 · Know when an app stops working (every 10 s rather than Docker's event stream, D-127; the crash notification is read once the app runs again or is uninstalled; the logs card's title and reason say what happened, its Reinstall… comes with US-APP-24; checked for real with a stopped container in e2e)
 - [ ] US-APP-24 · Offer to reinstall a broken app
-- [ ] US-APP-25 · Reinstall runs and keeps the data
+- [x] US-APP-25 · Reinstall runs and keeps the data (the compose file is written again from the store's entry of the installed version, else the project's own stays; images another app names are kept; the notices go to all admins; while paused it's refused; checked against the fake engine, the real-Docker check is with US-APP-24's e2e)
 - [ ] US-INST-28 · Install hlabs as an app on my computer
 - [ ] US-INST-29 · Use hlabs in its own window
 

@@ -46,6 +46,7 @@ export const STATUS_DOT: Record<AppState, Status> = {
   stopping: 'working',
   updating: 'working',
   rolling_back: 'working',
+  reinstalling: 'working',
   installing: 'working',
   uninstalling: 'working',
   error: 'failed',

@@ -17,6 +17,7 @@ import type { HostStats } from './platform/host-stats';
 import type { UsageHistory } from './usage/history';
 import type { UsageSampler } from './usage/sampler';
 import type { AppWatch } from './apps/app-watch';
+import type { ReinstallService } from './apps/reinstall';
 import type { SystemProbe } from './platform/system';
 import type { NotificationService } from './notifications/service';
 import type { NetworkStorage } from './storage/network';
@@ -56,6 +57,8 @@ export interface Services {
   appDisk: AppDiskUsage;
   /** Updates and their rollback (US-STORE-17). */
   updates: UpdateService;
+  /** Reinstalling an app, keeping its data and settings (US-APP-25). */
+  reinstalls: ReinstallService;
   /** hlabs's own updates: the update manifest, checked now and every 6 h (US-SYS-24). */
   hlabsUpdates: HlabsUpdates;
   /** "Update now" (US-SYS-23): who applies it here and how. */

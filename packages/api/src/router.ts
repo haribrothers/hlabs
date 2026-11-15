@@ -113,6 +113,7 @@ export const appRouter = router({
     update: m(p.admin, s.apps.update),
     updateAll: m(p.admin, s.apps.updateAll),
     uninstall: m(p.admin, s.apps.uninstall),
+    reinstall: m(p.admin, s.apps.reinstall),
     getConfig: q(p.admin, s.apps.getConfig),
     setConfig: m(p.admin, s.apps.setConfig),
     revealSecret: m(p.admin, s.apps.revealSecret),

@@ -16,6 +16,8 @@ export const APP_STATES = [
   'restarting',
   'updating',
   'rolling_back',
+  /** Rebuilt from its manifest with the same data and settings (US-APP-25). */
+  'reinstalling',
   'error',
   'uninstalling',
 ] as const;

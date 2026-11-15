@@ -5,11 +5,12 @@ import { useUiStrings } from '../lib/strings';
 import { SIZE_APP_ICON } from '../lib/tokens';
 
 /**
- * How a tile looks (US-HOME-06): `running` is the logo and name; `installing` and `updating` a ring over the dimmed
+ * How a tile looks (US-HOME-06): `running` is the logo and name; `installing`, `reinstalling` and `updating` a ring over the dimmed
  * logo; `busy` (starting, restarting, stopping, rolling back, removing) the dimmed logo with `status` for its name;
  * `stopped` desaturated at half opacity; `update` and `error` a badge.
  */
-export type AppIconState = 'running' | 'installing' | 'updating' | 'busy' | 'stopped' | 'update' | 'error';
+export type AppIconState =
+  'running' | 'installing' | 'reinstalling' | 'updating' | 'busy' | 'stopped' | 'update' | 'error';
 
 export interface AppIconProps {
   name: string;
@@ -54,21 +55,23 @@ export function AppIcon({
   const t = useUiStrings();
   const offlineId = useId();
   const pct = Math.max(0, Math.min(100, Math.round(progress ?? 0)));
-  const ring = state === 'installing' || state === 'updating';
+  const ring = state === 'installing' || state === 'reinstalling' || state === 'updating';
   const badge = state === 'update' || state === 'error' || state === 'stopped' ? t.appState[state] : null;
   const label =
     state === 'installing'
       ? t.installing(pct)
-      : state === 'updating'
-        ? t.updating
-        : state === 'busy'
-          ? (status ?? name)
-          : name;
+      : state === 'reinstalling'
+        ? t.reinstalling(pct)
+        : state === 'updating'
+          ? t.updating
+          : state === 'busy'
+            ? (status ?? name)
+            : name;
   // "Nextcloud, installing, 64%", "Pi-hole, stopped", "Vaultwarden, restarting".
   const said = (text: string) => text.replace(/…/g, '').toLowerCase();
   const stateWords =
-    state === 'installing'
-      ? `${said(t.installing(pct).replace(/\s*\d+%$/, ''))}, ${pct}%`
+    state === 'installing' || state === 'reinstalling'
+      ? `${said(label.replace(/\s*\d+%$/, ''))}, ${pct}%`
       : badge
         ? said(badge)
         : state === 'running'

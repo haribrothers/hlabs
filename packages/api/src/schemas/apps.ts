@@ -111,6 +111,17 @@ export const appDetailSchema = homeAppSchema.extend({
   autostart: z.boolean(),
   autoUpdate: z.boolean(),
   custom: z.boolean(),
+  /**
+   * What a reinstall would do (US-APP-24): the version it installs again (the installed one), about how much it
+   * downloads (null while counted) and why it can't run. Null for members.
+   */
+  reinstall: z
+    .object({
+      version: z.string(),
+      downloadBytes: z.number().int().nullable(),
+      blocked: z.enum(['settings_missing', 'manifest_missing']).nullable(),
+    })
+    .nullable(),
 });
 export type AppDetail = z.infer<typeof appDetailSchema>;
 
@@ -135,6 +146,8 @@ export const apps = {
   update: io(appRefSchema, jobRefSchema),
   updateAll: io(empty, jobIdsSchema),
   uninstall: io(appRefSchema.extend({ keepData: z.boolean() }), jobRefSchema),
+  /** Rebuilds the app, keeping its data and settings (US-APP-25): the job already going when there is one. */
+  reinstall: io(appRefSchema, jobRefSchema),
   getConfig: io(appRefSchema, pending),
   setConfig: io(
     appRefSchema.extend({

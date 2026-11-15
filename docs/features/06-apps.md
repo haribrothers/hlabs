@@ -457,14 +457,14 @@ Everything that happens after an app is installed: opening it, checking that it 
 
 **Acceptance criteria**
 - **Given** I confirm, **then** `apps.reinstall` starts an `app_reinstall` job and the app goes to `reinstalling` at once (02 §2.5).
-- **Given** the job runs, **then** it: stops the app and removes its containers and compose network (`compose down`, never `-v`); writes the project's `docker-compose.yml` again from the manifest of the installed version, with the same `.env`, settings, folder access, hostname and ports; removes the app's images that no other app uses and pulls every image again; starts it (`compose up -d`) and waits for health (D-081); registers its route and names again; and goes to `running`.
+- **Given** the job runs, **then** it: stops the app and removes its containers and compose network (`compose down`, never `-v`); writes the project's `docker-compose.yml` again from the store's entry of the installed version, with the same `.env`, settings, folder access, hostname and ports (when the store has moved on to a newer version, the project's own file stays); removes the app's images that no other app uses and pulls them again; starts it (`compose up -d`) and waits for health (D-081); registers its route and names again; and goes to `running`.
 - **Given** the job runs, **then** `app-data/<appId>` and the folders the app was given are never touched, and the app keeps its id, Home position, Dock pin, `app_access`, backup includes, "Start automatically" and "Update automatically".
 - **Given** the job succeeds, **then** a Toast and a success notification read "<App> was reinstalled", `audit_log` records `app.reinstall` with the version, and the app opens with its data as before.
 - **Given** a step fails, **then** the app goes to `error` with `state_detail` naming the step, the data is untouched, and a warning notification "<App> couldn't be reinstalled" offers "Try again" (`apps.reinstall`) and "View logs".
-- **Given** hlabs stops during the job, **then** on the next start the job is failed (as every interrupted job) and the app is `error` with "The reinstall was interrupted" and "Try again".
+- **Given** hlabs stops during the job, **then** on the next start the job is failed (as every interrupted job) and the app is `error` with "hlabs restarted during the reinstall." and "Reinstall…" to try again.
 - **Given** a stopped app is reinstalled, **then** it ends `running` and its desired state is running.
-- **Given** a second `apps.reinstall` for the same app while one runs, **then** it returns the same `jobId`; from `installing`, `install_failed`, `updating`, `rolling_back` or `uninstalling` it is `APP_BUSY`; while an exclusive job runs it is `JOB_EXCLUSIVE_RUNNING`; without the engine it is `ENGINE_UNAVAILABLE`.
-- **Given** the `.env` or the manifest is missing, **then** the call is refused with `APP_REINSTALL_UNAVAILABLE` before anything is stopped (D-125).
+- **Given** a second `apps.reinstall` for the same app while one runs, **then** it returns the same `jobId`; from `installing`, `install_failed`, `updating`, `rolling_back` or `uninstalling`, or while apps are paused, it is `APP_BUSY`; while an exclusive job runs it is `JOB_EXCLUSIVE_RUNNING`; without the engine it is `ENGINE_UNAVAILABLE`.
+- **Given** the `.env` of an app with secret settings, or its manifest, is missing, **then** the call is refused with `APP_REINSTALL_UNAVAILABLE` before anything is stopped (D-125); a missing manifest copy is fine while the store lists the installed version.
 
 **Implementation notes**
 - API: `apps.reinstall { appId }` (admin) → `{ jobId }`; `ContainerEngine.removeImage`.

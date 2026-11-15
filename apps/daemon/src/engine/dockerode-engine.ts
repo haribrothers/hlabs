@@ -128,6 +128,16 @@ export class DockerodeEngine implements ContainerEngine {
     return parseDockerStats(raw);
   }
 
+  async removeImage(image: string): Promise<void> {
+    try {
+      await this.docker.getImage(image).remove();
+    } catch (error) {
+      // 404: already gone; 409: something still uses it.
+      const status = (error as { statusCode?: number }).statusCode;
+      if (status !== 404 && status !== 409) throw error;
+    }
+  }
+
   async imageSize(image: string): Promise<number | null> {
     try {
       return (await this.docker.getImage(image).inspect()).Size;

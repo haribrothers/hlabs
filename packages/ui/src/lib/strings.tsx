@@ -12,6 +12,8 @@ export interface UiStrings {
   badgeNew: (n: number) => string;
   open: string;
   installing: (percent: number) => string;
+  /** A tile rebuilding an app, keeping its data (US-APP-24). */
+  reinstalling: (percent: number) => string;
   updating: string;
   appState: { update: string; error: string; stopped: string };
   dismiss: string;
@@ -46,6 +48,7 @@ export const defaultStrings: UiStrings = {
   badgeNew: (n) => `${n} new`,
   open: 'open',
   installing: (p) => `Installing… ${p}%`,
+  reinstalling: (p) => `Reinstalling… ${p}%`,
   updating: 'Updating…',
   appState: { update: 'Update', error: 'Error', stopped: 'Stopped' },
   dismiss: 'Dismiss',

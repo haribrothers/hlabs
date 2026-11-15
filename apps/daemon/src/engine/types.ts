@@ -68,6 +68,11 @@ export interface ContainerEngine {
   ): AsyncIterable<ContainerLogLine>;
   /** One container's usage now (`docker stats` once, without streaming). */
   containerStats(containerId: string, signal?: AbortSignal): Promise<ContainerStats>;
+  /**
+   * Removes an image (a reference or `sha256:…`) so the next pull downloads it again (US-APP-25). An image that's
+   * already gone, or that a container still uses, is left as it is.
+   */
+  removeImage(image: string): Promise<void>;
   /** An image's size on disk (`sha256:…` or a reference), or null when it isn't here. */
   imageSize(image: string): Promise<number | null>;
   /**

@@ -116,7 +116,10 @@ describe('state machine', () => {
     expect(APP_TRANSITIONS.install_failed).toEqual(['installing']);
     expect(APP_TRANSITIONS.updating).toEqual(['running', 'rolling_back']);
     expect(APP_TRANSITIONS.uninstalling).toEqual(['error']);
-    expect(APP_TRANSITIONS.stopped).toEqual(['starting', 'uninstalling']);
+    expect(APP_TRANSITIONS.stopped).toEqual(['starting', 'uninstalling', 'reinstalling']);
+    // US-APP-25, US-APP-26.
+    expect(APP_TRANSITIONS.reinstalling).toEqual(['starting', 'error']);
+    expect(APP_TRANSITIONS.error).toEqual(['starting', 'uninstalling', 'running', 'reinstalling']);
   });
 
   it('moves along an edge and emits app.stateChanged; other moves are APP_BUSY', async () => {

@@ -41,6 +41,7 @@ export const appStateSchema = z.enum([
   'restarting',
   'updating',
   'rolling_back',
+  'reinstalling',
   'error',
   'uninstalling',
 ]);
@@ -93,6 +94,8 @@ export const jobKindSchema = z.enum([
   'app_install',
   'app_update',
   'app_uninstall',
+  /** Rebuilds an app's containers and images, keeping its data and settings (US-APP-25). */
+  'app_reinstall',
   'app_move_data',
   'app_deploy_custom',
   'starter_apps',

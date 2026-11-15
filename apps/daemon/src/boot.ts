@@ -70,6 +70,7 @@ import { SystemHostStats, type HostStats } from './platform/host-stats';
 import { UsageHistory } from './usage/history';
 import { UsageSampler } from './usage/sampler';
 import { AppWatch } from './apps/app-watch';
+import { ReinstallService } from './apps/reinstall';
 import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
@@ -432,6 +433,20 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     probes: deps.healthProbes,
   });
   updates.register();
+  const reinstalls = new ReinstallService({
+    db,
+    logger,
+    jobs,
+    catalog,
+    apps: appService,
+    installer,
+    engine,
+    network,
+    notifications,
+    disk,
+    probes: deps.healthProbes,
+  });
+  reinstalls.register();
   const updateSource = deps.updateSource ?? new HttpUpdateSource();
   const hlabsUpdates = new HlabsUpdates({
     db,
@@ -483,6 +498,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     installer,
     appDisk: disk,
     updates,
+    reinstalls,
     hlabsUpdates,
     systemUpdate,
     autoUpdates,

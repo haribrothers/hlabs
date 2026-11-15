@@ -99,6 +99,7 @@ export const appDetail = (extra: Partial<AppDetail> = {}): AppDetail => ({
   autostart: true,
   autoUpdate: false,
   custom: false,
+  reinstall: { version: '1.0.0', downloadBytes: 420_000_000, blocked: null },
   ...extra,
 });
 

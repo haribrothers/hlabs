@@ -15,6 +15,7 @@ export const appsCopy = {
     stopped: 'Stopped',
     updating: 'Updating…',
     rolling_back: 'Rolling back…',
+    reinstalling: 'Reinstalling…',
     error: 'Not responding',
     uninstalling: 'Uninstalling…',
     installing: 'Installing…',

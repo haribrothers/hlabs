@@ -57,6 +57,7 @@ export const TILE: Record<HomeApp['state'], { state: AppIconState; status?: stri
   stopped: { state: 'stopped' },
   updating: { state: 'updating' },
   rolling_back: { state: 'busy', status: homeCopy.tileStatus.rollingBack },
+  reinstalling: { state: 'reinstalling' },
   error: { state: 'error' },
   uninstalling: { state: 'busy', status: homeCopy.tileStatus.removing },
 };
@@ -108,7 +109,9 @@ export function AppGrid({
                 icon={look.fallbackIcon}
                 state={TILE[app.state].state}
                 status={TILE[app.state].status}
-                progress={progress?.get(app.id) ?? (app.state === 'installing' ? 0 : undefined)}
+                progress={
+                  progress?.get(app.id) ?? (app.state === 'installing' || app.state === 'reinstalling' ? 0 : undefined)
+                }
                 ariaLabel={app.state === 'running' && !offline ? homeCopy.openApp(app.name) : undefined}
                 offline={offline ? engineCopy.offline : undefined}
                 onClick={() => openApp(app)}

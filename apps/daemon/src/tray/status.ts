@@ -22,7 +22,8 @@ import type { SystemProbe } from '../platform/system';
 import type { UsageSampler } from '../usage/sampler';
 
 /** An app on its way up. */
-const COMING_UP = new Set(['starting', 'restarting']);
+// A reinstalling app counts as starting (US-APP-25).
+const COMING_UP = new Set(['starting', 'restarting', 'reinstalling']);
 
 export interface TrayStatusDeps {
   isReconciling(): boolean;
