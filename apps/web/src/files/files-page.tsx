@@ -11,6 +11,7 @@ import { FolderView, type FilesMe } from './folder-view';
 import { HOME, type FilesLocation } from './places';
 import { RecentsView } from './recents-view';
 import { NewFolderDialog } from './new-folder-dialog';
+import { SearchField, useDebouncedQuery } from './search';
 import { FilesChips, FilesSidebar } from './sidebar';
 import { FolderToolbar } from './toolbar';
 
@@ -23,6 +24,14 @@ export function locationOf(search: Record<string, unknown>): FilesLocation {
   if (search.view === 'recents') return { path: '', view: 'recents' };
   const path = typeof search.path === 'string' && search.path.startsWith('/') ? search.path : HOME;
   return { path, view: 'folder' };
+}
+
+/** "Documents" for the phone's "Search in Documents"; the tops of places by their names, a drive's top as "Files". */
+export function placeName(path: string): string {
+  const parts = path.split('/').filter(Boolean);
+  if (parts.length === 1) return copy.areaNames[path] ?? copy.title;
+  if (parts[0] === 'drives' && parts.length === 2) return copy.title;
+  return parts.at(-1) ?? copy.title;
 }
 
 /** The page, at the location in the URL. */
@@ -38,6 +47,10 @@ export function FilesPage({ at }: FilesPageProps) {
   const [, setConnecting] = useState(false);
   const [newFolder, setNewFolder] = useState(false);
   const [focusPath, setFocusPath] = useState<string | null>(null);
+  // The search belongs to the folder it was typed in: opening another one clears it.
+  const [search, setSearch] = useState({ path: at.path, text: '' });
+  const searchText = search.path === at.path ? search.text : '';
+  const searchQuery = useDebouncedQuery(searchText);
 
   useEffect(() => {
     document.title = copy.docTitle;
@@ -72,6 +85,14 @@ export function FilesPage({ at }: FilesPageProps) {
         me={filesMe}
         onOpenFile={onOpenFile}
         focusPath={focusPath}
+        searchQuery={searchQuery}
+        search={
+          <SearchField
+            value={searchText}
+            onChange={(text) => setSearch({ path: at.path, text })}
+            place={placeName(at.path)}
+          />
+        }
         toolbar={(place) => <FolderToolbar readOnly={place.readOnly} onNewFolder={() => setNewFolder(true)} />}
       />
     );

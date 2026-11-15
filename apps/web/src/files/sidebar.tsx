@@ -126,7 +126,7 @@ export function FilesChips({ me, at }: { me: { role: 'admin' | 'member'; canSeeS
   const rows = sidebarGroups(me, useDrives(admin)).flatMap((g) => g.rows);
   const active = activeRow(at);
   return (
-    <nav aria-label={copy.places} className="-mx-4 overflow-x-auto px-4">
+    <nav aria-label={copy.places} className="-mx-4 shrink-0 overflow-x-auto px-4">
       <ul className="m-0 flex list-none gap-2 p-0">
         {rows.map((r) => (
           <li key={r.key} className="shrink-0">

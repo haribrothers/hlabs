@@ -62,6 +62,7 @@ export const filesCopy = {
   badName: 'Use a shorter name without “/”.',
   // Search (US-FILE-04)
   search: 'Search files',
+  searchPlaceholder: 'Search',
   searchIn: (place: string) => `Search in ${place}`,
   noMatches: (query: string) => `No files match “${query}”`,
   capped: (n: number) => `Showing the first ${n} results`,

@@ -28,26 +28,37 @@ export function RecentsView({
   const desktop = useIsDesktop();
   const recent = useQuery({ ...trpc.files.recent.queryOptions(), staleTime: 30_000, refetchInterval: 4 * 60_000 });
   const items = recent.data?.items ?? [];
+  const title = <h1 className="m-0 text-title-2">{copy.recents}</h1>;
+  const content =
+    recent.data && items.length === 0 ? (
+      <p className="m-0 py-16 text-center text-body text-ink-muted">{copy.noRecents}</p>
+    ) : (
+      <FileGrid
+        items={items}
+        label={copy.recents}
+        accent={me.accent}
+        onOpen={(e) => onOpenFile(e, items)}
+        openOnClick={!desktop}
+        below={(e) => folderLine(e.path)}
+      />
+    );
+  if (!desktop) {
+    return (
+      <div className="flex min-w-0 flex-col gap-4">
+        {title}
+        {content}
+      </div>
+    );
+  }
   return (
     <ScrollPane
       className="min-h-0 flex-1"
-      header={<h1 className="m-0 text-title-2">{copy.recents}</h1>}
-      headerClassName="px-7 pt-6 pb-4 max-md:px-0 max-md:pt-0"
-      scrollClassName="mr-2 max-md:mr-0"
-      bodyClassName="flex min-h-full flex-col px-5 pb-5 max-md:px-0"
+      header={title}
+      headerClassName="px-7 pt-6 pb-4"
+      scrollClassName="mr-2"
+      bodyClassName="flex min-h-full flex-col px-5 pb-5"
     >
-      {recent.data && items.length === 0 ? (
-        <p className="m-0 py-16 text-center text-body text-ink-muted">{copy.noRecents}</p>
-      ) : (
-        <FileGrid
-          items={items}
-          label={copy.recents}
-          accent={me.accent}
-          onOpen={(e) => onOpenFile(e, items)}
-          openOnClick={!desktop}
-          below={(e) => folderLine(e.path)}
-        />
-      )}
+      {content}
     </ScrollPane>
   );
 }

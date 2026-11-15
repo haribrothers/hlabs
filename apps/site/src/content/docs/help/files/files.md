@@ -39,3 +39,9 @@ If someone removes a folder while you have it open, Files says **This folder no 
 Choose **New folder** at the top, type a name (or keep **Untitled folder**) and choose **Create**, or press Return. The new folder is selected so you can open it straight away.
 
 A name can't be empty, contain "/" or be very long, and there can't already be a file or folder with that name in the same place; Files tells you which one it is so you can choose another name. In places you can't change, such as App data, **New folder** and **Upload** are greyed out and say **This folder is read only**.
+
+## Find a file
+
+Type at least two letters of its name in **Search** at the top. Files looks in the folder you have open and every folder inside it, and shows what it finds with the folder each one is in, for example **Home › Documents › Bills**. Upper and lower case don't matter.
+
+Files shows up to 200 results; if there are more, it says **Showing the first 200 results**, so type a little more of the name. A very large folder may say **Showing the first results** when it couldn't look everywhere in time. Press Esc, or clear the search, to go back to the folder.

@@ -14,6 +14,7 @@ import { useTRPC } from '../lib/trpc';
 import { Breadcrumb } from './breadcrumb';
 import { FileGrid } from './file-grid';
 import { HOME } from './places';
+import { SearchResults } from './search';
 
 export interface FilesMe {
   role: 'admin' | 'member';
@@ -90,7 +91,7 @@ export function FolderView({
   focusPath,
   onOpenFile,
   onRetryDrive,
-  children,
+  searchQuery = '',
 }: {
   path: string;
   me: FilesMe;
@@ -102,8 +103,8 @@ export function FolderView({
   onOpenFile: (entry: FileEntry, items: FileEntry[]) => void;
   /** A drive that can't be reached: mount it again (US-FILE-12). */
   onRetryDrive?: (driveId: string) => Promise<void>;
-  /** Shown instead of the folder (search results). */
-  children?: ReactNode;
+  /** Search results instead of the folder while there's a query (US-FILE-04). */
+  searchQuery?: string;
 }) {
   const navigate = useNavigate();
   const desktop = useIsDesktop();
@@ -112,8 +113,8 @@ export function FolderView({
     e.kind === 'folder' ? void navigate({ to: '/files', search: { path: e.path } }) : onOpenFile(e, items);
 
   let body: ReactNode;
-  if (children) {
-    body = children;
+  if (search && listing && searchQuery) {
+    body = <SearchResults path={path} query={searchQuery} crumbs={listing.crumbs} me={me} onOpenFile={onOpenFile} />;
   } else if (query.isError) {
     const code = errorCode(query.error);
     if (code === 'NOT_FOUND') {
@@ -178,8 +179,8 @@ export function FolderView({
   }
 
   const footer =
-    listing && !children ? (
-      <footer className="flex flex-wrap items-center justify-between gap-2 px-7 pt-2 pb-5 text-caption text-ink-muted">
+    listing && !searchQuery ? (
+      <footer className="flex flex-wrap items-center justify-between gap-2 px-7 pt-2 pb-5 max-md:px-0 text-caption text-ink-muted">
         <span>{copy.footer(copy.items(listing.count), formatBytes(listing.filesBytes))}</span>
         <span>{footerRight(listing.place, me)}</span>
       </footer>
@@ -195,14 +196,25 @@ export function FolderView({
     </div>
   );
 
+  // A phone scrolls the whole page (PhoneFiles); a desktop window scrolls the folder under its header.
+  if (!desktop) {
+    return (
+      <div className="flex min-w-0 flex-col gap-4">
+        {header}
+        <div className="flex flex-col">{body}</div>
+        {footer}
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <ScrollPane
         className="min-h-0 flex-1"
         header={header}
-        headerClassName="px-7 pt-6 pb-4 max-md:px-0 max-md:pt-0"
-        scrollClassName="mr-2 max-md:mr-0"
-        bodyClassName="flex min-h-full flex-col px-5 pb-5 max-md:px-0"
+        headerClassName="px-7 pt-6 pb-4"
+        scrollClassName="mr-2"
+        bodyClassName="flex min-h-full flex-col px-5 pb-5"
       >
         {body}
       </ScrollPane>
