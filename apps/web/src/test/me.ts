@@ -11,6 +11,7 @@ export function fakeMe(overrides: Record<string, unknown> = {}) {
     totpEnabled: false,
     canSeeUsage: true,
     canInstallApps: true,
+    canSeeShared: true,
     remember: false,
     appearance: {
       wallpaper: 'dusk',

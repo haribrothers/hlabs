@@ -45,6 +45,10 @@ export default defineConfig({
                   ],
                 },
                 {
+                  label: 'Files',
+                  items: [{ label: 'Your files', link: '/help/files/files/' }],
+                },
+                {
                   label: 'Remote access',
                   items: [
                     { label: 'How to reach hlabs', link: '/help/remote-access/addresses/' },

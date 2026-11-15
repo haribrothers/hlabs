@@ -192,6 +192,8 @@ export const userSettingsSchemas = {
     }),
   /** Per-user in-app notification switches (D-043); missing keys mean "on". */
   notifications: z.record(z.string(), z.boolean()).default({}),
+  /** Files has made Photos, Documents and Downloads in this person's Home once (US-FILE-01). */
+  filesSetUp: z.boolean().default(false),
 } as const;
 
 export type SettingKey = keyof typeof settingsSchemas;

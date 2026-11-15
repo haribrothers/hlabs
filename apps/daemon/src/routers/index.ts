@@ -6,6 +6,7 @@ import { account } from './account';
 import { apps } from './apps';
 import { auth } from './auth';
 import { events } from './events';
+import { files } from './files';
 import { home } from './home';
 import { invites } from './invites';
 import { network } from './network';
@@ -29,6 +30,7 @@ export const handlers: AppHandlers<DaemonContext> = {
   storage,
   store,
   home,
+  files,
   apps,
   account,
   settings,

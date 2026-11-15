@@ -46,6 +46,8 @@ export const meSchema = z.object({
   canSeeUsage: z.boolean(),
   /** App Store in the Dock: admins, or members when "Members can install apps" is on (US-HOME-05). */
   canInstallApps: z.boolean(),
+  /** "Shared with me" in Files: admins, or members with "See the Shared folder in Files" (US-FILE-01). */
+  canSeeShared: z.boolean(),
   /** This session was started with "Remember me" (US-AUTH-14). */
   remember: z.boolean(),
   appearance: appearanceSchema,

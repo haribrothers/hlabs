@@ -176,6 +176,7 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
       totpEnabled,
       canSeeUsage: admin || (people.membersCanSeeUsage && user.canSeeUsage),
       canInstallApps: admin || people.membersCanInstall,
+      canSeeShared: admin || user.canSeeShared,
       // Whether this session was started with "Remember me", so this device can reuse the choice (US-AUTH-14).
       remember: id.session.remember,
       appearance: getUserSetting(ctx.services.db, 'appearance', user.id),

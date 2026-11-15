@@ -20,6 +20,7 @@ import type { AppWatch } from './apps/app-watch';
 import type { ReinstallService } from './apps/reinstall';
 import type { SystemProbe } from './platform/system';
 import type { NotificationService } from './notifications/service';
+import type { FilesService } from './files/service';
 import type { NetworkStorage } from './storage/network';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
@@ -97,6 +98,8 @@ export interface Services {
   /** Holds off sleep while apps run, when the setting is on (US-SYS-20). */
   keepAwake: KeepAwake;
   network: NetworkStorage;
+  /** Files: virtual paths, listings, uploads and downloads (07-files). */
+  files: FilesService;
   notifications: NotificationService;
 }
 

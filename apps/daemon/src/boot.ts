@@ -65,6 +65,7 @@ import { LoginService } from './auth/login';
 import { OnboardingService } from './onboarding/service';
 import { NodeDriveProbe, type DriveProbe } from './platform/drives';
 import { LinuxNetworkMounter, MacNetworkMounter, type NetworkMounter } from './platform/network-mount';
+import { FilesService } from './files/service';
 import { NetworkStorage } from './storage/network';
 import { SystemHostStats, type HostStats } from './platform/host-stats';
 import { UsageHistory } from './usage/history';
@@ -546,6 +547,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
           : new LinuxNetworkMounter(config.privHelper, join(config.paths.dataDir, 'tmp'))),
       mountsDir: join(config.paths.dataDir, 'mounts'),
     }),
+    files: new FilesService({ db, appDataDir: config.paths.appDataDir }),
   };
   holder.set(services);
   // Keep awake follows the setting and whether any app runs.
