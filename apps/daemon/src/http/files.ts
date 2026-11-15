@@ -3,12 +3,13 @@
 // asking; every path is resolved for that person by FilesService, so access is checked here as in tRPC.
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { mkdir, open, rename, stat } from 'node:fs/promises';
+import { lstat, mkdir, open, readdir, realpath, rename, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { readCookie, SESSION_COOKIE } from '../auth/sessions';
 import { isTextMime, mimeOf, PREVIEW_IMAGES } from '../files/mime';
-import { realInside, type Caller } from '../files/places';
+import yazl from 'yazl';
+import { inside, isHidden, realInside, type Caller, type Place } from '../files/places';
 import type { ServiceHolder, Services } from '../services';
 
 /** Text previews show the first 1 MB (US-FILE-06). */
@@ -120,7 +121,114 @@ async function thumbnail(cacheDir: string, real: string, mtimeMs: number, width:
   return out;
 }
 
+/** `attachment` with the name for every browser: ASCII in `filename`, the real name in `filename*` (RFC 6266). */
+export function attachment(name: string): string {
+  const ascii = name.replace(/[^\x20-\x7e]|["\\]/g, '_');
+  const encoded = encodeURIComponent(name).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+}
+
+/** What a download is called: the file or folder's name; a place's top by the place ("Home", "Anu", "NAS · Media"). */
+export function downloadName(place: Place): string {
+  const last = place.rest[place.rest.length - 1];
+  if (last) return last;
+  if (place.area === 'home') return 'Home';
+  if (place.area === 'shared') return 'Shared';
+  return (place.name ?? 'hlabs').replace(/[/\\]/g, '-');
+}
+
+/** Name of a multi-item download (US-FILE-05). */
+export const MULTI_ZIP = 'hlabs files.zip';
+
+/**
+ * Adds a folder's visible files to the zip under `prefix/`, one level at a time; linked folders aren't followed and
+ * links leading out of the place are left out. Empty folders are kept.
+ */
+async function addFolder(zip: yazl.ZipFile, realBase: string, dir: string, prefix: string, signal: AbortSignal) {
+  const queue: Array<{ dir: string; prefix: string }> = [{ dir, prefix }];
+  while (queue.length && !signal.aborted) {
+    const next = queue.shift()!;
+    const names = (await readdir(next.dir).catch(() => [] as string[])).filter((n) => !isHidden(n)).sort();
+    if (!names.length) zip.addEmptyDirectory(next.prefix);
+    for (const name of names) {
+      const host = join(next.dir, name);
+      const link = await lstat(host).catch(() => null);
+      if (!link) continue;
+      if (link.isSymbolicLink()) {
+        const real = await realpath(host).catch(() => null);
+        if (!real || !inside(realBase, real)) continue;
+      }
+      const st = await stat(host).catch(() => null);
+      if (!st) continue;
+      if (st.isDirectory() && !link.isSymbolicLink()) queue.push({ dir: host, prefix: `${next.prefix}/${name}` });
+      else if (st.isFile()) zip.addFile(host, `${next.prefix}/${name}`, { compress: false, mtime: st.mtime });
+    }
+  }
+}
+
 export function registerFiles(app: FastifyInstance, holder: ServiceHolder, devAnonymousAdmin: boolean): void {
+  // GET /api/files/download?path=…[&path=…] (US-FILE-05): a file as it is (with Range), or a folder or several items as
+  // a zip streamed as it's made, never built on disk first. Anything the person can't reach: 403 and no bytes.
+  app.get(
+    '/api/files/download',
+    { logLevel: 'warn' },
+    async (req: FastifyRequest<{ Querystring: { path?: string | string[] } }>, reply) => {
+      const who = whoIs(req, reply, holder, devAnonymousAdmin);
+      if (!who) return reply;
+      const { services, caller } = who;
+      const paths = [req.query.path ?? []].flat().filter((p) => typeof p === 'string' && p);
+      if (!paths.length || paths.length > 1000) return reply.code(400).send();
+      const items: Array<{ place: Place; real: string; isFile: boolean; size: number; name: string }> = [];
+      try {
+        for (const path of paths) {
+          const place = await services.files.resolve(caller, path);
+          if (place.base === null) return reply.code(400).send();
+          const real = await realInside(place.base, place.host!);
+          const st = await stat(real);
+          items.push({ place, real, isFile: st.isFile(), size: st.size, name: downloadName(place) });
+        }
+      } catch (err) {
+        return reply.code(statusOf(err)).send();
+      }
+      const only = items.length === 1 ? items[0]! : null;
+      if (only?.isFile) {
+        return sendFile(req, reply, only.real, only.size, {
+          'content-type': mimeOf(only.name) ?? 'application/octet-stream',
+          'content-disposition': attachment(only.name),
+          'cache-control': 'private, no-store',
+        });
+      }
+      // A zip: stored, not compressed (photos and videos already are), Zip64 when it needs to be.
+      const zip = new yazl.ZipFile();
+      const abort = new AbortController();
+      // A file that vanishes or can't be read mid-zip: the download stops (the browser shows it failed).
+      zip.on('error', () => reply.raw.destroy());
+      req.raw.once('close', () => abort.abort());
+      const used = new Set<string>();
+      const unique = (name: string) => {
+        let n = name;
+        for (let i = 2; used.has(n); i++) n = `${name} (${i})`;
+        used.add(n);
+        return n;
+      };
+      void (async () => {
+        for (const item of items) {
+          if (abort.signal.aborted) break;
+          const name = unique(item.name);
+          if (item.isFile) zip.addFile(item.real, name, { compress: false });
+          else await addFolder(zip, await realpath(item.place.base!), item.real, name, abort.signal);
+        }
+        zip.end();
+      })().catch(() => zip.end());
+      return reply
+        .header('content-type', 'application/zip')
+        .header('content-disposition', attachment(only ? `${only.name}.zip` : MULTI_ZIP))
+        .header('cache-control', 'private, no-store')
+        .header('x-content-type-options', 'nosniff')
+        .send(zip.outputStream);
+    },
+  );
+
   // GET /api/files/preview/:token[?w=256]: a signed preview link (US-FILE-06), for the person it was made for.
   app.get(
     '/api/files/preview/:token',
