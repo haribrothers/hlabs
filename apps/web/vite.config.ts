@@ -20,6 +20,15 @@ const previewPhase = (command: string) =>
     ? JSON.stringify(process.env.HLABS_PREVIEW_PHASE ? Number(process.env.HLABS_PREVIEW_PHASE) : BUILDING_PHASE)
     : 'null';
 
+/**
+ * Help links in development go to the local site (`pnpm dev:site`, Astro's default port, or HLABS_HELP_URL) until the
+ * site is published (phase 6, Q-07). Builds and unit tests keep the public address.
+ */
+const helpUrlBase = (command: string) =>
+  command === 'serve' && !process.env.VITEST
+    ? JSON.stringify(process.env.HLABS_HELP_URL ?? 'http://localhost:4321')
+    : 'null';
+
 /** Where builds go: dist, or the folder given with --outDir (the e2e PWA build, dist-pwa). */
 const outArg = process.argv.indexOf('--outDir');
 const outDir = resolve(import.meta.dirname, outArg > 0 ? process.argv[outArg + 1]! : 'dist');
@@ -46,7 +55,7 @@ const toDaemon = {
 };
 
 export default defineConfig(({ command }) => ({
-  define: { __HLABS_PREVIEW_PHASE__: previewPhase(command) },
+  define: { __HLABS_PREVIEW_PHASE__: previewPhase(command), __HLABS_HELP_URL__: helpUrlBase(command) },
   plugins: [
     tanstackRouter({ target: 'react', autoCodeSplitting: true }),
     react(),

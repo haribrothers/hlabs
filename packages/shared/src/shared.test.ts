@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   displayNameSchema,
   err,
@@ -74,6 +74,16 @@ describe('helpUrl', () => {
   it('builds site links and rejects bad slugs', () => {
     expect(helpUrl('backups/restore')).toBe('https://hlabs.dev/help/backups/restore/');
     expect(() => helpUrl('../etc')).toThrow();
+  });
+
+  it('goes to the local site when the dashboard dev server says so (pnpm dev:site, before the site is published)', () => {
+    vi.stubGlobal('__HLABS_HELP_URL__', 'http://localhost:4321/');
+    try {
+      expect(helpUrl('get-started/use-as-app')).toBe('http://localhost:4321/help/get-started/use-as-app/');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(helpUrl('get-started/use-as-app')).toBe('https://hlabs.dev/help/get-started/use-as-app/');
   });
 });
 

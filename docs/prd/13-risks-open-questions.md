@@ -31,7 +31,7 @@ All answered on 27 Sep 2026:
 
 | ID | Question | Status |
 | --- | --- | --- |
-| Q-07 | Website domain (used for `SITE_URL`, the install command and help links). The bundle id `dev.hlabs.app` suggests `hlabs.dev`. | Open: needed before phase 6 |
+| Q-07 | Website domain (used for `SITE_URL`, the install command and help links). The bundle id `dev.hlabs.app` suggests `hlabs.dev`, which isn't live. Also: publish help at that domain, or bundle it with hlabs so links work offline and match the installed version? Until then, development opens the local site (D-128). | Open: needed before phase 6 |
 | Q-08 | Page designs for the website (home, download, app catalogue, help theme). | Open: design before phase 6; until then follow the design system and Starlight defaults |
 
 New questions found during the build go here with the next free id (Q-09 onward).
