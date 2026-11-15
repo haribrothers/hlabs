@@ -1,11 +1,12 @@
 // The Files sidebar (US-FILE-01, FilesBrowser): places in three groups, drive status, "+ Connect a drive" and the
 // storage bar for admins. On a phone the same places are a row of chips above the folder (PhoneFiles).
 import { formatBytes } from '@hlabs/shared';
-import { cn, StatusDot } from '@hlabs/ui';
-import { useQuery } from '@tanstack/react-query';
+import { cn, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, StatusDot } from '@hlabs/ui';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import type { KeyboardEvent } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { filesCopy as copy } from '../copy/files';
+import { useEventStream } from '../lib/use-event-stream';
 import { useTRPC } from '../lib/trpc';
 import { activeRow, sidebarGroups, type Drive, type FilesLocation, type SidebarRow } from './places';
 
@@ -31,6 +32,46 @@ export function useDrives(admin: boolean): Drive[] {
   return admin ? ((q.data?.locations ?? []) as Drive[]) : [];
 }
 
+/** A drive connected, disconnected, mounted or gone offline (US-FILE-12): the sidebar and open folder follow. */
+export function DriveEvents() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  useEventStream((event) => {
+    if (event.type !== 'storage.locationChanged') return;
+    void queryClient.invalidateQueries({ queryKey: trpc.storage.locations.list.queryKey() });
+    void queryClient.invalidateQueries({ queryKey: trpc.files.list.pathKey() });
+  });
+  return null;
+}
+
+/** A drive's row: right-click (or the context-menu key, or a long press) opens its menu with Disconnect (US-FILE-12). */
+function DriveRow({ row, current, onDisconnect }: { row: SidebarRow; current: boolean; onDisconnect: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <span
+          className="block"
+          aria-label={copy.driveMenu(row.label)}
+          // A click follows the link; only the context menu opens the menu.
+          onPointerDown={(e) => e.preventDefault()}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setOpen(true);
+          }}
+        >
+          <RowLink row={row} current={current} />
+        </span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-44">
+        <DropdownMenuItem danger onSelect={onDisconnect}>
+          {copy.disconnect}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function RowLink({ row, current }: { row: SidebarRow; current: boolean }) {
   const label = row.offline ? (
     <StatusDot status="stopped">
@@ -46,6 +87,8 @@ function RowLink({ row, current }: { row: SidebarRow; current: boolean }) {
       search={row.path === null ? { view: 'recents' } : { path: row.path }}
       className={ROW}
       aria-current={current ? 'page' : undefined}
+      // Enter and Space follow the link and never open a drive's menu.
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ' ? e.stopPropagation() : undefined)}
     >
       {label}
     </Link>
@@ -80,10 +123,12 @@ export function FilesSidebar({
   me,
   at,
   onConnect,
+  onDisconnect,
 }: {
   me: { role: 'admin' | 'member'; canSeeShared: boolean };
   at: FilesLocation;
   onConnect: () => void;
+  onDisconnect: (driveId: string) => void;
 }) {
   const admin = me.role === 'admin';
   const groups = sidebarGroups(me, useDrives(admin));
@@ -101,7 +146,11 @@ export function FilesSidebar({
             <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
               {g.rows.map((r) => (
                 <li key={r.key}>
-                  <RowLink row={r} current={active === r.key} />
+                  {r.driveId ? (
+                    <DriveRow row={r} current={active === r.key} onDisconnect={() => onDisconnect(r.driveId!)} />
+                  ) : (
+                    <RowLink row={r} current={active === r.key} />
+                  )}
                 </li>
               ))}
               {g.connect ? (
@@ -115,7 +164,12 @@ export function FilesSidebar({
           </div>
         ))}
       </nav>
-      {admin ? <StorageBar /> : null}
+      {admin ? (
+        <>
+          <StorageBar />
+          <DriveEvents />
+        </>
+      ) : null}
     </div>
   );
 }

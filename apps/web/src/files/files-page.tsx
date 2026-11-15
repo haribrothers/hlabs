@@ -15,7 +15,10 @@ import { NewFolderDialog } from './new-folder-dialog';
 import { OpenWith } from './open-with';
 import { useFileUploads } from './use-file-uploads';
 import { SearchField, useDebouncedQuery } from './search';
-import { FilesChips, FilesSidebar } from './sidebar';
+import { FilesChips, FilesSidebar, useDrives } from './sidebar';
+import { ConnectDriveDialog } from './connect-drive-dialog';
+import { DisconnectDriveDialog } from './disconnect-drive-dialog';
+import { useTRPCClient } from '../lib/trpc';
 import { FolderToolbar } from './toolbar';
 
 export interface FilesPageProps {
@@ -44,10 +47,13 @@ export function FilesScreen() {
 }
 
 export function FilesPage({ at }: FilesPageProps) {
-  const me = useMe().data;
+  const me = useMe();
   const navigate = useNavigate();
   const desktop = useIsDesktop();
-  const [, setConnecting] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const drives = useDrives(me.data?.role === 'admin');
+  const trpcClient = useTRPCClient();
   const [newFolder, setNewFolder] = useState(false);
   const [focusPath, setFocusPath] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ entry: FileEntry; items: FileEntry[] } | null>(null);
@@ -73,13 +79,14 @@ export function FilesPage({ at }: FilesPageProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, [navigate]);
 
-  if (!me) return null;
+  if (!me.data) return null;
   const filesMe: FilesMe = {
-    role: me.role,
-    displayName: me.displayName,
-    canSeeShared: me.canSeeShared,
-    accent: me.appearance.accent,
+    role: me.data.role,
+    displayName: me.data.displayName,
+    canSeeShared: me.data.canSeeShared,
+    accent: me.data.appearance.accent,
   };
+  const disconnectDrive = drives.find((d) => d.id === disconnecting);
   const onOpenFile = (entry: FileEntry, items: FileEntry[]) => setPreview({ entry, items });
 
   const main: ReactNode =
@@ -106,6 +113,9 @@ export function FilesPage({ at }: FilesPageProps) {
             onUpload={() => uploads.choose(folderPath, folderName)}
           />
         )}
+        onRetryDrive={async (locationId) => {
+          await trpcClient.storage.locations.reconnect.mutate({ locationId });
+        }}
         onDropFiles={(data, folderName) => uploads.drop(data, folderPath, folderName)}
         notice={(folderName) => uploads.notice(folderPath, folderName)}
       />
@@ -120,6 +130,22 @@ export function FilesPage({ at }: FilesPageProps) {
           onNavigate={(entry) => setPreview({ ...preview, entry })}
           onClose={() => setPreview(null)}
           openWith={<OpenWith path={preview.entry.path} />}
+        />
+      ) : null}
+      {connecting ? (
+        <ConnectDriveDialog
+          onClose={() => setConnecting(false)}
+          onConnected={(id) => void navigate({ to: '/files', search: { path: `/drives/${id}` } })}
+        />
+      ) : null}
+      {disconnectDrive ? (
+        <DisconnectDriveDialog
+          drive={{ id: disconnectDrive.id, name: disconnectDrive.name, usedBy: disconnectDrive.usedBy ?? [] }}
+          onClose={() => setDisconnecting(null)}
+          onDisconnected={() => {
+            if (at.path.startsWith(`/drives/${disconnectDrive.id}`))
+              void navigate({ to: '/files', search: { path: HOME } });
+          }}
         />
       ) : null}
       {newFolder && at.view === 'folder' ? (
@@ -150,7 +176,7 @@ export function FilesPage({ at }: FilesPageProps) {
         <p className="m-0 mb-3 px-3 text-title-2 font-bold" aria-hidden="true">
           {copy.title}
         </p>
-        <FilesSidebar me={filesMe} at={at} onConnect={() => setConnecting(true)} />
+        <FilesSidebar me={filesMe} at={at} onConnect={() => setConnecting(true)} onDisconnect={setDisconnecting} />
       </div>
       <div className="relative flex min-h-0 min-w-0 flex-col">{main}</div>
       {dialogs}

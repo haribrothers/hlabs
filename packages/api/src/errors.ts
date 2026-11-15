@@ -72,6 +72,8 @@ export const HLABS_ERRORS = {
 
   // Storage, files and network
   STORAGE_NOT_WRITABLE: 'BAD_REQUEST',
+  /** A drive an app keeps folders on can't be disconnected (US-FILE-12): `detail.apps` names them. */
+  STORAGE_LOCATION_IN_USE: 'PRECONDITION_FAILED',
   NAS_UNREACHABLE: 'BAD_GATEWAY',
   NAS_AUTH_FAILED: 'BAD_REQUEST',
   NAS_READ_ONLY: 'BAD_REQUEST',

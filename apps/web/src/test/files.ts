@@ -20,7 +20,7 @@ export function filesHandlers(over: Record<string, (input: unknown) => unknown> 
     'storage.locations.list': () => ({
       locations: [
         { id: 'root', kind: 'local', name: 'This computer', path: '/x', isRoot: true, status: 'ok' },
-        { id: 'nas', kind: 'smb', name: 'NAS · Media', path: '/m', isRoot: false, status: 'unreachable' },
+        { id: 'nas', kind: 'smb', name: 'NAS · Media', path: '/m', isRoot: false, status: 'unreachable', usedBy: [] },
         { id: 'usb', kind: 'external', name: 'Backup disk', path: '/v', isRoot: false, status: 'ok' },
       ],
     }),
@@ -38,6 +38,8 @@ export function filesHandlers(over: Record<string, (input: unknown) => unknown> 
     'files.recent': () => ({ items: [] }),
     'files.openWith': () => ({ apps: [] }),
     'files.uploads': () => ({ uploads: [] }),
+    // The event stream stays open and quiet.
+    'events.stream': () => new Promise(() => {}),
     ...over,
   };
 }

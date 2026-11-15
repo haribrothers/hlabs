@@ -19,6 +19,8 @@ export interface Drive {
   name: string;
   isRoot: boolean;
   status: string;
+  /** Apps that keep folders on it (US-FILE-12). */
+  usedBy?: string[];
 }
 
 export interface SidebarRow {

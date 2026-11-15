@@ -29,5 +29,5 @@ test('US-AUTH-16 Log out ends this device only and lands on Login with my name',
   await page.goto('/files');
   await expect(page).toHaveURL(/\/login\/password\?user=hari&next=%2Ffiles$/);
   await setup.goto('/files');
-  await expect(setup.getByRole('heading', { level: 1, name: 'Files' })).toBeVisible();
+  await expect(setup.getByRole('navigation', { name: 'Places' })).toBeVisible();
 });

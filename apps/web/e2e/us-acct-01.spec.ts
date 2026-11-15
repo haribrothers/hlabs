@@ -14,6 +14,7 @@ test.describe('US-ACCT-01', () => {
       'Users',
       'Network & remote access',
       'Engine & startup',
+      'Backups',
       'Updates',
     ]);
     await expect(nav.getByRole('link', { name: 'Account' })).toHaveAttribute('aria-current', 'page');

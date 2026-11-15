@@ -169,6 +169,7 @@ export const appRouter = router({
       testNetwork: m(p.admin, s.storage.locations.testNetwork),
       addNetwork: m(p.admin, s.storage.locations.addNetwork),
       remove: m(p.admin, s.storage.locations.remove),
+      reconnect: m(p.admin, s.storage.locations.reconnect),
       eject: m(p.admin, s.storage.locations.eject),
     }),
     moveAllPlan: q(p.admin, s.storage.moveAllPlan),

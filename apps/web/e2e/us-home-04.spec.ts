@@ -17,9 +17,9 @@ test.describe('US-HOME-04', () => {
     await settings.hover();
     await expect(settings.locator('.hl-dock-tip')).toHaveCSS('opacity', '1');
     await expect(tile).toHaveCSS('transform', /matrix\(1\.35/);
-    // Its neighbour grows a little (Usage, from phase 4).
-    const usage = dock.getByRole('button', { name: 'Usage' }).locator('.hl-dock-tile');
-    await expect(usage).toHaveCSS('transform', /matrix\(1\.14/);
+    // Its neighbour grows a little (Backups, from phase 5).
+    const backups = dock.getByRole('button', { name: 'Backups' }).locator('.hl-dock-tile');
+    await expect(backups).toHaveCSS('transform', /matrix\(1\.14/);
   });
 
   test('with Reduce motion the tile keeps its size but still shows its name', async ({ page }) => {

@@ -25,6 +25,7 @@ import { createAdmin } from '../onboarding/create-admin';
 import { prepareStorageRoot, setStorageRoot } from '../onboarding/storage';
 import { cookieDomain, sessionCookie } from '../auth/sessions';
 import { FakeTailscale } from '../tailscale/fake';
+import { FakeNas } from '../platform/fake-nas';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { ServiceHolder } from '../services';
@@ -181,6 +182,25 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     const { running } = engineBody.parse(req.body);
     const status = await services.engine.simulateStop(!running);
     return { state: status.state };
+  });
+
+  // The pretend NAS (HLABS_DEV_FAKE_NAS): e2e takes it offline and back (US-FILE-12), and can forget its drives.
+  const fakeNasBody = z.object({ online: z.boolean().default(true), forget: z.boolean().default(false) });
+  app.post('/dev/fake-nas', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    if (!(services.discovery instanceof FakeNas)) return reply.code(404).send({ reason: 'HLABS_DEV_FAKE_NAS is off' });
+    const { online, forget } = fakeNasBody.parse(req.body ?? {});
+    services.discovery.online = online;
+    if (forget) {
+      services.db
+        .delete(storageLocations)
+        .where(and(eq(storageLocations.kind, 'smb'), eq(storageLocations.isRoot, false)))
+        .run();
+    }
+    // Offline shows at once; coming back is left to Try again (or the next minute's check).
+    if (!online) await services.networkDrives.check();
+    return { online };
   });
 
   // The pretend Tailscale (HLABS_DEV_FAKE_TAILSCALE): e2e sets what it reports (US-SYS-02…04, US-ONB-17).

@@ -15,6 +15,24 @@ export interface NetworkLocationInput extends NetworkShare {
 }
 
 const PROBE = '.hlabs-write-test';
+/** Connecting gives up after this long (US-FILE-11). */
+export const CONNECT_TIMEOUT_MS = 10_000;
+
+/** `mount` within 10 s, or NAS_UNREACHABLE; a mount that finishes later is undone. */
+async function mountWithin(mounter: NetworkMounter, share: NetworkShare, target: string, ms = CONNECT_TIMEOUT_MS) {
+  let late = false;
+  const mounting = mounter.mount(share, target).then((point) => {
+    if (late) void mounter.unmount(point).catch(() => {});
+    return point;
+  });
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => {
+      late = true;
+      reject(hlabsError('NAS_UNREACHABLE', 'timeout', { reason: 'unreachable' }));
+    }, ms).unref(),
+  );
+  return Promise.race([mounting, timeout]);
+}
 
 export class NetworkStorage {
   constructor(
@@ -24,7 +42,7 @@ export class NetworkStorage {
   /** Mounts in a temporary folder, checks hlabs can write there, and unmounts. */
   async test(share: NetworkShare): Promise<void> {
     const target = join(this.deps.mountsDir, `test-${ulid()}`);
-    const mountPoint = await this.deps.mounter.mount(share, target);
+    const mountPoint = await mountWithin(this.deps.mounter, share, target);
     try {
       await this.checkWritable(mountPoint);
     } finally {
@@ -36,7 +54,7 @@ export class NetworkStorage {
   /** Mounts the share for good and saves it as a location (not the root: onboarding.setStorage does that). */
   async add(input: NetworkLocationInput, opts: { userId: string | null; ip: string | null; now?: number }) {
     const id = ulid();
-    const mountPoint = await this.deps.mounter.mount(input, join(this.deps.mountsDir, id));
+    const mountPoint = await mountWithin(this.deps.mounter, input, join(this.deps.mountsDir, id));
     try {
       await this.checkWritable(mountPoint);
     } catch (err) {

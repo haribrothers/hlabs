@@ -17,7 +17,8 @@ test('US-AUTH-15 a device whose session is revoked goes to log in within 5 secon
   await page.getByLabel('Password', { exact: true }).fill(ADMIN.password);
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(`${FIRST_RUN_URL}/files`);
-  await expect(page.getByRole('heading', { level: 1, name: 'Files' })).toBeVisible();
+  // Files, from phase 5: its places.
+  await expect(page.getByRole('navigation', { name: 'Places' })).toBeVisible();
 
   const res = await request.post(`${FIRST_RUN_URL}/dev/revoke-sessions`, { data: { username: ADMIN.username } });
   expect(res.ok()).toBe(true);

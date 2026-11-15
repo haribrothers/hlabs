@@ -197,6 +197,10 @@ export const errorCopy = {
       title: "hlabs can't connect to network drives here",
       body: 'Reinstall hlabs to add the missing helper.',
     }),
+    STORAGE_LOCATION_IN_USE: () => ({
+      title: 'An app uses this drive',
+      body: 'Choose another folder for it first.',
+    }),
     FILES_ACCESS_DENIED: () => ({ title: "You don't have access to that", body: 'Ask the person who shared it.' }),
     FILES_READ_ONLY: () => ({ title: 'This folder is read-only', body: 'Save it somewhere else.' }),
     FILES_NO_SPACE: () => ({ title: 'There’s no space left there', body: 'Free up some space, then try again.' }),

@@ -110,6 +110,7 @@ export function FolderView({
   const desktop = useIsDesktop();
   const { query, listing, items } = useFolder(path);
   const [dragging, setDragging] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const last = listing?.crumbs[listing.crumbs.length - 1];
   const folderName = last ? crumbName(last) : copy.title;
   const canDrop = !!listing && !listing.place.readOnly && !!onDropFiles;
@@ -174,9 +175,15 @@ export function FolderView({
           action={
             <Button
               variant="secondary"
+              busy={retrying}
               onClick={async () => {
-                if (driveId && onRetryDrive) await onRetryDrive(driveId).catch(() => {});
-                await query.refetch();
+                setRetrying(true);
+                try {
+                  if (driveId && onRetryDrive) await onRetryDrive(driveId).catch(() => {});
+                  await query.refetch();
+                } finally {
+                  setRetrying(false);
+                }
               }}
             >
               {copy.tryAgain}

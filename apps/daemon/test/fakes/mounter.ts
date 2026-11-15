@@ -17,6 +17,9 @@ export class FakeMounter implements NetworkMounter {
     this.mounted.add(target);
     return target;
   }
+  async isMounted(mountPoint: string) {
+    return this.mounted.has(mountPoint);
+  }
   async unmount(mountPoint: string) {
     chmodSync(mountPoint, 0o755);
     this.mounted.delete(mountPoint);

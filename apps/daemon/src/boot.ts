@@ -66,6 +66,9 @@ import { OnboardingService } from './onboarding/service';
 import { NodeDriveProbe, type DriveProbe } from './platform/drives';
 import { LinuxNetworkMounter, MacNetworkMounter, type NetworkMounter } from './platform/network-mount';
 import { FilesJanitor } from './files/janitor';
+import { FakeNas } from './platform/fake-nas';
+import { LinuxDiscovery, MacDiscovery, type NetworkDiscovery } from './platform/network-discovery';
+import { NetworkDrives } from './storage/drives';
 import { FilesService } from './files/service';
 import { Trash } from './files/trash';
 import { Uploads } from './files/uploads';
@@ -116,6 +119,10 @@ export interface BootDeps {
   updateHealthWaitMs?: number;
   drives?: DriveProbe;
   mounter?: NetworkMounter;
+  /** Finds SMB and NFS servers (US-FILE-11). */
+  discovery?: NetworkDiscovery;
+  /** Check network drives every minute (off in most tests). */
+  watchDrives?: boolean;
   /** Downloads, tar and colima for the engine install (US-ONB-05). */
   installer?: InstallerHost;
   /** Restarts the engine (US-SYS-18); tests pass a fake. */
@@ -486,6 +493,17 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     },
     updateApp: (appId) => updates.update({ userId: null }, appId).jobId,
   });
+  // Network drives (US-FILE-11): the system's tools, or a pretend NAS in development (HLABS_DEV_FAKE_NAS).
+  const fakeNas = config.devFakeNas ? new FakeNas(join(config.paths.dataDir, 'fake-nas')) : null;
+  const mounter: NetworkMounter =
+    deps.mounter ??
+    fakeNas ??
+    (process.platform === 'darwin'
+      ? new MacNetworkMounter(config.netmountHelper)
+      : new LinuxNetworkMounter(config.privHelper, join(config.paths.dataDir, 'tmp')));
+  const discovery: NetworkDiscovery =
+    deps.discovery ?? fakeNas ?? (process.platform === 'darwin' ? new MacDiscovery() : new LinuxDiscovery());
+  const mountsDir = join(config.paths.dataDir, 'mounts');
   const files = new FilesService({ db, appDataDir: config.paths.appDataDir });
   const trash = new Trash({ db });
   const uploads = new Uploads({ db, files, trash, freeBytes: (path) => probe.freeBytes(path) });
@@ -543,16 +561,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       keepAwake: getSetting(db, 'startup').keepAwake,
       appsRunning: db.select({ id: apps.id }).from(apps).where(eq(apps.state, 'running')).all().length,
     })),
-    network: new NetworkStorage({
-      db,
-      secrets,
-      mounter:
-        deps.mounter ??
-        (process.platform === 'darwin'
-          ? new MacNetworkMounter(config.netmountHelper)
-          : new LinuxNetworkMounter(config.privHelper, join(config.paths.dataDir, 'tmp'))),
-      mountsDir: join(config.paths.dataDir, 'mounts'),
-    }),
+    network: new NetworkStorage({ db, secrets, mounter, mountsDir }),
+    discovery,
+    networkDrives: new NetworkDrives({ db, secrets, mounter, mountsDir, bus, logger }),
     files,
     trash,
     uploads,
@@ -574,6 +585,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   }
   if (deps.watchApps !== false) services.appWatch.start();
   services.filesJanitor.start();
+  if (deps.watchDrives !== false) services.networkDrives.start();
   if (deps.checkUpdates !== false) {
     services.hlabsUpdates.start();
     services.autoUpdates.start();
@@ -620,6 +632,7 @@ export async function shutdown(services: Services | null): Promise<void> {
   services.usageHistory.stop();
   services.appWatch.stop();
   services.filesJanitor.stop();
+  services.networkDrives.stop();
   services.hlabsUpdates.stop();
   services.autoUpdates.stop();
   // The last finished minute is written before stopping, so a restart loses at most the minute in progress.

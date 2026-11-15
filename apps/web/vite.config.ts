@@ -47,6 +47,7 @@ const toDaemon = {
   '/dev/fake-app': DAEMON,
   '/dev/engine': DAEMON,
   '/dev/tailscale': DAEMON,
+  '/dev/fake-nas': DAEMON,
   '/dev/remove-app': DAEMON,
   '/dev/rolled-back': DAEMON,
   '/dev/sync-store': DAEMON,

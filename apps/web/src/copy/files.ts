@@ -125,7 +125,35 @@ export const filesCopy = {
   keepBoth: 'Keep both',
   replace: 'Replace',
   everyConflict: 'Do this for every conflict',
+  // Connect a network drive (US-FILE-11)
+  connectTitle: 'Connect a network drive',
+  found: 'Found on your network',
+  looking: 'Looking for drives on your network…',
+  noneFound: 'No drives found. Enter its address below.',
+  serverMeta: (protocol: 'smb' | 'nfs', shares: number | null) =>
+    shares === null
+      ? protocol.toUpperCase()
+      : `${protocol.toUpperCase()} · ${shares} ${shares === 1 ? 'share' : 'shares'}`,
+  sharesOn: (host: string) => `Shares on ${host}`,
+  orAddress: 'Or enter an address',
+  addressHint: 'smb://host/share, \\\\host\\share or nfs://host/path',
+  badAddress: 'Use an address like smb://nas.local/Media or nfs://nas.local/volume1/media.',
+  username: 'Username',
+  password: 'Password',
+  letAppsUse: 'Let apps use this drive (you choose which ones)',
+  reconnect: 'Reconnect automatically after restart',
+  connect: 'Connect',
+  wrongPassword: 'Wrong username or password',
+  cantReachHost: (host: string) => `Can't reach ${host}`,
+  noShare: (share: string, host: string) => `There's no share called “${share}” on ${host}`,
   // Drives (US-FILE-12)
+  driveMenu: (name: string) => `${name} options`,
+  disconnect: 'Disconnect',
+  disconnectTitle: (name: string) => `Disconnect ${name}?`,
+  disconnectBody: 'Files on the drive are not deleted.',
+  usesDrive: (apps: string[]) =>
+    `${apps.length === 1 ? apps[0] : `${apps.slice(0, -1).join(', ')} and ${apps.at(-1)}`} ${apps.length === 1 ? 'uses' : 'use'} this drive. Choose another folder for ${apps.length === 1 ? 'it' : 'them'} first.`,
+  ok: 'OK',
   cantReach: (name: string) => `Can't reach ${name}`,
   cantReachBody: 'Check that the drive is on and connected to your network.',
   driveFooter: (name: string) => name,

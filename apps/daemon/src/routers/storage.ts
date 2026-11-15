@@ -35,19 +35,34 @@ export const storage: AppHandlers<DaemonContext>['storage'] = {
           path: storageLocations.path,
           isRoot: storageLocations.isRoot,
           status: storageLocations.status,
+          autoMount: storageLocations.autoMount,
+          appsAllowed: storageLocations.appsAllowed,
         })
         .from(storageLocations)
-        .all(),
+        .all()
+        .map((l) => ({ ...l, usedBy: ctx.services.networkDrives.appsUsing(l.id) })),
     }),
-    testNetwork: async (input, ctx) => {
-      await ctx.services.network.test(input);
+    discover: async (_input, ctx) => ({ servers: await ctx.services.discovery.browse(5_000) }),
+    testNetwork: async ({ share, ...input }, ctx) => {
+      if (!share) return { ok: true, shares: await ctx.services.discovery.shares(input.protocol, input.host) };
+      await ctx.services.network.test({ ...input, share });
       return { ok: true };
     },
-    addNetwork: async (input, ctx) => ({
-      locationId: await ctx.services.network.add(input, {
+    remove: async ({ locationId }, ctx) => {
+      await ctx.services.networkDrives.remove(locationId, {
         userId: ctx.identity.kind === 'user' ? ctx.identity.userId : null,
         ip: ctx.request.ip,
-      }),
-    }),
+      });
+      return { ok: true };
+    },
+    reconnect: ({ locationId }, ctx) => ctx.services.networkDrives.reconnect(locationId),
+    addNetwork: async (input, ctx) => {
+      const locationId = await ctx.services.network.add(input, {
+        userId: ctx.identity.kind === 'user' ? ctx.identity.userId : null,
+        ip: ctx.request.ip,
+      });
+      ctx.services.bus.emit('storage.locationChanged', { locationId, change: 'added' });
+      return { locationId };
+    },
   },
 };

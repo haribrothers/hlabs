@@ -25,6 +25,8 @@ import type { FilesService } from './files/service';
 import type { Trash } from './files/trash';
 import type { Uploads } from './files/uploads';
 import type { NetworkStorage } from './storage/network';
+import type { NetworkDrives } from './storage/drives';
+import type { NetworkDiscovery } from './platform/network-discovery';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 import type { CatalogService } from './store/catalog';
@@ -101,6 +103,10 @@ export interface Services {
   /** Holds off sleep while apps run, when the setting is on (US-SYS-20). */
   keepAwake: KeepAwake;
   network: NetworkStorage;
+  /** SMB and NFS servers on the network (US-FILE-11). */
+  discovery: NetworkDiscovery;
+  /** Connected network drives: checked every minute, mounted again, disconnected (US-FILE-11, US-FILE-12). */
+  networkDrives: NetworkDrives;
   /** Files: virtual paths, listings, uploads and downloads (07-files). */
   files: FilesService;
   /** Where replaced and deleted files go (D-027). */

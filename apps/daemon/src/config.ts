@@ -28,6 +28,7 @@ const envSchema = z.object({
   HLABS_DEV_NO_ENGINE_INSTALL: flag,
   HLABS_DEV_NO_ENGINE_CONTROL: flag,
   HLABS_DEV_FAKE_TAILSCALE: flag,
+  HLABS_DEV_FAKE_NAS: flag,
   HLABS_NETMOUNT_BIN: z.string().optional(),
   HLABS_PRIV_HELPER: z.string().optional(),
   HLABS_SECRET_STORE: z.enum(['keychain', 'file']).optional(),
@@ -123,6 +124,8 @@ export interface DaemonConfig {
   devNoEngineControl: boolean;
   /** Development and e2e: a pretend Tailscale, so tests never touch the real one (CI has none). */
   devFakeTailscale: boolean;
+  /** A pretend NAS (nas.local) for network drives in development and e2e (US-FILE-11). */
+  devFakeNas: boolean;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
@@ -135,6 +138,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
   }
   if (e.HLABS_DEV_NO_ENGINE_CONTROL && e.NODE_ENV === 'production') {
     throw new Error('HLABS_DEV_NO_ENGINE_CONTROL is for development only and is refused in production.');
+  }
+  if (e.HLABS_DEV_FAKE_NAS && e.NODE_ENV === 'production') {
+    throw new Error('HLABS_DEV_FAKE_NAS is for development only and is refused in production.');
   }
   if (e.HLABS_DEV_FAKE_TAILSCALE && e.NODE_ENV === 'production') {
     throw new Error('HLABS_DEV_FAKE_TAILSCALE is for development only and is refused in production.');
@@ -184,5 +190,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
     devNoEngineInstall: e.HLABS_DEV_NO_ENGINE_INSTALL,
     devNoEngineControl: e.HLABS_DEV_NO_ENGINE_CONTROL,
     devFakeTailscale: e.HLABS_DEV_FAKE_TAILSCALE,
+    devFakeNas: e.HLABS_DEV_FAKE_NAS,
   };
 }
