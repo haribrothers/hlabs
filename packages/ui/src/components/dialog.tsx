@@ -45,6 +45,8 @@ export interface ModalDialogProps extends Omit<DialogProps, 'className'> {
   initialFocus?: RefObject<HTMLElement | null>;
   /** Below the md breakpoint, a bottom sheet with full-width buttons. */
   sheetOnPhone?: boolean;
+  /** Where focus goes when it closes, when not back to what opened it (e.g. the folder New folder just made). */
+  finalFocus?: () => HTMLElement | null;
 }
 
 /** A modal dialog (Radix): scrim-strong behind, focus trapped, Escape closes, focus returns to the trigger. */
@@ -60,6 +62,7 @@ export function ModalDialog({
   description,
   initialFocus,
   sheetOnPhone = false,
+  finalFocus,
 }: ModalDialogProps) {
   // Radix only restores focus to a Dialog.Trigger; remember whatever opened the dialog instead.
   const returnTo = useRef<HTMLElement | null>(null);
@@ -85,6 +88,12 @@ export function ModalDialog({
             initialFocus.current.focus();
           }}
           onCloseAutoFocus={(e) => {
+            const to = finalFocus?.();
+            if (to?.isConnected) {
+              e.preventDefault();
+              to.focus();
+              return;
+            }
             if (!returnTo.current?.isConnected) return;
             e.preventDefault();
             returnTo.current.focus();

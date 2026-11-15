@@ -33,3 +33,9 @@ The open folder shows its folders first, then its files, each from A to Z. Under
 At the bottom, hlabs says how many items the folder holds and how much space its files take, and who can see it: **Private to you** in your Home, or **Everyone who can see Shared can open this** in Shared.
 
 If someone removes a folder while you have it open, Files says **This folder no longer exists**; choose **Go to Home** to carry on.
+
+## Make a folder
+
+Choose **New folder** at the top, type a name (or keep **Untitled folder**) and choose **Create**, or press Return. The new folder is selected so you can open it straight away.
+
+A name can't be empty, contain "/" or be very long, and there can't already be a file or folder with that name in the same place; Files tells you which one it is so you can choose another name. In places you can't change, such as App data, **New folder** and **Upload** are greyed out and say **This folder is read only**.

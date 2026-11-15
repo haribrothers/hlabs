@@ -10,7 +10,9 @@ import { useMe } from '../lib/use-me';
 import { FolderView, type FilesMe } from './folder-view';
 import { HOME, type FilesLocation } from './places';
 import { RecentsView } from './recents-view';
+import { NewFolderDialog } from './new-folder-dialog';
 import { FilesChips, FilesSidebar } from './sidebar';
+import { FolderToolbar } from './toolbar';
 
 export interface FilesPageProps {
   at: FilesLocation;
@@ -34,6 +36,8 @@ export function FilesPage({ at }: FilesPageProps) {
   const navigate = useNavigate();
   const desktop = useIsDesktop();
   const [, setConnecting] = useState(false);
+  const [newFolder, setNewFolder] = useState(false);
+  const [focusPath, setFocusPath] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = copy.docTitle;
@@ -63,8 +67,21 @@ export function FilesPage({ at }: FilesPageProps) {
     at.view === 'recents' ? (
       <RecentsView me={filesMe} onOpenFile={onOpenFile} />
     ) : (
-      <FolderView path={at.path || HOME} me={filesMe} onOpenFile={onOpenFile} />
+      <FolderView
+        path={at.path || HOME}
+        me={filesMe}
+        onOpenFile={onOpenFile}
+        focusPath={focusPath}
+        toolbar={(place) => <FolderToolbar readOnly={place.readOnly} onNewFolder={() => setNewFolder(true)} />}
+      />
     );
+  const dialogs = (
+    <>
+      {newFolder && at.view === 'folder' ? (
+        <NewFolderDialog path={at.path || HOME} onClose={() => setNewFolder(false)} onCreated={setFocusPath} />
+      ) : null}
+    </>
+  );
 
   if (!desktop) {
     return (
@@ -74,6 +91,7 @@ export function FilesPage({ at }: FilesPageProps) {
         </p>
         <FilesChips me={filesMe} at={at} />
         {main}
+        {dialogs}
       </div>
     );
   }
@@ -90,6 +108,7 @@ export function FilesPage({ at }: FilesPageProps) {
         <FilesSidebar me={filesMe} at={at} onConnect={() => setConnecting(true)} />
       </div>
       <div className="flex min-h-0 min-w-0 flex-col">{main}</div>
+      {dialogs}
     </GlassCard>
   );
 }

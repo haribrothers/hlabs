@@ -61,12 +61,15 @@ export function FileGrid({
 
   useEffect(() => {
     if (!focusPath) return;
-    const el = ref.current?.querySelector<HTMLElement>(`[data-path="${CSS.escape(focusPath)}"]`);
-    if (el) {
+    // A frame later: a dialog that just closed (New folder, a preview) gives focus back to what opened it first.
+    const frame = requestAnimationFrame(() => {
+      const el = ref.current?.querySelector<HTMLElement>(`[data-path="${CSS.escape(focusPath)}"]`);
+      if (!el) return;
       setCurrent(focusPath);
       el.focus();
       el.scrollIntoView?.({ block: 'nearest' });
-    }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [focusPath, items]);
 
   const onKeyDown = (e: KeyboardEvent) => {
