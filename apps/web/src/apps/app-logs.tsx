@@ -24,6 +24,9 @@ const LEVEL_TONE: Record<LogLevel, 'danger' | 'warning' | 'accent' | 'neutral'> 
   INFO: 'accent',
   DEBUG: 'neutral',
 };
+/** What hlabs says when it noticed a running app stop working (US-APP-26). */
+const CRASHED: ReadonlySet<string> = new Set(['APP_CRASHED', 'APP_UNHEALTHY']);
+
 /** Scrolled this close to the end still counts as at the newest line. */
 const AT_END_PX = 8;
 
@@ -178,7 +181,9 @@ function AppLogsView({ appId, at, onBack, backTo = 'settings' }: LogsProps) {
       {app.state === 'error' ? (
         // Why it isn't running, for an app opened from its broken tile (US-HOME-08).
         <div role="status" className="rounded-md border border-danger/40 bg-surface-control px-4 py-3">
-          <p className="m-0 text-body font-bold text-ink">{copy.notResponding(app.name)}</p>
+          <p className="m-0 text-body font-bold text-ink">
+            {CRASHED.has(String(app.stateDetail?.code)) ? copy.stoppedWorking(app.name) : copy.notResponding(app.name)}
+          </p>
           <p className="m-0 text-body-sm text-ink-muted">{failureReason(app.stateDetail, app.name, os)}</p>
         </div>
       ) : null}

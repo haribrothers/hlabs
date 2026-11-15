@@ -204,7 +204,7 @@ Shipped 3 Oct 2026 (`SHIPPED_PHASE = 4`). "Done when" checked by hand on macOS w
 Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 
 - [x] US-APP-08 · Back from Logs never loops with App settings (D-124; the history state `fromSettings` marks Logs opened from that app's settings, whose Back steps back; from anywhere else Back replaces Logs with the settings)
-- [ ] US-APP-26 · Know when an app stops working
+- [x] US-APP-26 · Know when an app stops working (every 10 s rather than Docker's event stream, D-127; the crash notification is read once the app runs again or is uninstalled; the logs card's title and reason say what happened, its Reinstall… comes with US-APP-24; checked for real with a stopped container in e2e)
 - [ ] US-APP-24 · Offer to reinstall a broken app
 - [ ] US-APP-25 · Reinstall runs and keeps the data
 - [ ] US-INST-28 · Install hlabs as an app on my computer

@@ -26,7 +26,7 @@ const FIRST_RUN_SPECS =
 // Specs that change the main instance for everyone, run after the desktop and phone specs, one at a time: those that
 // really install store apps (the D-071 smoke set, and uninstalling one) or leave failed installs, and those that report
 // the engine as stopped (US-STATE-08…10).
-const SERIAL_SPECS = /(us-store-1[1-4]|us-store-17-rollback|us-app-12|us-state-(0[89]|10))\.spec\.ts/;
+const SERIAL_SPECS = /(us-store-1[1-4]|us-store-17-rollback|us-app-12|us-app-26|us-state-(0[89]|10))\.spec\.ts/;
 // CI runs each project in a job of its own (HLABS_E2E_SPLIT, .github/workflows/ci.yml): the serial specs then have a
 // main instance to themselves and needn't wait for the desktop and phone specs.
 const SPLIT = !!process.env.HLABS_E2E_SPLIT;

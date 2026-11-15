@@ -45,6 +45,12 @@ If the new version doesn't start, hlabs puts the previous version back and start
 
 In the rare case the previous version doesn't start again either, the app shows an error and the message says it couldn't be restored. Check its logs.
 
+## When an app stops working
+
+hlabs keeps an eye on your apps while they run. If one crashes and doesn't come back by itself within 30 seconds, keeps crashing (3 times in 5 minutes), or stops answering for a minute, hlabs marks it as not working: its tile on Home shows **Error**, and admins get a notice such as "Uptime Kuma stopped working" with what happened. Choose **Restart** to start it again, or **View logs** to see why. Your data stays as it is.
+
+Short hiccups that fix themselves within a few seconds don't count, and neither does anything you do yourself, like stopping, restarting or updating an app. If an app comes back by itself and keeps working for a minute, hlabs says "Uptime Kuma is working again". Family members aren't told; they see that the app isn't running if they try to open it.
+
 ## Read an app's logs
 
 Logs are what an app writes about what it's doing. They help when something goes wrong, for example when an app won't start. Choose **Logs** in App settings or at the top of the app window. The back button at the top returns to where you opened them: App settings, or the app. Logs you reached another way, such as from a broken app's tile or a notice, go back to the app's settings, and **Close** there takes you back to where you started.

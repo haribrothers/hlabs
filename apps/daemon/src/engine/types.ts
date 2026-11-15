@@ -22,6 +22,10 @@ export interface ContainerState {
   imageId: string;
   startedAt: number | null;
   exitCode: number | null;
+  /** How many times Docker's restart policy has restarted it (absent: 0); a crash loop counts up (US-APP-26). */
+  restartCount?: number;
+  /** Its last run was killed for using too much memory (absent: false). */
+  oomKilled?: boolean;
 }
 
 /** One container's usage right now (US-USE-08). Network and disk are totals since it started; rates come from two. */

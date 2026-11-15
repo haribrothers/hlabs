@@ -12,7 +12,8 @@ export const APP_TRANSITIONS: Record<AppState, readonly AppState[]> = {
   restarting: ['running', 'error'],
   updating: ['running', 'rolling_back'],
   rolling_back: ['running', 'error'],
-  error: ['starting', 'uninstalling'],
+  // An app that stopped working and came back by itself (Docker restarted it) is running again (US-APP-26).
+  error: ['starting', 'uninstalling', 'running'],
   // A failed uninstall leaves the app in error with the step that failed, to try again (US-APP-12).
   uninstalling: ['error'],
 };

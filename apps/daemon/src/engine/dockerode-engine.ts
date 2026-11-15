@@ -156,6 +156,8 @@ export class DockerodeEngine implements ContainerEngine {
           startedAt: inspect.State.Running && Number.isFinite(started) ? started : null,
           // A crash-looping container is "restarting" (and Running) with the exit code of its last run.
           exitCode: inspect.State.Running && !inspect.State.Restarting ? null : inspect.State.ExitCode,
+          restartCount: inspect.RestartCount ?? 0,
+          oomKilled: inspect.State.OOMKilled === true,
         };
       }),
     );

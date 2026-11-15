@@ -1,0 +1,17 @@
+schema: 1
+id: crash-demo
+name: Crash demo
+version: '1.0.0'
+revision: 1
+tagline: A test app for e2e (US-APP-26)
+description: |
+  A tiny web server whose container the test stops behind hlabs's back, so hlabs notices it stopped working.
+category: developer
+developer: { name: hlabs e2e }
+icon:
+  gradient: ['#a3e635', '#4d7c0f']
+  fallback: activity
+platforms: [linux/amd64, linux/arm64]
+web: { service: web, port: 80 }
+health: { service: web, http: /, timeout: 15 }
+permissions: { network: none }

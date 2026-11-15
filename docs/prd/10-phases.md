@@ -353,7 +353,7 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - hlabs as an installable app on members' computers (D-126); a native client is later (Q-16).
 
 **Done when**
-- [ ] An app whose container is killed by hand goes to error within a minute and the admin is told "<App> stopped working" (e2e with Uptime Kuma).
+- [ ] An app whose container is stopped by hand goes to error within a minute and the admin is told "<App> stopped working" (e2e with Uptime Kuma).
 - [ ] A broken app (its containers and image removed by hand) is reinstalled from its Logs and opens with its data as before (e2e with Uptime Kuma).
 - [ ] hlabs installs from Chrome on macOS from the tailnet address and opens in its own window; with hlabs off it shows "Can't reach hlabs" and loads when hlabs is back.
 
