@@ -199,6 +199,16 @@ Shipped 3 Oct 2026 (`SHIPPED_PHASE = 4`). "Done when" checked by hand on macOS w
 - [x] US-STATE-03 · Handle a failed or stuck update (the danger toast is the admins' critical notification, so members never get it; a failing migration notes it in the update marker and the next start reports it)
 - [x] US-STATE-07 · Show the daemon-down state in the tray (built with US-INST-13: one health watch in the tray's Rust side, /healthz every 5 s)
 
+## Phase 4 follow-ups (before phase 5)
+
+Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126).
+
+- [ ] US-APP-08 · Back from Logs never loops with App settings (D-124)
+- [ ] US-APP-24 · Offer to reinstall a broken app
+- [ ] US-APP-25 · Reinstall runs and keeps the data
+- [ ] US-INST-28 · Install hlabs as an app on my computer
+- [ ] US-INST-29 · Use hlabs in its own window
+
 ## Phase 5 · Backups and Files
 
 - [ ] US-FILE-01 · See my places in the sidebar

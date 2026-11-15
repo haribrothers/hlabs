@@ -13,16 +13,16 @@ hlabs is a home cloud OS for macOS and Linux: an App Store for self-hosted apps,
 8. [prd/11-testing-release](prd/11-testing-release.md) · [prd/12-decisions](prd/12-decisions.md) · [prd/13-risks-open-questions](prd/13-risks-open-questions.md) · [prd/14-glossary](prd/14-glossary.md)
 
 ## Features and user stories
-125 features and 337 user stories across 13 modules. Each story has an id, priority, phase, the screens it covers, acceptance criteria and implementation notes.
+127 features and 341 user stories across 13 modules. Each story has an id, priority, phase, the screens it covers, acceptance criteria and implementation notes.
 
 | File | Module | Stories |
 | --- | --- | --- |
-| [01-install-tray](features/01-install-tray.md) | Install & menu-bar app | 27 |
+| [01-install-tray](features/01-install-tray.md) | Install & menu-bar app | 29 |
 | [02-onboarding](features/02-onboarding.md) | Onboarding | 24 |
 | [03-sign-in](features/03-sign-in.md) | Sign in | 24 |
 | [04-home](features/04-home.md) | Home | 23 |
 | [05-app-store](features/05-app-store.md) | App Store & installing | 22 |
-| [06-apps](features/06-apps.md) | Using & managing apps | 23 |
+| [06-apps](features/06-apps.md) | Using & managing apps | 25 |
 | [07-files](features/07-files.md) | Files | 24 |
 | [08-usage-backups](features/08-usage-backups.md) | Live usage & backups | 34 |
 | [09-account-people](features/09-account-people.md) | Settings · account & people | 35 |

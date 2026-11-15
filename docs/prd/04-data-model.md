@@ -76,3 +76,5 @@ These columns were introduced while writing the stories and are part of the sche
 | `apps` | `net_internet` (bool), `net_apps` (bool), `data_location_id` | 06-apps |
 | `storage_locations` | `auto_mount` (default true), `apps_allowed` (default true) | 07-files |
 | `backup_plan` | `pause_apps` (default true) | 08-usage-backups |
+| `apps` | `state` value `reinstalling` (02 §2.5) | 06-apps (US-APP-25) |
+| `jobs` | `kind` value `app_reinstall` (an app job: serial per app, refused while an exclusive job runs) | 06-apps (US-APP-25) |

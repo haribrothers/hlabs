@@ -342,6 +342,27 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-STATE-02 · Reconnect automatically when the update finishes (P1)
 - US-STATE-03 · Handle a failed or stuck update (P1)
 
+## Phase 4 follow-ups (before phase 5)
+
+**Goal:** fix what using phase 4 turned up (Hari, 15 Nov 2026), before backups and Files.
+
+**Deliverables**
+- Back from Logs never loops with App settings (D-124).
+- Reinstall a broken app, keeping its data (D-125).
+- hlabs as an installable app on members' computers (D-126); a native client is later (Q-16).
+
+**Done when**
+- [ ] A broken app (its containers and image removed by hand) is reinstalled from its Logs and opens with its data as before (e2e with Uptime Kuma).
+- [ ] hlabs installs from Chrome on macOS from the tailnet address and opens in its own window; with hlabs off it shows "Can't reach hlabs" and loads when hlabs is back.
+
+**Stories**
+
+- US-APP-08 · Follow an app's logs live (P1, the back-navigation criteria added by D-124)
+- US-APP-24 · Offer to reinstall a broken app (P1)
+- US-APP-25 · Reinstall runs and keeps the data (P1)
+- US-INST-28 · Install hlabs as an app on my computer (P2)
+- US-INST-29 · Use hlabs in its own window (P2)
+
 ## Phase 5 · Backups and Files
 
 **Goal:** Data is safe and reachable: encrypted backups with restore, and a Files app.

@@ -138,6 +138,11 @@ stateDiagram-v2
   error --> uninstalling: uninstall
   uninstalling --> [*]
   uninstalling --> error: a step failed (US-APP-12)
+  running --> reinstalling: reinstall (US-APP-25)
+  stopped --> reinstalling: reinstall
+  error --> reinstalling: reinstall
+  reinstalling --> starting: rebuilt, images pulled, compose up
+  reinstalling --> error: a step failed
 ```
 
 Rules:
@@ -145,6 +150,7 @@ Rules:
 - **Install:** validate manifest → render compose (inject hlabs network, labels, volume paths, env) → `docker compose pull` (progress from `docker.pull` stream per image, aggregated to %) → `compose up -d` → wait for health (manifest `health` or container healthcheck, default timeout 120 s) → register Caddy route → create per-app hostname (mDNS) → `running`.
 - **Update:** snapshot previous `compose.yml`, `.env` and image digests; for apps with `backup.beforeUpdate: true` take a restic snapshot of the app's data first; pull, up, health-check; on failure within the timeout, restore the snapshot of config (and data if the manifest marks migrations irreversible) and set state back to running on the old version with an `UpdateRolledBack` notification.
 - **Uninstall:** `compose down`, remove route and hostname, then either keep or delete `<appDataDir>/<appId>` as the user chose.
+- **Reinstall** (US-APP-24/25, D-125): `compose down` (never removing volumes), render the compose file again from the installed version's manifest with the same `.env`, settings, mounts, hostname and ports, remove the app's images no other app uses, pull them all again, `compose up -d`, wait for health, register the route and hostname again. App data, user folders, sharing, Home and Dock places and backup includes are never touched. Refused before anything stops when the `.env` or the manifest is missing.
 - All apps join the `hlabs` bridge network; they are not published on host ports unless the manifest requests a raw port (for protocols Caddy can't proxy, e.g. DNS for Pi-hole, SMB).
 
 ## 2.6 Networking

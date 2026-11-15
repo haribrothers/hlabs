@@ -142,7 +142,8 @@ Home is the first screen every signed-in person sees: a greeting over the wallpa
 **Acceptance criteria**
 - **Given** I right-click a running app tile (or long-press 500 ms on touch, or press Shift+F10 / the Menu key when focused), **when** the menu opens, **then** it shows a header with the app name and items "Open", "Settings", "View logs", "Restart", "Stop", "Uninstall…" (Uninstall in destructive colour, separated).
 - **Given** the app is stopped, **when** the menu opens, **then** "Stop" is replaced by "Start" and "Restart" is hidden.
-- **Given** the app is installing, updating or uninstalling, **when** the menu opens, **then** only "Open" (disabled) and "View logs" are enabled.
+- **Given** the app is installing, updating, reinstalling or uninstalling, **when** the menu opens, **then** only "Open" (disabled) and "View logs" are enabled.
+- **Given** the app is in `error`, **when** the menu opens, **then** "Reinstall…" follows "Restart" and opens `ReinstallConfirm` (US-APP-24, phase 4 follow-up).
 - **Given** I choose "Restart" or "Stop"/"Start", **when** the mutation succeeds, **then** the tile goes to `restarting`/`stopping`/`starting` immediately and a Toast confirms ("Vaultwarden restarted"); on failure a Toast shows the mapped `hlabsCode` copy.
 - **Given** I choose "Settings", "View logs" or "Uninstall…", **when** chosen, **then** `AppSettings`, `AppLogs` or `UninstallConfirm` opens for that app.
 - **Given** Escape or a click outside, **when** the menu is open, **then** it closes and focus returns to the tile.
