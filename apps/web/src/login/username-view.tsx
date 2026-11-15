@@ -1,4 +1,5 @@
 // LoginUsername (US-AUTH-02, US-AUTH-03): type a username when your name isn't listed, or the list is hidden.
+import { isStandalone } from '../lib/install-app';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { Button, Switch, TextField } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
@@ -20,7 +21,8 @@ export function UsernameView({ next, reason }: { next?: string; reason?: 'timeou
   const listShown = (list.data?.users.length ?? 0) > 0;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(false);
+  // On by default in the installed app only: it has its own cookies and is this person's own (US-INST-29).
+  const [remember, setRemember] = useState(isStandalone);
   // Back here after the code step timed out (US-AUTH-08).
   const [error, setError] = useState<string | null>(reason === 'timeout' ? copy.timedOut : null);
   const field = useRef<HTMLInputElement>(null);

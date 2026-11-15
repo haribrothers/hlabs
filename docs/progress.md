@@ -207,8 +207,8 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 - [x] US-APP-26 · Know when an app stops working (every 10 s rather than Docker's event stream, D-127; the crash notification is read once the app runs again or is uninstalled; the logs card's title and reason say what happened, its Reinstall… comes with US-APP-24; checked for real with a stopped container in e2e)
 - [x] US-APP-24 · Offer to reinstall a broken app (`apps.get.reinstall.blocked` also says `paused`, the only way the dashboard learns of a pause; the progress shows a percentage, not bytes; checked for real in e2e: a crash-demo app's containers and image removed by hand, noticed as broken and reinstalled from its Logs)
 - [x] US-APP-25 · Reinstall runs and keeps the data (the compose file is written again from the store's entry of the installed version, else the project's own stays; images another app names are kept; the notices go to all admins; while paused it's refused; checked against the fake engine, the real-Docker check is with US-APP-24's e2e)
-- [ ] US-INST-28 · Install hlabs as an app on my computer
-- [ ] US-INST-29 · Use hlabs in its own window
+- [x] US-INST-28 · Install hlabs as an app on my computer (vite-plugin-pwa 2.0; the worker precaches only the shell; icons rendered from the app icon and committed; `account.get.tailnetUrl` for the tailnet row; installability, the manifest and the worker checked against a production build in the e2e `pwa` project; installing for real in Chrome and Safari is part of the follow-ups' manual check)
+- [x] US-INST-29 · Use hlabs in its own window (offline, the saved shell shows AppOffline: a /healthz with no answer at all at start, while an error page from Caddy stays US-STATE-04; anything that answers loads the page; pages come from the network, so an update shows at once without the worker reloading; checked offline for real in the e2e `pwa` project)
 
 ## Phase 5 · Backups and Files
 

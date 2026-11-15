@@ -43,6 +43,11 @@ export const account = {
       homeFolderBytes: z.number().nonnegative().nullable(),
       /** An admin's display name, for "ask <admin>" copy. */
       adminName: z.string().nullable(),
+      /**
+       * The dashboard's tailnet address while remote access is connected (D-109), else null: "Use hlabs as an app"
+       * suggests installing from it, so the app works at home and away (US-INST-28).
+       */
+      tailnetUrl: z.string().nullable(),
     }),
   ),
   update: io(

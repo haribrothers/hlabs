@@ -459,7 +459,9 @@ This module gets hlabs onto a computer and keeps it running: the macOS `.dmg` an
 - **Given** a member or an admin, **then** the card is the same.
 
 **Implementation notes**
-- `vite-plugin-pwa` (01-tech-stack), with the icons built from `docs/design/logos/hlabs-app-icon.svg`; static files are served by the daemon with the rest of the build (05 Non-tRPC HTTP). No new tRPC.
+- `vite-plugin-pwa` 2.0 (01-tech-stack, `apps/web/src/pwa-options.ts`); the icons in `apps/web/public/icons` are rendered from `docs/design/logos/hlabs-app-icon.svg` by `apps/web/scripts/pwa-icons.mjs` and committed. The worker precaches only the shell (index.html, what it loads, fonts, icons: about 100 files, not the build's per-icon chunks); navigations go to the network and fall back to the saved shell only when nothing answers. Static files are served by the daemon with the rest of the build (05 Non-tRPC HTTP).
+- API: `account.get.tailnetUrl` (the dashboard's tailnet address while remote access is connected, D-109) for the tailnet row.
+- Tests: the built manifest, worker and Chrome's installability run in the e2e `pwa` project (a production build on port 5373), since development has no worker.
 - The install prompt is the saved `beforeinstallprompt` event (Chrome, Edge); "installed" is the `appinstalled` event or `matchMedia('(display-mode: standalone)')`.
 - Edge case: on `hlabs.local` the browser must trust Caddy's local certificate before it will install (CertGuide, US-SYS-09/10, phase 9; Q-15). The tailnet address uses a Tailscale certificate and needs nothing else.
 - Help: a "Use hlabs as an app" page for Chrome, Edge and Safari, linked from the card.

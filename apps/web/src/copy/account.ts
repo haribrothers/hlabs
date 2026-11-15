@@ -1,5 +1,16 @@
 // Settings › Account (09-account-people.md).
 export const accountCopy = {
+  // "Use hlabs as an app" (US-INST-28, D-126).
+  thisComputer: 'This computer',
+  useAsApp: 'Use hlabs as an app',
+  useAsAppIntro: 'Open hlabs in its own window from your Dock or Start menu, without a browser tab.',
+  installApp: 'Install hlabs',
+  installedApp: 'hlabs is installed on this computer.',
+  safariHow: 'In Safari, choose File › Add to Dock.',
+  otherBrowser: 'To install hlabs, open it in Chrome, Edge or Safari.',
+  howToInstall: 'How to install',
+  tailnetHint: 'Install it from your tailnet address so the app works at home and away.',
+  openTailnet: 'Open tailnet address',
   managedBy: (admin: string) => `Apps, users and system settings are managed by ${admin} (admin).`,
   managedByAdmin: 'Apps, users and system settings are managed by your admin.',
   logOut: 'Log out',

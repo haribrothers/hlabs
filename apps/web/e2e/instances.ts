@@ -8,6 +8,12 @@ import { expect, type APIRequestContext } from '@playwright/test';
  */
 export const MAIN_PORTS = { daemon: 7574, web: 5273 } as const;
 export const MAIN_URL = `http://127.0.0.1:${MAIN_PORTS.web}`;
+/**
+ * The main instance's dashboard as built for production (`vite build` and `vite preview`, proxying to its daemon):
+ * the web manifest and service worker exist only in builds (US-INST-28, US-INST-29).
+ */
+export const PWA_PORT = 5373;
+export const PWA_URL = `http://127.0.0.1:${PWA_PORT}`;
 /** The main instance's signed-in browser state, written by global.setup.ts. */
 export const MAIN_STORAGE_STATE = 'e2e/.auth/main.json';
 

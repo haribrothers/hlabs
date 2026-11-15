@@ -8,6 +8,8 @@ import tseslint from 'typescript-eslint';
 export const ignores = [
   '**/node_modules/**',
   '**/dist/**',
+  // The dashboard built for the e2e pwa project (US-INST-28).
+  '**/dist-pwa/**',
   '**/.turbo/**',
   '**/coverage/**',
   '**/.dev-data/**',

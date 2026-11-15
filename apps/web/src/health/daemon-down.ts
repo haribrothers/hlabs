@@ -10,6 +10,8 @@ export interface HealthCheck {
   step?: number;
   steps?: number;
   stepLabel?: string;
+  /** Nothing answered at all (no network, or no way to hlabs's computer), as opposed to an error page (US-INST-29). */
+  noAnswer?: boolean;
 }
 
 /** One /healthz request; no answer within 4 seconds counts as no answer. */
@@ -34,7 +36,7 @@ export async function checkHealth(url = '/healthz', timeoutMs = 4_000): Promise<
       ...(typeof body?.stepLabel === 'string' ? { stepLabel: body.stepLabel } : {}),
     };
   } catch {
-    return { ok: false, reason: null };
+    return { ok: false, reason: null, noAnswer: true };
   }
 }
 

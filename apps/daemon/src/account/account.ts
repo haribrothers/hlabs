@@ -6,6 +6,7 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { LoginService } from '../auth/login';
 import { hashPassword } from '../auth/passwords';
 import type { SessionService } from '../auth/sessions';
+import { tailnetDashboardUrl } from '../network/domains';
 import { homeFolderBytes } from '../storage/home-folder';
 
 /** Who manages hlabs, as members are told: the earliest-created enabled admin (US-ACCT-27, US-HOME-12). */
@@ -48,6 +49,8 @@ export function getAccount(db: HlabsDb, userId: string) {
     // Counted in the background and kept 10 minutes; null while it's first being counted (US-ACCT-28).
     homeFolderBytes: homeFolderBytes(db, user.username),
     adminName: managingAdminName(db),
+    // Where to install hlabs as an app so it works at home and away (US-INST-28): while remote access is connected.
+    tailnetUrl: getSetting(db, 'remote').state === 'connected' ? tailnetDashboardUrl(db) : null,
   };
 }
 
