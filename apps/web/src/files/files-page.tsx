@@ -10,6 +10,7 @@ import { useMe } from '../lib/use-me';
 import { FolderView, type FilesMe } from './folder-view';
 import { HOME, type FilesLocation } from './places';
 import { RecentsView } from './recents-view';
+import { FilePreview } from './file-preview';
 import { NewFolderDialog } from './new-folder-dialog';
 import { SearchField, useDebouncedQuery } from './search';
 import { FilesChips, FilesSidebar } from './sidebar';
@@ -47,6 +48,7 @@ export function FilesPage({ at }: FilesPageProps) {
   const [, setConnecting] = useState(false);
   const [newFolder, setNewFolder] = useState(false);
   const [focusPath, setFocusPath] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ entry: FileEntry; items: FileEntry[] } | null>(null);
   // The search belongs to the folder it was typed in: opening another one clears it.
   const [search, setSearch] = useState({ path: at.path, text: '' });
   const searchText = search.path === at.path ? search.text : '';
@@ -74,7 +76,7 @@ export function FilesPage({ at }: FilesPageProps) {
     canSeeShared: me.canSeeShared,
     accent: me.appearance.accent,
   };
-  const onOpenFile = (_entry: FileEntry, _items: FileEntry[]) => {};
+  const onOpenFile = (entry: FileEntry, items: FileEntry[]) => setPreview({ entry, items });
 
   const main: ReactNode =
     at.view === 'recents' ? (
@@ -98,6 +100,14 @@ export function FilesPage({ at }: FilesPageProps) {
     );
   const dialogs = (
     <>
+      {preview ? (
+        <FilePreview
+          entry={preview.entry}
+          items={preview.items}
+          onNavigate={(entry) => setPreview({ ...preview, entry })}
+          onClose={() => setPreview(null)}
+        />
+      ) : null}
       {newFolder && at.view === 'folder' ? (
         <NewFolderDialog path={at.path || HOME} onClose={() => setNewFolder(false)} onCreated={setFocusPath} />
       ) : null}

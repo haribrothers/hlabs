@@ -5,6 +5,7 @@ import { apps, getUserSetting, setUserSetting, type HlabsDb } from '@hlabs/db';
 import type { Dirent, Stats } from 'node:fs';
 import { lstat, mkdir, readdir, realpath, stat } from 'node:fs/promises';
 import { join } from 'node:path';
+import { dimensionsOf } from './dimensions';
 import { mimeOf, PREVIEW_IMAGES, PREVIEW_VIDEOS } from './mime';
 import { PreviewTokens, previewUrl } from './preview-tokens';
 import { inside, isHidden, joinVirtual, Places, realInside, type Caller, type Crumb, type Place } from './places';
@@ -219,9 +220,10 @@ export class FilesService {
     const st = await stat(real);
     const name = place.rest[place.rest.length - 1]!;
     const children = st.isDirectory() ? await visibleCount(real) : null;
+    const entry = entryOf(name, place.virtual, st, children);
     return {
-      ...entryOf(name, place.virtual, st, children),
-      dimensions: null as { width: number; height: number } | null,
+      ...entry,
+      dimensions: st.isFile() ? await dimensionsOf(real, entry.mime, st.size) : null,
       parent: place.crumbs.slice(0, -1) as Crumb[],
       readOnly: place.readOnly,
     };

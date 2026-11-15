@@ -216,8 +216,8 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 - [x] US-FILE-02 · Browse a folder in grid view
 - [x] US-FILE-03 · Create a folder
 - [x] US-FILE-04 · Search files
-- [ ] US-FILE-05 · Download files
-- [ ] US-FILE-06 · Preview a file
+- [x] US-FILE-05 · Download files
+- [x] US-FILE-06 · Preview a file
 - [ ] US-FILE-07 · Open a file with an app
 - [ ] US-FILE-08 · Upload files with progress
 - [ ] US-FILE-09 · Pause, resume and cancel uploads

@@ -137,6 +137,9 @@ export function downloadName(place: Place): string {
   return (place.name ?? 'hlabs').replace(/[/\\]/g, '-');
 }
 
+/** `inline`, with the file's name for when it's saved from the browser's viewer. */
+export const inline = (name: string) => attachment(name).replace(/^attachment/, 'inline');
+
 /** Name of a multi-item download (US-FILE-05). */
 export const MULTI_ZIP = 'hlabs files.zip';
 
@@ -296,7 +299,7 @@ export function registerFiles(app: FastifyInstance, holder: ServiceHolder, devAn
       const shown = mime && (mime.startsWith('image/') || mime.startsWith('video/') || mime === 'application/pdf');
       return sendFile(req, reply, real, size, {
         'content-type': shown ? mime : 'application/octet-stream',
-        'content-disposition': shown ? 'inline' : 'attachment',
+        'content-disposition': shown ? inline(name) : attachment(name),
         ...cache,
       });
     },

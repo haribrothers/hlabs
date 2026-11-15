@@ -45,3 +45,13 @@ A name can't be empty, contain "/" or be very long, and there can't already be a
 Type at least two letters of its name in **Search** at the top. Files looks in the folder you have open and every folder inside it, and shows what it finds with the folder each one is in, for example **Home › Documents › Bills**. Upper and lower case don't matter.
 
 Files shows up to 200 results; if there are more, it says **Showing the first 200 results**, so type a little more of the name. A very large folder may say **Showing the first results** when it couldn't look everywhere in time. Press Esc, or clear the search, to go back to the folder.
+
+## Look at a file
+
+Open a file to see it without downloading it. Photos show at the size of the window, videos play with the usual controls, PDFs open in your browser's own viewer (on a phone, use **Download** instead), and text files such as notes, lists and code show their first 1 MB. Other kinds of file, such as spreadsheets, zip files and iPhone HEIC photos, show their icon with **Download**.
+
+Use the arrows at the sides, or the Left and Right arrow keys, to see the previous or next file in the folder. **Details** shows the file's size, its width and height for photos and videos, when it last changed and where it is; choose the location to open that folder. Press Esc or choose **×** to close.
+
+## Download a file
+
+Open the file and choose **Download** at the top. The file keeps its name. Big downloads, such as videos, can pick up where they stopped if the connection drops.
