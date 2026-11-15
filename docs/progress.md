@@ -218,7 +218,7 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 - [x] US-FILE-04 · Search files
 - [x] US-FILE-05 · Download files
 - [x] US-FILE-06 · Preview a file
-- [ ] US-FILE-07 · Open a file with an app
+- [x] US-FILE-07 · Open a file with an app
 - [ ] US-FILE-08 · Upload files with progress
 - [ ] US-FILE-09 · Pause, resume and cancel uploads
 - [ ] US-FILE-10 · Handle name conflicts when uploading

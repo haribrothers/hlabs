@@ -1,6 +1,7 @@
 import { notificationActionsSchema, onboardingStepSchema, severitySchema } from '@hlabs/api';
 import {
   APP_STATES,
+  appMounts,
   apps,
   appSources,
   catalogApps,
@@ -169,6 +170,8 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     stateDetail: z.record(z.string(), z.unknown()).optional(),
     /** Its own port (12000–12999), for its fallback and tailnet addresses (US-SYS-04 e2e). */
     port: z.number().int().min(12000).max(12999).optional(),
+    /** Folders on the storage root it uses, e.g. `users/<username>/Photos` (US-FILE-07 e2e: Open with). */
+    mounts: z.array(z.string()).optional(),
   });
   // The engine as stopped (or back), without touching the real one: e2e for the engine-stopped states (US-STATE-08…10).
   const engineBody = z.object({ running: z.boolean() });
@@ -225,7 +228,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
   app.post('/dev/fake-app', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
-    const { id, name, remove, state, progress, embed, stateDetail: detail, port } = fakeApp.parse(req.body);
+    const { id, name, remove, state, progress, embed, stateDetail: detail, port, mounts } = fakeApp.parse(req.body);
     const stateDetail = detail ? JSON.stringify(detail) : null;
     const { db, bus } = services;
     if (remove) {
@@ -266,6 +269,15 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
       })
       .onConflictDoUpdate({ target: apps.id, set: { state, stateDetail, updatedAt: Date.now() } })
       .run();
+    const root = db.select().from(storageLocations).where(eq(storageLocations.isRoot, true)).get();
+    if (mounts && root) {
+      db.delete(appMounts).where(eq(appMounts.appId, id)).run();
+      for (const [i, subpath] of mounts.entries()) {
+        db.insert(appMounts)
+          .values({ id: ulid(), appId: id, target: `folder${i}`, storageLocationId: root.id, subpath })
+          .run();
+      }
+    }
     bus.emit('app.stateChanged', { appId: id, state, detail: null }, { kind: 'all' });
     if (progress !== undefined) bus.emit('app.installProgress', { appId: id, jobId: 'dev', progress }, { kind: 'all' });
     return { added: id };

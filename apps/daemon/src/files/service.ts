@@ -1,7 +1,10 @@
 // Files (07-files): listing, details, new folders, recents and search over the virtual paths of places.ts. Every call
 // resolves the path for the caller first, so access is enforced here and not only in the dashboard.
 import { hlabsError, type FileEntry } from '@hlabs/api';
-import { apps, getUserSetting, setUserSetting, type HlabsDb } from '@hlabs/db';
+import { appMounts, apps, getUserSetting, setUserSetting, storageLocations, type HlabsDb } from '@hlabs/db';
+import { eq } from 'drizzle-orm';
+import { appSummary } from '../apps/list';
+import { visibleAppIds } from '../home/layout';
 import type { Dirent, Stats } from 'node:fs';
 import { lstat, mkdir, readdir, realpath, stat } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -118,6 +121,36 @@ export class FilesService {
         ? { ...e, previewUrl: previewUrl(this.tokens.sign(caller.id, e.path, now).token) }
         : e,
     );
+  }
+
+  /**
+   * Running apps this person can open whose folders hold the file (US-FILE-07): each `app_mounts` folder (its storage
+   * location's path and subpath) that the file is in. Apps are listed once, in the order they were installed.
+   */
+  async openWith(caller: Caller, path: string, isPublished?: (name: string) => boolean) {
+    const place = await this.resolve(caller, path);
+    if (place.base === null || place.rest.length === 0) throw hlabsError('FILES_INVALID_PATH');
+    const real = await realInside(place.base, place.host!);
+    const visible = new Set(visibleAppIds(this.deps.db, { id: caller.id, role: caller.role }));
+    const rows = this.deps.db
+      .select({ app: apps, location: storageLocations.path, subpath: appMounts.subpath })
+      .from(appMounts)
+      .innerJoin(apps, eq(apps.id, appMounts.appId))
+      .innerJoin(storageLocations, eq(storageLocations.id, appMounts.storageLocationId))
+      .where(eq(apps.state, 'running'))
+      .orderBy(apps.installedAt)
+      .all();
+    const found = new Map<string, typeof apps.$inferSelect>();
+    for (const row of rows) {
+      if (found.has(row.app.id) || !visible.has(row.app.id)) continue;
+      const folder = await realpath(join(row.location, row.subpath)).catch(() => null);
+      if (folder && inside(folder, real)) found.set(row.app.id, row.app);
+    }
+    return {
+      apps: [...found.values()]
+        .map((app) => appSummary(this.deps.db, app, isPublished))
+        .map(({ webPath: _w, ...a }) => a),
+    };
   }
 
   /** A signed link to a file for this person, for 5 minutes (US-FILE-06); `width` asks for a thumbnail. */

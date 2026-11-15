@@ -16,5 +16,7 @@ export const files: AppHandlers<DaemonContext>['files'] = {
   recent: (_input, ctx) => ctx.services.files.recent(callerOf(ctx)),
   search: (input, ctx) => ctx.services.files.search(callerOf(ctx), input),
   mkdir: (input, ctx) => ctx.services.files.mkdir(callerOf(ctx), input),
+  openWith: ({ path }, ctx) =>
+    ctx.services.files.openWith(callerOf(ctx), path, (name) => ctx.services.routing.isPublished(name)),
   preview: (input, ctx) => ctx.services.files.preview(callerOf(ctx), input),
 };

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { io } from '../trpc';
-import { appIdSchema, empty, jobRefSchema, ok, pageInputSchema, pending } from './common';
+import { homeAppSchema } from './apps';
+import { empty, jobRefSchema, ok, pageInputSchema, pending } from './common';
 
 /**
  * Virtual paths (07-files, resolved and jailed server-side): `/home` (the caller's Home folder), `/shared`, and for
@@ -49,9 +50,6 @@ export const filePlaceSchema = z.object({
 
 export const fileSortSchema = z.enum(['name', 'modified', 'size', 'kind']);
 
-/** An app that can open a file (US-FILE-07). */
-export const openWithAppSchema = z.object({ appId: appIdSchema, name: z.string(), url: z.string() });
-
 export const files = {
   /** A folder's entries, folders first, paged at 200 (US-FILE-02); `count` and `filesBytes` cover the whole folder. */
   list: io(
@@ -80,7 +78,7 @@ export const files = {
   recent: io(empty, z.object({ items: z.array(fileEntrySchema) })),
   listTrash: io(pageInputSchema, pending),
   /** Running apps the caller can open whose folders hold the path (US-FILE-07). */
-  openWith: io(pathRef, z.object({ apps: z.array(openWithAppSchema) })),
+  openWith: io(pathRef, z.object({ apps: z.array(homeAppSchema) })),
   /** A signed URL for 5 minutes, for this person only (US-FILE-06); `width` asks for a thumbnail. */
   preview: io(
     pathRef.extend({ width: z.number().int().min(16).max(2048).optional() }),

@@ -12,6 +12,7 @@ import { HOME, type FilesLocation } from './places';
 import { RecentsView } from './recents-view';
 import { FilePreview } from './file-preview';
 import { NewFolderDialog } from './new-folder-dialog';
+import { OpenWith } from './open-with';
 import { SearchField, useDebouncedQuery } from './search';
 import { FilesChips, FilesSidebar } from './sidebar';
 import { FolderToolbar } from './toolbar';
@@ -106,6 +107,7 @@ export function FilesPage({ at }: FilesPageProps) {
           items={preview.items}
           onNavigate={(entry) => setPreview({ ...preview, entry })}
           onClose={() => setPreview(null)}
+          openWith={<OpenWith path={preview.entry.path} />}
         />
       ) : null}
       {newFolder && at.view === 'folder' ? (

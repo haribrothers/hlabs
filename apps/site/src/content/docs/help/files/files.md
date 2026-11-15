@@ -50,6 +50,8 @@ Files shows up to 200 results; if there are more, it says **Showing the first 20
 
 Open a file to see it without downloading it. Photos show at the size of the window, videos play with the usual controls, PDFs open in your browser's own viewer (on a phone, use **Download** instead), and text files such as notes, lists and code show their first 1 MB. Other kinds of file, such as spreadsheets, zip files and iPhone HEIC photos, show their icon with **Download**.
 
+If an app you can use keeps its files in that folder (for example Immich for your Photos), **Open with** lists it under Details; choose it to open the app in a new tab.
+
 Use the arrows at the sides, or the Left and Right arrow keys, to see the previous or next file in the folder. **Details** shows the file's size, its width and height for photos and videos, when it last changed and where it is; choose the location to open that folder. Press Esc or choose **×** to close.
 
 ## Download a file
