@@ -32,7 +32,7 @@ hlabs is a home cloud OS for macOS and Linux: an App Store for self-hosted apps,
 | [13-site](features/13-site.md) | Website and help | 14 |
 
 ## Design
-[design/](design/): brand book, motion, tokens, 25 component specs with a reference implementation, logos, and all 115 screens with images ([design/screens.md](design/screens.md)).
+[design/](design/): brand book, motion, tokens, 25 component specs with a reference implementation, logos, and all 123 screens with images (8 added for the phase 4 follow-ups, rendered from `design/mockups/`) ([design/screens.md](design/screens.md)).
 
 ## Already built
 `packages/icons` (`@hlabs/icons`) is included and tested: Lucide re-exports, the filled tab-bar glyphs, `LogoMark`/`LogoLockup`, `AppLogo` with fallback, `FileIcon` (Papirus file and folder icons, `@hlabs/icons/files`), the manifest icon schema, and app-icon and tray PNGs. Wire it into the workspace in phase 0.

@@ -2,7 +2,7 @@
 
 This module gets hlabs onto a computer and keeps it running: the macOS `.dmg` and first-launch setup, the Linux server install script and service, and the tray app (macOS menu bar, Linux desktop tray) that shows status, offers quick actions, resets a password locally, applies hlabs updates and uninstalls hlabs. It is used by whoever owns the computer, usually the admin, and is the only place that works without a dashboard login. It also covers using hlabs as an app on anyone's other computers (the installable dashboard, F-INST-11).
 
-**Screens:** `MacInstall` (P2), `LinuxInstall` (P3), `TrayMenu` (P1), `TrayStates` (P1), `TrayResetPassword` (P1), `TrayUninstall` (Polish), `LinuxTray` (Polish), `SettingsAccount` (the "Use hlabs as an app" card, P2), `AppOffline` (P2).
+**Screens:** `MacInstall` (P2), `LinuxInstall` (P3), `TrayMenu` (P1), `TrayStates` (P1), `TrayResetPassword` (P1), `TrayUninstall` (Polish), `LinuxTray` (Polish), `SettingsAccountApp`, `DesktopAppCard`, `DesktopAppWindow`, `AppOffline` (P2).
 **Depends on:** [02-onboarding](02-onboarding.md) (first run the tray opens), [04-home](04-home.md) (dashboard the tray opens), [11-system-states](11-system-states.md) (daemon down, updating), [10-system-settings](10-system-settings.md) (updates, engine & startup), [06-apps](06-apps.md) (logs), [08-usage-backups](08-usage-backups.md) (backup runs).
 
 ## Features
@@ -19,7 +19,7 @@ This module gets hlabs onto a computer and keeps it running: the macOS `.dmg` an
 | F-INST-08 | Uninstall hlabs from the tray | Polish | 6 | `TrayUninstall` |
 | F-INST-09 | Linux server install script and service | P3 | 6 | `LinuxInstall` |
 | F-INST-10 | Linux desktop tray menus | Polish | 6 | `LinuxTray` |
-| F-INST-11 | hlabs as an app on other computers | P2 | 4 | `SettingsAccount`, `AppOffline` |
+| F-INST-11 | hlabs as an app on other computers | P2 | 4 | `SettingsAccountApp`, `DesktopAppCard`, `DesktopAppWindow`, `AppOffline` |
 
 ## User stories
 
@@ -442,7 +442,7 @@ This module gets hlabs onto a computer and keeps it running: the macOS `.dmg` an
 - Edge cases: Caddy needs ports 80/443 as a user service; the package post-install grants `cap_net_bind_service` on the bundled `caddy` binary.
 
 ### US-INST-28 · Install hlabs as an app on my computer
-**Feature:** F-INST-11 · **Priority:** P2 · **Phase:** 4 · **Screens:** `SettingsAccount`
+**Feature:** F-INST-11 · **Priority:** P2 · **Phase:** 4 · **Screens:** `SettingsAccountApp`, `DesktopAppCard`
 **As** anyone signed in on a computer, **I want** to install hlabs as an app, **so that** it opens in its own window from my Dock, Start menu or app launcher instead of a browser tab.
 
 **Acceptance criteria**
@@ -450,11 +450,11 @@ This module gets hlabs onto a computer and keeps it running: the macOS `.dmg` an
 - **Given** a signed-out visitor, **when** the manifest, the icons or `/sw.js` are requested, **then** they are served without a session.
 - **Given** the dashboard, **when** it registers its service worker (`/sw.js`, scope `/`), **then** the worker caches only the built shell (HTML, JS, CSS, fonts, icons) and never `/trpc`, `/api`, `/auth` or `/healthz` responses; **given** the browser refuses the worker (for example a certificate it doesn't trust), **then** the dashboard works as before.
 - **Given** Chrome or Edge on macOS, Windows or Linux over HTTPS, **then** the dashboard is installable (Lighthouse "Installable" passes) and the browser's own install button installs it.
-- **Given** a screen at least 768px wide and hlabs not running as an installed app, **when** I open Settings › Account, **then** a card "Use hlabs as an app" reads "Open hlabs in its own window from your Dock or Start menu, without a browser tab." and:
+- **Given** a screen at least 768px wide and hlabs not running as an installed app, **when** I open Settings › Account, **then** a "This computer" section under the profile card (`SettingsAccountApp`, each browser in `DesktopAppCard`) shows "Use hlabs as an app" with the hlabs app icon, which reads "Open hlabs in its own window from your Dock or Start menu, without a browser tab." and:
   - in Chrome or Edge, once the browser offers it, an "Install hlabs" button opens the browser's install prompt; after I accept, the card reads "hlabs is installed on this computer.";
   - in Safari on macOS, it reads "In Safari, choose File › Add to Dock.";
   - in any other browser, or when Chrome or Edge never offers it, it reads "To install hlabs, open it in Chrome, Edge or Safari." with "How to install" (help, through `helpUrl()`).
-- **Given** remote access is connected and the page is not on the tailnet address, **then** the card adds "Install it from your tailnet address so the app works at home and away." with "Open tailnet address" (a new tab at the dashboard's tailnet URL), because an installed app keeps the address it was installed from (D-126).
+- **Given** remote access is connected and the page is not on the tailnet address, **then** the card adds a second row "Install it from your tailnet address so the app works at home and away." showing that address, with "Open tailnet address" (a new tab at the dashboard's tailnet URL), because an installed app keeps the address it was installed from (D-126).
 - **Given** hlabs runs as an installed app, or the screen is narrower than 768px, **then** the card is hidden (phones: US-PHONE-23).
 - **Given** a member or an admin, **then** the card is the same.
 
@@ -465,14 +465,14 @@ This module gets hlabs onto a computer and keeps it running: the macOS `.dmg` an
 - Help: a "Use hlabs as an app" page for Chrome, Edge and Safari, linked from the card.
 
 ### US-INST-29 · Use hlabs in its own window
-**Feature:** F-INST-11 · **Priority:** P2 · **Phase:** 4 · **Screens:** `AppOffline`, `Main`
+**Feature:** F-INST-11 · **Priority:** P2 · **Phase:** 4 · **Screens:** `DesktopAppWindow`, `AppOffline`, `Main`
 **As** anyone who installed hlabs on a computer, **I want** it to behave like an app, **so that** I can open my apps from it every day without a browser.
 
 **Acceptance criteria**
 - **Given** I open the installed hlabs, **then** it opens in its own window at Home (or log in when signed out) with no tabs or address bar, and the window's title bar follows the theme colour in light and dark.
 - **Given** the installed app shares the browser's cookies (Chrome, Edge), **then** I'm signed in when the browser was; **given** it has its own (Safari's Add to Dock), **then** the first launch shows log in with "Remember me on this device" on by default, in the installed app only.
 - **Given** I open an app from Home or the Dock, **then** an app that embeds opens in the app window as it does in a browser (US-APP-01), and one that doesn't opens in my default browser; help and other outside links open in the default browser too.
-- **Given** this computer can't reach hlabs when the app opens (offline, away from home without Tailscale, or the hlabs computer is off), **then** the cached shell shows `AppOffline`: "Can't reach hlabs", "Check that this computer is on your home network or connected to Tailscale.", and "Try again", and it tries `/healthz` again every 10 seconds; when hlabs answers, the page loads. A daemon that is down behind a running Caddy shows Caddy's page as before (US-STATE-04).
+- **Given** this computer can't reach hlabs when the app opens (offline, away from home without Tailscale, or the hlabs computer is off), **then** the cached shell shows `AppOffline`: "Can't reach hlabs", "Trying again in 10 seconds…", the steps "Check that this computer is on your home network or connected to Tailscale." and "Make sure the computer hlabs runs on is on and awake.", and "Try again"; it tries `/healthz` again every 10 seconds; when hlabs answers, the page loads. A daemon that is down behind a running Caddy shows Caddy's page as before (US-STATE-04).
 - **Given** hlabs was updated, **when** the installed app next loads online, **then** it loads the new version (the shell's HTML is fetched from the network first) and reloads at most once; the updating screen and reload (US-STATE-01/02) work as in a browser.
 - **Given** I log out, or my session is revoked or expires, **then** log in shows inside the app's window.
 - **Given** keyboard shortcuts (⌘K / Ctrl+K search, Escape), **then** they work as in the browser.

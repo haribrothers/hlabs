@@ -2,7 +2,7 @@
 
 Everything that happens after an app is installed: opening it, checking that it is healthy, starting and stopping it, reinstalling it when it's broken, changing its settings, folder and network access, reading its logs and resource use, moving its data and uninstalling it. Admins manage apps; members can only open the apps an admin has shared with them.
 
-**Screens:** `AppWindow` (P1), `AppSettings` (P1), `AppLogs` (P1), `UninstallConfirm` (P1), `ReinstallConfirm` (P1), `AppConfig` (P2), `AppPermissions` (P2), `AppUsageDetail` (P2), `AppMoveData` (P3).
+**Screens:** `AppWindow` (P1), `AppSettings` (P1), `AppLogs` (P1), `UninstallConfirm` (P1), `ReinstallConfirm` (P1), `AppLogsBroken`, `AppSettingsBroken`, `AppSettingsReinstalling`, `HomeAppBroken` (P1), `AppConfig` (P2), `AppPermissions` (P2), `AppUsageDetail` (P2), `AppMoveData` (P3).
 **Depends on:** 04-home.md (Home grid, `HomeStates` app tile states), 05-app-store.md (install, manifest prompts, updates), 07-files.md (folder picker), 08-usage-backups.md (usage sampling, backup plan), 09-account-people.md (app access for members), 10-system-settings.md (storage locations, remote access), 11-system-states.md (engine stopped, daemon down).
 
 ## Features
@@ -410,13 +410,13 @@ Everything that happens after an app is installed: opening it, checking that it 
 - UI: Progress, Toast.
 
 ### US-APP-26 · Know when an app stops working
-**Feature:** F-APP-02 · **Priority:** P1 · **Phase:** 4 · **Screens:** `HomeStates`, `AppLogs`
+**Feature:** F-APP-02 · **Priority:** P1 · **Phase:** 4 · **Screens:** `HomeAppBroken`, `AppLogsBroken`, `AppSettingsBroken`
 **As** an admin, **I want** hlabs to notice when a running app crashes or stops answering and tell me, **so that** I can fix it before someone in the house finds it broken.
 
 **Acceptance criteria**
 - **Given** an app is `running`, **when** one of its containers exits and isn't running again within 30 seconds (Docker restarts it by itself, `restart: unless-stopped`), **or** exits 3 times within 5 minutes, **or** reports `unhealthy` for 60 seconds, **then** the app goes to `error` with `state_detail` saying which service and why (`APP_CRASHED` with the exit code and whether it ran out of memory, or `APP_UNHEALTHY`), and `app.stateChanged` is emitted (D-127).
 - **Given** hlabs itself is stopping, restarting, updating, reinstalling, pausing or uninstalling the app, or the container engine is stopping or stopped, **then** containers exiting don't count as a crash.
-- **Given** the app goes to `error` this way, **then** every admin gets a warning notification and Toast "<App> stopped working" with the reason ("It quit unexpectedly." / "It ran out of memory." / "It stopped answering.") and the actions "Restart" (`apps.restart`) and "View logs"; members get nothing.
+- **Given** the app goes to `error` this way, **then** every admin gets a warning notification and Toast "<App> stopped working" with the reason ("It quit unexpectedly." / "It quit unexpectedly 3 times in 5 minutes." / "It ran out of memory." / "It stopped answering.") and the actions "Restart" (`apps.restart`) and "View logs" (`HomeAppBroken`); members get nothing.
 - **Given** an unread "stopped working" notification for the app already exists, **then** no second one is added while it's unread.
 - **Given** the app's tile, **then** it shows the error state (US-HOME-06) and opens Logs with the reason card and "Restart" and "Reinstall…" (US-HOME-08, US-APP-24).
 - **Given** the crashed app comes back by itself (Docker restarted it) and is running and healthy for 60 seconds, **then** it returns to `running`, its "stopped working" notifications are marked read and a Toast reads "<App> is working again".
@@ -430,16 +430,16 @@ Everything that happens after an app is installed: opening it, checking that it 
 - Copy for `APP_CRASHED` and `APP_UNHEALTHY` in `apps/web/src/copy/errors.ts`.
 
 ### US-APP-24 · Offer to reinstall a broken app
-**Feature:** F-APP-09 · **Priority:** P1 · **Phase:** 4 · **Screens:** `AppLogs`, `AppSettings`, `ReinstallConfirm`, `HomeStates`
+**Feature:** F-APP-09 · **Priority:** P1 · **Phase:** 4 · **Screens:** `AppLogsBroken`, `AppSettingsBroken`, `AppSettingsReinstalling`, `ReinstallConfirm`, `HomeAppBroken`
 **As** an admin, **I want** to reinstall an app that won't run, keeping its data, **so that** I can fix it without uninstalling it and setting it up again.
 
 **Acceptance criteria**
-- **Given** an app in `error`, **when** its Logs open (from its broken tile, US-HOME-08, or anywhere else), **then** the reason card under the title ("<App> isn't responding" and the reason) shows "Restart" and "Reinstall…".
-- **Given** an app in `error`, **when** App settings opens, **then** the action row shows "Restart", "Reinstall…" and "Logs".
+- **Given** an app in `error`, **when** its Logs open (from its broken tile, US-HOME-08, or anywhere else), **then** the reason card under the title shows the title ("<App> stopped working" after a crash, US-APP-26, else "<App> isn't responding"), the reason, "Restart it, or reinstall it if that doesn't help. Its data is kept either way.", "Reinstall…" and "Restart" (the white primary) (`AppLogsBroken`).
+- **Given** an app in `error`, **when** App settings opens, **then** the header status reads "Stopped working · <reason>" in the danger colour and the action row shows "Restart" (primary), "Reinstall…" and "Logs" (`AppSettingsBroken`).
 - **Given** a running or stopped app, **then** App settings' footer shows "Reinstall…" (secondary) beside "Uninstall…", so an app that misbehaves while running can be rebuilt too.
 - **Given** the tile menu of an app in `error` (US-HOME-07), **then** it shows "Reinstall…" after "Restart".
-- **Given** I press "Reinstall…", **then** the shared confirm dialog (US-STATE-11) titled "Reinstall <App>?" reads "hlabs downloads <App> <version> again (about <size>) and sets it up from scratch. Its data, settings, passwords, folder access and who it's shared with are kept.", with "Cancel" and "Reinstall" (not destructive; focus starts on "Cancel"); for a stopped app it adds "It starts when it's done."
-- **Given** I press "Reinstall", **then** the dialog closes, the App settings header, the Logs reason card and the Home tile show "Reinstalling" with the job's step and progress ("Stopping", "Removing old containers", "Downloading" with %, "Starting", "Checking it works"), and Start, Stop, Restart, Reinstall… and Uninstall… are disabled until the app settles (`running`, `stopped` or `error`).
+- **Given** I press "Reinstall…", **then** the shared confirm dialog (US-STATE-11) titled "Reinstall <App>?" reads "hlabs downloads <App> <version> again (about <size>) and sets it up from scratch." above a "Kept as they are" list ("Its data and settings", "Passwords it created", "Folder access and who it's shared with", "Its place on Home and in the Dock"), with "Cancel" and "Reinstall" (the white primary, not destructive; focus starts on "Cancel") (`ReinstallConfirm`); for a stopped app it adds "It starts when it's done."
+- **Given** I press "Reinstall", **then** the dialog closes, the App settings header ("Reinstalling" and a Progress bar with the step, such as "Downloading <App> <version> · 42% · 176 of 420 MB", `AppSettingsReinstalling`), the Logs reason card and the Home tile ("Reinstalling… 42%", `HomeAppBroken`) show the job's step and progress ("Stopping", "Removing old containers", "Downloading" with %, "Starting", "Checking it works"), and Start, Stop, Restart, Reinstall… and Uninstall… are disabled until the app settles (`running`, `stopped` or `error`).
 - **Given** the container engine is stopped, **then** "Reinstall…" is disabled with "Start the container engine first"; **given** a job runs for this app or an exclusive job runs (04 invariant 5), **then** it is disabled with "Wait for <job> to finish"; **given** all apps are paused (US-INST-08), **then** it is disabled with "Resume apps first".
 - **Given** hlabs can't find the app's saved settings (its `.env`) or its manifest, **then** the dialog reads "hlabs can't find <App>'s saved settings, so reinstalling would reset its passwords. To start over, uninstall it and install it again." with "Cancel" only, and nothing changes.
 - **Given** someone opens the app while it reinstalls, **then** the app window shows that it's on its way, as for `starting` (US-APP-03): "<App> is being reinstalled".
@@ -452,7 +452,7 @@ Everything that happens after an app is installed: opening it, checking that it 
 - The "about <size>" is `disk.imageBytes` (US-APP-07); it is left out while that is still being counted.
 
 ### US-APP-25 · Reinstall runs and keeps the data
-**Feature:** F-APP-09 · **Priority:** P1 · **Phase:** 4 · **Screens:** `AppSettings`, `HomeStates`
+**Feature:** F-APP-09 · **Priority:** P1 · **Phase:** 4 · **Screens:** `AppSettingsReinstalling`, `HomeAppBroken`
 **As** an admin, **I want** reinstalling to rebuild everything except my data and settings, **so that** a broken container, image or project folder is fixed and nothing I care about is lost.
 
 **Acceptance criteria**

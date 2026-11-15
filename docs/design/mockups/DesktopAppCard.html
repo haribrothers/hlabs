@@ -1,0 +1,16 @@
+<script>
+var label = function (t) { return h('p', { style: Object.assign({}, T.muted, { margin: '0 0 6px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none' }) }, t); };
+render(
+  wall(
+    areaWindow([
+      h('h1', { key: 't', style: T.h2 }, '“Use hlabs as an app” in each browser'),
+      h('div', { key: 'g', style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '22px 28px' } },
+        [['Chrome or Edge, once the browser offers to install', 'chrome'], ['Safari on macOS', 'safari'], ['Firefox, or Chrome and Edge when they don’t offer it', 'other'], ['Just after installing (hidden once hlabs runs as the app)', 'installed']].map(function (v) {
+          return h('div', { key: v[1] }, label(v[0]), desktopAppCard(v[1], true));
+        })),
+      h('div', { key: 'tn' }, label('Remote access on, page not on the tailnet address'), desktopAppCard('chrome-tailnet', true)),
+    ]),
+    { dim: true }
+  )
+);
+</script>

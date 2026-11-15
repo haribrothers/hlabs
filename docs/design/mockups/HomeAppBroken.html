@@ -1,0 +1,49 @@
+<script>
+var tiles = HOME_TILES;
+render(
+  wall([
+    h('div', { key: 'top', style: { position: 'absolute', top: 56, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 } },
+      h('div', { className: 'hl-glass hl-glass-1', style: { width: 50, height: 50, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, h(H.Logo, { size: 30 })),
+      h('h1', { style: { margin: 0, font: '700 44px/52px var(--font-sans)', letterSpacing: '-0.02em', color: 'var(--ink)' } }, 'Good evening, Hari'),
+      h('div', { className: 'hl-glass hl-glass-1', style: { width: 328, height: 46, borderRadius: 'var(--radius-pill)', display: 'flex', alignItems: 'center', gap: 10, padding: '0 20px', boxSizing: 'border-box', color: 'var(--ink-muted)', font: '400 15px var(--font-sans)' } },
+        icon('search', 16), h('span', { style: { flex: 1 } }, 'Search apps, files, settings'), h('span', { style: { font: '600 12px var(--font-sans)', background: 'var(--surface-control)', borderRadius: 6, padding: '2px 6px' } }, '⌘K'))),
+    h('div', { key: 'w', style: { position: 'absolute', top: 262, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 16 } },
+      widget('Live usage', h('div', null, h('div', { style: Object.assign({}, T.body, { display: 'flex', justifyContent: 'space-between', fontSize: 13 }) }, h('span', null, 'CPU'), h('b', null, '18%')), bar(18), h('div', { style: Object.assign({}, T.body, { display: 'flex', justifyContent: 'space-between', fontSize: 13, marginTop: 12 }) }, h('span', null, 'Memory'), h('b', null, '9.4 / 16 GB')), bar(58)), 'a'),
+      widget('Storage', h('div', null, h('p', { style: { margin: 0, font: '700 30px/36px var(--font-sans)', color: 'var(--ink)' } }, '142 GB ', h('span', { style: T.muted }, 'left of 256 GB')), bar(45)), 'b'),
+      widget('Remote access', h('div', null, h('p', { style: { margin: 0, font: '700 20px/26px var(--font-sans)', color: 'var(--ink)' } }, 'hlabs.tailnet'), h('p', { style: T.muted }, 'Tailscale · 5 devices online')), 'c'),
+      widget('Backups', h('div', null, h('p', { style: { margin: 0, font: '700 20px/26px var(--font-sans)', color: 'var(--ink)' } }, '2 hours ago'), h('p', { style: T.muted }, '11 apps → NAS · restic')), 'd')),
+    h('div', { key: 'g', style: { position: 'absolute', top: 460, left: 150, width: 1140, display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', rowGap: 30, justifyItems: 'center' } },
+      tiles.map(function (t, i) {
+        var el = appTile(t[0], t[1]);
+        return h('div', { key: i, style: { position: 'relative' } }, el,
+          t[2] ? h('div', { style: { position: 'absolute', left: -40, right: -40, bottom: 0, textAlign: 'center', font: '500 14px/18px var(--font-sans)', color: 'var(--ink)', background: 'transparent' } }) : null);
+      })),
+    // The broken tile's menu (US-HOME-07) with Reinstall… (US-APP-24).
+    h('div', { key: 'm', className: 'hl-glass hl-glass-3', style: { position: 'absolute', left: 492, top: 496, zIndex: 3, borderRadius: 14 } },
+      h(H.Menu, {
+        label: 'Uptime Kuma', width: 230, header: 'Uptime Kuma',
+        items: [
+          { label: 'Open', icon: icon('open', 16), disabled: true },
+          { label: 'Settings', icon: icon('settings', 16) },
+          { label: 'View logs', icon: icon('logs', 16) },
+          { separator: true },
+          { label: 'Restart', icon: icon('restart', 16) },
+          { label: 'Reinstall…', icon: icon('reinstall', 16) },
+          { separator: true },
+          { label: 'Uninstall…', icon: icon('trash', 16), danger: true },
+        ],
+      })),
+    // The "stopped working" notification as a toast, top-right (US-APP-26).
+    h('div', { key: 't', style: { position: 'absolute', top: 24, right: 24, zIndex: 4 } },
+      h(H.Toast, {
+        tone: 'warning', title: 'Uptime Kuma stopped working',
+        action: h('div', { style: { display: 'flex', gap: 8, marginTop: 10 } }, btn('secondary', 'sm', 'Restart', { style: { height: 30 } }), btn('secondary', 'sm', 'View logs', { style: { height: 30 } })),
+      }, 'It quit unexpectedly 3 times in 5 minutes.')),
+    dock('home'),
+  ])
+);
+// A reinstalling tile reads "Reinstalling… 42%" where an installing one reads "Installing… 42%".
+setTimeout(function () {
+  document.querySelectorAll('.hl-app-name').forEach(function (n) { if (/^Installing/.test(n.textContent)) n.textContent = 'Reinstalling\u2026 42%'; });
+}, 50);
+</script>
