@@ -37,7 +37,8 @@ describe('US-INST-29', () => {
   });
 
   it('it asks again every 10 seconds and loads the page when hlabs answers', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Only fake time: nothing moves unless the test moves it (real time crept in on a slow CI machine).
+    vi.useFakeTimers();
     let answer = noAnswer;
     const check = vi.fn(async () => answer);
     const reload = vi.fn();
@@ -46,15 +47,19 @@ describe('US-INST-29', () => {
         <p>the dashboard</p>
       </OfflineGate>,
     );
-    await screen.findByRole('heading', { name: "Can't reach hlabs" });
-    await act(async () => vi.advanceTimersByTime(5_000));
+    // The first check's answer arrives.
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(screen.getByRole('heading', { name: "Can't reach hlabs" })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Trying again in 10 seconds…');
+    await act(() => vi.advanceTimersByTimeAsync(5_000));
     expect(screen.getByRole('status')).toHaveTextContent('Trying again in 5 seconds…');
-    await act(async () => vi.advanceTimersByTime(5_000));
+    await act(() => vi.advanceTimersByTimeAsync(5_000));
     expect(check).toHaveBeenCalledTimes(2);
     expect(reload).not.toHaveBeenCalled();
     answer = ok;
-    await act(async () => vi.advanceTimersByTime(10_000));
-    await waitFor(() => expect(reload).toHaveBeenCalledOnce());
+    await act(() => vi.advanceTimersByTimeAsync(10_000));
+    expect(check).toHaveBeenCalledTimes(3);
+    expect(reload).toHaveBeenCalledOnce();
   });
 
   it('Try again asks at once', async () => {

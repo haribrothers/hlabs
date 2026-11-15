@@ -21,7 +21,8 @@ jobs:
       matrix:
         include:
           - platform: macos-arm64
-            os: macos-14
+            # GitHub retired the macos-14 image (Nov 2026); latest is Apple silicon too, like ci.yml's.
+            os: macos-latest
             bundles: app
           - platform: linux-x64
             os: ubuntu-22.04
