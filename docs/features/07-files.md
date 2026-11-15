@@ -2,7 +2,7 @@
 
 Files is the household's file browser: everyone signed in can browse, preview, upload and organise the files in their private Home folder, and admins also reach the Shared folder, app data, network drives and external drives. It replaces "copy it to the Mac mini over AirDrop" with one place that works the same from a laptop or a phone, and it can publish folders to the local network as SMB shares.
 
-**Screens:** `FilesBrowser` (P2), `FilePreview` (P2), `FilesUpload` (P2), `NetworkDrives` (P2), `FilesShare` (P3), `FilesExternal` (P3), `FilesTrash` (P3), `FilesList` (Nice to have), `FilesContextMenu` (Nice to have), `FilesMove` (Nice to have), `FilesRename` (Nice to have), `FilesLoading` (Nice to have).
+**Screens:** `FilesBrowser` (P2), `FilePreview` (P2), `FilesUpload` (P2), `NetworkDrives` (P2), `FolderPicker` (P1), `FilesShare` (P3), `FilesExternal` (P3), `FilesTrash` (P3), `FilesList` (Nice to have), `FilesContextMenu` (Nice to have), `FilesMove` (Nice to have), `FilesRename` (Nice to have), `FilesLoading` (Nice to have).
 **Depends on:** 03-sign-in.md (sessions), 04-home.md (desktop windows, Dock, Spotlight), 06-apps.md (app folder mounts, Open with), 08-usage-backups.md (Use for backups), 09-account-people.md (member "See the Shared folder in Files" permission), 10-system-settings.md (SettingsStorage, storage root).
 
 ## Features
@@ -21,6 +21,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 | F-FILE-10 | Move to | Nice to have | 9 | `FilesMove` |
 | F-FILE-11 | Rename | Nice to have | 9 | `FilesRename` |
 | F-FILE-12 | Loading, empty and error states | Nice to have | 9 | `FilesLoading` |
+| F-FILE-13 | Choose a folder for an app (folder picker) | P1 | 5 | `FolderPicker`, `InstallSheet` |
 
 ## User stories
 
@@ -427,6 +428,29 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 **Implementation notes**
 - UI: FileItem skeleton variant; TanStack Query cache keyed by path and sort.
 - Edge: switching folders while loading cancels the previous request.
+
+### US-FILE-25 · Choose a folder for an app
+**Feature:** F-FILE-13 · **Priority:** P1 · **Phase:** 5 · **Screens:** `FolderPicker`, `InstallSheet`
+**As** an admin installing an app, **I want** to choose which folder each of its folders points at, on this computer or a network drive, **so that** the app uses the files I already have where I keep them.
+
+Added with the phase 5 Files work (Hari, 15 Nov 2026, Q-17, D-131): US-STORE-08 asks for "Change" and a folder picker, D-083 left them for the Files phase, and US-FILE-11's "Let apps use this drive" needs them to mean anything. AppPermissions' "+ Give access to a folder" (US-APP-*, phase 7) reuses this picker.
+
+**Acceptance criteria**
+- **Given** the install sheet, **when** a folder row renders, **then** it shows its place ("Home › Photos"), its mode and role ("Read and write · where your library is stored") and a "Change" Button (accessible name "Change folder for <role or key>"); an optional folder keeps its Switch, and "Change" turns it on.
+- **Given** "Change", **then** the FolderPicker Dialog opens titled "Choose a folder for <App>" with the folder's role and mode under it, opened at the folder's current place (its parent when the folder doesn't exist yet).
+- **Given** the picker, **then** its places are Home, Shared (when the person may see it) and each network or external drive whose "Let apps use this drive" is on, in that order; a drive that isn't mounted is listed with "Offline" and can't be opened; App data, This computer and other people's Home folders are never offered.
+- **Given** a place, **then** the picker lists its folders only (files aren't shown), A to Z, with a breadcrumb; double-click, Enter or a tap opens a folder; the breadcrumb goes back up.
+- **Given** a folder is selected (or none, meaning the open one), **then** the primary Button reads "Use <folder name>" (e.g. "Use Photos archive", or "Use NAS · Media" at a drive's top); choosing it closes the picker and the row shows the new place ("NAS › Photos archive").
+- **Given** "+ New folder" in the picker, **then** the New folder dialog of US-FILE-03 makes a folder in the open one and selects it.
+- **Given** a folder that needs to write (manifest mode `rw`) and a read-only drive or folder, **then** "Use …" is disabled with "This folder is read only"; a `ro` folder may be anywhere and stays read only (US-STORE-08: the mode is never raised).
+- **Given** "Install", **then** each folder is sent as `{ target, storageLocationId, subpath, mode }` for the chosen place, and the app's compose file mounts that folder.
+- **Given** a member installing an app (when "Members can install apps" is on), **then** the picker offers only their Home (and Shared with the permission), and the daemon refuses any other folder with `FILES_ACCESS_DENIED`, whatever the request says.
+- **Given** keyboard use, **then** arrow keys move between folders, Enter opens, Escape closes the picker (back to the install sheet, nothing changed); on a phone the picker is a full-height sheet.
+
+**Implementation notes**
+- API: `files.list` (folders only: `kinds: ['folder']`) gains `location: { id, subpath } | null`, the storage location and subpath a virtual path resolves to (null for App data and the lists of places), so a choice is sent as the install's `mounts`; `storage.locations.list` (`appsAllowed`, `status`); `apps.install` `mounts` (US-STORE-08). `resolveMounts` checks a member's subpaths (`users/<username>/…`, `shared/…` with `can_see_shared`).
+- UI: Dialog (sheet on phone), FileItem (list rows), Breadcrumb, Button, the New folder dialog.
+- Edge: a folder chosen and then removed before Install: the install makes it again (as for defaults, US-STORE-08) or fails with the usual folder error if its drive went offline.
 
 ## API additions
 Merged into [05-api](../prd/05-api.md) under "Contract additions from the feature files".

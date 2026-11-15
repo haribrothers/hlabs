@@ -637,6 +637,14 @@ Links to: `AppStore`, `BackupsOverview`, `FilePreview`, `FilesBrowser`, `FilesEx
 
 Shows: hlabs — Files · uploading · [Files] · [Locations] · Files · Recents · Home · Photos · Downloads · Shared with me · Locations · This computer · NAS · Media · [DRIVE NAME] · + Connect a drive · Other · App data · Trash · 114 GB of 256 GB used · [Breadcrumb] · Home · › · Documents · Search files · [Search] · [View] · [Grid view] · [List view] · Share folder · New folder · Upload · Bills · 24 items · Taxes · 12 items · Travel · 8 items · Work · 41 items · Scans · 17 items · Manuals · 9 items · Lease agreement.pdf · 1.2 MB · Kitchen plan.jpg · 3.4 MB · Budget 2026.xlsx · 84 KB · Letter draft.docx · 32 KB · Passport scan.png · 2.1 MB · Old laptop backup.zip · 4.8 GB · 12 items · 5.1 GB · Private to you · Hari's Home folder · [Uploads] · Uploading 3 files · About 1 min left · Tax return 2025.pdf · Done · Home video.mov · 62% · 1.1 of 1.8 GB · Receipts.zip · Waiting · Pause · Cancel all · Drop to upload to Documents · [Dock] · Home · App Store, 2 updates · Files · Usage · Backups · Settings · Jellyfin, open · Immich · Vaultwarden · Add to Dock · Search
 
+### FolderPicker — Choose a folder for an app
+
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-FILE-25 · Design: to be added on the Home Cloud Dashboard canvas (D-131).
+
+Links to: `InstallSheet`
+
+Shows: Choose a folder for Immich · Where your library is stored · Read and write · [Places] · Home · Shared · NAS · Media · Backup NAS · Offline · [Breadcrumb] · NAS · Media › Photos · [Folders] · 2024 · 2025 · Photos archive · + New folder · Cancel · Use Photos archive
+
 ### FilesMove — Move to
 
 **Priority:** Nice to have · **Phase:** 9 · **Stories:** US-FILE-22

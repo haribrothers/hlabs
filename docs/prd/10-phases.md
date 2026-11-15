@@ -395,6 +395,7 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-FILE-10 · Handle name conflicts when uploading (P2)
 - US-FILE-11 · Connect an SMB or NFS drive (P2)
 - US-FILE-12 · Disconnect or recover a network drive (P2)
+- US-FILE-25 · Choose a folder for an app (P1; added 15 Nov 2026, Q-17, D-131)
 
 *[Live usage & backups](../features/08-usage-backups.md)*
 
