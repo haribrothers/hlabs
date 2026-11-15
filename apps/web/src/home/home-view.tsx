@@ -27,12 +27,20 @@ export function HomeView() {
   // Installed, removed or changed apps show up without a reload (US-HOME-03); installs fill their ring (US-STORE-12).
   useSubscription(
     trpc.events.stream.subscriptionOptions(
-      { types: ['app.stateChanged', 'app.installProgress'] },
+      { types: ['app.stateChanged', 'app.installProgress', 'job.progress'] },
       {
         onData: ({ data: event }) => {
           if (event.type === 'app.installProgress') {
             const { appId, progress: pct } = event.data;
             setProgress((m) => (m.get(appId) === pct ? m : new Map(m).set(appId, pct)));
+            return;
+          }
+          // A reinstall fills its tile's ring too (US-APP-24).
+          if (event.type === 'job.progress') {
+            const { kind, target, progress: pct } = event.data;
+            if (kind === 'app_reinstall' && target) {
+              setProgress((m) => (m.get(target) === pct ? m : new Map(m).set(target, pct)));
+            }
             return;
           }
           void queryClient.invalidateQueries({ queryKey: trpc.apps.list.queryKey() });

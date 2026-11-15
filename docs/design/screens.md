@@ -1,6 +1,6 @@
 # Screens
 
-Every screen of the hlabs prototype (115). Desktop screens show the Dock (D-054); phone screens show the tab bar. Each has an image in `screens/<Name>.webp` (rendered from the canvas with fallback fonts; the product uses Plus Jakarta Sans) and the text it shows. Stories reference screens by name.
+Every screen of the hlabs prototype (115), plus the screens added since (the last section), which are rendered from `mockups/` with the reference components (`node docs/design/mockups/render.mjs`). Desktop screens show the Dock (D-054); phone screens show the tab bar. Each has an image in `screens/<Name>.webp` (rendered from the canvas with fallback fonts; the product uses Plus Jakarta Sans) and the text it shows. Stories reference screens by name.
 
 Where a screen and a story's acceptance criteria disagree, the story wins. Some screens still show things later removed from scope (for example email/SMTP settings, importing Umbrel or Runtipi stores, `hlabs.service`); see [12-decisions](../prd/12-decisions.md) D-040 and the design follow-ups in [13-risks-open-questions](../prd/13-risks-open-questions.md).
 
@@ -1176,3 +1176,95 @@ Shows: Phone — Backups · ‹ · Settings · Backups · 2 hours ago · Next: t
 Links to: `LiveUsage`, `PhoneAppDetails`, `PhoneFiles`, `PhoneHome`, `PhoneSettings`, `PhoneStore`
 
 Shows: Phone — Updates · App Store · Updates · Update all · Checked 12 minutes ago · apps restart briefly while they update · Immich · 1.135.3 → 1.136.0 · Faster face detection and a new map view. · What's new · Update · Jellyfin · 10.10.3 → 10.10.4 · Fixes subtitles on Apple TV. · What's new · Update · Recently updated · Home Assistant · Update rolled back · still on 2026.9.1 · Rolled back · [Tab bar] · Home · Apps · [2 updates] · 2 · Files · Usage · Settings
+
+## Added for the phase 4 follow-ups (15 Nov 2026)
+
+Rendered from [mockups/](mockups/) with the design system's reference components, the product's tokens and Plus Jakarta Sans. Edit the mockup and run `node docs/design/mockups/render.mjs <Name>` to change one.
+
+### AppLogsBroken — Logs of an app that stopped working
+
+**Priority:** P1 · **Phase:** 4 · **Stories:** US-HOME-08, US-APP-24, US-APP-26
+
+![AppLogsBroken](screens/AppLogsBroken.webp)
+
+Links to: `AppSettings`, `ReinstallConfirm`
+
+Shows: Uptime Kuma logs · ‹ (Back to app settings) · Filter · Following · Download · [reason card] Uptime Kuma stopped working · It quit unexpectedly 3 times in 5 minutes. Restart it, or reinstall it if that doesn't help. Its data is kept either way. · Reinstall… · Restart · All · uptime-kuma · Errors only · log lines with "Container restarted" dividers
+
+### AppSettingsBroken — App settings of an app that stopped working
+
+**Priority:** P1 · **Phase:** 4 · **Stories:** US-APP-24, US-APP-26
+
+![AppSettingsBroken](screens/AppSettingsBroken.webp)
+
+Links to: `AppLogs`, `ReinstallConfirm`, `UninstallConfirm`
+
+Shows: Uptime Kuma · Stopped working · it quit unexpectedly · Overview · Configuration · Permissions · Usage · Restart · Reinstall… · Logs · Access · Behaviour · Storage and resources · Using now · Not running · Disk 86 MB · Version 1.23.16 · up to date · Uninstall…
+
+### AppSettingsReinstalling — Reinstall in progress
+
+**Priority:** P1 · **Phase:** 4 · **Stories:** US-APP-24, US-APP-25
+
+![AppSettingsReinstalling](screens/AppSettingsReinstalling.webp)
+
+Links to: `AppLogs`
+
+Shows: Uptime Kuma · Reinstalling · Downloading Uptime Kuma 1.23.16 · 42% · 176 of 420 MB · Open, Restart, Stop (disabled) · Logs · … · Version 1.23.16 · up to date · Reinstall… · Uninstall… (disabled; for a running or stopped app "Reinstall…" sits beside "Uninstall…" in the footer like this, enabled)
+
+### ReinstallConfirm — Reinstall an app
+
+**Priority:** P1 · **Phase:** 4 · **Stories:** US-APP-24
+
+![ReinstallConfirm](screens/ReinstallConfirm.webp)
+
+Links to: `AppSettingsReinstalling`
+
+Shows: Reinstall Uptime Kuma? · hlabs downloads Uptime Kuma 1.23.16 again (about 420 MB) and sets it up from scratch. · Kept as they are · Its data and settings · Passwords it created · Folder access and who it's shared with · Its place on Home and in the Dock · Cancel · Reinstall
+
+### HomeAppBroken — An app stopped working, and one reinstalling
+
+**Priority:** P1 · **Phase:** 4 · **Stories:** US-HOME-07, US-APP-24, US-APP-25, US-APP-26
+
+![HomeAppBroken](screens/HomeAppBroken.webp)
+
+Links to: `AppLogsBroken`, `AppSettingsBroken`, `ReinstallConfirm`
+
+Shows: [toast, top-right] Uptime Kuma stopped working · It quit unexpectedly 3 times in 5 minutes. · Restart · View logs · Good evening, Hari · widgets · Uptime Kuma (Error) · [menu] Uptime Kuma · Open (disabled) · Settings · View logs · Restart · Reinstall… · Uninstall… · Nextcloud · Reinstalling… 42%
+
+### SettingsAccountApp — Use hlabs as an app
+
+**Priority:** P2 · **Phase:** 4 · **Stories:** US-INST-28
+
+![SettingsAccountApp](screens/SettingsAccountApp.webp)
+
+Links to: `DesktopAppWindow`
+
+Shows: Settings · Account · Hari · hari · Admin · Edit profile · This computer · Use hlabs as an app · Open hlabs in its own window from your Dock or Start menu, without a browser tab. · Install hlabs · Install it from your tailnet address so the app works at home and away. · https://hlabs.tail4f2a.ts.net · Open tailnet address · Security · …
+
+### DesktopAppCard — "Use hlabs as an app" in each browser
+
+**Priority:** P2 · **Phase:** 4 · **Stories:** US-INST-28
+
+![DesktopAppCard](screens/DesktopAppCard.webp)
+
+Shows: the card in Chrome or Edge (Install hlabs), Safari (In Safari, choose File › Add to Dock.), other browsers (To install hlabs, open it in Chrome, Edge or Safari. · How to install), just after installing (hlabs is installed on this computer.), and with the tailnet row
+
+### DesktopAppWindow — hlabs in its own window
+
+**Priority:** P2 · **Phase:** 4 · **Stories:** US-INST-29
+
+![DesktopAppWindow](screens/DesktopAppWindow.webp)
+
+Links to: `Main`, `AppOffline`
+
+Shows: [a Mac with hlabs installed from the browser] a window titled hlabs with no tabs or address bar, its title bar in the theme colour · Good evening, Asha · a member's Home and Dock · hlabs in the Mac's Dock (the Mac's menu bar and Dock are illustration only)
+
+### AppOffline — Can't reach hlabs (installed app)
+
+**Priority:** P2 · **Phase:** 4 · **Stories:** US-INST-29
+
+![AppOffline](screens/AppOffline.webp)
+
+Links to: `Main`
+
+Shows: Can't reach hlabs · Trying again in 10 seconds… · 1 Check that this computer is on your home network or connected to Tailscale. · 2 Make sure the computer hlabs runs on is on and awake. · Try again

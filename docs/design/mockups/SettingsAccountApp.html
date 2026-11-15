@@ -1,0 +1,19 @@
+<script>
+render(
+  wall([
+    settingsArea([
+      h('h1', { key: 't', style: T.title }, 'Account'),
+      h(profileCard, { key: 'p' }),
+      h(function () { return desktopAppCard('chrome-tailnet'); }, { key: 'd' }),
+      h(function () {
+        return listGroup('Security', [
+          { title: 'Password', sub: 'Changed when you set up hlabs', trailing: btn('secondary', 'sm', 'Change') },
+          { title: 'Two-factor login', sub: 'On · authenticator app', subColor: 'var(--success)', trailing: btn('secondary', 'sm', 'Manage') },
+          { title: 'Recovery codes', sub: '8 of 10 unused', trailing: btn('secondary', 'sm', 'View') },
+        ]);
+      }, { key: 's' }),
+    ]),
+    dock('settings'),
+  ], { dim: true })
+);
+</script>

@@ -128,6 +128,16 @@ export class DockerodeEngine implements ContainerEngine {
     return parseDockerStats(raw);
   }
 
+  async removeImage(image: string): Promise<void> {
+    try {
+      await this.docker.getImage(image).remove();
+    } catch (error) {
+      // 404: already gone; 409: something still uses it.
+      const status = (error as { statusCode?: number }).statusCode;
+      if (status !== 404 && status !== 409) throw error;
+    }
+  }
+
   async imageSize(image: string): Promise<number | null> {
     try {
       return (await this.docker.getImage(image).inspect()).Size;
@@ -156,6 +166,8 @@ export class DockerodeEngine implements ContainerEngine {
           startedAt: inspect.State.Running && Number.isFinite(started) ? started : null,
           // A crash-looping container is "restarting" (and Running) with the exit code of its last run.
           exitCode: inspect.State.Running && !inspect.State.Restarting ? null : inspect.State.ExitCode,
+          restartCount: inspect.RestartCount ?? 0,
+          oomKilled: inspect.State.OOMKilled === true,
         };
       }),
     );

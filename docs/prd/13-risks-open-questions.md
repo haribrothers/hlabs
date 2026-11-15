@@ -31,7 +31,7 @@ All answered on 27 Sep 2026:
 
 | ID | Question | Status |
 | --- | --- | --- |
-| Q-07 | Website domain (used for `SITE_URL`, the install command and help links). The bundle id `dev.hlabs.app` suggests `hlabs.dev`. | Open: needed before phase 6 |
+| Q-07 | Website domain (used for `SITE_URL`, the install command and help links). The bundle id `dev.hlabs.app` suggests `hlabs.dev`, which isn't live. Also: publish help at that domain, or bundle it with hlabs so links work offline and match the installed version? Until then, development opens the local site (D-128). | Open: needed before phase 6 |
 | Q-08 | Page designs for the website (home, download, app catalogue, help theme). | Open: design before phase 6; until then follow the design system and Starlight defaults |
 
 New questions found during the build go here with the next free id (Q-09 onward).
@@ -44,6 +44,8 @@ New questions found during the build go here with the next free id (Q-09 onward)
 | Q-12 | How does Caddy get onto dev machines: a script that downloads the pinned binary, a system package, or a container? | Answered 29 Sep 2026: a script downloads the pinned binary (D-072) |
 | Q-13 | 02 §2.6 and US-APP-05 give each app a LAN fallback address `https://hlabs.local:<port>` (used when its mDNS name can't be published) on its 12000–12999 port. D-049 already publishes the app's web service on `127.0.0.1:<that port>`, and on Linux Caddy can't listen on `0.0.0.0:<port>` while Docker holds `127.0.0.1:<port>`. Options: (a) publish containers on a second loopback range (13000–13999) and keep 12000–12999 for the fallback and tailnet ports; (b) have Caddy listen on the LAN address itself (`<lan-ip>:<port>`), reloaded when the address changes; (c) drop the per-app fallback and show `https://<lan-ip>` addresses instead. | Answered (Hari, 30 Sep 2026): (a), a second loopback range. D-086. |
 | Q-14 | US-ACCT-16 keeps a deleted person's Home folder at `users/<username>/` (unless "Also delete their Home folder" is ticked) and lets the username be used again by a later invite. A new person who picks that username then gets the old folder, with the old person's files, as their private Home. Options: (a) leave it (the admin chose to keep the files); (b) on delete, rename a kept folder to `users/<username>-deleted-<date>/`; (c) on accept, refuse a username whose folder already exists without an owner. | Answered (Hari, 2 Oct 2026): (b), rename the kept folder. D-101. |
+| Q-15 | Installing hlabs as an app from `https://hlabs.local` (US-INST-28) needs the computer to trust Caddy's local certificate, and the certificate guide (US-SYS-09/10) is phase 9. Until then, installing works from the tailnet address only (or after trusting the certificate by hand). Move the certificate guide forward, or is the tailnet address enough? | Open: before phase 9 |
+| Q-16 | A native desktop client (Tauri) for members (D-126's later step): finds hlabs on the network (mDNS), handles the certificate, system notifications, opens at login, Windows included. Which of these does the installable dashboard leave people missing, and when (after v1)? | Open: after v1 |
 
 ## Design follow-ups (copy changes already decided)
 - `ForgotPassword`: remove "Have a recovery code?"; admin line reads "your admin can make a reset link for you from Settings › Users" (D-009).

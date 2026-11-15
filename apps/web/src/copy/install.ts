@@ -76,8 +76,16 @@ export const installCopy = {
     APP_NETWORK_UNREACHABLE: "hlabs couldn't reach the internet to download the app.",
     APP_HEALTH_TIMEOUT: (app: string, seconds: number | string) => `${app} didn't start within ${seconds} seconds.`,
     crashed: (app: string) => `${app} stopped while starting.`,
+    // An app that stopped working while it ran (US-APP-26), as the notification says it.
+    APP_CRASHED: {
+      quit: 'It quit unexpectedly.',
+      loop: 'It quit unexpectedly 3 times in 5 minutes.',
+      memory: 'It ran out of memory.',
+    },
+    APP_UNHEALTHY: 'It stopped answering.',
     ENGINE_UNAVAILABLE: 'The container engine stopped.',
     restarted: 'hlabs restarted during the install.',
+    restartedReinstall: 'hlabs restarted during the reinstall.',
     other: 'Something went wrong while installing.',
   },
   useDifferentPort: 'Use a different port',

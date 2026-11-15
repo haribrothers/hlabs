@@ -22,6 +22,10 @@ export interface ContainerState {
   imageId: string;
   startedAt: number | null;
   exitCode: number | null;
+  /** How many times Docker's restart policy has restarted it (absent: 0); a crash loop counts up (US-APP-26). */
+  restartCount?: number;
+  /** Its last run was killed for using too much memory (absent: false). */
+  oomKilled?: boolean;
 }
 
 /** One container's usage right now (US-USE-08). Network and disk are totals since it started; rates come from two. */
@@ -64,6 +68,11 @@ export interface ContainerEngine {
   ): AsyncIterable<ContainerLogLine>;
   /** One container's usage now (`docker stats` once, without streaming). */
   containerStats(containerId: string, signal?: AbortSignal): Promise<ContainerStats>;
+  /**
+   * Removes an image (a reference or `sha256:…`) so the next pull downloads it again (US-APP-25). An image that's
+   * already gone, or that a container still uses, is left as it is.
+   */
+  removeImage(image: string): Promise<void>;
   /** An image's size on disk (`sha256:…` or a reference), or null when it isn't here. */
   imageSize(image: string): Promise<number | null>;
   /**

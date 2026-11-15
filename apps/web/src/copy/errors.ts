@@ -162,6 +162,10 @@ export const errorCopy = {
       title: `${str(d, 'app', 'The app')} didn't start in time`,
       body: 'Check its logs, then try again.',
     }),
+    APP_REINSTALL_UNAVAILABLE: () => ({
+      title: "This app can't be reinstalled",
+      body: 'Its saved settings are missing, so reinstalling would reset its passwords. Uninstall it and install it again instead.',
+    }),
     APP_HAS_DEPENDENTS: () => ({
       title: 'Other apps need this one',
       body: 'Uninstall the apps that use it first.',

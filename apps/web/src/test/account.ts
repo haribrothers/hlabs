@@ -16,6 +16,7 @@ export function fakeAccount(overrides: Record<string, unknown> = {}) {
     hostname: 'hlabs',
     homeFolderBytes: null,
     adminName: 'Hari',
+    tailnetUrl: null,
     ...overrides,
   });
 }

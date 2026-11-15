@@ -46,7 +46,15 @@ export const SLOW_AFTER_MS = 20_000;
 export const REMOVED_CLOSE_MS = 2_500;
 
 /** States on the way somewhere: the frame area shows a spinner and the app comes back by itself (US-APP-02, 03). */
-const BUSY = new Set<AppState>(['starting', 'restarting', 'stopping', 'updating', 'rolling_back', 'uninstalling']);
+const BUSY = new Set<AppState>([
+  'starting',
+  'restarting',
+  'stopping',
+  'updating',
+  'rolling_back',
+  'uninstalling',
+  'reinstalling',
+]);
 
 /**
  * The app's frame, once this browser can open its address (D-097): an address it doesn't trust says so, with a new
@@ -249,7 +257,11 @@ export function AppWindow({ appId }: { appId: string }) {
         {...iconDefaults}
         className="size-8 animate-spin text-ink-muted motion-reduce:animate-none"
       />
-      <StatusDot status={statusDot(app.state)}>{copy.status[app.state]}</StatusDot>
+      {app.state === 'reinstalling' ? (
+        <p className="m-0 text-body text-ink">{copy.beingReinstalled(app.name)}</p>
+      ) : (
+        <StatusDot status={statusDot(app.state)}>{copy.status[app.state]}</StatusDot>
+      )}
     </FramePanel>
   ) : app.state === 'stopped' ? (
     <FramePanel>

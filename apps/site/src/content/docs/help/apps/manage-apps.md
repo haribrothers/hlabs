@@ -45,9 +45,23 @@ If the new version doesn't start, hlabs puts the previous version back and start
 
 In the rare case the previous version doesn't start again either, the app shows an error and the message says it couldn't be restored. Check its logs.
 
+## When an app stops working
+
+hlabs keeps an eye on your apps while they run. If one crashes and doesn't come back by itself within 30 seconds, keeps crashing (3 times in 5 minutes), or stops answering for a minute, hlabs marks it as not working: its tile on Home shows **Error**, and admins get a notice such as "Uptime Kuma stopped working" with what happened. Choose **Restart** to start it again, or **View logs** to see why. Your data stays as it is.
+
+Short hiccups that fix themselves within a few seconds don't count, and neither does anything you do yourself, like stopping, restarting or updating an app. If an app comes back by itself and keeps working for a minute, hlabs says "Uptime Kuma is working again". Family members aren't told; they see that the app isn't running if they try to open it.
+
+## Reinstall an app
+
+If an app keeps failing, even after a restart, reinstall it. hlabs downloads the same version again and sets it up from scratch, but keeps everything that's yours: its data and settings, the passwords it created, its folder access, who it's shared with, and its place on Home and in the Dock.
+
+Choose **Reinstall…** in the app's logs or App settings when it has stopped working, or from its tile's menu on Home. For an app that runs but misbehaves, **Reinstall…** is at the bottom of App settings, next to **Uninstall…**. hlabs says how much it downloads before you confirm. While it reinstalls, the tile and App settings show how far it has got; anyone opening the app is told it's being reinstalled.
+
+If hlabs can't find the app's saved settings, it won't reinstall it, because the app's passwords would be reset. Uninstall it and install it again instead. **Reinstall…** also waits while the container engine is stopped, while your apps are paused from the menu bar, or while hlabs is busy with something that can't be interrupted.
+
 ## Read an app's logs
 
-Logs are what an app writes about what it's doing. They help when something goes wrong, for example when an app won't start. Choose **Logs** in App settings or at the top of the app window. The back button at the top returns to where you opened them: App settings, or the app.
+Logs are what an app writes about what it's doing. They help when something goes wrong, for example when an app won't start. Choose **Logs** in App settings or at the top of the app window. The back button at the top returns to where you opened them: App settings, or the app. Logs you reached another way, such as from a broken app's tile or a notice, go back to the app's settings, and **Close** there takes you back to where you started.
 
 The logs show the latest 500 lines, oldest first, with the time and, when the app says, how serious each line is: INFO, WARN, ERROR or DEBUG. New lines appear as the app writes them while **Following** is on. Scroll up to read earlier lines and following stops; choose **Following** again to jump back to the newest line. If the app restarts while you watch, a "Container restarted" line marks where.
 

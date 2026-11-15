@@ -38,3 +38,8 @@ curl http://127.0.0.1:7474/healthz                          # is it up, and whic
 To remove a test install completely: stop it as above, then delete `~/Library/LaunchAgents/dev.hlabs.daemon.plist`, `/Applications/hlabs.app` and, if you want its data gone too, `~/Library/Application Support/hlabs`. Remove the keychain item `dev.hlabs` with Keychain Access.
 
 Each build ships a new, unsigned copy of Node.js, so macOS asks once per build whether it may read the keychain item: choose **Always Allow**.
+
+## The installable dashboard
+
+`vite build` also writes the web manifest (`manifest.webmanifest`) and the service worker (`sw.js`, Workbox through `vite-plugin-pwa`) that let people install hlabs as an app (US-INST-28). The worker keeps only the shell (index.html, what it loads, the fonts and the app icons) for opening offline, and never answers `/trpc`, `/api`, `/auth` or `/healthz`. Development (`pnpm dev`) has neither. The app icons in `apps/web/public/icons` are rendered from `docs/design/logos/hlabs-app-icon.svg`; after the logo changes, run `node apps/web/scripts/pwa-icons.mjs` and commit them.
+

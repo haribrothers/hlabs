@@ -71,6 +71,13 @@ export function healthTimeoutSeconds(manifest: AppManifest): number {
 const containerReady = (c: ContainerState | undefined) =>
   !!c && c.state === 'running' && (c.health === null || c.health === 'healthy');
 
+/**
+ * Running and not reported unhealthy: for a service hlabs checks itself (http or tcp on its published port), whose
+ * answer decides. Docker's own healthcheck can say "starting" for its whole first interval (Vaultwarden's is 60 s, as
+ * long as its timeout) after the app already answers.
+ */
+const containerUp = (c: ContainerState | undefined) => !!c && c.state === 'running' && c.health !== 'unhealthy';
+
 /** One look: is the app healthy now? */
 export async function checkHealthOnce(
   input: WaitHealthyInput,
@@ -97,13 +104,15 @@ export async function checkHealthOnce(
   const health = manifest.health;
 
   if (!health) {
-    if (!containerReady(byService(manifest.web.service))) return { ready: false };
+    if (!containerUp(byService(manifest.web.service))) return { ready: false };
     const status = await probes.http(local(manifest.web.path));
     return { ready: status !== null && status < 500 };
   }
   const target = byService(health.service);
-  if (!containerReady(target)) return { ready: false };
   const published = health.service === manifest.web.service;
+  const checkedByHlabs =
+    published && (health.http !== undefined || (health.tcp !== undefined && health.tcp === manifest.web.port));
+  if (!(checkedByHlabs ? containerUp(target) : containerReady(target))) return { ready: false };
   if (health.http !== undefined && published) {
     const status = await probes.http(local(health.http));
     return { ready: status !== null && status >= 200 && status < 400 };

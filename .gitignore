@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-fallback/
+dist-pwa/
 .bin/
 .turbo/
 *.log

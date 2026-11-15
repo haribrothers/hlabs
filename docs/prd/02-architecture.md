@@ -131,20 +131,28 @@ stateDiagram-v2
   updating --> running: new version healthy
   updating --> rolling_back: new version unhealthy
   rolling_back --> running: previous version restored
-  running --> error: container exits / unhealthy
+  running --> error: container exits / unhealthy (US-APP-26, D-127)
+  error --> running: came back by itself and healthy 60 s (US-APP-26)
   error --> starting: restart
   running --> uninstalling: uninstall
   stopped --> uninstalling: uninstall
   error --> uninstalling: uninstall
   uninstalling --> [*]
   uninstalling --> error: a step failed (US-APP-12)
+  running --> reinstalling: reinstall (US-APP-25)
+  stopped --> reinstalling: reinstall
+  error --> reinstalling: reinstall
+  reinstalling --> starting: rebuilt, images pulled, compose up
+  reinstalling --> error: a step failed
 ```
 
 Rules:
 - State lives in `apps.state`; transitions happen only in `AppService` and each emits `app.stateChanged`.
-- **Install:** validate manifest → render compose (inject hlabs network, labels, volume paths, env) → `docker compose pull` (progress from `docker.pull` stream per image, aggregated to %) → `compose up -d` → wait for health (manifest `health` or container healthcheck, default timeout 120 s) → register Caddy route → create per-app hostname (mDNS) → `running`.
+- **Install:** validate manifest → render compose (inject hlabs network, labels, volume paths, env) → `docker compose pull` (progress from `docker.pull` stream per image, aggregated to %) → `compose up -d` → wait for health (manifest `health` or container healthcheck, default timeout 120 s; an http or tcp check hlabs makes on the web service decides by itself, and only Docker's own `unhealthy` holds it up, since an image's healthcheck can say `starting` for its whole first interval after the app answers) → register Caddy route → create per-app hostname (mDNS) → `running`.
 - **Update:** snapshot previous `compose.yml`, `.env` and image digests; for apps with `backup.beforeUpdate: true` take a restic snapshot of the app's data first; pull, up, health-check; on failure within the timeout, restore the snapshot of config (and data if the manifest marks migrations irreversible) and set state back to running on the old version with an `UpdateRolledBack` notification.
 - **Uninstall:** `compose down`, remove route and hostname, then either keep or delete `<appDataDir>/<appId>` as the user chose.
+- **Crashes** (US-APP-26, D-127): the daemon looks at every `running` app's containers every 10 s. A `running` app goes to `error` when a container is down for 30 s, is restarted by Docker 3 times in 5 minutes (its restart count), or is unhealthy for 60 s; only `running` apps are watched, so exits that hlabs causes (stop, restart, update, reinstall, pause, uninstall) never count, and nothing is judged while the engine is away. Admins get one `app.crashed` warning notification per crash, marked read when the app runs again or is uninstalled; an app back by itself and healthy for 60 s returns to `running` with an `app.recovered` success notification.
+- **Reinstall** (US-APP-24/25, D-125): `compose down` (never removing volumes), render the compose file again from the installed version's manifest with the same `.env`, settings, mounts, hostname and ports, remove the app's images no other app uses, pull them all again, `compose up -d`, wait for health, register the route and hostname again. App data, user folders, sharing, Home and Dock places and backup includes are never touched. Refused before anything stops when the `.env` or the manifest is missing.
 - All apps join the `hlabs` bridge network; they are not published on host ports unless the manifest requests a raw port (for protocols Caddy can't proxy, e.g. DNS for Pi-hole, SMB).
 
 ## 2.6 Networking

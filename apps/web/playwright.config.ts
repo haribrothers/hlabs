@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { cpSync, rmSync } from 'node:fs';
-import { E2E_STORE_DIR, MAIN_PORTS, MAIN_STORAGE_STATE, MAIN_URL } from './e2e/instances';
+import { E2E_STORE_DIR, MAIN_PORTS, MAIN_STORAGE_STATE, MAIN_URL, PWA_PORT, PWA_URL } from './e2e/instances';
 
 // E2E specs are named by user story id (us-<code>-<nn>.spec.ts); phase checks by phase.
 // Playwright starts the daemons and Vite itself, on ports of their own, so a running `pnpm dev` (and its data) is
@@ -26,7 +26,14 @@ const FIRST_RUN_SPECS =
 // Specs that change the main instance for everyone, run after the desktop and phone specs, one at a time: those that
 // really install store apps (the D-071 smoke set, and uninstalling one) or leave failed installs, and those that report
 // the engine as stopped (US-STATE-08…10).
-const SERIAL_SPECS = /(us-store-1[1-4]|us-store-17-rollback|us-app-12|us-state-(0[89]|10))\.spec\.ts/;
+const SERIAL_SPECS =
+  /(us-store-1[1-4]|us-store-17-rollback|us-app-12|us-app-24|us-app-26|us-state-(0[89]|10))\.spec\.ts/;
+// The installable dashboard's specs (US-INST-28, US-INST-29) run against a production build, where its manifest and
+// service worker exist.
+const PWA_SPECS = /us-inst-2[89]\.spec\.ts/;
+/** That build takes a while: made only when the pwa project runs, or every project does (no --project given). */
+const ARGV = process.argv.join(' ');
+const PWA_RUN = !/--project[= ]/.test(ARGV) || /--project[= ]pwa\b/.test(ARGV);
 // CI runs each project in a job of its own (HLABS_E2E_SPLIT, .github/workflows/ci.yml): the serial specs then have a
 // main instance to themselves and needn't wait for the desktop and phone specs.
 const SPLIT = !!process.env.HLABS_E2E_SPLIT;
@@ -58,15 +65,27 @@ export default defineConfig({
   use: { baseURL: MAIN_URL, trace: 'retain-on-failure' },
   projects: [
     { name: 'setup', testMatch: /global\.setup\.ts/ },
+    // The installable dashboard, against a production build (US-INST-28, US-INST-29).
+    {
+      name: 'pwa',
+      testMatch: PWA_SPECS,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1440, height: 900 },
+        storageState: MAIN_STORAGE_STATE,
+        baseURL: PWA_URL,
+      },
+      dependencies: ['setup'],
+    },
     {
       name: 'desktop',
-      testIgnore: [FIRST_RUN_SPECS, SERIAL_SPECS],
+      testIgnore: [FIRST_RUN_SPECS, SERIAL_SPECS, PWA_SPECS],
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, storageState: MAIN_STORAGE_STATE },
       dependencies: ['setup'],
     },
     {
       name: 'phone',
-      testIgnore: [FIRST_RUN_SPECS, SERIAL_SPECS],
+      testIgnore: [FIRST_RUN_SPECS, SERIAL_SPECS, PWA_SPECS],
       use: { ...devices['Pixel 7'], storageState: MAIN_STORAGE_STATE },
       dependencies: ['setup'],
     },
@@ -112,5 +131,17 @@ export default defineConfig({
       env: { HLABS_DAEMON_URL: `http://127.0.0.1:${MAIN_PORTS.daemon}` },
       timeout: 60_000,
     },
+    // The same dashboard built for production, in its own folder, for the pwa project; only when that project runs.
+    ...(PWA_RUN
+      ? [
+          {
+            command: `pnpm exec vite build --outDir dist-pwa --emptyOutDir && pnpm exec vite preview --outDir dist-pwa --port ${PWA_PORT} --strictPort`,
+            url: PWA_URL,
+            reuseExistingServer: !process.env.CI,
+            env: { HLABS_DAEMON_URL: `http://127.0.0.1:${MAIN_PORTS.daemon}` },
+            timeout: 180_000,
+          },
+        ]
+      : []),
   ],
 });

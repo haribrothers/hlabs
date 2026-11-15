@@ -6,6 +6,7 @@ import { fakeMe } from '../test/me';
 import { renderScreen, type Handlers } from '../test/render';
 import { appDetail } from '../test/store';
 import { AppLogs, logTime } from './app-logs';
+import { AppSettings } from './app-settings';
 import { logLevel } from './log-level';
 
 const never = () => new Promise(() => {});
@@ -136,5 +137,80 @@ describe('US-APP-08', () => {
     ['no error here', null],
   ])('"%s" is %s', (text, level) => {
     expect(logLevel(text)).toBe(level);
+  });
+});
+
+// Back from Logs never loops with App settings (D-124): Logs' Back and the settings' Close both lead out.
+describe('US-APP-08 · Back to app settings', () => {
+  function flow(entries: string[]) {
+    const rendered = renderScreen(
+      () => <h1>Home</h1>,
+      {
+        'apps.get': () => appDetail({ id: 'vaultwarden', name: 'Vaultwarden', state: 'error' }),
+        'apps.logs': () => ({ lines: [] }),
+        'apps.watchLogs': never,
+        'events.stream': never,
+        'system.info': never,
+        'auth.me': fakeMe({ role: 'admin' }),
+      },
+      {
+        path: '/',
+        entries,
+        routes: {
+          '/apps/$appId/settings': () => <AppSettings appId="vaultwarden" />,
+          '/apps/$appId/logs': () => <AppLogs appId="vaultwarden" />,
+        },
+      },
+    );
+    const at = () => rendered.router.state.location.pathname;
+    const go = (to: string, state = {}) => act(() => rendered.router.navigate({ to, state }));
+    const back = async () => fireEvent.click(await screen.findByRole('button', { name: 'Back to app settings' }));
+    const close = async () => fireEvent.click(await screen.findByRole('button', { name: 'Close' }));
+    return { ...rendered, at, go, back, close };
+  }
+
+  it('opened from App settings, Back steps back to them and their Close returns to Home', async () => {
+    const f = flow(['/']);
+    await f.go('/apps/vaultwarden/settings', { from: '/' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Logs' }));
+    await screen.findByRole('heading', { name: 'Vaultwarden logs' });
+    await f.back();
+    await waitFor(() => expect(f.at()).toBe('/apps/vaultwarden/settings'));
+    // A step back, not a new page: Logs is no longer ahead of Home in history.
+    expect(f.router.history.length).toBe(3);
+    await f.close();
+    await waitFor(() => expect(f.at()).toBe('/'));
+    expect(await screen.findByRole('heading', { name: 'Home' })).toBeInTheDocument();
+  });
+
+  it('opened from anywhere else (a broken tile), the settings replace Logs, so Close returns to where Logs was opened', async () => {
+    const f = flow(['/']);
+    await f.go('/apps/vaultwarden/logs');
+    await f.back();
+    await waitFor(() => expect(f.at()).toBe('/apps/vaultwarden/settings'));
+    await f.close();
+    await waitFor(() => expect(f.at()).toBe('/'));
+    // Logs isn't waiting behind the settings: the browser's Back from Home goes nowhere near it.
+    expect(f.router.history.canGoBack()).toBe(false);
+  });
+
+  it('opened first (a link or a reload), Back opens the settings and their Close goes Home', async () => {
+    const f = flow(['/apps/vaultwarden/logs']);
+    await f.back();
+    await waitFor(() => expect(f.at()).toBe('/apps/vaultwarden/settings'));
+    await f.close();
+    await waitFor(() => expect(f.at()).toBe('/'));
+  });
+
+  it('Back and Close never lead from one to the other in a loop', async () => {
+    const f = flow(['/']);
+    await f.go('/apps/vaultwarden/logs');
+    for (let i = 0; i < 2; i++) {
+      await f.back();
+      await waitFor(() => expect(f.at()).toBe('/apps/vaultwarden/settings'));
+      await f.close();
+      await waitFor(() => expect(f.at()).toBe('/'));
+      if (i === 0) await f.go('/apps/vaultwarden/logs');
+    }
   });
 });

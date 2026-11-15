@@ -58,6 +58,8 @@ export const HLABS_ERRORS = {
   APP_NETWORK_UNREACHABLE: 'BAD_GATEWAY',
   APP_HEALTH_TIMEOUT: 'TIMEOUT',
   APP_HAS_DEPENDENTS: 'PRECONDITION_FAILED',
+  /** Its saved settings (.env) or manifest are gone, so a reinstall would reset its passwords (US-APP-25). */
+  APP_REINSTALL_UNAVAILABLE: 'PRECONDITION_FAILED',
   APP_ENV_INVALID: 'BAD_REQUEST',
   APP_DISK_FULL: 'INTERNAL_SERVER_ERROR',
   /** Start, stop or restart while the app is installing, updating or already changing state (02 §2.5). */

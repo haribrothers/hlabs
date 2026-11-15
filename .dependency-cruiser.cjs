@@ -50,7 +50,7 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: 'node_modules' },
-    exclude: { path: '(^|/)(dist|node_modules|coverage|src-tauri|\\.astro)/' },
+    exclude: { path: '(^|/)(dist|dist-pwa|node_modules|coverage|src-tauri|\\.astro)/' },
     tsPreCompilationDeps: true,
     combinedDependencies: true,
     enhancedResolveOptions: {

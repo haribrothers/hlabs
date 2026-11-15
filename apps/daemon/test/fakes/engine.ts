@@ -185,6 +185,15 @@ export class FakeEngine implements ContainerEngine {
     }
   }
 
+  /** Images removed, in order. */
+  readonly removedImages: string[] = [];
+
+  async removeImage(image: string) {
+    this.assertRunning();
+    this.removedImages.push(image);
+    this.images.delete(image);
+  }
+
   async imageSize(image: string) {
     this.assertRunning();
     return this.imageSizes.get(image) ?? null;

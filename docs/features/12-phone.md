@@ -389,6 +389,7 @@ The phone layout of the hlabs dashboard: the same React SPA as the desktop, rend
 - **Given** the hint was dismissed, or hlabs runs in standalone mode, or the browser is not iOS Safari, **then** the hint is not shown; the dismissal is remembered per browser (in `localStorage`, wrapped in try/catch; if storage is unavailable the hint may show again on a later visit, never more than once per session).
 
 **Implementation notes**
+- The manifest, its icons and the service worker are built earlier, with US-INST-28 (phase 4 follow-up, D-126); this story adds the `apple-touch-icon`, the Apple meta tags and the iOS hint, and checks installing on Android Chrome and iOS Safari.
 - Static files in `apps/web/public` (manifest) and a Vite build step for icons and `sw.js`; served by the daemon with the rest of `apps/web/dist`. No new API.
 - `theme-color` meta has light and dark variants via `media`.
 - Edge case: `hlabs.local` uses the Caddy local CA; installation there needs the CA trusted (CertGuide in 10-system-settings.md). The tailnet host uses a Tailscale certificate and works without extra steps.

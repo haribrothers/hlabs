@@ -59,6 +59,7 @@ export const usageCopy = {
     stopped: 'Stopped',
     updating: 'Updating',
     rolling_back: 'Rolling back',
+    reinstalling: 'Reinstalling',
     error: 'Error',
     uninstalling: 'Uninstalling',
     installing: 'Installing',

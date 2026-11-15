@@ -199,6 +199,17 @@ Shipped 3 Oct 2026 (`SHIPPED_PHASE = 4`). "Done when" checked by hand on macOS w
 - [x] US-STATE-03 · Handle a failed or stuck update (the danger toast is the admins' critical notification, so members never get it; a failing migration notes it in the update marker and the next start reports it)
 - [x] US-STATE-07 · Show the daemon-down state in the tray (built with US-INST-13: one health watch in the tray's Rust side, /healthz every 5 s)
 
+## Phase 4 follow-ups (before phase 5)
+
+Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
+
+- [x] US-APP-08 · Back from Logs never loops with App settings (D-124; the history state `fromSettings` marks Logs opened from that app's settings, whose Back steps back; from anywhere else Back replaces Logs with the settings)
+- [x] US-APP-26 · Know when an app stops working (every 10 s rather than Docker's event stream, D-127; the crash notification is read once the app runs again or is uninstalled; the logs card's title and reason say what happened, its Reinstall… comes with US-APP-24; checked for real with a stopped container in e2e)
+- [x] US-APP-24 · Offer to reinstall a broken app (`apps.get.reinstall.blocked` also says `paused`, the only way the dashboard learns of a pause; the progress shows a percentage, not bytes; checked for real in e2e: a crash-demo app's containers and image removed by hand, noticed as broken and reinstalled from its Logs)
+- [x] US-APP-25 · Reinstall runs and keeps the data (the compose file is written again from the store's entry of the installed version, else the project's own stays; images another app names are kept; the notices go to all admins; while paused it's refused; checked against the fake engine, the real-Docker check is with US-APP-24's e2e)
+- [x] US-INST-28 · Install hlabs as an app on my computer (vite-plugin-pwa 2.0; the worker precaches only the shell; icons rendered from the app icon and committed; `account.get.tailnetUrl` for the tailnet row; installability, the manifest and the worker checked against a production build in the e2e `pwa` project; installing for real in Chrome and Safari is part of the follow-ups' manual check)
+- [x] US-INST-29 · Use hlabs in its own window (offline, the saved shell shows AppOffline: a /healthz with no answer at all at start, while an error page from Caddy stays US-STATE-04; anything that answers loads the page; pages come from the network, so an update shows at once without the worker reloading; checked offline for real in the e2e `pwa` project)
+
 ## Phase 5 · Backups and Files
 
 - [ ] US-FILE-01 · See my places in the sidebar

@@ -1,0 +1,19 @@
+<script>
+render(
+  wall(
+    settingsWindow({
+      app: 'kuma',
+      status: h('p', { style: Object.assign({}, T.muted, { color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 6 }) },
+        h('span', { style: { width: 8, height: 8, borderRadius: 4, background: 'var(--danger)' } }), 'Stopped working · it quit unexpectedly'),
+      actions: [
+        btn('primary', 'sm', [icon('restart', 14, { key: 'i' }), 'Restart'], { key: 'r', style: { height: 38, padding: '0 16px' } }),
+        btn('secondary', 'sm', [icon('reinstall', 14, { key: 'i' }), 'Reinstall…'], { key: 'ri', style: { height: 38, padding: '0 16px' } }),
+        btn('secondary', 'sm', [icon('logs', 14, { key: 'i' }), 'Logs'], { key: 'l', style: { height: 38, padding: '0 16px' } }),
+      ],
+      usingNow: 'Not running · Disk 86 MB',
+      footer: h('button', { className: 'hl-btn hl-btn-link', style: { color: 'var(--danger)' } }, 'Uninstall…'),
+    }),
+    { dim: true }
+  )
+);
+</script>

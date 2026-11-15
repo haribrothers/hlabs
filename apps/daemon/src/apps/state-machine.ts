@@ -6,13 +6,16 @@ export const APP_TRANSITIONS: Record<AppState, readonly AppState[]> = {
   installing: ['starting', 'install_failed'],
   install_failed: ['installing'],
   starting: ['running', 'error'],
-  running: ['stopping', 'restarting', 'updating', 'error', 'uninstalling'],
+  running: ['stopping', 'restarting', 'updating', 'error', 'uninstalling', 'reinstalling'],
   stopping: ['stopped'],
-  stopped: ['starting', 'uninstalling'],
+  stopped: ['starting', 'uninstalling', 'reinstalling'],
   restarting: ['running', 'error'],
   updating: ['running', 'rolling_back'],
   rolling_back: ['running', 'error'],
-  error: ['starting', 'uninstalling'],
+  // An app that stopped working and came back by itself (Docker restarted it) is running again (US-APP-26).
+  error: ['starting', 'uninstalling', 'running', 'reinstalling'],
+  // Rebuilt and started (or a step failed), US-APP-25.
+  reinstalling: ['starting', 'error'],
   // A failed uninstall leaves the app in error with the step that failed, to try again (US-APP-12).
   uninstalling: ['error'],
 };

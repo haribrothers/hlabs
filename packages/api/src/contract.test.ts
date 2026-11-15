@@ -46,7 +46,7 @@ const EXPECTED: Row[] = [
   ['apps.list', 'q', 'authed'], ['apps.get', 'q', 'authed'], ['apps.install', 'm', 'authed'],
   ['apps.retryInstall', 'm', 'admin'], ['apps.start', 'm', 'admin'], ['apps.stop', 'm', 'admin'],
   ['apps.restart', 'm', 'admin'], ['apps.update', 'm', 'admin'], ['apps.updateAll', 'm', 'admin'],
-  ['apps.uninstall', 'm', 'admin'], ['apps.getConfig', 'q', 'admin'], ['apps.setConfig', 'm', 'admin'],
+  ['apps.uninstall', 'm', 'admin'], ['apps.reinstall', 'm', 'admin'], ['apps.getConfig', 'q', 'admin'], ['apps.setConfig', 'm', 'admin'],
   ['apps.revealSecret', 'm', 'admin'], ['apps.setMounts', 'm', 'admin'], ['apps.setPermissions', 'm', 'admin'],
   ['apps.setAutostart', 'm', 'admin'], ['apps.setAutoUpdate', 'm', 'admin'], ['apps.setAuthMode', 'm', 'admin'],
   ['apps.logs', 'q', 'admin'], ['apps.watchLogs', 's', 'admin'], ['apps.moveData', 'm', 'admin'],

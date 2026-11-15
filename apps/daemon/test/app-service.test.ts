@@ -116,7 +116,10 @@ describe('state machine', () => {
     expect(APP_TRANSITIONS.install_failed).toEqual(['installing']);
     expect(APP_TRANSITIONS.updating).toEqual(['running', 'rolling_back']);
     expect(APP_TRANSITIONS.uninstalling).toEqual(['error']);
-    expect(APP_TRANSITIONS.stopped).toEqual(['starting', 'uninstalling']);
+    expect(APP_TRANSITIONS.stopped).toEqual(['starting', 'uninstalling', 'reinstalling']);
+    // US-APP-25, US-APP-26.
+    expect(APP_TRANSITIONS.reinstalling).toEqual(['starting', 'error']);
+    expect(APP_TRANSITIONS.error).toEqual(['starting', 'uninstalling', 'running', 'reinstalling']);
   });
 
   it('moves along an edge and emits app.stateChanged; other moves are APP_BUSY', async () => {
@@ -176,7 +179,7 @@ describe('start, stop and restart', () => {
   it('start: → error with APP_HEALTH_TIMEOUT when it never becomes healthy', async () => {
     const t = await setup();
     t.install('uptime-kuma', 'stopped');
-    t.compose.serviceState.set('uptime-kuma', { health: 'starting' });
+    t.compose.serviceState.set('uptime-kuma', { health: 'unhealthy' });
     expect(await t.service.start('uptime-kuma')).toEqual({ ok: false, reason: 'timeout', seconds: 120 });
     expect(t.states.at(-1)).toEqual([
       'uptime-kuma',
@@ -274,6 +277,19 @@ describe('checkHealthOnce', () => {
     expect((await check(base, [container('web')], () => 401)).ready).toBe(true);
     expect((await check(base, [container('web')], () => 502)).ready).toBe(false);
     expect((await check(base, [container('web')], () => null)).ready).toBe(false);
+  });
+
+  it('hlabs\'s own check on the web service decides: Docker\'s "starting" doesn\'t hold it up, "unhealthy" does', async () => {
+    // Vaultwarden: Docker's first healthcheck comes after 60 s, as long as its timeout, while /alive answers at once.
+    const manifest = { ...base, health: { service: 'web', http: '/alive', timeout: 60 } } as AppManifest;
+    expect((await check(manifest, [container('web', { health: 'starting' })])).ready).toBe(true);
+    expect((await check(manifest, [container('web', { health: 'starting' })], () => null)).ready).toBe(false);
+    expect((await check(manifest, [container('web', { health: 'unhealthy' })])).ready).toBe(false);
+    const tcp = { ...base, health: { service: 'web', tcp: 80, timeout: 60 } } as AppManifest;
+    expect((await check(tcp, [container('web', { health: 'starting' })])).ready).toBe(true);
+    // No health in the manifest: the web service answering decides the same way.
+    expect((await check(base, [container('web', { health: 'starting' })])).ready).toBe(true);
+    expect((await check(base, [container('web', { health: 'unhealthy' })])).ready).toBe(false);
   });
 
   it('a check on an unpublished service falls back to its container and healthcheck', async () => {

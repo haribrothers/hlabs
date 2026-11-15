@@ -83,7 +83,9 @@ describe('US-INST-10 · Quit hlabs', () => {
     let finish!: (v: unknown) => void;
     answer({ boot: started, status: running(), confirm: true, quit: () => new Promise((r) => (finish = r)) });
     render(<Menu />);
-    await userEvent.click(await screen.findByRole('menuitem', { name: /Quit hlabs/ }));
+    // hlabs's status first: clicked before it arrives, the menu can't know an update or a restore is running.
+    await screen.findByText(/Running · 2 apps/);
+    await userEvent.click(screen.getByRole('menuitem', { name: /Quit hlabs/ }));
     expect(await screen.findByRole('menu', { name: 'hlabs' })).toHaveTextContent('Stopping apps…');
     await act(async () => finish(null));
   });
@@ -91,7 +93,9 @@ describe('US-INST-10 · Quit hlabs', () => {
   it('during an update or a restore it says to wait, and nothing quits', async () => {
     answer({ boot: started, status: running({ exclusiveJobRunning: true }), confirm: true });
     render(<Menu />);
-    await userEvent.click(await screen.findByRole('menuitem', { name: /Quit hlabs/ }));
+    // hlabs's status first: clicked before it arrives, the menu can't know an update or a restore is running.
+    await screen.findByText(/Running · 2 apps/);
+    await userEvent.click(screen.getByRole('menuitem', { name: /Quit hlabs/ }));
     await waitFor(() =>
       expect(calls('confirm_dialog')).toEqual([
         {
@@ -113,7 +117,9 @@ describe('US-INST-10 · Quit hlabs', () => {
       quit: () => Promise.reject({ hlabsCode: 'JOB_EXCLUSIVE_RUNNING', status: 409 }),
     });
     render(<Menu />);
-    await userEvent.click(await screen.findByRole('menuitem', { name: /Quit hlabs/ }));
+    // hlabs's status first: clicked before it arrives, the menu can't know an update or a restore is running.
+    await screen.findByText(/Running · 2 apps/);
+    await userEvent.click(screen.getByRole('menuitem', { name: /Quit hlabs/ }));
     await waitFor(() => expect(calls('confirm_dialog')).toHaveLength(2));
     expect((calls('confirm_dialog')[1] as { title: string }).title).toBe('hlabs is busy');
     expect(await screen.findByText(/Running · 2 apps/)).toBeInTheDocument();

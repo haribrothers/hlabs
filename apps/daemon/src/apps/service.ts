@@ -30,6 +30,8 @@ const ROUTED: ReadonlySet<AppState> = new Set([
   'restarting',
   'updating',
   'rolling_back',
+  // A reinstall keeps its address: Caddy's 502 shows it on its way (US-APP-24).
+  'reinstalling',
   'error',
 ]);
 
@@ -278,6 +280,10 @@ export class AppService {
         case 'updating':
         case 'rolling_back':
           this.settle(app.id, 'error', stateDetail('INTERNAL', { reason: 'restarted' }));
+          continue;
+        case 'reinstalling':
+          // The job was failed by JobRunner.recover; "Try again" reinstalls it (US-APP-25).
+          this.settle(app.id, 'error', stateDetail('INTERNAL', { reason: 'restarted', reinstall: true }));
           continue;
         case 'install_failed':
         case 'stopped':

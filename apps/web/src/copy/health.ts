@@ -1,6 +1,14 @@
 // "Can't reach hlabs" (US-STATE-04…06): shared by the in-app state and the fallback page Caddy serves when the daemon
 // doesn't answer. Plain words; no version, hostnames or user names.
 export const healthCopy = {
+  // The installed app, opened where hlabs can't be reached (US-INST-29, AppOffline).
+  offline: {
+    checks: [
+      'Check that this computer is on your home network or connected to Tailscale.',
+      'Make sure the computer hlabs runs on is on and awake.',
+    ],
+    tryAgain: 'Try again',
+  },
   title: "Can't reach hlabs",
   tryingIn: (seconds: number) => `Trying again in ${seconds} ${seconds === 1 ? 'second' : 'seconds'}…`,
   trying: 'Trying again…',

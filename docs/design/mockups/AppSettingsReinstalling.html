@@ -1,0 +1,25 @@
+<script>
+var dis = { disabled: true };
+render(
+  wall(
+    settingsWindow({
+      app: 'kuma',
+      status: h('p', { style: Object.assign({}, T.muted, { display: 'flex', alignItems: 'center', gap: 6 }) },
+        h('span', { style: { width: 8, height: 8, borderRadius: 4, background: 'var(--accent)' } }), 'Reinstalling'),
+      progress: h(H.Progress, { value: 42, label: 'Downloading Uptime Kuma 1.23.16', detail: '42% · 176 of 420 MB' }),
+      actions: [
+        btn('secondary', 'sm', [icon('open', 14, { key: 'i' }), 'Open'], Object.assign({ key: 'o', style: { height: 38, padding: '0 16px' } }, dis)),
+        btn('secondary', 'sm', [icon('restart', 14, { key: 'i' }), 'Restart'], Object.assign({ key: 'r', style: { height: 38, padding: '0 16px' } }, dis)),
+        btn('secondary', 'sm', [icon('stop', 14, { key: 'i' }), 'Stop'], Object.assign({ key: 's', style: { height: 38, padding: '0 16px' } }, dis)),
+        btn('secondary', 'sm', [icon('logs', 14, { key: 'i' }), 'Logs'], { key: 'l', style: { height: 38, padding: '0 16px' } }),
+      ],
+      usingNow: 'Not running · Disk 86 MB',
+      footer: [
+        h('button', { key: 'r', className: 'hl-btn hl-btn-link', disabled: true, style: { color: 'var(--ink)' } }, 'Reinstall…'),
+        h('button', { key: 'u', className: 'hl-btn hl-btn-link', disabled: true, style: { color: 'var(--danger)' } }, 'Uninstall…'),
+      ],
+    }),
+    { dim: true }
+  )
+);
+</script>

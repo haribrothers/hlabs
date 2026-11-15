@@ -69,6 +69,8 @@ import { NetworkStorage } from './storage/network';
 import { SystemHostStats, type HostStats } from './platform/host-stats';
 import { UsageHistory } from './usage/history';
 import { UsageSampler } from './usage/sampler';
+import { AppWatch } from './apps/app-watch';
+import { ReinstallService } from './apps/reinstall';
 import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
@@ -96,6 +98,8 @@ export interface BootDeps {
   host?: HostStats;
   /** Tests that drive the sampler themselves turn the 5 s timer off. */
   sampleUsage?: boolean;
+  /** Tests that drive the app watch themselves turn its 10 s timer off (US-APP-26). */
+  watchApps?: boolean;
   /** Where hlabs's update manifest comes from (US-SYS-24); tests pass a fake. */
   updateSource?: UpdateSource;
   /** Tests turn the 6-hour update check off. */
@@ -429,6 +433,20 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     probes: deps.healthProbes,
   });
   updates.register();
+  const reinstalls = new ReinstallService({
+    db,
+    logger,
+    jobs,
+    catalog,
+    apps: appService,
+    installer,
+    engine,
+    network,
+    notifications,
+    disk,
+    probes: deps.healthProbes,
+  });
+  reinstalls.register();
   const updateSource = deps.updateSource ?? new HttpUpdateSource();
   const hlabsUpdates = new HlabsUpdates({
     db,
@@ -480,6 +498,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     installer,
     appDisk: disk,
     updates,
+    reinstalls,
     hlabsUpdates,
     systemUpdate,
     autoUpdates,
@@ -511,6 +530,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     system: probe,
     host,
     usage: sampler,
+    appWatch: new AppWatch({ db, apps: appService, engine, notifications, bus, logger }),
     usageHistory: new UsageHistory({ db, recent: () => sampler.recent(), logger }),
     keepAwake: new KeepAwake(deps.sleepBlocker ?? processSleepBlocker(), () => ({
       keepAwake: getSetting(db, 'startup').keepAwake,
@@ -541,6 +561,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     services.usage.start();
     services.usageHistory.start();
   }
+  if (deps.watchApps !== false) services.appWatch.start();
   if (deps.checkUpdates !== false) {
     services.hlabsUpdates.start();
     services.autoUpdates.start();
@@ -585,6 +606,7 @@ export async function shutdown(services: Services | null): Promise<void> {
   services.engine.stop();
   services.usage.stop();
   services.usageHistory.stop();
+  services.appWatch.stop();
   services.hlabsUpdates.stop();
   services.autoUpdates.stop();
   // The last finished minute is written before stopping, so a restart loses at most the minute in progress.

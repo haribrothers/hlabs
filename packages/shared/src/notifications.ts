@@ -3,6 +3,7 @@ export const TOAST_MUTATIONS = [
   'apps.start',
   'apps.restart',
   'apps.uninstall',
+  'apps.reinstall',
   'backups.runNow',
   'settings.updates.check',
 ] as const;

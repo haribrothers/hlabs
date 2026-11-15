@@ -1,0 +1,40 @@
+<script>
+var lines = [
+  ['17:02:11', 'INFO', 'Welcome to Uptime Kuma 1.23.16'],
+  ['17:02:12', 'INFO', 'Connecting to the database'],
+  ['17:02:12', 'INFO', 'Connected'],
+  ['17:02:13', 'INFO', 'Listening on 3001'],
+  ['17:05:40', 'WARN', 'Monitor "NAS" is slow to answer (4,812 ms)'],
+  ['17:09:44', 'ERROR', "Error: Cannot find module '/app/server/server.js'"],
+  ['17:09:44', 'ERROR', 'Node.js v20.18.0, exiting with code 1'],
+  { divider: 'Container restarted' },
+  ['17:09:47', 'INFO', 'Welcome to Uptime Kuma 1.23.16'],
+  ['17:09:48', 'ERROR', "Error: Cannot find module '/app/server/server.js'"],
+  { divider: 'Container restarted' },
+  ['17:09:52', 'INFO', 'Welcome to Uptime Kuma 1.23.16'],
+  ['17:09:53', 'ERROR', "Error: Cannot find module '/app/server/server.js'"],
+];
+render(
+  wall(
+    areaWindow([
+      h('header', { key: 'h', style: { display: 'flex', alignItems: 'center', gap: 14 } },
+        circleBtn('back', 'Back to app settings'),
+        h('h1', { style: Object.assign({}, T.h2, { flex: 1 }) }, 'Uptime Kuma logs'),
+        h('div', { className: 'hl-input', style: { width: 260, height: 36, borderRadius: 'var(--radius-pill)', display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', color: 'var(--ink-faint)', font: '400 14px var(--font-sans)', background: 'var(--surface-input)', border: '1px solid var(--border-input)' } }, icon('search', 14), 'Filter'),
+        h('button', { className: 'hl-btn hl-btn-sm hl-btn-secondary', style: { height: 36, color: 'var(--success)' } }, h('span', { style: { width: 8, height: 8, borderRadius: 4, background: 'var(--success)' } }), 'Following'),
+        h('button', { className: 'hl-btn hl-btn-sm hl-btn-secondary', style: { height: 36 } }, icon('download', 14), 'Download')),
+      // The reason card (US-HOME-08), now with the fixes (US-APP-24).
+      h('div', { key: 'r', role: 'status', style: { display: 'flex', alignItems: 'center', gap: 16, padding: '14px 16px 14px 18px', borderRadius: 'var(--radius-md)', background: 'var(--surface-row)', border: '1px solid var(--danger-border, rgba(255,107,107,0.4))' } },
+        h('span', { style: { color: 'var(--danger)', display: 'inline-flex' } }, icon('alert', 20)),
+        h('div', { style: { flex: 1 } },
+          h('p', { style: Object.assign({}, T.body, { fontWeight: 700 }) }, 'Uptime Kuma stopped working'),
+          h('p', { style: T.muted }, 'It quit unexpectedly 3 times in 5 minutes. Restart it, or reinstall it if that doesn’t help. Its data is kept either way.')),
+        btn('secondary', 'sm', [icon('reinstall', 14, { key: 'i' }), 'Reinstall…']),
+        btn('primary', 'sm', [icon('restart', 14, { key: 'i' }), 'Restart'])),
+      h('div', { key: 'c', style: { display: 'flex', gap: 8 } }, chip('All', true), chip('uptime-kuma'), chip('Errors only')),
+      h(function () { return logConsole(lines); }, { key: 'l' }),
+    ]),
+    { dim: true }
+  )
+);
+</script>

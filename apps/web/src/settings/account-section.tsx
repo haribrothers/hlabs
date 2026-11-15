@@ -1,4 +1,5 @@
-// Settings › Account (US-ACCT-03…12, US-ACCT-27): profile, security (password, two-factor, recovery codes) and devices;
+// Settings › Account (US-ACCT-03…12, US-ACCT-27): profile, "Use hlabs as an app" (US-INST-28), security (password,
+// two-factor, recovery codes) and devices;
 // members first see who manages the rest.
 // `/settings/account/two-factor` opens it with TwoFactorManage showing.
 import { safeNext } from '@hlabs/shared';
@@ -12,6 +13,7 @@ import { LogOutButton } from '../login/log-out-button';
 import { Profile } from './profile';
 import { Security } from './security';
 import { SignedInDevices } from './signed-in-devices';
+import { ThisComputer } from './this-computer';
 
 /** For members, above their account: who looks after everything else (US-ACCT-27). */
 function ManagedByNote() {
@@ -35,6 +37,7 @@ export function AccountSection({ openTwoFactor = false, next }: { openTwoFactor?
     <div className="flex flex-col gap-6">
       <ManagedByNote />
       <Profile />
+      <ThisComputer />
       <Security
         openTwoFactor={openTwoFactor}
         // Closing the dialog opened by its address goes back to plain Account, or on to where this person was going

@@ -25,8 +25,9 @@ pnpm fetch-binaries   # Caddy and docker compose into .bin/, checked against pin
 | --- | --- |
 | `pnpm dev` | hlabsd on `127.0.0.1:7474` and the dashboard on `http://127.0.0.1:5173`. No web proxy, no `.local` names. Enough for most work. |
 | `pnpm dev:full` | The same, plus Caddy on ports 443 and 80 and the `.local` names, so the dashboard is at `https://hlabs.local` as it is for people using hlabs. |
+| `pnpm dev:full:built` | Like `pnpm dev:full`, but the dashboard is built first and served by hlabs itself, as in a release, instead of by Vite: no hot reload. Use it to try what only exists in builds, such as installing hlabs as an app from Chrome (its web manifest and service worker). Rebuild by running it again. |
 | `pnpm dev:tray` | The menu-bar app, talking to whichever hlabs runs on 7474. See [the menu-bar app](/developers/menu-bar-app/). |
-| `pnpm dev:site` | This website. |
+| `pnpm dev:site` | This website, on http://localhost:4321. In development the dashboard's help links open it there (set `HLABS_HELP_URL` for another address), since the public site isn't published yet. |
 
 Development keeps its data in `.dev-data/` at the root of the repository; delete that folder to start again from setup. In development every request counts as an admin's (`HLABS_DEV_ANONYMOUS_ADMIN`), so you don't need to log in to try things.
 
@@ -51,6 +52,6 @@ pnpm test        # every package's unit tests (Vitest)
 pnpm test:e2e    # the dashboard in a real browser (Playwright, with axe)
 ```
 
-The end-to-end tests run their own hlabs on other ports (7574 for hlabs, 5273 for the dashboard) with their own data, so they never touch your development hlabs. The first run needs the browsers: `pnpm --filter @hlabs/web exec playwright install chromium`.
+The end-to-end tests run their own hlabs on other ports (7574 for hlabs, 5273 for the dashboard) with their own data, so they never touch your development hlabs. The installable dashboard's tests (the `pwa` project) also build the dashboard into `apps/web/dist-pwa` and serve it on 5373, because its web manifest and service worker only exist in builds. The first run needs the browsers: `pnpm --filter @hlabs/web exec playwright install chromium`.
 
 For the menu-bar app's Rust code: `cd apps/tray/src-tauri && cargo test`.

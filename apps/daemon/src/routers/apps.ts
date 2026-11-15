@@ -22,8 +22,14 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
       throw hlabsError('ACCESS_DENIED');
     }
     const detail = await ctx.services.installer.detail(input.appId);
-    // An update that rolled back, for the admins' banner (US-STORE-17).
-    return { ...detail, rolledBack: user.role === 'admin' ? ctx.services.updates.rolledBack(input.appId) : null };
+    const admin = user.role === 'admin';
+    return {
+      ...detail,
+      // An update that rolled back, for the admins' banner (US-STORE-17).
+      rolledBack: admin ? ctx.services.updates.rolledBack(input.appId) : null,
+      // What a reinstall would do, for admins (US-APP-24).
+      reinstall: admin ? await ctx.services.reinstalls.info(input.appId) : null,
+    };
   },
   install: (input, ctx) =>
     ctx.services.installer.begin(installer(ctx), {
@@ -58,6 +64,7 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
   update: (input, ctx) => ctx.services.updates.update(installer(ctx), input.appId),
   retryInstall: (input, ctx) => ctx.services.installer.retry(installer(ctx), input.appId, input.portOverrides?.web),
   uninstall: (input, ctx) => ctx.services.installer.uninstall(installer(ctx), input.appId, input.keepData),
+  reinstall: (input, ctx) => ctx.services.reinstalls.reinstall(installer(ctx), input.appId),
   /** Only the apps this person can open, enforced here, not in the UI (07 §7.4). */
   list: (_input, ctx) => {
     const id = ctx.identity;

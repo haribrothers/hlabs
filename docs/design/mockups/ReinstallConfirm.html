@@ -1,0 +1,25 @@
+<script>
+render(
+  wall(
+    h('div', { style: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
+      h(H.Dialog, {
+        title: 'Reinstall Uptime Kuma?',
+        width: 500,
+        actions: [btn('secondary', 'md', 'Cancel', { key: 'c' }), btn('primary', 'md', 'Reinstall', { key: 'r' })],
+      },
+        h('p', { style: Object.assign({}, T.muted, { fontSize: 14, lineHeight: '21px' }) },
+          'hlabs downloads Uptime Kuma 1.23.16 again (about 420 MB) and sets it up from scratch.'),
+        h('div', { className: 'hl-list-box', style: { marginTop: 16, borderRadius: 'var(--radius-md)', background: 'var(--surface-row)', border: '1px solid var(--hairline)', padding: '12px 16px' } },
+          h('p', { style: Object.assign({}, T.section, { margin: '0 0 6px' }) }, 'Kept as they are'),
+          ['Its data and settings', 'Passwords it created', 'Folder access and who it’s shared with', 'Its place on Home and in the Dock'].map(function (t) {
+            return h('div', { key: t, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', color: 'var(--ink)' } },
+              h('span', { style: { color: 'var(--success)', display: 'inline-flex' } }, icon('check', 16)),
+              h('span', { style: T.body }, t));
+          })
+        )
+      )
+    ),
+    { dim: 'strong' }
+  )
+);
+</script>

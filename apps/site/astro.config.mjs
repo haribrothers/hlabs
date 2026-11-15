@@ -33,6 +33,7 @@ export default defineConfig({
                     { label: 'Live usage', link: '/help/get-started/live-usage/' },
                     { label: 'Update hlabs', link: '/help/get-started/updates/' },
                     { label: "Can't reach hlabs", link: '/help/get-started/cant-reach/' },
+                    { label: 'Use hlabs as an app', link: '/help/get-started/use-as-app/' },
                     { label: 'Confirmations and notices', link: '/help/get-started/confirmations/' },
                   ],
                 },

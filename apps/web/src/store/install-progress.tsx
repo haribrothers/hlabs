@@ -91,10 +91,15 @@ export function failureReason(detail: Record<string, unknown> | null, appName: s
       return detail?.exitCode !== undefined && detail?.seconds === undefined
         ? r.crashed(appName)
         : r.APP_HEALTH_TIMEOUT(appName, String(detail?.seconds ?? 120));
+    case 'APP_CRASHED':
+      return detail?.oom ? r.APP_CRASHED.memory : detail?.loop ? r.APP_CRASHED.loop : r.APP_CRASHED.quit;
+    case 'APP_UNHEALTHY':
+      return r.APP_UNHEALTHY;
     case 'ENGINE_UNAVAILABLE':
       return r.ENGINE_UNAVAILABLE;
     default:
-      return detail?.reason === 'restarted' ? r.restarted : r.other;
+      if (detail?.reason === 'restarted') return detail.reinstall ? r.restartedReinstall : r.restarted;
+      return r.other;
   }
 }
 
