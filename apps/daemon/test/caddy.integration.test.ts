@@ -67,7 +67,24 @@ function get(
   });
 }
 
-function plain(port: number, path: string, host = 'demo.hlabs.local'): Promise<Reply> {
+/**
+ * Plain HTTP. Just after a config loads Caddy can still be swapping its listeners, and a connection then may be dropped
+ * ("socket hang up", ECONNRESET, ECONNREFUSED on a slow CI runner): tried again for up to 3 s, as a browser would.
+ */
+async function plain(port: number, path: string, host = 'demo.hlabs.local'): Promise<Reply> {
+  const deadline = Date.now() + 3_000;
+  for (;;) {
+    try {
+      return await plainOnce(port, path, host);
+    } catch (error) {
+      const dropped = /socket hang up|ECONNRESET|ECONNREFUSED/.test(String((error as Error).message ?? error));
+      if (!dropped || Date.now() > deadline) throw error;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  }
+}
+
+function plainOnce(port: number, path: string, host: string): Promise<Reply> {
   return new Promise((resolve, reject) => {
     const req = httpRequest({ host: '127.0.0.1', port, path, headers: { Host: host }, agent: false }, (res) => {
       let body = '';
