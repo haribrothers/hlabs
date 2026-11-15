@@ -142,6 +142,7 @@ export const appRouter = router({
     stat: q(p.authed, s.files.stat),
     recent: q(p.authed, s.files.recent),
     listTrash: q(p.authed, s.files.listTrash),
+    uploads: q(p.authed, s.files.uploads),
     openWith: q(p.authed, s.files.openWith),
     preview: q(p.authed, s.files.preview),
     search: q(p.authed, s.files.search),

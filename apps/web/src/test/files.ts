@@ -37,6 +37,7 @@ export function filesHandlers(over: Record<string, (input: unknown) => unknown> 
     'files.list': (input: unknown) => folder((input as { path: string }).path),
     'files.recent': () => ({ items: [] }),
     'files.openWith': () => ({ apps: [] }),
+    'files.uploads': () => ({ uploads: [] }),
     ...over,
   };
 }

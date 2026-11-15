@@ -85,7 +85,9 @@ export async function buildServer({
   registerAuthVerify(app, holder, config.resources.webFallbackDir);
   registerAppAssets(app, holder, config.devAnonymousAdmin);
   registerAppLogs(app, holder, config.devAnonymousAdmin);
-  registerFiles(app, holder, config.devAnonymousAdmin);
+  registerFiles(app, holder, config.devAnonymousAdmin, () =>
+    dashboardOrigins(config.dashboardUrl, holder.current?.db ?? null),
+  );
   if (config.dev) registerDevRoutes(app, holder);
   registerDashboard(app, config.resources.webDir);
 

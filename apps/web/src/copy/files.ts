@@ -88,6 +88,43 @@ export const filesCopy = {
   noPreview: 'No preview for this kind of file',
   textTruncated: 'Showing the first 1 MB',
   previewFailed: "Couldn't show this file",
+  // Uploads (US-FILE-08…10)
+  uploads: 'Uploads',
+  uploading: (n: number) => `Uploading ${n} ${n === 1 ? 'file' : 'files'}`,
+  uploadedTitle: (n: number) => `${n} ${n === 1 ? 'file' : 'files'} uploaded`,
+  eta: (seconds: number) =>
+    seconds < 60
+      ? 'Less than a minute left'
+      : seconds < 3600
+        ? `About ${Math.round(seconds / 60)} min left`
+        : `About ${Math.round(seconds / 3600)} h left`,
+  rowStatus: {
+    waiting: 'Waiting',
+    done: 'Done',
+    skipped: 'Skipped',
+    connectionLost: 'Paused · connection lost',
+    noSpace: 'Not enough space',
+    readOnly: "Can't upload here",
+    elsewhere: 'Uploading in another tab',
+    failed: "Couldn't upload",
+    cancelled: 'Cancelled',
+  } as Record<string, string>,
+  rowProgress: (pct: number, sent: string, total: string) => `${pct}% · ${sent} of ${total}`,
+  pause: 'Pause',
+  resume: 'Resume',
+  cancelAll: 'Cancel all',
+  uploadedToast: (n: number) => `${n} ${n === 1 ? 'file' : 'files'} uploaded`,
+  dropTo: (folder: string) => `Drop to upload to ${folder}`,
+  foldersNotYet: "Folders can't be uploaded yet. Upload the files inside instead.",
+  interrupted: (n: number) => (n === 1 ? '1 upload was interrupted' : `${n} uploads were interrupted`),
+  interruptedBody: 'Choose the same files again to carry on where they stopped.',
+  chooseAgain: 'Choose files again',
+  conflictTitle: (name: string, folder: string) => `“${name}” already exists in ${folder}`,
+  conflictBody: 'Replace moves the file that’s there now to the Trash. Keep both saves the new one with a number.',
+  skip: 'Skip',
+  keepBoth: 'Keep both',
+  replace: 'Replace',
+  everyConflict: 'Do this for every conflict',
   // Drives (US-FILE-12)
   cantReach: (name: string) => `Can't reach ${name}`,
   cantReachBody: 'Check that the drive is on and connected to your network.',

@@ -14,6 +14,7 @@ export const files: AppHandlers<DaemonContext>['files'] = {
   list: (input, ctx) => ctx.services.files.list(callerOf(ctx), input),
   stat: ({ path }, ctx) => ctx.services.files.stat(callerOf(ctx), path),
   recent: (_input, ctx) => ctx.services.files.recent(callerOf(ctx)),
+  uploads: (_input, ctx) => ({ uploads: ctx.services.uploads.list(callerOf(ctx)) }),
   search: (input, ctx) => ctx.services.files.search(callerOf(ctx), input),
   mkdir: (input, ctx) => ctx.services.files.mkdir(callerOf(ctx), input),
   openWith: ({ path }, ctx) =>

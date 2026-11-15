@@ -1,6 +1,7 @@
 // The Files sidebar (US-FILE-01): which places this person sees, which one is open, and the names the breadcrumb
 // gives the tops of places. Pure, so it's tested without rendering.
 import { isFeatureEnabled } from '@hlabs/shared';
+import type { FileAccent } from '@hlabs/ui/files';
 import { filesCopy as copy } from '../copy/files';
 
 export const HOME = '/home';
@@ -103,3 +104,11 @@ export function activeRow(at: FilesLocation): string | null {
 export const crumbName = (c: { path: string; name: string | null }) => c.name ?? copy.areaNames[c.path] ?? c.path;
 
 export const parentOf = (path: string) => path.slice(0, Math.max(1, path.lastIndexOf('/'))) || '/';
+
+/** The person Files is for, as the views need them. */
+export interface FilesMe {
+  role: 'admin' | 'member';
+  displayName: string;
+  canSeeShared: boolean;
+  accent: FileAccent;
+}

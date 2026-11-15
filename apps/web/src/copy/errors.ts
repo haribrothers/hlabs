@@ -202,6 +202,14 @@ export const errorCopy = {
     FILES_NO_SPACE: () => ({ title: 'There’s no space left there', body: 'Free up some space, then try again.' }),
     FILES_NAME_EXISTS: () => ({ title: 'That name is taken', body: 'Choose another name.' }),
     FILES_INVALID_PATH: () => ({ title: "That place doesn't exist", body: 'It may have been moved or removed.' }),
+    UPLOAD_OFFSET_MISMATCH: () => ({
+      title: 'The upload got out of step',
+      body: 'Try again; it carries on where it stopped.',
+    }),
+    UPLOAD_IN_PROGRESS: () => ({
+      title: 'This file is uploading somewhere else',
+      body: 'Wait for it to finish there, or cancel it there.',
+    }),
     FILES_INVALID_NAME: () => ({ title: "That name won't work", body: 'Names can’t contain / or be empty.' }),
     TAILSCALE_PERMISSION_DENIED: () => ({
       title: 'Tailscale needs permission first',

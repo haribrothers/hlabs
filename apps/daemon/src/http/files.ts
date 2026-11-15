@@ -6,10 +6,14 @@ import { createReadStream } from 'node:fs';
 import { lstat, mkdir, open, readdir, realpath, rename, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { readCookie, SESSION_COOKIE } from '../auth/sessions';
+import { csrfMatches, readCookie, SESSION_COOKIE } from '../auth/sessions';
+import type { Readable } from 'node:stream';
+import { z } from 'zod';
+import { CHUNK_MAX } from '../files/uploads';
 import { isTextMime, mimeOf, PREVIEW_IMAGES } from '../files/mime';
 import yazl from 'yazl';
 import { inside, isHidden, realInside, type Caller, type Place } from '../files/places';
+import type { Logger } from '../logger';
 import type { ServiceHolder, Services } from '../services';
 
 /** Text previews show the first 1 MB (US-FILE-06). */
@@ -169,7 +173,137 @@ async function addFolder(zip: yazl.ZipFile, realBase: string, dir: string, prefi
   }
 }
 
-export function registerFiles(app: FastifyInstance, holder: ServiceHolder, devAnonymousAdmin: boolean): void {
+/** An hlabs error as an HTTP answer for the upload routes: its status and `{ hlabsCode, detail }` (never raw text). */
+function sendError(reply: FastifyReply, err: unknown, logger: Pick<Logger, 'warn'>) {
+  const cause = (err as { cause?: { hlabsCode?: string; detail?: unknown } }).cause;
+  const code = cause?.hlabsCode;
+  if (!code) {
+    logger.warn({ err }, 'upload failed');
+    return reply.code(500).send({ hlabsCode: 'INTERNAL', detail: null });
+  }
+  const status =
+    code === 'FILES_NO_SPACE'
+      ? 507
+      : code === 'UPLOAD_OFFSET_MISMATCH' || code === 'UPLOAD_IN_PROGRESS' || code === 'FILES_NAME_EXISTS'
+        ? 409
+        : code === 'FILES_READ_ONLY'
+          ? 403
+          : code === 'FILES_INVALID_NAME' || code === 'VALIDATION_FAILED'
+            ? 400
+            : statusOf(err);
+  return reply.code(status).send({ hlabsCode: code, detail: cause?.detail ?? null });
+}
+
+/** Mutations need the session's CSRF header, and a dashboard Origin when one is sent (07 §7.3), as in tRPC. */
+function csrfOk(req: FastifyRequest, raw: string | null, allowedOrigins: () => readonly string[]): boolean {
+  if (raw === null) return true; // The development admin (no session).
+  const origin = typeof req.headers.origin === 'string' ? req.headers.origin : null;
+  if (origin !== null && !allowedOrigins().includes(origin)) return false;
+  const header = req.headers['x-hlabs-csrf'];
+  return csrfMatches(raw, typeof header === 'string' ? header : null);
+}
+
+const uploadBody = z.object({
+  path: z.string().min(1).max(4096).startsWith('/'),
+  name: z.string().min(1).max(1024),
+  size: z.number().int().nonnegative(),
+  onConflict: z.enum(['skip', 'keepBoth', 'replace']).optional(),
+});
+
+export function registerFiles(
+  app: FastifyInstance,
+  holder: ServiceHolder,
+  devAnonymousAdmin: boolean,
+  allowedOrigins: () => readonly string[] = () => [],
+): void {
+  // Upload chunks arrive as raw bytes (tus-style), streamed straight to the partial file.
+  app.addContentTypeParser('application/offset+octet-stream', (_req, payload, done) => done(null, payload));
+
+  /** Who's uploading, with their CSRF checked; null when a reply was sent. */
+  const uploader = (req: FastifyRequest, reply: FastifyReply) => {
+    const who = whoIs(req, reply, holder, devAnonymousAdmin);
+    if (!who) return null;
+    const raw = readCookie(req.headers.cookie, SESSION_COOKIE) ?? null;
+    if (!csrfOk(req, who.services.sessions.resolve(raw) ? raw : null, allowedOrigins)) {
+      void reply.code(403).send({ hlabsCode: 'CSRF_REJECTED', detail: null });
+      return null;
+    }
+    return who;
+  };
+
+  // POST /api/files/upload { path, name, size, onConflict } → { id, offset } (US-FILE-08): a new upload, or the one
+  // already there for the same folder, name and size (US-FILE-09).
+  app.post('/api/files/upload', { logLevel: 'warn' }, async (req, reply) => {
+    const who = uploader(req, reply);
+    if (!who) return reply;
+    const body = uploadBody.safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ hlabsCode: 'VALIDATION_FAILED', detail: null });
+    try {
+      return await who.services.uploads.create(who.caller, body.data);
+    } catch (err) {
+      return sendError(reply, err, who.services.logger);
+    }
+  });
+
+  // HEAD /api/files/upload/:id → Upload-Offset (US-FILE-09: Resume asks where the server is).
+  app.head(
+    '/api/files/upload/:id',
+    { logLevel: 'warn' },
+    async (req: FastifyRequest<{ Params: { id: string } }>, reply) => {
+      const who = whoIs(req, reply, holder, devAnonymousAdmin);
+      if (!who) return reply;
+      try {
+        const { offset, size } = await who.services.uploads.offset(who.caller, req.params.id);
+        return reply
+          .header('upload-offset', String(offset))
+          .header('upload-length', String(size))
+          .header('cache-control', 'no-store')
+          .send();
+      } catch (err) {
+        return reply.code(statusOf(err)).send();
+      }
+    },
+  );
+
+  // PATCH /api/files/upload/:id (Upload-Offset, up to 8 MB) → { offset, done } (US-FILE-08, US-FILE-09).
+  app.patch(
+    '/api/files/upload/:id',
+    { logLevel: 'warn', bodyLimit: CHUNK_MAX },
+    async (req: FastifyRequest<{ Params: { id: string } }>, reply) => {
+      const who = uploader(req, reply);
+      if (!who) return reply;
+      if (req.headers['content-type'] !== 'application/offset+octet-stream') {
+        return reply.code(415).send({ hlabsCode: 'VALIDATION_FAILED', detail: null });
+      }
+      const offset = Number(req.headers['upload-offset']);
+      if (!Number.isSafeInteger(offset) || offset < 0) {
+        return reply.code(400).send({ hlabsCode: 'VALIDATION_FAILED', detail: null });
+      }
+      try {
+        const result = await who.services.uploads.append(who.caller, req.params.id, offset, req.body as Readable);
+        return reply.header('upload-offset', String(result.offset)).send(result);
+      } catch (err) {
+        return sendError(reply, err, who.services.logger);
+      }
+    },
+  );
+
+  // DELETE /api/files/upload/:id: cancel (US-FILE-09): the session and its partial file go.
+  app.delete(
+    '/api/files/upload/:id',
+    { logLevel: 'warn' },
+    async (req: FastifyRequest<{ Params: { id: string } }>, reply) => {
+      const who = uploader(req, reply);
+      if (!who) return reply;
+      try {
+        await who.services.uploads.cancel(who.caller, req.params.id);
+        return { ok: true };
+      } catch (err) {
+        return sendError(reply, err, who.services.logger);
+      }
+    },
+  );
+
   // GET /api/files/download?path=…[&path=…] (US-FILE-05): a file as it is (with Range), or a folder or several items as
   // a zip streamed as it's made, never built on disk first. Anything the person can't reach: 403 and no bytes.
   app.get(

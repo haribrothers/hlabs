@@ -46,6 +46,21 @@ Type at least two letters of its name in **Search** at the top. Files looks in t
 
 Files shows up to 200 results; if there are more, it says **Showing the first 200 results**, so type a little more of the name. A very large folder may say **Showing the first results** when it couldn't look everywhere in time. Press Esc, or clear the search, to go back to the folder.
 
+## Upload files
+
+Open the folder you want them in, choose **Upload** and pick one or more files, or drag files from your computer onto the folder (Files says **Drop to upload to** and the folder's name). Folders can't be uploaded yet: pick the files inside instead.
+
+The **Uploads** panel shows each file: **Waiting**, how far along it is (for example **62% · 1.1 of 1.8 GB**) or **Done**, and about how long is left. Files go one at a time, in the order you chose them. When they're all done, the panel closes after a few seconds and says how many were uploaded. If there isn't enough space on the disk for a file (hlabs keeps 1 GB free), it says **Not enough space** and goes on to the next.
+
+- **Pause** stops after the piece being sent; **Resume** carries on from where it stopped.
+- If the connection drops, hlabs keeps trying for about half a minute. If it still can't, the upload pauses with **Paused · connection lost**; choose **Resume** when you're back online.
+- **Cancel all** stops every upload that hasn't finished and removes what was sent of them. Files already uploaded stay.
+- If you close the page or it reloads during an upload, Files says the uploads were interrupted. Choose **Choose files again** and pick the same files: they carry on where they stopped. Unfinished uploads are removed after a day.
+
+### When a file with the same name is already there
+
+Files asks what to do: **Skip** leaves the file that's there and doesn't upload yours; **Keep both** saves yours with a number, for example **Report (2).pdf**; **Replace** puts yours in its place and moves the old one to the Trash. Tick **Do this for every conflict** to use the same answer for the rest of the files you're uploading.
+
 ## Look at a file
 
 Open a file to see it without downloading it. Photos show at the size of the window, videos play with the usual controls, PDFs open in your browser's own viewer (on a phone, use **Download** instead), and text files such as notes, lists and code show their first 1 MB. Other kinds of file, such as spreadsheets, zip files and iPhone HEIC photos, show their icon with **Download**.

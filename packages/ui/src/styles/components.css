@@ -512,6 +512,9 @@
     background: var(--accent);
     transition: width var(--hl-dur) var(--hl-ease);
   }
+  .hl-progress-success {
+    background: var(--success);
+  }
 
   /* Glass card (widget) */
   .hl-card {

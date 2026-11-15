@@ -219,9 +219,9 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 - [x] US-FILE-05 · Download files
 - [x] US-FILE-06 · Preview a file
 - [x] US-FILE-07 · Open a file with an app
-- [ ] US-FILE-08 · Upload files with progress
-- [ ] US-FILE-09 · Pause, resume and cancel uploads
-- [ ] US-FILE-10 · Handle name conflicts when uploading
+- [x] US-FILE-08 · Upload files with progress
+- [x] US-FILE-09 · Pause, resume and cancel uploads
+- [x] US-FILE-10 · Handle name conflicts when uploading
 - [ ] US-FILE-11 · Connect an SMB or NFS drive
 - [ ] US-FILE-12 · Disconnect or recover a network drive
 - [ ] US-BKP-01 · See the last backup's status

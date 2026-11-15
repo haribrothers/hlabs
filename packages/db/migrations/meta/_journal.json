@@ -22,6 +22,13 @@
       "when": 1790664369824,
       "tag": "0002_notifications_target",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794742773969,
+      "tag": "0003_upload_sessions",
+      "breakpoints": true
     }
   ]
 }

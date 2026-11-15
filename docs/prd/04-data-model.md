@@ -34,8 +34,8 @@ Secrets never go in SQLite in plain text: passwords are Argon2id hashes, TOTP se
 | --- | --- | --- |
 | `storage_locations` | `id`, `kind` (`local`\|`external`\|`smb`\|`nfs`), `name`, `path`, `mount_options`, `secret_ref`, `is_root` (bool), `status`, `last_seen_at` | Exactly one `is_root`. |
 | `file_shares` | `id`, `path`, `protocol` (`smb`), `name`, `read_only`, `users_json` | FilesShare (P3). |
-| `trash_items` | `id`, `owner_user_id`, `original_path`, `trash_path`, `deleted_at`, `size` | Auto-empty after 30 days. |
-| `upload_sessions` | `id`, `user_id`, `path`, `size`, `received`, `created_at` | Resumable uploads. |
+| `trash_items` | `id`, `owner_user_id`, `original_path` (virtual), `trash_path` (`<location>/.trash/<userId>/<id>-<name>`, on the same storage location as the item), `deleted_at`, `size` | Auto-empty after 30 days (checked hourly). |
+| `upload_sessions` | `id`, `user_id`, `path` (the folder, virtual), `name`, `size`, `received`, `on_conflict` (`skip`\|`keepBoth`\|`replace`), `created_at`, `updated_at` (last chunk) | Resumable uploads (US-FILE-08…10); one per person, folder and name (unique). Removed with its partial file after 24 h without a chunk. |
 
 ### Backups
 | Table | Columns | Notes |

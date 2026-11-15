@@ -32,3 +32,31 @@ export async function filesDaemon(
   const code = (r: Reply) => r.error?.data.hlabsCode;
   return { d, db, root, rootId, anu, put, data, code, appDataDir: d.services!.config.paths.appDataDir };
 }
+
+/** Upload calls as the dashboard makes them (US-FILE-08…10), for a person's cookie and CSRF token. */
+export function uploadClient(url: string, who: { cookie: string; csrf: string }) {
+  const headers = { cookie: who.cookie, 'x-hlabs-csrf': who.csrf };
+  return {
+    create: (body: { path: string; name: string; size: number; onConflict?: string }) =>
+      fetch(`${url}/api/files/upload`, {
+        method: 'POST',
+        headers: { ...headers, 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
+    chunk: (id: string, offset: number, bytes: string | Buffer) =>
+      fetch(`${url}/api/files/upload/${id}`, {
+        method: 'PATCH',
+        headers: { ...headers, 'content-type': 'application/offset+octet-stream', 'upload-offset': String(offset) },
+        body: typeof bytes === 'string' ? Buffer.from(bytes) : bytes,
+      }),
+    head: (id: string) => fetch(`${url}/api/files/upload/${id}`, { method: 'HEAD', headers }),
+    cancel: (id: string) => fetch(`${url}/api/files/upload/${id}`, { method: 'DELETE', headers }),
+    /** Creates and sends `content` in one chunk; the final reply. */
+    async send(path: string, name: string, content: string, onConflict?: string) {
+      const made = (await (await this.create({ path, name, size: Buffer.byteLength(content), onConflict })).json()) as {
+        id: string;
+      };
+      return (await (await this.chunk(made.id, 0, content)).json()) as { offset: number; done: unknown };
+    },
+  };
+}

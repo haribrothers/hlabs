@@ -13,6 +13,7 @@ import { RecentsView } from './recents-view';
 import { FilePreview } from './file-preview';
 import { NewFolderDialog } from './new-folder-dialog';
 import { OpenWith } from './open-with';
+import { useFileUploads } from './use-file-uploads';
 import { SearchField, useDebouncedQuery } from './search';
 import { FilesChips, FilesSidebar } from './sidebar';
 import { FolderToolbar } from './toolbar';
@@ -54,6 +55,8 @@ export function FilesPage({ at }: FilesPageProps) {
   const [search, setSearch] = useState({ path: at.path, text: '' });
   const searchText = search.path === at.path ? search.text : '';
   const searchQuery = useDebouncedQuery(searchText);
+  const uploads = useFileUploads();
+  const folderPath = at.path || HOME;
 
   useEffect(() => {
     document.title = copy.docTitle;
@@ -96,11 +99,20 @@ export function FilesPage({ at }: FilesPageProps) {
             place={placeName(at.path)}
           />
         }
-        toolbar={(place) => <FolderToolbar readOnly={place.readOnly} onNewFolder={() => setNewFolder(true)} />}
+        toolbar={(place, folderName) => (
+          <FolderToolbar
+            readOnly={place.readOnly}
+            onNewFolder={() => setNewFolder(true)}
+            onUpload={() => uploads.choose(folderPath, folderName)}
+          />
+        )}
+        onDropFiles={(data, folderName) => uploads.drop(data, folderPath, folderName)}
+        notice={(folderName) => uploads.notice(folderPath, folderName)}
       />
     );
   const dialogs = (
     <>
+      {uploads.ui}
       {preview ? (
         <FilePreview
           entry={preview.entry}
@@ -140,7 +152,7 @@ export function FilesPage({ at }: FilesPageProps) {
         </p>
         <FilesSidebar me={filesMe} at={at} onConnect={() => setConnecting(true)} />
       </div>
-      <div className="flex min-h-0 min-w-0 flex-col">{main}</div>
+      <div className="relative flex min-h-0 min-w-0 flex-col">{main}</div>
       {dialogs}
     </GlassCard>
   );

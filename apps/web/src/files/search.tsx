@@ -10,7 +10,7 @@ import { filesCopy as copy } from '../copy/files';
 import { useIsDesktop } from '../lib/use-media';
 import { useTRPC } from '../lib/trpc';
 import { FileGrid } from './file-grid';
-import type { FilesMe } from './folder-view';
+import type { FilesMe } from './places';
 import { crumbName } from './places';
 
 export const SEARCH_MIN = 2;

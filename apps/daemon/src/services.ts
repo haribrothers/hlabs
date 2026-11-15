@@ -20,7 +20,10 @@ import type { AppWatch } from './apps/app-watch';
 import type { ReinstallService } from './apps/reinstall';
 import type { SystemProbe } from './platform/system';
 import type { NotificationService } from './notifications/service';
+import type { FilesJanitor } from './files/janitor';
 import type { FilesService } from './files/service';
+import type { Trash } from './files/trash';
+import type { Uploads } from './files/uploads';
 import type { NetworkStorage } from './storage/network';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
@@ -100,6 +103,12 @@ export interface Services {
   network: NetworkStorage;
   /** Files: virtual paths, listings, uploads and downloads (07-files). */
   files: FilesService;
+  /** Where replaced and deleted files go (D-027). */
+  trash: Trash;
+  /** Resumable uploads (US-FILE-08, US-FILE-09). */
+  uploads: Uploads;
+  /** Removes idle uploads and month-old Trash. */
+  filesJanitor: FilesJanitor;
   notifications: NotificationService;
 }
 

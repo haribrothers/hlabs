@@ -3,25 +3,19 @@
 import type { FileEntry } from '@hlabs/api';
 import { formatBytes } from '@hlabs/shared';
 import { Button, ScrollPane } from '@hlabs/ui';
-import type { FileAccent } from '@hlabs/ui/files';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type DragEvent, type ReactNode } from 'react';
 import { filesCopy as copy } from '../copy/files';
 import { errorCode, errorData, pageQuery } from '../lib/error-copy';
 import { useIsDesktop } from '../lib/use-media';
 import { useTRPC } from '../lib/trpc';
 import { Breadcrumb } from './breadcrumb';
 import { FileGrid } from './file-grid';
-import { HOME } from './places';
-import { SearchResults } from './search';
+import { crumbName, HOME, type FilesMe } from './places';
 
-export interface FilesMe {
-  role: 'admin' | 'member';
-  displayName: string;
-  canSeeShared: boolean;
-  accent: FileAccent;
-}
+export type { FilesMe };
+import { SearchResults } from './search';
 
 type Listing = {
   place: { area: string; name: string | null; readOnly: boolean };
@@ -92,11 +86,17 @@ export function FolderView({
   onOpenFile,
   onRetryDrive,
   searchQuery = '',
+  onDropFiles,
+  notice,
 }: {
   path: string;
   me: FilesMe;
-  /** New folder, Upload … for this place (they know whether it's read only). */
-  toolbar?: (place: Listing['place']) => ReactNode;
+  /** New folder, Upload … for this place (they know whether it's read only), and the folder's name. */
+  toolbar?: (place: Listing['place'], folderName: string) => ReactNode;
+  /** Files dropped on a folder that can take them (US-FILE-08). */
+  onDropFiles?: (data: DataTransfer, folderName: string) => void;
+  /** Above the folder: "<n> uploads were interrupted" (US-FILE-09). */
+  notice?: (folderName: string) => ReactNode;
   /** The search field; it replaces the folder with results while there's a query. */
   search?: ReactNode;
   focusPath?: string | null;
@@ -109,6 +109,42 @@ export function FolderView({
   const navigate = useNavigate();
   const desktop = useIsDesktop();
   const { query, listing, items } = useFolder(path);
+  const [dragging, setDragging] = useState(false);
+  const last = listing?.crumbs[listing.crumbs.length - 1];
+  const folderName = last ? crumbName(last) : copy.title;
+  const canDrop = !!listing && !listing.place.readOnly && !!onDropFiles;
+  const hasFiles = (e: DragEvent) => [...(e.dataTransfer?.types ?? [])].includes('Files');
+  const dropProps = canDrop
+    ? {
+        onDragEnter: (e: DragEvent) => {
+          if (!hasFiles(e)) return;
+          e.preventDefault();
+          setDragging(true);
+        },
+        onDragOver: (e: DragEvent) => {
+          if (!hasFiles(e)) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+        },
+        onDragLeave: (e: DragEvent) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+        },
+        onDrop: (e: DragEvent) => {
+          if (!hasFiles(e)) return;
+          e.preventDefault();
+          setDragging(false);
+          onDropFiles!(e.dataTransfer, folderName);
+        },
+      }
+    : {};
+  const overlay = dragging ? (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-3 z-10 flex items-center justify-center rounded-xl border-2 border-dashed border-accent"
+    >
+      <span className="rounded-pill bg-surface-dialog px-4 py-2 text-label text-ink">{copy.dropTo(folderName)}</span>
+    </div>
+  ) : null;
   const open = (e: FileEntry) =>
     e.kind === 'folder' ? void navigate({ to: '/files', search: { path: e.path } }) : onOpenFile(e, items);
 
@@ -165,7 +201,6 @@ export function FolderView({
   } else if (items.length === 0) {
     body = <Message title={copy.emptyFolder} body={listing.place.readOnly ? undefined : copy.emptyWritable} />;
   } else {
-    const last = listing.crumbs[listing.crumbs.length - 1];
     body = (
       <FileGrid
         items={items}
@@ -191,7 +226,7 @@ export function FolderView({
       <div className="min-w-0 flex-1">{listing ? <Breadcrumb crumbs={listing.crumbs} /> : null}</div>
       <div className="flex flex-wrap items-center gap-2 max-md:w-full">
         {search}
-        {listing && toolbar ? toolbar(listing.place) : null}
+        {listing && toolbar ? toolbar(listing.place, folderName) : null}
       </div>
     </div>
   );
@@ -201,6 +236,7 @@ export function FolderView({
     return (
       <div className="flex min-w-0 flex-col gap-4">
         {header}
+        {notice?.(folderName)}
         <div className="flex flex-col">{body}</div>
         {footer}
       </div>
@@ -208,7 +244,8 @@ export function FolderView({
   }
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col" {...dropProps}>
+      {overlay}
       <ScrollPane
         className="min-h-0 flex-1"
         header={header}
@@ -216,6 +253,7 @@ export function FolderView({
         scrollClassName="mr-2"
         bodyClassName="flex min-h-full flex-col px-5 pb-5"
       >
+        {notice?.(folderName)}
         {body}
       </ScrollPane>
       {footer}

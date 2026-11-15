@@ -65,7 +65,10 @@ import { LoginService } from './auth/login';
 import { OnboardingService } from './onboarding/service';
 import { NodeDriveProbe, type DriveProbe } from './platform/drives';
 import { LinuxNetworkMounter, MacNetworkMounter, type NetworkMounter } from './platform/network-mount';
+import { FilesJanitor } from './files/janitor';
 import { FilesService } from './files/service';
+import { Trash } from './files/trash';
+import { Uploads } from './files/uploads';
 import { NetworkStorage } from './storage/network';
 import { SystemHostStats, type HostStats } from './platform/host-stats';
 import { UsageHistory } from './usage/history';
@@ -483,6 +486,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     },
     updateApp: (appId) => updates.update({ userId: null }, appId).jobId,
   });
+  const files = new FilesService({ db, appDataDir: config.paths.appDataDir });
+  const trash = new Trash({ db });
+  const uploads = new Uploads({ db, files, trash, freeBytes: (path) => probe.freeBytes(path) });
   const services: Services = {
     config,
     logger,
@@ -547,7 +553,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
           : new LinuxNetworkMounter(config.privHelper, join(config.paths.dataDir, 'tmp'))),
       mountsDir: join(config.paths.dataDir, 'mounts'),
     }),
-    files: new FilesService({ db, appDataDir: config.paths.appDataDir }),
+    files,
+    trash,
+    uploads,
+    filesJanitor: new FilesJanitor({ uploads, trash, logger }),
   };
   holder.set(services);
   // Keep awake follows the setting and whether any app runs.
@@ -564,6 +573,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     services.usageHistory.start();
   }
   if (deps.watchApps !== false) services.appWatch.start();
+  services.filesJanitor.start();
   if (deps.checkUpdates !== false) {
     services.hlabsUpdates.start();
     services.autoUpdates.start();
@@ -609,6 +619,7 @@ export async function shutdown(services: Services | null): Promise<void> {
   services.usage.stop();
   services.usageHistory.stop();
   services.appWatch.stop();
+  services.filesJanitor.stop();
   services.hlabsUpdates.stop();
   services.autoUpdates.stop();
   // The last finished minute is written before stopping, so a restart loses at most the minute in progress.

@@ -83,6 +83,10 @@ export const HLABS_ERRORS = {
   FILES_NAME_EXISTS: 'CONFLICT',
   FILES_INVALID_PATH: 'BAD_REQUEST',
   FILES_INVALID_NAME: 'BAD_REQUEST',
+  /** An upload chunk that doesn't start where the server is (US-FILE-09): `detail.offset` says where it is. */
+  UPLOAD_OFFSET_MISMATCH: 'CONFLICT',
+  /** The upload is being sent from another tab or device right now (US-FILE-09). */
+  UPLOAD_IN_PROGRESS: 'CONFLICT',
   NETWORK_PORT_IN_USE: 'CONFLICT',
   TAILSCALE_HTTPS_DISABLED: 'PRECONDITION_FAILED',
   /** Linux: the daemon's user isn't Tailscale's operator (D-104). Not FORBIDDEN: that would mean "no access". */

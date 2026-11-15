@@ -77,6 +77,22 @@ export const files = {
   /** The 50 most recently changed files in the caller's Home and, when allowed, Shared (US-FILE-01). */
   recent: io(empty, z.object({ items: z.array(fileEntrySchema) })),
   listTrash: io(pageInputSchema, pending),
+  /** This person's unfinished uploads (US-FILE-09): picked again with the same name and size, they resume. */
+  uploads: io(
+    empty,
+    z.object({
+      uploads: z.array(
+        z.object({
+          id: z.string(),
+          path: virtualPathSchema,
+          name: z.string(),
+          size: z.number().nonnegative(),
+          received: z.number().nonnegative(),
+          updatedAt: z.number(),
+        }),
+      ),
+    }),
+  ),
   /** Running apps the caller can open whose folders hold the path (US-FILE-07). */
   openWith: io(pathRef, z.object({ apps: z.array(homeAppSchema) })),
   /** A signed URL for 5 minutes, for this person only (US-FILE-06); `width` asks for a thumbnail. */
