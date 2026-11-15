@@ -409,6 +409,26 @@ Everything that happens after an app is installed: opening it, checking that it 
 - Data: new column `apps.data_location_id` (references `storage_locations`), `jobs`, `audit_log`.
 - UI: Progress, Toast.
 
+### US-APP-26 · Know when an app stops working
+**Feature:** F-APP-02 · **Priority:** P1 · **Phase:** 4 · **Screens:** `HomeStates`, `AppLogs`
+**As** an admin, **I want** hlabs to notice when a running app crashes or stops answering and tell me, **so that** I can fix it before someone in the house finds it broken.
+
+**Acceptance criteria**
+- **Given** an app is `running`, **when** one of its containers exits and isn't running again within 30 seconds (Docker restarts it by itself, `restart: unless-stopped`), **or** exits 3 times within 5 minutes, **or** reports `unhealthy` for 60 seconds, **then** the app goes to `error` with `state_detail` saying which service and why (`APP_CRASHED` with the exit code and whether it ran out of memory, or `APP_UNHEALTHY`), and `app.stateChanged` is emitted (D-127).
+- **Given** hlabs itself is stopping, restarting, updating, reinstalling, pausing or uninstalling the app, or the container engine is stopping or stopped, **then** containers exiting don't count as a crash.
+- **Given** the app goes to `error` this way, **then** every admin gets a warning notification and Toast "<App> stopped working" with the reason ("It quit unexpectedly." / "It ran out of memory." / "It stopped answering.") and the actions "Restart" (`apps.restart`) and "View logs"; members get nothing.
+- **Given** an unread "stopped working" notification for the app already exists, **then** no second one is added while it's unread.
+- **Given** the app's tile, **then** it shows the error state (US-HOME-06) and opens Logs with the reason card and "Restart" and "Reinstall…" (US-HOME-08, US-APP-24).
+- **Given** the crashed app comes back by itself (Docker restarted it) and is running and healthy for 60 seconds, **then** it returns to `running`, its "stopped working" notifications are marked read and a Toast reads "<App> is working again".
+- **Given** the daemon missed engine events (the event stream dropped and reconnected), **then** a check every 60 seconds of every `running` app's containers catches what was missed.
+- **Given** the menu bar, **then** an app in `error` shows as needing attention, as before (US-INST-14).
+
+**Implementation notes**
+- API: `events.stream` (`app.stateChanged`, `notification.created`), `apps.restart`.
+- Engine: `ContainerEngine.watchEvents` (dockerode `getEvents`, filtered to hlabs's compose label; `die`, `oom`, `health_status`), plus the 60-second inspect sweep.
+- Data: `apps.state`, `apps.state_detail`, `notifications` (`app.crashed`, `target` = appId).
+- Copy for `APP_CRASHED` and `APP_UNHEALTHY` in `apps/web/src/copy/errors.ts`.
+
 ### US-APP-24 · Offer to reinstall a broken app
 **Feature:** F-APP-09 · **Priority:** P1 · **Phase:** 4 · **Screens:** `AppLogs`, `AppSettings`, `ReinstallConfirm`, `HomeStates`
 **As** an admin, **I want** to reinstall an app that won't run, keeping its data, **so that** I can fix it without uninstalling it and setting it up again.

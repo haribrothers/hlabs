@@ -201,9 +201,10 @@ Shipped 3 Oct 2026 (`SHIPPED_PHASE = 4`). "Done when" checked by hand on macOS w
 
 ## Phase 4 follow-ups (before phase 5)
 
-Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126).
+Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 
 - [ ] US-APP-08 · Back from Logs never loops with App settings (D-124)
+- [ ] US-APP-26 · Know when an app stops working
 - [ ] US-APP-24 · Offer to reinstall a broken app
 - [ ] US-APP-25 · Reinstall runs and keeps the data
 - [ ] US-INST-28 · Install hlabs as an app on my computer
