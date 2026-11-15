@@ -115,7 +115,7 @@ export class ReinstallService {
     const dir = this.deps.apps.project(appId).dir;
     const entry = this.deps.catalog.get(appId, app.sourceId ?? undefined);
     const listed = entry && entry.manifest.version === app.version ? entry : null;
-    let manifest: AppManifest | null = null;
+    let manifest: AppManifest | null;
     try {
       manifest = JSON.parse(readFileSync(join(dir, MANIFEST_COPY), 'utf8')) as AppManifest;
     } catch {
