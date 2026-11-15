@@ -25,6 +25,7 @@ pnpm fetch-binaries   # Caddy and docker compose into .bin/, checked against pin
 | --- | --- |
 | `pnpm dev` | hlabsd on `127.0.0.1:7474` and the dashboard on `http://127.0.0.1:5173`. No web proxy, no `.local` names. Enough for most work. |
 | `pnpm dev:full` | The same, plus Caddy on ports 443 and 80 and the `.local` names, so the dashboard is at `https://hlabs.local` as it is for people using hlabs. |
+| `pnpm dev:full:built` | Like `pnpm dev:full`, but the dashboard is built first and served by hlabs itself, as in a release, instead of by Vite: no hot reload. Use it to try what only exists in builds, such as installing hlabs as an app from Chrome (its web manifest and service worker). Rebuild by running it again. |
 | `pnpm dev:tray` | The menu-bar app, talking to whichever hlabs runs on 7474. See [the menu-bar app](/developers/menu-bar-app/). |
 | `pnpm dev:site` | This website, on http://localhost:4321. In development the dashboard's help links open it there (set `HLABS_HELP_URL` for another address), since the public site isn't published yet. |
 
