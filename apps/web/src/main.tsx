@@ -38,6 +38,8 @@ declare module '@tanstack/react-router' {
   interface HistoryState {
     /** Where a view such as App settings was opened from, for its Close (US-APP-04). */
     from?: string;
+    /** Logs opened from that app's settings, so their Back is a step back (US-APP-08, D-124). */
+    fromSettings?: boolean;
   }
 }
 

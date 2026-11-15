@@ -203,7 +203,7 @@ Shipped 3 Oct 2026 (`SHIPPED_PHASE = 4`). "Done when" checked by hand on macOS w
 
 Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 
-- [ ] US-APP-08 · Back from Logs never loops with App settings (D-124)
+- [x] US-APP-08 · Back from Logs never loops with App settings (D-124; the history state `fromSettings` marks Logs opened from that app's settings, whose Back steps back; from anywhere else Back replaces Logs with the settings)
 - [ ] US-APP-26 · Know when an app stops working
 - [ ] US-APP-24 · Offer to reinstall a broken app
 - [ ] US-APP-25 · Reinstall runs and keeps the data

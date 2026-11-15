@@ -47,7 +47,7 @@ In the rare case the previous version doesn't start again either, the app shows 
 
 ## Read an app's logs
 
-Logs are what an app writes about what it's doing. They help when something goes wrong, for example when an app won't start. Choose **Logs** in App settings or at the top of the app window. The back button at the top returns to where you opened them: App settings, or the app.
+Logs are what an app writes about what it's doing. They help when something goes wrong, for example when an app won't start. Choose **Logs** in App settings or at the top of the app window. The back button at the top returns to where you opened them: App settings, or the app. Logs you reached another way, such as from a broken app's tile or a notice, go back to the app's settings, and **Close** there takes you back to where you started.
 
 The logs show the latest 500 lines, oldest first, with the time and, when the app says, how serious each line is: INFO, WARN, ERROR or DEBUG. New lines appear as the app writes them while **Following** is on. Scroll up to read earlier lines and following stops; choose **Following** again to jump back to the newest line. If the app restarts while you watch, a "Container restarted" line marks where.
 

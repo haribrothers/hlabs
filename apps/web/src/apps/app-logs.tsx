@@ -4,7 +4,7 @@
 import type { LogLine } from '@hlabs/api';
 import { ChevronLeft, Download, iconDefaults, Search } from '@hlabs/icons';
 import { Badge, Button, GlassCard, IconButton, ModalPanel, Segmented } from '@hlabs/ui';
-import { useNavigate } from '@tanstack/react-router';
+import { useLocation, useNavigate, useRouter } from '@tanstack/react-router';
 import { useDeferredValue, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { appsCopy } from '../copy/apps';
 import { useNow } from '../lib/use-now';
@@ -56,13 +56,28 @@ export function AppLogs(props: LogsProps) {
   );
 }
 
+/**
+ * "Back to app settings" (D-124): a step back when Logs were opened from those settings; from anywhere else (a broken
+ * tile, a toast, a notification, search) the settings replace Logs, so their Close returns to where Logs was opened.
+ * Pushing the settings instead made Back and Close send people between the two for good.
+ */
+function useBackToSettings(appId: string) {
+  const router = useRouter();
+  const navigate = useNavigate();
+  const state = useLocation({ select: (l) => l.state });
+  return () =>
+    state.fromSettings && router.history.canGoBack()
+      ? router.history.back()
+      : void navigate({ to: '/apps/$appId/settings', params: { appId }, replace: true, state: { from: state.from } });
+}
+
 function AppLogsView({ appId, at, onBack, backTo = 'settings' }: LogsProps) {
   const { data: app } = useApp(appId);
   const trpc = useTRPC();
   // Only an image without this computer's platform reads differently on macOS and Linux.
   const info = useQuery({ ...trpc.system.info.queryOptions(), retry: false, enabled: app?.state === 'error' });
   const os = info.data?.os.platform === 'linux' ? 'linux' : 'macos';
-  const navigate = useNavigate();
+  const backToSettings = useBackToSettings(appId);
   // Filters (US-APP-09): text and level on the loaded lines, the container on the server.
   const [text, setText] = useState('');
   const query = useDeferredValue(text.trim().toLowerCase());
@@ -114,7 +129,7 @@ function AppLogsView({ appId, at, onBack, backTo = 'settings' }: LogsProps) {
         <IconButton
           label={backTo === 'app' ? copy.backToApp(app.name) : copy.backToSettings}
           className="rounded-pill"
-          onClick={onBack ?? (() => void navigate({ to: '/apps/$appId/settings', params: { appId } }))}
+          onClick={onBack ?? backToSettings}
         >
           <ChevronLeft aria-hidden {...iconDefaults} className="size-4" />
         </IconButton>

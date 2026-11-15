@@ -189,7 +189,10 @@ function Actions({ app, onOpenLogs }: { app: AppDetail; onOpenLogs?: () => void 
       )}
       <Button
         variant="secondary"
-        onClick={onOpenLogs ?? (() => void navigate({ to: '/apps/$appId/logs', params: { appId: app.id } }))}
+        onClick={
+          onOpenLogs ??
+          (() => void navigate({ to: '/apps/$appId/logs', params: { appId: app.id }, state: { fromSettings: true } }))
+        }
       >
         <TextAlignStart aria-hidden {...iconDefaults} className={icon} />
         {copy.logs}

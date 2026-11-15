@@ -67,7 +67,15 @@ export function renderWithDaemon(ui: ReactNode, handlers: Handlers = {}) {
   return { ...result, calls };
 }
 
-export function renderScreen(Screen: ComponentType, handlers: Handlers, opts: { path?: string } = {}) {
+/**
+ * `routes` adds more screens beside `Screen` (paths may have params) and `entries` sets the history it starts with
+ * (default: just `path`), for flows that move between screens.
+ */
+export function renderScreen(
+  Screen: ComponentType,
+  handlers: Handlers,
+  opts: { path?: string; routes?: Record<string, ComponentType>; entries?: string[] } = {},
+) {
   const { client, queryClient, calls } = fakeDaemon(handlers);
 
   const root = createRootRoute({
@@ -80,10 +88,13 @@ export function renderScreen(Screen: ComponentType, handlers: Handlers, opts: { 
   });
   const path = opts.path ?? '/';
   const screen = createRoute({ getParentRoute: () => root, path, component: () => <Screen /> });
+  const more = Object.entries(opts.routes ?? {}).map(([p, Component]) =>
+    createRoute({ getParentRoute: () => root, path: p, component: () => <Component /> }),
+  );
   const other = createRoute({ getParentRoute: () => root, path: '$', component: () => <p>elsewhere</p> });
   const router = createRouter({
-    routeTree: root.addChildren([screen, other]),
-    history: createMemoryHistory({ initialEntries: [path] }),
+    routeTree: root.addChildren([screen, ...more, other]),
+    history: createMemoryHistory({ initialEntries: opts.entries ?? [path] }),
     // As the app's router: a FORBIDDEN page query shows "You don't have access to this" (US-STATE-20).
     defaultErrorComponent: RouteError,
   });
