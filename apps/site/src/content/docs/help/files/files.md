@@ -21,3 +21,15 @@ Admins also see:
 - One row for each network drive you've connected. A drive that can't be reached has a grey dot; you can still choose it to try again.
 - **App data:** the folder each installed app keeps its data in. You can look and download, but not change anything here, so running apps stay safe.
 - How much of this computer's disk is used, at the bottom.
+
+## Browse a folder
+
+The open folder shows its folders first, then its files, each from A to Z. Under each folder is how many items it holds; under each file, its size. Photos and videos show a small picture of themselves; other files show an icon for their kind (a PDF, a spreadsheet, a zip file and so on).
+
+- **Open a folder:** double-click it, or select it and press Return. On a phone, tap it.
+- **Go back up:** choose a folder in the path at the top, for example **Home** in **Home › Documents**. Deep folders fold the middle of the path into **…**; choose it to pick one of them. Your browser's Back and Forward buttons move between the folders you opened too.
+- **Use the keyboard:** the arrow keys move between items; Return opens the one you're on.
+
+At the bottom, hlabs says how many items the folder holds and how much space its files take, and who can see it: **Private to you** in your Home, or **Everyone who can see Shared can open this** in Shared.
+
+If someone removes a folder while you have it open, Files says **This folder no longer exists**; choose **Go to Home** to carry on.

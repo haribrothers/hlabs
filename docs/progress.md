@@ -213,7 +213,7 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 ## Phase 5 · Backups and Files
 
 - [x] US-FILE-01 · See my places in the sidebar
-- [ ] US-FILE-02 · Browse a folder in grid view
+- [x] US-FILE-02 · Browse a folder in grid view
 - [ ] US-FILE-03 · Create a folder
 - [ ] US-FILE-04 · Search files
 - [ ] US-FILE-05 · Download files
