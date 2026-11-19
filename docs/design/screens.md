@@ -1276,3 +1276,151 @@ Shows: [a Mac with hlabs installed from the browser] a window titled hlabs with 
 Links to: `Main`
 
 Shows: Can't reach hlabs · Trying again in 10 seconds… · 1 Check that this computer is on your home network or connected to Tailscale. · 2 Make sure the computer hlabs runs on is on and awake. · Try again
+
+## Added for phase 5 Backups (19 Nov 2026)
+
+On the Home Cloud Dashboard canvas, page "Phase 5 · Backups". The restore steps follow D-024 (stop, safety copy, copy, start) and replace `RestoreProgress`'s order; "Another hlabs" is left out until D-132's Backup receiver app.
+
+### BackupsEmpty — No backups yet
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-01
+
+![BackupsEmpty](screens/BackupsEmpty.webp)
+
+Shows: Backups · Restore… (off) · Back up now (off) · No backups yet · Add a destination to start backing up your apps and Home folders. · + Add a destination · Schedule and retention · Every day at 03:00 · Keeps 7 daily, 4 weekly and 6 monthly restore points · starts once a destination is added
+
+### BackupsFailed — Last backup failed, overdue
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-01, US-BKP-02, US-BKP-03
+
+![BackupsFailed](screens/BackupsFailed.webp)
+
+Shows: Last backup failed · 24 Sep, 03:00 · Overdue · 11 apps and 3 Home folders · next backup tonight at 03:00 · Details · NAS · nas.local/Backups · Unreachable · Edit · Recent runs · 24 Sep, 03:00 · NAS was not reachable · Failed · Details · 23 Sep, 03:30 · Retry · NAS was not reachable
+
+### BackupsRunning — Backing up now
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-03, US-BKP-04
+
+![BackupsRunning](screens/BackupsRunning.webp)
+
+Shows: Backing up… 42% (off) · Backup started · Last backup yesterday at 03:00 · Recent runs · Now · Backing up… 42% · Immich · 0.5 of 1.2 GB · Running
+
+### BackupAddNetwork — Add destination · network drive
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-08, US-BKP-09, US-BKP-10
+
+![BackupAddNetwork](screens/BackupAddNetwork.webp)
+
+Shows: Add a backup destination · Cloud storage · Network drive · External drive · Choose a connected drive · NAS · Media · NAS · Backups · Or enter a share address · smb://nas.local/Backups · Backups go in a folder named hlabs-backups on it · Encryption password · Copy · Save this password somewhere safe. Without it, these backups can't be restored, not even by the admin. · Connected · Cancel · Test connection · Add destination
+
+### BackupAddExternal — Add destination · external drive
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-08
+
+![BackupAddExternal](screens/BackupAddExternal.webp)
+
+Shows: Choose a drive · Backup disk · 2 TB · 1.4 TB free · Samsung T7 · Folder name · hlabs-backups · Made on the drive if it isn't there
+
+### BackupAddCloudError — Add destination · wrong key
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-08, US-BKP-09
+
+![BackupAddCloudError](screens/BackupAddCloudError.webp)
+
+Shows: Endpoint · Bucket · Access key · Secret key · Access key or secret key is wrong
+
+### BackupAddExisting — Add destination · backups already there
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-09
+
+![BackupAddExisting](screens/BackupAddExisting.webp)
+
+Shows: Backups already exist here. Enter their encryption password to use them. · Encryption password · That password doesn't open these backups
+
+### BackupEditDest — Edit destination
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-11
+
+![BackupEditDest](screens/BackupEditDest.webp)
+
+Shows: Edit Backblaze · Name · Cloud storage · s3…/hlabs-backups · The type and place can't change. To move backups, add another destination. · Access key · Secret key (Unchanged) · Show encryption password · Remove destination · Cancel · Save
+
+### BackupShowPassword — Show encryption password
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-10
+
+![BackupShowPassword](screens/BackupShowPassword.webp)
+
+Shows: Show encryption password · Enter your hlabs password to see the encryption password for Backblaze. · Your password · Cancel · Show
+
+### BackupPasswordShown — Encryption password shown
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-10
+
+![BackupPasswordShown](screens/BackupPasswordShown.webp)
+
+Shows: Encryption password for Backblaze · Copy · Keep it somewhere safe and private. Anyone with it and access to the bucket can read these backups. · Done
+
+### BackupRemoveDest — Remove destination
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-11
+
+![BackupRemoveDest](screens/BackupRemoveDest.webp)
+
+Shows: Stop backing up to NAS? · Existing backups stay on the NAS and can be added again later. · Cancel · Remove
+
+### RestoreConfirm — Confirm a restore
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-19
+
+![RestoreConfirm](screens/RestoreConfirm.webp)
+
+Shows: Replace Vaultwarden with its data from yesterday, 03:00? · Vaultwarden stops until the restore finishes. hlabs keeps a safety copy of today's data until it's done. · Your password · Needed for every restore · Cancel · Replace data
+
+### RestoreProgressCancel — Restore in progress, can cancel
+
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-BKP-20, US-BKP-22
+
+![RestoreProgressCancel](screens/RestoreProgressCancel.webp)
+
+Shows: Step 3 of 3 · Restoring Vaultwarden · From yesterday, 03:00 · replacing current data · Stopped Vaultwarden · Saved a safety copy of current data · Copying data from NAS · 134 of 210 MB · Starting Vaultwarden · If anything goes wrong, hlabs puts the safety copy back automatically. · Cancel restore · Hide
+
+### RestoreDone — Restore finished
+
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-BKP-21
+
+![RestoreDone](screens/RestoreDone.webp)
+
+Shows: Vaultwarden restored · From yesterday, 03:00 · replaced current data · Copied data from NAS · Started Vaultwarden · The safety copy has been deleted. · Done
+
+### RestoreFailed — Restore failed, rolled back
+
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-BKP-21
+
+![RestoreFailed](screens/RestoreFailed.webp)
+
+Shows: Restore didn't finish · Vaultwarden is back to how it was. · hlabs couldn't reach your NAS. It may have been asleep or off. Try again when it's back. · Copying data from NAS · Stopped at 134 of 210 MB · Put the safety copy back · Started Vaultwarden · Close
+
+### PhoneBackupsEmpty — Phone · Backups, none yet
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-01
+
+![PhoneBackupsEmpty](screens/PhoneBackupsEmpty.webp)
+
+Shows: ‹ Settings · Backups · No backups yet · + Add a destination · Schedule · Daily 03:00 · Restore… (off)
+
+### PhoneBackupAdd — Phone · add a destination
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-08
+
+![PhoneBackupAdd](screens/PhoneBackupAdd.webp)
+
+Shows: Add a backup destination · Cancel · Cloud storage · Network drive · External drive · Choose a connected drive · Encryption password · Copy · Test connection · Add destination
+
+### PhoneRestoreProgress — Phone · restore in progress
+
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-BKP-20, US-BKP-22
+
+![PhoneRestoreProgress](screens/PhoneRestoreProgress.webp)
+
+Shows: Restoring Vaultwarden · Cancel restore · Hide
