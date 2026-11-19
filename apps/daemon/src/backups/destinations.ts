@@ -451,6 +451,18 @@ export class Destinations {
     }
   }
 
+  /** When the newest successful run to it started: its latest restore point (US-BKP-17). */
+  latestAt(id: string): number | null {
+    return (
+      this.deps.db
+        .select({ at: backupRuns.startedAt })
+        .from(backupRuns)
+        .where(and(eq(backupRuns.destinationId, id), eq(backupRuns.status, 'succeeded')))
+        .orderBy(desc(backupRuns.startedAt))
+        .get()?.at ?? null
+    );
+  }
+
   /** The last time a run to it ended, for the list. */
   lastRunAt(id: string): number | null {
     return (
@@ -477,6 +489,7 @@ export class Destinations {
       offsite: row.kind === 's3' || row.kind === 'sftp' || row.kind === 'hlabs',
       hasKeys: row.kind === 's3',
       busy: this.busy(row.id),
+      latestAt: this.latestAt(row.id),
     }));
   }
 

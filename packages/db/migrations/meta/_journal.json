@@ -36,6 +36,13 @@
       "when": 1795106633496,
       "tag": "0004_backups",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1795107615007,
+      "tag": "0005_restore_steps",
+      "breakpoints": true
     }
   ]
 }

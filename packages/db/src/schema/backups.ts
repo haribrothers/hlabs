@@ -85,4 +85,18 @@ export const restores = sqliteTable('restores', {
   phase: text('phase', { enum: RESTORE_PHASES }).notNull().default('checking'),
   /** The person who started it ("Restored" goes in their Home for a copy). */
   userId: text('user_id'),
+  /** Each step as the progress screen shows it (US-BKP-20). */
+  stepsJson: json<RestoreStep[]>('steps_json').notNull().default([]),
 });
+
+/** One step of a restore (US-BKP-20): stop an app, the safety copy, copying, start an app, or putting things back. */
+export interface RestoreStep {
+  kind: 'stop' | 'safety' | 'copy' | 'start' | 'putBack';
+  /** The app it's about (stop, start), or null. */
+  appId: string | null;
+  state: 'todo' | 'running' | 'done' | 'failed';
+  startedAt: number | null;
+  finishedAt: number | null;
+  bytesDone: number | null;
+  bytesTotal: number | null;
+}

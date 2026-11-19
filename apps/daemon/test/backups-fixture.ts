@@ -1,7 +1,7 @@
 // A daemon ready for the backup stories (08-usage-backups): Files' fixture (a storage root, Hari the admin, Anu a
 // member), the fake restic, a fake mounter for network drives and a fake external drive on "another disk".
 import type { AppManifest } from '@hlabs/app-manifest';
-import { apps, storageLocations } from '@hlabs/db';
+import { apps, backupRuns, storageLocations } from '@hlabs/db';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { BootDeps } from '../src/boot';
@@ -110,7 +110,35 @@ export async function backupsDaemon(closers: Array<() => Promise<void>>, opts: {
     });
     return { ...nas, destinationId: f.data<{ destinationId: string }>(res).destinationId };
   };
-  return { ...f, restic, mounter, engine, usb, drives, nasDrive, nasDestination, app, s };
+  /**
+   * Starting and stopping apps, recorded instead of run through compose: `startFails` makes an app come up unhealthy
+   * (once per entry).
+   */
+  const appControl = { calls: [] as string[], startFails: [] as string[] };
+  s.apps.stop = async (appId: string) => {
+    appControl.calls.push(`stop:${appId}`);
+    s.apps.transition(appId, 'stopping');
+    s.apps.transition(appId, 'stopped');
+  };
+  s.apps.start = async (appId: string) => {
+    appControl.calls.push(`start:${appId}`);
+    s.apps.transition(appId, 'starting');
+    const i = appControl.startFails.indexOf(appId);
+    if (i >= 0) {
+      appControl.startFails.splice(i, 1);
+      s.apps.transition(appId, 'error');
+      return { ok: false as const, reason: 'timeout' as const, seconds: 120 };
+    }
+    s.apps.transition(appId, 'running');
+    return { ok: true as const };
+  };
+  /** Backs everything up now and returns the restore point (the run's id). */
+  const backUp = async () => {
+    const { jobId } = f.data<{ jobId: string }>(await f.d.mutate('backups.runNow'));
+    await s.jobs.settled(jobId);
+    return s.db.select().from(backupRuns).all().at(-1)!.id;
+  };
+  return { ...f, restic, mounter, engine, usb, drives, nasDrive, nasDestination, app, appControl, backUp, s };
 }
 
 export const PASSWORD = 'maple-orbit-tundra-cobalt-ferry-quill';

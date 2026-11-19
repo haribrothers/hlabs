@@ -30,6 +30,7 @@ import type { NetworkDiscovery } from './platform/network-discovery';
 import type { Destinations } from './backups/destinations';
 import type { Restic } from './backups/restic';
 import type { BackupService } from './backups/runner';
+import type { RestoreService } from './backups/restore';
 import type { PlanSizes } from './backups/plan';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
@@ -127,6 +128,8 @@ export interface Services {
   /** Backup runs, the schedule and the plan (US-BKP-01…07, US-BKP-23). */
   backups: BackupService;
   planSizes: PlanSizes;
+  /** Restores (US-BKP-17…22). */
+  restores: RestoreService;
 }
 
 /** Holds services once boot has created them; requests before then get DAEMON_STARTING. */

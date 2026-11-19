@@ -78,6 +78,8 @@ export const backupDestinationSchema = z.object({
   hasKeys: z.boolean(),
   /** A backup to it is running: Remove waits (US-BKP-11). */
   busy: z.boolean(),
+  /** When its newest restore point was made, for "latest today, 03:00" (US-BKP-17). */
+  latestAt: z.number().nullable(),
 });
 
 export const backupRunSchema = z.object({
@@ -114,6 +116,36 @@ export const backupRestorePointSchema = z.object({
   bytesChanged: z.number().nullable(),
 });
 
+export const restoreStepSchema = z.object({
+  kind: z.enum(['stop', 'safety', 'copy', 'start', 'putBack']),
+  appId: z.string().nullable(),
+  state: z.enum(['todo', 'running', 'done', 'failed']),
+  startedAt: z.number().nullable(),
+  finishedAt: z.number().nullable(),
+  bytesDone: z.number().nullable(),
+  bytesTotal: z.number().nullable(),
+});
+
+export const restoreViewSchema = z.object({
+  id: idSchema,
+  jobId: idSchema.nullable(),
+  status: z.enum(['running', 'succeeded', 'failed', 'cancelled']),
+  /** `swap` on: "Cancel restore" is hidden (US-BKP-22). */
+  cancellable: z.boolean(),
+  mode: z.enum(['replace', 'copy']),
+  /** What's being restored, by name: "Vaultwarden", "Home › Hari". */
+  items: z.array(z.object({ kind: z.enum(['app', 'folder']), id: z.string(), label: z.string() })),
+  /** The restore point's time. */
+  pointTime: z.number(),
+  destinationName: z.string().nullable(),
+  /** Whole system with replace: hlabs restarts at the end (US-BKP-18). */
+  wholeSystem: z.boolean(),
+  steps: z.array(restoreStepSchema),
+  error: hlabsCodeSchema.nullable(),
+  /** "Home › Restored › 20 Nov 2026 03-00" for a copy. */
+  copyFolder: z.string().nullable(),
+});
+
 export const restoreScopeSchema = z.object({
   mode: z.enum(['replace', 'copy']),
   apps: z.array(z.string()),
@@ -141,6 +173,8 @@ export const backups = {
       plan: z.object({ scheduleCron: z.string(), retention: retentionSchema }),
       /** The backup job running now. */
       running: z.object({ jobId: idSchema, progress: z.number(), message: z.string().nullable() }).nullable(),
+      /** A restore running now (or the last one, until it's seen): Backups shows its progress (US-BKP-20). */
+      restoring: restoreViewSchema.nullable(),
       /** The job kind "Back up now" and "Restore…" wait for (D-020), or null. */
       blockedBy: z.string().nullable(),
       /** The last 30 runs, oldest first, for the chart (US-BKP-03). */
@@ -224,5 +258,7 @@ export const backups = {
     destinationRef.extend({ snapshotId: z.string(), scope: restoreScopeSchema, password: passwordSchema }),
     jobRefSchema,
   ),
+  /** A restore's steps, by its job (US-BKP-20); reloading the page picks it up from here. */
+  getRestore: io(z.object({ jobId: idSchema }), restoreViewSchema),
   exportRepoPassword: io(destinationRef.extend({ password: passwordSchema }), z.object({ repoPassword: z.string() })),
 };

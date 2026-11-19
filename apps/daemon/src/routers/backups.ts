@@ -26,7 +26,7 @@ const manifestOf = (ctx: DaemonContext) => (appId: string) => {
 };
 
 export const backups: Partial<AppHandlers<DaemonContext>['backups']> = {
-  overview: (_input, ctx) => ctx.services.backups.overview(),
+  overview: (_input, ctx) => ({ ...ctx.services.backups.overview(), restoring: ctx.services.restores.running() }),
   destinations: {
     list: (_input, ctx) => ({ destinations: ctx.services.destinations.list() }),
     test: (input, ctx) => ctx.services.destinations.test(input),
@@ -103,6 +103,11 @@ export const backups: Partial<AppHandlers<DaemonContext>['backups']> = {
   runNow: (input, ctx) => ctx.services.backups.runNow(input?.destinationId),
   listRuns: (input, ctx) => ctx.services.backups.listRuns(input),
   getRun: ({ runId }, ctx) => ctx.services.backups.getRun(runId),
+  listSnapshots: ({ destinationId }, ctx) => ctx.services.restores.points(destinationId),
+  getSnapshot: ({ destinationId, snapshotId }, ctx) => ctx.services.restores.items(destinationId, snapshotId),
+  restore: ({ password, ...input }, ctx) =>
+    ctx.services.restores.start({ ...input, password }, { userId: userId(ctx), ip: ctx.request.ip }),
+  getRestore: ({ jobId }, ctx) => ctx.services.restores.byJob(jobId),
   exportRepoPassword: ({ destinationId, password }, ctx) =>
     ctx.services.destinations.exportPassword(destinationId, { userId: userId(ctx), password, ip: ctx.request.ip }),
 };

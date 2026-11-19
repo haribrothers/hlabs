@@ -12,7 +12,7 @@ import { watchEngine } from './engine/watch';
 import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting, users } from '@hlabs/db';
 import { hlabsError } from '@hlabs/api';
 import { nextOrigins } from '@hlabs/shared';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, renameSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -72,6 +72,7 @@ import { LinuxDiscovery, MacDiscovery, type NetworkDiscovery } from './platform/
 import { Destinations } from './backups/destinations';
 import { ResticCli, type Restic } from './backups/restic';
 import { BackupService } from './backups/runner';
+import { PENDING_DB, RestoreService } from './backups/restore';
 import { PlanSizes } from './backups/plan';
 import { NetworkDrives } from './storage/drives';
 import { FilesService } from './files/service';
@@ -126,6 +127,8 @@ export interface BootDeps {
   mounter?: NetworkMounter;
   /** Finds SMB and NFS servers (US-FILE-11). */
   discovery?: NetworkDiscovery;
+  /** After a whole-system restore (US-BKP-18); tests pass a fake. */
+  restartDaemon?: () => void;
   /** Run the backup schedule every minute and recover after a crash (off in most tests). */
   scheduleBackups?: boolean;
   /** restic for backups (D-133); tests pass a fake. */
@@ -171,6 +174,17 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     logger.fatal({ err, dataDir: config.paths.dataDir }, 'data directory is not writable');
     readiness.fail('storage_unavailable');
     return null;
+  }
+  // A whole-system restore left the restored database (US-BKP-18): it goes in before anything opens the old one.
+  const pendingDb = join(config.paths.dataDir, PENDING_DB);
+  if (existsSync(pendingDb)) {
+    const current = join(config.paths.dataDir, 'hlabs.db');
+    for (const suffix of ['', '-wal', '-shm']) rmSync(`${current}${suffix}.before-restore`, { force: true });
+    for (const suffix of ['', '-wal', '-shm']) {
+      if (existsSync(`${current}${suffix}`)) renameSync(`${current}${suffix}`, `${current}${suffix}.before-restore`);
+    }
+    renameSync(pendingDb, current);
+    logger.info('put the restored database in place');
   }
   let db;
   try {
@@ -617,6 +631,27 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       dataDir: config.paths.dataDir,
     }),
     planSizes: new PlanSizes(),
+    restores: new RestoreService({
+      db,
+      bus,
+      jobs,
+      logger,
+      notifications,
+      destinations,
+      restic,
+      secrets,
+      apps: appService,
+      freeBytes: (path) => probe.freeBytes(path),
+      confirmPassword: async (userId, password, action, ip) => {
+        const user = db.select().from(users).where(eq(users.id, userId)).get();
+        if (!user) throw hlabsError('AUTH_REQUIRED');
+        await login.confirmPassword({ user, password, action, ip });
+      },
+      appDataDir: config.paths.appDataDir,
+      dataDir: config.paths.dataDir,
+      // launchd and systemd start hlabsd again (D-133); the next start puts the restored database in place.
+      restartDaemon: deps.restartDaemon ?? (() => process.exit(75)),
+    }),
   };
   holder.set(services);
   // Keep awake follows the setting and whether any app runs.
@@ -638,7 +673,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     services.networkDrives.start();
     services.destinations.start();
   }
-  if (deps.scheduleBackups !== false) services.backups.start();
+  if (deps.scheduleBackups !== false) {
+    services.backups.start();
+    void services.restores.recover().catch((err) => logger.warn({ err }, 'restore recovery failed'));
+  }
   if (deps.checkUpdates !== false) {
     services.hlabsUpdates.start();
     services.autoUpdates.start();

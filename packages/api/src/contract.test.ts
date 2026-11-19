@@ -76,7 +76,7 @@ const EXPECTED: Row[] = [
   ['backups.destinations.remove', 'm', 'admin'], ['backups.plan.get', 'q', 'admin'], ['backups.plan.update', 'm', 'admin'],
   ['backups.plan.estimate', 'q', 'admin'], ['backups.runNow', 'm', 'admin'], ['backups.listRuns', 'q', 'admin'],
   ['backups.getRun', 'q', 'admin'], ['backups.listSnapshots', 'q', 'admin'], ['backups.getSnapshot', 'q', 'admin'],
-  ['backups.restore', 'm', 'admin'], ['backups.exportRepoPassword', 'm', 'admin'],
+  ['backups.restore', 'm', 'admin'], ['backups.getRestore', 'q', 'admin'], ['backups.exportRepoPassword', 'm', 'admin'],
 
   ['network.status', 'q', 'admin'], ['network.setHostname', 'm', 'admin'], ['network.remote.connect', 'm', 'admin'],
   ['network.remote.disconnect', 'm', 'admin'], ['network.caCertificate', 'q', 'admin'], ['network.ports', 'q', 'admin'],

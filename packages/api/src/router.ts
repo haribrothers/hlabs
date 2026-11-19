@@ -207,6 +207,7 @@ export const appRouter = router({
     listSnapshots: q(p.admin, s.backups.listSnapshots),
     getSnapshot: q(p.admin, s.backups.getSnapshot),
     restore: m(p.admin, s.backups.restore),
+    getRestore: q(p.admin, s.backups.getRestore),
     exportRepoPassword: m(p.admin, s.backups.exportRepoPassword),
   }),
 
