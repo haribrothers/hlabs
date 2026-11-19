@@ -98,6 +98,13 @@ export const settingsSchemas = {
       serve: [],
       connectStartedAt: null,
     }),
+  /**
+   * The backup schedule's progress (US-BKP-05, US-BKP-07, D-133): the last scheduled time handled (a later one that
+   * passed while hlabs was off or asleep runs once), and when a failed scheduled run is retried (30 minutes on).
+   */
+  backupSchedule: z
+    .object({ lastSlot: z.number().nullable().default(null), retryAt: z.number().nullable().default(null) })
+    .default({ lastSlot: null, retryAt: null }),
   paused: z
     .object({
       at: z.number().int(),

@@ -69,6 +69,10 @@ describe('US-APP-12', () => {
     t.s.db
       .insert(backupPlan)
       .values({ id: 1, includeJson: { apps: ['immich'], folders: ['users/hari'], includeNewApps: true } })
+      .onConflictDoUpdate({
+        target: backupPlan.id,
+        set: { includeJson: { apps: ['immich'], folders: ['users/hari'], includeNewApps: true } },
+      })
       .run();
     const before = t.secret();
 

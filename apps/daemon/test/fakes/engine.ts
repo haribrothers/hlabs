@@ -199,6 +199,40 @@ export class FakeEngine implements ContainerEngine {
     return this.imageSizes.get(image) ?? null;
   }
 
+  /** Containers paused and unpaused, in order (US-BKP-05). */
+  readonly pauses: Array<{ id: string; paused: boolean }> = [];
+  /** Commands run inside containers, and what each one answers (default exit 0). */
+  readonly execs: Array<{ id: string; command: string }> = [];
+  execResults = new Map<string, { exitCode: number; output: string }>();
+
+  private findContainer(id: string) {
+    for (const list of this.containers.values()) {
+      const c = list.find((x) => x.id === id);
+      if (c) return c;
+    }
+    return null;
+  }
+
+  async pauseContainer(id: string) {
+    this.assertRunning();
+    this.pauses.push({ id, paused: true });
+    const c = this.findContainer(id);
+    if (c) c.state = 'paused';
+  }
+
+  async unpauseContainer(id: string) {
+    this.assertRunning();
+    this.pauses.push({ id, paused: false });
+    const c = this.findContainer(id);
+    if (c && c.state === 'paused') c.state = 'running';
+  }
+
+  async execInContainer(id: string, command: string) {
+    this.assertRunning();
+    this.execs.push({ id, command });
+    return this.execResults.get(command) ?? { exitCode: 0, output: '' };
+  }
+
   /** Changes one service's containers (a crash, a healthcheck turning unhealthy). */
   setService(project: string, service: string, patch: Partial<ContainerState>) {
     for (const c of this.containers.get(project) ?? []) if (c.service === service) Object.assign(c, patch);

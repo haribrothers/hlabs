@@ -8,12 +8,13 @@ import type { DaemonConfig } from '../src/config';
 import { daemonWithAdmin, type Reply } from './admin-session';
 import { tempDir } from './helpers';
 import { memberSession } from './member-session';
+import type { FakeEngine } from './fakes/engine';
 
 export async function filesDaemon(
   closers: Array<() => Promise<void>>,
-  opts: { config?: Partial<DaemonConfig>; boot?: Partial<BootDeps>; memberApps?: string[] } = {},
+  opts: { config?: Partial<DaemonConfig>; boot?: Partial<BootDeps>; memberApps?: string[]; engine?: FakeEngine } = {},
 ) {
-  const d = await daemonWithAdmin(closers, opts.config, opts.boot);
+  const d = await daemonWithAdmin(closers, opts.config, opts.boot, opts.engine);
   const { db } = d.services!;
   const root = tempDir('hlabs-root-');
   const rootId = ulid();

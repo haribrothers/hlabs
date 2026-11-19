@@ -41,7 +41,7 @@ export const tray: AppHandlers<DaemonContext>['tray'] = {
   diagnostics: (_input, ctx) => ({ report: diagnosticsReport(ctx.services) }),
 
   // US-INST-06: the dashboard's current address for "Open Dashboard" and "Copy dashboard address"; the tray opens or
-  // copies it. Back up comes with backups (US-INST-07, phase 5).
+  // copies it.
   quickAction: ({ action }, ctx) => {
     if (action === 'openDashboard' || action === 'copyAddress') return { url: dashboardUrl(ctx.services) };
     // US-INST-08: one at a time; a second press gets the job already running.
@@ -50,6 +50,8 @@ export const tray: AppHandlers<DaemonContext>['tray'] = {
       const running = ctx.services.jobs.listActive().find((j) => j.kind === kind);
       return { jobId: running?.id ?? ctx.services.jobs.start(kind, { payload: { via: 'tray' } }) };
     }
+    // US-BKP-04: the same as "Back up now" in Backups.
+    if (action === 'backupNow') return ctx.services.backups.runNow();
     throw hlabsError('NOT_IMPLEMENTED', `tray.quickAction ${action} is not implemented yet`);
   },
 

@@ -71,6 +71,8 @@ import { FakeNas } from './platform/fake-nas';
 import { LinuxDiscovery, MacDiscovery, type NetworkDiscovery } from './platform/network-discovery';
 import { Destinations } from './backups/destinations';
 import { ResticCli, type Restic } from './backups/restic';
+import { BackupService } from './backups/runner';
+import { PlanSizes } from './backups/plan';
 import { NetworkDrives } from './storage/drives';
 import { FilesService } from './files/service';
 import { Trash } from './files/trash';
@@ -124,6 +126,8 @@ export interface BootDeps {
   mounter?: NetworkMounter;
   /** Finds SMB and NFS servers (US-FILE-11). */
   discovery?: NetworkDiscovery;
+  /** Run the backup schedule every minute and recover after a crash (off in most tests). */
+  scheduleBackups?: boolean;
   /** restic for backups (D-133); tests pass a fake. */
   restic?: Restic;
   /** Check network drives every minute (off in most tests). */
@@ -598,6 +602,21 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     filesJanitor: new FilesJanitor({ uploads, trash, logger }),
     restic,
     destinations,
+    backups: new BackupService({
+      db,
+      bus,
+      jobs,
+      logger,
+      notifications,
+      destinations,
+      restic,
+      secrets,
+      engine: () => engine.client,
+      apps: appService,
+      appDataDir: config.paths.appDataDir,
+      dataDir: config.paths.dataDir,
+    }),
+    planSizes: new PlanSizes(),
   };
   holder.set(services);
   // Keep awake follows the setting and whether any app runs.
@@ -619,6 +638,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     services.networkDrives.start();
     services.destinations.start();
   }
+  if (deps.scheduleBackups !== false) services.backups.start();
   if (deps.checkUpdates !== false) {
     services.hlabsUpdates.start();
     services.autoUpdates.start();
@@ -667,6 +687,7 @@ export async function shutdown(services: Services | null): Promise<void> {
   services.filesJanitor.stop();
   services.networkDrives.stop();
   services.destinations.stop();
+  services.backups.stop();
   services.hlabsUpdates.stop();
   services.autoUpdates.stop();
   // The last finished minute is written before stopping, so a restart loses at most the minute in progress.

@@ -81,6 +81,15 @@ export interface ContainerEngine {
    * do it (no shell) or the container fails.
    */
   clearFolder(image: string, hostPath: string): Promise<void>;
+  /** Freezes a running container for a consistent backup copy (US-BKP-05); `unpause` lets it go on. */
+  pauseContainer(containerId: string): Promise<void>;
+  unpauseContainer(containerId: string): Promise<void>;
+  /** Runs `sh -c <command>` inside a running container (a manifest's `backup.preHook`, e.g. pg_dumpall). */
+  execInContainer(
+    containerId: string,
+    command: string,
+    signal?: AbortSignal,
+  ): Promise<{ exitCode: number; output: string }>;
 }
 
 export interface EngineCandidate {

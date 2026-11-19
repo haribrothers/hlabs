@@ -35,6 +35,7 @@ import type { CatalogService } from '../store/catalog';
 import type { StoreHost } from '../store/service';
 import { ComposeError, ENV_FILE } from './compose';
 import { isSecret, parseEnvFile, resolveEnv } from './env';
+import { includeNew } from '../backups/plan';
 import { appDataBindDirs, folderPaths, resolveMounts, type MountRequest } from './folders';
 import { waitHealthy, type HealthProbes } from './health';
 import { takenHostnames } from './hostnames';
@@ -474,6 +475,8 @@ export class InstallService {
       this.deps.apps.transition(appId, 'starting');
       await this.deps.network.sync();
       this.deps.apps.transition(appId, 'running');
+      // "Include new apps automatically" (US-BKP-23, D-134).
+      includeNew(this.deps.db, { app: appId });
       report('network', 1, { address });
       // Paused from the menu bar while it installed: it finishes, then stops with the others (US-INST-08).
       await stopIfPaused(this.deps, appId);
