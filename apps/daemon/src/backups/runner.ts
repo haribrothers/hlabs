@@ -617,7 +617,7 @@ export class BackupService {
   getRun(runId: string) {
     const row = this.deps.db.select().from(backupRuns).where(eq(backupRuns.id, runId)).get();
     if (!row) throw hlabsError('NOT_FOUND');
-    let log: string | null = null;
+    let log: string | null;
     try {
       log = row.logPath ? readFileSync(row.logPath, 'utf8') : null;
     } catch {
