@@ -1,11 +1,11 @@
-// Downloads the binaries hlabs bundles and checks each against a pinned checksum (03 §scripts, D-072): Caddy and
-// the docker-compose CLI plugin. Development and CI use the same files as a release.
+// Downloads the binaries hlabs bundles and checks each against a pinned checksum (03 §scripts, D-072): Caddy, the
+// docker-compose CLI plugin and restic (backups, D-008, D-133). Development and CI use the same files as a release.
 //
 //   pnpm fetch-binaries                      # this computer's platform, into .bin/
 //   pnpm fetch-binaries --target linux-x64 --out dist/bin
 //   pnpm fetch-binaries --packaging          # also the node runtime the app bundle runs hlabsd with
 //
-// restic joins with backups (phase 5). Bump a version by changing it and its checksums here.
+// Bump a version by changing it and its checksums here.
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -23,12 +23,15 @@ interface Binary {
   checksums: Record<Target, string>;
   /** Tarballs: the file to take out (it lands in the output folder under `name`). Plain downloads are the binary. */
   extract?: (target: Target) => string;
+  /** A bzip2-compressed binary (restic's releases). */
+  bzip2?: boolean;
   /** Only for the app bundle (`--packaging`), not development. */
   packaging?: boolean;
 }
 
 const CADDY_VERSION = '2.11.4';
 const COMPOSE_VERSION = '5.5.1';
+const RESTIC_VERSION = '0.18.1';
 /** The Node.js the app bundle runs hlabsd with (D-113); the major matches .nvmrc. */
 const NODE_VERSION = '22.23.3';
 
@@ -69,6 +72,21 @@ const BINARIES: Binary[] = [
       'mac-x64': 'sha256:a264d61e824bf08a78867e59cdf32eb09f0aee9ecdf9f6ebfa43f76dc52880f1',
       'linux-arm64': 'sha256:732e3a84c1a0f67256ce80bc2598a24546b10ca05f9faa97efceb1171ece2ef7',
       'linux-x64': 'sha256:db1889184726840f75c4f9c001048430d4f25b3be3cb084d3ddd762bc0aed576',
+    },
+  },
+  {
+    name: 'restic',
+    version: RESTIC_VERSION,
+    url: (t) => {
+      const [os, arch] = t.split('-') as [string, string];
+      return `https://github.com/restic/restic/releases/download/v${RESTIC_VERSION}/restic_${RESTIC_VERSION}_${os === 'mac' ? 'darwin' : 'linux'}_${arch === 'x64' ? 'amd64' : 'arm64'}.bz2`;
+    },
+    bzip2: true,
+    checksums: {
+      'mac-arm64': 'sha256:193fccc8bb4567b498923bc70261e104ff22be88016f0f108b035dad372ab711',
+      'mac-x64': 'sha256:eb8543ed92ff1ddb67762daebf09f7bea4b0c37d21edb6a910bee3d4f514015f',
+      'linux-arm64': 'sha256:87f53fddde38764095e9c058a3b31834052c37e5826d2acf34e18923c006bd45',
+      'linux-x64': 'sha256:680838f19d67151adba227e1570cdd8af12c19cf1735783ed1ba928bc41f363d',
     },
   },
   {
@@ -145,6 +163,8 @@ for (const binary of BINARIES.filter((b) => values.packaging || !b.packaging)) {
       rmSync(tmp, { force: true });
       rmSync(unpacked, { recursive: true, force: true });
     }
+  } else if (binary.bzip2) {
+    writeFileSync(dest, execFileSync('bunzip2', ['-c'], { input: data, maxBuffer: 256 * 1024 * 1024 }));
   } else {
     writeFileSync(dest, data);
   }

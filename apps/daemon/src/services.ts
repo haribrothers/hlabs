@@ -27,6 +27,8 @@ import type { Uploads } from './files/uploads';
 import type { NetworkStorage } from './storage/network';
 import type { NetworkDrives } from './storage/drives';
 import type { NetworkDiscovery } from './platform/network-discovery';
+import type { Destinations } from './backups/destinations';
+import type { Restic } from './backups/restic';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 import type { CatalogService } from './store/catalog';
@@ -116,6 +118,10 @@ export interface Services {
   /** Removes idle uploads and month-old Trash. */
   filesJanitor: FilesJanitor;
   notifications: NotificationService;
+  /** restic, the bundled binary or a fake (D-133). */
+  restic: Restic;
+  /** Where backups go (US-BKP-08…11). */
+  destinations: Destinations;
 }
 
 /** Holds services once boot has created them; requests before then get DAEMON_STARTING. */

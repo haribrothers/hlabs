@@ -658,7 +658,7 @@ export class InstallService {
         }
         tx.delete(appAccess).where(eq(appAccess.appId, appId)).run();
         const plan = tx.select().from(backupPlan).get();
-        if (plan && Array.isArray(plan.includeJson.apps)) {
+        if (plan?.includeJson) {
           tx.update(backupPlan)
             .set({ includeJson: { ...plan.includeJson, apps: plan.includeJson.apps.filter((id) => id !== appId) } })
             .run();

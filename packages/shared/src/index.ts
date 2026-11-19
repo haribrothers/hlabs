@@ -13,3 +13,4 @@ export * from './store';
 export * from './search';
 export * from './people';
 export * from './ports';
+export * from './diceware';

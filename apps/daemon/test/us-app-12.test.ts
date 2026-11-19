@@ -68,7 +68,7 @@ describe('US-APP-12', () => {
       .run();
     t.s.db
       .insert(backupPlan)
-      .values({ id: 1, includeJson: { apps: ['immich'], homeFolders: 'all' } })
+      .values({ id: 1, includeJson: { apps: ['immich'], folders: ['users/hari'], includeNewApps: true } })
       .run();
     const before = t.secret();
 
@@ -85,7 +85,7 @@ describe('US-APP-12', () => {
       itemsJson: [{ kind: 'widget', id: 'usage' }],
       dockJson: [],
     });
-    expect(t.s.db.select().from(backupPlan).get()?.includeJson.apps).toEqual([]);
+    expect(t.s.db.select().from(backupPlan).get()?.includeJson?.apps).toEqual([]);
     expect(existsSync(t.dataDir)).toBe(true);
     expect(readdirSync(t.project.dir)).toEqual([ENV_FILE]);
     expect(t.events.at(-1)).toEqual({ state: 'uninstalling', detail: 'removed' });

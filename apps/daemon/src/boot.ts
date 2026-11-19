@@ -9,7 +9,8 @@ import { registerEngineStart } from './engine/start-job';
 import { registerPause, resumeAfterQuit } from './apps/pause';
 import { registerHomeFolderTrash } from './users/home-trash-job';
 import { watchEngine } from './engine/watch';
-import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
+import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting, users } from '@hlabs/db';
+import { hlabsError } from '@hlabs/api';
 import { nextOrigins } from '@hlabs/shared';
 import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -68,6 +69,8 @@ import { LinuxNetworkMounter, MacNetworkMounter, type NetworkMounter } from './p
 import { FilesJanitor } from './files/janitor';
 import { FakeNas } from './platform/fake-nas';
 import { LinuxDiscovery, MacDiscovery, type NetworkDiscovery } from './platform/network-discovery';
+import { Destinations } from './backups/destinations';
+import { ResticCli, type Restic } from './backups/restic';
 import { NetworkDrives } from './storage/drives';
 import { FilesService } from './files/service';
 import { Trash } from './files/trash';
@@ -121,6 +124,8 @@ export interface BootDeps {
   mounter?: NetworkMounter;
   /** Finds SMB and NFS servers (US-FILE-11). */
   discovery?: NetworkDiscovery;
+  /** restic for backups (D-133); tests pass a fake. */
+  restic?: Restic;
   /** Check network drives every minute (off in most tests). */
   watchDrives?: boolean;
   /** Downloads, tar and colima for the engine install (US-ONB-05). */
@@ -507,6 +512,40 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   const files = new FilesService({ db, appDataDir: config.paths.appDataDir });
   const trash = new Trash({ db });
   const uploads = new Uploads({ db, files, trash, freeBytes: (path) => probe.freeBytes(path) });
+  const networkStorage = new NetworkStorage({ db, secrets, mounter, mountsDir });
+  const networkDrives = new NetworkDrives({ db, secrets, mounter, mountsDir, bus, logger });
+  const drives = deps.drives ?? new NodeDriveProbe();
+  const restic: Restic =
+    deps.restic ??
+    new ResticCli(join(config.resources.binDir, 'restic'), join(config.paths.dataDir, 'cache', 'restic'));
+  const login = new LoginService(db, sessions, totp, bus, () =>
+    nextOrigins({
+      dashboardUrl: config.dashboardUrl,
+      hostname: getSetting(db, 'hostname'),
+      apps: db.select({ hostname: apps.hostname, port: apps.portFallback }).from(apps).all(),
+      tailnet: getSetting(db, 'remote').tailnetName,
+      tailnetNode: getSetting(db, 'remote').nodeName,
+      tailnetDashboardPort: getSetting(db, 'remote').dashboardPort,
+      lanAddresses: lanAddresses(),
+      httpsPort: getSetting(db, 'network').ports.https,
+    }),
+  );
+  const destinations = new Destinations({
+    db,
+    secrets,
+    restic,
+    network: networkStorage,
+    networkDrives,
+    drives,
+    jobs,
+    logger,
+    dataDir: config.paths.dataDir,
+    confirmPassword: async (userId, password, action, ip) => {
+      const user = db.select().from(users).where(eq(users.id, userId)).get();
+      if (!user) throw hlabsError('AUTH_REQUIRED');
+      await login.confirmPassword({ user, password, action, ip });
+    },
+  });
   const services: Services = {
     config,
     logger,
@@ -538,20 +577,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     onboarding,
     sessions,
     totp,
-    login: new LoginService(db, sessions, totp, bus, () =>
-      nextOrigins({
-        dashboardUrl: config.dashboardUrl,
-        hostname: getSetting(db, 'hostname'),
-        apps: db.select({ hostname: apps.hostname, port: apps.portFallback }).from(apps).all(),
-        tailnet: getSetting(db, 'remote').tailnetName,
-        tailnetNode: getSetting(db, 'remote').nodeName,
-        tailnetDashboardPort: getSetting(db, 'remote').dashboardPort,
-        lanAddresses: lanAddresses(),
-        httpsPort: getSetting(db, 'network').ports.https,
-      }),
-    ),
+    login,
     notifications,
-    drives: deps.drives ?? new NodeDriveProbe(),
+    drives,
     system: probe,
     host,
     usage: sampler,
@@ -561,13 +589,15 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       keepAwake: getSetting(db, 'startup').keepAwake,
       appsRunning: db.select({ id: apps.id }).from(apps).where(eq(apps.state, 'running')).all().length,
     })),
-    network: new NetworkStorage({ db, secrets, mounter, mountsDir }),
+    network: networkStorage,
     discovery,
-    networkDrives: new NetworkDrives({ db, secrets, mounter, mountsDir, bus, logger }),
+    networkDrives,
     files,
     trash,
     uploads,
     filesJanitor: new FilesJanitor({ uploads, trash, logger }),
+    restic,
+    destinations,
   };
   holder.set(services);
   // Keep awake follows the setting and whether any app runs.
@@ -585,7 +615,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   }
   if (deps.watchApps !== false) services.appWatch.start();
   services.filesJanitor.start();
-  if (deps.watchDrives !== false) services.networkDrives.start();
+  if (deps.watchDrives !== false) {
+    services.networkDrives.start();
+    services.destinations.start();
+  }
   if (deps.checkUpdates !== false) {
     services.hlabsUpdates.start();
     services.autoUpdates.start();
@@ -633,6 +666,7 @@ export async function shutdown(services: Services | null): Promise<void> {
   services.appWatch.stop();
   services.filesJanitor.stop();
   services.networkDrives.stop();
+  services.destinations.stop();
   services.hlabsUpdates.stop();
   services.autoUpdates.stop();
   // The last finished minute is written before stopping, so a restart loses at most the minute in progress.
