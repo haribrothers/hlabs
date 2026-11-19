@@ -41,7 +41,7 @@ Secrets never go in SQLite in plain text: passwords are Argon2id hashes, TOTP se
 | Table | Columns | Notes |
 | --- | --- | --- |
 | `backup_destinations` | `id`, `kind` (`local`\|`smb`\|`nfs`\|`s3`\|`sftp`\|`hlabs`), `name`, `config_json`, `repo_password_ref`, `status`, `used_bytes`, `snapshot_count`, `created_at` | |
-| `backup_plan` | singleton row: `schedule_cron` (default `0 3 * * *`), `retention_json`, `include_json` (apps + home folders), `enabled` | BackupSchedule. |
+| `backup_plan` | singleton row: `schedule_cron` (default `0 3 * * *`), `retention_json`, `include_json` (`{ apps: string[], folders: string[], includeNewApps }`: app ids, Home folders as `users/<name>` and `shared`; D-134), `enabled` | BackupSchedule. |
 | `backup_runs` | `id`, `destination_id`, `started_at`, `finished_at`, `status` (`running`\|`succeeded`\|`failed`\|`cancelled`), `trigger` (`schedule`\|`manual`\|`pre_update`), `bytes_added`, `files_changed`, `error`, `log_path` | |
 | `restores` | `id`, `snapshot_id`, `destination_id`, `scope_json`, `status`, `started_at`, `finished_at`, `error` | |
 

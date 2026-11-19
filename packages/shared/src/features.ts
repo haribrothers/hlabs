@@ -34,6 +34,8 @@ export const FEATURE_PHASE = {
   liveUsage: 4,
   hlabsUpdates: 4,
   backups: 5,
+  /** "Another hlabs" as a backup destination: waits for the Backup receiver app (D-132, Q-18). */
+  backupToHlabs: 8,
   /** "Uninstall hlabs…" in the tray (US-INST-21, US-INST-22). */
   uninstall: 6,
   files: 5,
