@@ -639,11 +639,11 @@ Shows: hlabs — Files · uploading · [Files] · [Locations] · Files · Recent
 
 ### FolderPicker — Choose a folder for an app
 
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-FILE-25 · Design: to be added on the Home Cloud Dashboard canvas (D-131).
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-FILE-25 · Design: Home Cloud Dashboard canvas, page "Phase 5 · Choose a folder" (D-131): `InstallSheetChange`, `FolderPicker`, `FolderPickerReadOnly`, `InstallSheetChosen`, `FolderPickerMember`, `PhoneFolderPicker`.
 
-Links to: `InstallSheet`
+Links to: `InstallSheet`, `InstallProgress`, `AppDetails`
 
-Shows: Choose a folder for Immich · Where your library is stored · Read and write · [Places] · Home · Shared · NAS · Media · Backup NAS · Offline · [Breadcrumb] · NAS · Media › Photos · [Folders] · 2024 · 2025 · Photos archive · + New folder · Cancel · Use Photos archive
+Shows: Install Immich · Folder access · Home › Photos · Read and write · where your library is stored · [Change folder for Photo library] · Change · NAS · Archive › Photos 2010–2019 · Read only · import existing photos · [Change folder for Existing photos] · Change · [Give access to existing photos] · Choose a folder for Immich · Photo library · Read and write · [Places] · Places · Home · Shared · NAS · Media · NAS · Archive · Read only · NAS · Backups · Offline · [Breadcrumb] · Home › Photos · [Folders in Photos] · Camera roll · Holidays 2025 · Scans · [Open Scans] · › · No folders in <folder> · Use this folder, or make a new one inside it. · + New folder · This folder is read only · Cancel · Use Photos
 
 ### FilesMove — Move to
 
