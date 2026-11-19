@@ -168,6 +168,7 @@ export const filesCopy = {
     use: (name: string) => `Use ${name}`,
     newFolder: '+ New folder',
     readOnly: 'This folder is read only',
+    readOnlyTag: 'Read only',
     empty: (name: string) => `No folders in ${name}`,
     emptyHint: 'Use this folder, or make a new one inside it.',
     loading: 'Loading folders',

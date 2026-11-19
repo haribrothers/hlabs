@@ -61,6 +61,8 @@ export const storage = {
             appsAllowed: z.boolean(),
             /** Names of the apps that keep folders on it: it can't be disconnected while there are any (US-FILE-12). */
             usedBy: z.array(z.string()),
+            /** Mounted but hlabs can't write to it: the FolderPicker tags it "Read only" (US-FILE-25). */
+            readOnly: z.boolean(),
           }),
         ),
       }),

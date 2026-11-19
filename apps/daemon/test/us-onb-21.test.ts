@@ -25,10 +25,11 @@ describe('US-ONB-21', () => {
         path: d.config.paths.storageRootDefault,
         isRoot: true,
         status: 'ok',
-        // US-FILE-11, US-FILE-12.
+        // US-FILE-11, US-FILE-12, US-FILE-25.
         autoMount: true,
         appsAllowed: true,
         usedBy: [],
+        readOnly: false,
       },
     ]);
     expect((await d.query('auth.me')).result?.data).toMatchObject({

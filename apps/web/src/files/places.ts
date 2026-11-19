@@ -23,6 +23,8 @@ export interface Drive {
   usedBy?: string[];
   /** "Let apps use this drive" (US-FILE-11); the FolderPicker offers only these (US-FILE-25). */
   appsAllowed?: boolean;
+  /** Mounted, but hlabs can't write to it (US-FILE-25). */
+  readOnly?: boolean;
 }
 
 export interface SidebarRow {
@@ -93,6 +95,8 @@ export interface PickerPlace {
   path: string;
   /** A drive that isn't mounted: listed, but it can't be opened. */
   offline: boolean;
+  /** A drive hlabs can't write to: "Read only" beside it. */
+  readOnly: boolean;
 }
 
 /**
@@ -105,15 +109,21 @@ export function pickerPlaces(
   drives: Drive[],
   shippedPhase?: number,
 ): PickerPlace[] {
-  const places: PickerPlace[] = [{ key: 'home', label: copy.home, path: HOME, offline: false }];
+  const places: PickerPlace[] = [{ key: 'home', label: copy.home, path: HOME, offline: false, readOnly: false }];
   if (me.canSeeShared)
-    places.push({ key: 'shared', label: copy.areaNames['/shared']!, path: '/shared', offline: false });
+    places.push({ key: 'shared', label: copy.areaNames['/shared']!, path: '/shared', offline: false, readOnly: false });
   if (me.role !== 'admin') return places;
   const external = isFeatureEnabled('externalDrives', shippedPhase);
   for (const d of drives) {
     if (d.isRoot || d.appsAllowed === false) continue;
     if (!(d.kind === 'smb' || d.kind === 'nfs' || (external && d.kind === 'external'))) continue;
-    places.push({ key: `drive:${d.id}`, label: d.name, path: `/drives/${d.id}`, offline: d.status !== 'ok' });
+    places.push({
+      key: `drive:${d.id}`,
+      label: d.name,
+      path: `/drives/${d.id}`,
+      offline: d.status !== 'ok',
+      readOnly: d.status === 'ok' && !!d.readOnly,
+    });
   }
   return places;
 }

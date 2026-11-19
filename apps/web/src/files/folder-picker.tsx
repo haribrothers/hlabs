@@ -324,7 +324,11 @@ function Places({
           >
             {desktop ? <FileIcon folder path={p.path} size={20} /> : null}
             <span className="min-w-0 flex-1 truncate">{p.label}</span>
-            {p.offline ? <span className="text-caption font-semibold text-ink-muted">{filesCopy.offline}</span> : null}
+            {p.offline || p.readOnly ? (
+              <span className="text-caption font-semibold text-ink-muted">
+                {p.offline ? filesCopy.offline : copy.readOnlyTag}
+              </span>
+            ) : null}
           </button>
         );
       })}

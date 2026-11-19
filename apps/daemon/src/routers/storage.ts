@@ -1,5 +1,7 @@
 import type { AppHandlers } from '@hlabs/api';
 import { storageLocations } from '@hlabs/db';
+import { constants } from 'node:fs';
+import { access } from 'node:fs/promises';
 import type { DaemonContext } from '../context';
 import { byUseDeps, storageByUse } from '../storage/by-use';
 
@@ -26,21 +28,33 @@ export const storage: AppHandlers<DaemonContext>['storage'] = {
     drives: (await ctx.services.drives.externalDrives()).filter((d) => d.writable),
   }),
   locations: {
-    list: (_input, ctx) => ({
-      locations: ctx.services.db
-        .select({
-          id: storageLocations.id,
-          kind: storageLocations.kind,
-          name: storageLocations.name,
-          path: storageLocations.path,
-          isRoot: storageLocations.isRoot,
-          status: storageLocations.status,
-          autoMount: storageLocations.autoMount,
-          appsAllowed: storageLocations.appsAllowed,
-        })
-        .from(storageLocations)
-        .all()
-        .map((l) => ({ ...l, usedBy: ctx.services.networkDrives.appsUsing(l.id) })),
+    list: async (_input, ctx) => ({
+      locations: await Promise.all(
+        ctx.services.db
+          .select({
+            id: storageLocations.id,
+            kind: storageLocations.kind,
+            name: storageLocations.name,
+            path: storageLocations.path,
+            isRoot: storageLocations.isRoot,
+            status: storageLocations.status,
+            autoMount: storageLocations.autoMount,
+            appsAllowed: storageLocations.appsAllowed,
+          })
+          .from(storageLocations)
+          .all()
+          .map(async (l) => ({
+            ...l,
+            usedBy: ctx.services.networkDrives.appsUsing(l.id),
+            // Only a mounted drive can say; one that's offline isn't read only, just away.
+            readOnly:
+              l.status === 'ok' &&
+              (await access(l.path, constants.W_OK).then(
+                () => false,
+                () => true,
+              )),
+          })),
+      ),
     }),
     discover: async (_input, ctx) => ({ servers: await ctx.services.discovery.browse(5_000) }),
     testNetwork: async ({ share, ...input }, ctx) => {

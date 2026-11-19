@@ -129,6 +129,32 @@ describe('US-FILE-25', () => {
     expect(mount).toMatchObject({ subpath: 'Archive', mode: 'ro' });
   });
 
+  it.skipIf(asRoot)('storage.locations.list says which mounted drives hlabs can’t write to', async () => {
+    const f = await filesDaemon(closers);
+    const rw = tempDir('nas-');
+    const ro = tempDir('nas-');
+    chmodSync(ro, 0o555);
+    closers.push(async () => chmodSync(ro, 0o755));
+    f.db
+      .insert(storageLocations)
+      .values([
+        { id: 'media', kind: 'smb', name: 'NAS · Media', path: rw },
+        { id: 'archive', kind: 'smb', name: 'NAS · Archive', path: ro },
+        { id: 'backups', kind: 'nfs', name: 'NAS · Backups', path: ro, status: 'unreachable' },
+      ])
+      .run();
+    const { locations } = f.data<{ locations: Array<{ id: string; readOnly: boolean }> }>(
+      await f.d.query('storage.locations.list'),
+    );
+    expect(Object.fromEntries(locations.map((l) => [l.id, l.readOnly]))).toEqual({
+      [f.rootId]: false,
+      media: false,
+      archive: true,
+      // Offline: away, not read only.
+      backups: false,
+    });
+  });
+
   it('a folder can’t lead outside its drive through a symlink', async () => {
     const t = await installDaemon(closers);
     const outside = tempDir('outside-');

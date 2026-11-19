@@ -53,7 +53,16 @@ function crumbsOf(path: string) {
 const drives = [
   { id: 'root', kind: 'local', name: 'This computer', path: '/x', isRoot: true, status: 'ok', appsAllowed: true },
   { id: 'media', kind: 'smb', name: 'NAS · Media', path: '/m', isRoot: false, status: 'ok', appsAllowed: true },
-  { id: 'archive', kind: 'smb', name: 'NAS · Archive', path: '/a', isRoot: false, status: 'ok', appsAllowed: true },
+  {
+    id: 'archive',
+    kind: 'smb',
+    name: 'NAS · Archive',
+    path: '/a',
+    isRoot: false,
+    status: 'ok',
+    appsAllowed: true,
+    readOnly: true,
+  },
   {
     id: 'backups',
     kind: 'nfs',
@@ -173,7 +182,7 @@ describe('US-FILE-25', () => {
     expect(lists.map((l) => l.path)).toEqual(['/home/Pictures', '/home']);
   });
 
-  it('places: Home, Shared, then drives that let apps use them; an offline drive is listed but won’t open', async () => {
+  it('places: Home, Shared, then drives that let apps use them; a read-only drive says so; an offline one won’t open', async () => {
     const { lists } = sheet();
     const picker = await openPicker();
     const places = within(picker).getByRole('navigation', { name: 'Places' });
@@ -182,7 +191,7 @@ describe('US-FILE-25', () => {
         within(places)
           .getAllByRole('button')
           .map((b) => b.textContent),
-      ).toEqual(['Home', 'Shared', 'NAS · Media', 'NAS · Archive', 'NAS · BackupsOffline']),
+      ).toEqual(['Home', 'Shared', 'NAS · Media', 'NAS · ArchiveRead only', 'NAS · BackupsOffline']),
     );
     const offline = within(places).getByRole('button', { name: /NAS · Backups/ });
     expect(offline).toHaveAttribute('aria-disabled', 'true');
@@ -292,7 +301,7 @@ describe('US-FILE-25', () => {
   it('a folder the app writes to can’t go on a read-only drive; a read-only folder can, and Change turns it on', async () => {
     const { calls } = sheet({ folders: [manifestFolder(), optional] });
     let picker = await openPicker();
-    fireEvent.click(await within(picker).findByRole('button', { name: 'NAS · Archive' }));
+    fireEvent.click(await within(picker).findByRole('button', { name: /^NAS · Archive/ }));
     fireEvent.click(await option(picker, 'Old photos'));
     expect(within(picker).getByRole('button', { name: 'Use Old photos' })).toBeDisabled();
     expect(within(picker).getByRole('status')).toHaveTextContent('This folder is read only');
@@ -301,7 +310,7 @@ describe('US-FILE-25', () => {
 
     picker = await openPicker('Change folder for Existing photos');
     expect(picker).toHaveTextContent('Existing photos · Read only');
-    fireEvent.click(await within(picker).findByRole('button', { name: 'NAS · Archive' }));
+    fireEvent.click(await within(picker).findByRole('button', { name: /^NAS · Archive/ }));
     fireEvent.click(await option(picker, 'Old photos'));
     fireEvent.click(within(picker).getByRole('button', { name: 'Use Old photos' }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: /Choose a folder/ })).toBeNull());
