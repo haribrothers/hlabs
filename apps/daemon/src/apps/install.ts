@@ -16,6 +16,7 @@ import {
   homeLayout,
   jobs,
   storageLocations,
+  users,
   type HlabsDb,
 } from '@hlabs/db';
 import { HOSTNAME_PATTERN, ulid } from '@hlabs/shared';
@@ -249,7 +250,12 @@ export class InstallService {
     if (this.takenHostnames().includes(hostname)) throw hlabsError('HOSTNAME_TAKEN', undefined, { hostname });
 
     const env = resolveEnv(manifest, req.env, this.keptEnv(req.appId));
-    const mounts = resolveMounts(db, manifest, req.mounts);
+    const owner = db.select().from(users).where(eq(users.id, user.userId)).get();
+    const mounts = await resolveMounts(db, manifest, req.mounts, {
+      role: user.role,
+      username: owner?.username ?? '',
+      canSeeShared: user.role === 'admin' || !!owner?.canSeeShared,
+    });
     const port = await this.freePort();
     const now = (this.deps.now ?? Date.now)();
 

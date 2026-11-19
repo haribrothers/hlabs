@@ -1,5 +1,5 @@
 import * as RadixDialog from '@radix-ui/react-dialog';
-import { useId, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { createContext, useContext, useId, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { cn } from '../lib/cn';
 
 export interface DialogProps {
@@ -47,7 +47,12 @@ export interface ModalDialogProps extends Omit<DialogProps, 'className'> {
   sheetOnPhone?: boolean;
   /** Where focus goes when it closes, when not back to what opened it (e.g. the folder New folder just made). */
   finalFocus?: () => HTMLElement | null;
+  /** A fixed height whatever its content (a picker): its body grows to fill it; full height as a phone sheet. */
+  tall?: boolean;
 }
+
+/** Set inside a modal dialog, so one opened from it (a picker from the install sheet) knows it's on top of another. */
+const InsideDialog = createContext(false);
 
 /** A modal dialog (Radix): scrim-strong behind, focus trapped, Escape closes, focus returns to the trigger. */
 export function ModalDialog({
@@ -63,11 +68,20 @@ export function ModalDialog({
   initialFocus,
   sheetOnPhone = false,
   finalFocus,
+  tall = false,
 }: ModalDialogProps) {
   // Radix only restores focus to a Dialog.Trigger; remember whatever opened the dialog instead.
   const returnTo = useRef<HTMLElement | null>(null);
+  const nested = useContext(InsideDialog);
   const block = (e: Event) => {
     if (!dismissible) e.preventDefault();
+  };
+  // A dialog on top of another closes a moment after Escape: closed at once, the one below would be the top layer
+  // by the time Radix hands it the same key press, and close too.
+  const onEscape = (e: KeyboardEvent) => {
+    if (!dismissible || !nested) return block(e);
+    e.preventDefault();
+    setTimeout(() => onOpenChange(false));
   };
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
@@ -79,6 +93,7 @@ export function ModalDialog({
           className={cn(
             'hl-dialog hl-dialog-modal hl-glass hl-glass-3 hl-anim-dialog',
             sheetOnPhone && 'hl-dialog-sheet',
+            tall && 'hl-dialog-tall',
           )}
           style={width ? { width } : undefined}
           onOpenAutoFocus={(e) => {
@@ -98,7 +113,7 @@ export function ModalDialog({
             e.preventDefault();
             returnTo.current.focus();
           }}
-          onEscapeKeyDown={block}
+          onEscapeKeyDown={onEscape}
           onPointerDownOutside={block}
           onInteractOutside={block}
         >
@@ -106,8 +121,10 @@ export function ModalDialog({
           {description ? (
             <RadixDialog.Description className="hl-dialog-body">{description}</RadixDialog.Description>
           ) : null}
-          {children ? <div className="hl-dialog-body">{children}</div> : null}
-          {actions ? <div className="hl-dialog-actions">{actions}</div> : null}
+          <InsideDialog.Provider value>
+            {children ? <div className="hl-dialog-body">{children}</div> : null}
+            {actions ? <div className="hl-dialog-actions">{actions}</div> : null}
+          </InsideDialog.Provider>
         </RadixDialog.Content>
       </RadixDialog.Portal>
     </RadixDialog.Root>

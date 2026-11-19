@@ -21,6 +21,8 @@ export interface Drive {
   status: string;
   /** Apps that keep folders on it (US-FILE-12). */
   usedBy?: string[];
+  /** "Let apps use this drive" (US-FILE-11); the FolderPicker offers only these (US-FILE-25). */
+  appsAllowed?: boolean;
 }
 
 export interface SidebarRow {
@@ -85,6 +87,41 @@ export function sidebarGroups(
   ];
 }
 
+export interface PickerPlace {
+  key: string;
+  label: string;
+  path: string;
+  /** A drive that isn't mounted: listed, but it can't be opened. */
+  offline: boolean;
+}
+
+/**
+ * The FolderPicker's places (US-FILE-25): Home, Shared when this person may see it, then each network (and, from
+ * phase 8, external) drive that lets apps use it. Never App data, This computer or other people's Homes; members get
+ * no drives.
+ */
+export function pickerPlaces(
+  me: { role: 'admin' | 'member'; canSeeShared: boolean },
+  drives: Drive[],
+  shippedPhase?: number,
+): PickerPlace[] {
+  const places: PickerPlace[] = [{ key: 'home', label: copy.home, path: HOME, offline: false }];
+  if (me.canSeeShared)
+    places.push({ key: 'shared', label: copy.areaNames['/shared']!, path: '/shared', offline: false });
+  if (me.role !== 'admin') return places;
+  const external = isFeatureEnabled('externalDrives', shippedPhase);
+  for (const d of drives) {
+    if (d.isRoot || d.appsAllowed === false) continue;
+    if (!(d.kind === 'smb' || d.kind === 'nfs' || (external && d.kind === 'external'))) continue;
+    places.push({ key: `drive:${d.id}`, label: d.name, path: `/drives/${d.id}`, offline: d.status !== 'ok' });
+  }
+  return places;
+}
+
+/** The place a path is in: the one whose path it starts with. */
+export const placeOfPath = (places: PickerPlace[], path: string) =>
+  places.find((p) => path === p.path || path.startsWith(`${p.path}/`)) ?? null;
+
 const trashRow: SidebarRow = { key: 'trash', label: copy.trash, path: null };
 
 /** The sidebar row for where Files is: the deepest place the path is in. */
@@ -104,6 +141,8 @@ export function activeRow(at: FilesLocation): string | null {
 
 /** A breadcrumb step's name: its own, or the place's ("Home", "Shared", "This computer", "App data"). */
 export const crumbName = (c: { path: string; name: string | null }) => c.name ?? copy.areaNames[c.path] ?? c.path;
+
+export const joinPath = (parent: string, name: string) => (parent === '/' ? `/${name}` : `${parent}/${name}`);
 
 export const parentOf = (path: string) => path.slice(0, Math.max(1, path.lastIndexOf('/'))) || '/';
 

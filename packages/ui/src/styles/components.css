@@ -1132,6 +1132,15 @@
     padding: var(--space-1);
     margin: calc(-1 * var(--space-1));
   }
+  /* A picker (FolderPicker): the same height whatever folder is open; its body fills it and scrolls inside. */
+  .hl-dialog-tall {
+    height: min(660px, calc(100dvh - 2 * var(--space-4)));
+  }
+  .hl-dialog-tall > .hl-dialog-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
   /* The search panel (Spotlight): centred near the top, its list scrolling inside. */
   .hl-command {
     position: fixed;
@@ -1175,6 +1184,10 @@
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
       padding-bottom: calc(var(--space-7) + env(safe-area-inset-bottom));
+    }
+    .hl-dialog-sheet.hl-dialog-tall {
+      height: calc(100dvh - var(--space-7));
+      max-height: none;
     }
     .hl-dialog-sheet .hl-dialog-actions {
       flex-direction: column;

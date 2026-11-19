@@ -50,13 +50,14 @@ describe('US-STORE-08', () => {
   });
 
   it('an optional folder has a Switch; turning it off leaves the mount out', async () => {
-    const optional = folder({ key: 'import', required: false });
+    const optional = folder({ key: 'import', label: 'Import', required: false });
     const { calls } = sheet(details({ folders: [folder(), optional] }));
-    const switches = await screen.findAllByRole('switch', { name: 'Give access to Home › Photos' });
-    // The required one can't be turned off.
-    expect(switches[0]).toBeDisabled();
-    expect(switches[1]).toBeChecked();
-    fireEvent.click(switches[1]!);
+    // The required one is always on, so only the optional one has a Switch (US-FILE-25).
+    const switches = await screen.findAllByRole('switch');
+    expect(switches).toHaveLength(1);
+    expect(switches[0]).toHaveAccessibleName('Give access to Import');
+    expect(switches[0]).toBeChecked();
+    fireEvent.click(switches[0]!);
     fireEvent.click(screen.getByRole('button', { name: 'Install' }));
     await vi.waitFor(() => expect(calls.some((c) => c.path === 'apps.install')).toBe(true));
     const input = calls.find((c) => c.path === 'apps.install')!.input as { mounts: Array<{ target: string }> };

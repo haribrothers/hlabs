@@ -73,7 +73,8 @@ describe('US-STORE-08', () => {
     const { resolveMounts } = await import('../src/apps/folders');
     const manifest = t.s.catalog.get('immich')!.manifest;
     const ro = { ...manifest, folders: [{ ...manifest.folders[0]!, mode: 'ro' as const }] };
-    expect(resolveMounts(t.s.db, ro, [library({ mode: 'rw' }) as never])[0]!.mode).toBe('ro');
+    const admin = { role: 'admin' as const, username: 'hari', canSeeShared: true };
+    expect((await resolveMounts(t.s.db, ro, [library({ mode: 'rw' }) as never], admin))[0]!.mode).toBe('ro');
     const res = (await t.d.mutate('apps.install', { appId: 'immich', mounts: [library()] })) as Reply;
     await t.s.jobs.settled(res.result!.data.jobId);
     expect(t.s.db.select().from(appMounts).all()).toEqual([

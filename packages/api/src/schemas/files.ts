@@ -53,11 +53,21 @@ export const fileSortSchema = z.enum(['name', 'modified', 'size', 'kind']);
 export const files = {
   /** A folder's entries, folders first, paged at 200 (US-FILE-02); `count` and `filesBytes` cover the whole folder. */
   list: io(
-    pathRef.extend({ sort: fileSortSchema.optional(), cursor: z.string().optional() }),
+    pathRef.extend({
+      sort: fileSortSchema.optional(),
+      cursor: z.string().optional(),
+      /** `['folder']`: folders only, for the FolderPicker (US-FILE-25). */
+      kinds: z.array(z.literal('folder')).optional(),
+    }),
     z.object({
       path: virtualPathSchema,
       crumbs: z.array(fileCrumbSchema),
       place: filePlaceSchema,
+      /**
+       * The storage location and subpath this folder is (US-FILE-25), so a choice in the FolderPicker is sent as an
+       * install's `mounts`; null for App data and the lists of places.
+       */
+      location: z.object({ id: z.string(), subpath: z.string() }).nullable(),
       items: z.array(fileEntrySchema),
       nextCursor: z.string().nullable(),
       count: z.number().int().nonnegative(),

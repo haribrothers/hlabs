@@ -224,7 +224,7 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 - [x] US-FILE-10 · Handle name conflicts when uploading
 - [x] US-FILE-11 · Connect an SMB or NFS drive
 - [x] US-FILE-12 · Disconnect or recover a network drive
-- [ ] US-FILE-25 · Choose a folder for an app
+- [x] US-FILE-25 · Choose a folder for an app
 - [ ] US-BKP-01 · See the last backup's status
 - [ ] US-BKP-02 · See destinations and the schedule summary
 - [ ] US-BKP-03 · Review recent runs and run history

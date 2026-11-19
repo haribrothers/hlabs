@@ -157,4 +157,19 @@ export const filesCopy = {
   cantReach: (name: string) => `Can't reach ${name}`,
   cantReachBody: 'Check that the drive is on and connected to your network.',
   driveFooter: (name: string) => name,
+  // Choose a folder for an app (US-FILE-25)
+  picker: {
+    title: (app: string) => `Choose a folder for ${app}`,
+    forLine: (label: string, mode: string) => `${label} · ${mode}`,
+    places: 'Places',
+    folders: (name: string) => `Folders in ${name}`,
+    open: (name: string) => `Open ${name}`,
+    up: (name: string) => `Back to ${name}`,
+    use: (name: string) => `Use ${name}`,
+    newFolder: '+ New folder',
+    readOnly: 'This folder is read only',
+    empty: (name: string) => `No folders in ${name}`,
+    emptyHint: 'Use this folder, or make a new one inside it.',
+    loading: 'Loading folders',
+  },
 };

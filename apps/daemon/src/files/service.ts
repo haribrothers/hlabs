@@ -11,7 +11,17 @@ import { join } from 'node:path';
 import { dimensionsOf } from './dimensions';
 import { mimeOf, PREVIEW_IMAGES, PREVIEW_VIDEOS } from './mime';
 import { PreviewTokens, previewUrl } from './preview-tokens';
-import { inside, isHidden, joinVirtual, Places, realInside, type Caller, type Crumb, type Place } from './places';
+import {
+  inside,
+  isHidden,
+  joinVirtual,
+  locationOf,
+  Places,
+  realInside,
+  type Caller,
+  type Crumb,
+  type Place,
+} from './places';
 
 export const PAGE_SIZE = 200;
 export const RECENT_COUNT = 50;
@@ -221,7 +231,7 @@ export class FilesService {
   }
 
   /** A folder's entries, folders first (US-FILE-02), 200 at a time. */
-  async list(caller: Caller, input: { path: string; sort?: Sort; cursor?: string }) {
+  async list(caller: Caller, input: { path: string; sort?: Sort; cursor?: string; kinds?: 'folder'[] }) {
     const place = await this.resolve(caller, input.path);
     if (place.area === 'shared' && place.rest.length === 0) await mkdir(place.base!, { recursive: true });
     let all: FileEntry[];
@@ -231,6 +241,7 @@ export class FilesService {
       const real = await realInside(place.base, place.host!);
       all = await this.entriesOf(place, real, place.virtual);
     }
+    if (input.kinds?.length) all = all.filter((e) => e.kind === 'folder');
     const sorted = sortEntries(all, input.sort);
     const from = Math.max(0, Number.parseInt(input.cursor ?? '0', 10) || 0);
     const items = this.withPreviews(caller, sorted.slice(from, from + PAGE_SIZE));
@@ -238,6 +249,7 @@ export class FilesService {
       path: place.virtual,
       crumbs: place.crumbs,
       place: { area: place.area, name: place.name, readOnly: place.readOnly },
+      location: locationOf(place, caller),
       items,
       nextCursor: from + PAGE_SIZE < sorted.length ? String(from + PAGE_SIZE) : null,
       count: sorted.length,

@@ -262,6 +262,25 @@ export class Places {
   }
 }
 
+/**
+ * The storage location and subpath a place is (US-FILE-25): Home and Shared are on the storage root
+ * (`users/<username>/…`, `shared/…`), a drive is its own location; null for App data and the lists of places.
+ */
+export function locationOf(place: Place, caller: Pick<Caller, 'username'>): { id: string; subpath: string } | null {
+  if (!place.locationId) return null;
+  const top =
+    place.area === 'home'
+      ? ['users', caller.username]
+      : place.area === 'shared'
+        ? ['shared']
+        : place.area === 'user'
+          ? ['users', place.top.split('/')[2]!]
+          : place.area === 'drive'
+            ? []
+            : null;
+  return top ? { id: place.locationId, subpath: [...top, ...place.rest].join('/') } : null;
+}
+
 /** True when `real` is `base` or inside it. */
 export const inside = (base: string, real: string) =>
   real === base || real.startsWith(base.endsWith(sep) ? base : base + sep);

@@ -58,11 +58,11 @@ const EXPECTED: Row[] = [
   ['files.list', 'q', 'authed'], ['files.stat', 'q', 'authed'], ['files.recent', 'q', 'authed'],
   ['files.listTrash', 'q', 'authed'], ['files.openWith', 'q', 'authed'], ['files.preview', 'q', 'authed'],
   ['files.search', 'q', 'authed'], ['files.mkdir', 'm', 'authed'], ['files.rename', 'm', 'authed'],
-  ['files.move', 'm', 'authed'], ['files.copy', 'm', 'authed'], ['files.trash', 'm', 'authed'],
+  ['files.move', 'm', 'authed'], ['files.copy', 'm', 'authed'], ['files.trash', 'm', 'authed'], ['files.uploads', 'q', 'authed'],
   ['files.restoreFromTrash', 'm', 'authed'], ['files.emptyTrash', 'm', 'authed'], ['files.shares.get', 'q', 'authed'],
   ['files.shares.set', 'm', 'authed'], ['files.shares.remove', 'm', 'authed'],
 
-  ['storage.summary', 'q', 'admin'], ['storage.listDrives', 'q', 'admin'], ['storage.locations.list', 'q', 'admin'],
+  ['storage.summary', 'q', 'admin'], ['storage.listDrives', 'q', 'admin'], ['storage.locations.list', 'q', 'admin'], ['storage.locations.reconnect', 'm', 'admin'],
   ['storage.locations.discover', 'q', 'admin'], ['storage.locations.testNetwork', 'm', 'admin'],
   ['storage.locations.addNetwork', 'm', 'admin'], ['storage.locations.remove', 'm', 'admin'],
   ['storage.locations.eject', 'm', 'admin'], ['storage.moveAllPlan', 'q', 'admin'], ['storage.moveAll', 'm', 'admin'],

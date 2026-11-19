@@ -1,5 +1,5 @@
 // US-STORE-08 · Choose folder access in the install sheet (main instance, admin, built-in store). Nothing is installed:
-// the sheet is closed with Cancel. Changing a folder's place needs the folder picker from Files (phase 5, D-036).
+// the sheet is closed with Cancel. Choosing another folder is US-FILE-25's.
 import { expect, test } from '@playwright/test';
 
 test('US-STORE-08 Install on the details opens the sheet with each folder, where it goes and its mode', async ({
@@ -13,8 +13,9 @@ test('US-STORE-08 Install on the details opens the sheet with each folder, where
   await expect(sheet.getByText('Review what it can access')).toBeVisible();
   await expect(sheet.getByText('Home › Photos')).toBeVisible();
   await expect(sheet.getByText('Read and write · where your photos and videos are stored')).toBeVisible();
-  // Required, so it can't be turned off.
-  await expect(sheet.getByRole('switch', { name: 'Give access to Home › Photos' })).toBeDisabled();
+  // Required, so always on: no Switch, only Change (US-FILE-25).
+  await expect(sheet.getByRole('switch')).toHaveCount(0);
+  await expect(sheet.getByRole('button', { name: 'Change folder for Photo library' })).toBeVisible();
   if (info.project.name === 'phone') {
     // A bottom sheet on a phone: it reaches the bottom of the screen.
     const box = (await sheet.boundingBox())!;
