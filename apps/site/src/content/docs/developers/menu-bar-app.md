@@ -14,6 +14,8 @@ pnpm dev:tray   # the menu-bar app, with its window on http://127.0.0.1:5174
 
 The development menu-bar app talks to the hlabs on `127.0.0.1:7474`. It doesn't install or start a background service: that's `pnpm dev`'s job.
 
+Like the dashboard's dev server, `pnpm dev:tray` shows the menu items of the phase being built (`HLABS_PREVIEW_PHASE` picks another), for example **Back up now** before backups ship. A built app (`pnpm build:tray`) shows only what has shipped.
+
 ## Its access to hlabs
 
 The menu-bar app proves itself to hlabs with a token (`Authorization: Bearer`, accepted only from this computer and only for `tray.*` calls). An installed app keeps the token in the keychain (`dev.hlabs` / `tray-token`); a development build keeps it in `.dev-data/tray.token`, so no keychain prompt appears while you work.

@@ -6,6 +6,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { TrayMenu, TraySetup, type MenuItem } from '@hlabs/ui';
 import { useEffect, useState } from 'react';
 import { useAccess, type Access } from './access';
+import { backupItem, useBackUpNow } from './backup';
 import { useBoot, type BootState } from './boot';
 import { daemon } from './daemon';
 import { useDashboardActions } from './dashboard';
@@ -73,6 +74,8 @@ export interface RunningActions {
   startAtLogin?: { checked: boolean; failed: boolean; toggle: () => void };
   /** "Check for updates…" and what it says while and after checking (US-INST-19). */
   checkUpdates?: { feedback: CheckFeedback; run: () => void };
+  /** "Back up now" as the backup's state has it (US-INST-07); shown once backups ship (D-036). */
+  backup?: MenuItem;
 }
 
 const CHECK_LABEL: Record<Exclude<CheckFeedback, null>, string> = {
@@ -87,14 +90,15 @@ export const quitItem: MenuItem = { label: t.quit, shortcut: '⌘Q', onSelect: (
 
 /**
  * The running menu, in the design's order (TrayMenu): what the actions do arrives with their stories (US-INST-05…10,
- * US-INST-17, US-INST-19); "Back up now" waits for backups (phase 5) and "Uninstall hlabs…" for phase 6 (D-036).
+ * US-INST-07, US-INST-17, US-INST-19); "Back up now" shows once backups ship (phase 5) and "Uninstall hlabs…" once
+ * phase 6 does (D-036). `phase` is the phase whose controls show (tests pass one).
  */
-export function runningItems(actions: RunningActions = {}): MenuItem[] {
+export function runningItems(actions: RunningActions = {}, phase?: number): MenuItem[] {
   return [
     { separator: true },
     { label: t.openDashboard, shortcut: '⌘D', onSelect: actions.openDashboard },
     { label: actions.copied ? t.copied : t.copyAddress, onSelect: actions.copyAddress },
-    ...(isFeatureEnabled('backups') ? [{ label: t.backUpNow }] : []),
+    ...(isFeatureEnabled('backups', phase) ? [actions.backup ?? { label: t.backUpNow }] : []),
     { separator: true },
     {
       label: actions.startAtLogin?.failed ? t.startAtLoginFailed : t.startAtLogin,
@@ -108,7 +112,7 @@ export function runningItems(actions: RunningActions = {}): MenuItem[] {
     },
     { label: t.resetPassword, onSelect: () => void invoke('open_reset_window').catch(() => {}) },
     { separator: true },
-    ...(isFeatureEnabled('uninstall') ? [{ label: t.uninstall }] : []),
+    ...(isFeatureEnabled('uninstall', phase) ? [{ label: t.uninstall }] : []),
     quitItem,
   ];
 }
@@ -344,14 +348,18 @@ export function RunningMenu({
   onChanged,
   startAtLogin,
   checkUpdates,
+  phase,
 }: {
   status: TrayStatus | null;
   onChanged?: () => void;
   startAtLogin?: RunningActions['startAtLogin'];
   checkUpdates?: RunningActions['checkUpdates'];
+  phase?: number;
 }) {
   const dashboard = useDashboardActions();
   const pause = useQuickAction('pauseAll', onChanged);
+  const openDashboard = dashboard.open;
+  const backUpNow = useBackUpNow(status?.backup, openDashboard, onChanged);
   const cpu = formatCpu(status?.cpuPercent);
   const memory = formatMemory(status?.memoryUsedBytes);
   const free = formatFree(status?.freeBytes);
@@ -366,14 +374,18 @@ export function RunningMenu({
         { label: t.memory, value: memory, spoken: t.memorySpoken(memory) },
         { label: t.free, value: free, spoken: t.freeSpoken(free) },
       ]}
-      items={runningItems({
-        openDashboard: () => void dashboard.open(),
-        copyAddress: () => void dashboard.copy(),
-        copied: dashboard.copied,
-        pauseAll: pause.busy ? undefined : () => void pause.run(),
-        startAtLogin,
-        checkUpdates,
-      })}
+      items={runningItems(
+        {
+          openDashboard: () => void dashboard.open(),
+          copyAddress: () => void dashboard.copy(),
+          copied: dashboard.copied,
+          pauseAll: pause.busy ? undefined : () => void pause.run(),
+          startAtLogin,
+          checkUpdates,
+          backup: backupItem(status?.backup, backUpNow),
+        },
+        phase,
+      )}
     />
   );
 }

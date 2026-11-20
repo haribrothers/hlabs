@@ -50,8 +50,11 @@ export function iconFor(s: {
     const line = t.runningWithAttention(s.status.appsRunning, s.status.appsExpected, s.status.appsNeedAttention);
     return { look: 'dot', dot: 'danger', line, offline: false };
   }
-  if (s.status.paused) return { look: 'paused', dot: null, line: t.paused, offline: false };
   const line = appsLine(s.status.appsRunning, t.runningApps);
+  // The last backup failed (US-INST-07): the red dot until a run succeeds.
+  if (s.status.backup?.lastFailed)
+    return { look: 'dot', dot: 'danger', line: t.backupFailedLine(line), offline: false };
+  if (s.status.paused) return { look: 'paused', dot: null, line: t.paused, offline: false };
   return s.updateAvailable
     ? { look: 'dot', dot: 'accent', line, offline: false }
     : { look: 'plain', dot: null, line, offline: false };

@@ -15,7 +15,7 @@ The hlabs icon itself tells you how things are, without opening the menu:
 - **Plain:** hlabs and your apps are running.
 - **Pulsing:** hlabs is starting or bringing your apps back. (It stays still if you've turned on Reduce motion.)
 - **Faded:** your apps are paused.
-- **Red dot:** something needs you: an app couldn't start, the container engine has stopped, or hlabs isn't answering. If your apps have been offline for a minute, you also get one notification.
+- **Red dot:** something needs you: an app couldn't start, the last backup failed, the container engine has stopped, or hlabs isn't answering. If your apps have been offline for a minute, you also get one notification.
 
 ## Status at a glance
 
@@ -38,6 +38,12 @@ If the menu says **Container engine stopped**, the program that runs your apps (
 ## Open the dashboard
 
 Choose **Open Dashboard** (or press ⌘D while the menu is open) to open hlabs in your browser. **Copy dashboard address** copies the address so you can paste it into a message to someone at home; the item says **Copied** for a moment. Both always use hlabs's current address, so they keep working after you rename this computer in hlabs. If setup isn't finished yet, the address opens setup.
+
+## Back up now
+
+Before you change something big, choose **Back up now** to back up your apps and files straight away, to every backup destination. Next to it, the menu says when the last backup finished, for example **Last: 2h ago**, or **Last: never** before the first one. While the backup runs, the item says how far it got, for example **Backing up… 34%**, and you can close the menu: the backup carries on. When it's done, the item says **Last: just now**.
+
+If a backup fails, the item says **Last backup failed** and the icon gets a red dot until a backup works again. Open the dashboard's Backups page to see what went wrong. If you haven't set up a backup destination yet, **Back up now** opens that page so you can add one. If hlabs is busy with something that can't be interrupted, such as a restore, the item says **Busy, try later** for a moment and nothing starts.
 
 ## Pause your apps
 

@@ -60,7 +60,8 @@ async function freeBytes(deps: TrayStatusDeps): Promise<number | null> {
   }
 }
 
-function backup(db: HlabsDb): TrayStatus['backup'] {
+/** "Back up now" (US-INST-07): a destination exists, the last good run, and the backup job running now with its progress. */
+function backup(db: HlabsDb, jobs: JobRunner): TrayStatus['backup'] {
   const configured = db.select({ id: backupDestinations.id }).from(backupDestinations).limit(1).get() !== undefined;
   const last = db.select().from(backupRuns).orderBy(desc(backupRuns.startedAt)).limit(1).get();
   const lastSucceeded = db
@@ -70,12 +71,13 @@ function backup(db: HlabsDb): TrayStatus['backup'] {
     .orderBy(desc(backupRuns.finishedAt))
     .limit(1)
     .get();
+  const job = jobs.listActive().find((j) => j.kind === 'backup');
   return {
     configured,
     lastSucceededAt: lastSucceeded?.finishedAt ?? null,
-    running: last?.status === 'running',
-    progress: null,
-    lastFailed: last?.status === 'failed',
+    running: job !== undefined || last?.status === 'running',
+    progress: job ? Math.max(0, Math.min(100, job.progress)) / 100 : null,
+    lastFailed: job === undefined && last?.status === 'failed',
   };
 }
 
@@ -129,7 +131,7 @@ export async function trayStatus(deps: TrayStatusDeps): Promise<TrayStatus> {
       canStart: engine.state !== 'missing' && engine.candidate.kind !== 'docker-engine',
     },
     dashboardUrl: dashboardUrl(deps),
-    backup: backup(db),
+    backup: backup(db, deps.jobs),
     startAtLogin: getSetting(db, 'startup').startAtLogin,
     updateChannel: updates.channel,
     autoUpdate: updates.autoHlabs,

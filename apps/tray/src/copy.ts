@@ -71,6 +71,15 @@ export const trayCopy = {
   copyAddress: 'Copy dashboard address',
   copied: 'Copied',
   backUpNow: 'Back up now',
+  /** US-INST-07: the item while a backup runs, its secondary text, and when another task holds it off. */
+  backingUp: (percent: number) => `Backing up… ${percent}%`,
+  lastNever: 'Last: never',
+  lastJustNow: 'Last: just now',
+  lastAgo: (ago: string) => `Last: ${ago}`,
+  lastBackupFailed: 'Last backup failed',
+  busyTryLater: 'Busy, try later',
+  /** US-INST-14: what VoiceOver reads with the red dot after a failed backup. */
+  backupFailedLine: (line: string) => `${line} · last backup failed`,
   startAtLogin: 'Start at login',
   startAtLoginFailed: "Couldn't change login setting",
   pauseAll: 'Pause all apps',

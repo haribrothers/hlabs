@@ -162,7 +162,7 @@ Shipped 3 Oct 2026 (`SHIPPED_PHASE = 4`). "Done when" checked by hand on macOS w
 - [x] US-INST-02 · First launch hands off to onboarding in the browser (the daemon now serves the dashboard's build, so the setup URL opens at http://127.0.0.1:7474 without Vite; the tray opens setup by itself once per launch whenever onboarding is incomplete, not only on a first launch, as "Open setup is shown again" needs; checked live with a built .app as part of the phase's manual check)
 - [x] US-INST-05 · See status at a glance (the tray asks tray.status every 5 s while the menu is open and every 30 s while it's closed rather than listening to events; CPU and memory are read when asked until the sampler, US-USE-08, keeps them; following Reduce transparency in the tray is left with the reduceTransparency field until the tray has a solid look, which the design doesn't draw)
 - [x] US-INST-06 · Open the dashboard and copy its address (the tray's Rust side opens the browser and writes the clipboard, so the window needs neither permission)
-- [x] US-INST-07 · Back up now from the menu (hidden until backups ship in phase 5, D-036; phase 4 checks it's absent and that tray.quickAction backupNow is refused; its criteria are built and tested with backups)
+- [x] US-INST-07 · Back up now from the menu (hidden until backups ship in phase 5, D-036; the menu item was built in phase 5: "Last: 2h ago", "Backing up… 34%", "Last backup failed" with the red dot, the Backups page with no destination, "Busy, try later")
 - [x] US-INST-08 · Pause and resume all apps (pause_all and resume_all jobs; settings.paused is written before stopping, so an install that finishes meanwhile is stopped and resumed with the others; waiting for a running backup comes with backups, phase 5)
 - [x] US-INST-09 · Start at login (the tray reads the saved choice from tray.status, asked every 30 s while the menu is closed, rather than listening for startup.changeRequested, so a change in Settings reaches the OS within 30 s or when the tray next starts; in development the login item is pretended)
 - [x] US-SYS-42 · See why hlabs can't serve its address (added 3 Oct 2026 after Tailscale Serve held 443 on Hari's Mac, D-122; `pnpm dev` no longer touches the real Tailscale, D-121)
@@ -212,7 +212,7 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 
 ## Phase 5 · Backups and Files
 
-Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). Automated, 20 Nov 2026: #1 `apps/web/e2e/us-bkp-20.spec.ts` (real engine and restic: Vaultwarden and Paperless-ngx backed up to the pretend NAS, their data wiped, restored, both running again); #2 `apps/web/e2e/us-file-09.spec.ts` (an upload resumes after the connection drops). Still to check by hand: a real NAS and a cloud bucket as destinations, a restore after a real sleep/wake catch-up, the tray's "Back up now" (US-INST-07's menu item isn't built).
+Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). Automated, 20 Nov 2026: #1 `apps/web/e2e/us-bkp-20.spec.ts` (real engine and restic: Vaultwarden and Paperless-ngx backed up to the pretend NAS, their data wiped, restored, both running again); #2 `apps/web/e2e/us-file-09.spec.ts` (an upload resumes after the connection drops). Still to check by hand: a real NAS and a cloud bucket as destinations, a restore after a real sleep/wake catch-up, the tray's "Back up now" (US-INST-07) with `pnpm dev:tray`.
 
 - [x] US-FILE-01 · See my places in the sidebar
 - [x] US-FILE-02 · Browse a folder in grid view
