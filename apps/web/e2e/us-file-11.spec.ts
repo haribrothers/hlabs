@@ -11,7 +11,7 @@ test('US-FILE-11 connect the NAS found on the network and open it', async ({ pag
   const reset = await request.post(`${MAIN_URL}/dev/fake-nas`, { data: { online: true, forget: true } });
   expect([reset.status(), await reset.text()]).toEqual([200, '{"online":true}']);
   await page.goto('/files');
-  await page.getByRole('button', { name: '+ Connect a drive' }).click();
+  await page.getByRole('button', { name: 'Connect a drive' }).click();
   const dialog = page.getByRole('dialog', { name: 'Connect a network drive' });
   const nas = dialog.getByRole('button', { name: /nas\.local/ });
   await expect(nas).toContainText('SMB · 3 shares');

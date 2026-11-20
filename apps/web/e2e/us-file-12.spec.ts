@@ -14,7 +14,7 @@ test('US-FILE-12 a drive that goes offline says so, comes back with Try again, a
   const reset = await request.post(`${MAIN_URL}/dev/fake-nas`, { data: { online: true, forget: true } });
   expect([reset.status(), await reset.text()]).toEqual([200, '{"online":true}']);
   await page.goto('/files');
-  await page.getByRole('button', { name: '+ Connect a drive' }).click();
+  await page.getByRole('button', { name: 'Connect a drive' }).click();
   const dialog = page.getByRole('dialog', { name: 'Connect a network drive' });
   await dialog.getByRole('textbox', { name: 'Or enter an address' }).fill('smb://nas.local/Photos');
   await dialog.getByRole('textbox', { name: 'Username' }).fill('hari');
