@@ -212,7 +212,7 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 
 ## Phase 5 · Backups and Files
 
-Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). Automated, 20 Nov 2026: #1 `apps/web/e2e/us-bkp-20.spec.ts` (real engine and restic: Vaultwarden and Paperless-ngx backed up to the pretend NAS, their data wiped, restored, both running again); #2 `apps/web/e2e/us-file-09.spec.ts` (an upload resumes after the connection drops). Still to check by hand: a real NAS and a cloud bucket as destinations, a restore after a real sleep/wake catch-up, the tray's "Back up now" (US-INST-07) with `pnpm dev:tray`.
+Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). Automated, 20 Nov 2026: #1 `apps/web/e2e/us-bkp-20.spec.ts` (real engine and restic: Vaultwarden and Paperless-ngx backed up to the pretend NAS, their data wiped, restored, both running again); #2 `apps/web/e2e/us-file-09.spec.ts` (an upload resumes after the connection drops). #3 (D-135) `apps/web/e2e/us-file-22.spec.ts` (renamed with F2, moved to another folder and back with Undo, moved to Trash and back with Undo, and restored from the Trash page, on the real daemon and disk), 20 Nov 2026. Still to check by hand: a real NAS and a cloud bucket as destinations, a restore after a real sleep/wake catch-up, the tray's "Back up now" (US-INST-07) with `pnpm dev:tray`.
 
 - [x] US-FILE-01 · See my places in the sidebar
 - [x] US-FILE-02 · Browse a folder in grid view
