@@ -1424,3 +1424,167 @@ Shows: Add a backup destination · Cancel · Cloud storage · Network drive · E
 ![PhoneRestoreProgress](screens/PhoneRestoreProgress.webp)
 
 Shows: Restoring Vaultwarden · Cancel restore · Hide
+
+## Added for phase 5 Organise files (20 Nov 2026)
+
+On the Home Cloud Dashboard canvas, page "Phase 5 · Organise files" (D-135): the states `FilesList`, `FilesContextMenu`, `FilesMove`, `FilesRename`, `FilesLoading` and `FilesTrash` don't draw. They show phase 5 as it ships, without "Share folder" or external drives (phase 8, D-036). Toasts sit above the Dock. On a phone every item has "•••", "Select" turns on ticks, and the selection bar takes the tab bar's place.
+
+### FilesListLoading — List view loading, slow drive
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-24
+
+![FilesListLoading](screens/FilesListLoading.webp)
+
+Shows: NAS · Media › Movies · list view · Name ↑ · Modified · Size · 8 skeleton rows · Still loading… this drive is slow to respond
+
+### FilesGridSelect — Selecting in grid view
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-20
+
+![FilesGridSelect](screens/FilesGridSelect.webp)
+
+Shows: 3 selected · Move to… · Share · Download · Move to Trash · Clear selection · ticked tiles · an empty tick on the hovered tile · 12 items · 3 selected · 4.7 MB · Shift-click to select a range
+
+### FilesMenuMulti — Right-click menu for several items
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-21
+
+![FilesMenuMulti](screens/FilesMenuMulti.webp)
+
+Shows: 3 selected · Share… · Download · Move to… · Duplicate · Move to Trash ⌫ (no Open, Open with, Copy link or Rename…)
+
+### FilesMenuReadOnly — Open with, on a read-only drive
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-21
+
+![FilesMenuReadOnly](screens/FilesMenuReadOnly.webp)
+
+Shows: NAS · Media › Scans · no New folder or Upload · Open ↵ · Open with › Paperless-ngx, Stirling PDF · Share… · Copy link · Download · Rename… Move to… Duplicate Move to Trash (off) · Read only · NAS · Media
+
+### FilesRenameInUse — Rename a folder an app uses
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-23
+
+![FilesRenameInUse](screens/FilesRenameInUse.webp)
+
+Shows: Rename · Scanned letters · Paperless-ngx uses this folder. Renaming it will break that. · Cancel · Rename anyway
+
+### FilesRenameTaken — Rename, name already taken
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-23
+
+![FilesRenameTaken](screens/FilesRenameTaken.webp)
+
+Shows: Rename · Taxes · A folder called “Taxes” already exists here. · Cancel · Rename (off)
+
+### FilesDragMove — Drag items onto a folder
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-22
+
+![FilesDragMove](screens/FilesDragMove.webp)
+
+Shows: 2 ticked files dragged onto Taxes (highlighted) · Move 2 items to Taxes · Drop on a folder to move
+
+### FilesMovedUndo — Moved, with Undo
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-22
+
+![FilesMovedUndo](screens/FilesMovedUndo.webp)
+
+Shows: list view without the moved files · toast: Moved 3 items to Taxes · Undo
+
+### FilesMoveProgress — Moving to another disk
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-22
+
+![FilesMoveProgress](screens/FilesMoveProgress.webp)
+
+Shows: toast: Moving 3 items to NAS · Media · 1.9 of 4.8 GB · they leave Home once the copy is checked · progress bar
+
+### FilesTrashUndo — Moved to Trash, with Undo
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-16
+
+![FilesTrashUndo](screens/FilesTrashUndo.webp)
+
+Shows: grid without the two files · toast: 2 items moved to Trash · Undo
+
+### FilesDeleteForGood — Delete for good on a network drive
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-16
+
+![FilesDeleteForGood](screens/FilesDeleteForGood.webp)
+
+Shows: Delete 2 items for good? · They're on NAS · Media, and Trash only covers this computer, so they're deleted straight away. You can't undo this. · Cancel · Delete
+
+### FilesEmptyTrash — Empty trash?
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-18
+
+![FilesEmptyTrash](screens/FilesEmptyTrash.webp)
+
+Shows: Empty trash? · 4 items (14.2 MB) will be deleted for good. You can't undo this. · Cancel · Empty trash
+
+### FilesTrashEmpty — Trash is empty
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-17
+
+![FilesTrashEmpty](screens/FilesTrashEmpty.webp)
+
+Shows: Trash · Restore all (off) · Empty trash (off) · Items are deleted for good after 30 days. · Trash is empty
+
+### FilesRestoreFailed — Couldn't restore
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-17
+
+![FilesRestoreFailed](screens/FilesRestoreFailed.webp)
+
+Shows: Scan 0412.pdf · From NAS · Media › Scans · 4 days left (amber) · toast: Couldn't restore. NAS · Media isn't connected. · Scan 0412.pdf stays in Trash. Reconnect the drive in Files, then try again.
+
+### PhoneFilesMore — Phone · ••• on every item
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-21
+
+![PhoneFilesMore](screens/PhoneFilesMore.webp)
+
+Shows: Files · Recents · Home · Photos · Downloads · Home › Documents · Search in Documents · New folder · Upload · Select · tiles with More for <name> · 4 items · 1.3 MB
+
+### PhoneFilesActions — Phone · ••• actions sheet
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-21
+
+![PhoneFilesActions](screens/PhoneFilesActions.webp)
+
+Shows: Lease agreement.pdf · 1.2 MB · 12 Sep 2026 · Open · Open with › · Share… · Copy link · Download · Rename… · Move to… · Duplicate · Move to Trash
+
+### PhoneFilesSelect — Phone · selecting
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-20
+
+![PhoneFilesSelect](screens/PhoneFilesSelect.webp)
+
+Shows: 2 selected · Select all · Done · ticked tiles · bar in the tab bar's place: Move · Share · Download · Trash · 4 items · 2 selected · 1.3 MB
+
+### PhoneFilesMove — Phone · Move to, full screen
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-22
+
+![PhoneFilesMove](screens/PhoneFilesMove.webp)
+
+Shows: Cancel · Move 2 items to… · Home › Documents (current) › Bills, Taxes, Travel · Photos · Shared with me · NAS · Media · + New folder · Move to Taxes
+
+### PhoneFilesRename — Phone · Rename sheet
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-23
+
+![PhoneFilesRename](screens/PhoneFilesRename.webp)
+
+Shows: Rename · Lease agreement.pdf (name selected) · The .pdf ending is kept so apps still know how to open it. · Cancel · Rename
+
+### PhoneFilesTrash — Phone · Trash
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-17
+
+![PhoneFilesTrash](screens/PhoneFilesTrash.webp)
+
+Shows: Trash chip · Trash · Restore all · Empty trash · Items are deleted for good after 30 days. · rows with From … · deleted … · days left (4 days left in amber) · Restore
