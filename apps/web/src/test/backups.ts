@@ -3,6 +3,9 @@ import { fakeMe } from './me';
 
 const HOUR = 3_600_000;
 
+/** Up to two hours ago, but always today, so tests that read "today" pass just after midnight too. */
+export const earlierToday = () => Math.max(new Date().setHours(0, 0, 0, 0), Date.now() - 2 * HOUR);
+
 export const destination = (over: Record<string, unknown> = {}) => ({
   id: 'd1',
   kind: 'smb',
@@ -14,7 +17,7 @@ export const destination = (over: Record<string, unknown> = {}) => ({
   offsite: false,
   hasKeys: false,
   busy: false,
-  latestAt: Date.now() - 2 * HOUR,
+  latestAt: earlierToday(),
   ...over,
 });
 

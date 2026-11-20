@@ -1,4 +1,6 @@
 // A restore as backups.getRestore answers it, for the restore flow tests (US-BKP-17…22).
+import { earlierToday } from './backups';
+
 export const restoreView = (over: Record<string, unknown> = {}) => ({
   id: 'rs1',
   jobId: 'j1',
@@ -54,8 +56,8 @@ export const restoreView = (over: Record<string, unknown> = {}) => ({
 
 export const points = () => ({
   points: [
-    { id: 'p3', time: Date.now() - 2 * 3_600_000, kind: 'daily', bytesChanged: 1.2e9 },
-    { id: 'p2', time: Date.now() - 26 * 3_600_000, kind: 'daily', bytesChanged: 0.8e9 },
+    { id: 'p3', time: earlierToday(), kind: 'daily', bytesChanged: 1.2e9 },
+    { id: 'p2', time: earlierToday() - 24 * 3_600_000, kind: 'daily', bytesChanged: 0.8e9 },
     { id: 'p1', time: new Date(2026, 8, 20, 3).getTime(), kind: 'weekly', bytesChanged: null },
   ],
 });
