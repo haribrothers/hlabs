@@ -1,5 +1,6 @@
 import { CircleCheck, CircleX, Info, TriangleAlert, X } from '@hlabs/icons';
 import type { ReactNode } from 'react';
+import { Progress } from './progress';
 import { useUiStrings } from '../lib/strings';
 
 export type ToastTone = 'neutral' | 'success' | 'warning' | 'danger';
@@ -14,13 +15,15 @@ export interface ToastProps {
   onDismiss?: () => void;
   /** Playing its exit (fades up; nothing with Reduce motion). */
   leaving?: boolean;
+  /** A bar for work that's going on (0–100): moving files to another disk (US-FILE-22). */
+  progress?: number;
 }
 
 // An icon for every tone, so the colour is never the only signal.
 const ICONS = { neutral: Info, success: CircleCheck, warning: TriangleAlert, danger: CircleX } as const;
 
 /** A short notice on level-3 glass. Danger toasts are alerts; the rest are status messages. */
-export function Toast({ tone = 'success', title, children, action, onDismiss, leaving = false }: ToastProps) {
+export function Toast({ tone = 'success', title, children, action, onDismiss, leaving = false, progress }: ToastProps) {
   const t = useUiStrings();
   const Icon = ICONS[tone];
   return (
@@ -34,6 +37,9 @@ export function Toast({ tone = 'success', title, children, action, onDismiss, le
       <div className="hl-toast-body">
         <span className="hl-toast-title">{title}</span>
         {children ? <span className="hl-toast-text">{children}</span> : null}
+        {progress !== undefined ? (
+          <Progress value={progress} aria-label={typeof title === 'string' ? title : undefined} className="min-w-0" />
+        ) : null}
         {action}
       </div>
       {onDismiss ? (

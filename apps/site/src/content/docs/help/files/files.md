@@ -50,6 +50,12 @@ A bar then says how many are selected, with what you can do with them: **Downloa
 
 On a phone, choose **Select**, then tap the items you want; the buttons along the bottom act on them. **Select all** ticks everything, and **Done** ends selecting.
 
+### Move items to another folder
+
+Select what you want to move and choose **Move to…** (on a phone, **Move** along the bottom), or open a file and choose **•••** › **Move to…**. Pick a folder in the list (it opens at the folder you're in, marked **current**) and choose **Move to** *folder*. **+ New folder** makes a folder inside the one you picked. You can also drag items onto a folder, or onto a place on the left.
+
+Moving within the same disk is instant, and the message at the bottom has **Undo** to put them back. Moving to another disk, such as a network drive, or more than 1 GB, carries on in the background with a bar showing how far it got; the items leave where they were only once their copy is checked. If something with the same name is already there, Files asks whether to skip it, keep both (the moved one gets a number) or replace the one that's there (it goes to the Trash).
+
 ### Rename a file or folder
 
 Select an item and press **F2**, or open a file and choose **•••** › **Rename…**. Type the new name and press Return. For a file, only the part before its ending (such as **.pdf**) changes, so apps still know how to open it. Names can't be empty, contain **/** or match something already in the folder.

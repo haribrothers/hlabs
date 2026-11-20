@@ -3,9 +3,16 @@
 import { Button, ModalDialog } from '@hlabs/ui';
 import { useState } from 'react';
 import { filesCopy as copy } from '../copy/files';
-import type { ConflictAnswer, OnConflict, UploadRow } from './upload-manager';
+import type { ConflictAnswer, OnConflict } from './upload-manager';
 
-export function ConflictDialog({ row, onAnswer }: { row: UploadRow; onAnswer: (answer: ConflictAnswer) => void }) {
+/** For uploads (US-FILE-10) and Move to (US-FILE-22): a name and the folder where it's taken. */
+export function ConflictDialog({
+  row,
+  onAnswer,
+}: {
+  row: { name: string; folderName: string };
+  onAnswer: (answer: ConflictAnswer) => void;
+}) {
   const [all, setAll] = useState(false);
   const answer = (choice: OnConflict) => onAnswer({ choice, all });
   return (

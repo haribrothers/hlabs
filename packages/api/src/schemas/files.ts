@@ -138,7 +138,24 @@ export const files = {
     pathRef.extend({ name: z.string().min(1).max(1024), force: z.boolean().optional() }),
     z.object({ path: virtualPathSchema }),
   ),
-  move: io(pathsRef.extend({ to: virtualPathSchema }), z.union([ok, jobRefSchema])),
+  /**
+   * Move to (US-FILE-22): items into the folder `to`. A name already there is FILES_NAME_EXISTS (`detail.names`) until
+   * `conflicts` says skip, keep both or replace for it. Same disk and up to 1 GB: done at once (`moved` says where
+   * each went, for Undo); otherwise a `files_move` job (copied, checked, then removed from where it was).
+   */
+  move: io(
+    pathsRef.extend({
+      to: virtualPathSchema,
+      conflicts: z.record(z.string(), z.enum(['skip', 'keepBoth', 'replace'])).optional(),
+    }),
+    z.union([
+      z.object({
+        done: z.literal(true),
+        moved: z.array(z.object({ from: virtualPathSchema, to: virtualPathSchema })),
+      }),
+      jobRefSchema,
+    ]),
+  ),
   copy: io(pathsRef.extend({ to: virtualPathSchema }), z.union([ok, jobRefSchema])),
   trash: io(pathsRef, ok),
   restoreFromTrash: io(z.object({ ids: z.array(z.string()).min(1) }), ok),

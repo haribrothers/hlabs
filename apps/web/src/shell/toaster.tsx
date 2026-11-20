@@ -119,6 +119,7 @@ export function Toaster() {
               tone={t.tone}
               title={t.title}
               leaving={t.leaving}
+              progress={t.progress}
               onDismiss={() => handled(t)}
               action={<ToastActions toast={t} actions={visibleActions(t.actions, { isAdmin })} />}
             >

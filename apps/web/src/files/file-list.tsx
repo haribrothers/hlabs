@@ -10,6 +10,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 
 import { filesCopy as copy } from '../copy/files';
 import { labelOf, modsOf, SelectBox, type SelectProps } from './file-grid';
 import { modifiedLabel } from './format';
+import { itemDragProps, type DragProps } from './drag';
 import type { FilesSort, SortBy } from './view-prefs';
 
 const COLUMNS = 'grid-cols-[28px_minmax(0,1fr)_160px_110px] max-md:grid-cols-[28px_minmax(0,1fr)_88px]';
@@ -62,7 +63,10 @@ export function FileList({
   now,
   select,
   onRename,
+  drag,
 }: {
+  /** Dragging rows onto folders moves them (US-FILE-22); desktop only. */
+  drag?: DragProps;
   /** F2 on the focused row (US-FILE-23). */
   onRename?: (entry: FileEntry) => void;
   select?: SelectProps;
@@ -81,6 +85,7 @@ export function FileList({
   const today = now ?? shownAt;
   const ref = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState<string | null>(null);
+  const [over, setOver] = useState<string | null>(null);
   const tabStop = items.some((e) => e.path === current) ? current : (items[0]?.path ?? null);
 
   useEffect(() => {
@@ -155,8 +160,9 @@ export function FileList({
             aria-selected={select ? checked : undefined}
             tabIndex={e.path === tabStop ? 0 : -1}
             className={`hl-focus grid ${COLUMNS} min-h-11 cursor-default items-center gap-3 px-4 py-2 outline-offset-[-2px] ${
-              checked ? 'bg-accent-wash' : 'hover:bg-surface-row'
-            }`}
+              checked || over === e.path ? 'bg-accent-wash' : 'hover:bg-surface-row'
+            } ${over === e.path ? 'ring-2 ring-accent ring-inset' : ''}`}
+            {...itemDragProps(e, openOnClick ? undefined : drag, setOver)}
             onFocus={() => setCurrent(e.path)}
             onClick={(ev) => {
               setCurrent(e.path);

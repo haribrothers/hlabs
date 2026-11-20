@@ -1,10 +1,12 @@
 // The Files sidebar (US-FILE-01, FilesBrowser): places in three groups, drive status, "+ Connect a drive" and the
 // storage bar for admins. On a phone the same places are a row of chips above the folder (PhoneFiles).
+import type { FileEntry } from '@hlabs/api';
+import { dragged, endDrag, isItemDrag } from './drag';
 import { formatBytes } from '@hlabs/shared';
 import { cn, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, StatusDot } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { useState, type KeyboardEvent } from 'react';
+import { useState, type DragEvent, type KeyboardEvent } from 'react';
 import { filesCopy as copy } from '../copy/files';
 import { useEventStream } from '../lib/use-event-stream';
 import { useTRPC } from '../lib/trpc';
@@ -119,12 +121,19 @@ function StorageBar() {
   );
 }
 
+/** A sidebar place items can be dropped on (US-FILE-22): not Recents, This computer or App data. */
+export const droppable = (row: SidebarRow) =>
+  row.path !== null && row.path !== '/users' && !row.path.startsWith('/appdata') && !row.offline;
+
 export function FilesSidebar({
   me,
   at,
   onConnect,
   onDisconnect,
+  onDropItems,
 }: {
+  /** Items dragged onto a place move there (US-FILE-22). */
+  onDropItems?: (entries: FileEntry[], from: string, to: string, name: string) => void;
   me: { role: 'admin' | 'member'; canSeeShared: boolean };
   at: FilesLocation;
   onConnect: () => void;
@@ -133,6 +142,27 @@ export function FilesSidebar({
   const admin = me.role === 'admin';
   const groups = sidebarGroups(me, useDrives(admin));
   const active = activeRow(at);
+  const [over, setOver] = useState<string | null>(null);
+  const dropProps = (r: SidebarRow) =>
+    onDropItems && droppable(r)
+      ? {
+          onDragOver: (e: DragEvent) => {
+            if (!isItemDrag(e)) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            setOver(r.key);
+          },
+          onDragLeave: () => setOver(null),
+          onDrop: (e: DragEvent) => {
+            if (!isItemDrag(e)) return;
+            e.preventDefault();
+            setOver(null);
+            const d = dragged();
+            endDrag();
+            if (d && d.from !== r.path) onDropItems(d.entries, d.from, r.path!, r.label);
+          },
+        }
+      : {};
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <nav aria-label={copy.places} onKeyDown={moveInList} className="min-h-0 flex-1 overflow-y-auto pb-4">
@@ -145,7 +175,11 @@ export function FilesSidebar({
             )}
             <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
               {g.rows.map((r) => (
-                <li key={r.key}>
+                <li
+                  key={r.key}
+                  className={over === r.key ? 'rounded-sm bg-accent-wash ring-2 ring-accent' : undefined}
+                  {...dropProps(r)}
+                >
                   {r.driveId ? (
                     <DriveRow row={r} current={active === r.key} onDisconnect={() => onDisconnect(r.driveId!)} />
                   ) : (

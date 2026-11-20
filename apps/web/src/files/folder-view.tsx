@@ -15,6 +15,7 @@ import { FileGrid, type SelectProps } from './file-grid';
 import { FileList } from './file-list';
 import { FolderSkeleton } from './folder-skeleton';
 import { RenameDialog } from './rename-dialog';
+import type { DragProps } from './drag';
 import { DEFAULT_SORT, type FilesSort, type FilesView, type SortBy } from './view-prefs';
 import { clickSelect, emptySelection, selectAll, toggleSelect, type Selection } from './selection';
 import { canShareFiles, PhoneSelectionBar, SelectionBar, shareFiles, type SelectionActions } from './selection-bar';
@@ -138,9 +139,12 @@ export function FolderView({
   sort = DEFAULT_SORT,
   onSort,
   selectionActions,
+  onDropItems,
 }: {
   /** Move to… and Move to Trash for the selected items, once their stories ship (US-FILE-22, US-FILE-16). */
-  selectionActions?: (entries: FileEntry[], clear: () => void) => Omit<SelectionActions, 'onShare'>;
+  selectionActions?: (entries: FileEntry[], clear: () => void, readOnly: boolean) => Omit<SelectionActions, 'onShare'>;
+  /** Items dragged onto a folder here (US-FILE-22). */
+  onDropItems?: (entries: FileEntry[], from: string, to: FileEntry) => void;
   /** Grid or list, and the order (US-FILE-19). */
   view?: FilesView;
   sort?: FilesSort;
@@ -167,6 +171,9 @@ export function FolderView({
   const { query, listing, items } = useFolder(path, sort);
   const queryClient = useQueryClient();
   const trpc = useTRPC();
+  // Before the listing comes, the breadcrumb and toolbar show what's known, so they can be used meanwhile.
+  const crumbs = listing?.crumbs ?? provisionalCrumbs(path, knownCrumbs(queryClient, trpc.files.list.pathKey()));
+  const place = listing?.place ?? { area: 'home', name: null, readOnly: provisionalReadOnly(path) };
   const [dragging, setDragging] = useState(false);
   const [renaming, setRenaming] = useState<FileEntry | null>(null);
   const [focusAfter, setFocusAfter] = useState<string | null>(null);
@@ -188,7 +195,7 @@ export function FolderView({
     selecting,
   };
   const actions: SelectionActions = {
-    ...selectionActions?.(chosen, clear),
+    ...selectionActions?.(chosen, clear, place.readOnly),
     // The device's share sheet takes files, not folders (US-FILE-20).
     ...(canShareFiles() && chosen.length > 0 && chosen.every((e) => e.kind === 'file')
       ? { onShare: () => void shareFiles(chosen).catch(() => {}) }
@@ -208,9 +215,15 @@ export function FolderView({
     return () => window.removeEventListener('keydown', onKey, true);
   }, [hasSelection, path]);
   const [retrying, setRetrying] = useState(false);
-  // Before the listing comes, the breadcrumb and toolbar show what's known, so they can be used meanwhile.
-  const crumbs = listing?.crumbs ?? provisionalCrumbs(path, knownCrumbs(queryClient, trpc.files.list.pathKey()));
-  const place = listing?.place ?? { area: 'home', name: null, readOnly: provisionalReadOnly(path) };
+  // Dragging items onto a folder moves them (US-FILE-22); not out of a read-only place.
+  const drag: DragProps | undefined =
+    onDropItems && !place.readOnly && isFeatureEnabled('filesMove')
+      ? {
+          carry: (e) => (select.selected.has(e.path) ? chosen : [e]),
+          from: path,
+          onDrop: (folder, entries, from) => onDropItems(entries, from, folder),
+        }
+      : undefined;
   const canRename = !place.readOnly && isFeatureEnabled('filesRename');
   const last = crumbs[crumbs.length - 1];
   const folderName = last ? crumbName(last) : copy.title;
@@ -321,6 +334,7 @@ export function FolderView({
           onOpen={open}
           openOnClick={!desktop}
           select={select}
+          drag={drag}
           onRename={canRename ? setRenaming : undefined}
           focusPath={focusAfter ?? focusPath}
         />
@@ -332,6 +346,7 @@ export function FolderView({
           onOpen={open}
           openOnClick={!desktop}
           select={select}
+          drag={drag}
           onRename={canRename ? setRenaming : undefined}
           focusPath={focusAfter ?? focusPath}
         />

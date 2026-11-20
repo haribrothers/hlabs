@@ -6,6 +6,7 @@ import { FileItem, type FileAccent } from '@hlabs/ui/files';
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { filesCopy as copy } from '../copy/files';
 import type { ClickMods } from './selection';
+import { itemDragProps, type DragProps } from './drag';
 
 /** "24 items" under a folder, the size under a file. */
 export const metaOf = (e: FileEntry) =>
@@ -87,7 +88,10 @@ export function FileGrid({
   openOnClick = false,
   select,
   onRename,
+  drag,
 }: {
+  /** Dragging items onto folders moves them (US-FILE-22); desktop only. */
+  drag?: DragProps;
   /** F2 on the focused item (US-FILE-23); absent where it can't be renamed. */
   onRename?: (entry: FileEntry) => void;
   select?: SelectProps;
@@ -104,6 +108,7 @@ export function FileGrid({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState<string | null>(null);
+  const [over, setOver] = useState<string | null>(null);
   const tabStop = items.some((e) => e.path === current) ? current : (items[0]?.path ?? null);
 
   useEffect(() => {
@@ -163,7 +168,11 @@ export function FileGrid({
       {items.map((e) => {
         const checked = select?.selected.has(e.path) ?? false;
         return (
-          <div key={e.path} className="group relative">
+          <div
+            key={e.path}
+            className={`group relative rounded-lg ${over === e.path ? 'bg-accent-wash ring-2 ring-accent' : ''}`}
+            {...itemDragProps(e, openOnClick ? undefined : drag, setOver)}
+          >
             <FileItem
               name={e.name}
               kind={e.kind === 'folder' ? 'folder' : undefined}

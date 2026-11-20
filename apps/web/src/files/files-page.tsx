@@ -22,6 +22,8 @@ import { useTRPCClient } from '../lib/trpc';
 import { FolderToolbar, ViewToggle } from './toolbar';
 import { useFilesView } from './view-prefs';
 import { RenameDialog } from './rename-dialog';
+import { useMoveFlow } from './move-flow';
+import type { MoveRoot } from './move-dialog';
 import { isFeatureEnabled } from '@hlabs/shared';
 
 export interface FilesPageProps {
@@ -68,6 +70,16 @@ export function FilesPage({ at }: FilesPageProps) {
   const uploads = useFileUploads();
   const folderPath = at.path || HOME;
   const prefs = useFilesView();
+  // Where Move to can put things (US-FILE-22): Home, Shared when this person sees it, drives hlabs can write to.
+  const moveRoots: MoveRoot[] = [
+    { path: HOME, name: copy.home },
+    ...(me.data?.canSeeShared ? [{ path: '/shared', name: copy.sharedWithMe }] : []),
+    ...drives
+      .filter((d) => !d.isRoot && d.status === 'ok' && !d.readOnly)
+      .map((d) => ({ path: `/drives/${d.id}`, name: d.name })),
+  ];
+  const mover = useMoveFlow({ roots: moveRoots, accent: me.data?.appearance.accent ?? 'violet' });
+  const canMove = isFeatureEnabled('filesMove');
 
   useEffect(() => {
     document.title = copy.docTitle;
@@ -107,6 +119,10 @@ export function FilesPage({ at }: FilesPageProps) {
         view={prefs.view}
         sort={prefs.sort}
         onSort={prefs.sortBy}
+        selectionActions={(entries, clear, readOnly) =>
+          canMove && !readOnly ? { onMove: () => mover.choose(entries, folderPath, clear) } : {}
+        }
+        onDropItems={canMove ? (entries, from, to) => mover.move(entries, from, to.path, to.name) : undefined}
         search={
           <SearchField
             value={searchText}
@@ -134,6 +150,7 @@ export function FilesPage({ at }: FilesPageProps) {
   const dialogs = (
     <>
       {uploads.ui}
+      {mover.ui}
       {preview ? (
         <FilePreview
           entry={preview.entry}
@@ -147,6 +164,17 @@ export function FilesPage({ at }: FilesPageProps) {
               : [
                   ...(isFeatureEnabled('filesRename')
                     ? [{ label: copy.renameItem, onSelect: () => setRenaming(entry) }]
+                    : []),
+                  ...(canMove
+                    ? [
+                        {
+                          label: copy.moveTo,
+                          onSelect: () => {
+                            setPreview(null);
+                            mover.choose([entry], entry.path.slice(0, entry.path.lastIndexOf('/')));
+                          },
+                        },
+                      ]
                     : []),
                 ]
           }
@@ -207,7 +235,13 @@ export function FilesPage({ at }: FilesPageProps) {
         <p className="m-0 mb-3 px-3 text-title-2 font-bold" aria-hidden="true">
           {copy.title}
         </p>
-        <FilesSidebar me={filesMe} at={at} onConnect={() => setConnecting(true)} onDisconnect={setDisconnecting} />
+        <FilesSidebar
+          me={filesMe}
+          at={at}
+          onConnect={() => setConnecting(true)}
+          onDisconnect={setDisconnecting}
+          onDropItems={canMove ? (entries, from, to, name) => mover.move(entries, from, to, name) : undefined}
+        />
       </div>
       <div className="relative flex min-h-0 min-w-0 flex-col">{main}</div>
       {dialogs}
