@@ -86,7 +86,10 @@ export function FileGrid({
   below,
   openOnClick = false,
   select,
+  onRename,
 }: {
+  /** F2 on the focused item (US-FILE-23); absent where it can't be renamed. */
+  onRename?: (entry: FileEntry) => void;
   select?: SelectProps;
   items: FileEntry[];
   /** The grid's accessible name: the folder's name. */
@@ -117,6 +120,15 @@ export function FileGrid({
   }, [focusPath, items]);
 
   const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'F2' && onRename) {
+      const path = (document.activeElement as HTMLElement | null)?.dataset.path;
+      const entry = items.find((i) => i.path === path);
+      if (entry) {
+        e.preventDefault();
+        onRename(entry);
+      }
+      return;
+    }
     if (select && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
       e.preventDefault();
       select.onSelectAll();

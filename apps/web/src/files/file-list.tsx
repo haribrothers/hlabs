@@ -61,7 +61,10 @@ export function FileList({
   openOnClick = false,
   now,
   select,
+  onRename,
 }: {
+  /** F2 on the focused row (US-FILE-23). */
+  onRename?: (entry: FileEntry) => void;
   select?: SelectProps;
   items: FileEntry[];
   label: string;
@@ -96,6 +99,11 @@ export function FileList({
     if (select && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
       e.preventDefault();
       select.onSelectAll();
+      return;
+    }
+    if (e.key === 'F2' && onRename) {
+      e.preventDefault();
+      onRename(entry);
       return;
     }
     if (e.key === ' ' && select) {

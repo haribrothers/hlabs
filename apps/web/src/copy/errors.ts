@@ -206,6 +206,13 @@ export const errorCopy = {
     FILES_NO_SPACE: () => ({ title: 'There’s no space left there', body: 'Free up some space, then try again.' }),
     FILES_NAME_EXISTS: () => ({ title: 'That name is taken', body: 'Choose another name.' }),
     FILES_INVALID_PATH: () => ({ title: "That place doesn't exist", body: 'It may have been moved or removed.' }),
+    FILES_IN_USE: (d) => {
+      const apps = Array.isArray(d?.apps) ? (d.apps as string[]) : [];
+      return {
+        title: 'Something uses this folder',
+        body: `${apps.length ? apps.join(', ') : 'An app'} would stop finding it if it changed.`,
+      };
+    },
     UPLOAD_OFFSET_MISMATCH: () => ({
       title: 'The upload got out of step',
       body: 'Try again; it carries on where it stopped.',

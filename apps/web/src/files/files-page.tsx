@@ -21,6 +21,8 @@ import { DisconnectDriveDialog } from './disconnect-drive-dialog';
 import { useTRPCClient } from '../lib/trpc';
 import { FolderToolbar, ViewToggle } from './toolbar';
 import { useFilesView } from './view-prefs';
+import { RenameDialog } from './rename-dialog';
+import { isFeatureEnabled } from '@hlabs/shared';
 
 export interface FilesPageProps {
   at: FilesLocation;
@@ -58,6 +60,7 @@ export function FilesPage({ at }: FilesPageProps) {
   const [newFolder, setNewFolder] = useState(false);
   const [focusPath, setFocusPath] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ entry: FileEntry; items: FileEntry[] } | null>(null);
+  const [renaming, setRenaming] = useState<FileEntry | null>(null);
   // The search belongs to the folder it was typed in: opening another one clears it.
   const [search, setSearch] = useState({ path: at.path, text: '' });
   const searchText = search.path === at.path ? search.text : '';
@@ -138,6 +141,26 @@ export function FilesPage({ at }: FilesPageProps) {
           onNavigate={(entry) => setPreview({ ...preview, entry })}
           onClose={() => setPreview(null)}
           openWith={<OpenWith path={preview.entry.path} />}
+          menu={(entry, readOnly) =>
+            readOnly
+              ? []
+              : [
+                  ...(isFeatureEnabled('filesRename')
+                    ? [{ label: copy.renameItem, onSelect: () => setRenaming(entry) }]
+                    : []),
+                ]
+          }
+        />
+      ) : null}
+      {renaming ? (
+        <RenameDialog
+          entry={renaming}
+          onClose={() => setRenaming(null)}
+          onRenamed={(path, name) => {
+            // The preview follows the file to its new name.
+            const renamed = (e: FileEntry) => (e.path === renaming.path ? { ...e, path, name } : e);
+            setPreview((p) => (p ? { entry: renamed(p.entry), items: p.items.map(renamed) } : p));
+          }}
         />
       ) : null}
       {connecting ? (

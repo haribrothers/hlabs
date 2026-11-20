@@ -3,9 +3,17 @@
 // folder's files (Left and Right too); Escape closes and puts focus back on the file. Details on the right: size,
 // dimensions, modified and where it is. Preview links last 5 minutes; an expired one is fetched again quietly.
 import type { FileEntry } from '@hlabs/api';
-import { ChevronLeft, ChevronRight, iconDefaults, X } from '@hlabs/icons';
+import { ChevronLeft, ChevronRight, iconDefaults, MoreHorizontal, X } from '@hlabs/icons';
 import { formatBytes, isFeatureEnabled } from '@hlabs/shared';
-import { Button, IconButton, ModalPanel } from '@hlabs/ui';
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  IconButton,
+  ModalPanel,
+} from '@hlabs/ui';
 import { FileIcon } from '@hlabs/icons/files';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -135,7 +143,10 @@ export function FilePreview({
   onNavigate,
   onClose,
   openWith,
+  menu,
 }: {
+  /** The "•••" menu: Rename…, Move to…, Move to Trash, as their stories ship (D-036); read-only files get none. */
+  menu?: (entry: FileEntry, readOnly: boolean) => Array<{ label: string; onSelect: () => void; danger?: boolean }>;
   entry: FileEntry;
   /** The folder in its order: previous and next skip folders. */
   items: FileEntry[];
@@ -163,6 +174,8 @@ export function FilePreview({
     }
   };
 
+  // Read only until stat says otherwise, so nothing is offered that would be refused.
+  const moreItems = menu?.(entry, stat?.readOnly ?? true) ?? [];
   const location = stat?.parent ?? [];
   const goTo = location[location.length - 1]?.path;
   return (
@@ -189,6 +202,26 @@ export function FilePreview({
           <Button variant="secondary" size="sm" href={downloadUrl(entry.path)} download={entry.name}>
             {copy.download}
           </Button>
+          {moreItems.length ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton label={copy.more} className="rounded-full">
+                  <MoreHorizontal aria-hidden {...iconDefaults} />
+                </IconButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-48">
+                {moreItems.map((m) => (
+                  <DropdownMenuItem
+                    key={m.label}
+                    onSelect={m.onSelect}
+                    className={m.danger ? 'text-danger' : undefined}
+                  >
+                    {m.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
         </header>
         <section
           aria-label={copy.details}

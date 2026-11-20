@@ -55,6 +55,20 @@ export const filesCopy = {
   moveShort: 'Move',
   moveToTrash: 'Move to Trash',
   trashShort: 'Trash',
+  // Rename (US-FILE-23)
+  renameTitle: 'Rename',
+  renameItem: 'Rename…',
+  newName: 'New name',
+  rename: 'Rename',
+  renameAnyway: 'Rename anyway',
+  extensionKept: (ext: string) => `The ${ext} ending is kept so apps still know how to open it.`,
+  nameTaken: (kind: 'folder' | 'file', name: string) =>
+    `A ${kind === 'folder' ? 'folder' : 'file'} called “${name}” already exists here.`,
+  usedBy: (names: string[]) => {
+    if (!names.length) return 'An app uses this folder. Renaming it will break that.';
+    const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
+    return `${list} ${names.length === 1 ? 'uses' : 'use'} this folder. Renaming it will break that.`;
+  },
   emptyFolder: 'This folder is empty',
   emptyWritable: 'Drop files here or use Upload',
   gone: 'This folder no longer exists',

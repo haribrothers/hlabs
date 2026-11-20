@@ -1,13 +1,13 @@
 // Files (07-files): listing, details, new folders, recents and search over the virtual paths of places.ts. Every call
 // resolves the path for the caller first, so access is enforced here and not only in the dashboard.
 import { hlabsError, type FileEntry } from '@hlabs/api';
-import { appMounts, apps, getUserSetting, setUserSetting, storageLocations, type HlabsDb } from '@hlabs/db';
+import { appMounts, apps, fileShares, getUserSetting, setUserSetting, storageLocations, type HlabsDb } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
-import { appSummary } from '../apps/list';
+import { appSummary, catalogManifest } from '../apps/list';
 import { visibleAppIds } from '../home/layout';
 import type { Dirent, Stats } from 'node:fs';
-import { lstat, mkdir, readdir, realpath, stat } from 'node:fs/promises';
-import { join } from 'node:path';
+import { lstat, mkdir, readdir, realpath, rename, stat } from 'node:fs/promises';
+import { dirname, join, sep } from 'node:path';
 import { dimensionsOf } from './dimensions';
 import { mimeOf, PREVIEW_IMAGES, PREVIEW_VIDEOS } from './mime';
 import { PreviewTokens, previewUrl } from './preview-tokens';
@@ -302,6 +302,72 @@ export class FilesService {
       throw err;
     });
     return { path: joinVirtual(place.virtual, name) };
+  }
+
+  /**
+   * What a rename or move would break (US-FILE-23): apps whose folders are this one or inside it, and network shares of
+   * it, by name.
+   */
+  async usedBy(real: string): Promise<string[]> {
+    const rows = this.deps.db
+      .select({ name: apps.id, location: storageLocations.path, subpath: appMounts.subpath })
+      .from(appMounts)
+      .innerJoin(apps, eq(apps.id, appMounts.appId))
+      .innerJoin(storageLocations, eq(storageLocations.id, appMounts.storageLocationId))
+      .all();
+    const names = new Set<string>();
+    for (const row of rows) {
+      const folder = await realpath(join(row.location, row.subpath)).catch(() => null);
+      if (folder && inside(real, folder)) names.add(this.appName(row.name));
+    }
+    for (const share of this.deps.db.select().from(fileShares).all()) {
+      if (inside(real, share.path)) names.add(share.name);
+    }
+    return [...names];
+  }
+
+  /** An app's name from its manifest, else its id. */
+  private appName(appId: string): string {
+    const row = this.deps.db.select().from(apps).where(eq(apps.id, appId)).get();
+    return row ? (catalogManifest(this.deps.db, row).name ?? appId) : appId;
+  }
+
+  /**
+   * A new name in the same folder (US-FILE-23). Same rules as New folder; a folder something uses needs `force`.
+   * Network shares of it follow the new name.
+   */
+  async rename(caller: Caller, input: { path: string; name: string; force?: boolean }) {
+    const name = input.name.trim();
+    if (!validName(name)) throw hlabsError('FILES_INVALID_NAME');
+    const place = await this.resolve(caller, input.path);
+    if (place.base === null || place.rest.length === 0) throw hlabsError('FILES_INVALID_PATH');
+    if (place.readOnly) throw hlabsError('FILES_READ_ONLY');
+    const real = await realInside(place.base, place.host!);
+    const target = join(dirname(real), name);
+    const parentVirtual = place.virtual.slice(0, place.virtual.lastIndexOf('/'));
+    if (target === real) return { path: place.virtual };
+    // Another item of that name; on a case-insensitive disk "bills" → "Bills" is the same item and may go ahead.
+    const existing = await realpath(target).catch(() => null);
+    if (existing !== null && existing !== real) throw hlabsError('FILES_NAME_EXISTS', name, { name });
+    if (!input.force) {
+      const apps = await this.usedBy(real);
+      if (apps.length) throw hlabsError('FILES_IN_USE', undefined, { apps });
+    }
+    await rename(real, target).catch((err: NodeJS.ErrnoException) => {
+      if (err.code === 'EACCES' || err.code === 'EROFS' || err.code === 'EPERM') throw hlabsError('FILES_READ_ONLY');
+      if (err.code === 'ENOENT') throw hlabsError('NOT_FOUND');
+      throw err;
+    });
+    for (const share of this.deps.db.select().from(fileShares).all()) {
+      if (share.path === real || share.path.startsWith(real + sep)) {
+        this.deps.db
+          .update(fileShares)
+          .set({ path: target + share.path.slice(real.length) })
+          .where(eq(fileShares.id, share.id))
+          .run();
+      }
+    }
+    return { path: joinVirtual(parentVirtual, name) };
   }
 
   /**

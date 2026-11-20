@@ -50,6 +50,12 @@ A bar then says how many are selected, with what you can do with them: **Downloa
 
 On a phone, choose **Select**, then tap the items you want; the buttons along the bottom act on them. **Select all** ticks everything, and **Done** ends selecting.
 
+### Rename a file or folder
+
+Select an item and press **F2**, or open a file and choose **•••** › **Rename…**. Type the new name and press Return. For a file, only the part before its ending (such as **.pdf**) changes, so apps still know how to open it. Names can't be empty, contain **/** or match something already in the folder.
+
+If an app keeps its data in a folder (or a folder inside it), Files says so before renaming it, because the app would stop finding it there; choose **Rename anyway** only if you'll point the app at the new name.
+
 ## Make a folder
 
 Choose **New folder** at the top, type a name (or keep **Untitled folder**) and choose **Create**, or press Return. The new folder is selected so you can open it straight away.

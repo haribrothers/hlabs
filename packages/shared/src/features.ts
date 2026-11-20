@@ -66,7 +66,7 @@ export const FEATURE_PHASE = {
   filesListView: 5,
   filesContextMenu: 9,
   filesMove: 9,
-  filesRename: 9,
+  filesRename: 5,
   /** "Share" (a link) in FilePreview (US-FILE-06). */
   fileLinks: 9,
   aiAccess: 8,

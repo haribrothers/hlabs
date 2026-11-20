@@ -130,7 +130,14 @@ export const files = {
   ),
   /** A new folder `name` in `path` (US-FILE-03). */
   mkdir: io(pathRef.extend({ name: z.string().max(1024) }), z.object({ path: virtualPathSchema })),
-  rename: io(pathRef.extend({ name: z.string().min(1).max(255) }), ok),
+  /**
+   * A new name for a file or folder (US-FILE-23), in the same folder. A folder an app keeps (or holds one) or a network
+   * share is `FILES_IN_USE` with `detail.apps` until it's sent again with `force`. Answers the new path.
+   */
+  rename: io(
+    pathRef.extend({ name: z.string().min(1).max(1024), force: z.boolean().optional() }),
+    z.object({ path: virtualPathSchema }),
+  ),
   move: io(pathsRef.extend({ to: virtualPathSchema }), z.union([ok, jobRefSchema])),
   copy: io(pathsRef.extend({ to: virtualPathSchema }), z.union([ok, jobRefSchema])),
   trash: io(pathsRef, ok),

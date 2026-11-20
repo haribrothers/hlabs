@@ -1,7 +1,7 @@
 // The open folder (US-FILE-02, FilesBrowser): breadcrumb, search and the toolbar on top, the grid, and a footer that
 // says how much is here and who can see it. Errors and empty folders say what to do next.
 import type { FileEntry } from '@hlabs/api';
-import { formatBytes } from '@hlabs/shared';
+import { formatBytes, isFeatureEnabled } from '@hlabs/shared';
 import { Button, ScrollPane } from '@hlabs/ui';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -14,6 +14,7 @@ import { Breadcrumb } from './breadcrumb';
 import { FileGrid, type SelectProps } from './file-grid';
 import { FileList } from './file-list';
 import { FolderSkeleton } from './folder-skeleton';
+import { RenameDialog } from './rename-dialog';
 import { DEFAULT_SORT, type FilesSort, type FilesView, type SortBy } from './view-prefs';
 import { clickSelect, emptySelection, selectAll, toggleSelect, type Selection } from './selection';
 import { canShareFiles, PhoneSelectionBar, SelectionBar, shareFiles, type SelectionActions } from './selection-bar';
@@ -167,6 +168,8 @@ export function FolderView({
   const queryClient = useQueryClient();
   const trpc = useTRPC();
   const [dragging, setDragging] = useState(false);
+  const [renaming, setRenaming] = useState<FileEntry | null>(null);
+  const [focusAfter, setFocusAfter] = useState<string | null>(null);
   // The selection belongs to this folder (US-FILE-20): opening another one clears it, and a phone's Select mode ends.
   const [selState, setSel] = useState<Selection>(() => emptySelection(path));
   const [selectingIn, setSelectingIn] = useState<string | null>(null);
@@ -208,6 +211,7 @@ export function FolderView({
   // Before the listing comes, the breadcrumb and toolbar show what's known, so they can be used meanwhile.
   const crumbs = listing?.crumbs ?? provisionalCrumbs(path, knownCrumbs(queryClient, trpc.files.list.pathKey()));
   const place = listing?.place ?? { area: 'home', name: null, readOnly: provisionalReadOnly(path) };
+  const canRename = !place.readOnly && isFeatureEnabled('filesRename');
   const last = crumbs[crumbs.length - 1];
   const folderName = last ? crumbName(last) : copy.title;
   const canDrop = !!listing && !listing.place.readOnly && !!onDropFiles;
@@ -314,20 +318,22 @@ export function FolderView({
           accent={me.accent}
           sort={sort}
           onSort={onSort ?? (() => {})}
-          focusPath={focusPath}
           onOpen={open}
           openOnClick={!desktop}
           select={select}
+          onRename={canRename ? setRenaming : undefined}
+          focusPath={focusAfter ?? focusPath}
         />
       ) : (
         <FileGrid
           items={items}
           label={name}
           accent={me.accent}
-          focusPath={focusPath}
           onOpen={open}
           openOnClick={!desktop}
           select={select}
+          onRename={canRename ? setRenaming : undefined}
+          focusPath={focusAfter ?? focusPath}
         />
       );
   }
@@ -390,6 +396,18 @@ export function FolderView({
     </div>
   );
 
+  const dialogs = renaming ? (
+    <RenameDialog
+      entry={renaming}
+      onClose={() => setRenaming(null)}
+      onRenamed={(renamed) => {
+        // It stays selected and focused under its new name (US-FILE-23).
+        setSel({ folder: path, paths: [renamed], anchor: renamed });
+        setFocusAfter(renamed);
+      }}
+    />
+  ) : null;
+
   // A phone scrolls the whole page (PhoneFiles); a desktop window scrolls the folder under its header.
   if (!desktop) {
     return (
@@ -399,6 +417,7 @@ export function FolderView({
         <div className="flex flex-col">{body}</div>
         {footer}
         {selecting ? <PhoneSelectionBar entries={chosen} actions={actions} /> : null}
+        {dialogs}
       </div>
     );
   }
@@ -417,6 +436,7 @@ export function FolderView({
         {body}
       </ScrollPane>
       {footer}
+      {dialogs}
     </div>
   );
 }
