@@ -139,11 +139,12 @@ describe('US-FILE-01', () => {
     expect(at('/drives/nas/Movies')).toBe('drive:nas');
   });
 
-  it('Trash and external drives show once phase 8 ships', () => {
+  it('Trash shows from phase 5 (D-135) and external drives once phase 8 ships', () => {
     const drives = [{ id: 'usb', kind: 'external' as const, name: 'Backup disk', isRoot: false, status: 'ok' }];
     const keys = (phase: number) =>
       sidebarGroups({ role: 'admin', canSeeShared: true }, drives, phase).flatMap((g) => g.rows.map((r) => r.key));
-    expect(keys(5)).not.toContain('trash');
+    expect(keys(4)).not.toContain('trash');
+    expect(keys(5)).toContain('trash');
     expect(keys(5)).not.toContain('drive:usb');
     expect(keys(8)).toContain('trash');
     expect(keys(8)).toContain('drive:usb');

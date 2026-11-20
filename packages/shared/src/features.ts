@@ -58,7 +58,7 @@ export const FEATURE_PHASE = {
   deployCustom: 8,
   moveAppData: 8,
   networkShares: 8,
-  trashScreen: 8,
+  trashScreen: 5,
   /** External drives in Files' sidebar and their screen (F-FILE-06). */
   externalDrives: 8,
   /** Files' list view and multi-selection (F-FILE-08), its right-click menu (F-FILE-09), Move to (F-FILE-10) and

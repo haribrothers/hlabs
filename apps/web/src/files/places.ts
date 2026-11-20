@@ -10,7 +10,7 @@ export const RECENTS = 'recents';
 /** Where Files is: a folder (`path`) or Recents. */
 export interface FilesLocation {
   path: string;
-  view: 'folder' | 'recents';
+  view: 'folder' | 'recents' | 'trash';
 }
 
 export interface Drive {
@@ -30,8 +30,9 @@ export interface Drive {
 export interface SidebarRow {
   key: string;
   label: string;
-  /** Null for Recents. */
+  /** Null for Recents and Trash, which are views (`view`). */
   path: string | null;
+  view?: 'recents' | 'trash';
   /** Drives that aren't mounted show an offline dot (US-FILE-01). */
   offline?: boolean;
   driveId?: string;
@@ -58,7 +59,7 @@ export function sidebarGroups(
   const admin = me.role === 'admin';
   const trash = isFeatureEnabled('trashScreen', shippedPhase);
   const files: SidebarRow[] = [
-    { key: 'recents', label: copy.recents, path: null },
+    { key: 'recents', label: copy.recents, path: null, view: 'recents' },
     { key: 'home', label: copy.home, path: HOME },
     { key: 'photos', label: copy.photos, path: `${HOME}/Photos` },
     { key: 'downloads', label: copy.downloads, path: `${HOME}/Downloads` },
@@ -132,11 +133,12 @@ export function pickerPlaces(
 export const placeOfPath = (places: PickerPlace[], path: string) =>
   places.find((p) => path === p.path || path.startsWith(`${p.path}/`)) ?? null;
 
-const trashRow: SidebarRow = { key: 'trash', label: copy.trash, path: null };
+const trashRow: SidebarRow = { key: 'trash', label: copy.trash, path: null, view: 'trash' };
 
 /** The sidebar row for where Files is: the deepest place the path is in. */
 export function activeRow(at: FilesLocation): string | null {
   if (at.view === 'recents') return 'recents';
+  if (at.view === 'trash') return 'trash';
   const p = at.path;
   const under = (top: string) => p === top || p.startsWith(`${top}/`);
   if (under(`${HOME}/Photos`)) return 'photos';

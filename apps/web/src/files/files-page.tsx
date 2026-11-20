@@ -10,6 +10,7 @@ import { useMe } from '../lib/use-me';
 import { FolderView, type FilesMe } from './folder-view';
 import { HOME, type FilesLocation } from './places';
 import { RecentsView } from './recents-view';
+import { TrashView } from './trash-view';
 import { FilePreview } from './file-preview';
 import { NewFolderDialog } from './new-folder-dialog';
 import { OpenWith } from './open-with';
@@ -34,6 +35,7 @@ export interface FilesPageProps {
 /** Where Files is, from `/files?path=…` or `/files?view=recents` (US-FILE-02: back and forward move between folders). */
 export function locationOf(search: Record<string, unknown>): FilesLocation {
   if (search.view === 'recents') return { path: '', view: 'recents' };
+  if (search.view === 'trash') return { path: '', view: 'trash' };
   const path = typeof search.path === 'string' && search.path.startsWith('/') ? search.path : HOME;
   return { path, view: 'folder' };
 }
@@ -117,6 +119,8 @@ export function FilesPage({ at }: FilesPageProps) {
   const main: ReactNode =
     at.view === 'recents' ? (
       <RecentsView me={filesMe} onOpenFile={onOpenFile} />
+    ) : at.view === 'trash' ? (
+      <TrashView accent={filesMe.accent} />
     ) : (
       <FolderView
         path={at.path || HOME}

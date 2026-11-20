@@ -2,11 +2,12 @@
 // for good instead, after a confirmation), deleting for good, and restoring to where they were (the folder is made
 // again if it's gone; a name that's taken gets " (2)"). Each person sees and restores only their own Trash.
 import { hlabsCodeOf, hlabsError, type HlabsCode } from '@hlabs/api';
-import { auditLog, trashItems, type HlabsDb } from '@hlabs/db';
+import { auditLog, storageLocations, trashItems, users, type HlabsDb } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { lstat, mkdir, rename, rm } from 'node:fs/promises';
 import { join, posix } from 'node:path';
+import { mimeOf } from './mime';
 import { joinVirtual, realInside, type Caller } from './places';
 import type { FilesService } from './service';
 import type { Trash } from './trash';
@@ -28,6 +29,54 @@ export interface RestoreFailure {
 
 export class FilesTrash {
   constructor(private readonly deps: { db: HlabsDb; files: FilesService; trash: Trash }) {}
+
+  /** This person's Trash, newest first (US-FILE-17), paged by offset. */
+  async list(caller: Caller, input: { cursor?: string; limit?: number }) {
+    const limit = input.limit ?? 50;
+    const rows = this.deps.db
+      .select()
+      .from(trashItems)
+      .where(eq(trashItems.ownerUserId, caller.id))
+      .orderBy(desc(trashItems.deletedAt))
+      .all();
+    const from = Math.max(0, Number.parseInt(input.cursor ?? '0', 10) || 0);
+    const page = rows.slice(from, from + limit);
+    const items = [];
+    for (const row of page) {
+      const name = posix.basename(row.originalPath);
+      const folder = await lstat(row.trashPath).then(
+        (st) => st.isDirectory(),
+        () => false,
+      );
+      items.push({
+        id: row.id,
+        name,
+        kind: folder ? ('folder' as const) : ('file' as const),
+        mime: folder ? null : mimeOf(name),
+        size: row.size,
+        originalPath: row.originalPath,
+        from: this.fromNames(posix.dirname(row.originalPath)),
+        deletedAt: row.deletedAt,
+      });
+    }
+    return { items, nextCursor: from + limit < rows.length ? String(from + limit) : null };
+  }
+
+  /** "Documents › Bills" as names: below Home its folders, else the place's name first. */
+  private fromNames(parent: string): string[] {
+    const [area, second, ...rest] = parent.split('/').filter(Boolean);
+    if (area === 'home') return second ? [second, ...rest] : ['Home'];
+    if (area === 'shared') return ['Shared', ...(second ? [second, ...rest] : [])];
+    if (area === 'drives' && second) {
+      const loc = this.deps.db.select().from(storageLocations).where(eq(storageLocations.id, second)).get();
+      return [loc?.name ?? second, ...rest];
+    }
+    if (area === 'users' && second) {
+      const person = this.deps.db.select().from(users).where(eq(users.username, second)).get();
+      return [person?.displayName ?? second, ...rest];
+    }
+    return [parent];
+  }
 
   /** Items to this person's Trash (US-FILE-16); answers their Trash ids for Undo. */
   async trash(caller: Caller, paths: string[]): Promise<{ trashItemIds: string[] }> {

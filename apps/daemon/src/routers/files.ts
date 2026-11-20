@@ -22,6 +22,7 @@ export const files: AppHandlers<DaemonContext>['files'] = {
   trash: ({ paths }, ctx) => ctx.services.filesTrash.trash(callerOf(ctx), paths),
   delete: ({ paths }, ctx) => ctx.services.filesTrash.remove(callerOf(ctx), paths),
   restoreFromTrash: ({ ids }, ctx) => ctx.services.filesTrash.restore(callerOf(ctx), ids),
+  listTrash: (input, ctx) => ctx.services.filesTrash.list(callerOf(ctx), input),
   openWith: ({ path }, ctx) =>
     ctx.services.files.openWith(callerOf(ctx), path, (name) => ctx.services.routing.isPublished(name)),
   preview: (input, ctx) => ctx.services.files.preview(callerOf(ctx), input),

@@ -233,7 +233,7 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-FILE-23 · Rename a file or folder (moved to phase 5, D-135; F2 and FilePreview's "•••"; the right-click menu and the phone's "•••" come with US-FILE-21)
 - [x] US-FILE-22 · Move items to another folder (moved to phase 5, D-135; from the selection bar, the preview's •••, and by dragging onto folders and sidebar places; the right-click menu's Move to… comes with US-FILE-21)
 - [x] US-FILE-16 · Move items to Trash with undo (moved to phase 5, D-135; files.delete for network drives; the right-click menu's Move to Trash comes with US-FILE-21)
-- [ ] US-FILE-17 · Restore items from Trash (moved to phase 5, D-135)
+- [x] US-FILE-17 · Restore items from Trash (moved to phase 5, D-135)
 - [ ] US-FILE-18 · Empty Trash manually and automatically (moved to phase 5, D-135)
 - [ ] US-FILE-21 · Use the right-click menu (moved to phase 5, D-135)
 - [x] US-BKP-01 · See the last backup's status

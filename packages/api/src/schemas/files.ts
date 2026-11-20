@@ -89,7 +89,28 @@ export const files = {
   ),
   /** The 50 most recently changed files in the caller's Home and, when allowed, Shared (US-FILE-01). */
   recent: io(empty, z.object({ items: z.array(fileEntrySchema) })),
-  listTrash: io(pageInputSchema, pending),
+  /**
+   * The caller's Trash, newest first (US-FILE-17). `from` names the folder it was in, top first ("Documents",
+   * "Bills"; a drive by its name; the Home itself is "Home").
+   */
+  listTrash: io(
+    pageInputSchema,
+    z.object({
+      items: z.array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          kind: z.enum(['folder', 'file']),
+          mime: z.string().nullable(),
+          size: z.number().nonnegative(),
+          originalPath: virtualPathSchema,
+          from: z.array(z.string()),
+          deletedAt: z.number(),
+        }),
+      ),
+      nextCursor: z.string().nullable(),
+    }),
+  ),
   /** This person's unfinished uploads (US-FILE-09): picked again with the same name and size, they resume. */
   uploads: io(
     empty,

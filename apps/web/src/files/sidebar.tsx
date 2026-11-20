@@ -6,7 +6,7 @@ import { formatBytes } from '@hlabs/shared';
 import { cn, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, StatusDot } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { useState, type DragEvent, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
 import { filesCopy as copy } from '../copy/files';
 import { useEventStream } from '../lib/use-event-stream';
 import { useTRPC } from '../lib/trpc';
@@ -86,7 +86,7 @@ function RowLink({ row, current }: { row: SidebarRow; current: boolean }) {
   return (
     <Link
       to="/files"
-      search={row.path === null ? { view: 'recents' } : { path: row.path }}
+      search={row.path === null ? { view: row.view ?? 'recents' } : { path: row.path }}
       className={ROW}
       aria-current={current ? 'page' : undefined}
       // Enter and Space follow the link and never open a drive's menu.
@@ -213,14 +213,19 @@ export function FilesChips({ me, at }: { me: { role: 'admin' | 'member'; canSeeS
   const admin = me.role === 'admin';
   const rows = sidebarGroups(me, useDrives(admin)).flatMap((g) => g.rows);
   const active = activeRow(at);
+  const nav = useRef<HTMLElement>(null);
+  // The open place's chip scrolls into view (Trash is at the end, PhoneFilesTrash).
+  useEffect(() => {
+    nav.current?.querySelector('[aria-current="page"]')?.scrollIntoView?.({ inline: 'nearest', block: 'nearest' });
+  }, [active]);
   return (
-    <nav aria-label={copy.places} className="-mx-4 shrink-0 overflow-x-auto px-4">
+    <nav ref={nav} aria-label={copy.places} className="-mx-4 shrink-0 overflow-x-auto px-4">
       <ul className="m-0 flex list-none gap-2 p-0">
         {rows.map((r) => (
           <li key={r.key} className="shrink-0">
             <Link
               to="/files"
-              search={r.path === null ? { view: 'recents' } : { path: r.path }}
+              search={r.path === null ? { view: r.view ?? 'recents' } : { path: r.path }}
               aria-current={active === r.key ? 'page' : undefined}
               className="hl-focus inline-flex min-h-11 items-center rounded-pill bg-surface-control px-4 text-body text-ink no-underline aria-[current=page]:bg-fill-primary aria-[current=page]:font-semibold aria-[current=page]:text-ink-on-light"
             >
