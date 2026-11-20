@@ -29,6 +29,13 @@ export function parseAddress(raw: string): DriveAddress | null {
   return { protocol, host: url[2]!, share: protocol === 'smb' ? path.replace(/^\/+/, '') : path };
 }
 
+/** The address for a share on a found server: `smb://host/Media` or `nfs://host/volume1/media`. */
+export function addressOf(s: { host: string; protocol: 'smb' | 'nfs' }, share: string): string {
+  return s.protocol === 'smb'
+    ? `smb://${s.host}/${share.replace(/^\/+/, '')}`
+    : `nfs://${s.host}${share.startsWith('/') ? '' : '/'}${share}`;
+}
+
 /** "NAS · Media": the server's own name when it was found, else its host without the domain. */
 export function driveName(address: DriveAddress, serverName?: string): string {
   const host = serverName ?? address.host.replace(/\.(local|home\.arpa|lan)$/i, '');
@@ -62,6 +69,8 @@ export function ConnectDriveDialog({
   const [address, setAddress] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  // The share typed for a server that doesn't list its shares.
+  const [typedShare, setTypedShare] = useState('');
   const [appsAllowed, setAppsAllowed] = useState(true);
   const [autoMount, setAutoMount] = useState(true);
   const parsed = parseAddress(address);
@@ -86,9 +95,7 @@ export function ConnectDriveDialog({
 
   const pick = (s: { name: string; host: string; protocol: 'smb' | 'nfs' }, share: string) => {
     setServer({ name: s.name, host: s.host });
-    setAddress(
-      s.protocol === 'smb' ? `smb://${s.host}/${share}` : `nfs://${s.host}${share.startsWith('/') ? '' : '/'}${share}`,
-    );
+    setAddress(addressOf(s, share));
   };
 
   const error = connect.isError && parsed ? connectError(connect.error, parsed) : null;
@@ -140,6 +147,7 @@ export function ConnectDriveDialog({
                       aria-pressed={selected}
                       onClick={() => {
                         setServer({ name: s.name, host: s.host });
+                        setTypedShare('');
                         if (s.shares?.length === 1) pick(s, s.shares[0]!);
                       }}
                       className={cn(
@@ -153,6 +161,24 @@ export function ConnectDriveDialog({
                         {copy.serverMeta(s.protocol, s.shares?.length ?? null)}
                       </span>
                     </button>
+                    {selected && !s.shares?.length ? (
+                      // A server that won't list its shares to a guest: type the one you want.
+                      <div className="mt-2 pl-2">
+                        <TextField
+                          label={copy.shareName}
+                          hint={copy.shareNameHint(s.host)}
+                          value={typedShare}
+                          onChange={(e) => {
+                            connect.reset();
+                            setTypedShare(e.target.value);
+                            setAddress(e.target.value.trim() ? addressOf(s, e.target.value.trim()) : '');
+                          }}
+                          placeholder={s.protocol === 'smb' ? 'Media' : '/volume1/media'}
+                          autoComplete="off"
+                          spellCheck={false}
+                        />
+                      </div>
+                    ) : null}
                     {selected && s.shares?.length ? (
                       <div
                         role="radiogroup"
@@ -217,6 +243,7 @@ export function ConnectDriveDialog({
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
             />
+            <p className="m-0 text-body-sm text-ink-muted sm:col-span-2">{copy.guestHint}</p>
           </div>
         ) : null}
         {[

@@ -1,5 +1,5 @@
-// US-FILE-11 · Connect an SMB or NFS drive: "+ Connect a drive" opens the dialog with drives found on the network;
-// choosing one and a share fills the address; SMB asks for a username and password, NFS doesn't; both switches start
+// US-FILE-11 · Connect an SMB or NFS drive: "Connect a drive" opens the dialog with drives found on the network;
+// choosing one and a share fills the address (a server that won't list its shares asks for the share's name); SMB asks for a username and password, NFS doesn't; both switches start
 // on; Connect adds "<Host> · <Share>" and opens it; what went wrong is said in the dialog.
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -17,6 +17,8 @@ function open(addNetwork: (input: unknown) => unknown = () => ({ locationId: 'ne
         servers: [
           { name: 'NAS', host: 'nas.local', protocol: 'smb', shares: ['Media', 'Photos', 'Backups'] },
           { name: 'Old box', host: 'old.local', protocol: 'nfs', shares: null },
+          // Lists only IPC$ to a guest, as many NAS boxes do.
+          { name: 'HLab', host: 'hlab.local', protocol: 'smb', shares: [] },
         ],
       }),
       'storage.locations.addNetwork': (input) => {
@@ -121,5 +123,25 @@ describe('US-FILE-11', () => {
     expect(parseAddress('ftp://nas/x')).toBeNull();
     expect(driveName({ protocol: 'smb', host: 'nas.local', share: 'media' })).toBe('nas · Media');
     expect(driveName({ protocol: 'nfs', host: 'nas.local', share: '/volume1/media' }, 'NAS')).toBe('NAS · Media');
+  });
+
+  it('a server that doesn’t list its shares asks for the share’s name; empty credentials connect as a guest', async () => {
+    const { added } = open();
+    const d = await dialog();
+    fireEvent.click(await within(d).findByRole('button', { name: /hlab\.local/ }));
+    const share = within(d).getByRole('textbox', { name: 'Share name' });
+    expect(
+      within(d).getByText("hlab.local doesn't list its shares. Type the name of the one you want."),
+    ).toBeInTheDocument();
+    expect(within(d).getByRole('button', { name: 'Connect' })).toBeDisabled();
+    fireEvent.change(share, { target: { value: 'My Share' } });
+    expect((within(d).getByRole('textbox', { name: 'Or enter an address' }) as HTMLInputElement).value).toBe(
+      'smb://hlab.local/My Share',
+    );
+    expect(within(d).getByText('Leave both empty for a share anyone on your network can open.')).toBeInTheDocument();
+    fireEvent.click(within(d).getByRole('button', { name: 'Connect' }));
+    await waitFor(() => expect(added).toHaveLength(1));
+    expect(added[0]).toMatchObject({ protocol: 'smb', host: 'hlab.local', share: 'My Share' });
+    expect(added[0]).not.toHaveProperty('username');
   });
 });
