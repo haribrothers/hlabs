@@ -62,4 +62,17 @@ test('US-FILE-25 Escape closes the picker and leaves the folder as it was', asyn
   await page.keyboard.press('Escape');
   await expect(picker).toBeHidden();
   await expect(sheet.getByText('Home › Photos')).toBeVisible();
+
+  // Escape the moment the picker opens closes the picker only: for an instant the sheet below still holds Radix's
+  // Escape listener (it failed this way on CI).
+  await sheet.getByRole('button', { name: 'Change folder for Photo library' }).evaluate((b: HTMLElement) => {
+    b.click();
+    setTimeout(() =>
+      document.activeElement?.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      ),
+    );
+  });
+  await expect(picker).toBeHidden();
+  await expect(sheet.getByText('Home › Photos')).toBeVisible();
 });

@@ -1,5 +1,5 @@
 import * as RadixDialog from '@radix-ui/react-dialog';
-import { createContext, useContext, useId, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { useId, useLayoutEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { cn } from '../lib/cn';
 
 export interface DialogProps {
@@ -51,8 +51,13 @@ export interface ModalDialogProps extends Omit<DialogProps, 'className'> {
   tall?: boolean;
 }
 
-/** Set inside a modal dialog, so one opened from it (a picker from the install sheet) knows it's on top of another. */
-const InsideDialog = createContext(false);
+/**
+ * The open modal dialogs, newest last. Escape closes only the newest, once per key press: Radix hands Escape to the
+ * layer that last rendered as the top one, and for a moment after a dialog opens over another (a picker over the
+ * install sheet) that is still the one below.
+ */
+const openDialogs: Array<{ escape: () => void }> = [];
+const escapes = new WeakSet<Event>();
 
 /** A modal dialog (Radix): scrim-strong behind, focus trapped, Escape closes, focus returns to the trigger. */
 export function ModalDialog({
@@ -72,16 +77,28 @@ export function ModalDialog({
 }: ModalDialogProps) {
   // Radix only restores focus to a Dialog.Trigger; remember whatever opened the dialog instead.
   const returnTo = useRef<HTMLElement | null>(null);
-  const nested = useContext(InsideDialog);
   const block = (e: Event) => {
     if (!dismissible) e.preventDefault();
   };
-  // A dialog on top of another closes a moment after Escape: closed at once, the one below would be the top layer
-  // by the time Radix hands it the same key press, and close too.
+  const latest = useRef({ dismissible, onOpenChange });
+  useLayoutEffect(() => {
+    latest.current = { dismissible, onOpenChange };
+  });
+  useLayoutEffect(() => {
+    if (!open) return;
+    const me = {
+      escape: () => {
+        if (latest.current.dismissible) latest.current.onOpenChange(false);
+      },
+    };
+    openDialogs.push(me);
+    return () => void openDialogs.splice(openDialogs.indexOf(me), 1);
+  }, [open]);
   const onEscape = (e: KeyboardEvent) => {
-    if (!dismissible || !nested) return block(e);
     e.preventDefault();
-    setTimeout(() => onOpenChange(false));
+    if (escapes.has(e)) return;
+    escapes.add(e);
+    openDialogs.at(-1)?.escape();
   };
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
@@ -121,10 +138,8 @@ export function ModalDialog({
           {description ? (
             <RadixDialog.Description className="hl-dialog-body">{description}</RadixDialog.Description>
           ) : null}
-          <InsideDialog.Provider value>
-            {children ? <div className="hl-dialog-body">{children}</div> : null}
-            {actions ? <div className="hl-dialog-actions">{actions}</div> : null}
-          </InsideDialog.Provider>
+          {children ? <div className="hl-dialog-body">{children}</div> : null}
+          {actions ? <div className="hl-dialog-actions">{actions}</div> : null}
         </RadixDialog.Content>
       </RadixDialog.Portal>
     </RadixDialog.Root>

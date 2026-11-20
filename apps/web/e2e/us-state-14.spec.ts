@@ -2,7 +2,7 @@
 // sliding with Reduce motion.
 import { expect, test } from '@playwright/test';
 
-test('US-STATE-14 toasts sit bottom-right (above the tab bar on a phone), hold while hovered and match their tone', async ({
+test('US-STATE-14 toasts sit bottom-right above the Dock (above the tab bar on a phone), hold while hovered and match their tone', async ({
   page,
 }, testInfo) => {
   await page.clock.install();
@@ -35,8 +35,14 @@ test('US-STATE-14 toasts sit bottom-right (above the tab bar on a phone), hold w
     expect(Number.isFinite(tabBarTop)).toBe(true);
     expect(box.y + box.height).toBeLessThanOrEqual(tabBarTop);
   } else {
+    // Bottom-right, clear of the Dock (7rem up, like the tab bar on a phone).
     expect(viewport.width - (box.x + box.width)).toBeLessThan(40);
-    expect(viewport.height - (box.y + box.height)).toBeLessThan(40);
+    const gap = viewport.height - (box.y + box.height);
+    expect(gap).toBeGreaterThanOrEqual(96);
+    expect(gap).toBeLessThan(140);
+    // The shell's Dock (the gallery also shows one as a sample).
+    const dock = page.getByTestId('dock-bar').getByRole('navigation', { name: 'Dock' });
+    expect(box.y + box.height).toBeLessThanOrEqual((await dock.boundingBox())!.y);
   }
 
   // Hovering holds it past 5 s; it goes once the pointer leaves and the rest of the time runs out.
