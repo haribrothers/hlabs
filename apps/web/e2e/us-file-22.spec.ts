@@ -28,6 +28,7 @@ test('rename, move with Undo, Trash with Undo, and Restore from the Trash', asyn
     expect(onDisk('Lease 2026.pdf')).toBe(true);
 
     // Move to Taxes, then Undo.
+    await page.getByRole('button', { name: 'Select', exact: true }).click();
     await item(/^Lease 2026\.pdf/).click();
     await page
       .getByRole('toolbar', { name: /selected/ })

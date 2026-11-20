@@ -79,7 +79,7 @@ describe('US-FILE-23', () => {
     expect(splitName({ name: 'README', kind: 'file' })).toEqual({ base: 'README', ext: '' });
   });
 
-  it('F2 on a file: the name without .pdf, selected, .pdf beside it and why; Enter renames and keeps it selected', async () => {
+  it('F2 on a file: the name without .pdf, selected, .pdf beside it and why; Enter renames and it keeps focus (D-137)', async () => {
     const { calls } = open();
     const dialog = await renameWithF2(/^Lease agreement\.pdf/);
     const field = within(dialog).getByRole('textbox', { name: 'New name' }) as HTMLInputElement;
@@ -97,7 +97,6 @@ describe('US-FILE-23', () => {
       expect(renameCalls(calls)).toEqual([{ path: '/home/Documents/Lease agreement.pdf', name: 'Lease 2026.pdf' }]),
     );
     const renamed = await screen.findByRole('button', { name: /^Lease 2026\.pdf/ });
-    expect(renamed).toHaveAttribute('aria-selected', 'true');
     await waitFor(() => expect(renamed).toHaveFocus());
   });
 
@@ -158,7 +157,7 @@ describe('US-FILE-23', () => {
   it('the preview’s "•••" offers Rename…', async () => {
     open();
     await screen.findByRole('group', { name: 'Documents' });
-    fireEvent.doubleClick(screen.getByRole('button', { name: /^Lease agreement\.pdf/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Lease agreement\.pdf/ }));
     const more = await screen.findByRole('button', { name: 'More' });
     fireEvent.pointerDown(more, { button: 0, ctrlKey: false });
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Rename…' }));

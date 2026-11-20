@@ -191,21 +191,37 @@ export function FolderView({
   const [menu, setMenu] = useState<{ entries: FileEntry[]; at: { x: number; y: number } | null } | null>(null);
   const client = useTRPCClient();
   const [focusAfter, setFocusAfter] = useState<string | null>(null);
-  // The selection belongs to this folder (US-FILE-20): opening another one clears it, and a phone's Select mode ends.
+  // Selecting is a mode (D-137): Select, a long press or Cmd/Ctrl+A starts it, Done or Esc ends it. It belongs to this
+  // folder: opening another one ends it.
   const [selState, setSel] = useState<Selection>(() => emptySelection(path));
   const [selectingIn, setSelectingIn] = useState<string | null>(null);
   // Another folder: start again (adjusting state while rendering, as React suggests for a changed prop).
-  if (selState.folder !== path) setSel(emptySelection(path));
+  if (selState.folder !== path) {
+    setSel(emptySelection(path));
+    setSelectingIn(null);
+  }
   const sel = selState.folder === path ? selState : emptySelection(path);
-  const selecting = !desktop && selectingIn === path;
+  const selecting = selectingIn === path;
   const order = items.map((e) => e.path);
   const chosen = items.filter((e) => sel.paths.includes(e.path));
-  const clear = () => setSel(emptySelection(path));
+  const clear = () => {
+    setSel(emptySelection(path));
+    setSelectingIn(null);
+  };
   const select: SelectProps = {
     selected: new Set(chosen.map((e) => e.path)),
-    onSelect: (e, mods) => setSel(clickSelect(sel, order, e.path, mods)),
+    // While selecting a click ticks one, Shift-click ticks the range from the last one.
+    onSelect: (e, mods) =>
+      setSel(mods.range ? clickSelect(sel, order, e.path, { range: true }) : toggleSelect(sel, e.path)),
     onToggle: (e) => setSel(toggleSelect(sel, e.path)),
-    onSelectAll: () => setSel(selectAll(sel, order)),
+    onSelectAll: () => {
+      setSelectingIn(path);
+      setSel(selectAll(sel, order));
+    },
+    onLongPress: (e) => {
+      setSelectingIn(path);
+      setSel(toggleSelect(emptySelection(path), e.path));
+    },
     selecting,
   };
   const actions: SelectionActions = {
@@ -216,8 +232,8 @@ export function FolderView({
       ? { onShare: () => void shareFiles(chosen).catch(() => {}) }
       : {}),
   };
-  // Esc clears the selection before it would close the window (FilesPage checks defaultPrevented).
-  const hasSelection = chosen.length > 0 || selecting;
+  // Esc ends selecting before it would close the window (FilesPage checks defaultPrevented).
+  const hasSelection = selecting;
   useEffect(() => {
     if (!hasSelection) return;
     const onKey = (e: KeyboardEvent) => {
@@ -232,17 +248,16 @@ export function FolderView({
   const [retrying, setRetrying] = useState(false);
   // Dragging items onto a folder moves them (US-FILE-22); not out of a read-only place.
   const drag: DragProps | undefined =
-    onDropItems && !place.readOnly && isFeatureEnabled('filesMove')
+    desktop && onDropItems && !place.readOnly && isFeatureEnabled('filesMove')
       ? {
           carry: (e) => (select.selected.has(e.path) ? chosen : [e]),
           from: path,
           onDrop: (folder, entries, from) => onDropItems(entries, from, folder),
         }
       : undefined;
-  /** A right-click on an item that isn't selected selects only it; on a selected one the menu is for them all. */
+  /** The menu is for the item; on a ticked one while selecting, for every ticked item. Nothing gets selected (D-137). */
   const openMenu = (entry: FileEntry, at: { x: number; y: number } | null) => {
-    const many = select.selected.has(entry.path) && chosen.length > 1;
-    if (!select.selected.has(entry.path) && at) setSel({ folder: path, paths: [entry.path], anchor: entry.path });
+    const many = selecting && select.selected.has(entry.path) && chosen.length > 1;
     setMenu({ entries: many ? chosen : [entry], at });
   };
   const runAction = (action: ItemAction, entries: FileEntry[]) => {
@@ -279,9 +294,8 @@ export function FolderView({
           .mutate({ paths: entries.map((e) => e.path), to: path })
           .then(async ({ copied }) => {
             await queryClient.invalidateQueries({ queryKey: trpc.files.list.pathKey() });
-            // The copies are selected (US-FILE-21).
+            // The copy gets focus (D-137: selecting is its own mode).
             const made = copied.map((c) => c.to);
-            setSel({ folder: path, paths: made, anchor: made[0] ?? null });
             setFocusAfter(made[0] ?? null);
             if (made.length === 1)
               showToast({ tone: 'success', title: copy.duplicated(made[0]!.slice(made[0]!.lastIndexOf('/') + 1)) });
@@ -414,7 +428,7 @@ export function FolderView({
           onMenu={onMenu}
           onDeleteKey={
             onTrashItems && !place.readOnly
-              ? (e) => onTrashItems(select.selected.has(e.path) ? chosen : [e], place, clear)
+              ? (e) => onTrashItems(selecting && select.selected.has(e.path) ? chosen : [e], place, clear)
               : undefined
           }
           onRename={canRename ? setRenaming : undefined}
@@ -432,7 +446,7 @@ export function FolderView({
           onMenu={onMenu}
           onDeleteKey={
             onTrashItems && !place.readOnly
-              ? (e) => onTrashItems(select.selected.has(e.path) ? chosen : [e], place, clear)
+              ? (e) => onTrashItems(selecting && select.selected.has(e.path) ? chosen : [e], place, clear)
               : undefined
           }
           onRename={canRename ? setRenaming : undefined}
@@ -453,7 +467,7 @@ export function FolderView({
               )
             : copy.footer(copy.items(listing.count), formatBytes(listing.filesBytes))}
         </span>
-        <span>{chosen.length > 0 && desktop ? copy.rangeHint : footerRight(listing.place, me)}</span>
+        <span>{selecting && desktop ? copy.rangeHint : footerRight(listing.place, me)}</span>
       </footer>
     ) : null;
 
@@ -464,7 +478,7 @@ export function FolderView({
       </div>
       <div className="flex flex-wrap items-center gap-2 max-md:w-full">
         {search}
-        {selecting ? (
+        {selecting && !desktop ? (
           <>
             <span className="flex-1 text-headline">{copy.selected(chosen.length)}</span>
             <Button variant="secondary" size="sm" onClick={() => setSel(selectAll(sel, order))}>
@@ -483,17 +497,27 @@ export function FolderView({
         ) : (
           <>
             {toolbar && !query.isError ? toolbar(place, folderName) : null}
-            {!desktop && listing && items.length > 0 ? (
-              <Button variant="secondary" size="sm" className="ml-auto" onClick={() => setSelectingIn(path)}>
+            {listing && items.length > 0 && !selecting && !searchQuery ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                className={desktop ? undefined : 'ml-auto'}
+                onClick={() => setSelectingIn(path)}
+              >
                 {copy.select}
               </Button>
             ) : null}
           </>
         )}
       </div>
-      {desktop && chosen.length > 0 && !searchQuery ? (
+      {desktop && selecting && !searchQuery ? (
         <div className="basis-full">
-          <SelectionBar entries={chosen} actions={actions} onClear={clear} />
+          <SelectionBar
+            entries={chosen}
+            actions={actions}
+            onClear={clear}
+            onSelectAll={() => setSel(selectAll(sel, order))}
+          />
         </div>
       ) : null}
     </div>
@@ -531,8 +555,7 @@ export function FolderView({
       entry={renaming}
       onClose={() => setRenaming(null)}
       onRenamed={(renamed) => {
-        // It stays selected and focused under its new name (US-FILE-23).
-        setSel({ folder: path, paths: [renamed], anchor: renamed });
+        // It keeps focus under its new name (US-FILE-23; selecting is its own mode, D-137).
         setFocusAfter(renamed);
       }}
     />

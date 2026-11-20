@@ -26,7 +26,7 @@ Admins also see:
 
 The open folder shows its folders first, then its files, each from A to Z. Under each folder is how many items it holds; under each file, its size. Photos and videos show a small picture of themselves; other files show an icon for their kind (a PDF, a spreadsheet, a zip file and so on).
 
-- **Open a folder:** double-click it, or select it and press Return. On a phone, tap it.
+- **Open a folder:** click it (tap it on a phone), or move to it with the arrow keys and press Return.
 - **Go back up:** choose a folder in the path at the top, for example **Home** in **Home › Documents**. Deep folders fold the middle of the path into **…**; choose it to pick one of them. Your browser's Back and Forward buttons move between the folders you opened too.
 - **Use the keyboard:** the arrow keys move between items; Return opens the one you're on.
 
@@ -44,27 +44,25 @@ Choose a column's name to sort by it, and choose it again to turn the order arou
 
 ### Select several items
 
-Click an item to select it. Hold **⌘** (Ctrl on Windows and Linux) and click to add or remove one, hold **Shift** and click to select everything between, or press **⌘A** (Ctrl+A) to select the whole folder. Each item also has a tick box.
+A click opens a file or folder. To work on several at once, choose **Select** beside the buttons at the top (or press and hold an item, or press **⌘A**, Ctrl+A on Windows and Linux). Every item then shows a tick box: click items to tick them, or hold **Shift** and click to tick everything between. **Select all** ticks the whole folder.
 
-A bar then says how many are selected, with what you can do with them: **Download** saves them (several come as one zip file), and **Share** sends files with your device's share sheet where it can. At the bottom, Files adds up how much the selected files take. Press **Esc** or choose **✕** to clear the selection; opening another folder clears it too.
-
-On a phone, choose **Select**, then tap the items you want; the buttons along the bottom act on them. **Select all** ticks everything, and **Done** ends selecting.
+A bar says how many are ticked, with what you can do with them: **Download** saves them (several come as one zip file), and **Share** sends files with your device's share sheet where it can. At the bottom, Files adds up how much the ticked files take. Choose **✕** or press **Esc** to stop selecting; opening another folder stops it too. On a phone, the buttons along the bottom act on the ticked items, and **Done** stops selecting.
 
 ### The right-click menu
 
-Right-click a file or folder (or select it and press **Shift+F10** or the Menu key) for everything you can do with it: **Open**, **Open with** an app that uses its folder, **Share…** (files, with your device's share sheet), **Copy link**, **Download**, **Rename…**, **Move to…**, **Duplicate** and **Move to Trash**. **Copy link** copies an address to the item; only people who can open its folder can use it. **Duplicate** makes a copy beside it, such as **Lease agreement copy.pdf**. If several items are selected, the menu acts on all of them. In a folder you can only read, the options that change things are greyed out.
+Right-click a file or folder (or select it and press **Shift+F10** or the Menu key) for everything you can do with it: **Open**, **Open with** an app that uses its folder, **Share…** (files, with your device's share sheet), **Copy link**, **Download**, **Rename…**, **Move to…**, **Duplicate** and **Move to Trash**. **Copy link** copies an address to the item; only people who can open its folder can use it. **Duplicate** makes a copy beside it, such as **Lease agreement copy.pdf**. While you're selecting, right-clicking a ticked item makes the menu act on all ticked items. In a folder you can only read, the options that change things are greyed out.
 
 On a phone, tap **•••** on any file or folder for the same options.
 
 ### Move items to another folder
 
-Select what you want to move and choose **Move to…** (on a phone, **Move** along the bottom), or open a file and choose **•••** › **Move to…**. Pick a folder in the list (it opens at the folder you're in, marked **current**) and choose **Move to** *folder*. **+ New folder** makes a folder inside the one you picked. You can also drag items onto a folder, or onto a place on the left.
+Right-click an item and choose **Move to…**, or tick several and choose **Move to…** (on a phone, **Move** along the bottom), or open a file and choose **•••** › **Move to…**. Pick a folder in the list (it opens at the folder you're in, marked **current**) and choose **Move to** *folder*. **+ New folder** makes a folder inside the one you picked. You can also drag items onto a folder, or onto a place on the left.
 
 Moving within the same disk is instant, and the message at the bottom has **Undo** to put them back. Moving to another disk, such as a network drive, or more than 1 GB, carries on in the background with a bar showing how far it got; the items leave where they were only once their copy is checked. If something with the same name is already there, Files asks whether to skip it, keep both (the moved one gets a number) or replace the one that's there (it goes to the Trash).
 
 ### Delete files and folders
 
-Select what you want to delete and choose **Move to Trash** (on a phone, **Trash** along the bottom), press **Delete** or **Backspace**, or open a file and choose **•••** › **Move to Trash**. They go to your Trash, and the message at the bottom has **Undo** for a few seconds. Something deleted from Shared goes to the Trash of whoever deleted it.
+Right-click an item and choose **Move to Trash**, or tick several and choose **Move to Trash** (on a phone, **Trash** along the bottom), press **Delete** or **Backspace**, or open a file and choose **•••** › **Move to Trash**. They go to your Trash, and the message at the bottom has **Undo** for a few seconds. Something deleted from Shared goes to the Trash of whoever deleted it.
 
 Trash only covers this computer. On a network drive, Files asks **Delete … for good?** first, because those items can't be brought back.
 
@@ -76,7 +74,7 @@ Items are deleted for good 30 days after you deleted them. To free the space soo
 
 ### Rename a file or folder
 
-Select an item and press **F2**, or open a file and choose **•••** › **Rename…**. Type the new name and press Return. For a file, only the part before its ending (such as **.pdf**) changes, so apps still know how to open it. Names can't be empty, contain **/** or match something already in the folder.
+Move to an item with the arrow keys and press **F2**, right-click it and choose **Rename…**, or open a file and choose **•••** › **Rename…**. Type the new name and press Return. For a file, only the part before its ending (such as **.pdf**) changes, so apps still know how to open it. Names can't be empty, contain **/** or match something already in the folder.
 
 If an app keeps its data in a folder (or a folder inside it), Files says so before renaming it, because the app would stop finding it there; choose **Rename anyway** only if you'll point the app at the new name.
 

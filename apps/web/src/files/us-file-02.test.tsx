@@ -1,5 +1,5 @@
 // US-FILE-02 · Browse a folder in grid view: FileItems with "24 items" or the size and accessible names; the breadcrumb
-// (folded past 4 steps); opening folders by double-click or Enter, and back; the footer for each place; arrow keys;
+// (folded past 4 steps); opening folders with a click or Enter (D-137), and back; the footer for each place; arrow keys;
 // a folder that's gone; no Grid/List toggle until phase 5 ships.
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -90,14 +90,14 @@ describe('US-FILE-02', () => {
     expect(within(crumbs).getByRole('button', { name: 'More folders' })).toBeInTheDocument();
   });
 
-  it('double-click or Enter opens a folder; the URL follows and Back returns', async () => {
+  it('a click or Enter opens a folder (D-137); the URL follows and Back returns', async () => {
     const { router } = open('/home/Documents', (input) => {
       const path = (input as { path: string }).path;
       return path === '/home/Documents'
         ? documents
         : folder(path, { crumbs: [{ path, name: path.split('/').at(-1) }] });
     });
-    fireEvent.doubleClick(await screen.findByRole('button', { name: 'Bills, folder' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Bills, folder' }));
     await waitFor(() => expect(router.state.location.search).toEqual({ path: '/home/Documents/Bills' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Bills' })).toBeInTheDocument();
     router.history.back();

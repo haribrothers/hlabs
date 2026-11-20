@@ -42,7 +42,7 @@ function open(apps: unknown[]) {
 describe('US-FILE-07', () => {
   it('lists the apps that can open the file; each opens in a new tab', async () => {
     open([app('immich', 'Immich'), app('nextcloud', 'Nextcloud')]);
-    fireEvent.doubleClick(await screen.findByRole('button', { name: /^beach\.jpg/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^beach\.jpg/ }));
     const dialog = await screen.findByRole('dialog');
     const section = await within(dialog).findByRole('region', { name: 'Open with' });
     const links = within(section).getAllByRole('link');
@@ -57,7 +57,7 @@ describe('US-FILE-07', () => {
 
   it('no app uses the folder: no Open with', async () => {
     open([]);
-    fireEvent.doubleClick(await screen.findByRole('button', { name: /^beach\.jpg/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^beach\.jpg/ }));
     const dialog = await screen.findByRole('dialog');
     await within(dialog).findByRole('region', { name: 'Details' });
     expect(within(dialog).queryByText('Open with')).toBeNull();

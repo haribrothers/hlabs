@@ -1,4 +1,19 @@
-// The Files sidebar (US-FILE-01, FilesBrowser): places in three groups, drive status, "+ Connect a drive" and the
+import {
+  Clock,
+  Download,
+  Folder,
+  HardDrive,
+  House,
+  iconDefaults,
+  Image,
+  Monitor,
+  Package,
+  Plus,
+  Server,
+  Trash2,
+  Users,
+} from '@hlabs/icons';
+// The Files sidebar (US-FILE-01, FilesBrowser): places in three groups, drive status, "Connect a drive" and the
 // storage bar for admins. On a phone the same places are a row of chips above the folder (PhoneFiles).
 import type { FileEntry } from '@hlabs/api';
 import { dragged, endDrag, isItemDrag } from './drag';
@@ -6,11 +21,38 @@ import { formatBytes } from '@hlabs/shared';
 import { cn, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, StatusDot } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { filesCopy as copy } from '../copy/files';
 import { useEventStream } from '../lib/use-event-stream';
 import { useTRPC } from '../lib/trpc';
 import { activeRow, sidebarGroups, type Drive, type FilesLocation, type SidebarRow } from './places';
+
+/** Each place's icon (Lucide, stroke 2): a network drive is a server, any other drive a disk. */
+export function placeIcon(row: SidebarRow): ReactNode {
+  const props = { 'aria-hidden': true, ...iconDefaults, className: 'size-4.5 shrink-0 text-ink-muted' } as const;
+  if (row.driveId)
+    return row.driveKind === 'smb' || row.driveKind === 'nfs' ? <Server {...props} /> : <HardDrive {...props} />;
+  switch (row.key) {
+    case 'recents':
+      return <Clock {...props} />;
+    case 'home':
+      return <House {...props} />;
+    case 'photos':
+      return <Image {...props} />;
+    case 'downloads':
+      return <Download {...props} />;
+    case 'shared':
+      return <Users {...props} />;
+    case 'computer':
+      return <Monitor {...props} />;
+    case 'appdata':
+      return <Package {...props} />;
+    case 'trash':
+      return <Trash2 {...props} />;
+    default:
+      return <Folder {...props} />;
+  }
+}
 
 const ROW =
   'hl-focus flex min-h-9 w-full items-center gap-2 rounded-md px-3 text-left text-body text-ink no-underline hover:bg-surface-control aria-[current=page]:bg-surface-control aria-[current=page]:font-semibold';
@@ -92,6 +134,7 @@ function RowLink({ row, current }: { row: SidebarRow; current: boolean }) {
       // Enter and Space follow the link and never open a drive's menu.
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ' ? e.stopPropagation() : undefined)}
     >
+      {placeIcon(row)}
       {label}
     </Link>
   );
@@ -190,7 +233,8 @@ export function FilesSidebar({
               {g.connect ? (
                 <li>
                   <button type="button" className={cn(ROW, 'border-0 bg-transparent font-sans')} onClick={onConnect}>
-                    {copy.connectDrive}
+                    <Plus aria-hidden {...iconDefaults} className="size-4.5 shrink-0 text-ink-muted" />
+                    {copy.connectDrive.replace(/^\+ /, '')}
                   </button>
                 </li>
               ) : null}

@@ -1,6 +1,6 @@
-// US-FILE-21 · Use the right-click menu: a right-click (or Shift+F10) on an item opens the menu in the drawn order and
-// selects only it; on part of a selection it's for them all, without Open, Open with, Copy link or Rename…; Copy link
-// copies the address with its toast; Duplicate copies next to it and selects the copy; a read-only place turns the
+// US-FILE-21 · Use the right-click menu: a right-click (or Shift+F10) opens the menu in the drawn order and selects
+// nothing (D-137); on a ticked item while selecting it's for them all, without Open, Open with, Copy link or Rename…;
+// Copy link copies the address with its toast; Duplicate copies next to it and focuses it; a read-only place turns the
 // changes off; Esc closes and focus goes back; on a phone each item's "•••" opens the same actions as a sheet.
 import type { FileEntry } from '@hlabs/api';
 import type * as Shared from '@hlabs/shared';
@@ -89,10 +89,9 @@ describe('US-FILE-21', () => {
     ]);
   });
 
-  it('a right-click opens the menu for that item and selects only it', async () => {
+  it('a right-click opens the menu for that item and selects nothing', async () => {
     open();
     await screen.findByRole('group', { name: 'Documents' });
-    fireEvent.click(screen.getByRole('button', { name: /^b\.pdf/ }));
     fireEvent.contextMenu(screen.getByRole('button', { name: /^a\.pdf/ }), { clientX: 400, clientY: 300 });
     const menu = await screen.findByRole('menu');
     expect(labels(menu)).toEqual([
@@ -105,17 +104,15 @@ describe('US-FILE-21', () => {
       'Duplicate',
       'Move to Trash⌫',
     ]);
-    // The rest of the page is hidden from assistive tech while the menu is open.
-    const tile = (n: string) => document.querySelector(`[data-path="/home/Documents/${n}"]`)!;
-    expect(tile('a.pdf')).toHaveAttribute('aria-selected', 'true');
-    expect(tile('b.pdf')).not.toHaveAttribute('aria-selected');
+    expect(document.querySelectorAll('[aria-selected="true"]')).toHaveLength(0);
   });
 
-  it('on part of a selection the menu is for them all', async () => {
+  it('on a ticked item while selecting, the menu is for every ticked item', async () => {
     open();
     await screen.findByRole('group', { name: 'Documents' });
+    fireEvent.click(screen.getByRole('button', { name: 'Select' }));
     fireEvent.click(screen.getByRole('button', { name: /^a\.pdf/ }));
-    fireEvent.click(screen.getByRole('button', { name: /^b\.pdf/ }), { metaKey: true });
+    fireEvent.click(screen.getByRole('button', { name: /^b\.pdf/ }));
     fireEvent.contextMenu(screen.getByRole('button', { name: /^b\.pdf/ }), { clientX: 400, clientY: 300 });
     const menu = await screen.findByRole('menu');
     expect(labels(menu)).toEqual(['Download', 'Move to…', 'Duplicate', 'Move to Trash⌫']);
@@ -138,7 +135,7 @@ describe('US-FILE-21', () => {
     );
   });
 
-  it('Duplicate makes a copy next to it and selects the copy', async () => {
+  it('Duplicate makes a copy next to it and focuses the copy', async () => {
     const { calls } = open();
     await screen.findByRole('group', { name: 'Documents' });
     fireEvent.contextMenu(screen.getByRole('button', { name: /^a\.pdf/ }), { clientX: 1, clientY: 1 });
@@ -148,7 +145,8 @@ describe('US-FILE-21', () => {
         { paths: ['/home/Documents/a.pdf'], to: '/home/Documents' },
       ]),
     );
-    expect(await screen.findByRole('button', { name: /^a copy\.pdf/ })).toHaveAttribute('aria-selected', 'true');
+    const copyItem = await screen.findByRole('button', { name: /^a copy\.pdf/ });
+    await waitFor(() => expect(copyItem).toHaveFocus());
   });
 
   it('a read-only place turns Rename…, Move to…, Duplicate and Move to Trash off', async () => {

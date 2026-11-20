@@ -18,6 +18,7 @@ import {
 import type { FileAccent } from '@hlabs/ui/files';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { filesCopy as copy } from '../copy/files';
 import { appAddress } from '../lib/app-address';
 import { useTRPC } from '../lib/trpc';
@@ -52,9 +53,14 @@ export function ItemMenu({
   const apps = useOpenWithApps(one);
   return (
     <DropdownMenu open onOpenChange={(open) => (open ? null : onClose())} modal>
-      <DropdownMenuTrigger asChild>
-        <span aria-hidden="true" className="fixed size-0" style={{ left: at.x, top: at.y }} />
-      </DropdownMenuTrigger>
+      {/* The anchor goes on the page itself: inside the Files window, whose glass (backdrop-filter) makes "fixed"
+          relative to the window, the menu opened away from the pointer. */}
+      {createPortal(
+        <DropdownMenuTrigger asChild>
+          <span aria-hidden="true" className="pointer-events-none fixed size-0" style={{ left: at.x, top: at.y }} />
+        </DropdownMenuTrigger>,
+        document.body,
+      )}
       <DropdownMenuContent
         align="start"
         className="min-w-60"

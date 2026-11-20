@@ -33,6 +33,8 @@ export interface SidebarRow {
   /** Null for Recents and Trash, which are views (`view`). */
   path: string | null;
   view?: 'recents' | 'trash';
+  /** A drive's kind, for its icon. */
+  driveKind?: Drive['kind'];
   /** Drives that aren't mounted show an offline dot (US-FILE-01). */
   offline?: boolean;
   driveId?: string;
@@ -42,7 +44,7 @@ export interface SidebarGroup {
   key: 'files' | 'locations' | 'other';
   label: string;
   rows: SidebarRow[];
-  /** "+ Connect a drive" under Locations (admins). */
+  /** "Connect a drive" under Locations (admins). */
   connect?: boolean;
 }
 
@@ -79,6 +81,7 @@ export function sidebarGroups(
         path: `/drives/${d.id}`,
         offline: d.status !== 'ok',
         driveId: d.id,
+        driveKind: d.kind,
       })),
   ];
   const other: SidebarRow[] = [{ key: 'appdata', label: copy.appData, path: '/appdata' }];

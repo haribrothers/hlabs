@@ -30,7 +30,7 @@ function open(addNetwork: (input: unknown) => unknown = () => ({ locationId: 'ne
 }
 
 async function dialog() {
-  fireEvent.click(await screen.findByRole('button', { name: '+ Connect a drive' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Connect a drive' }));
   return screen.findByRole('dialog', { name: 'Connect a network drive' });
 }
 

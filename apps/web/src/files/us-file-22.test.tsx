@@ -55,7 +55,8 @@ function open(move: (input: unknown) => unknown, events?: Promise<unknown>) {
 
 async function chooseMove(names: RegExp[]) {
   await screen.findByRole('group', { name: 'Documents' });
-  for (const [i, n] of names.entries()) fireEvent.click(screen.getByRole('button', { name: n }), { metaKey: i > 0 });
+  fireEvent.click(screen.getByRole('button', { name: 'Select' }));
+  for (const n of names) fireEvent.click(screen.getByRole('button', { name: n }));
   fireEvent.click(within(screen.getByRole('toolbar', { name: /selected/ })).getByRole('button', { name: 'Move to…' }));
   return screen.findByRole('dialog', { name: names.length === 1 ? /^Move “/ : `Move ${names.length} items to…` });
 }

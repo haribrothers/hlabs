@@ -64,7 +64,7 @@ function open(over: Record<string, (input: unknown) => unknown> = {}) {
 async function openFile(name: RegExp) {
   const item = await screen.findByRole('button', { name });
   item.focus();
-  fireEvent.doubleClick(item);
+  fireEvent.click(item);
   return screen.findByRole('dialog', { name: /^Preview of / });
 }
 

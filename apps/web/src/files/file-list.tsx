@@ -12,6 +12,7 @@ import { filesCopy as copy } from '../copy/files';
 import { labelOf, modsOf, SelectBox, type SelectProps } from './file-grid';
 import { modifiedLabel } from './format';
 import { itemDragProps, type DragProps } from './drag';
+import { consumeLongPress, longPressProps } from './long-press';
 import type { FilesSort, SortBy } from './view-prefs';
 
 const COLUMNS = 'grid-cols-[28px_minmax(0,1fr)_160px_110px] max-md:grid-cols-[28px_minmax(0,1fr)_88px]';
@@ -129,7 +130,7 @@ export function FileList({
       onRename(entry);
       return;
     }
-    if (e.key === ' ' && select) {
+    if ((e.key === ' ' || e.key === 'Enter') && select?.selecting) {
       e.preventDefault();
       select.onSelect(entry, modsOf(e));
       return;
@@ -180,29 +181,26 @@ export function FileList({
             className={`hl-focus grid ${COLUMNS} min-h-11 cursor-default items-center gap-3 px-4 py-2 outline-offset-[-2px] ${
               checked || over === e.path ? 'bg-accent-wash' : 'hover:bg-surface-row'
             } ${over === e.path ? 'ring-2 ring-accent ring-inset' : ''}`}
-            {...itemDragProps(e, openOnClick ? undefined : drag, setOver)}
+            {...itemDragProps(e, drag, setOver)}
+            {...longPressProps(select?.onLongPress && !select.selecting ? () => select.onLongPress!(e) : undefined)}
             onFocus={() => setCurrent(e.path)}
+            // A click opens (D-137); while selecting it ticks.
             onClick={(ev) => {
               setCurrent(e.path);
-              if (select?.selecting) select.onToggle(e);
-              else if (openOnClick) onOpen(e);
-              else select?.onSelect(e, modsOf(ev));
+              if (consumeLongPress() || ev.detail > 1) return;
+              if (select?.selecting) select.onSelect(e, modsOf(ev));
+              else onOpen(e);
             }}
-            onDoubleClick={() => (select?.selecting ? undefined : onOpen(e))}
-            onContextMenu={
-              onMenu && !openOnClick
-                ? (ev) => {
-                    ev.preventDefault();
-                    onMenu(e, { x: ev.clientX, y: ev.clientY });
-                  }
-                : undefined
-            }
+            onContextMenu={(ev) => {
+              if (openOnClick) return ev.preventDefault();
+              if (!onMenu) return;
+              ev.preventDefault();
+              onMenu(e, { x: ev.clientX, y: ev.clientY });
+            }}
             onKeyDown={(ev) => onKeyDown(ev, e)}
           >
             <div role="gridcell" className="flex items-center">
-              {select && (!openOnClick || select.selecting) ? (
-                <SelectBox entry={e} checked={checked} onToggle={select.onToggle} />
-              ) : null}
+              {select?.selecting ? <SelectBox entry={e} checked={checked} onToggle={select.onToggle} /> : null}
             </div>
             <div role="gridcell" className="flex min-w-0 items-center gap-3">
               {isFolder ? (

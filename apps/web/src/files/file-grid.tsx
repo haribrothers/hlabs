@@ -9,6 +9,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type 
 import { filesCopy as copy } from '../copy/files';
 import type { ClickMods } from './selection';
 import { itemDragProps, type DragProps } from './drag';
+import { consumeLongPress, longPressProps } from './long-press';
 
 /** "24 items" under a folder, the size under a file. */
 export const metaOf = (e: FileEntry) =>
@@ -34,8 +35,10 @@ export interface SelectProps {
   onSelect: (entry: FileEntry, mods: ClickMods) => void;
   onToggle: (entry: FileEntry) => void;
   onSelectAll: () => void;
-  /** A phone's Select mode: every item shows its tick and a tap ticks it. */
+  /** Select mode (D-137): every item shows its tick and a click ticks it. */
   selecting?: boolean;
+  /** A long press starts selecting with this item (D-137). */
+  onLongPress?: (entry: FileEntry) => void;
 }
 
 /** The tick on an item (US-FILE-20): "Select <name>". */
@@ -112,6 +115,7 @@ export function FileGrid({
   onOpen: (entry: FileEntry) => void;
   /** Under each name instead of the size: search shows the folder (US-FILE-04). */
   below?: (entry: FileEntry) => ReactNode;
+  /** A phone: "•••" on each item instead of the right-click menu, and no dragging. */
   openOnClick?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -161,6 +165,15 @@ export function FileGrid({
       }
       return;
     }
+    if (e.key === 'Enter' || (e.key === ' ' && select?.selecting)) {
+      const from = (e.target as HTMLElement).closest<HTMLElement>('[data-path]');
+      const entry = items.find((i) => i.path === from?.dataset.path);
+      if (!entry) return;
+      e.preventDefault();
+      if (select?.selecting) select.onSelect(entry, modsOf(e));
+      else onOpen(entry);
+      return;
+    }
     if (select && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
       e.preventDefault();
       select.onSelectAll();
@@ -198,7 +211,8 @@ export function FileGrid({
           <div
             key={e.path}
             className={`group relative rounded-lg ${over === e.path ? 'bg-accent-wash ring-2 ring-accent' : ''}`}
-            {...itemDragProps(e, openOnClick ? undefined : drag, setOver)}
+            {...itemDragProps(e, drag, setOver)}
+            {...longPressProps(select?.onLongPress && !select.selecting ? () => select.onLongPress!(e) : undefined)}
           >
             <FileItem
               name={e.name}
@@ -213,34 +227,23 @@ export function FileGrid({
               tabIndex={e.path === tabStop ? 0 : -1}
               selected={checked}
               onFocus={() => setCurrent(e.path)}
-              // A tap opens on a phone (or ticks it while selecting); on a desktop a click selects and a double-click opens.
+              // A click opens (D-137); while selecting it ticks. Enter is handled by the grid.
               onClick={(ev) => {
                 setCurrent(e.path);
-                if (select?.selecting) select.onToggle(e);
-                else if (openOnClick) onOpen(e);
-                else select?.onSelect(e, modsOf(ev));
+                if (consumeLongPress() || ev.detail > 1) return;
+                if (select?.selecting) select.onSelect(e, modsOf(ev));
+                else onOpen(e);
               }}
-              onOpen={() => (select?.selecting ? select.onToggle(e) : onOpen(e))}
-              onContextMenu={
-                onMenu && !openOnClick
-                  ? (ev) => {
-                      ev.preventDefault();
-                      onMenu(e, { x: ev.clientX, y: ev.clientY });
-                    }
-                  : undefined
-              }
+              onContextMenu={(ev) => {
+                // A phone's long press would bring up the browser's own menu.
+                if (openOnClick) return ev.preventDefault();
+                if (!onMenu) return;
+                ev.preventDefault();
+                onMenu(e, { x: ev.clientX, y: ev.clientY });
+              }}
             />
-            {select && (!openOnClick || select.selecting) ? (
-              <SelectBox
-                entry={e}
-                checked={checked}
-                onToggle={select.onToggle}
-                className={`absolute top-3 left-3 ${
-                  checked || select.selecting
-                    ? ''
-                    : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 [@media(hover:none)]:hidden'
-                }`}
-              />
+            {select?.selecting ? (
+              <SelectBox entry={e} checked={checked} onToggle={select.onToggle} className="absolute top-3 left-3" />
             ) : null}
             {onMenu && openOnClick && !select?.selecting ? (
               <IconButton

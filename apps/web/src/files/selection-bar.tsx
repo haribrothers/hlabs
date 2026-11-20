@@ -40,12 +40,16 @@ export function SelectionBar({
   entries,
   actions,
   onClear,
+  onSelectAll,
 }: {
   entries: FileEntry[];
   actions: SelectionActions;
+  /** ✕: ends selecting (D-137). */
   onClear: () => void;
+  onSelectAll?: () => void;
 }) {
   const n = entries.length;
+  const none = n === 0;
   return (
     <div
       role="toolbar"
@@ -53,8 +57,13 @@ export function SelectionBar({
       className="flex flex-wrap items-center gap-2 rounded-md border border-accent bg-accent-wash py-2 pr-2 pl-4"
     >
       <span className="flex-1 text-body font-semibold">{copy.selected(n)}</span>
+      {onSelectAll ? (
+        <Button variant="link" size="sm" onClick={onSelectAll}>
+          {copy.selectAll}
+        </Button>
+      ) : null}
       {actions.onMove ? (
-        <Button variant="secondary" size="sm" onClick={actions.onMove}>
+        <Button variant="secondary" size="sm" disabled={none} onClick={actions.onMove}>
           {copy.moveTo}
         </Button>
       ) : null}
@@ -63,11 +72,17 @@ export function SelectionBar({
           {copy.share}
         </Button>
       ) : null}
-      <Button variant="secondary" size="sm" href={downloadUrlOf(entries.map((e) => e.path))} download>
-        {copy.download}
-      </Button>
+      {none ? (
+        <Button variant="secondary" size="sm" disabled>
+          {copy.download}
+        </Button>
+      ) : (
+        <Button variant="secondary" size="sm" href={downloadUrlOf(entries.map((e) => e.path))} download>
+          {copy.download}
+        </Button>
+      )}
       {actions.onTrash ? (
-        <Button variant="secondary" size="sm" className="text-danger" onClick={actions.onTrash}>
+        <Button variant="secondary" size="sm" className="text-danger" disabled={none} onClick={actions.onTrash}>
           {copy.moveToTrash}
         </Button>
       ) : null}

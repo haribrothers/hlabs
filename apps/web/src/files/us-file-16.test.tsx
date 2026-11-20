@@ -55,8 +55,9 @@ describe('US-FILE-16', () => {
   it('Move to Trash sends the selection to the Trash; the toast offers Undo for 8 s', async () => {
     const { calls } = open('/home/Documents', { area: 'home', name: 'Hari', readOnly: false });
     await screen.findByRole('group', { name: 'Here' });
+    fireEvent.click(screen.getByRole('button', { name: 'Select' }));
     fireEvent.click(screen.getByRole('button', { name: /^a\.pdf/ }));
-    fireEvent.click(screen.getByRole('button', { name: /^b\.pdf/ }), { metaKey: true });
+    fireEvent.click(screen.getByRole('button', { name: /^b\.pdf/ }));
     fireEvent.click(
       within(screen.getByRole('toolbar', { name: /selected/ })).getByRole('button', { name: 'Move to Trash' }),
     );
@@ -81,8 +82,9 @@ describe('US-FILE-16', () => {
   it('on a network drive it asks "Delete 2 items for good?" and deletes for good', async () => {
     const { calls } = open('/drives/nas/Movies', { area: 'drive', name: 'NAS · Media', readOnly: false });
     await screen.findByRole('group', { name: 'Here' });
+    fireEvent.click(screen.getByRole('button', { name: 'Select' }));
     fireEvent.click(screen.getByRole('button', { name: /^a\.pdf/ }));
-    fireEvent.click(screen.getByRole('button', { name: /^b\.pdf/ }), { metaKey: true });
+    fireEvent.click(screen.getByRole('button', { name: /^b\.pdf/ }));
     fireEvent.click(
       within(screen.getByRole('toolbar', { name: /selected/ })).getByRole('button', { name: 'Move to Trash' }),
     );
@@ -103,6 +105,7 @@ describe('US-FILE-16', () => {
     const { calls } = open('/appdata/immich', { area: 'app', name: 'Immich', readOnly: true });
     await screen.findByRole('group', { name: 'Here' });
     const a = screen.getByRole('button', { name: /^a\.pdf/ });
+    fireEvent.click(screen.getByRole('button', { name: 'Select' }));
     fireEvent.click(a);
     expect(
       within(screen.getByRole('toolbar', { name: /selected/ })).queryByRole('button', { name: 'Move to Trash' }),

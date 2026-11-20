@@ -350,10 +350,10 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 **As** anyone signed in, **I want** to select several files at once, **so that** I can move, download or delete them together.
 
 **Acceptance criteria**
-- **Given** list or grid view, **then** click selects one item, Cmd/Ctrl-click toggles an item, Shift-click selects a range, each row has a checkbox labelled "Select <name>", and Cmd/Ctrl+A selects all.
-- **Given** one or more items are selected, **then** a selection bar replaces the toolbar actions with "<n> selected", "Move to…", "Share", "Download", "Move to Trash" and "✕" (label "Clear selection").
+- **Given** list or grid view, **then** a click (or Enter) opens an item and selects nothing; selecting is a mode (D-137) started by "Select" in the toolbar, a long press on an item (which ticks it), or Cmd/Ctrl+A (which ticks all). While selecting, every item has a checkbox labelled "Select <name>", a click ticks or unticks one and Shift-click ticks the range from the last one.
+- **Given** selecting, **then** a selection bar under the toolbar (D-136) shows "<n> selected", "Select all", "Move to…", "Share", "Download", "Move to Trash" and "✕" (label "Clear selection"), which ends selecting.
 - **Given** a selection, **then** the footer reads "<n> items · <k> selected · <size of selected files>" (e.g. "12 items · 3 selected · 4.7 MB") and the hint "Shift-click to select a range" is shown.
-- **Given** Esc or "✕", **then** the selection clears.
+- **Given** Esc or "✕" ("Done" on a phone), **then** selecting ends and the ticks go.
 - **Given** "Share" with a selection that isn't exactly one folder, **then** it uses the device's share sheet for files (Web Share API) and is hidden where unsupported.
 - **Given** the folder changes, **then** the selection clears.
 
@@ -367,10 +367,10 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 
 **Acceptance criteria**
 - **Given** the user right-clicks a file (or presses Shift+F10 / the Menu key), **then** a Menu opens with "Open ↵", "Open with ›", "Share…", "Copy link", "Download", "Rename…", "Move to…", "Duplicate" and "Move to Trash ⌫", grouped with separators.
-- **Given** the item is not selected, **then** it becomes the only selection; if it is part of a multi-selection, the menu applies to all selected items and hides "Open", "Open with", "Copy link" and "Rename…".
+- **Given** a right-click, **then** nothing gets selected (D-137): the menu is for that item; on a ticked item while selecting it applies to all ticked items and hides "Open", "Open with", "Copy link" and "Rename…".
 - **Given** "Open with ›", **then** a submenu lists apps from `files.openWith`, or "No apps" (disabled).
 - **Given** "Copy link", **then** `https://<hostname>/files?path=<path>` is copied and the Toast "Link copied · only people who can open this folder can use it" is shown.
-- **Given** "Duplicate", **then** a copy named "<name> copy.<ext>" (then "copy 2") is created next to it and selected.
+- **Given** "Duplicate", **then** a copy named "<name> copy.<ext>" (then "copy 2") is created next to it and gets focus (D-137).
 - **Given** a read-only place, **then** Rename, Move to, Duplicate and Move to Trash are disabled.
 - **Given** the menu is open, **then** arrow keys move, Enter activates, Esc closes and returns focus to the item.
 - **Given** the phone layout or a device without hover, **then** every file and folder shows a "•••" button (label "More for <name>", 44 px target) that opens the same actions as a bottom sheet (US-PHONE-03); there, "Move to…" opens `FilesMove` full-screen as a folder picker and "Rename…" opens `FilesRename` as a sheet (from US-PHONE-18, D-135).
@@ -405,7 +405,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - **Given** "Rename…" on a file, **then** a Dialog "Rename" opens with a "New name" TextField containing the name without its extension (e.g. "Lease agreement"), selected, and the extension (".pdf") shown next to it, not editable.
 - **Given** a file with an extension, **then** the helper text reads "The .pdf ending is kept so apps still know how to open it." with the real extension.
 - **Given** a folder or a file without an extension, **then** the whole name is editable and no helper text is shown.
-- **Given** the user clicks "Rename" or presses Enter, **then** the item is renamed and stays selected; "Cancel" or Esc closes without changes.
+- **Given** the user clicks "Rename" or presses Enter, **then** the item is renamed and keeps focus (D-137); "Cancel" or Esc closes without changes.
 - **Given** the new name exists, is empty, contains "/" or is over 255 bytes, **then** the same inline errors as New folder are shown and "Rename" is disabled.
 - **Given** the item is mounted by an app or shared on the network, **then** a warning says "<App> uses this folder. Renaming it will break that." and requires a second click on "Rename anyway".
 

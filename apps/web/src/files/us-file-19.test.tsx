@@ -125,7 +125,7 @@ describe('US-FILE-19', () => {
     expect(listCalls(again.calls)[0]).toMatchObject({ sort: 'size', dir: 'desc' });
   });
 
-  it('Enter or a double-click on a row opens it; the arrow keys move between rows', async () => {
+  it('Enter or a click on a row opens it (D-137); the arrow keys move between rows', async () => {
     window.localStorage.setItem(VIEW_KEY, '"list"');
     const { router } = open();
     const list = await screen.findByRole('grid', { name: 'Documents' });
@@ -134,7 +134,7 @@ describe('US-FILE-19', () => {
     bills.focus();
     fireEvent.keyDown(bills, { key: 'ArrowDown' });
     expect(within(list).getByRole('row', { name: 'Lease agreement.pdf, 1.2 MB' })).toHaveFocus();
-    fireEvent.doubleClick(bills);
+    fireEvent.click(bills);
     await waitFor(() => expect(router.state.location.search).toEqual({ path: '/home/Documents/Bills' }));
   });
 

@@ -32,7 +32,7 @@ describe('US-FILE-01', () => {
       'Shared with me',
       'This computer',
       'NAS · Media · Offline',
-      '+ Connect a drive',
+      'Connect a drive',
       'App data',
     ]);
     expect(await screen.findByText('114 GB of 256 GB used')).toBeInTheDocument();
