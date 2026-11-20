@@ -19,7 +19,8 @@ import { FilesChips, FilesSidebar, useDrives } from './sidebar';
 import { ConnectDriveDialog } from './connect-drive-dialog';
 import { DisconnectDriveDialog } from './disconnect-drive-dialog';
 import { useTRPCClient } from '../lib/trpc';
-import { FolderToolbar } from './toolbar';
+import { FolderToolbar, ViewToggle } from './toolbar';
+import { useFilesView } from './view-prefs';
 
 export interface FilesPageProps {
   at: FilesLocation;
@@ -63,6 +64,7 @@ export function FilesPage({ at }: FilesPageProps) {
   const searchQuery = useDebouncedQuery(searchText);
   const uploads = useFileUploads();
   const folderPath = at.path || HOME;
+  const prefs = useFilesView();
 
   useEffect(() => {
     document.title = copy.docTitle;
@@ -99,6 +101,9 @@ export function FilesPage({ at }: FilesPageProps) {
         onOpenFile={onOpenFile}
         focusPath={focusPath}
         searchQuery={searchQuery}
+        view={prefs.view}
+        sort={prefs.sort}
+        onSort={prefs.sortBy}
         search={
           <SearchField
             value={searchText}
@@ -107,11 +112,14 @@ export function FilesPage({ at }: FilesPageProps) {
           />
         }
         toolbar={(place, folderName) => (
-          <FolderToolbar
-            readOnly={place.readOnly}
-            onNewFolder={() => setNewFolder(true)}
-            onUpload={() => uploads.choose(folderPath, folderName)}
-          />
+          <>
+            <ViewToggle view={prefs.view} onChange={prefs.setView} />
+            <FolderToolbar
+              readOnly={place.readOnly}
+              onNewFolder={() => setNewFolder(true)}
+              onUpload={() => uploads.choose(folderPath, folderName)}
+            />
+          </>
         )}
         onRetryDrive={async (locationId) => {
           await trpcClient.storage.locations.reconnect.mutate({ locationId });

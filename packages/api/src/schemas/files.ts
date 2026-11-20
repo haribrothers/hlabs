@@ -49,12 +49,15 @@ export const filePlaceSchema = z.object({
 });
 
 export const fileSortSchema = z.enum(['name', 'modified', 'size', 'kind']);
+/** Each order's natural direction when absent: names A to Z, newest first, biggest first (US-FILE-19). */
+export const fileSortDirSchema = z.enum(['asc', 'desc']);
 
 export const files = {
   /** A folder's entries, folders first, paged at 200 (US-FILE-02); `count` and `filesBytes` cover the whole folder. */
   list: io(
     pathRef.extend({
       sort: fileSortSchema.optional(),
+      dir: fileSortDirSchema.optional(),
       cursor: z.string().optional(),
       /** `['folder']`: folders only, for the FolderPicker (US-FILE-25). */
       kinds: z.array(z.literal('folder')).optional(),

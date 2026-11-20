@@ -1,10 +1,11 @@
 // The folder's toolbar (FilesBrowser): Share folder (phase 8), New folder and Upload. In a read-only place (App data,
 // a read-only drive, the lists of places) they're unavailable and say why on hover and to screen readers (US-FILE-03).
-import { iconDefaults, Upload } from '@hlabs/icons';
+import { iconDefaults, LayoutGrid, List, Upload } from '@hlabs/icons';
 import { isFeatureEnabled } from '@hlabs/shared';
-import { Button } from '@hlabs/ui';
+import { Button, Segmented } from '@hlabs/ui';
 import { useId, type ReactNode } from 'react';
 import { filesCopy as copy } from '../copy/files';
+import type { FilesView } from './view-prefs';
 
 function ToolButton({
   readOnly,
@@ -37,6 +38,38 @@ function ToolButton({
         </span>
       ) : null}
     </>
+  );
+}
+
+/** Grid or list (US-FILE-19), kept per browser. */
+export function ViewToggle({ view, onChange }: { view: FilesView; onChange: (view: FilesView) => void }) {
+  if (!isFeatureEnabled('filesListView')) return null;
+  return (
+    <Segmented
+      aria-label={copy.view}
+      value={view}
+      onChange={(v) => onChange(v as FilesView)}
+      options={[
+        {
+          value: 'grid',
+          label: (
+            <>
+              <LayoutGrid aria-hidden {...iconDefaults} className="size-4" />
+              <span className="sr-only">{copy.gridView}</span>
+            </>
+          ),
+        },
+        {
+          value: 'list',
+          label: (
+            <>
+              <List aria-hidden {...iconDefaults} className="size-4" />
+              <span className="sr-only">{copy.listView}</span>
+            </>
+          ),
+        },
+      ]}
+    />
   );
 }
 

@@ -63,7 +63,7 @@ export const FEATURE_PHASE = {
   externalDrives: 8,
   /** Files' list view and multi-selection (F-FILE-08), its right-click menu (F-FILE-09), Move to (F-FILE-10) and
    * Rename (F-FILE-11). */
-  filesListView: 9,
+  filesListView: 5,
   filesContextMenu: 9,
   filesMove: 9,
   filesRename: 9,

@@ -35,14 +35,21 @@ export type Sort = 'name' | 'modified' | 'size' | 'kind';
 const byName = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 const extOf = (name: string) => (name.includes('.') ? name.slice(name.lastIndexOf('.') + 1).toLowerCase() : '');
 
-/** Folders first, then files; each group by the chosen order (name A to Z by default). */
-export function sortEntries(items: FileEntry[], sort: Sort = 'name'): FileEntry[] {
-  const order = (a: FileEntry, b: FileEntry) => {
-    if (sort === 'modified') return b.modifiedAt - a.modifiedAt || byName(a.name, b.name);
-    if (sort === 'size') return (b.size ?? b.childCount ?? 0) - (a.size ?? a.childCount ?? 0) || byName(a.name, b.name);
-    if (sort === 'kind') return byName(extOf(a.name), extOf(b.name)) || byName(a.name, b.name);
+export type SortDir = 'asc' | 'desc';
+
+/** Each order's natural direction: names A to Z, newest first, biggest first (US-FILE-19). */
+export const DEFAULT_DIR: Record<Sort, SortDir> = { name: 'asc', modified: 'desc', size: 'desc', kind: 'asc' };
+
+/** Folders first, then files, whatever the order (US-FILE-19); each group by the chosen order and direction. */
+export function sortEntries(items: FileEntry[], sort: Sort = 'name', dir: SortDir = DEFAULT_DIR[sort]): FileEntry[] {
+  const up = (a: FileEntry, b: FileEntry) => {
+    if (sort === 'modified') return a.modifiedAt - b.modifiedAt;
+    if (sort === 'size') return (a.size ?? a.childCount ?? 0) - (b.size ?? b.childCount ?? 0);
+    if (sort === 'kind') return byName(extOf(a.name), extOf(b.name));
     return byName(a.name, b.name);
   };
+  const sign = dir === 'asc' ? 1 : -1;
+  const order = (a: FileEntry, b: FileEntry) => sign * up(a, b) || byName(a.name, b.name);
   return [...items].sort((a, b) => (a.kind === b.kind ? order(a, b) : a.kind === 'folder' ? -1 : 1));
 }
 
@@ -231,7 +238,7 @@ export class FilesService {
   }
 
   /** A folder's entries, folders first (US-FILE-02), 200 at a time. */
-  async list(caller: Caller, input: { path: string; sort?: Sort; cursor?: string; kinds?: 'folder'[] }) {
+  async list(caller: Caller, input: { path: string; sort?: Sort; dir?: SortDir; cursor?: string; kinds?: 'folder'[] }) {
     const place = await this.resolve(caller, input.path);
     if (place.area === 'shared' && place.rest.length === 0) await mkdir(place.base!, { recursive: true });
     let all: FileEntry[];
@@ -242,7 +249,7 @@ export class FilesService {
       all = await this.entriesOf(place, real, place.virtual);
     }
     if (input.kinds?.length) all = all.filter((e) => e.kind === 'folder');
-    const sorted = sortEntries(all, input.sort);
+    const sorted = sortEntries(all, input.sort, input.dir);
     const from = Math.max(0, Number.parseInt(input.cursor ?? '0', 10) || 0);
     const items = this.withPreviews(caller, sorted.slice(from, from + PAGE_SIZE));
     return {

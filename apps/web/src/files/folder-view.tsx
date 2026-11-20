@@ -12,7 +12,9 @@ import { useIsDesktop } from '../lib/use-media';
 import { useTRPC } from '../lib/trpc';
 import { Breadcrumb } from './breadcrumb';
 import { FileGrid } from './file-grid';
+import { FileList } from './file-list';
 import { FolderSkeleton } from './folder-skeleton';
+import { DEFAULT_SORT, type FilesSort, type FilesView, type SortBy } from './view-prefs';
 import { crumbName, HOME, type FilesMe } from './places';
 
 export type { FilesMe };
@@ -64,12 +66,20 @@ export function provisionalReadOnly(path: string): boolean {
 }
 
 /** The whole folder: pages of 200 are fetched one after another until it's all here. */
-export function useFolder(path: string) {
+export function useFolder(path: string, sort: FilesSort = DEFAULT_SORT) {
   const trpc = useTRPC();
   const q = useInfiniteQuery({
-    ...trpc.files.list.infiniteQueryOptions({ path }, { getNextPageParam: (p) => p.nextCursor ?? undefined }),
+    ...trpc.files.list.infiniteQueryOptions(
+      { path, sort: sort.by, dir: sort.dir },
+      { getNextPageParam: (p) => p.nextCursor ?? undefined },
+    ),
     ...pageQuery,
     retry: false,
+    // Sorting again keeps showing this folder until the new order comes; another folder starts empty (US-FILE-24).
+    placeholderData: (previous, previousQuery) =>
+      (previousQuery?.queryKey[1] as { input?: { path?: string } } | undefined)?.input?.path === path
+        ? previous
+        : undefined,
     // Preview links last 5 minutes: listings are fetched again before they run out.
     staleTime: 30_000,
     refetchInterval: 4 * 60_000,
@@ -121,7 +131,14 @@ export function FolderView({
   searchQuery = '',
   onDropFiles,
   notice,
+  view = 'grid',
+  sort = DEFAULT_SORT,
+  onSort,
 }: {
+  /** Grid or list, and the order (US-FILE-19). */
+  view?: FilesView;
+  sort?: FilesSort;
+  onSort?: (by: SortBy) => void;
   path: string;
   me: FilesMe;
   /** New folder, Upload … for this place (they know whether it's read only), and the folder's name. */
@@ -141,7 +158,7 @@ export function FolderView({
 }) {
   const navigate = useNavigate();
   const desktop = useIsDesktop();
-  const { query, listing, items } = useFolder(path);
+  const { query, listing, items } = useFolder(path, sort);
   const queryClient = useQueryClient();
   const trpc = useTRPC();
   const [dragging, setDragging] = useState(false);
@@ -242,20 +259,33 @@ export function FolderView({
       );
     }
   } else if (!listing) {
-    body = <FolderSkeleton />;
+    body = <FolderSkeleton view={view} />;
   } else if (items.length === 0) {
     body = <Message title={copy.emptyFolder} body={listing.place.readOnly ? undefined : copy.emptyWritable} />;
   } else {
-    body = (
-      <FileGrid
-        items={items}
-        label={last?.name ?? copy.areaNames[last?.path ?? ''] ?? copy.title}
-        accent={me.accent}
-        focusPath={focusPath}
-        onOpen={open}
-        openOnClick={!desktop}
-      />
-    );
+    const name = last?.name ?? copy.areaNames[last?.path ?? ''] ?? copy.title;
+    body =
+      view === 'list' ? (
+        <FileList
+          items={items}
+          label={name}
+          accent={me.accent}
+          sort={sort}
+          onSort={onSort ?? (() => {})}
+          focusPath={focusPath}
+          onOpen={open}
+          openOnClick={!desktop}
+        />
+      ) : (
+        <FileGrid
+          items={items}
+          label={name}
+          accent={me.accent}
+          focusPath={focusPath}
+          onOpen={open}
+          openOnClick={!desktop}
+        />
+      );
   }
 
   const footer =

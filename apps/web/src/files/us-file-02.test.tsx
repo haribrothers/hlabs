@@ -1,6 +1,6 @@
 // US-FILE-02 · Browse a folder in grid view: FileItems with "24 items" or the size and accessible names; the breadcrumb
 // (folded past 4 steps); opening folders by double-click or Enter, and back; the footer for each place; arrow keys;
-// a folder that's gone; no Grid/List toggle until phase 9.
+// a folder that's gone; no Grid/List toggle until phase 5 ships.
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { daemonError, renderScreen } from '../test/render';
@@ -66,7 +66,7 @@ describe('US-FILE-02', () => {
         .getAllByRole('button')
         .map((b) => b.tabIndex),
     ).toEqual([0, -1, -1, -1]);
-    // Grid only until phase 9 (D-036).
+    // Grid only until phase 5 ships (D-036, D-135).
     expect(screen.queryByRole('radio', { name: 'List view' })).toBeNull();
     expect(screen.queryByText('Share folder')).toBeNull();
   });

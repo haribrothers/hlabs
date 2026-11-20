@@ -39,6 +39,8 @@ export const filesCopy = {
   view: 'View',
   gridView: 'Grid view',
   listView: 'List view',
+  /** List view's columns (US-FILE-19). */
+  columns: { name: 'Name', modified: 'Modified', size: 'Size' },
   emptyFolder: 'This folder is empty',
   emptyWritable: 'Drop files here or use Upload',
   gone: 'This folder no longer exists',

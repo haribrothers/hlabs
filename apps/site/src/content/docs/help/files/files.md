@@ -34,6 +34,14 @@ At the bottom, hlabs says how many items the folder holds and how much space its
 
 If someone removes a folder while you have it open, Files says **This folder no longer exists**; choose **Go to Home** to carry on.
 
+While a folder loads, Files shows grey placeholders where the items will be; the path at the top and the buttons still work. A network drive that is slow to answer adds **Still loading… this drive is slow to respond**. If the folder can't be loaded, choose **Try again**.
+
+### List view and sorting
+
+Choose the list button beside the search field to see the folder as a list with each item's **Name**, when it was **Modified** and its **Size** (for a folder, how many items it holds). Recent changes say **Yesterday**, **2 days ago** or **3 weeks ago**; older ones show the date.
+
+Choose a column's name to sort by it, and choose it again to turn the order around; an arrow shows which column is sorted and which way. Folders always stay above files. Files remembers the view and the order in this browser, and the order applies to the grid too.
+
 ## Make a folder
 
 Choose **New folder** at the top, type a name (or keep **Untitled folder**) and choose **Create**, or press Return. The new folder is selected so you can open it straight away.
