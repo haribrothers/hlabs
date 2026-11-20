@@ -2,7 +2,8 @@
 // size. Clicking a column header sorts by it and clicking again turns it around; the active one shows an arrow and
 // says its order to screen readers. Rows take one Tab stop; the arrow keys move, Enter or a double-click opens.
 import type { FileEntry } from '@hlabs/api';
-import { ArrowDown, ArrowUp, iconDefaults } from '@hlabs/icons';
+import { ArrowDown, ArrowUp, iconDefaults, MoreHorizontal } from '@hlabs/icons';
+import { IconButton } from '@hlabs/ui';
 import { FileIcon, fileKindOf } from '@hlabs/icons/files';
 import { formatBytes } from '@hlabs/shared';
 import type { FileAccent } from '@hlabs/ui/files';
@@ -65,7 +66,10 @@ export function FileList({
   onRename,
   drag,
   onDeleteKey,
+  onMenu,
 }: {
+  /** The right-click menu at a point, or a phone's "•••" (null) (US-FILE-21). */
+  onMenu?: (entry: FileEntry, at: { x: number; y: number } | null) => void;
   /** Delete or Backspace on the focused item (US-FILE-16). */
   onDeleteKey?: (entry: FileEntry) => void;
   /** Dragging rows onto folders moves them (US-FILE-22); desktop only. */
@@ -107,6 +111,12 @@ export function FileList({
     if (select && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
       e.preventDefault();
       select.onSelectAll();
+      return;
+    }
+    if (onMenu && ((e.shiftKey && e.key === 'F10') || e.key === 'ContextMenu')) {
+      e.preventDefault();
+      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      onMenu(entry, { x: r.left + 40, y: r.bottom });
       return;
     }
     if ((e.key === 'Delete' || e.key === 'Backspace') && onDeleteKey) {
@@ -179,6 +189,14 @@ export function FileList({
               else select?.onSelect(e, modsOf(ev));
             }}
             onDoubleClick={() => (select?.selecting ? undefined : onOpen(e))}
+            onContextMenu={
+              onMenu && !openOnClick
+                ? (ev) => {
+                    ev.preventDefault();
+                    onMenu(e, { x: ev.clientX, y: ev.clientY });
+                  }
+                : undefined
+            }
             onKeyDown={(ev) => onKeyDown(ev, e)}
           >
             <div role="gridcell" className="flex items-center">
@@ -199,8 +217,19 @@ export function FileList({
             <div role="gridcell" className="text-ink-muted max-md:hidden">
               {modifiedLabel(e.modifiedAt, today)}
             </div>
-            <div role="gridcell" className="justify-self-end text-ink-muted">
+            <div role="gridcell" className="flex items-center justify-self-end gap-1 text-ink-muted">
               {sizeOf(e)}
+              {onMenu && openOnClick && !select?.selecting ? (
+                <IconButton
+                  label={copy.moreFor(e.name)}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    onMenu(e, null);
+                  }}
+                >
+                  <MoreHorizontal aria-hidden {...iconDefaults} />
+                </IconButton>
+              ) : null}
             </div>
           </div>
         );

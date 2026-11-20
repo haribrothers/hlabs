@@ -19,6 +19,7 @@ export const files: AppHandlers<DaemonContext>['files'] = {
   mkdir: (input, ctx) => ctx.services.files.mkdir(callerOf(ctx), input),
   rename: (input, ctx) => ctx.services.files.rename(callerOf(ctx), input),
   move: (input, ctx) => ctx.services.fileMover.move(callerOf(ctx), input),
+  copy: (input, ctx) => ctx.services.fileMover.copy(callerOf(ctx), input),
   trash: ({ paths }, ctx) => ctx.services.filesTrash.trash(callerOf(ctx), paths),
   delete: ({ paths }, ctx) => ctx.services.filesTrash.remove(callerOf(ctx), paths),
   restoreFromTrash: ({ ids }, ctx) => ctx.services.filesTrash.restore(callerOf(ctx), ids),

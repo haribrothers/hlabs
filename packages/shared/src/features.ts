@@ -64,7 +64,7 @@ export const FEATURE_PHASE = {
   /** Files' list view and multi-selection (F-FILE-08), its right-click menu (F-FILE-09), Move to (F-FILE-10) and
    * Rename (F-FILE-11). */
   filesListView: 5,
-  filesContextMenu: 9,
+  filesContextMenu: 5,
   filesMove: 5,
   /** Move to Trash with Undo, and delete for good on network drives (US-FILE-16). */
   filesTrash: 5,

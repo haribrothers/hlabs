@@ -177,7 +177,14 @@ export const files = {
       jobRefSchema,
     ]),
   ),
-  copy: io(pathsRef.extend({ to: virtualPathSchema }), z.union([ok, jobRefSchema])),
+  /**
+   * Copies into the folder `to` (US-FILE-21 Duplicate: the same folder). A name already there becomes "<name> copy.<ext>",
+   * then "copy 2"; answers where each copy is.
+   */
+  copy: io(
+    pathsRef.extend({ to: virtualPathSchema }),
+    z.object({ copied: z.array(z.object({ from: virtualPathSchema, to: virtualPathSchema })) }),
+  ),
   /** To the caller's Trash (US-FILE-16); this computer only (a drive's are FILES_NO_TRASH). Ids for Undo. */
   trash: io(pathsRef, z.object({ trashItemIds: z.array(z.string()) })),
   /** Deleted for good, audited (US-FILE-16: items on a network drive, after "Delete <n> items for good?"). */

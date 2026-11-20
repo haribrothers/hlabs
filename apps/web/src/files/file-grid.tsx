@@ -2,6 +2,8 @@
 // or a double-click opens. One item takes Tab (roving focus), so the grid is one stop on the way through the window.
 import type { FileEntry } from '@hlabs/api';
 import { formatBytes } from '@hlabs/shared';
+import { iconDefaults, MoreHorizontal } from '@hlabs/icons';
+import { IconButton } from '@hlabs/ui';
 import { FileItem, type FileAccent } from '@hlabs/ui/files';
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { filesCopy as copy } from '../copy/files';
@@ -90,7 +92,10 @@ export function FileGrid({
   onRename,
   drag,
   onDeleteKey,
+  onMenu,
 }: {
+  /** The right-click menu at a point, or a phone's "•••" (null) (US-FILE-21). */
+  onMenu?: (entry: FileEntry, at: { x: number; y: number } | null) => void;
   /** Delete or Backspace on the focused item (US-FILE-16). */
   onDeleteKey?: (entry: FileEntry) => void;
   /** Dragging items onto folders moves them (US-FILE-22); desktop only. */
@@ -128,6 +133,16 @@ export function FileGrid({
   }, [focusPath, items]);
 
   const onKeyDown = (e: KeyboardEvent) => {
+    if (onMenu && ((e.shiftKey && e.key === 'F10') || e.key === 'ContextMenu')) {
+      const el = document.activeElement as HTMLElement | null;
+      const entry = items.find((i) => i.path === el?.dataset.path);
+      if (entry && el) {
+        e.preventDefault();
+        const r = el.getBoundingClientRect();
+        onMenu(entry, { x: r.left + r.width / 2, y: r.bottom });
+      }
+      return;
+    }
     if ((e.key === 'Delete' || e.key === 'Backspace') && onDeleteKey) {
       const path = (document.activeElement as HTMLElement | null)?.dataset.path;
       const entry = items.find((i) => i.path === path);
@@ -206,6 +221,14 @@ export function FileGrid({
                 else select?.onSelect(e, modsOf(ev));
               }}
               onOpen={() => (select?.selecting ? select.onToggle(e) : onOpen(e))}
+              onContextMenu={
+                onMenu && !openOnClick
+                  ? (ev) => {
+                      ev.preventDefault();
+                      onMenu(e, { x: ev.clientX, y: ev.clientY });
+                    }
+                  : undefined
+              }
             />
             {select && (!openOnClick || select.selecting) ? (
               <SelectBox
@@ -218,6 +241,15 @@ export function FileGrid({
                     : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 [@media(hover:none)]:hidden'
                 }`}
               />
+            ) : null}
+            {onMenu && openOnClick && !select?.selecting ? (
+              <IconButton
+                label={copy.moreFor(e.name)}
+                className="absolute top-0.5 right-0.5 bg-transparent"
+                onClick={() => onMenu(e, null)}
+              >
+                <MoreHorizontal aria-hidden {...iconDefaults} />
+              </IconButton>
             ) : null}
           </div>
         );

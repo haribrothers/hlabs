@@ -50,6 +50,12 @@ A bar then says how many are selected, with what you can do with them: **Downloa
 
 On a phone, choose **Select**, then tap the items you want; the buttons along the bottom act on them. **Select all** ticks everything, and **Done** ends selecting.
 
+### The right-click menu
+
+Right-click a file or folder (or select it and press **Shift+F10** or the Menu key) for everything you can do with it: **Open**, **Open with** an app that uses its folder, **Share…** (files, with your device's share sheet), **Copy link**, **Download**, **Rename…**, **Move to…**, **Duplicate** and **Move to Trash**. **Copy link** copies an address to the item; only people who can open its folder can use it. **Duplicate** makes a copy beside it, such as **Lease agreement copy.pdf**. If several items are selected, the menu acts on all of them. In a folder you can only read, the options that change things are greyed out.
+
+On a phone, tap **•••** on any file or folder for the same options.
+
 ### Move items to another folder
 
 Select what you want to move and choose **Move to…** (on a phone, **Move** along the bottom), or open a file and choose **•••** › **Move to…**. Pick a folder in the list (it opens at the folder you're in, marked **current**) and choose **Move to** *folder*. **+ New folder** makes a folder inside the one you picked. You can also drag items onto a folder, or onto a place on the left.

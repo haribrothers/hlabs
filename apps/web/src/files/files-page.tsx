@@ -135,6 +135,7 @@ export function FilesPage({ at }: FilesPageProps) {
           canMove && !readOnly ? { onMove: () => mover.choose(entries, folderPath, clear) } : {}
         }
         onDropItems={canMove ? (entries, from, to) => mover.move(entries, from, to.path, to.name) : undefined}
+        onMoveItems={canMove ? (entries, from, done) => mover.choose(entries, from, done) : undefined}
         onTrashItems={
           canTrash
             ? (entries, place, done) =>

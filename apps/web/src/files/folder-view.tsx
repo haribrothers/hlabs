@@ -9,12 +9,17 @@ import { useEffect, useState, type DragEvent, type ReactNode } from 'react';
 import { filesCopy as copy } from '../copy/files';
 import { errorCode, errorData, pageQuery } from '../lib/error-copy';
 import { useIsDesktop } from '../lib/use-media';
-import { useTRPC } from '../lib/trpc';
+import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { showErrorToast } from '../lib/error-copy';
+import { showToast } from '../lib/toasts';
 import { Breadcrumb } from './breadcrumb';
 import { FileGrid, type SelectProps } from './file-grid';
 import { FileList } from './file-list';
 import { FolderSkeleton } from './folder-skeleton';
 import { RenameDialog } from './rename-dialog';
+import { ItemMenu, ItemSheet } from './item-menu';
+import { itemMenu, type ItemAction } from './item-menu-model';
+import { downloadUrlOf } from './selection-bar';
 import type { DragProps } from './drag';
 import { DEFAULT_SORT, type FilesSort, type FilesView, type SortBy } from './view-prefs';
 import { clickSelect, emptySelection, selectAll, toggleSelect, type Selection } from './selection';
@@ -141,11 +146,14 @@ export function FolderView({
   selectionActions,
   onDropItems,
   onTrashItems,
+  onMoveItems,
 }: {
   /** Move to… and Move to Trash for the selected items, once their stories ship (US-FILE-22, US-FILE-16). */
   selectionActions?: (entries: FileEntry[], clear: () => void, readOnly: boolean) => Omit<SelectionActions, 'onShare'>;
   /** Move to Trash (or delete for good on a network drive) for these items here (US-FILE-16). */
   onTrashItems?: (entries: FileEntry[], place: Listing['place'], done: () => void) => void;
+  /** "Move to…" for these items (US-FILE-22), from the right-click menu. */
+  onMoveItems?: (entries: FileEntry[], from: string, done: () => void) => void;
   /** Items dragged onto a folder here (US-FILE-22). */
   onDropItems?: (entries: FileEntry[], from: string, to: FileEntry) => void;
   /** Grid or list, and the order (US-FILE-19). */
@@ -179,6 +187,9 @@ export function FolderView({
   const place = listing?.place ?? { area: 'home', name: null, readOnly: provisionalReadOnly(path) };
   const [dragging, setDragging] = useState(false);
   const [renaming, setRenaming] = useState<FileEntry | null>(null);
+  // The right-click menu (at a point) or a phone's ••• sheet (US-FILE-21).
+  const [menu, setMenu] = useState<{ entries: FileEntry[]; at: { x: number; y: number } | null } | null>(null);
+  const client = useTRPCClient();
   const [focusAfter, setFocusAfter] = useState<string | null>(null);
   // The selection belongs to this folder (US-FILE-20): opening another one clears it, and a phone's Select mode ends.
   const [selState, setSel] = useState<Selection>(() => emptySelection(path));
@@ -228,6 +239,67 @@ export function FolderView({
           onDrop: (folder, entries, from) => onDropItems(entries, from, folder),
         }
       : undefined;
+  /** A right-click on an item that isn't selected selects only it; on a selected one the menu is for them all. */
+  const openMenu = (entry: FileEntry, at: { x: number; y: number } | null) => {
+    const many = select.selected.has(entry.path) && chosen.length > 1;
+    if (!select.selected.has(entry.path) && at) setSel({ folder: path, paths: [entry.path], anchor: entry.path });
+    setMenu({ entries: many ? chosen : [entry], at });
+  };
+  const runAction = (action: ItemAction, entries: FileEntry[]) => {
+    const one = entries[0]!;
+    const focusBack = () =>
+      requestAnimationFrame(() =>
+        document.querySelector<HTMLElement>(`[data-path="${CSS.escape(one.path)}"]`)?.focus(),
+      );
+    switch (action) {
+      case 'open':
+        return open(one);
+      case 'share':
+        return void shareFiles(entries).catch(() => {});
+      case 'copyLink':
+        void navigator.clipboard
+          ?.writeText(`${window.location.origin}/files?path=${encodeURIComponent(one.path)}`)
+          .then(() => showToast({ tone: 'success', title: copy.linkCopied }));
+        return focusBack();
+      case 'download': {
+        const a = document.createElement('a');
+        a.href = downloadUrlOf(entries.map((e) => e.path));
+        a.download = '';
+        a.click();
+        return focusBack();
+      }
+      case 'rename':
+        return setRenaming(one);
+      case 'move':
+        return onMoveItems?.(entries, path, clear);
+      case 'trash':
+        return onTrashItems?.(entries, place, clear);
+      case 'duplicate':
+        void client.files.copy
+          .mutate({ paths: entries.map((e) => e.path), to: path })
+          .then(async ({ copied }) => {
+            await queryClient.invalidateQueries({ queryKey: trpc.files.list.pathKey() });
+            // The copies are selected (US-FILE-21).
+            const made = copied.map((c) => c.to);
+            setSel({ folder: path, paths: made, anchor: made[0] ?? null });
+            setFocusAfter(made[0] ?? null);
+            if (made.length === 1)
+              showToast({ tone: 'success', title: copy.duplicated(made[0]!.slice(made[0]!.lastIndexOf('/') + 1)) });
+          })
+          .catch((err: unknown) => showErrorToast(err));
+        return;
+    }
+  };
+  const menuGroups = (entries: FileEntry[]) =>
+    itemMenu({
+      entries,
+      readOnly: place.readOnly,
+      canShareFiles: canShareFiles(),
+      // Shown once their stories ship; a read-only place shows them off (US-FILE-21).
+      can: { rename: isFeatureEnabled('filesRename'), move: !!onMoveItems, trash: !!onTrashItems },
+    });
+  const onMenu = isFeatureEnabled('filesContextMenu') ? openMenu : undefined;
+
   const canRename = !place.readOnly && isFeatureEnabled('filesRename');
   const last = crumbs[crumbs.length - 1];
   const folderName = last ? crumbName(last) : copy.title;
@@ -339,6 +411,7 @@ export function FolderView({
           openOnClick={!desktop}
           select={select}
           drag={drag}
+          onMenu={onMenu}
           onDeleteKey={
             onTrashItems && !place.readOnly
               ? (e) => onTrashItems(select.selected.has(e.path) ? chosen : [e], place, clear)
@@ -356,6 +429,7 @@ export function FolderView({
           openOnClick={!desktop}
           select={select}
           drag={drag}
+          onMenu={onMenu}
           onDeleteKey={
             onTrashItems && !place.readOnly
               ? (e) => onTrashItems(select.selected.has(e.path) ? chosen : [e], place, clear)
@@ -425,6 +499,33 @@ export function FolderView({
     </div>
   );
 
+  const menuUi = menu ? (
+    menu.at ? (
+      <ItemMenu
+        at={menu.at}
+        entries={menu.entries}
+        groups={menuGroups(menu.entries)}
+        onAction={(a) => runAction(a, menu.entries)}
+        onClose={() => {
+          const first = menu.entries[0];
+          setMenu(null);
+          if (first)
+            requestAnimationFrame(() =>
+              document.querySelector<HTMLElement>(`[data-path="${CSS.escape(first.path)}"]`)?.focus(),
+            );
+        }}
+      />
+    ) : (
+      <ItemSheet
+        entry={menu.entries[0]!}
+        accent={me.accent}
+        groups={menuGroups(menu.entries)}
+        onAction={(a) => runAction(a, menu.entries)}
+        onClose={() => setMenu(null)}
+      />
+    )
+  ) : null;
+
   const dialogs = renaming ? (
     <RenameDialog
       entry={renaming}
@@ -447,6 +548,7 @@ export function FolderView({
         {footer}
         {selecting ? <PhoneSelectionBar entries={chosen} actions={actions} /> : null}
         {dialogs}
+        {menuUi}
       </div>
     );
   }
@@ -466,6 +568,7 @@ export function FolderView({
       </ScrollPane>
       {footer}
       {dialogs}
+      {menuUi}
     </div>
   );
 }

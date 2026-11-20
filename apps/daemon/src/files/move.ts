@@ -6,7 +6,7 @@
 import { hlabsError } from '@hlabs/api';
 import type { HlabsDb } from '@hlabs/db';
 import { createReadStream, createWriteStream } from 'node:fs';
-import { lstat, mkdir, readdir, readlink, rename, rm, stat, symlink } from 'node:fs/promises';
+import { cp, lstat, mkdir, readdir, readlink, rename, rm, stat, symlink } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import type { JobRunner } from '../jobs/runner';
@@ -68,6 +68,16 @@ async function copyTree(from: string, to: string, onBytes: (n: number) => void, 
   const read = createReadStream(from);
   read.on('data', (chunk) => onBytes(chunk.length));
   await pipeline(read, createWriteStream(to), { signal });
+}
+
+/** "Lease agreement copy.pdf", then "Lease agreement copy 2.pdf"; folders "Bills copy" (US-FILE-21). */
+export async function copyName(dir: string, name: string, isFolder: boolean): Promise<string> {
+  const dot = name.lastIndexOf('.');
+  const [base, ext] = isFolder || dot <= 0 ? [name, ''] : [name.slice(0, dot), name.slice(dot)];
+  for (let n = 1; ; n++) {
+    const candidate = `${base} copy${n === 1 ? '' : ` ${n}`}${ext}`;
+    if (!(await exists(join(dir, candidate)))) return candidate;
+  }
 }
 
 export class FileMover {
@@ -156,6 +166,36 @@ export class FileMover {
     const signal = new AbortController().signal;
     for (const step of steps) await this.apply(step, payload, signal, () => {});
     return { done: true as const, moved: steps.map((s) => ({ from: s.fromVirtual, to: s.toVirtual })) };
+  }
+
+  /** Copies items into `to`; a name already there gets " copy" (Duplicate, US-FILE-21). */
+  async copy(caller: Caller, input: { paths: string[]; to: string }) {
+    const files = this.deps.files;
+    const dest = await files.resolve(caller, input.to);
+    if (dest.base === null || dest.readOnly) throw hlabsError('FILES_READ_ONLY');
+    const destReal = await realInside(dest.base, dest.host!);
+    const copied: Array<{ from: string; to: string }> = [];
+    for (const path of input.paths) {
+      const place = await files.resolve(caller, path);
+      if (place.base === null || place.rest.length === 0) throw hlabsError('FILES_INVALID_PATH');
+      const real = await realInside(place.base, place.host!);
+      if (inside(real, destReal) && real !== destReal && dirname(real) !== destReal) {
+        throw hlabsError('FILES_INVALID_PATH', 'A folder cannot go inside itself');
+      }
+      const st = await lstat(real);
+      const name = basename(real);
+      const target = (await exists(join(destReal, name))) ? await copyName(destReal, name, st.isDirectory()) : name;
+      await cp(real, join(destReal, target), { recursive: true, errorOnExist: true, force: false }).catch(
+        (err: NodeJS.ErrnoException) => {
+          if (err.code === 'ENOSPC') throw hlabsError('FILES_NO_SPACE');
+          if (err.code === 'EACCES' || err.code === 'EROFS' || err.code === 'EPERM')
+            throw hlabsError('FILES_READ_ONLY');
+          throw err;
+        },
+      );
+      copied.push({ from: place.virtual, to: joinVirtual(dest.virtual, target) });
+    }
+    return { copied };
   }
 
   private async apply(step: Step, payload: MovePayload, signal: AbortSignal, onBytes: (n: number) => void) {

@@ -235,7 +235,7 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-FILE-16 · Move items to Trash with undo (moved to phase 5, D-135; files.delete for network drives; the right-click menu's Move to Trash comes with US-FILE-21)
 - [x] US-FILE-17 · Restore items from Trash (moved to phase 5, D-135)
 - [x] US-FILE-18 · Empty Trash manually and automatically (moved to phase 5, D-135; everyone's Trash, `allUsers`, stays with US-SYS-14)
-- [ ] US-FILE-21 · Use the right-click menu (moved to phase 5, D-135)
+- [x] US-FILE-21 · Use the right-click menu (moved to phase 5, D-135; with the phone's "•••" sheet from US-PHONE-18; "Share…" on a folder waits for network shares, phase 8)
 - [x] US-BKP-01 · See the last backup's status
 - [x] US-BKP-02 · See destinations and the schedule summary
 - [x] US-BKP-03 · Review recent runs and run history

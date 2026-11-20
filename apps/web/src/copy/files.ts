@@ -98,6 +98,16 @@ export const filesCopy = {
     `${n} ${n === 1 ? 'item' : 'items'} (${size}) will be deleted for good. You can't undo this.`,
   trashEmptied: 'Trash emptied',
   emptyingTrash: 'Emptying Trash…',
+  // Right-click menu and a phone's ••• (US-FILE-21)
+  open: 'Open',
+  shareItem: 'Share…',
+  copyLink: 'Copy link',
+  duplicate: 'Duplicate',
+  noApps: 'No apps',
+  moreFor: (name: string) => `More for ${name}`,
+  menuFor: (n: number, name: string) => (n === 1 ? name : `${n} items`),
+  linkCopied: 'Link copied · only people who can open this folder can use it',
+  duplicated: (name: string) => `Made “${name}”`,
   // Rename (US-FILE-23)
   renameTitle: 'Rename',
   renameItem: 'Rename…',
