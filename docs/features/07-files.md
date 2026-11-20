@@ -373,6 +373,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - **Given** "Duplicate", **then** a copy named "<name> copy.<ext>" (then "copy 2") is created next to it and selected.
 - **Given** a read-only place, **then** Rename, Move to, Duplicate and Move to Trash are disabled.
 - **Given** the menu is open, **then** arrow keys move, Enter activates, Esc closes and returns focus to the item.
+- **Given** the phone layout or a device without hover, **then** every file and folder shows a "•••" button (label "More for <name>", 44 px target) that opens the same actions as a bottom sheet (US-PHONE-03); there, "Move to…" opens `FilesMove` full-screen as a folder picker and "Rename…" opens `FilesRename` as a sheet (from US-PHONE-18, D-135).
 
 **Implementation notes**
 - API: `files.copy` (Duplicate), `files.openWith`, plus the actions of other stories.
