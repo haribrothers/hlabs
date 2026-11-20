@@ -13,11 +13,11 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 | 2 | Apps | 38 |  |
 | 3 | Remote access and family | 29 |  |
 | 4 | Menu-bar app, monitoring and updates | 38 |  |
-| 5 | Backups and Files | 30 |  |
+| 5 | Backups and Files | 40 |  |
 | 6 | Distribution | 21 | MVP / 1.0 beta |
 | 7 | v1.0 completeness | 54 | 1.0 |
-| 8 | Power features (P3) | 23 |  |
-| 9 | Nice to have and polish | 35 |  |
+| 8 | Power features (P3) | 20 |  |
+| 9 | Nice to have and polish | 29 |  |
 
 ## Phase 0 · Foundations
 
@@ -373,11 +373,13 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 **Deliverables**
 - Backups overview, destinations (local, SMB/NFS, S3), schedule, run now, restore choose and progress.
 - Files browser, preview, resumable uploads, network drives.
-- Trash service (backend) used by uploads and deletes.
+- Trash service (backend), already used by an upload's "Replace".
+- Organising files (D-135): loading states, list view and sorting, selecting several items, rename, Move to, Trash (move to Trash with undo, restore, empty) and the right-click menu.
 
 **Done when**
 - [ ] Backup → wipe app data → restore returns the app to the same state (e2e with Vaultwarden and Paperless).
 - [ ] Uploads resume after a dropped connection.
+- [ ] Files can be renamed, moved to another folder and moved to Trash; Undo and Trash's Restore bring them back (e2e).
 
 **Stories**
 
@@ -396,6 +398,15 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-FILE-11 · Connect an SMB or NFS drive (P2)
 - US-FILE-12 · Disconnect or recover a network drive (P2)
 - US-FILE-25 · Choose a folder for an app (P1; added 15 Nov 2026, Q-17, D-131)
+- US-FILE-24 · See skeletons while a folder loads (P2; moved to phase 5, D-135)
+- US-FILE-19 · Switch to list view and sort (P2; moved to phase 5, D-135)
+- US-FILE-20 · Select several items (P2; moved to phase 5, D-135)
+- US-FILE-23 · Rename a file or folder (P2; moved to phase 5, D-135)
+- US-FILE-22 · Move items to another folder (P2; moved to phase 5, D-135)
+- US-FILE-16 · Move items to Trash with undo (P2; moved to phase 5, D-135)
+- US-FILE-17 · Restore items from Trash (P2; moved to phase 5, D-135)
+- US-FILE-18 · Empty Trash manually and automatically (P2; moved to phase 5, D-135)
+- US-FILE-21 · Use the right-click menu (P2; moved to phase 5, D-135)
 
 *[Live usage & backups](../features/08-usage-backups.md)*
 
@@ -561,7 +572,7 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 **Goal:** For tinkerers and edge cases.
 
 **Deliverables**
-- Restore from a backup in onboarding, deploy your own app, move app data, SMB shares, external drives, trash UI, failed backup details, AI access (MCP), About, 404.
+- Restore from a backup in onboarding, deploy your own app, move app data, SMB shares, external drives, failed backup details, AI access (MCP), About, 404.
 
 **Done when**
 - [ ] All P3 stories pass.
@@ -588,9 +599,6 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-FILE-13 · Share a folder on the local network (P3)
 - US-FILE-14 · Detect and browse an external drive (P3)
 - US-FILE-15 · Eject an external drive (P3)
-- US-FILE-16 · Move items to Trash with undo (P3)
-- US-FILE-17 · Restore items from Trash (P3)
-- US-FILE-18 · Empty Trash manually and automatically (P3)
 
 *[Live usage & backups](../features/08-usage-backups.md)*
 
@@ -617,7 +625,7 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 **Goal:** Refinement.
 
 **Deliverables**
-- Loading skeletons, list view, context menus, move/rename, backup schedule editor, notification settings, rename server, certificate guide, move all data, engine switch, phone Files/Settings/Backups, reduce transparency polish.
+- Loading skeletons (store), backup schedule editor, notification settings, rename server, certificate guide, move all data, engine switch, phone Files/Settings/Backups, reduce transparency polish.
 
 **Done when**
 - [ ] All remaining stories pass.
@@ -631,15 +639,6 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 *[App Store & installing](../features/05-app-store.md)*
 
 - US-STORE-22 · Show skeletons while the store loads (Nice to have)
-
-*[Files](../features/07-files.md)*
-
-- US-FILE-19 · Switch to list view and sort (Nice to have)
-- US-FILE-20 · Select several items (Nice to have)
-- US-FILE-21 · Use the right-click menu (Nice to have)
-- US-FILE-22 · Move items to another folder (Nice to have)
-- US-FILE-23 · Rename a file or folder (Nice to have)
-- US-FILE-24 · See skeletons while a folder loads (Nice to have)
 
 *[Live usage & backups](../features/08-usage-backups.md)*
 

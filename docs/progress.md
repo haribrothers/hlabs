@@ -227,6 +227,15 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-FILE-11 · Connect an SMB or NFS drive
 - [x] US-FILE-12 · Disconnect or recover a network drive
 - [x] US-FILE-25 · Choose a folder for an app
+- [ ] US-FILE-24 · See skeletons while a folder loads (moved to phase 5, D-135)
+- [ ] US-FILE-19 · Switch to list view and sort (moved to phase 5, D-135)
+- [ ] US-FILE-20 · Select several items (moved to phase 5, D-135)
+- [ ] US-FILE-23 · Rename a file or folder (moved to phase 5, D-135)
+- [ ] US-FILE-22 · Move items to another folder (moved to phase 5, D-135)
+- [ ] US-FILE-16 · Move items to Trash with undo (moved to phase 5, D-135)
+- [ ] US-FILE-17 · Restore items from Trash (moved to phase 5, D-135)
+- [ ] US-FILE-18 · Empty Trash manually and automatically (moved to phase 5, D-135)
+- [ ] US-FILE-21 · Use the right-click menu (moved to phase 5, D-135)
 - [x] US-BKP-01 · See the last backup's status
 - [x] US-BKP-02 · See destinations and the schedule summary
 - [x] US-BKP-03 · Review recent runs and run history
@@ -338,9 +347,6 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [ ] US-FILE-13 · Share a folder on the local network
 - [ ] US-FILE-14 · Detect and browse an external drive
 - [ ] US-FILE-15 · Eject an external drive
-- [ ] US-FILE-16 · Move items to Trash with undo
-- [ ] US-FILE-17 · Restore items from Trash
-- [ ] US-FILE-18 · Empty Trash manually and automatically
 - [ ] US-BKP-15 · Understand why a backup failed
 - [ ] US-BKP-16 · Download the log or try again
 - [ ] US-SYS-32 · Turn on AI access
@@ -357,12 +363,6 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 
 - [ ] US-HOME-21 · Use Home with Reduce transparency on
 - [ ] US-STORE-22 · Show skeletons while the store loads
-- [ ] US-FILE-19 · Switch to list view and sort
-- [ ] US-FILE-20 · Select several items
-- [ ] US-FILE-21 · Use the right-click menu
-- [ ] US-FILE-22 · Move items to another folder
-- [ ] US-FILE-23 · Rename a file or folder
-- [ ] US-FILE-24 · See skeletons while a folder loads
 - [ ] US-BKP-12 · Choose how often backups run
 - [ ] US-BKP-13 · Set how many restore points to keep
 - [ ] US-BKP-14 · Pause apps briefly for a consistent copy

@@ -2,7 +2,7 @@
 
 Files is the household's file browser: everyone signed in can browse, preview, upload and organise the files in their private Home folder, and admins also reach the Shared folder, app data, network drives and external drives. It replaces "copy it to the Mac mini over AirDrop" with one place that works the same from a laptop or a phone, and it can publish folders to the local network as SMB shares.
 
-**Screens:** `FilesBrowser` (P2), `FilePreview` (P2), `FilesUpload` (P2), `NetworkDrives` (P2), `FolderPicker` (P1), `FilesShare` (P3), `FilesExternal` (P3), `FilesTrash` (P3), `FilesList` (Nice to have), `FilesContextMenu` (Nice to have), `FilesMove` (Nice to have), `FilesRename` (Nice to have), `FilesLoading` (Nice to have).
+**Screens:** `FilesBrowser` (P2), `FilePreview` (P2), `FilesUpload` (P2), `NetworkDrives` (P2), `FolderPicker` (P1), `FilesShare` (P3), `FilesExternal` (P3), `FilesTrash` (P2), `FilesList` (P2), `FilesContextMenu` (P2), `FilesMove` (P2), `FilesRename` (P2), `FilesLoading` (P2).
 **Depends on:** 03-sign-in.md (sessions), 04-home.md (desktop windows, Dock, Spotlight), 06-apps.md (app folder mounts, Open with), 08-usage-backups.md (Use for backups), 09-account-people.md (member "See the Shared folder in Files" permission), 10-system-settings.md (SettingsStorage, storage root).
 
 ## Features
@@ -15,12 +15,12 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 | F-FILE-04 | Connect a network drive | P2 | 5 | `NetworkDrives` |
 | F-FILE-05 | Share a folder on the network | P3 | 8 | `FilesShare` |
 | F-FILE-06 | External drives | P3 | 8 | `FilesExternal` |
-| F-FILE-07 | Trash | P3 | 8 | `FilesTrash` |
-| F-FILE-08 | List view and multi-selection | Nice to have | 9 | `FilesList` |
-| F-FILE-09 | Right-click menu | Nice to have | 9 | `FilesContextMenu` |
-| F-FILE-10 | Move to | Nice to have | 9 | `FilesMove` |
-| F-FILE-11 | Rename | Nice to have | 9 | `FilesRename` |
-| F-FILE-12 | Loading, empty and error states | Nice to have | 9 | `FilesLoading` |
+| F-FILE-07 | Trash | P2 | 5 | `FilesTrash` |
+| F-FILE-08 | List view and multi-selection | P2 | 5 | `FilesList` |
+| F-FILE-09 | Right-click menu | P2 | 5 | `FilesContextMenu` |
+| F-FILE-10 | Move to | P2 | 5 | `FilesMove` |
+| F-FILE-11 | Rename | P2 | 5 | `FilesRename` |
+| F-FILE-12 | Loading, empty and error states | P2 | 5 | `FilesLoading` |
 | F-FILE-13 | Choose a folder for an app (folder picker) | P1 | 5 | `FolderPicker`, `InstallSheet` |
 
 ## User stories
@@ -37,7 +37,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - **Given** a network drive's status is not `mounted`, **when** the sidebar renders, **then** its row shows a StatusDot in the offline state and its name stays clickable.
 - **Given** the active place, **when** the user clicks another sidebar row, **then** that row is highlighted (`aria-current="page"`) and the main area shows its root; Photos and Downloads open `/home/Photos` and `/home/Downloads`.
 - **Given** the admin clicks "This computer", **then** the main area lists one folder per user's Home (by display name) and "Shared", so admins can reach every Home folder.
-- **Given** phase 5, **then** the Trash row and external drive rows are hidden until phase 8 ships (D-036).
+- **Given** phase 5, **then** the Trash row shows (Trash ships with Files, D-135) and external drive rows are hidden until phase 8 ships (D-036).
 
 **Implementation notes**
 - API: `files.list`, `storage.locations.list` (admin), `storage.summary` (admin, for the bar), `files.recent` (new, see API additions). Paths are virtual: `/home`, `/shared`, `/drives/<id>`, plus new admin-only `/users/<username>` and `/appdata/<appId>`.
@@ -284,7 +284,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - macOS `diskutil eject`; Linux UDisks2 `Unmount` + `PowerOff`.
 
 ### US-FILE-16 · Move items to Trash with undo
-**Feature:** F-FILE-07 · **Priority:** P3 · **Phase:** 8 · **Screens:** `FilesTrash`, `FilesBrowser`
+**Feature:** F-FILE-07 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesTrash`, `FilesBrowser`
 **As** anyone signed in, **I want** deleted files to go to Trash first, **so that** I can get them back after a mistake.
 
 **Acceptance criteria**
@@ -299,7 +299,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - UI: Toast with action, Dialog.
 
 ### US-FILE-17 · Restore items from Trash
-**Feature:** F-FILE-07 · **Priority:** P3 · **Phase:** 8 · **Screens:** `FilesTrash`
+**Feature:** F-FILE-07 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesTrash`
 **As** anyone signed in, **I want** to see what I deleted and restore it, **so that** I can undo a delete days later.
 
 **Acceptance criteria**
@@ -317,7 +317,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - UI: List, ListRow, Button, Badge for days left.
 
 ### US-FILE-18 · Empty Trash manually and automatically
-**Feature:** F-FILE-07 · **Priority:** P3 · **Phase:** 8 · **Screens:** `FilesTrash`
+**Feature:** F-FILE-07 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesTrash`
 **As** anyone signed in, **I want** Trash to clean itself up, **so that** deleted files don't fill the disk forever.
 
 **Acceptance criteria**
@@ -332,7 +332,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - Edge: a trash item whose owner was deleted is purged with the user's Home per 09-account-people.md.
 
 ### US-FILE-19 · Switch to list view and sort
-**Feature:** F-FILE-08 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `FilesList`
+**Feature:** F-FILE-08 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesList`
 **As** anyone signed in, **I want** a list with name, date and size columns, **so that** I can scan and sort many files.
 
 **Acceptance criteria**
@@ -346,7 +346,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - UI: List, ListRow, FileItem (row variant). Column headers are buttons with `aria-sort`.
 
 ### US-FILE-20 · Select several items
-**Feature:** F-FILE-08 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `FilesList`
+**Feature:** F-FILE-08 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesList`
 **As** anyone signed in, **I want** to select several files at once, **so that** I can move, download or delete them together.
 
 **Acceptance criteria**
@@ -362,7 +362,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - Accessibility: the list uses `role="grid"` with `aria-selected`; selection count is announced via a live region.
 
 ### US-FILE-21 · Use the right-click menu
-**Feature:** F-FILE-09 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `FilesContextMenu`
+**Feature:** F-FILE-09 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesContextMenu`
 **As** anyone signed in, **I want** a right-click menu on files, **so that** common actions are one click away.
 
 **Acceptance criteria**
@@ -379,7 +379,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - UI: Menu with shortcut hints. "Share…" on a folder opens FilesShare (US-FILE-13); on a file it uses the Web Share API.
 
 ### US-FILE-22 · Move items to another folder
-**Feature:** F-FILE-10 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `FilesMove`
+**Feature:** F-FILE-10 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesMove`
 **As** anyone signed in, **I want** to pick a destination folder from a tree, **so that** I can reorganise files without dragging.
 
 **Acceptance criteria**
@@ -397,7 +397,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - Edge: cancelling a cross-disk job leaves the source untouched and removes partial copies.
 
 ### US-FILE-23 · Rename a file or folder
-**Feature:** F-FILE-11 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `FilesRename`
+**Feature:** F-FILE-11 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesRename`
 **As** anyone signed in, **I want** to rename an item safely, **so that** I don't break the file type by accident.
 
 **Acceptance criteria**
@@ -414,7 +414,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - UI: Dialog, TextField, Button.
 
 ### US-FILE-24 · See skeletons while a folder loads
-**Feature:** F-FILE-12 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `FilesLoading`
+**Feature:** F-FILE-12 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesLoading`
 **As** anyone signed in, **I want** a clear loading state, **so that** I know hlabs is working on a slow drive.
 
 **Acceptance criteria**

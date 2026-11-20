@@ -599,7 +599,7 @@ Shows: hlabs — Files · [Files] · [Locations] · Files · Recents · Home · 
 
 ### FilesList — List view & selection
 
-**Priority:** Nice to have · **Phase:** 9 · **Stories:** US-FILE-19, US-FILE-20
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-19, US-FILE-20
 
 ![FilesList](screens/FilesList.webp)
 
@@ -609,7 +609,7 @@ Shows: hlabs — Files · list view & selection · [Files] · [Locations] · Fil
 
 ### FilesContextMenu — Right-click menu
 
-**Priority:** Nice to have · **Phase:** 9 · **Stories:** US-FILE-21
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-21
 
 ![FilesContextMenu](screens/FilesContextMenu.webp)
 
@@ -647,7 +647,7 @@ Shows: Install Immich · Folder access · Home › Photos · Read and write · w
 
 ### FilesMove — Move to
 
-**Priority:** Nice to have · **Phase:** 9 · **Stories:** US-FILE-22
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-22
 
 ![FilesMove](screens/FilesMove.webp)
 
@@ -657,7 +657,7 @@ Shows: hlabs — Files · move to · [Files] · [Locations] · Files · Recents 
 
 ### FilesRename — Rename
 
-**Priority:** Nice to have · **Phase:** 9 · **Stories:** US-FILE-23
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-23
 
 ![FilesRename](screens/FilesRename.webp)
 
@@ -697,7 +697,7 @@ Shows: hlabs — Files · external drive · [Files] · [Locations] · Files · R
 
 ### FilesTrash — Trash
 
-**Priority:** P3 · **Phase:** 8 · **Stories:** US-FILE-16, US-FILE-17, US-FILE-18
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-16, US-FILE-17, US-FILE-18
 
 ![FilesTrash](screens/FilesTrash.webp)
 
@@ -707,7 +707,7 @@ Shows: hlabs — Files · Trash · [Files] · [Locations] · Files · Recents ·
 
 ### FilesLoading — Loading
 
-**Priority:** Nice to have · **Phase:** 9 · **Stories:** US-FILE-24
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-24
 
 ![FilesLoading](screens/FilesLoading.webp)
 
