@@ -128,7 +128,8 @@ export function FilesPage({ at }: FilesPageProps) {
         onOpenFile={onOpenFile}
         focusPath={focusPath}
         searchQuery={searchQuery}
-        view={prefs.view}
+        // A phone shows the grid: its list layout is US-PHONE-16 (phase 9), and PhoneFilesMore has no toggle.
+        view={desktop ? prefs.view : 'grid'}
         sort={prefs.sort}
         onSort={prefs.sortBy}
         selectionActions={(entries, clear, readOnly) =>
@@ -151,7 +152,7 @@ export function FilesPage({ at }: FilesPageProps) {
         }
         toolbar={(place, folderName) => (
           <>
-            <ViewToggle view={prefs.view} onChange={prefs.setView} />
+            {desktop ? <ViewToggle view={prefs.view} onChange={prefs.setView} /> : null}
             <FolderToolbar
               readOnly={place.readOnly}
               onNewFolder={() => setNewFolder(true)}

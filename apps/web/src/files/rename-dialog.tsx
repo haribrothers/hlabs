@@ -115,7 +115,7 @@ export function RenameDialog({
             selected.current = true;
             e.currentTarget.select();
           }}
-          trailing={ext ? <span className="text-body text-ink-muted">{ext}</span> : undefined}
+          suffix={ext || undefined}
           hint={ext ? copy.extensionKept(ext) : undefined}
           error={error}
           autoComplete="off"

@@ -245,6 +245,49 @@
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-wash);
   }
+  /* A suffix right after the typed text (TextField suffix, FilesRename's ".pdf"). */
+  .hl-input-suffixed {
+    display: flex;
+    align-items: center;
+    cursor: text;
+  }
+  .hl-input-suffixed:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-wash);
+  }
+  .hl-input-grow {
+    display: inline-grid;
+    min-width: 0;
+    max-width: 100%;
+    /* Room for the cursor after the last letter, so the suffix follows the name without a space. */
+    padding-right: 1px;
+  }
+  .hl-input-grow::after,
+  .hl-input-grow > input {
+    grid-area: 1 / 1;
+    font: inherit;
+    padding: 0;
+    margin: 0;
+  }
+  .hl-input-grow::after {
+    content: attr(data-value);
+    visibility: hidden;
+    white-space: pre;
+    overflow: hidden;
+  }
+  .hl-input-grow > input {
+    width: 100%;
+    min-width: 1ch;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    outline: none;
+  }
+  .hl-input-suffix {
+    flex-shrink: 0;
+    color: var(--ink-muted);
+    white-space: pre;
+  }
   .hl-field-error .hl-input {
     border: 1.5px solid var(--danger);
   }

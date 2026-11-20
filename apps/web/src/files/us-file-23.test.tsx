@@ -86,7 +86,10 @@ describe('US-FILE-23', () => {
     await waitFor(() => expect(field).toHaveFocus());
     expect(field.value).toBe('Lease agreement');
     expect([field.selectionStart, field.selectionEnd]).toEqual([0, 'Lease agreement'.length]);
-    expect(within(dialog).getByText('.pdf')).toBeInTheDocument();
+    // The ending follows the typed name inside the field, not at its far edge.
+    const ending = within(dialog).getByText('.pdf');
+    expect(ending.closest('.hl-input-suffixed')).toBe(field.closest('.hl-input-suffixed'));
+    expect(field.parentElement!.nextElementSibling).toBe(ending);
     expect(within(dialog).getByText('The .pdf ending is kept so apps still know how to open it.')).toBeInTheDocument();
     fireEvent.change(field, { target: { value: 'Lease 2026' } });
     fireEvent.submit(field.closest('form')!);

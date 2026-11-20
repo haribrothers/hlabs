@@ -137,4 +137,22 @@ describe('US-FILE-19', () => {
     fireEvent.doubleClick(bills);
     await waitFor(() => expect(router.state.location.search).toEqual({ path: '/home/Documents/Bills' }));
   });
+
+  it('a phone shows the grid without the toggle (its list layout is US-PHONE-16)', async () => {
+    window.matchMedia = ((query: string) => ({
+      matches: !query.includes('min-width'),
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia;
+    window.localStorage.setItem(VIEW_KEY, '"list"');
+    try {
+      open();
+      expect(await screen.findByRole('group', { name: 'Documents' })).toBeInTheDocument();
+      expect(screen.queryByRole('radio', { name: 'List view' })).toBeNull();
+    } finally {
+      // @ts-expect-error put in for this case
+      delete window.matchMedia;
+    }
+  });
 });
