@@ -212,6 +212,8 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 
 ## Phase 5 · Backups and Files
 
+Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). Automated, 20 Nov 2026: #1 `apps/web/e2e/us-bkp-20.spec.ts` (real engine and restic: Vaultwarden and Paperless-ngx backed up to the pretend NAS, their data wiped, restored, both running again); #2 `apps/web/e2e/us-file-09.spec.ts` (an upload resumes after the connection drops). Still to check by hand: a real NAS and a cloud bucket as destinations, a restore after a real sleep/wake catch-up, the tray's "Back up now" (US-INST-07's menu item isn't built).
+
 - [x] US-FILE-01 · See my places in the sidebar
 - [x] US-FILE-02 · Browse a folder in grid view
 - [x] US-FILE-03 · Create a folder
@@ -225,24 +227,24 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 - [x] US-FILE-11 · Connect an SMB or NFS drive
 - [x] US-FILE-12 · Disconnect or recover a network drive
 - [x] US-FILE-25 · Choose a folder for an app
-- [ ] US-BKP-01 · See the last backup's status
-- [ ] US-BKP-02 · See destinations and the schedule summary
-- [ ] US-BKP-03 · Review recent runs and run history
-- [ ] US-BKP-04 · Back up now
-- [ ] US-BKP-05 · Run a backup
-- [ ] US-BKP-06 · Apply retention after each run
-- [ ] US-BKP-07 · Handle failed runs
-- [ ] US-BKP-08 · Choose a destination type and fill in its details
-- [ ] US-BKP-09 · Test the connection and add the destination
-- [ ] US-BKP-10 · See the encryption password once
-- [ ] US-BKP-11 · Edit or remove a destination
-- [ ] US-BKP-17 · Start a restore and pick a restore point
-- [ ] US-BKP-18 · Choose apps or folders and how to restore
-- [ ] US-BKP-19 · Confirm a restore with my password
-- [ ] US-BKP-20 · Watch a restore in progress
-- [ ] US-BKP-21 · Roll back automatically if a restore fails
-- [ ] US-BKP-22 · Cancel a restore only before swap-in
-- [ ] US-BKP-23 · Choose what's included in backups
+- [x] US-BKP-01 · See the last backup's status
+- [x] US-BKP-02 · See destinations and the schedule summary
+- [x] US-BKP-03 · Review recent runs and run history
+- [x] US-BKP-04 · Back up now
+- [x] US-BKP-05 · Run a backup
+- [x] US-BKP-06 · Apply retention after each run
+- [x] US-BKP-07 · Handle failed runs
+- [x] US-BKP-08 · Choose a destination type and fill in its details
+- [x] US-BKP-09 · Test the connection and add the destination
+- [x] US-BKP-10 · See the encryption password once
+- [x] US-BKP-11 · Edit or remove a destination
+- [x] US-BKP-17 · Start a restore and pick a restore point
+- [x] US-BKP-18 · Choose apps or folders and how to restore
+- [x] US-BKP-19 · Confirm a restore with my password
+- [x] US-BKP-20 · Watch a restore in progress
+- [x] US-BKP-21 · Roll back automatically if a restore fails
+- [x] US-BKP-22 · Cancel a restore only before swap-in
+- [x] US-BKP-23 · Choose what's included in backups
 
 ## Phase 6 · Distribution
 

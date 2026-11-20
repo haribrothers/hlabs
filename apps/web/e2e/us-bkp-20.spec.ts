@@ -20,7 +20,7 @@ async function removeApps(request: APIRequestContext) {
 async function install(page: Page, id: string) {
   await page.goto(`/store/app/${id}?install=true`);
   await page.getByRole('dialog').getByRole('button', { name: 'Install', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Open' })).toBeVisible({ timeout: 10 * 60_000 });
+  await expect(page.getByRole('button', { name: 'Open', exact: true })).toBeVisible({ timeout: 10 * 60_000 });
 }
 
 test('Phase 5: back up Vaultwarden and Paperless, wipe their data, restore it, both run again', async ({
@@ -40,6 +40,7 @@ test('Phase 5: back up Vaultwarden and Paperless, wipe their data, restore it, b
     await dialog.getByRole('button', { name: 'Add destination' }).click();
     await expect(dialog).toBeHidden({ timeout: 30_000 });
     await page.getByRole('button', { name: 'Back up now' }).click();
+    await expect(page.getByRole('button', { name: /^Backing up… \d+%$/ })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Back up now' })).toBeEnabled({ timeout: 10 * 60_000 });
     await expect(page.getByRole('region', { name: 'Last backup just now' })).toBeVisible();
     await expect(page.getByRole('group', { name: 'Recent runs' })).toContainText('Succeeded');
@@ -62,7 +63,7 @@ test('Phase 5: back up Vaultwarden and Paperless, wipe their data, restore it, b
     for (const app of APPS) expect(readFileSync(marker(app.id), 'utf8')).toBe(`${app.id} before`);
     for (const app of APPS) {
       await page.goto(`/store/app/${app.id}`);
-      await expect(page.getByRole('button', { name: 'Open' })).toBeVisible({ timeout: 3 * 60_000 });
+      await expect(page.getByRole('button', { name: 'Open', exact: true })).toBeVisible({ timeout: 3 * 60_000 });
     }
   } finally {
     await cleanBackups(page, request).catch(() => {});
