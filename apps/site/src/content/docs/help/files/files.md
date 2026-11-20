@@ -56,6 +56,12 @@ Select what you want to move and choose **Move to…** (on a phone, **Move** alo
 
 Moving within the same disk is instant, and the message at the bottom has **Undo** to put them back. Moving to another disk, such as a network drive, or more than 1 GB, carries on in the background with a bar showing how far it got; the items leave where they were only once their copy is checked. If something with the same name is already there, Files asks whether to skip it, keep both (the moved one gets a number) or replace the one that's there (it goes to the Trash).
 
+### Delete files and folders
+
+Select what you want to delete and choose **Move to Trash** (on a phone, **Trash** along the bottom), press **Delete** or **Backspace**, or open a file and choose **•••** › **Move to Trash**. They go to your Trash, and the message at the bottom has **Undo** for a few seconds. Something deleted from Shared goes to the Trash of whoever deleted it.
+
+Trash only covers this computer. On a network drive, Files asks **Delete … for good?** first, because those items can't be brought back.
+
 ### Rename a file or folder
 
 Select an item and press **F2**, or open a file and choose **•••** › **Rename…**. Type the new name and press Return. For a file, only the part before its ending (such as **.pdf**) changes, so apps still know how to open it. Names can't be empty, contain **/** or match something already in the folder.

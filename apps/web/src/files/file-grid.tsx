@@ -89,7 +89,10 @@ export function FileGrid({
   select,
   onRename,
   drag,
+  onDeleteKey,
 }: {
+  /** Delete or Backspace on the focused item (US-FILE-16). */
+  onDeleteKey?: (entry: FileEntry) => void;
   /** Dragging items onto folders moves them (US-FILE-22); desktop only. */
   drag?: DragProps;
   /** F2 on the focused item (US-FILE-23); absent where it can't be renamed. */
@@ -125,6 +128,15 @@ export function FileGrid({
   }, [focusPath, items]);
 
   const onKeyDown = (e: KeyboardEvent) => {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && onDeleteKey) {
+      const path = (document.activeElement as HTMLElement | null)?.dataset.path;
+      const entry = items.find((i) => i.path === path);
+      if (entry) {
+        e.preventDefault();
+        onDeleteKey(entry);
+      }
+      return;
+    }
     if (e.key === 'F2' && onRename) {
       const path = (document.activeElement as HTMLElement | null)?.dataset.path;
       const entry = items.find((i) => i.path === path);

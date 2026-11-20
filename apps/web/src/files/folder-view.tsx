@@ -140,9 +140,12 @@ export function FolderView({
   onSort,
   selectionActions,
   onDropItems,
+  onTrashItems,
 }: {
   /** Move to… and Move to Trash for the selected items, once their stories ship (US-FILE-22, US-FILE-16). */
   selectionActions?: (entries: FileEntry[], clear: () => void, readOnly: boolean) => Omit<SelectionActions, 'onShare'>;
+  /** Move to Trash (or delete for good on a network drive) for these items here (US-FILE-16). */
+  onTrashItems?: (entries: FileEntry[], place: Listing['place'], done: () => void) => void;
   /** Items dragged onto a folder here (US-FILE-22). */
   onDropItems?: (entries: FileEntry[], from: string, to: FileEntry) => void;
   /** Grid or list, and the order (US-FILE-19). */
@@ -196,6 +199,7 @@ export function FolderView({
   };
   const actions: SelectionActions = {
     ...selectionActions?.(chosen, clear, place.readOnly),
+    ...(onTrashItems && !place.readOnly ? { onTrash: () => onTrashItems(chosen, place, clear) } : {}),
     // The device's share sheet takes files, not folders (US-FILE-20).
     ...(canShareFiles() && chosen.length > 0 && chosen.every((e) => e.kind === 'file')
       ? { onShare: () => void shareFiles(chosen).catch(() => {}) }
@@ -335,6 +339,11 @@ export function FolderView({
           openOnClick={!desktop}
           select={select}
           drag={drag}
+          onDeleteKey={
+            onTrashItems && !place.readOnly
+              ? (e) => onTrashItems(select.selected.has(e.path) ? chosen : [e], place, clear)
+              : undefined
+          }
           onRename={canRename ? setRenaming : undefined}
           focusPath={focusAfter ?? focusPath}
         />
@@ -347,6 +356,11 @@ export function FolderView({
           openOnClick={!desktop}
           select={select}
           drag={drag}
+          onDeleteKey={
+            onTrashItems && !place.readOnly
+              ? (e) => onTrashItems(select.selected.has(e.path) ? chosen : [e], place, clear)
+              : undefined
+          }
           onRename={canRename ? setRenaming : undefined}
           focusPath={focusAfter ?? focusPath}
         />

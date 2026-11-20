@@ -87,6 +87,8 @@ export const HLABS_ERRORS = {
   FILES_INVALID_NAME: 'BAD_REQUEST',
   /** An app keeps this folder (or one inside it), or it's shared on the network; `detail.apps` names them. */
   FILES_IN_USE: 'PRECONDITION_FAILED',
+  /** Trash only covers this computer: a network drive's items are deleted for good instead (files.delete). */
+  FILES_NO_TRASH: 'PRECONDITION_FAILED',
   /** An upload chunk that doesn't start where the server is (US-FILE-09): `detail.offset` says where it is. */
   UPLOAD_OFFSET_MISMATCH: 'CONFLICT',
   /** The upload is being sent from another tab or device right now (US-FILE-09). */

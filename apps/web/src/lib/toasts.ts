@@ -59,6 +59,8 @@ export interface ToastItem {
   key?: string;
   /** Work going on (0–100): the toast shows a bar and stays until it's replaced (US-FILE-22). */
   progress?: number;
+  /** How long it shows instead of its tone's time (US-FILE-16: Undo for 8 s). */
+  durationMs?: number;
 }
 
 /** How many show at once; more wait. */
@@ -156,9 +158,9 @@ function run(id: number) {
   t.timer = setTimeout(() => dismissToast(id), t.left);
 }
 
-function startTimer(id: number, tone: ToastTone, sticky = false) {
+function startTimer(id: number, tone: ToastTone, sticky = false, durationMs?: number) {
   clearTimer(id);
-  const ms = sticky ? null : TOAST_MS[tone];
+  const ms = sticky ? null : (durationMs ?? TOAST_MS[tone]);
   if (ms === null) return;
   // Held until publish says it's on screen.
   timers.set(id, { timer: null, left: ms, startedAt: 0, holds: new Set(['queued']) });
@@ -168,12 +170,12 @@ export function showToast(toast: Omit<ToastItem, 'id' | 'leaving'>): number {
   const same = toast.key ? items.find((i) => i.key === toast.key && !i.leaving) : undefined;
   if (same) {
     // A repeat: update it in place, and its time starts again.
-    startTimer(same.id, toast.tone, toast.progress !== undefined);
+    startTimer(same.id, toast.tone, toast.progress !== undefined, toast.durationMs);
     publish(items.map((i) => (i.id === same.id ? { ...toast, id: same.id } : i)));
     return same.id;
   }
   const id = nextId++;
-  startTimer(id, toast.tone, toast.progress !== undefined);
+  startTimer(id, toast.tone, toast.progress !== undefined, toast.durationMs);
   publish([...items, { ...toast, id }]);
   return id;
 }

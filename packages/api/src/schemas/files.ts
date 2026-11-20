@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { io } from '../trpc';
 import { homeAppSchema } from './apps';
-import { empty, jobRefSchema, ok, pageInputSchema, pending } from './common';
+import { empty, hlabsCodeSchema, jobRefSchema, ok, pageInputSchema, pending } from './common';
 
 /**
  * Virtual paths (07-files, resolved and jailed server-side): `/home` (the caller's Home folder), `/shared`, and for
@@ -157,8 +157,23 @@ export const files = {
     ]),
   ),
   copy: io(pathsRef.extend({ to: virtualPathSchema }), z.union([ok, jobRefSchema])),
-  trash: io(pathsRef, ok),
-  restoreFromTrash: io(z.object({ ids: z.array(z.string()).min(1) }), ok),
+  /** To the caller's Trash (US-FILE-16); this computer only (a drive's are FILES_NO_TRASH). Ids for Undo. */
+  trash: io(pathsRef, z.object({ trashItemIds: z.array(z.string()) })),
+  /** Deleted for good, audited (US-FILE-16: items on a network drive, after "Delete <n> items for good?"). */
+  delete: io(pathsRef, ok),
+  /**
+   * Back where they were (US-FILE-16 Undo, US-FILE-17): the caller's own items, `ids` absent for all. The folder is
+   * made again if it's gone; a taken name gets " (2)". What couldn't come back says why (a drive not connected).
+   */
+  restoreFromTrash: io(
+    z.object({ ids: z.array(z.string()).min(1).optional() }),
+    z.object({
+      restored: z.array(z.object({ id: z.string(), path: virtualPathSchema })),
+      failed: z.array(
+        z.object({ id: z.string(), name: z.string(), hlabsCode: hlabsCodeSchema, location: z.string().nullable() }),
+      ),
+    }),
+  ),
   emptyTrash: io(z.object({ allUsers: z.boolean().optional() }).optional(), ok),
   shares: {
     get: io(pathRef, pending),

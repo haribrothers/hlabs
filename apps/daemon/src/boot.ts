@@ -78,6 +78,7 @@ import { NetworkDrives } from './storage/drives';
 import { FilesService } from './files/service';
 import { Trash } from './files/trash';
 import { FileMover } from './files/move';
+import { FilesTrash } from './files/trash-actions';
 import { Uploads } from './files/uploads';
 import { NetworkStorage } from './storage/network';
 import { SystemHostStats, type HostStats } from './platform/host-stats';
@@ -532,6 +533,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   const trash = new Trash({ db });
   const uploads = new Uploads({ db, files, trash, freeBytes: (path) => probe.freeBytes(path) });
   const fileMover = new FileMover({ db, files, trash, jobs });
+  const filesTrash = new FilesTrash({ db, files, trash });
   fileMover.register();
   const networkStorage = new NetworkStorage({ db, secrets, mounter, mountsDir });
   const networkDrives = new NetworkDrives({ db, secrets, mounter, mountsDir, bus, logger });
@@ -615,6 +617,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     networkDrives,
     files,
     fileMover,
+    filesTrash,
     trash,
     uploads,
     filesJanitor: new FilesJanitor({ uploads, trash, logger }),

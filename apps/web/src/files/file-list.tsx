@@ -64,7 +64,10 @@ export function FileList({
   select,
   onRename,
   drag,
+  onDeleteKey,
 }: {
+  /** Delete or Backspace on the focused item (US-FILE-16). */
+  onDeleteKey?: (entry: FileEntry) => void;
   /** Dragging rows onto folders moves them (US-FILE-22); desktop only. */
   drag?: DragProps;
   /** F2 on the focused row (US-FILE-23). */
@@ -104,6 +107,11 @@ export function FileList({
     if (select && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
       e.preventDefault();
       select.onSelectAll();
+      return;
+    }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && onDeleteKey) {
+      e.preventDefault();
+      onDeleteKey(entry);
       return;
     }
     if (e.key === 'F2' && onRename) {

@@ -24,6 +24,7 @@ import type { FilesJanitor } from './files/janitor';
 import type { FilesService } from './files/service';
 import type { Trash } from './files/trash';
 import type { FileMover } from './files/move';
+import type { FilesTrash } from './files/trash-actions';
 import type { Uploads } from './files/uploads';
 import type { NetworkStorage } from './storage/network';
 import type { NetworkDrives } from './storage/drives';
@@ -117,6 +118,8 @@ export interface Services {
   files: FilesService;
   /** Move to (US-FILE-22). */
   fileMover: FileMover;
+  /** Trash, delete for good, restore (US-FILE-16…18). */
+  filesTrash: FilesTrash;
   /** Where replaced and deleted files go (D-027). */
   trash: Trash;
   /** Resumable uploads (US-FILE-08, US-FILE-09). */

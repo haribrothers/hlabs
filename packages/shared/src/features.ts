@@ -66,6 +66,8 @@ export const FEATURE_PHASE = {
   filesListView: 5,
   filesContextMenu: 9,
   filesMove: 5,
+  /** Move to Trash with Undo, and delete for good on network drives (US-FILE-16). */
+  filesTrash: 5,
   filesRename: 5,
   /** "Share" (a link) in FilePreview (US-FILE-06). */
   fileLinks: 9,

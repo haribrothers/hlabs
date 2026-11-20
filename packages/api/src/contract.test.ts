@@ -59,7 +59,7 @@ const EXPECTED: Row[] = [
   ['files.listTrash', 'q', 'authed'], ['files.openWith', 'q', 'authed'], ['files.preview', 'q', 'authed'],
   ['files.search', 'q', 'authed'], ['files.mkdir', 'm', 'authed'], ['files.rename', 'm', 'authed'],
   ['files.move', 'm', 'authed'], ['files.copy', 'm', 'authed'], ['files.trash', 'm', 'authed'], ['files.uploads', 'q', 'authed'],
-  ['files.restoreFromTrash', 'm', 'authed'], ['files.emptyTrash', 'm', 'authed'], ['files.shares.get', 'q', 'authed'],
+  ['files.delete', 'm', 'authed'], ['files.restoreFromTrash', 'm', 'authed'], ['files.emptyTrash', 'm', 'authed'], ['files.shares.get', 'q', 'authed'],
   ['files.shares.set', 'm', 'authed'], ['files.shares.remove', 'm', 'authed'],
 
   ['storage.summary', 'q', 'admin'], ['storage.listDrives', 'q', 'admin'], ['storage.locations.list', 'q', 'admin'], ['storage.locations.reconnect', 'm', 'admin'],

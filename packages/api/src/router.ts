@@ -151,6 +151,7 @@ export const appRouter = router({
     move: m(p.authed, s.files.move),
     copy: m(p.authed, s.files.copy),
     trash: m(p.authed, s.files.trash),
+    delete: m(p.authed, s.files.delete),
     restoreFromTrash: m(p.authed, s.files.restoreFromTrash),
     emptyTrash: m(p.authed, s.files.emptyTrash),
     shares: router({

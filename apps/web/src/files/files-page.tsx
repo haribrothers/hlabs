@@ -23,6 +23,7 @@ import { FolderToolbar, ViewToggle } from './toolbar';
 import { useFilesView } from './view-prefs';
 import { RenameDialog } from './rename-dialog';
 import { useMoveFlow } from './move-flow';
+import { useTrashFlow } from './trash-flow';
 import type { MoveRoot } from './move-dialog';
 import { isFeatureEnabled } from '@hlabs/shared';
 
@@ -80,6 +81,13 @@ export function FilesPage({ at }: FilesPageProps) {
   ];
   const mover = useMoveFlow({ roots: moveRoots, accent: me.data?.appearance.accent ?? 'violet' });
   const canMove = isFeatureEnabled('filesMove');
+  const trashItems = useTrashFlow();
+  const canTrash = isFeatureEnabled('filesTrash');
+  /** A network drive's name for a path on one (Trash doesn't reach it), else null. */
+  const driveOf = (path: string) => {
+    const id = /^\/drives\/([^/]+)/.exec(path)?.[1];
+    return id ? (drives.find((d) => d.id === id)?.name ?? '') : null;
+  };
 
   useEffect(() => {
     document.title = copy.docTitle;
@@ -123,6 +131,12 @@ export function FilesPage({ at }: FilesPageProps) {
           canMove && !readOnly ? { onMove: () => mover.choose(entries, folderPath, clear) } : {}
         }
         onDropItems={canMove ? (entries, from, to) => mover.move(entries, from, to.path, to.name) : undefined}
+        onTrashItems={
+          canTrash
+            ? (entries, place, done) =>
+                void trashItems(entries, place.area === 'drive' ? (place.name ?? '') : null, done)
+            : undefined
+        }
         search={
           <SearchField
             value={searchText}
@@ -172,6 +186,18 @@ export function FilesPage({ at }: FilesPageProps) {
                           onSelect: () => {
                             setPreview(null);
                             mover.choose([entry], entry.path.slice(0, entry.path.lastIndexOf('/')));
+                          },
+                        },
+                      ]
+                    : []),
+                  ...(canTrash
+                    ? [
+                        {
+                          label: copy.moveToTrash,
+                          danger: true,
+                          onSelect: () => {
+                            setPreview(null);
+                            void trashItems([entry], driveOf(entry.path));
                           },
                         },
                       ]

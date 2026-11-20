@@ -69,6 +69,15 @@ export const filesCopy = {
   moveFailed: "Couldn't move the items",
   moveFailedBody: 'Nothing was removed from where they were. Check there is space on the drive, then try again.',
   undo: 'Undo',
+  // Trash (US-FILE-16)
+  movedToTrashOne: (name: string) => `“${name}” moved to Trash`,
+  movedToTrashMany: (n: number) => `${n} items moved to Trash`,
+  deleteTitle: (n: number, name: string) => (n === 1 ? `Delete “${name}” for good?` : `Delete ${n} items for good?`),
+  deleteBody: (drive: string) =>
+    `${drive ? `They're on ${drive}, and Trash` : 'Trash'} only covers this computer, so they're deleted straight away. You can't undo this.`,
+  delete: 'Delete',
+  deletedOne: (name: string) => `“${name}” deleted`,
+  deletedMany: (n: number) => `${n} items deleted`,
   // Rename (US-FILE-23)
   renameTitle: 'Rename',
   renameItem: 'Rename…',
