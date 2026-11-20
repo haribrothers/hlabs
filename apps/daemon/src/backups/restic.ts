@@ -18,6 +18,8 @@ export interface Snapshot {
   time: number;
   tags: string[];
   paths: string[];
+  /** What it holds (restic ≥ 0.17 keeps it in the snapshot's summary); null when unknown. */
+  bytes: number | null;
 }
 
 export interface Retention {
@@ -226,8 +228,15 @@ export class ResticCli implements Restic {
       time: string;
       tags?: string[];
       paths?: string[];
+      summary?: { total_bytes_processed?: number };
     }>;
-    return list.map((s) => ({ id: s.id, time: Date.parse(s.time), tags: s.tags ?? [], paths: s.paths ?? [] }));
+    return list.map((s) => ({
+      id: s.id,
+      time: Date.parse(s.time),
+      tags: s.tags ?? [],
+      paths: s.paths ?? [],
+      bytes: s.summary?.total_bytes_processed ?? null,
+    }));
   }
 
   async repoSize(repo: Repo) {

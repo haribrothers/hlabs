@@ -156,7 +156,7 @@ export class RestoreService {
         kind,
         id,
         label: kind === 'app' ? names.app(id) : names.folder(id),
-        sizeBytes: await this.deps.restic.restoreSize(repo, s.id).catch(() => null),
+        sizeBytes: s.bytes ?? (await this.deps.restic.restoreSize(repo, s.id).catch(() => null)),
         installed: kind === 'app' ? names.installed(id) : true,
       });
     }
@@ -195,7 +195,7 @@ export class RestoreService {
       if (kind === 'app' && scope.mode === 'replace' && !names.installed(id)) {
         throw hlabsError('VALIDATION_FAILED', `Install ${id} first`, { reason: 'notInstalled', appId: id });
       }
-      const bytes = await this.deps.restic.restoreSize(repo, snap.id).catch(() => 0);
+      const bytes = snap.bytes ?? (await this.deps.restic.restoreSize(repo, snap.id).catch(() => 0));
       total += bytes;
       stored[itemKey(kind, id)] = { snapshotId: snap.id, path: snap.paths[0] ?? '', bytes };
     }

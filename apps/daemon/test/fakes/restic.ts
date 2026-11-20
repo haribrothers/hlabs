@@ -138,7 +138,7 @@ export class FakeRestic implements Restic {
     this.enter('snapshots', repo);
     return this.open(repo)
       .snapshots.filter((s) => (opts.tags ?? []).every((t) => s.tags.includes(t)))
-      .map(({ id, time, tags, paths }) => ({ id, time, tags, paths }));
+      .map(({ id, time, tags, paths, bytes }) => ({ id, time, tags, paths, bytes }));
   }
 
   async repoSize(repo: Repo) {

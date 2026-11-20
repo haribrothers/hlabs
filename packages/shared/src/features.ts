@@ -36,6 +36,10 @@ export const FEATURE_PHASE = {
   backups: 5,
   /** "Another hlabs" as a backup destination: waits for the Backup receiver app (D-132, Q-18). */
   backupToHlabs: 8,
+  /** "Details" on a failed backup and BackupRunDetail (F-BKP-05, US-BKP-15/16). */
+  backupRunDetail: 8,
+  /** "Change" beside the schedule and BackupSchedule (F-BKP-04, US-BKP-12…14). */
+  backupSchedule: 9,
   /** "Uninstall hlabs…" in the tray (US-INST-21, US-INST-22). */
   uninstall: 6,
   files: 5,

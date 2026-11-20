@@ -90,7 +90,8 @@ export function when(at: number, now: number): string {
   const day = (ms: number) => new Date(ms).toDateString();
   if (day(at) === day(now)) return `today at ${hm}`;
   if (day(at) === day(now + 86_400_000)) return `tomorrow at ${hm}`;
-  return `${d.getDate()} ${d.toLocaleString('en-GB', { month: 'short' })} at ${hm}`;
+  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getMonth()];
+  return `${d.getDate()} ${month} at ${hm}`;
 }
 
 /** What went wrong, in a sentence, for the notification (US-BKP-07). */

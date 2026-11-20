@@ -40,6 +40,12 @@ export function errorLine(err: unknown): string {
   return `${title}. ${body}`;
 }
 
+/** The line for an hlabsCode stored with a record (a failed restore), as `errorLine` says it. */
+export function codeLine(code: string, detail: Record<string, unknown> = {}): string {
+  const { title, body } = catalogue[code]?.(detail) ?? errorCopy.generic;
+  return `${title}. ${body}`;
+}
+
 /** A mutation started from a button failed: say so in a danger toast (dialogs and forms show errors inline). The
  * same error again updates that toast. */
 export function showErrorToast(err: unknown): number {

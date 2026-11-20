@@ -6,6 +6,7 @@ import { settingsCopy } from '../copy/settings';
 import { useIsDesktop } from '../lib/use-media';
 import { useMe } from '../lib/use-me';
 import { AccessDenied } from '../shell/access-denied';
+import { BackupsActions, BackupsSection } from '../backups/backups-section';
 import { AccountSection } from './account-section';
 import { EngineSection, EngineStatus } from './engine-section';
 import { NetworkSection } from './network-section';
@@ -21,12 +22,14 @@ const CONTENT: Partial<
   network: NetworkSection,
   engine: EngineSection,
   updates: UpdatesSection,
+  backups: BackupsSection,
 };
 
 /** Something shown next to a section's title, such as the engine's state. */
 const ASIDE: Partial<Record<SectionId, ComponentType>> = {
   users: InviteButton,
   engine: EngineStatus,
+  backups: BackupsActions,
 };
 
 export function SectionPage({

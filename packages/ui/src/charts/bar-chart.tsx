@@ -19,9 +19,12 @@ export interface BarChartProps {
   width?: number;
   height?: number;
   formatValue?: (v: number) => string;
+  /** No grid, axis or labels: a strip of bars in a card (BackupsOverview). Tooltips and the table stay. */
+  compact?: boolean;
 }
 
-const PAD = { left: 44, right: 12, top: 18, bottom: 26 };
+const FULL_PAD = { left: 44, right: 12, top: 18, bottom: 26 };
+const COMPACT_PAD = { left: 0, right: 0, top: 4, bottom: 0 };
 const BAR_MAX = 24;
 const COLOR = { failed: 'var(--danger)', warning: 'var(--warning)' } as const;
 
@@ -35,7 +38,9 @@ export function BarChart({
   width = 560,
   height = 180,
   formatValue,
+  compact = false,
 }: BarChartProps) {
+  const PAD = compact ? COMPACT_PAD : FULL_PAD;
   const t = useUiStrings();
   const tableId = useId();
   const [idx, setIdx] = useState<number | null>(null);
@@ -51,7 +56,7 @@ export function BarChart({
 
   return (
     <figure className="hl-chart">
-      {title ? <figcaption className="hl-chart-title">{title}</figcaption> : null}
+      {title ? <figcaption className={compact ? 'sr-only' : 'hl-chart-title'}>{title}</figcaption> : null}
       <div className="hl-chart-plot">
         <svg
           viewBox={`0 0 ${width} ${height}`}
@@ -60,7 +65,7 @@ export function BarChart({
           aria-label={title ?? t.chartData}
           aria-describedby={tableId}
         >
-          {[0, 0.5, 1].map((f, i) => (
+          {(compact ? [] : [0, 0.5, 1]).map((f, i) => (
             <g key={`g${i}`}>
               <line
                 x1={PAD.left}
@@ -85,13 +90,21 @@ export function BarChart({
             return (
               <g
                 key={i}
-                tabIndex={0}
+                data-bar
+                tabIndex={idx === null ? (i === n - 1 ? 0 : -1) : idx === i ? 0 : -1}
                 role="img"
                 aria-label={`${d.label}: ${fmt(d.value)}${d.status === 'failed' ? `, ${t.failed.toLowerCase()}` : ''}`}
                 onMouseEnter={() => setIdx(i)}
                 onMouseLeave={() => setIdx(null)}
                 onFocus={() => setIdx(i)}
                 onBlur={() => setIdx(null)}
+                // Left and Right step through the bars (09 §charts).
+                onKeyDown={(e) => {
+                  const to = e.key === 'ArrowLeft' ? i - 1 : e.key === 'ArrowRight' ? i + 1 : null;
+                  if (to === null || to < 0 || to >= n) return;
+                  e.preventDefault();
+                  e.currentTarget.parentElement?.querySelectorAll<SVGGElement>('[data-bar]')[to]?.focus();
+                }}
               >
                 <rect
                   x={PAD.left + band * i}
@@ -114,7 +127,7 @@ export function BarChart({
                     data-testid="failed-mark"
                   />
                 ) : null}
-                {showLabel(i, n, every) ? (
+                {!compact && showLabel(i, n, every) ? (
                   <text x={cx} y={height - 6} textAnchor="middle" className="hl-chart-axis">
                     {d.label}
                   </text>
