@@ -1,6 +1,6 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { BUILDING_PHASE } from '@hlabs/shared';
+import { BUILDING_PHASE } from '../../packages/shared/src/features';
 import { defineConfig } from 'vite';
 
 /** The phase `pnpm dev:tray` previews, as the dashboard's dev server does (D-092); builds show SHIPPED_PHASE. */
