@@ -93,6 +93,11 @@ export const filesCopy = {
   driveNotConnected: (drive: string) => `Couldn't restore. ${drive} isn't connected.`,
   couldntRestore: (name: string) => `Couldn't restore “${name}”`,
   loadingTrash: 'Loading Trash',
+  emptyTrashTitle: 'Empty trash?',
+  emptyTrashBody: (n: number, size: string) =>
+    `${n} ${n === 1 ? 'item' : 'items'} (${size}) will be deleted for good. You can't undo this.`,
+  trashEmptied: 'Trash emptied',
+  emptyingTrash: 'Emptying Trash…',
   // Rename (US-FILE-23)
   renameTitle: 'Rename',
   renameItem: 'Rename…',

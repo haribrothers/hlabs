@@ -66,6 +66,8 @@ Trash only covers this computer. On a network drive, Files asks **Delete … for
 
 Choose **Trash** on the left (on a phone, the **Trash** button above your files). It lists what you deleted, newest first, with the folder it came from, when you deleted it and how many days are left before it's deleted for good (30 in all). Choose **Restore** to put an item back where it was, or **Restore all**. If its folder is gone, Files makes it again; if something with the same name is there now, the restored one gets a number, such as **Lease (2).pdf**. Everyone has their own Trash: nobody else sees what you deleted.
 
+Items are deleted for good 30 days after you deleted them. To free the space sooner, choose **Empty trash**: Files says how many items and how much space, and asks first, because they can't be brought back. Only your own Trash is emptied.
+
 ### Rename a file or folder
 
 Select an item and press **F2**, or open a file and choose **•••** › **Rename…**. Type the new name and press Return. For a file, only the part before its ending (such as **.pdf**) changes, so apps still know how to open it. Names can't be empty, contain **/** or match something already in the folder.

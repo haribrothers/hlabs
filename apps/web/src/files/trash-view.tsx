@@ -2,12 +2,15 @@
 // newest first: where each came from and when, the days left (amber at 7 or fewer) and Restore. Restoring puts an
 // item back where it was; a drive that isn't connected says so and the item stays. An empty Trash says so.
 import { fileKindOf, FileIcon } from '@hlabs/icons/files';
+import { formatBytes } from '@hlabs/shared';
 import { Button, ScrollPane } from '@hlabs/ui';
 import type { FileAccent } from '@hlabs/ui/files';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { filesCopy as copy } from '../copy/files';
+import { confirm } from '../lib/confirm';
 import { codeLine, pageQuery } from '../lib/error-copy';
+import { useEventStream } from '../lib/use-event-stream';
 import { showToast } from '../lib/toasts';
 import { useIsDesktop } from '../lib/use-media';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
@@ -38,7 +41,7 @@ export function failureLine(f: Failure): string {
   return `${copy.couldntRestore(f.name)}. ${codeLine(f.hlabsCode)}`;
 }
 
-export function TrashView({ accent, emptyAction }: { accent: FileAccent; emptyAction?: ReactNode }) {
+export function TrashView({ accent }: { accent: FileAccent }) {
   const trpc = useTRPC();
   const client = useTRPCClient();
   const queryClient = useQueryClient();
@@ -50,6 +53,35 @@ export function TrashView({ accent, emptyAction }: { accent: FileAccent; emptyAc
       queryClient.invalidateQueries({ queryKey: trpc.files.listTrash.pathKey() }),
       queryClient.invalidateQueries({ queryKey: trpc.files.list.pathKey() }),
     ]);
+
+  // A big Trash empties as a job: the list follows it.
+  useEventStream((event) => {
+    if (event.type === 'job.finished' && event.data.kind === 'empty_trash') {
+      void refresh();
+      void queryClient.invalidateQueries({ queryKey: trpc.storage.summary.queryKey() });
+      showToast({ tone: event.data.state === 'succeeded' ? 'success' : 'danger', title: copy.trashEmptied });
+    }
+  });
+
+  /** "Empty trash?" with how much goes; only this person's items (US-FILE-18). */
+  const emptyTrash = async () => {
+    const bytes = items.reduce((n, i) => n + i.size, 0);
+    let job = false;
+    const done = await confirm({
+      title: copy.emptyTrashTitle,
+      body: copy.emptyTrashBody(items.length, formatBytes(bytes)),
+      confirmLabel: copy.emptyTrash,
+      tone: 'danger',
+      onConfirm: async () => {
+        const res = await client.files.emptyTrash.mutate({});
+        job = 'jobId' in res;
+      },
+    });
+    if (!done) return;
+    await refresh();
+    void queryClient.invalidateQueries({ queryKey: trpc.storage.summary.queryKey() });
+    showToast(job ? { tone: 'neutral', title: copy.emptyingTrash } : { tone: 'success', title: copy.trashEmptied });
+  };
 
   const restore = useMutation({
     mutationFn: (ids?: string[]) => client.files.restoreFromTrash.mutate(ids ? { ids } : {}),
@@ -79,7 +111,9 @@ export function TrashView({ accent, emptyAction }: { accent: FileAccent; emptyAc
         >
           {copy.restoreAll}
         </Button>
-        {emptyAction}
+        <Button variant="destructive" size="sm" disabled={empty || !query.isSuccess} onClick={() => void emptyTrash()}>
+          {copy.emptyTrash}
+        </Button>
       </div>
       <p className="m-0 text-body-sm text-ink-muted">{copy.trashNote}</p>
     </div>

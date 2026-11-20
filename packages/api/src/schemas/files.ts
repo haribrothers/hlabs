@@ -195,7 +195,11 @@ export const files = {
       ),
     }),
   ),
-  emptyTrash: io(z.object({ allUsers: z.boolean().optional() }).optional(), ok),
+  /**
+   * Deletes the caller's Trash for good (US-FILE-18), audited; over 1 GB it's an `empty_trash` job. `allUsers` (every
+   * person's, admins) comes with US-SYS-14.
+   */
+  emptyTrash: io(z.object({ allUsers: z.boolean().optional() }).optional(), z.union([ok, jobRefSchema])),
   shares: {
     get: io(pathRef, pending),
     set: io(pathRef.extend({ name: z.string(), readOnly: z.boolean(), users: z.array(z.string()) }), ok),

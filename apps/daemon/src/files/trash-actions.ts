@@ -10,6 +10,7 @@ import { join, posix } from 'node:path';
 import { mimeOf } from './mime';
 import { joinVirtual, realInside, type Caller } from './places';
 import type { FilesService } from './service';
+import type { JobRunner } from '../jobs/runner';
 import type { Trash } from './trash';
 import { freeName } from './uploads';
 
@@ -27,8 +28,63 @@ export interface RestoreFailure {
   location: string | null;
 }
 
+/** A Trash bigger than this empties as a job (US-FILE-18). */
+export const EMPTY_JOB_BYTES = 1e9;
+
 export class FilesTrash {
-  constructor(private readonly deps: { db: HlabsDb; files: FilesService; trash: Trash }) {}
+  /** Tests lower it. */
+  emptyJobBytes = EMPTY_JOB_BYTES;
+
+  constructor(private readonly deps: { db: HlabsDb; files: FilesService; trash: Trash; jobs: JobRunner }) {}
+
+  register() {
+    this.deps.jobs.register<{ userId: string; ids: string[] }>('empty_trash', {
+      run: async ({ payload, report }) => {
+        await this.deleteRows(payload.ids, report);
+        report(100);
+      },
+    });
+  }
+
+  /**
+   * Deletes the caller's Trash for good (US-FILE-18), audited. A big one is a job; `allUsers` comes with US-SYS-14.
+   */
+  async empty(caller: Caller, input?: { allUsers?: boolean }) {
+    if (input?.allUsers) throw hlabsError('NOT_IMPLEMENTED', 'Emptying everyone’s Trash comes with US-SYS-14');
+    const rows = this.deps.db.select().from(trashItems).where(eq(trashItems.ownerUserId, caller.id)).all();
+    const bytes = rows.reduce((n, r) => n + r.size, 0);
+    this.deps.db
+      .insert(auditLog)
+      .values({
+        id: ulid(),
+        at: Date.now(),
+        userId: caller.id,
+        action: 'files.empty_trash',
+        target: null,
+        detailJson: { count: rows.length, bytes },
+      })
+      .run();
+    const ids = rows.map((r) => r.id);
+    if (bytes > this.emptyJobBytes) {
+      return { jobId: this.deps.jobs.start('empty_trash', { payload: { userId: caller.id, ids } }) };
+    }
+    await this.deleteRows(ids);
+    return { ok: true as const };
+  }
+
+  /** Each item's files, then its row; one already missing on disk just loses its row. */
+  private async deleteRows(ids: string[], report?: (progress: number) => void) {
+    let done = 0;
+    for (const id of ids) {
+      const row = this.deps.db.select().from(trashItems).where(eq(trashItems.id, id)).get();
+      if (row) {
+        await rm(row.trashPath, { recursive: true, force: true }).catch(() => {});
+        this.deps.db.delete(trashItems).where(eq(trashItems.id, id)).run();
+      }
+      done += 1;
+      report?.((done / ids.length) * 100);
+    }
+  }
 
   /** This person's Trash, newest first (US-FILE-17), paged by offset. */
   async list(caller: Caller, input: { cursor?: string; limit?: number }) {
