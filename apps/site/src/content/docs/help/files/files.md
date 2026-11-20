@@ -42,6 +42,14 @@ Choose the list button beside the search field to see the folder as a list with 
 
 Choose a column's name to sort by it, and choose it again to turn the order around; an arrow shows which column is sorted and which way. Folders always stay above files. Files remembers the view and the order in this browser, and the order applies to the grid too.
 
+### Select several items
+
+Click an item to select it. Hold **⌘** (Ctrl on Windows and Linux) and click to add or remove one, hold **Shift** and click to select everything between, or press **⌘A** (Ctrl+A) to select the whole folder. Each item also has a tick box.
+
+A bar then says how many are selected, with what you can do with them: **Download** saves them (several come as one zip file), and **Share** sends files with your device's share sheet where it can. At the bottom, Files adds up how much the selected files take. Press **Esc** or choose **✕** to clear the selection; opening another folder clears it too.
+
+On a phone, choose **Select**, then tap the items you want; the buttons along the bottom act on them. **Select all** ticks everything, and **Done** ends selecting.
+
 ## Make a folder
 
 Choose **New folder** at the top, type a name (or keep **Untitled folder**) and choose **Create**, or press Return. The new folder is selected so you can open it straight away.

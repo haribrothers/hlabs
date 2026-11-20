@@ -8,11 +8,11 @@ import { formatBytes } from '@hlabs/shared';
 import type { FileAccent } from '@hlabs/ui/files';
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { filesCopy as copy } from '../copy/files';
-import { labelOf } from './file-grid';
+import { labelOf, modsOf, SelectBox, type SelectProps } from './file-grid';
 import { modifiedLabel } from './format';
 import type { FilesSort, SortBy } from './view-prefs';
 
-const COLUMNS = 'grid-cols-[minmax(0,1fr)_160px_110px] max-md:grid-cols-[minmax(0,1fr)_88px]';
+const COLUMNS = 'grid-cols-[28px_minmax(0,1fr)_160px_110px] max-md:grid-cols-[28px_minmax(0,1fr)_88px]';
 
 export const sizeOf = (e: FileEntry) =>
   e.kind === 'folder' ? copy.items(e.childCount ?? 0) : formatBytes(e.size ?? 0);
@@ -60,7 +60,9 @@ export function FileList({
   onOpen,
   openOnClick = false,
   now,
+  select,
 }: {
+  select?: SelectProps;
   items: FileEntry[];
   label: string;
   accent: FileAccent;
@@ -91,6 +93,16 @@ export function FileList({
   }, [focusPath, items]);
 
   const onKeyDown = (e: KeyboardEvent, entry: FileEntry) => {
+    if (select && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      select.onSelectAll();
+      return;
+    }
+    if (e.key === ' ' && select) {
+      e.preventDefault();
+      select.onSelect(entry, modsOf(e));
+      return;
+    }
     if (e.key === 'Enter') {
       e.preventDefault();
       onOpen(entry);
@@ -118,25 +130,40 @@ export function FileList({
   return (
     <div ref={ref} role="grid" aria-label={label} className="overflow-hidden rounded-lg bg-surface-row text-body">
       <div role="row" className={`grid ${COLUMNS} items-center gap-3 border-b border-hairline px-4 py-2.5`}>
+        <span />
         <Header by="name" label={copy.columns.name} sort={sort} onSort={onSort} />
         <Header by="modified" label={copy.columns.modified} sort={sort} onSort={onSort} className="max-md:hidden" />
         <Header by="size" label={copy.columns.size} sort={sort} onSort={onSort} className="justify-self-end" />
       </div>
       {items.map((e): ReactNode => {
         const isFolder = e.kind === 'folder';
+        const checked = select?.selected.has(e.path) ?? false;
         return (
           <div
             key={e.path}
             role="row"
             aria-label={labelOf(e)}
             data-path={e.path}
+            aria-selected={select ? checked : undefined}
             tabIndex={e.path === tabStop ? 0 : -1}
-            className={`hl-focus grid ${COLUMNS} min-h-11 cursor-default items-center gap-3 px-4 py-2 outline-offset-[-2px] hover:bg-surface-row`}
+            className={`hl-focus grid ${COLUMNS} min-h-11 cursor-default items-center gap-3 px-4 py-2 outline-offset-[-2px] ${
+              checked ? 'bg-accent-wash' : 'hover:bg-surface-row'
+            }`}
             onFocus={() => setCurrent(e.path)}
-            onClick={() => (openOnClick ? onOpen(e) : setCurrent(e.path))}
-            onDoubleClick={() => onOpen(e)}
+            onClick={(ev) => {
+              setCurrent(e.path);
+              if (select?.selecting) select.onToggle(e);
+              else if (openOnClick) onOpen(e);
+              else select?.onSelect(e, modsOf(ev));
+            }}
+            onDoubleClick={() => (select?.selecting ? undefined : onOpen(e))}
             onKeyDown={(ev) => onKeyDown(ev, e)}
           >
+            <div role="gridcell" className="flex items-center">
+              {select && (!openOnClick || select.selecting) ? (
+                <SelectBox entry={e} checked={checked} onToggle={select.onToggle} />
+              ) : null}
+            </div>
             <div role="gridcell" className="flex min-w-0 items-center gap-3">
               {isFolder ? (
                 <FileIcon folder path={e.path} accent={accent} size={24} />

@@ -229,7 +229,7 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-FILE-25 · Choose a folder for an app
 - [x] US-FILE-24 · See skeletons while a folder loads (moved to phase 5, D-135; while loading, the breadcrumb is named from listings already fetched and the toolbar guesses read-only places by path)
 - [x] US-FILE-19 · Switch to list view and sort (moved to phase 5, D-135)
-- [ ] US-FILE-20 · Select several items (moved to phase 5, D-135)
+- [x] US-FILE-20 · Select several items (moved to phase 5, D-135; the bar sits under the toolbar and a phone's Select mode, D-136; Move to… and Move to Trash join with US-FILE-22 and US-FILE-16)
 - [ ] US-FILE-23 · Rename a file or folder (moved to phase 5, D-135)
 - [ ] US-FILE-22 · Move items to another folder (moved to phase 5, D-135)
 - [ ] US-FILE-16 · Move items to Trash with undo (moved to phase 5, D-135)

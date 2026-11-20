@@ -1047,6 +1047,10 @@
     z-index: 40;
     justify-content: center;
   }
+  /* A bar that takes the tab bar's place for a moment (Files' selection bar, PhoneFilesSelect). */
+  [data-tab-bar-hidden='true'] .hl-nav-phone {
+    display: none;
+  }
 
   /* Scroll area inside a window: a thin, translucent scrollbar on a clear track, kept clear of the window's
      rounded edges by the window's own padding. */

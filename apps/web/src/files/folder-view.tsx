@@ -11,10 +11,12 @@ import { errorCode, errorData, pageQuery } from '../lib/error-copy';
 import { useIsDesktop } from '../lib/use-media';
 import { useTRPC } from '../lib/trpc';
 import { Breadcrumb } from './breadcrumb';
-import { FileGrid } from './file-grid';
+import { FileGrid, type SelectProps } from './file-grid';
 import { FileList } from './file-list';
 import { FolderSkeleton } from './folder-skeleton';
 import { DEFAULT_SORT, type FilesSort, type FilesView, type SortBy } from './view-prefs';
+import { clickSelect, emptySelection, selectAll, toggleSelect, type Selection } from './selection';
+import { canShareFiles, PhoneSelectionBar, SelectionBar, shareFiles, type SelectionActions } from './selection-bar';
 import { crumbName, HOME, type FilesMe } from './places';
 
 export type { FilesMe };
@@ -134,7 +136,10 @@ export function FolderView({
   view = 'grid',
   sort = DEFAULT_SORT,
   onSort,
+  selectionActions,
 }: {
+  /** Move to… and Move to Trash for the selected items, once their stories ship (US-FILE-22, US-FILE-16). */
+  selectionActions?: (entries: FileEntry[], clear: () => void) => Omit<SelectionActions, 'onShare'>;
   /** Grid or list, and the order (US-FILE-19). */
   view?: FilesView;
   sort?: FilesSort;
@@ -162,6 +167,43 @@ export function FolderView({
   const queryClient = useQueryClient();
   const trpc = useTRPC();
   const [dragging, setDragging] = useState(false);
+  // The selection belongs to this folder (US-FILE-20): opening another one clears it, and a phone's Select mode ends.
+  const [selState, setSel] = useState<Selection>(() => emptySelection(path));
+  const [selectingIn, setSelectingIn] = useState<string | null>(null);
+  // Another folder: start again (adjusting state while rendering, as React suggests for a changed prop).
+  if (selState.folder !== path) setSel(emptySelection(path));
+  const sel = selState.folder === path ? selState : emptySelection(path);
+  const selecting = !desktop && selectingIn === path;
+  const order = items.map((e) => e.path);
+  const chosen = items.filter((e) => sel.paths.includes(e.path));
+  const clear = () => setSel(emptySelection(path));
+  const select: SelectProps = {
+    selected: new Set(chosen.map((e) => e.path)),
+    onSelect: (e, mods) => setSel(clickSelect(sel, order, e.path, mods)),
+    onToggle: (e) => setSel(toggleSelect(sel, e.path)),
+    onSelectAll: () => setSel(selectAll(sel, order)),
+    selecting,
+  };
+  const actions: SelectionActions = {
+    ...selectionActions?.(chosen, clear),
+    // The device's share sheet takes files, not folders (US-FILE-20).
+    ...(canShareFiles() && chosen.length > 0 && chosen.every((e) => e.kind === 'file')
+      ? { onShare: () => void shareFiles(chosen).catch(() => {}) }
+      : {}),
+  };
+  // Esc clears the selection before it would close the window (FilesPage checks defaultPrevented).
+  const hasSelection = chosen.length > 0 || selecting;
+  useEffect(() => {
+    if (!hasSelection) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) return;
+      e.preventDefault();
+      setSel(emptySelection(path));
+      setSelectingIn(null);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [hasSelection, path]);
   const [retrying, setRetrying] = useState(false);
   // Before the listing comes, the breadcrumb and toolbar show what's known, so they can be used meanwhile.
   const crumbs = listing?.crumbs ?? provisionalCrumbs(path, knownCrumbs(queryClient, trpc.files.list.pathKey()));
@@ -275,6 +317,7 @@ export function FolderView({
           focusPath={focusPath}
           onOpen={open}
           openOnClick={!desktop}
+          select={select}
         />
       ) : (
         <FileGrid
@@ -284,6 +327,7 @@ export function FolderView({
           focusPath={focusPath}
           onOpen={open}
           openOnClick={!desktop}
+          select={select}
         />
       );
   }
@@ -291,8 +335,16 @@ export function FolderView({
   const footer =
     listing && !searchQuery ? (
       <footer className="flex flex-wrap items-center justify-between gap-2 px-7 pt-2 pb-5 max-md:px-0 text-caption text-ink-muted">
-        <span>{copy.footer(copy.items(listing.count), formatBytes(listing.filesBytes))}</span>
-        <span>{footerRight(listing.place, me)}</span>
+        <span>
+          {chosen.length > 0
+            ? copy.footerSelected(
+                copy.items(listing.count),
+                chosen.length,
+                formatBytes(chosen.reduce((n, e) => n + (e.size ?? 0), 0)),
+              )
+            : copy.footer(copy.items(listing.count), formatBytes(listing.filesBytes))}
+        </span>
+        <span>{chosen.length > 0 && desktop ? copy.rangeHint : footerRight(listing.place, me)}</span>
       </footer>
     ) : null;
 
@@ -303,8 +355,38 @@ export function FolderView({
       </div>
       <div className="flex flex-wrap items-center gap-2 max-md:w-full">
         {search}
-        {toolbar && !query.isError ? toolbar(place, folderName) : null}
+        {selecting ? (
+          <>
+            <span className="flex-1 text-headline">{copy.selected(chosen.length)}</span>
+            <Button variant="secondary" size="sm" onClick={() => setSel(selectAll(sel, order))}>
+              {copy.selectAll}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                setSelectingIn(null);
+                clear();
+              }}
+            >
+              {copy.done}
+            </Button>
+          </>
+        ) : (
+          <>
+            {toolbar && !query.isError ? toolbar(place, folderName) : null}
+            {!desktop && listing && items.length > 0 ? (
+              <Button variant="secondary" size="sm" className="ml-auto" onClick={() => setSelectingIn(path)}>
+                {copy.select}
+              </Button>
+            ) : null}
+          </>
+        )}
       </div>
+      {desktop && chosen.length > 0 && !searchQuery ? (
+        <div className="basis-full">
+          <SelectionBar entries={chosen} actions={actions} onClear={clear} />
+        </div>
+      ) : null}
     </div>
   );
 
@@ -316,6 +398,7 @@ export function FolderView({
         {notice?.(folderName)}
         <div className="flex flex-col">{body}</div>
         {footer}
+        {selecting ? <PhoneSelectionBar entries={chosen} actions={actions} /> : null}
       </div>
     );
   }

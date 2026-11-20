@@ -3,8 +3,9 @@
 import type { FileEntry } from '@hlabs/api';
 import { formatBytes } from '@hlabs/shared';
 import { FileItem, type FileAccent } from '@hlabs/ui/files';
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { filesCopy as copy } from '../copy/files';
+import type { ClickMods } from './selection';
 
 /** "24 items" under a folder, the size under a file. */
 export const metaOf = (e: FileEntry) =>
@@ -17,6 +18,47 @@ export const labelOf = (e: FileEntry) =>
 /** Images get a 256px thumbnail; videos their first frame (D-053). */
 export const thumbnailOf = (e: FileEntry) =>
   e.previewUrl ? (e.mime?.startsWith('image/') ? `${e.previewUrl}?w=256` : e.previewUrl) : undefined;
+
+/** How a click asks to select (US-FILE-20): Cmd on a Mac or Ctrl elsewhere toggles, Shift selects a range. */
+export const modsOf = (e: MouseEvent | KeyboardEvent): ClickMods => ({
+  toggle: e.metaKey || e.ctrlKey,
+  range: e.shiftKey,
+});
+
+/** Selecting in a folder (US-FILE-20); absent where items can't be selected (search results, Recents). */
+export interface SelectProps {
+  selected: ReadonlySet<string>;
+  onSelect: (entry: FileEntry, mods: ClickMods) => void;
+  onToggle: (entry: FileEntry) => void;
+  onSelectAll: () => void;
+  /** A phone's Select mode: every item shows its tick and a tap ticks it. */
+  selecting?: boolean;
+}
+
+/** The tick on an item (US-FILE-20): "Select <name>". */
+export function SelectBox({
+  entry,
+  checked,
+  onToggle,
+  className = '',
+}: {
+  entry: FileEntry;
+  checked: boolean;
+  onToggle: (entry: FileEntry) => void;
+  className?: string;
+}) {
+  return (
+    <input
+      type="checkbox"
+      aria-label={copy.selectItem(entry.name)}
+      checked={checked}
+      onChange={() => onToggle(entry)}
+      onClick={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
+      className={`hl-focus size-4.5 shrink-0 cursor-pointer accent-[var(--color-accent)] ${className}`}
+    />
+  );
+}
 
 /** The index of the item one row up or down: the nearest item in that row by position. */
 function verticalNeighbour(items: HTMLElement[], from: number, down: boolean): number {
@@ -43,7 +85,9 @@ export function FileGrid({
   onOpen,
   below,
   openOnClick = false,
+  select,
 }: {
+  select?: SelectProps;
   items: FileEntry[];
   /** The grid's accessible name: the folder's name. */
   label: string;
@@ -73,6 +117,11 @@ export function FileGrid({
   }, [focusPath, items]);
 
   const onKeyDown = (e: KeyboardEvent) => {
+    if (select && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      select.onSelectAll();
+      return;
+    }
     const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
     if (!keys.includes(e.key)) return;
     const els = [...(ref.current?.querySelectorAll<HTMLElement>('[data-path]') ?? [])];
@@ -99,25 +148,47 @@ export function FileGrid({
       onKeyDown={onKeyDown}
       className="grid grid-cols-[repeat(auto-fill,minmax(132px,1fr))] justify-items-center gap-x-2 gap-y-3"
     >
-      {items.map((e) => (
-        <FileItem
-          key={e.path}
-          name={e.name}
-          kind={e.kind === 'folder' ? 'folder' : undefined}
-          mime={e.mime}
-          path={e.path}
-          accent={accent}
-          meta={below ? below(e) : metaOf(e)}
-          thumbnail={thumbnailOf(e)}
-          label={labelOf(e)}
-          dataPath={e.path}
-          tabIndex={e.path === tabStop ? 0 : -1}
-          onFocus={() => setCurrent(e.path)}
-          // A tap opens on a phone; on a desktop a click selects and a double-click opens.
-          onClick={() => (openOnClick ? onOpen(e) : setCurrent(e.path))}
-          onOpen={() => onOpen(e)}
-        />
-      ))}
+      {items.map((e) => {
+        const checked = select?.selected.has(e.path) ?? false;
+        return (
+          <div key={e.path} className="group relative">
+            <FileItem
+              name={e.name}
+              kind={e.kind === 'folder' ? 'folder' : undefined}
+              mime={e.mime}
+              path={e.path}
+              accent={accent}
+              meta={below ? below(e) : metaOf(e)}
+              thumbnail={thumbnailOf(e)}
+              label={labelOf(e)}
+              dataPath={e.path}
+              tabIndex={e.path === tabStop ? 0 : -1}
+              selected={checked}
+              onFocus={() => setCurrent(e.path)}
+              // A tap opens on a phone (or ticks it while selecting); on a desktop a click selects and a double-click opens.
+              onClick={(ev) => {
+                setCurrent(e.path);
+                if (select?.selecting) select.onToggle(e);
+                else if (openOnClick) onOpen(e);
+                else select?.onSelect(e, modsOf(ev));
+              }}
+              onOpen={() => (select?.selecting ? select.onToggle(e) : onOpen(e))}
+            />
+            {select && (!openOnClick || select.selecting) ? (
+              <SelectBox
+                entry={e}
+                checked={checked}
+                onToggle={select.onToggle}
+                className={`absolute top-3 left-3 ${
+                  checked || select.selecting
+                    ? ''
+                    : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 [@media(hover:none)]:hidden'
+                }`}
+              />
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }

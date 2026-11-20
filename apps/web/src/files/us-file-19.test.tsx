@@ -69,13 +69,13 @@ describe('US-FILE-19', () => {
       within(bills)
         .getAllByRole('gridcell')
         .map((c) => c.textContent),
-    ).toEqual(['Bills', '2 days ago', '24 items']);
+    ).toEqual(['', 'Bills', '2 days ago', '24 items']);
     const lease = within(list).getByRole('row', { name: 'Lease agreement.pdf, 1.2 MB' });
     expect(
       within(lease)
         .getAllByRole('gridcell')
         .map((c) => c.textContent),
-    ).toEqual(['Lease agreement.pdf', '3 weeks ago', '1.2 MB']);
+    ).toEqual(['', 'Lease agreement.pdf', '3 weeks ago', '1.2 MB']); // The first cell holds the tick (US-FILE-20).
     expect(window.localStorage.getItem(VIEW_KEY)).toBe('"list"');
   });
 
