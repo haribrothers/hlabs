@@ -46,6 +46,8 @@ export const filesCopy = {
   loadFailed: "Couldn't load this folder",
   tryAgain: 'Try again',
   loading: 'Loading files',
+  /** US-FILE-24: still no listing after 10 s. */
+  stillLoading: 'Still loading… this drive is slow to respond',
   noRecents: 'Files you change show up here',
   // Toolbar (US-FILE-03, US-FILE-08)
   shareFolder: 'Share folder',

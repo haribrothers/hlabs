@@ -3,7 +3,7 @@
 import type { FileEntry } from '@hlabs/api';
 import { formatBytes } from '@hlabs/shared';
 import { Button, ScrollPane } from '@hlabs/ui';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState, type DragEvent, type ReactNode } from 'react';
 import { filesCopy as copy } from '../copy/files';
@@ -12,6 +12,7 @@ import { useIsDesktop } from '../lib/use-media';
 import { useTRPC } from '../lib/trpc';
 import { Breadcrumb } from './breadcrumb';
 import { FileGrid } from './file-grid';
+import { FolderSkeleton } from './folder-skeleton';
 import { crumbName, HOME, type FilesMe } from './places';
 
 export type { FilesMe };
@@ -44,6 +45,24 @@ export function footerRight(place: Listing['place'], me: FilesMe): string {
   }
 }
 
+/**
+ * The breadcrumb while a folder loads (US-FILE-24): each step of the path, named from listings already fetched
+ * (a drive's or a person's name) or by its folder name; the tops of places name themselves.
+ */
+export function provisionalCrumbs(path: string, known: Map<string, string | null>): Listing['crumbs'] {
+  const parts = path.split('/').filter(Boolean);
+  return parts.map((part, i) => {
+    const at = `/${parts.slice(0, i + 1).join('/')}`;
+    if (known.has(at)) return { path: at, name: known.get(at) ?? null };
+    return { path: at, name: i === 0 ? null : part };
+  });
+}
+
+/** Until a listing says, a place is read only when it's App data or a list of places (US-FILE-24). */
+export function provisionalReadOnly(path: string): boolean {
+  return path.startsWith('/appdata') || path === '/users' || path === '/drives';
+}
+
 /** The whole folder: pages of 200 are fetched one after another until it's all here. */
 export function useFolder(path: string) {
   const trpc = useTRPC();
@@ -65,6 +84,20 @@ export function useFolder(path: string) {
     listing: first as (typeof first & Listing) | undefined,
     items: q.data?.pages.flatMap((p) => p.items) ?? [],
   };
+}
+
+/** The names of steps already seen in fetched listings, by path. */
+function knownCrumbs(
+  queryClient: ReturnType<typeof useQueryClient>,
+  key: readonly unknown[],
+): Map<string, string | null> {
+  const known = new Map<string, string | null>();
+  for (const [, data] of queryClient.getQueriesData<{ pages: Array<{ crumbs: Listing['crumbs'] }> }>({
+    queryKey: key,
+  })) {
+    for (const c of data?.pages[0]?.crumbs ?? []) known.set(c.path, c.name);
+  }
+  return known;
 }
 
 function Message({ title, body, action }: { title: string; body?: string; action?: ReactNode }) {
@@ -109,9 +142,14 @@ export function FolderView({
   const navigate = useNavigate();
   const desktop = useIsDesktop();
   const { query, listing, items } = useFolder(path);
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
   const [dragging, setDragging] = useState(false);
   const [retrying, setRetrying] = useState(false);
-  const last = listing?.crumbs[listing.crumbs.length - 1];
+  // Before the listing comes, the breadcrumb and toolbar show what's known, so they can be used meanwhile.
+  const crumbs = listing?.crumbs ?? provisionalCrumbs(path, knownCrumbs(queryClient, trpc.files.list.pathKey()));
+  const place = listing?.place ?? { area: 'home', name: null, readOnly: provisionalReadOnly(path) };
+  const last = crumbs[crumbs.length - 1];
   const folderName = last ? crumbName(last) : copy.title;
   const canDrop = !!listing && !listing.place.readOnly && !!onDropFiles;
   const hasFiles = (e: DragEvent) => [...(e.dataTransfer?.types ?? [])].includes('Files');
@@ -204,7 +242,7 @@ export function FolderView({
       );
     }
   } else if (!listing) {
-    body = <div aria-busy="true" aria-label={copy.loading} className="flex-1" />;
+    body = <FolderSkeleton />;
   } else if (items.length === 0) {
     body = <Message title={copy.emptyFolder} body={listing.place.readOnly ? undefined : copy.emptyWritable} />;
   } else {
@@ -230,10 +268,12 @@ export function FolderView({
 
   const header = (
     <div className="flex flex-wrap items-center gap-3">
-      <div className="min-w-0 flex-1">{listing ? <Breadcrumb crumbs={listing.crumbs} /> : null}</div>
+      <div className="min-w-0 flex-1">
+        <Breadcrumb crumbs={crumbs} />
+      </div>
       <div className="flex flex-wrap items-center gap-2 max-md:w-full">
         {search}
-        {listing && toolbar ? toolbar(listing.place, folderName) : null}
+        {toolbar && !query.isError ? toolbar(place, folderName) : null}
       </div>
     </div>
   );
