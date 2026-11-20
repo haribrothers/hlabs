@@ -718,12 +718,30 @@ export class InstallService {
     });
   }
 
-  /**
-   * Deletes the app's data folder. Files the app wrote as root or another user can't be deleted by hlabs on Linux, so
-   * then they're removed from inside a container of one of the app's own images, run as root, and the rest after.
-   */
+  /** Deletes the app's data folder (see removeAppFolder). */
   private async removeAppData(app: { id: string; sourceId: string | null }, projectDir: string): Promise<void> {
-    const appData = join(this.deps.appDataDir, app.id);
+    await this.removeFolder(app, projectDir, join(this.deps.appDataDir, app.id));
+  }
+
+  /** Deletes a folder of the app's data that isn't its data folder: a restore's safety copy (US-BKP-19). */
+  async removeAppFolder(appId: string, folder: string): Promise<void> {
+    const app = this.deps.db
+      .select({ id: apps.id, sourceId: apps.sourceId })
+      .from(apps)
+      .where(eq(apps.id, appId))
+      .get();
+    await this.removeFolder(app ?? { id: appId, sourceId: null }, this.deps.apps.project(appId).dir, folder);
+  }
+
+  /**
+   * Files the app wrote as root or another user can't be deleted by hlabs on Linux, so then they're removed from
+   * inside a container of one of the app's own images, run as root, and the rest after.
+   */
+  private async removeFolder(
+    app: { id: string; sourceId: string | null },
+    projectDir: string,
+    appData: string,
+  ): Promise<void> {
     const gone = { recursive: true, force: true, maxRetries: 5, retryDelay: 200 } as const;
     try {
       rmSync(appData, gone);

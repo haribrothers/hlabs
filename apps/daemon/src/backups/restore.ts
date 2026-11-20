@@ -71,6 +71,8 @@ export interface RestoreDeps {
   dataDir: string;
   /** Ends the daemon so launchd or systemd starts it again (D-133): after a whole-system restore. */
   restartDaemon: () => void;
+  /** Deletes a copy of an app's data, clearing what the app wrote as root through its own image (Linux). */
+  removeAppFolder?: (appId: string, folder: string) => Promise<void>;
   now?: () => number;
 }
 
@@ -487,7 +489,7 @@ export class RestoreService {
     this.setPhase(id, 'swap');
     for (const key of keys) {
       const p = this.places(id, key);
-      rmSync(p.target, { recursive: true, force: true });
+      await this.remove(p.target, p);
       renameSync(p.staging, p.target);
     }
     if (scope.systemSnap) this.swapSystem(id);
@@ -503,7 +505,25 @@ export class RestoreService {
       }
       this.end(id, 'start', appId, report);
     }
-    // 6. Done: the safety copy and staging go.
+    // 6. Done: the safety copy and staging go. The apps already run on the restored data, so what can't be deleted
+    // is left and logged; it doesn't fail the restore.
+    await this.clearWork(id, keys).catch((err) => this.deps.logger.warn({ err, restoreId: id }, 'restore leftovers'));
+  }
+
+  /** A folder that can hold what an app wrote as root (Linux): deleted through the app's own image when need be. */
+  private async remove(path: string, p: { kind: 'app' | 'folder'; id: string }) {
+    if (!existsSync(path)) return;
+    if (p.kind === 'app' && this.deps.removeAppFolder) return this.deps.removeAppFolder(p.id, path);
+    rmSync(path, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  }
+
+  /** The restore's safety copies and staging, every item's before the folders they share. */
+  private async clearWork(id: string, keys: string[]) {
+    for (const key of keys) {
+      const p = this.places(id, key);
+      await this.remove(p.staging, p);
+      await this.remove(p.safety, p);
+    }
     for (const key of keys) rmSync(this.places(id, key).work, { recursive: true, force: true });
     rmSync(join(this.deps.dataDir, '.restore', id), { recursive: true, force: true });
   }
@@ -514,14 +534,12 @@ export class RestoreService {
     this.begin(id, 'putBack', null, report);
     for (const key of keys) {
       const p = this.places(id, key);
-      rmSync(p.staging, { recursive: true, force: true });
       if (moved.includes(key) && existsSync(p.safety)) {
-        rmSync(p.target, { recursive: true, force: true });
+        await this.remove(p.target, p);
         renameSync(p.safety, p.target);
       }
-      rmSync(p.work, { recursive: true, force: true });
     }
-    rmSync(join(this.deps.dataDir, '.restore', id), { recursive: true, force: true });
+    await this.clearWork(id, keys);
     this.end(id, 'putBack', null, report);
     await this.startAgain(toStart);
   }
@@ -543,11 +561,11 @@ export class RestoreService {
     for (const key of keys) {
       const p = this.places(id, key);
       if (moved.includes(key) && existsSync(p.safety)) {
-        rmSync(p.target, { recursive: true, force: true });
+        await this.remove(p.target, p);
         renameSync(p.safety, p.target);
       }
-      rmSync(p.work, { recursive: true, force: true });
     }
+    await this.clearWork(id, keys);
     this.end(id, 'putBack', null, report);
     await this.startAgain(toStart);
   }
@@ -716,12 +734,13 @@ export class RestoreService {
         if (afterSwap) {
           if (existsSync(p.staging) && !existsSync(p.target)) renameSync(p.staging, p.target);
         } else if (existsSync(p.safety)) {
-          rmSync(p.target, { recursive: true, force: true });
+          await this.remove(p.target, p);
           renameSync(p.safety, p.target);
         }
-        rmSync(p.work, { recursive: true, force: true });
       }
-      rmSync(join(this.deps.dataDir, '.restore', row.id), { recursive: true, force: true });
+      await this.clearWork(row.id, keys).catch((err) =>
+        this.deps.logger.warn({ err, restoreId: row.id }, 'restore leftovers'),
+      );
       await this.startAgain(appIds);
       this.deps.db
         .update(restores)

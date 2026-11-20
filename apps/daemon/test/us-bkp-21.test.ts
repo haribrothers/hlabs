@@ -2,7 +2,7 @@
 // up after swap-in, puts the safety copy back and starts the app; not enough room refuses before stopping anything;
 // a crash is settled on the next start.
 import { restores } from '@hlabs/db';
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { backupsDaemon } from './backups-fixture';
@@ -50,6 +50,29 @@ describe('US-BKP-21', () => {
     expect((await t.s.jobs.settled(jobId))?.state).toBe('failed');
     expect(readFileSync(join(app.data, 'db', 'data.sqlite'), 'utf8')).toBe('today');
     expect(t.appControl.calls).toEqual(['stop:vaultwarden', 'start:vaultwarden', 'start:vaultwarden']);
+  });
+
+  it('what the app wrote as root is cleared through its own image; leftovers never fail a restore that worked', async () => {
+    const { t, app, restore } = await setUp();
+    // As Linux has it: the app's container wrote db/ as root, so hlabs can't delete what's in it.
+    writeFileSync(join(app.project.dir, 'docker-compose.yml'), 'services:\n  server:\n    image: vaultwarden:1\n');
+    chmodSync(join(app.data, 'db'), 0o555);
+    const { jobId } = t.data<{ jobId: string }>(await restore());
+    expect((await t.s.jobs.settled(jobId))?.state).toBe('succeeded');
+    const work = join(t.s.config.paths.appDataDir, '.restore', t.db.select().from(restores).get()!.id);
+    expect(t.engine.cleared.map((c) => c.hostPath)).toEqual([join(work, 'safety', 'app-vaultwarden')]);
+    expect(existsSync(work)).toBe(false);
+    expect(t.appControl.calls).toEqual(['stop:vaultwarden', 'start:vaultwarden']);
+
+    // When even that fails, the safety copy is left behind and the restore still succeeded.
+    const again = await setUp();
+    chmodSync(join(again.app.data, 'db'), 0o555);
+    again.t.engine.clearFolder = async () => {
+      throw new Error('no shell');
+    };
+    const second = again.t.data<{ jobId: string }>(await again.restore());
+    expect((await again.t.s.jobs.settled(second.jobId))?.state).toBe('succeeded');
+    expect(readFileSync(join(again.app.data, 'db', 'data.sqlite'), 'utf8')).not.toBe('today');
   });
 
   it('not enough room: DISK_FULL with what to free, before anything stops', async () => {

@@ -661,6 +661,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       dataDir: config.paths.dataDir,
       // launchd and systemd start hlabsd again (D-133); the next start puts the restored database in place.
       restartDaemon: deps.restartDaemon ?? (() => process.exit(75)),
+      removeAppFolder: (appId, folder) => installer.removeAppFolder(appId, folder),
     }),
   };
   holder.set(services);
