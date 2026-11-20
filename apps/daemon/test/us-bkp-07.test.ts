@@ -49,7 +49,7 @@ describe('US-BKP-07', () => {
     const retryAt = getSetting(t.db, 'backupSchedule').retryAt!;
     expect(retryAt).toBeGreaterThan(Date.now() + 29 * 60_000);
     expect(readFileSync(t.db.select().from(backupRuns).get()!.logPath!, 'utf8')).toMatch(
-      /Next attempt: today at \d\d:\d\d/,
+      /Next attempt: (today|tomorrow) at \d\d:\d\d/, // Worded from the real clock: tomorrow after 23:30.
     );
     t.s.backups.tick(retryAt - 1);
     expect(t.s.jobs.listActive()).toEqual([]);
@@ -61,7 +61,8 @@ describe('US-BKP-07', () => {
       ['failed', true],
     ]);
     expect(getSetting(t.db, 'backupSchedule').retryAt).toBeNull();
-    expect(readFileSync(runs[1]!.logPath!, 'utf8')).toMatch(/Next attempt: (tomorrow|\d+ \w+) at 03:00/);
+    // The next scheduled 03:00 from the real clock: today when this runs before 3am.
+    expect(readFileSync(runs[1]!.logPath!, 'utf8')).toMatch(/Next attempt: (today|tomorrow|\d+ \w+) at 03:00/);
   });
 
   it('admins get a warning with Details; three failures in a row make it critical', async () => {
