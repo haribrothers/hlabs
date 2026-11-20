@@ -1,7 +1,11 @@
 // US-FILE-11 · Connect an SMB or NFS drive (server side): servers found on the network with their shares, a host's
 // shares, testing and connecting (password in the secret store, never SQLite), "<Host> · <Share>", the two switches,
 // the 10 s limit, mounting again at start and every minute, and admins only.
+import { hlabsError } from '@hlabs/api';
 import { auditLog, storageLocations } from '@hlabs/db';
+import { existsSync, mkdtempSync, readdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { NetworkDiscovery } from '../src/platform/network-discovery';
@@ -11,6 +15,9 @@ import {
   parseDnsSdResolve,
   parseShowmount,
   parseSmbShares,
+  LinuxDiscovery,
+  MacDiscovery,
+  smbLoginResult,
 } from '../src/platform/network-discovery';
 import { CONNECT_TIMEOUT_MS } from '../src/storage/network';
 import { FakeMounter } from './fakes/mounter';
@@ -23,7 +30,15 @@ afterEach(async () => {
 
 const discovery: NetworkDiscovery = {
   browse: async () => [{ name: 'NAS', host: 'nas.local', protocol: 'smb', shares: ['Media', 'Photos', 'Backups'] }],
-  shares: async (_p, host) => (host === 'nas.local' ? ['Media', 'Photos', 'Backups'] : null),
+  shares: async (_p, host, login) => {
+    // hlab.local lists its shares only to a signed-in user, as many NAS boxes do.
+    if (host === 'hlab.local') {
+      if (!login) return null;
+      if (login.password !== 'right') throw hlabsError('NAS_AUTH_FAILED');
+      return ['Family', 'Scans'];
+    }
+    return host === 'nas.local' ? ['Media', 'Photos', 'Backups'] : null;
+  },
 };
 
 async function setup() {
@@ -167,5 +182,54 @@ describe('US-FILE-11', () => {
     expect(
       parseShowmount('Exports list on nas.local:\n/volume1/media    192.168.1.0/24\n/volume1/photos   *\n'),
     ).toEqual(['/volume1/media', '/volume1/photos']);
+  });
+
+  it('a server that hides its shares lists them once signed in; a wrong password says so', async () => {
+    const f = await setup();
+    const list = (login: Record<string, string> = {}) =>
+      f.d.mutate('storage.locations.testNetwork', { protocol: 'smb', host: 'hlab.local', ...login });
+    expect(f.data(await list())).toEqual({ ok: true, shares: null });
+    expect(f.data(await list({ username: 'hari', password: 'right' }))).toEqual({
+      ok: true,
+      shares: ['Family', 'Scans'],
+    });
+    expect(f.code(await list({ username: 'hari', password: 'wrong' }))).toBe('NAS_AUTH_FAILED');
+  });
+
+  it('macOS answers smbutil’s prompt with expect; the password is only ever in its environment', async () => {
+    const calls: Array<{ command: string; args: string[]; env?: NodeJS.ProcessEnv }> = [];
+    const mac = new MacDiscovery(async (command, args, opts) => {
+      calls.push({ command, args, env: opts?.env });
+      return { code: 0, stdout: 'Share   Type   Comments\n-----\nFamily     Disk\nIPC$     Pipe\n', stderr: '' };
+    });
+    expect(await mac.shares('smb', 'hlab.local', { username: 'hari', password: 's3cret' })).toEqual(['Family']);
+    expect(calls[0]!.command).toBe('/usr/bin/expect');
+    expect(calls[0]!.args.join(' ')).not.toContain('s3cret');
+    expect(calls[0]!.env).toMatchObject({
+      HLABS_SMB_HOST: 'hlab.local',
+      HLABS_SMB_USER: 'hari',
+      HLABS_SMB_PASSWORD: 's3cret',
+    });
+  });
+
+  it('Linux gives smbclient a credentials file and removes it', async () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'smb-'));
+    let file = '';
+    const linux = new LinuxDiscovery(tmp, async (_command, args) => {
+      file = args[args.indexOf('-A') + 1]!;
+      expect(existsSync(file)).toBe(true);
+      expect(args.join(' ')).not.toContain('s3cret');
+      return { code: 0, stdout: 'Disk|Family|\nIPC|IPC$|\n', stderr: '' };
+    });
+    expect(await linux.shares('smb', 'hlab.local', { username: 'hari', password: 's3cret' })).toEqual(['Family']);
+    expect(readdirSync(tmp)).toEqual([]);
+  });
+
+  it('reads smbutil’s answer as a user: shares, a refused login, or no answer', () => {
+    expect(smbLoginResult(0, 'Family    Disk\nScans   Disk\n')).toEqual(['Family', 'Scans']);
+    expect(() => smbLoginResult(77, 'smbutil: server rejected the authentication: Authentication error')).toThrow(
+      'NAS_AUTH_FAILED',
+    );
+    expect(() => smbLoginResult(68, 'smbutil: Unable to connect')).toThrow('unreachable');
   });
 });

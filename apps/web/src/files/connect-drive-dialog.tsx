@@ -69,8 +69,9 @@ export function ConnectDriveDialog({
   const [address, setAddress] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  // The share typed for a server that doesn't list its shares.
+  // The share typed for a server that doesn't list its shares, or listed once signed in.
   const [typedShare, setTypedShare] = useState('');
+  const [signedInShares, setSignedInShares] = useState<{ host: string; shares: string[] } | null>(null);
   const [appsAllowed, setAppsAllowed] = useState(true);
   const [autoMount, setAutoMount] = useState(true);
   const parsed = parseAddress(address);
@@ -92,6 +93,16 @@ export function ConnectDriveDialog({
       onConnected(locationId);
     },
   });
+
+  // A server that hides its shares lists them for the account typed below (US-FILE-11).
+  const listShares = useMutation({
+    mutationFn: (s: { host: string; protocol: 'smb' | 'nfs' }) =>
+      client.storage.locations.testNetwork.mutate({ protocol: s.protocol, host: s.host, username, password }),
+    meta: { inlineErrors: true },
+    onSuccess: (res, s) => setSignedInShares({ host: s.host, shares: res.shares ?? [] }),
+  });
+  const hidden = chosen && !chosen.shares?.length && chosen.protocol === 'smb' ? chosen : null;
+  const listed = hidden && signedInShares?.host === hidden.host ? signedInShares.shares : null;
 
   const pick = (s: { name: string; host: string; protocol: 'smb' | 'nfs' }, share: string) => {
     setServer({ name: s.name, host: s.host });
@@ -148,6 +159,8 @@ export function ConnectDriveDialog({
                       onClick={() => {
                         setServer({ name: s.name, host: s.host });
                         setTypedShare('');
+                        setSignedInShares(null);
+                        listShares.reset();
                         if (s.shares?.length === 1) pick(s, s.shares[0]!);
                       }}
                       className={cn(
@@ -232,7 +245,11 @@ export function ConnectDriveDialog({
             <TextField
               label={copy.username}
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setSignedInShares(null);
+                listShares.reset();
+              }}
               autoComplete="off"
               spellCheck={false}
             />
@@ -240,10 +257,63 @@ export function ConnectDriveDialog({
               label={copy.password}
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setSignedInShares(null);
+                listShares.reset();
+              }}
               autoComplete="new-password"
             />
             <p className="m-0 text-body-sm text-ink-muted sm:col-span-2">{copy.guestHint}</p>
+            {hidden ? (
+              <div className="flex flex-col gap-2 sm:col-span-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={!username.trim()}
+                    busy={listShares.isPending}
+                    onClick={() => listShares.mutate(hidden)}
+                  >
+                    {copy.showShares}
+                  </Button>
+                  {!username.trim() ? (
+                    <span className="text-body-sm text-ink-muted">{copy.showSharesHint(hidden.host)}</span>
+                  ) : null}
+                </div>
+                {listShares.isError ? (
+                  <p role="alert" className="m-0 text-body-sm text-danger">
+                    {connectError(listShares.error, { protocol: 'smb', host: hidden.host, share: '' })}
+                  </p>
+                ) : listed && listed.length === 0 ? (
+                  <p className="m-0 text-body-sm text-ink-muted">{copy.noSharesForYou}</p>
+                ) : listed ? (
+                  <div role="radiogroup" aria-label={copy.sharesOn(hidden.host)} className="flex flex-wrap gap-2">
+                    {listed.map((share) => {
+                      const on = parsed?.host === hidden.host && parsed.share === share;
+                      return (
+                        <button
+                          key={share}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          onClick={() => {
+                            setTypedShare(share);
+                            pick(hidden, share);
+                          }}
+                          className={cn(
+                            'hl-focus min-h-11 cursor-pointer rounded-pill border-0 px-4 font-sans text-label',
+                            on ? 'bg-fill-primary text-ink-on-light' : 'bg-surface-control text-ink',
+                          )}
+                        >
+                          {share}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         ) : null}
         {[

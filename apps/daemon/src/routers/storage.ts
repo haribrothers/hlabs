@@ -58,7 +58,11 @@ export const storage: AppHandlers<DaemonContext>['storage'] = {
     }),
     discover: async (_input, ctx) => ({ servers: await ctx.services.discovery.browse(5_000) }),
     testNetwork: async ({ share, ...input }, ctx) => {
-      if (!share) return { ok: true, shares: await ctx.services.discovery.shares(input.protocol, input.host) };
+      // Without a share: what the server lists, as the user when one is given (US-FILE-11, "Show shares").
+      if (!share) {
+        const login = input.username ? { username: input.username, password: input.password ?? '' } : undefined;
+        return { ok: true, shares: await ctx.services.discovery.shares(input.protocol, input.host, login) };
+      }
       await ctx.services.network.test({ ...input, share });
       return { ok: true };
     },

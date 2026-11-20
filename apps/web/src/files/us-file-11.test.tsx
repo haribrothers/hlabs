@@ -21,6 +21,12 @@ function open(addNetwork: (input: unknown) => unknown = () => ({ locationId: 'ne
           { name: 'HLab', host: 'hlab.local', protocol: 'smb', shares: [] },
         ],
       }),
+      'storage.locations.testNetwork': (input) => {
+        const i = input as { host: string; password?: string };
+        if (i.host !== 'hlab.local') return { ok: true, shares: null };
+        if (i.password !== 'right') throw daemonError('NAS_AUTH_FAILED');
+        return { ok: true, shares: ['Family', 'Scans'] };
+      },
       'storage.locations.addNetwork': (input) => {
         added.push(input);
         return addNetwork(input);
@@ -143,5 +149,28 @@ describe('US-FILE-11', () => {
     await waitFor(() => expect(added).toHaveLength(1));
     expect(added[0]).toMatchObject({ protocol: 'smb', host: 'hlab.local', share: 'My Share' });
     expect(added[0]).not.toHaveProperty('username');
+  });
+
+  it('a server that hides its shares lists them after signing in; a wrong password says so', async () => {
+    const { added } = open();
+    const d = await dialog();
+    fireEvent.click(await within(d).findByRole('button', { name: /hlab\.local/ }));
+    const show = within(d).getByRole('button', { name: 'Show shares' });
+    expect(show).toBeDisabled();
+    expect(within(d).getByText('Sign in above to see the shares on hlab.local.')).toBeInTheDocument();
+    fireEvent.change(within(d).getByRole('textbox', { name: 'Username' }), { target: { value: 'hari' } });
+    fireEvent.change(within(d).getByLabelText('Password'), { target: { value: 'wrong' } });
+    fireEvent.click(show);
+    expect(await within(d).findByText('Wrong username or password')).toBeInTheDocument();
+    fireEvent.change(within(d).getByLabelText('Password'), { target: { value: 'right' } });
+    fireEvent.click(within(d).getByRole('button', { name: 'Show shares' }));
+    const shares = await within(d).findByRole('radiogroup', { name: 'Shares on hlab.local' });
+    fireEvent.click(within(shares).getByRole('radio', { name: 'Scans' }));
+    expect((within(d).getByRole('textbox', { name: 'Or enter an address' }) as HTMLInputElement).value).toBe(
+      'smb://hlab.local/Scans',
+    );
+    fireEvent.click(within(d).getByRole('button', { name: 'Connect' }));
+    await waitFor(() => expect(added).toHaveLength(1));
+    expect(added[0]).toMatchObject({ host: 'hlab.local', share: 'Scans', username: 'hari', password: 'right' });
   });
 });

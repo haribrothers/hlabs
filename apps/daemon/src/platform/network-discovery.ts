@@ -1,9 +1,13 @@
 // Finding network drives (US-FILE-11): SMB and NFS servers that announce themselves with mDNS, and the shares a
 // server lists for a guest. macOS: `dns-sd` to browse and resolve, `smbutil view -g -N` for SMB shares. Linux:
 // `avahi-browse` (avahi-utils, D-074), `smbclient -L -N` when it's installed. Both: `showmount -e` for NFS exports.
-// A server that won't list its shares to a guest has `shares: null`: the admin types the share name. Never a password
-// on a command line (07 §7.7), so shares are only ever listed as a guest. Behind an interface for tests.
+// A server that won't list its shares to a guest has `shares: null`: the admin signs in to list them (or types the share
+// name). Never a password on a command line (07 §7.7): macOS answers smbutil's password prompt with `expect`, which
+// reads it from its environment; Linux gives smbclient a credentials file (0600, removed after). Behind an interface.
+import { hlabsError } from '@hlabs/api';
 import { spawn } from 'node:child_process';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { nodeExec, type Exec } from './network-mount';
 
 export interface FoundServer {
@@ -16,11 +20,20 @@ export interface FoundServer {
   shares: string[] | null;
 }
 
+/** A username and password to list a server's shares with. */
+export interface ShareLogin {
+  username: string;
+  password: string;
+}
+
 export interface NetworkDiscovery {
   /** Servers that answer within `timeoutMs`, each with its shares when a guest may list them. */
   browse(timeoutMs: number): Promise<FoundServer[]>;
-  /** A server's shares as a guest; null when it won't list them. */
-  shares(protocol: 'smb' | 'nfs', host: string): Promise<string[] | null>;
+  /**
+   * A server's shares as a guest, or as `login` (SMB); null when it won't list them. A login it refuses is
+   * NAS_AUTH_FAILED; a server that doesn't answer, NAS_UNREACHABLE.
+   */
+  shares(protocol: 'smb' | 'nfs', host: string, login?: ShareLogin): Promise<string[] | null>;
 }
 
 /** Runs `command` for `ms` and returns what it printed (dns-sd -B never exits by itself). */
@@ -102,9 +115,10 @@ abstract class SystemDiscovery implements NetworkDiscovery {
 
   protected abstract find(type: string, ms: number): Promise<Array<{ name: string; host: string }>>;
   protected abstract smbShares(host: string): Promise<string[] | null>;
+  protected abstract smbSharesAs(host: string, login: ShareLogin): Promise<string[]>;
 
-  async shares(protocol: 'smb' | 'nfs', host: string) {
-    if (protocol === 'smb') return this.smbShares(host);
+  async shares(protocol: 'smb' | 'nfs', host: string, login?: ShareLogin) {
+    if (protocol === 'smb') return login ? this.smbSharesAs(host, login) : this.smbShares(host);
     const res = await this.exec('showmount', ['-e', host]);
     return res.code === 0 ? parseShowmount(res.stdout) : null;
   }
@@ -146,9 +160,55 @@ export class MacDiscovery extends SystemDiscovery {
     const res = await this.exec('/usr/bin/smbutil', ['view', '-g', '-N', `//${host}`]);
     return res.code === 0 ? parseSmbShares(res.stdout) : null;
   }
+
+  /**
+   * smbutil asks for the password on a terminal and drops anything typed before its prompt, so `expect` waits for the
+   * prompt and answers with the password from its environment; nothing is echoed or logged until it's sent.
+   */
+  protected async smbSharesAs(host: string, login: ShareLogin) {
+    const res = await this.exec('/usr/bin/expect', ['-c', SMBUTIL_LOGIN], {
+      env: {
+        PATH: '/usr/bin:/bin',
+        HLABS_SMB_HOST: host,
+        HLABS_SMB_USER: encodeURIComponent(login.username),
+        HLABS_SMB_PASSWORD: login.password,
+      },
+    });
+    return smbLoginResult(res.code, res.stdout);
+  }
+}
+
+/** The expect script: smbutil view as a user, the password typed at its prompt (exit code passed on; 3 = no prompt). */
+export const SMBUTIL_LOGIN = `log_user 0
+set timeout 20
+spawn -noecho /usr/bin/smbutil view //$env(HLABS_SMB_USER)@$env(HLABS_SMB_HOST)
+expect {
+  -re "Password for" { send -- "$env(HLABS_SMB_PASSWORD)\r" }
+  timeout { exit 3 }
+  eof { }
+}
+log_user 1
+expect eof
+catch wait result
+exit [lindex $result 3]`;
+
+/** smbutil view as a user: 77 or "Authentication error" is a refused login; a table is the shares. */
+export function smbLoginResult(code: number, out: string): string[] {
+  if (code === 77 || /authentication error|logon failure|NT_STATUS_LOGON_FAILURE|NT_STATUS_ACCESS_DENIED/i.test(out))
+    throw hlabsError('NAS_AUTH_FAILED');
+  if (code !== 0) throw hlabsError('NAS_UNREACHABLE', 'unreachable', { reason: 'unreachable' });
+  return parseSmbShares(out);
 }
 
 export class LinuxDiscovery extends SystemDiscovery {
+  constructor(
+    /** Where the credentials file is written (0600), inside the data dir. */
+    private readonly tmpDir: string,
+    exec: Exec = nodeExec,
+  ) {
+    super(exec);
+  }
+
   protected async find(type: string, ms: number) {
     return parseAvahi(await runFor('avahi-browse', ['-rpt', type], ms), type);
   }
@@ -162,5 +222,26 @@ export class LinuxDiscovery extends SystemDiscovery {
       .map((l) => l.split('|'))
       .filter((f) => f[0] === 'Disk' && f[1] && !f[1].endsWith('$'))
       .map((f) => f[1]!);
+  }
+
+  /** smbclient reads the login from a credentials file, never the command line. */
+  protected async smbSharesAs(host: string, login: ShareLogin) {
+    await mkdir(this.tmpDir, { recursive: true, mode: 0o700 });
+    const credentials = join(this.tmpDir, `smb-list-${process.pid}-${Date.now()}`);
+    await writeFile(credentials, `username=${login.username}\npassword=${login.password}\n`, { mode: 0o600 });
+    try {
+      const res = await this.exec('smbclient', ['-L', host, '-A', credentials, '-g']);
+      if (/NT_STATUS_LOGON_FAILURE|NT_STATUS_ACCESS_DENIED/.test(res.stdout + res.stderr)) {
+        throw hlabsError('NAS_AUTH_FAILED');
+      }
+      if (res.code !== 0) throw hlabsError('NAS_UNREACHABLE', 'unreachable', { reason: 'unreachable' });
+      return res.stdout
+        .split('\n')
+        .map((l) => l.split('|'))
+        .filter((f) => f[0] === 'Disk' && f[1] && !f[1].endsWith('$'))
+        .map((f) => f[1]!);
+    } finally {
+      await rm(credentials, { force: true });
+    }
   }
 }

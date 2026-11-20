@@ -83,7 +83,8 @@ export const storage = {
     ),
     /**
      * With a share: mounts it somewhere temporary, checks hlabs can write there, and unmounts (10 s at most). Without
-     * one: the shares the server lists for a guest (`null` when it won't say).
+     * one: the shares the server lists, as `username` when given (a wrong password is NAS_AUTH_FAILED), else for a guest
+     * (`null` when it won't say).
      */
     testNetwork: io(
       networkLocationSchema.extend({ share: z.string().optional() }),

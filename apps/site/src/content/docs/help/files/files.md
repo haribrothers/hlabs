@@ -122,7 +122,7 @@ Open the file and choose **Download** at the top. The file keeps its name. Big d
 For admins. A NAS or another computer that shares folders on your network (SMB or NFS) can show up in Files, and apps can keep their files on it.
 
 1. In Files, choose **Connect a drive** under Locations.
-2. Under **Found on your network**, choose your NAS and then the share you want, for example **Media**. Many NAS boxes don't list their shares to visitors: then type the share's name under **Share name**. If the NAS itself isn't listed, type its address under **Or enter an address**: `smb://nas.local/Media`, `\\nas.local\Media` or `nfs://nas.local/volume1/media`.
+2. Under **Found on your network**, choose your NAS and then the share you want, for example **Media**. Many NAS boxes don't list their shares to visitors: then type your username and password and choose **Show shares** to see the ones your account can open, or type the share's name under **Share name**. If the NAS itself isn't listed, type its address under **Or enter an address**: `smb://nas.local/Media`, `\\nas.local\Media` or `nfs://nas.local/volume1/media`.
 3. For SMB, type the username and password you use for the NAS. For a share anyone on your network can open, leave them empty. NFS doesn't need them.
 4. Leave **Let apps use this drive** on if apps should be able to keep folders on it (you choose which ones), and **Reconnect automatically after restart** on so hlabs connects it again by itself.
 5. Choose **Connect**. hlabs tries the drive first and says what went wrong if it can't: **Wrong username or password**, **Can't reach** the NAS (check it's on and on the same network), or that there's no share with that name.

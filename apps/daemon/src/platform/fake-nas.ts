@@ -21,8 +21,10 @@ export class FakeNas implements NetworkMounter, NetworkDiscovery {
     return this.online ? [{ name: 'NAS', host: FAKE_NAS_HOST, protocol: 'smb', shares: [...FAKE_NAS_SHARES] }] : [];
   }
 
-  async shares(protocol: 'smb' | 'nfs', host: string) {
-    return this.online && protocol === 'smb' && host === FAKE_NAS_HOST ? [...FAKE_NAS_SHARES] : null;
+  async shares(protocol: 'smb' | 'nfs', host: string, login?: { username: string; password: string }) {
+    if (!this.online || protocol !== 'smb' || host !== FAKE_NAS_HOST) return null;
+    if (login && login.password !== FAKE_NAS_PASSWORD) throw hlabsError('NAS_AUTH_FAILED');
+    return [...FAKE_NAS_SHARES];
   }
 
   async mount(share: NetworkShare, target: string): Promise<string> {

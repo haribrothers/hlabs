@@ -527,7 +527,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       ? new MacNetworkMounter(config.netmountHelper)
       : new LinuxNetworkMounter(config.privHelper, join(config.paths.dataDir, 'tmp')));
   const discovery: NetworkDiscovery =
-    deps.discovery ?? fakeNas ?? (process.platform === 'darwin' ? new MacDiscovery() : new LinuxDiscovery());
+    deps.discovery ??
+    fakeNas ??
+    (process.platform === 'darwin' ? new MacDiscovery() : new LinuxDiscovery(join(config.paths.dataDir, 'tmp')));
   const mountsDir = join(config.paths.dataDir, 'mounts');
   const files = new FilesService({ db, appDataDir: config.paths.appDataDir });
   const trash = new Trash({ db });
