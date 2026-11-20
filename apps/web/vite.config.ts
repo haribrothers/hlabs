@@ -48,6 +48,7 @@ const toDaemon = {
   '/dev/engine': DAEMON,
   '/dev/tailscale': DAEMON,
   '/dev/fake-nas': DAEMON,
+  '/dev/admin-password': DAEMON,
   '/dev/remove-app': DAEMON,
   '/dev/rolled-back': DAEMON,
   '/dev/sync-store': DAEMON,

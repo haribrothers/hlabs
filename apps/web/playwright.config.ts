@@ -25,9 +25,10 @@ const FIRST_RUN_SPECS =
   /(d-098-server-name|us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-24-9]|2[0678])|us-home-1[12]|us-sys-(0[2-6]|1[89]|20|41))\.spec\.ts/;
 // Specs that change the main instance for everyone, run after the desktop and phone specs, one at a time: those that
 // really install store apps (the D-071 smoke set, and uninstalling one) or leave failed installs, and those that report
-// the engine as stopped (US-STATE-08…10), and those that take the pretend NAS offline (US-FILE-11, US-FILE-12).
+// the engine as stopped (US-STATE-08…10), those that take the pretend NAS offline (US-FILE-11, US-FILE-12), and the
+// backup specs, which keep their repository on it (US-BKP-08, US-BKP-20).
 const SERIAL_SPECS =
-  /(us-store-1[1-4]|us-store-17-rollback|us-app-12|us-app-24|us-app-26|us-state-(0[89]|10)|us-file-1[12])\.spec\.ts/;
+  /(us-store-1[1-4]|us-store-17-rollback|us-app-12|us-app-24|us-app-26|us-state-(0[89]|10)|us-file-1[12]|us-bkp-(08|20))\.spec\.ts/;
 // The installable dashboard's specs (US-INST-28, US-INST-29) run against a production build, where its manifest and
 // service worker exist.
 const PWA_SPECS = /us-inst-2[89]\.spec\.ts/;

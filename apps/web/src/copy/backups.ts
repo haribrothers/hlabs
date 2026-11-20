@@ -172,10 +172,10 @@ export const backupsCopy = {
   back: 'Back',
   restoreButton: 'Restore',
   restoreEverything: 'Restore everything',
-  confirmReplace: (what: string, when: string) =>
-    `Replace ${what} with ${what === 'everything' ? 'the data' : 'its data'} from ${when}?`,
-  confirmReplaceBody: (what: string) =>
-    `${what} stops until the restore finishes. hlabs keeps a safety copy of today's data until it's done.`,
+  confirmReplace: (what: string, when: string, many: boolean) =>
+    `Replace ${what} with ${what === 'everything' ? 'the data' : many ? 'their data' : 'its data'} from ${when}?`,
+  confirmReplaceBody: (what: string, many = false) =>
+    `${what} ${many ? 'stop' : 'stops'} until the restore finishes. hlabs keeps a safety copy of today's data until it's done.`,
   confirmEverythingBody: 'Every app stops until the restore finishes, and hlabs restarts when the restore finishes.',
   confirmCopy: (what: string, when: string) => `Copy ${what}'s data from ${when} to Home › Restored?`,
   confirmCopyBody: 'Nothing is stopped or replaced.',

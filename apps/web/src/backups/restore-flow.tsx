@@ -206,7 +206,8 @@ function ChooseSteps({
   }
 
   if (step === 'confirm') {
-    const titleText = mode === 'copy' ? copy.confirmCopy(what, when) : copy.confirmReplace(what, when);
+    const titleText =
+      mode === 'copy' ? copy.confirmCopy(what, when) : copy.confirmReplace(what, when, picked.length > 1);
     return (
       <ModalDialog
         open
@@ -222,7 +223,7 @@ function ChooseSteps({
               ? copy.confirmCopyBody
               : everything
                 ? copy.confirmEverythingBody
-                : copy.confirmReplaceBody(what)
+                : copy.confirmReplaceBody(what, picked.length > 1)
           }
           confirmLabel={mode === 'copy' ? copy.copyData : copy.replaceData}
           destructive={mode === 'replace'}

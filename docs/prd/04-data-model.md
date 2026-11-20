@@ -76,5 +76,7 @@ These columns were introduced while writing the stories and are part of the sche
 | `apps` | `net_internet` (bool), `net_apps` (bool), `data_location_id` | 06-apps |
 | `storage_locations` | `auto_mount` (default true), `apps_allowed` (default true) | 07-files |
 | `backup_plan` | `pause_apps` (default true) | 08-usage-backups |
+| `backup_runs` | `app_count`, `folder_count`, `retry` (the 30-minute retry of a scheduled run, D-046) | 08-usage-backups (US-BKP-03, US-BKP-07) |
+| `restores` | `job_id`, `phase` (`checking`\|`stopping`\|`safety`\|`copying`\|`swap`\|`starting`\|`done`), `user_id`, `steps_json` | 08-usage-backups (US-BKP-20…22) |
 | `apps` | `state` value `reinstalling` (02 §2.5) | 06-apps (US-APP-25) |
 | `jobs` | `kind` value `app_reinstall` (an app job: serial per app, refused while an exclusive job runs) | 06-apps (US-APP-25) |

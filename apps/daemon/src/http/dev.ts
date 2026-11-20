@@ -146,6 +146,22 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     return reply.header('set-cookie', sessionCookie(session.raw, { ...session, domain })).redirect('/');
   });
 
+  // Gives the first admin a known password, for e2e of actions that ask for it again (a restore, US-BKP-19).
+  const adminPasswordBody = z.object({ password: z.string().min(8) });
+  app.post('/dev/admin-password', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { password } = adminPasswordBody.parse(req.body ?? {});
+    const admin = services.db.select().from(users).where(eq(users.role, 'admin')).get();
+    if (!admin) return reply.code(404).send({ reason: 'no admin' });
+    services.db
+      .update(users)
+      .set({ passwordHash: await hashPassword(password) })
+      .where(eq(users.id, admin.id))
+      .run();
+    return { ok: true };
+  });
+
   // Ends every session of a user, as revoking from another device will (US-AUTH-15 e2e).
   const revokeBody = z.object({ username: z.string() });
   app.post('/dev/revoke-sessions', async (req, reply) => {
