@@ -9,7 +9,7 @@ const byTitle = [...errorPages].sort((a, b) => a.title.localeCompare(b.title));
 <StarlightPage
   frontmatter={{ title: 'Error messages', description: 'Every message hlabs can show, and what to do about it.' }}
 >
-  <p>For everyone. Each message hlabs shows has a page that says what to do.</p>
+  <p>For everyone. Each message hlabs shows has a page that says what to do. When hlabs shows one, <strong>Learn more</strong> opens its page here.</p>
   <ul>
     {
       byTitle.map((e) => (

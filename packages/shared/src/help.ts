@@ -16,3 +16,8 @@ export function helpUrl(slug: string): string {
   if (!/^[a-z0-9-]+(\/[a-z0-9-]+)*$/.test(clean)) throw new TypeError(`Invalid help slug: ${slug}`);
   return `${helpBase()}/help/${clean}/`;
 }
+
+/** An error code's help page (US-SITE-10): APP_PORT_IN_USE → "errors/app-port-in-use", for helpUrl. */
+export function errorHelpSlug(code: string): string {
+  return `errors/${code.toLowerCase().replace(/_/g, '-')}`;
+}

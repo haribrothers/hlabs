@@ -1,0 +1,12 @@
+# Cloudflare Pages headers (D-147). install.sh and its checksum and signature are plain text that changes with each
+# stable release, so nobody keeps an old one for more than 5 minutes (US-SITE-05). The rest arrive with the deploy
+# (phase 6 step 6, part d).
+/install.sh
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=300
+/install.sh.sha256
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=300
+/install.sh.sig
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=300

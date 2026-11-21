@@ -11,6 +11,8 @@
 # (D-141), with openssl. HLABS_VERSION=<v> installs that version instead of the latest; HLABS_TARBALL=<file> installs
 # a local build (its SHA256SUMS and SHA256SUMS.sig sit beside it).
 #
+#   … | sh -s -- --channel beta     installs the beta channel's latest version (D-147)
+#
 #   … | sh -s -- --uninstall [--keep-data | --delete-everything] [--yes]     removes hlabs (D-144); so does
 #   sudo hlabs uninstall
 set -eu
@@ -162,6 +164,38 @@ verify_signature() {
 
 sha256_of() { openssl dgst -sha256 -r "$1" | cut -d' ' -f1; }
 
+# The beta channel's latest version, from its update manifest (the rolling `beta` release's latest.json, D-146). What
+# that version downloads is checked like any other.
+beta_version() {
+  manifest="$(download "$RELEASES/download/beta/latest.json" 2>>"$LOG")" ||
+    fail "Couldn't find the beta channel's version" "Check this computer can reach github.com, then run this again"
+  v="$(printf '%s' "$manifest" | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
+  case "$v" in
+    [0-9]*.[0-9]*.[0-9]*) printf '%s' "$v" ;;
+    *) fail "The beta channel's version isn't one hlabs knows" "Try again later, or install the stable version" ;;
+  esac
+}
+
+# --channel stable|beta (or --channel=beta) picks what to install; other options are the uninstaller's.
+read_channel() {
+  CHANNEL=stable
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --channel=*) CHANNEL="${1#--channel=}" ;;
+      --channel)
+        [ $# -gt 1 ] || fail "--channel needs stable or beta"
+        CHANNEL="$2"
+        shift
+        ;;
+    esac
+    shift
+  done
+  case "$CHANNEL" in
+    stable | beta) ;;
+    *) fail "There's no $CHANNEL channel" "Use --channel stable or --channel beta" ;;
+  esac
+}
+
 # Puts the checked tarball for this computer in $WORK/hlabs.tar.gz.
 fetch_release() {
   arch="$(arch_name)"
@@ -173,7 +207,13 @@ fetch_release() {
     name="$(basename "$HLABS_TARBALL")"
     cp "$HLABS_TARBALL" "$WORK/hlabs.tar.gz"
   else
-    if [ -n "${HLABS_VERSION:-}" ]; then base="$RELEASES/download/v${HLABS_VERSION#v}"; else base="$RELEASES/latest/download"; fi
+    if [ -n "${HLABS_VERSION:-}" ]; then
+      base="$RELEASES/download/v${HLABS_VERSION#v}"
+    elif [ "${CHANNEL:-stable}" = beta ]; then
+      base="$RELEASES/download/v$(beta_version)"
+    else
+      base="$RELEASES/latest/download"
+    fi
     quietly download "$base/SHA256SUMS" "$WORK/SHA256SUMS" ||
       fail "Couldn't download hlabs from $base" "Check this computer can reach github.com, then run this again"
     quietly download "$base/SHA256SUMS.sig" "$WORK/SHA256SUMS.sig" || fail "Couldn't download hlabs's signature"
@@ -501,7 +541,8 @@ main() {
   WORK="$(mktemp -d)"
   trap 'rm -rf "$WORK"' EXIT
 
-  say "${BOLD}hlabs installer${RESET}"
+  read_channel "$@"
+  if [ "$CHANNEL" = beta ]; then say "${BOLD}hlabs installer${RESET} · beta channel"; else say "${BOLD}hlabs installer${RESET}"; fi
   check_system
   fetch_release
 

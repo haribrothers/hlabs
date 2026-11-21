@@ -44,7 +44,13 @@ sh install.sh
 
 The installer itself checks everything it downloads against `SHA256SUMS` and that file's signature, so a changed copy of the website alone can't give you a changed hlabs.
 
-To install the beta channel instead, run `sh install.sh --channel beta`.
+To install the beta channel's version instead, add `--channel beta`:
+
+```sh
+curl -fsSL https://hlabs.h4loom.com/install.sh | sh -s -- --channel beta
+```
+
+Beta builds may have bugs. hlabs updates to the next stable version once one is newer than the beta you installed.
 
 ## Find the setup address again
 

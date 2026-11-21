@@ -29,8 +29,9 @@
     "build:tray": "node scripts/build-tray.ts",
     "build:linux": "node scripts/build-linux.ts",
     "dev:site": "pnpm --filter @hlabs/site dev",
-    "site:build": "turbo run build --filter=@hlabs/site^... && pnpm --filter @hlabs/site site:build",
+    "site:build": "turbo run build --filter=@hlabs/site^... && node scripts/site-releases.ts && pnpm --filter @hlabs/site site:build",
     "site:check": "node scripts/site-check.ts",
+    "site:e2e": "turbo run build --filter=@hlabs/site^... && pnpm --filter @hlabs/site test:e2e",
     "test:e2e": "pnpm --filter @hlabs/web test:e2e"
   },
   "devDependencies": {

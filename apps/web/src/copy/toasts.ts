@@ -7,6 +7,9 @@ export const toastCopy = {
   changePort: 'Change port',
   manageStorage: 'Manage storage',
   open: 'Open',
+  /** An error's help page on the website (US-SITE-10), in a new tab. */
+  learnMore: 'Learn more',
+  newTab: '(opens in a new tab)',
   /** The success toast after a Retry (or other mutation) from a toast works (D-066). */
   done: {
     'apps.start': 'App started',

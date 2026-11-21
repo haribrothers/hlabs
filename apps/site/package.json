@@ -7,14 +7,24 @@
   "scripts": {
     "dev": "astro dev",
     "site:build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "test:e2e": "node e2e/build.ts && playwright test"
   },
   "dependencies": {
     "@astrojs/starlight": "~0.43.1",
+    "@fontsource/plus-jakarta-sans": "^5.3.0",
     "@hlabs/app-manifest": "workspace:*",
+    "@hlabs/icons": "workspace:*",
+    "@hlabs/shared": "workspace:*",
     "@hlabs/ui": "workspace:*",
     "astro": "^7.4.13",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "starlight-sidebar-topics": "~0.9.0",
     "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0"
   }
 }

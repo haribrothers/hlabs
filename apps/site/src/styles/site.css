@@ -1,10 +1,50 @@
-/* Starlight themed with @hlabs/ui tokens (tokens only; the site has its own layout). */
+/* Starlight (help and developer docs) themed like the website's own pages (D-147): @hlabs/ui tokens, Plus Jakarta Sans
+ * served from this site, the same background and a light theme. */
 @import '@hlabs/ui/tokens.css';
+@import '@fontsource/plus-jakarta-sans/latin-400.css';
+@import '@fontsource/plus-jakarta-sans/latin-600.css';
+@import '@fontsource/plus-jakarta-sans/latin-700.css';
 
 :root {
-  --sl-color-accent: var(--accent);
-  --sl-color-accent-high: var(--accent-tab);
-  --sl-color-accent-low: var(--wall-base);
   --sl-font: var(--hl-font-sans);
   --sl-font-mono: var(--hl-font-mono);
+  --sl-color-accent-low: #2a1f55;
+  --sl-color-accent: var(--accent-strong);
+  --sl-color-accent-high: var(--accent-tab);
+  --sl-color-white: var(--ink);
+  --sl-color-gray-1: #ece9f5;
+  --sl-color-gray-2: #c9c3dc;
+  --sl-color-gray-3: #a39cbb;
+  --sl-color-gray-4: #6b6487;
+  --sl-color-gray-5: #3a3358;
+  --sl-color-gray-6: #1d1738;
+  --sl-color-black: #100c22;
+  --sl-color-bg-nav: #120e27;
+  --sl-color-bg-sidebar: #120e27;
+  --sl-color-hairline-light: rgba(255, 255, 255, 0.12);
+  --sl-color-hairline: rgba(255, 255, 255, 0.09);
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #ede7fd;
+  --sl-color-accent: #6d28d9;
+  --sl-color-accent-high: #3b1a78;
+  --sl-color-white: var(--ink-on-light);
+  --sl-color-gray-1: #2b2447;
+  --sl-color-gray-2: #463d63;
+  --sl-color-gray-3: #5a5177;
+  --sl-color-gray-4: #8a83a3;
+  --sl-color-gray-5: #c9c3dc;
+  --sl-color-gray-6: #ece8f7;
+  --sl-color-gray-7: #f3f0fa;
+  --sl-color-black: #f7f5fc;
+  --sl-color-bg-nav: #f7f5fc;
+  --sl-color-bg-sidebar: #f1eef9;
+  --sl-color-hairline-light: rgba(27, 20, 51, 0.12);
+  --sl-color-hairline: rgba(27, 20, 51, 0.1);
+}
+
+.site-title {
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }

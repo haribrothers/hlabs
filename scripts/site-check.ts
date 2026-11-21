@@ -4,10 +4,13 @@
 //   - a help slug the product links to (helpUrl) has no page;
 //   - an error code (every one the dashboard has words for, which is all of packages/api's) has no error page, or apps/site/src/data/errors.json isn't what the dashboard says;
 //   - a help page doesn't say first who it's for ("For everyone…", "For admins…");
-//   - a link inside the site, or its #anchor, goes nowhere.
+//   - a link inside the site, or its #anchor, goes nowhere;
+//   - release notes have sections other than New, Improved, Fixed and Before you update, in that order;
+//   - the app catalogue names the store's groups differently from the dashboard.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { errorCopy } from '../apps/web/src/copy/errors.ts';
+import { categoryLabels } from '../apps/web/src/copy/store.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const site = join(root, 'apps/site');
@@ -133,6 +136,27 @@ for (const file of htmlFiles) {
     if (hash && to.endsWith('.html') && !idsOf(to).has(decodeURIComponent(hash))) {
       fail(`${page}: the link ${href} has no #${hash} there`);
     }
+  }
+}
+
+// 6. Release notes (D-146, D-147): only these sections, in this order.
+const SECTIONS = ['New', 'Improved', 'Fixed', 'Before you update'];
+const notesDir = join(site, 'src/content/releases');
+for (const f of existsSync(notesDir) ? readdirSync(notesDir).filter((n) => /^\d.*\.md$/.test(n)) : []) {
+  const headings = [...readFileSync(join(notesDir, f), 'utf8').matchAll(/^## (.+)$/gm)].map((m) => m[1]!.trim());
+  const order = headings.map((h) => SECTIONS.indexOf(h));
+  if (order.some((i) => i < 0) || order.some((i, n) => n > 0 && i <= order[n - 1]!)) {
+    fail(
+      `releases/${f}: use the sections ${SECTIONS.join(', ')}, in that order (it has ${headings.join(', ') || 'none'})`,
+    );
+  }
+}
+
+// 7. The catalogue's groups say what the dashboard's App Store says.
+const storeLib = readFileSync(join(site, 'src/lib/store.ts'), 'utf8');
+for (const [id, label] of Object.entries(categoryLabels)) {
+  if (!storeLib.includes(`${id}: '${label.replace(/'/g, "\\'")}'`)) {
+    fail(`apps/site/src/lib/store.ts: the "${id}" group should be called "${label}", as in the dashboard`);
   }
 }
 

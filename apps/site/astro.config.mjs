@@ -1,4 +1,5 @@
-// hlabs website, help and developer docs (D-055, D-123): static Astro + Starlight. Content arrives in phase 6.
+// hlabs website, help and developer docs (D-055, D-123, D-147): static Astro + Starlight. The website's own pages
+// (home, download, apps, release notes, privacy) are in src/pages; help and developer docs are Starlight's.
 // No analytics, cookies or third-party scripts.
 import starlight from '@astrojs/starlight';
 import starlightSidebarTopics from 'starlight-sidebar-topics';
@@ -6,12 +7,15 @@ import { defineConfig } from 'astro/config';
 
 export default defineConfig({
   site: 'https://hlabs.h4loom.com', // SITE_URL (D-139)
-  // Until the home page (phase 6 step 6, part c), the site's address opens the help.
-  redirects: { '/': '/help/' },
+  // The site's own tests build to dist-e2e, with their fixtures (e2e/build.ts), and leave dist alone.
+  outDir: process.env.HLABS_SITE_OUT_DIR ?? './dist',
+  publicDir: process.env.HLABS_SITE_PUBLIC_DIR ?? './public',
   integrations: [
     starlight({
       title: 'hlabs',
       customCss: ['./src/styles/site.css'],
+      // US-SITE-08: "/" opens search too, and finding nothing points somewhere useful.
+      components: { Search: './src/components/Search.astro' },
       // US-SITE-07: "Last updated" from git, an edit link, and previous/next (Starlight's own).
       lastUpdated: true,
       editLink: { baseUrl: 'https://github.com/haribrothers/hlabs/edit/main/apps/site/' },

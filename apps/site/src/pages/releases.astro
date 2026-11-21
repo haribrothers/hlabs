@@ -1,0 +1,206 @@
+---
+// US-SITE-13: every release, newest first, with its date and channel and its notes as written (D-146, D-147).
+import { getCollection, render } from 'astro:content';
+import Page from '../layouts/Page.astro';
+import { compareVersions } from '../../../../scripts/site-releases-lib.ts';
+
+const entries = (await getCollection('releases')).sort((a, b) => compareVersions(a.id, b.id));
+const releases = await Promise.all(
+  entries.map(async (e) => ({
+    version: e.id,
+    channel: e.id.includes('-') ? 'beta' : 'stable',
+    date: e.data.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }),
+    iso: e.data.date.toISOString().slice(0, 10),
+    title: e.data.title ?? `hlabs ${e.id}`,
+    Content: (await render(e)).Content,
+  })),
+);
+const hasBeta = releases.some((r) => r.channel === 'beta');
+---
+
+<Page title="Release notes" current="releases" description="What's new in each version of hlabs, newest first.">
+  <section class="page-head">
+    <div class="backdrop" aria-hidden="true">
+      <div class="glow glow-violet drift-a" style="width: 620px; height: 520px; left: -200px; top: -280px"></div>
+      <div class="gridbg"></div>
+    </div>
+    <div class="wrap head">
+      <div>
+        <p class="eyebrow rise">Release notes</p>
+        <h1 class="h1 rise rise-2">What's new in hlabs</h1>
+        <p class="lede rise rise-3" style="margin-top: 16px; max-width: 560px">
+          Every version, newest first. hlabs tells you when an update is ready in Settings › Updates.
+        </p>
+      </div>
+      {
+        hasBeta && (
+          <div class="filters rise rise-3" role="group" aria-label="Show releases" data-needs-js hidden>
+            <button type="button" class="chip" aria-pressed="true" data-show="all">
+              All
+            </button>
+            <button type="button" class="chip" aria-pressed="false" data-show="stable">
+              Stable
+            </button>
+            <button type="button" class="chip" aria-pressed="false" data-show="beta">
+              Beta
+            </button>
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="list" aria-label="Releases">
+    <div class="wrap">
+      {
+        releases.length === 0 && (
+          <p class="lede empty">
+            No releases yet. The first one is on its way: watch{' '}
+            <a href="https://github.com/haribrothers/hlabs/releases">GitHub Releases</a> to hear when it's out.
+          </p>
+        )
+      }
+      {
+        releases.map((r) => (
+          <article id={r.version} class="rel reveal" data-channel={r.channel} aria-labelledby={`t-${r.version}`}>
+            <div class="side">
+              <div class="mono ver">{r.version}</div>
+              <time datetime={r.iso} class="date">
+                {r.date}
+              </time>
+              <span class={`chan chan-${r.channel}`}>{r.channel === 'beta' ? 'Beta' : 'Stable'}</span>
+            </div>
+            <div class="notes">
+              <h2 id={`t-${r.version}`} class="rel-title">
+                {r.title}
+              </h2>
+              <r.Content />
+            </div>
+          </article>
+        ))
+      }
+      <p class="older">
+        Older versions and every download are on <a href="https://github.com/haribrothers/hlabs/releases">GitHub Releases</a>.
+      </p>
+    </div>
+  </section>
+</Page>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-needs-js]').forEach((el) => (el.hidden = false));
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-show]');
+  buttons.forEach((b) =>
+    b.addEventListener('click', () => {
+      buttons.forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+      const show = b.dataset.show;
+      document
+        .querySelectorAll<HTMLElement>('article[data-channel]')
+        .forEach((a) => (a.hidden = show !== 'all' && a.dataset.channel !== show));
+    }),
+  );
+</script>
+
+<style>
+  .head {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .filters {
+    display: flex;
+    gap: 8px;
+  }
+  .list {
+    padding: 0 0 112px;
+  }
+  .empty {
+    padding: 32px 0;
+  }
+  .rel {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 48px;
+    padding: 48px 0;
+    border-top: 1px solid var(--site-line);
+    scroll-margin-top: 80px;
+  }
+  .side {
+    position: sticky;
+    top: 96px;
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .ver {
+    font-size: 20px;
+    font-weight: 500;
+  }
+  .date {
+    font-size: 14px;
+    color: var(--site-faint);
+  }
+  .chan {
+    margin-top: 6px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .chan-beta {
+    background: var(--site-beta-bg);
+    color: var(--site-beta-ink);
+  }
+  .chan-stable {
+    background: var(--site-stable-bg);
+    color: var(--site-stable-ink);
+  }
+  .rel-title {
+    font-size: 30px;
+    letter-spacing: -0.025em;
+    margin: 0;
+  }
+  .notes :global(h2:not(.rel-title)) {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--site-faint);
+    margin: 28px 0 10px;
+  }
+  .notes :global(ul) {
+    margin: 0;
+    padding: 0 0 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .notes :global(li),
+  .notes :global(p) {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--site-muted);
+  }
+  .notes :global(code) {
+    font-size: 14px;
+  }
+  .older {
+    padding-top: 32px;
+    border-top: 1px solid var(--site-line);
+    font-size: 14px;
+    color: var(--site-muted);
+  }
+  @media (max-width: 860px) {
+    .rel {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+    }
+    .side {
+      position: static;
+    }
+  }
+</style>

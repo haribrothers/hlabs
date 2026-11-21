@@ -1,0 +1,648 @@
+---
+// US-SITE-02 and US-SITE-05: the right download first, every download listed, from the latest releases (D-147).
+// The computer's system only decides which comes first (a script, from the user agent); without JavaScript the Mac
+// comes first and everything is still there. The Beta switch needs JavaScript; without it, the beta's link is below.
+import Icon from '../components/Icon.astro';
+import Page from '../layouts/Page.astro';
+import Sha from '../components/Sha.astro';
+import LogoMark from '../components/LogoMark.astro';
+import { allReleasesUrl, channelOf, siteReleases, type Arch, type Channel, type Download } from '../lib/releases';
+
+const data = siteReleases();
+const stable = channelOf(data.stable);
+const beta = channelOf(data.beta);
+const channels = [
+  { id: 'stable', c: stable },
+  { id: 'beta', c: beta },
+].filter((x): x is { id: string; c: Channel } => x.c !== null);
+const command = 'curl -fsSL https://hlabs.h4loom.com/install.sh | sh';
+const betaCommand = `${command} -s -- --channel beta`;
+const archs: Array<{ id: Arch; label: string }> = [
+  { id: 'x86_64', label: 'x86_64' },
+  { id: 'aarch64', label: 'arm64' },
+];
+const pkgs = [
+  { key: 'deb', label: '.deb', for: 'Ubuntu and Debian' },
+  { key: 'rpm', label: '.rpm', for: 'Fedora' },
+  { key: 'appimage', label: 'AppImage', for: 'Any other distribution' },
+] as const;
+const sameAsStable = beta && stable && beta.version === stable.version;
+const verifySteps = (forBeta: boolean) =>
+  [
+    'curl -fsSLO https://hlabs.h4loom.com/install.sh',
+    'curl -fsSLO https://hlabs.h4loom.com/install.sh.sha256',
+    'sha256sum -c install.sh.sha256',
+    `sh install.sh${forBeta ? ' --channel beta' : ''}`,
+  ].join('\n');
+const hasScript = data.installScript !== null;
+---
+
+<Page
+  title="Download"
+  current="download"
+  description="Download hlabs for your Mac, or install it on a Linux server or desktop. Every download is checked."
+>
+  <section class="page-head">
+    <div class="backdrop" aria-hidden="true">
+      <div class="glow glow-coral drift-a" style="width: 520px; height: 520px; left: -160px; top: -240px"></div>
+      <div class="glow glow-violet drift-b" style="width: 620px; height: 620px; right: -200px; top: -260px"></div>
+      <div class="gridbg"></div>
+    </div>
+    <div class="wrap head-in">
+      <p class="eyebrow rise">Download</p>
+      <h1 class="h1 rise rise-2">Download hlabs</h1>
+      {
+        channels.length === 0 ? (
+          <p class="lede rise rise-3" style="margin-top: 18px; max-width: 560px">
+            There's no release yet. hlabs is getting ready for its first one: watch{' '}
+            <a href={allReleasesUrl(data.repo)}>GitHub Releases</a> to hear when it's out, or{' '}
+            <a href="/developers/getting-started/">build it from source</a>.
+          </p>
+        ) : (
+          <>
+            {channels.map(({ id, c }) => (
+              <p class="lede rise rise-3 version-line" data-channel={id} hidden={id !== 'stable' || undefined}>
+                Version {c.version} · {c.date} · <a href={`/releases/#${c.version}`}>What's new</a>
+              </p>
+            ))}
+            {beta && stable && (
+              <div class="rise rise-4" style="margin-top: 28px" data-needs-js hidden>
+                <div class="seg" role="group" aria-label="Release channel">
+                  <button type="button" aria-pressed="true" data-pick-channel="stable">
+                    Stable
+                  </button>
+                  <button type="button" aria-pressed="false" data-pick-channel="beta">
+                    Beta
+                  </button>
+                </div>
+              </div>
+            )}
+            <p class="callout fade beta-note" role="status" data-channel="beta" hidden>
+              <Icon name="triangle-alert" size={18} />
+              <span>
+                {/* US-SYS-30 (phase 7) adds a Beta switch to Settings › Updates; until then, say what happens. */}
+                Beta builds may have bugs. hlabs updates to the next stable version once one is newer than the beta.
+                {sameAsStable && ' The newest beta is the current stable version.'}
+              </span>
+            </p>
+          </>
+        )
+      }
+    </div>
+  </section>
+
+  {
+    channels.map(({ id, c }) => (
+      <section
+        class="downloads"
+        aria-label={id === 'stable' ? 'Stable downloads' : 'Beta downloads'}
+        data-channel={id}
+        hidden={id !== 'stable' || undefined}
+      >
+        <div class="wrap stack" data-order>
+          <article class="card dl-card mac" data-os="mac" aria-labelledby={`mac-${id}`}>
+            <div class="mac-grid">
+              <div>
+                <div class="title-row">
+                  <h2 id={`mac-${id}`} class="dl-title">
+                    Mac
+                  </h2>
+                  <span class="pill yours" hidden data-yours="mac">
+                    Your computer
+                  </span>
+                </div>
+                <p class="dl-text">
+                  macOS 14 Sonoma or later. hlabs lives in the menu bar and sets up a container engine if you don't
+                  have one.
+                </p>
+                {c.macArm ? (
+                  <>
+                    <a href={c.macArm.url} class="btn-primary">
+                      <Icon name="download" size={18} />
+                      Download for Mac (Apple silicon)
+                    </a>
+                    {c.macIntel && (
+                      <p class="dl-text" style="margin: 14px 0 0">
+                        Older Mac? <a href={c.macIntel.url}>Download for Intel Mac</a>{' '}
+                        <span class="faint">· {c.macIntel.size}</span>
+                      </p>
+                    )}
+                    <dl class="meta">
+                      <div>
+                        <dt>Version</dt>
+                        <dd>{c.version}</dd>
+                      </div>
+                      <div>
+                        <dt>Released</dt>
+                        <dd>{c.date}</dd>
+                      </div>
+                      <div>
+                        <dt>Size</dt>
+                        <dd>{c.macArm.size}</dd>
+                      </div>
+                      <div>
+                        <dt>File</dt>
+                        <dd>.dmg</dd>
+                      </div>
+                    </dl>
+                    <Sha d={c.macArm} />
+                  </>
+                ) : (
+                  <p class="dl-text">This release has no Mac download.</p>
+                )}
+              </div>
+              <div class="dmg" aria-hidden="true">
+                <div class="dmg-window">
+                  <span class="dmg-icon dmg-app">
+                    <LogoMark id={`markDmg-${id}`} width={58} />
+                  </span>
+                  <Icon name="arrow-right" size={36} />
+                  <span class="dmg-icon dmg-apps">
+                    <Icon name="layout-grid" size={40} />
+                  </span>
+                </div>
+                <p class="dmg-caption">Drag hlabs into Applications</p>
+              </div>
+            </div>
+          </article>
+
+          <div class="g-2 linux" data-os="linux">
+            <article class="card dl-card" aria-labelledby={`server-${id}`}>
+              <div class="title-row">
+                <Icon name="server" size={24} />
+                <h2 id={`server-${id}`} class="dl-title">
+                  Linux server
+                </h2>
+                <span class="pill yours" hidden data-yours="linux">
+                  Your computer
+                </span>
+              </div>
+              <p class="dl-text">
+                Ubuntu 22.04+, Debian 12+ or Fedora 40+ with systemd, on x86_64 or arm64. Run this as a user who can use
+                sudo:
+              </p>
+              {hasScript ? (
+                <>
+                  <div class="code">
+                    <div class="code-bar">
+                      <code tabindex="0">
+                        <span class="prompt">$</span> {id === 'beta' ? betaCommand : command}
+                      </code>
+                      <button type="button" class="copy-btn" data-copy={id === 'beta' ? betaCommand : command}>
+                        <span class="done">
+                          <Icon name="check" size={14} />
+                        </span>
+                        <span data-copy-label>Copy</span>
+                        <span class="sr-only"> the install command</span>
+                      </button>
+                    </div>
+                  </div>
+                  <details class="verify">
+                    <summary>Check the script before you run it</summary>
+                    <p class="dl-text">Download it with its checksum, check it, read it, then run it:</p>
+                    <pre class="code" tabindex="0"><code>{verifySteps(id === 'beta')}</code></pre>
+                    <p class="dl-text">
+                      The script downloads hlabs from GitHub Releases and checks its signature, so this site alone can't
+                      hand you a bad build. <a href="/install.sh.sig">install.sh.sig</a> is its signature by the hlabs
+                      update key.
+                    </p>
+                  </details>
+                </>
+              ) : (
+                <p class="dl-text">The install command arrives with the first signed release.</p>
+              )}
+              <a href="/help/install/linux-server/" class="more push">
+                Install on a Linux server: step by step
+              </a>
+            </article>
+
+            <article class="card dl-card" aria-labelledby={`desk-${id}`}>
+              <div class="title-row">
+                <Icon name="monitor" size={24} />
+                <h2 id={`desk-${id}`} class="dl-title">
+                  Linux desktop
+                </h2>
+                <div class="seg arch-seg" role="group" aria-label="Processor" data-needs-js hidden>
+                  {archs.map((a, i) => (
+                    <button type="button" aria-pressed={String(i === 0)} data-pick-arch={a.id}>
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p class="dl-text">The menu-bar app for a computer you sit at, with the same dashboard in your browser.</p>
+              {archs.map((a) => (
+                <div class="pkgs" data-arch={a.id}>
+                  <h3 class="arch">{a.label}</h3>
+                  {pkgs.map((p) => {
+                    const d = c.linux[a.id][p.key];
+                    return d ? (
+                      <div class="pkg">
+                        <div>
+                          <div class="pkg-name">{p.label}</div>
+                          <div class="faint small">{p.for}</div>
+                        </div>
+                        <div class="mono pkg-file">{d.name}</div>
+                        <div class="faint pkg-size">{d.size}</div>
+                        <a href={d.url} class="btn-secondary btn-sm">
+                          Download<span class="sr-only"> the {p.label} for {a.label}</span>
+                        </a>
+                        {d.sha256 && (
+                          <div class="pkg-sha">
+                            <span class="pkg-sha-label">SHA-256</span>
+                            <span class="mono pkg-sha-value">{d.sha256}</span>
+                            <button type="button" class="pkg-sha-copy" data-copy={d.sha256}>
+                              <span data-copy-label>Copy</span>
+                              <span class="sr-only"> the checksum of the {p.label} for {a.label}</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              ))}
+              <a href="/help/install/linux-desktop/" class="more push">
+                Install on a Linux desktop: step by step
+              </a>
+            </article>
+          </div>
+
+          <div class="all">
+            <span class="all-text">
+              <Icon name="shield-check" size={20} />
+              Every file is listed in SHA256SUMS, signed by the hlabs update key.
+            </span>
+            <a href={allReleasesUrl(data.repo)} class="more">
+              All downloads and older versions
+              <Icon name="arrow-up-right" size={14} />
+            </a>
+          </div>
+          {id === 'stable' && beta && !stable?.version.includes('-') && (
+            <noscript>
+              <p class="dl-text">
+                Want the beta? <a href={beta.url}>hlabs {beta.version} on GitHub</a>, or add{' '}
+                <code>-s -- --channel beta</code> to the Linux command.
+              </p>
+            </noscript>
+          )}
+        </div>
+      </section>
+    ))
+  }
+
+  <section class="after" aria-labelledby="nextTitle">
+    <div class="wrap">
+      <h2 id="nextTitle" class="after-title">After you install</h2>
+      <ol class="after-list">
+        <li class="card">
+          <span class="mono step">01</span>
+          <h3>Open the setup page</h3>
+          <p>hlabs opens it for you on a Mac. On a server, the script prints its address.</p>
+        </li>
+        <li class="card">
+          <span class="mono step">02</span>
+          <h3>Make the admin account</h3>
+          <p>It lives on your computer only. Keep the recovery codes somewhere safe.</p>
+        </li>
+        <li class="card">
+          <span class="mono step">03</span>
+          <h3>Install your first app</h3>
+          <p><a href="/apps/">Browse the apps</a> to pick one.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+</Page>
+
+<script>
+  // Which download comes first (US-SITE-02): only the order changes; every option stays on the page.
+  const ua = navigator.userAgent;
+  const platform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ?? '';
+  const isMac = /mac/i.test(platform) || (/Macintosh/.test(ua) && !/iPhone|iPad/.test(ua));
+  const os = isMac ? 'mac' : 'linux';
+  document.querySelectorAll<HTMLElement>('[data-order]').forEach((list) => {
+    if (os === 'linux') list.prepend(list.querySelector('[data-os="linux"]')!);
+  });
+  document.querySelectorAll<HTMLElement>(`[data-yours="${os}"]`).forEach((el) => (el.hidden = false));
+
+  // The processor switch on the Linux desktop card: the computer's own first (arm64 when the browser says so).
+  const arm = /arm|aarch64/i.test(platform) || /aarch64|arm64/i.test(ua);
+  document.querySelectorAll<HTMLElement>('.arch-seg').forEach((seg) => {
+    const card = seg.closest('article')!;
+    card.classList.add('one-arch');
+    const pick = (arch: string) => {
+      seg
+        .querySelectorAll<HTMLButtonElement>('[data-pick-arch]')
+        .forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pickArch === arch)));
+      card
+        .querySelectorAll<HTMLElement>('.pkgs')
+        .forEach((p) => p.toggleAttribute('data-shown', p.dataset.arch === arch));
+    };
+    seg
+      .querySelectorAll<HTMLButtonElement>('[data-pick-arch]')
+      .forEach((b) => b.addEventListener('click', () => pick(b.dataset.pickArch!)));
+    pick(arm && !isMac ? 'aarch64' : 'x86_64');
+  });
+
+  // The Beta switch: shows the beta's downloads, version and note instead of stable's.
+  document.querySelectorAll<HTMLElement>('[data-needs-js]').forEach((el) => (el.hidden = false));
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-pick-channel]');
+  buttons.forEach((b) =>
+    b.addEventListener('click', () => {
+      const pick = b.dataset.pickChannel!;
+      buttons.forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+      document.querySelectorAll<HTMLElement>('[data-channel]').forEach((el) => (el.hidden = el.dataset.channel !== pick));
+    }),
+  );
+</script>
+
+<style>
+  .head-in {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .version-line {
+    margin-top: 18px;
+  }
+  .beta-note {
+    margin: 18px 0 0;
+    text-align: left;
+    font-size: 14px;
+  }
+  .downloads {
+    padding: 8px 0 40px;
+  }
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .dl-card {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+  }
+  .mac {
+    padding: 36px;
+  }
+  .mac-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 40px;
+    align-items: center;
+  }
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .dl-title {
+    font-size: 24px;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+  .dl-text {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--site-muted);
+    margin: 10px 0 20px;
+  }
+  .faint {
+    color: var(--site-faint);
+  }
+  .small {
+    font-size: 12px;
+  }
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin: 28px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid var(--site-line);
+  }
+  .meta dt {
+    font-size: 12px;
+    color: var(--site-faint);
+    font-weight: 600;
+  }
+  .meta dd {
+    margin: 4px 0 0;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .dmg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 32px;
+    border-radius: var(--radius-window);
+    background: var(--dock-home);
+    color: var(--ink);
+    box-shadow: var(--site-shadow);
+  }
+  .dmg-window {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+  .dmg-icon {
+    width: 96px;
+    height: 96px;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-icon);
+  }
+  .dmg-app {
+    background: var(--wall-base);
+  }
+  .dmg-apps {
+    background: var(--dock-store);
+  }
+  .dmg-caption {
+    margin: 0;
+    font-weight: 600;
+  }
+  .verify {
+    margin-top: 18px;
+    font-size: 14px;
+  }
+  .verify summary {
+    cursor: pointer;
+    font-weight: 600;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  .verify pre {
+    white-space: pre;
+  }
+  .push {
+    margin-top: auto;
+    padding-top: 18px;
+  }
+  .pkgs {
+    margin-top: 8px;
+  }
+  .arch {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--site-faint);
+    margin: 12px 0 0;
+  }
+  .pkg {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr) 70px auto;
+    gap: 6px 16px;
+    align-items: center;
+    padding: 14px 0;
+    border-top: 1px solid var(--site-line);
+    font-size: 14px;
+  }
+  .pkg-name {
+    font-weight: 700;
+  }
+  .pkg-file {
+    font-size: 12px;
+    color: var(--site-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pkg-size {
+    text-align: right;
+  }
+  .pkg-sha {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--site-faint);
+  }
+  .pkg-sha-label {
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .pkg-sha-value {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--site-muted);
+    font-size: 11px;
+  }
+  .pkg-sha-copy {
+    border: 0;
+    background: none;
+    color: var(--site-link);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 32px;
+    padding: 0 4px;
+  }
+  .arch-seg {
+    margin-left: auto;
+  }
+  .arch-seg button {
+    min-height: 30px;
+    font-size: 13px;
+  }
+  /* With the switch, one processor at a time; its name is on the switch. */
+  .one-arch .pkgs:not([data-shown]),
+  .one-arch .arch {
+    display: none;
+  }
+  .all {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 32px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 28px;
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--site-line-2);
+  }
+  .all-text {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--site-muted);
+  }
+  .after {
+    padding: 64px 0 112px;
+  }
+  .after-title {
+    font-size: 26px;
+    letter-spacing: -0.02em;
+    margin: 0 0 20px;
+  }
+  .after-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .after-list li {
+    padding: 24px;
+  }
+  .after-list h3 {
+    font-size: 17px;
+    margin: 8px 0 6px;
+  }
+  .after-list p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--site-muted);
+    line-height: 1.6;
+  }
+  .step {
+    font-size: 13px;
+    color: var(--site-eyebrow);
+  }
+  @media (max-width: 980px) {
+    .mac-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .dmg {
+      display: none;
+    }
+  }
+  @media (max-width: 860px) {
+    .meta {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .pkg {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .pkg-file,
+    .pkg-size {
+      display: none;
+    }
+    .after-list {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 720px) {
+    .dl-card,
+    .mac {
+      padding: 22px;
+    }
+  }
+</style>

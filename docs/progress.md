@@ -266,18 +266,18 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-INST-25 · Manage a headless install from the command line
 - [x] US-INST-26 · Native tray menu on Linux desktops
 - [x] US-INST-27 · First run on a Linux desktop
-- [ ] US-SITE-01 · Understand hlabs from the home page
-- [ ] US-SITE-02 · Download the right build for my computer
-- [ ] US-SITE-03 · Browse the app catalogue
-- [ ] US-SITE-04 · Read an app's page
-- [ ] US-SITE-05 · Install on Linux with the command from the site
+- [x] US-SITE-01 · Understand hlabs from the home page
+- [ ] US-SITE-02 · Download the right build for my computer (built and tested; "shows it within 15 minutes" waits for release.yml to trigger the deploy, part d)
+- [x] US-SITE-03 · Browse the app catalogue
+- [x] US-SITE-04 · Read an app's page
+- [ ] US-SITE-05 · Install on Linux with the command from the site (built and tested; served from hlabs.h4loom.com once the site is deployed, part d)
 - [ ] US-SITE-06 · Follow a step-by-step install guide
 - [ ] US-SITE-07 · Find help for every part of hlabs
-- [ ] US-SITE-08 · Search the help
+- [x] US-SITE-08 · Search the help
 - [ ] US-SITE-09 · Fix a problem from an error message
-- [ ] US-SITE-10 · Open the right help page from the dashboard
-- [ ] US-SITE-12 · Visit a private, accessible site
-- [ ] US-SITE-13 · Read release notes
+- [x] US-SITE-10 · Open the right help page from the dashboard
+- [ ] US-SITE-12 · Visit a private, accessible site (built and tested with axe; Lighthouse in CI arrives with the deploy, part d)
+- [x] US-SITE-13 · Read release notes
 
 ## Phase 7 · v1.0 completeness
 

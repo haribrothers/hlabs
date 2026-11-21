@@ -7,7 +7,7 @@ description: Tag a release, what the release workflow builds and signs, and the 
 
 ## Make a release
 
-1. Write the release notes in `apps/site/src/content/releases/<version>.md`: a few bullets people will read in Settings › Updates. Commit them on `main`.
+1. Write the release notes in `apps/site/src/content/releases/<version>.md`: a `date`, an optional `title`, and the sections New, Improved, Fixed and Before you update (`apps/site/src/content/releases/README.md` has an example). People read them in Settings › Updates and at `/releases/` on the website. Commit them on `main`.
 2. Tag that commit and push the tag:
 
    ```sh
@@ -24,6 +24,8 @@ The tag is the version: every build gets it. A tag without release notes stops a
 | mac (arm64) | `macos-latest` | `hlabs-<v>-mac-arm64.dmg`, and with the update key `hlabs-<v>-mac-arm64.app.tar.gz` |
 | mac (x64), best-effort | `macos-15-intel` | the same for Intel |
 | linux (x86_64), linux (aarch64) | `ubuntu-22.04`, `ubuntu-22.04-arm` | `.deb`, `.rpm`, `.AppImage` and the server tarball `hlabs-<v>-linux-<arch>.tar.gz` |
+
+When the release is published, the website's next build offers it on `/download/` and serves its `install.sh` (`scripts/site-releases.ts`); the site only takes an `install.sh` that matches the release's `SHA256SUMS`.
 
 The last job signs every file (`<file>.sig`), adds `install.sh` with the key written in, writes `SHA256SUMS` (signed) and `latest.json`, and creates the release `v<version>`. A beta tag makes a prerelease. Every signed release also replaces `latest.json` on the rolling `beta` release, so the beta channel never lags stable.
 

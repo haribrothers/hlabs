@@ -1,5 +1,6 @@
-# Website and help (D-055, D-147): build the site and check the help can't fall behind the product (site:check).
-# axe, Lighthouse and the Cloudflare Pages deploy arrive with part (d) of phase 6's website step.
+# Website and help (D-055, D-147): build the site with the latest releases, check the help can't fall behind the
+# product (site:check), and run the website's stories against a build made from fixtures (site:e2e, with axe).
+# Lighthouse and the Cloudflare Pages deploy arrive with part (d) of phase 6's website step.
 name: site
 
 on:
@@ -16,6 +17,9 @@ on:
       - apps/cli/src/**
       - docs/features/**
       - scripts/site-check.ts
+      - scripts/site-releases*.ts
+      - scripts/install.sh
+      - packages/shared/src/store.ts
   push:
     branches: [main]
     paths: ['apps/site/**', 'store/**', 'packages/ui/**', 'packages/icons/**']
@@ -39,6 +43,18 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm site:build
+      - name: Build, with the latest releases from GitHub (D-147)
+        run: pnpm site:build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: The help covers the product (US-SITE-07, 09, 10)
         run: pnpm site:check
+      - run: pnpm --filter @hlabs/site exec playwright install --with-deps chromium
+      - name: The website's stories (US-SITE-01…05, 08, 12, 13), from fixtures
+        run: pnpm site:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: site-e2e
+          path: apps/site/test-results
+          retention-days: 7

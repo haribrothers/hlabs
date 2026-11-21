@@ -1,0 +1,78 @@
+---
+// US-SITE-12: what this site does with visits (nothing but the host's access logs), and what hlabs itself sends.
+import Page from '../layouts/Page.astro';
+---
+
+<Page title="Privacy" description="This site has no analytics, no cookies and nothing from other sites. Here's what is kept.">
+  <section class="page-head">
+    <div class="backdrop" aria-hidden="true"><div class="gridbg"></div></div>
+    <div class="wrap prose" style="position: relative">
+      <p class="eyebrow">Privacy</p>
+      <h1 class="h1">Privacy</h1>
+      <p class="lede" style="margin-top: 16px">For everyone who visits hlabs.h4loom.com.</p>
+
+      <h2>This website</h2>
+      <ul>
+        <li>It sets no cookies and has no analytics, trackers or ads.</li>
+        <li>
+          It loads nothing from other sites: its fonts and pictures come from here. Links to other sites, like GitHub,
+          take you there only when you follow them.
+        </li>
+        <li>
+          Search in the help runs in your browser. What you type isn't sent anywhere.
+        </li>
+        <li>
+          The light or dark theme you pick is kept in your browser, not sent to us.
+        </li>
+        <li>
+          The site is hosted on Cloudflare Pages. Like any web host, it keeps standard access logs (your IP address, the
+          page, the time and your browser) for up to 30 days, to keep the site running and safe. We don't use them for
+          anything else.
+        </li>
+      </ul>
+
+      <h2>hlabs itself</h2>
+      <ul>
+        <li>There's no account with us: the admin account you make lives on your own computer.</li>
+        <li>
+          hlabs sends no usage data. It goes online to check for updates, to refresh the App Store's list and download
+          the apps you install, and for the services you turn on yourself, such as remote access or cloud backups.
+          Settings › Advanced › What hlabs connects to lists each one.
+        </li>
+        <li>
+          Downloads come from GitHub Releases and the apps' own image registries, which keep their own logs.
+        </li>
+      </ul>
+
+      <h2>Questions</h2>
+      <p>
+        Ask on <a href="https://github.com/haribrothers/hlabs/issues">GitHub</a>. hlabs is open source, so you can also
+        read exactly what it does.
+      </p>
+    </div>
+  </section>
+  <div style="height: 64px"></div>
+</Page>
+
+<style>
+  .prose {
+    max-width: 760px;
+  }
+  .prose h2 {
+    font-size: 24px;
+    letter-spacing: -0.02em;
+    margin: 44px 0 12px;
+  }
+  .prose li,
+  .prose p {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--site-muted);
+  }
+  .prose ul {
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+</style>

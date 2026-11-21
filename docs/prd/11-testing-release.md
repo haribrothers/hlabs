@@ -23,7 +23,7 @@ Rules:
 | `ci.yml` | PR, push to main | install (pnpm cache) → lint → typecheck → unit/integration → build → e2e (Linux, Docker) → axe; `store:lint`; boundaries check |
 | `tray.yml` | PR touching `apps/tray` | `cargo clippy`, `cargo test`, `tauri build` (macOS arm64 and Linux x64, unsigned) |
 | `store.yml` | nightly, PR touching `store/` | store matrix; sign `index.json` on main |
-| `site.yml` | PR or push touching `apps/site`, `store/`, `packages/ui` or `packages/icons`; after `release.yml`; after a shots PR merges | `site:build` → `site:check` (help slugs, error pages, feature coverage, links) → axe on page templates → deploy (preview on PRs, production on `main`) |
+| `site.yml` | PR or push touching `apps/site`, `store/`, `packages/ui` or `packages/icons`; after `release.yml`; after a shots PR merges | `site:build` (with the latest releases from GitHub) → `site:check` (help slugs, error pages, feature coverage, links, release-note sections, store group names) → `site:e2e` (the website's stories against a build from fixtures, with axe on every page template in both themes) → deploy (preview on PRs, production on `main`) |
 | `release.yml` | tag `v*`; by hand for a rehearsal | check the release notes exist → build all targets → sign → notarize → one signed `SHA256SUMS` → GitHub release with the update manifest (`stable` or `beta` by tag; draft without the update key) → trigger `site.yml` (D-146) |
 
 ## Release artifacts
