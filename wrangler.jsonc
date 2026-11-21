@@ -7,12 +7,12 @@
   "assets": {
     "directory": "./apps/site/dist",
     // A page that doesn't exist gets the site's 404 page.
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
   },
   "workers_dev": true,
   "preview_urls": true,
   // `wrangler preview` (Workers Builds' default for a branch) needs this block, even empty.
   "previews": {},
   // No telemetry.
-  "send_metrics": false
+  "send_metrics": false,
 }

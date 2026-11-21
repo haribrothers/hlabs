@@ -47,7 +47,7 @@ For a Worker that already exists: **Workers & Pages** › `hlabs-site` › **Set
 | Build variables and secrets | Secret | `GITHUB_TOKEN` = the token from step 1 (choose **Secret**, not Text) |
 | Branch control | Production branch | `main` |
 | Branch control | Enable Preview Builds | On |
-| Build watch paths | Include paths | `apps/site/*`, `store/*`, `packages/ui/*`, `packages/icons/*`, `packages/shared/*`, `packages/app-manifest/*`, `scripts/site-releases*`, `package.json`, `pnpm-lock.yaml`, `turbo.json`, `wrangler.jsonc` |
+| Build watch paths | Include paths | `apps/site/*`, `store/*`, `packages/ui/*`, `packages/icons/*`, `packages/shared/*`, `packages/app-manifest/*`, `scripts/site-releases*`, `scripts/site-headers.ts`, `package.json`, `pnpm-lock.yaml`, `turbo.json`, `wrangler.jsonc` |
 | Build watch paths | Exclude paths | none |
 
 - **Node:** Astro 7 needs Node 22.23.4 or newer. `NODE_VERSION` may be newer, but not 23 or later.
@@ -64,7 +64,7 @@ A new Worker builds on any change (Include paths `*`). Until the paths are set, 
 2. Replace `*` with the include paths from the table, one per field. A trailing `*` matches everything under that folder.
 3. The **Production** and **Previews Base** tabs at the top of Builds each have their own paths: set and save both.
 
-The paths outside `apps/site` are what the site is built from: the store's apps, the packages that draw tiles, icons and the catalogue, and the script that reads releases. If the site starts reading another file, add it here, or a change to it won't publish. Cloudflare builds regardless of the paths when a push has no file changes, 3,000 files or more, or 20 commits or more.
+The paths outside `apps/site` are what the site is built from: the store's apps, the packages that draw tiles, icons and the catalogue, and the scripts that read releases and add the security policy. If the site starts reading another file, add it here, or a change to it won't publish. Cloudflare builds regardless of the paths when a push has no file changes, 3,000 files or more, or 20 commits or more.
 
 ### 4. The deploy hook for releases
 
