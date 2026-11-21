@@ -68,8 +68,9 @@ These were added while writing user stories and are **part of the API contract**
 - `settings.notifications.update` for members accepts only their own `notifications:<userId>` switches (D-043).
 - `tray.startEngine` (trayProcedure mutation) → `{ jobId }`: the same `engine_start` job as `settings.engine.start` (a second call gets the running one), audited as `engine.start` with `detail_json.via = "tray"`.
 - `tray.diagnostics` (trayProcedure query) → `{ report }`: plain text with hlabs's and the OS's versions, the engine, health and the last 200 lines of the newest daemon log, with Bearer values, tokens in addresses, password- and secret-like JSON values and session cookies replaced by `[redacted]`; no container logs.
-- `tray.uninstallInfo` (trayProcedure query): `appCount`, `dataBytes`, `storageRoot`, `colimaManaged`.
-- `tray.uninstall` (trayProcedure mutation): `{ keepData, removeColima }` → `{ jobId }`.
+- `tray.uninstallInfo` (trayProcedure query): `appCount`, `dataBytes` (bytes \| null when counting took over 10 s), `storageRoot`, `colimaManaged` (D-143).
+- `tray.uninstall` (trayProcedure mutation): `{ keepData, removeColima, via? }` (`via`: `tray` default, or `cli` for `hlabs uninstall`) → `{ jobId }`: the `hlabs_uninstall` job (exclusive; `JOB_EXCLUSIVE_RUNNING` while another runs), whose progress messages are `stoppingApps` and `removingColima` (D-143, D-144).
+- `tray.job` (trayProcedure query): `{ jobId }` → the job (`jobSchema`), so the tray and `hlabs` can follow `hlabs_uninstall`; `NOT_FOUND` for another id.
 - `events.stream` accepts the tray token (tray-scoped events only).
 - Data: new `settings` key `paused` (`{ at, appIds }`).
 
