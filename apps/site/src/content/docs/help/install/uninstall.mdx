@@ -4,6 +4,9 @@ description: Remove hlabs from a Mac or a Linux server, keeping your data or del
 features: [F-INST-08]
 ---
 
+import trayUninstall from '../../../../assets/screens/TrayUninstall.webp';
+
+
 For admins: the person who installed hlabs.
 
 Uninstalling stops every app and removes hlabs. You choose whether your data stays, so you can reinstall later and find everything where it was. Backups on your NAS or in cloud storage are never touched, and neither are files on a network drive or another disk.
@@ -11,6 +14,8 @@ Uninstalling stops every app and removes hlabs. You choose whether your data sta
 ## On a Mac
 
 Click the hlabs icon in the menu bar and choose **Uninstall hlabs…**. Dragging hlabs to the Trash on its own would leave your apps running in the background, so use this instead.
+
+<img src={trayUninstall.src} alt="The Uninstall hlabs window: Keep my data or Delete everything, Also remove Colima, and Uninstall." width="900" loading="lazy" />
 
 1. Choose what to keep:
    - **Keep my data** (chosen at first): your apps' data and Home folders stay in `~/hlabs`.
@@ -24,7 +29,7 @@ If a step doesn't finish, it says what to do. **Try again** carries on from that
 
 ## On a Linux desktop
 
-Removing the package uninstalls hlabs: see [Install on a Linux desktop](../install-linux-desktop/#remove-hlabs).
+Removing the package uninstalls hlabs: see [Install on a Linux desktop](../linux-desktop/#remove-hlabs).
 
 ## On a Linux server
 

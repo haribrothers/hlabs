@@ -30,6 +30,7 @@
     "build:linux": "node scripts/build-linux.ts",
     "dev:site": "pnpm --filter @hlabs/site dev",
     "site:build": "pnpm --filter @hlabs/site site:build",
+    "site:check": "node scripts/site-check.ts",
     "test:e2e": "pnpm --filter @hlabs/web test:e2e"
   },
   "devDependencies": {

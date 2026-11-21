@@ -4,6 +4,8 @@ description: Keep encrypted copies of your apps and files somewhere else, and br
 features: [F-BKP-01, F-BKP-02, F-BKP-03, F-BKP-06]
 ---
 
+For admins.
+
 hlabs copies your apps' data and your Home folders to a place you choose, every night at 03:00. Every copy is encrypted before it leaves this computer. Backups is for admins: choose **Backups** in the Dock, or **Settings › Backups**.
 
 ## Add a place for backups

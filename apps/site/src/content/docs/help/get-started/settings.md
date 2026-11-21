@@ -1,7 +1,7 @@
 ---
 title: Settings
 description: Where to find Settings, and which sections you'll see.
-features: [F-ACCT-01, F-ACCT-02, F-ACCT-03, F-ACCT-04]
+features: [F-ACCT-01, F-ACCT-02, F-ACCT-03, F-ACCT-04, F-ACCT-09]
 ---
 
 For everyone who uses hlabs.

@@ -65,3 +65,8 @@ pnpm test:e2e    # the dashboard in a real browser (Playwright, with axe)
 The end-to-end tests run their own hlabs on other ports (7574 for hlabs, 5273 for the dashboard) with their own data, so they never touch your development hlabs. The installable dashboard's tests (the `pwa` project) also build the dashboard into `apps/web/dist-pwa` and serve it on 5373, because its web manifest and service worker only exist in builds. The first run needs the browsers: `pnpm --filter @hlabs/web exec playwright install chromium`.
 
 For the menu-bar app's Rust code: `cd apps/tray/src-tauri && cargo test`.
+
+## The website and help
+
+`pnpm dev:site` serves the site with its help at `http://localhost:4321`. After changing help, run `pnpm site:build && pnpm site:check`. The check fails when a shipped P1 or P2 feature has no help page listing it in its `features` front matter, when a `helpUrl()` slug has no page, when a page doesn't start by saying who it's for, or when a link inside the site is broken. The error pages (`/help/errors/<code>/`) use the dashboard's own words: after changing `apps/web/src/copy/errors.ts`, run `pnpm --filter @hlabs/web errors:export` and commit `apps/site/src/data/errors.json`, or the check fails.
+

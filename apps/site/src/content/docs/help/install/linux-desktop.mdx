@@ -4,6 +4,10 @@ description: Install hlabs on a Linux computer with a desktop, use its menu in t
 features: [F-INST-10]
 ---
 
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import linuxTray from '../../../../assets/screens/LinuxTray.webp';
+
+
 For admins: the person who installs hlabs.
 
 ## What you need
@@ -14,17 +18,33 @@ For admins: the person who installs hlabs.
 
 ## Install
 
-Download the file for your computer from the hlabs website:
+Download the file for your computer from the [hlabs releases](https://github.com/haribrothers/hlabs/releases):
 
-- **Ubuntu, Debian and their relatives:** `hlabs-<version>-linux-x86_64.deb`. Open it, or run `sudo apt install ./hlabs-<version>-linux-x86_64.deb`.
-- **Fedora and its relatives:** `hlabs-<version>-linux-x86_64.rpm`. Run `sudo dnf install ./hlabs-<version>-linux-x86_64.rpm`.
-- **Anything else:** `hlabs-<version>-linux-x86_64.AppImage`. Make it executable (`chmod +x`) and open it. The AppImage needs no administrator, so it uses ports 8443 and 8080 instead of 443 and 80, and it can't connect network drives.
+<Tabs syncKey="distro">
+  <TabItem label="Ubuntu and Debian">
+
+    Download `hlabs-<version>-linux-x86_64.deb`, then open it, or run `sudo apt install ./hlabs-<version>-linux-x86_64.deb`.
+
+  </TabItem>
+  <TabItem label="Fedora">
+
+    Download `hlabs-<version>-linux-x86_64.rpm`, then run `sudo dnf install ./hlabs-<version>-linux-x86_64.rpm`.
+
+  </TabItem>
+  <TabItem label="AppImage">
+
+    Download `hlabs-<version>-linux-x86_64.AppImage`, make it executable (`chmod +x`) and open it. The AppImage needs no administrator, so it uses ports 8443 and 8080 instead of 443 and 80, and it can't connect network drives.
+
+  </TabItem>
+</Tabs>
 
 (On an arm64 computer the files say `aarch64`.)
 
-Then open **hlabs** from your applications. The first time, it sets up its background service, adds itself to the apps that open when you log in, and opens [setup](../set-up/) in your browser.
+Then open **hlabs** from your applications. The first time, it sets up its background service, adds itself to the apps that open when you log in, and opens [setup](../../get-started/set-up/) in your browser.
 
 ## The menu
+
+<img src={linuxTray.src} alt="The hlabs menu in GNOME's top bar and in KDE Plasma's system tray: hlabs · Running · 11 apps, Open Dashboard, Copy dashboard address, Back up now, Start at login, Pause all apps, Check for updates…, Reset a password…, Quit hlabs." width="900" loading="lazy" />
 
 Click the hlabs icon in the top bar. The first line says how hlabs is doing, such as **hlabs · Running · 11 apps**; it changes within a few seconds when something does. Then:
 
@@ -48,3 +68,7 @@ sudo apt remove hlabs        # or: sudo dnf remove hlabs, or delete the AppImage
 ```
 
 Your data stays in `~/hlabs` and `~/.local/share/hlabs`. Delete those folders too if you don't want it any more.
+
+## Install your first app
+
+Open the **App Store** from the Dock, choose an app and **Install**. See [The App Store](../../apps/app-store/).

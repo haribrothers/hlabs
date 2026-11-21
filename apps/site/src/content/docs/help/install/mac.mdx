@@ -1,0 +1,76 @@
+---
+title: Install on a Mac
+description: Install hlabs from its disk image, let it set up a container engine, and finish setup in your browser.
+features: [F-INST-01, F-INST-02, F-ONB-02]
+---
+
+import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+import macInstall from '../../../../assets/screens/MacInstall.webp';
+import trayStates from '../../../../assets/screens/TrayStates.webp';
+import onbSystem from '../../../../assets/screens/OnbSystem.webp';
+import onbWelcome from '../../../../assets/screens/OnbWelcome.webp';
+
+For admins: the person who installs hlabs.
+
+## What you need
+
+A Mac with Apple silicon (an Intel build is offered when there is one) running macOS 14 or later, and 8 GB of memory or more. On an older macOS, hlabs says **hlabs needs macOS 14 or later** and quits: update macOS in System Settings › General › Software Update, then open hlabs again.
+
+## Install
+
+<Steps>
+
+1. Download `hlabs-<version>-mac-arm64.dmg` from the [hlabs releases](https://github.com/haribrothers/hlabs/releases).
+
+2. Open it from your Downloads. In the window that opens, drag **hlabs** onto **Applications**.
+
+   <img src={macInstall.src} alt="The hlabs disk image window: the hlabs icon, an arrow, the Applications folder and 'Drag hlabs into Applications'." width="900" loading="lazy" />
+
+3. Open hlabs from your Applications folder. A small window under the hlabs icon in the menu bar says **Setting up hlabs** while it starts its background service. hlabs also adds itself to the apps that open when you log in.
+
+   <img src={trayStates.src} alt="The hlabs menu in its different states, including 'Setting up hlabs'." width="900" loading="lazy" />
+
+4. Setup opens in your browser and checks this computer, including the container engine that runs your apps:
+
+   <Tabs syncKey="engine">
+     <TabItem label="Colima">
+
+       With no engine on this Mac, hlabs installs its own Colima for you during setup. It lives in hlabs's folder and is only used by hlabs.
+
+     </TabItem>
+     <TabItem label="OrbStack">
+
+       hlabs uses OrbStack if it's installed and running. Keep OrbStack open at login so your apps start with the Mac.
+
+     </TabItem>
+     <TabItem label="Docker Desktop">
+
+       hlabs uses Docker Desktop if it's installed and running. In Docker Desktop's settings, turn on **Start Docker Desktop when you sign in**.
+
+     </TabItem>
+   </Tabs>
+
+   <img src={onbSystem.src} alt="Setup's system check: processor, macOS, the container engine, free space and web ports." width="900" loading="lazy" />
+
+5. Follow the rest of setup: your admin account, two-factor login, where your data lives and a few apps to start with. See [Set up hlabs](../../get-started/set-up/).
+
+   <img src={onbWelcome.src} alt="Setup's welcome screen with Get started." width="900" loading="lazy" />
+
+</Steps>
+
+You can eject the disk image and delete the `.dmg` afterwards.
+
+## If you open hlabs from the disk image or Downloads
+
+hlabs runs from your Applications folder, so its background service keeps working after you eject the disk image or tidy up Downloads. Opened from anywhere else, it asks **Move hlabs to Applications?** before it sets anything up:
+
+- **Move to Applications** copies hlabs there and opens it from there. An older copy already in Applications, and the copy you opened (unless it's on the disk image), go to the Trash.
+- **Quit** closes hlabs without setting anything up.
+
+If hlabs can't copy itself, for example because your Mac account can't add apps to Applications, it says **Couldn't move hlabs. Drag it into Applications, then open it again.** hlabs in the Applications folder inside your home folder (`~/Applications`) works too.
+
+hlabs runs once at a time: opening it again opens the menu under the hlabs icon in the menu bar.
+
+## Install your first app
+
+Open the **App Store** from the Dock, choose an app and **Install**. See [The App Store](../../apps/app-store/).

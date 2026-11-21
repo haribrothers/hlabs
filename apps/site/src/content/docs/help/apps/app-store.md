@@ -1,7 +1,7 @@
 ---
 title: The App Store
 description: Find apps for your hlabs, see what each one does, and install it.
-features: [F-STORE-01, F-STORE-04, F-STORE-05, F-STORE-06, F-STORE-07]
+features: [F-STORE-01, F-STORE-04, F-STORE-05, F-STORE-06, F-STORE-07, F-FILE-13]
 ---
 
 For admins, and for members when an admin has turned on **Members can install apps**.

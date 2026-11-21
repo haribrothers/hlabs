@@ -1,7 +1,7 @@
 ---
 title: Your Home screen
 description: What Home shows when you open hlabs, and how to get around.
-features: [F-HOME-01, F-HOME-02]
+features: [F-HOME-01, F-HOME-02, F-HOME-03, F-HOME-04, F-HOME-05, F-STATE-03]
 ---
 
 For everyone who uses hlabs.

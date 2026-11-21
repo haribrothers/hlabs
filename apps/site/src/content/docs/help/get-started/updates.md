@@ -1,7 +1,7 @@
 ---
 title: Update hlabs
 description: See which version of hlabs you have, and check for a newer one.
-features: [F-SYS-08]
+features: [F-SYS-08, F-STATE-01]
 ---
 
 For admins.
