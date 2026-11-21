@@ -14,7 +14,8 @@ import { categoryLabels } from '../apps/web/src/copy/store.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const site = join(root, 'apps/site');
-const dist = join(site, 'dist');
+// HLABS_SITE_OUT_DIR, as for the build, checks another build (the site tests' dist-e2e).
+const dist = resolve(site, process.env.HLABS_SITE_OUT_DIR ?? 'dist');
 const docs = join(site, 'src/content/docs');
 /** The last phase whose features must have help (the MVP, D-139). */
 const HELP_UP_TO_PHASE = 6;

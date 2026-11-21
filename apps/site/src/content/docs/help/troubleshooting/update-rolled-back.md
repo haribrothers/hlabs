@@ -8,14 +8,16 @@ For admins.
 
 hlabs never leaves you with a half-installed update. If a new version doesn't start, it puts back the one you had and starts it again.
 
-## An update of hlabs
+## What to try, in order
+
+### An update of hlabs
 
 The dashboard says **The update didn't install**, and the menu bar says **The update couldn't be installed**. hlabs keeps the version you had; your apps restart and nothing else changes.
 
 1. Wait a while and choose **Check for updates…** again: a fixed version is often out soon.
 2. If it happens again, collect diagnostics (below) before trying a third time.
 
-## An update of an app
+### An update of an app
 
 The app's page in the App Store says **<App>'s update didn't start, so hlabs rolled it back**, and admins get a notification.
 
@@ -31,4 +33,4 @@ The app's page in the App Store says **<App>'s update didn't start, so hlabs rol
 
 ## Still stuck?
 
-Copy the diagnostics (below), then [open an issue on GitHub](https://github.com/haribrothers/hlabs/issues/new) and paste them in. They contain no passwords or file names.
+Copy the diagnostics (above), then [open an issue on GitHub](https://github.com/haribrothers/hlabs/issues/new?template=bug_report.yml) and paste them in. They contain no passwords or file names.

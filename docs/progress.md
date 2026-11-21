@@ -271,10 +271,10 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-SITE-03 · Browse the app catalogue
 - [x] US-SITE-04 · Read an app's page
 - [ ] US-SITE-05 · Install on Linux with the command from the site (built and tested; checked on hlabs.h4loom.com once Cloudflare is set up)
-- [ ] US-SITE-06 · Follow a step-by-step install guide
-- [ ] US-SITE-07 · Find help for every part of hlabs
+- [x] US-SITE-06 · Follow a step-by-step install guide
+- [x] US-SITE-07 · Find help for every part of hlabs
 - [x] US-SITE-08 · Search the help
-- [ ] US-SITE-09 · Fix a problem from an error message
+- [x] US-SITE-09 · Fix a problem from an error message
 - [x] US-SITE-10 · Open the right help page from the dashboard
 - [x] US-SITE-12 · Visit a private, accessible site
 - [x] US-SITE-13 · Read release notes

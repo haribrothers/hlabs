@@ -4,8 +4,9 @@ description: Install hlabs on a Linux computer with a desktop, use its menu in t
 features: [F-INST-10]
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 import linuxTray from '../../../../assets/screens/LinuxTray.webp';
+import onbWelcome from '../../../../assets/screens/OnbWelcome.webp';
 
 
 For admins: the person who installs hlabs.
@@ -18,33 +19,41 @@ For admins: the person who installs hlabs.
 
 ## Install
 
-Download the file for your computer from the [download page](/download/), under **Linux desktop**:
+<Steps>
 
-<Tabs syncKey="distro">
-  <TabItem label="Ubuntu and Debian">
+1. Download the file for your computer from the [download page](/download/), under **Linux desktop**, and install it:
 
-    Download `hlabs-<version>-linux-x86_64.deb`, then open it, or run `sudo apt install ./hlabs-<version>-linux-x86_64.deb`.
+   <Tabs syncKey="distro">
+     <TabItem label="Ubuntu and Debian">
 
-  </TabItem>
-  <TabItem label="Fedora">
+       Download `hlabs-<version>-linux-x86_64.deb`, then open it, or run `sudo apt install ./hlabs-<version>-linux-x86_64.deb`.
 
-    Download `hlabs-<version>-linux-x86_64.rpm`, then run `sudo dnf install ./hlabs-<version>-linux-x86_64.rpm`.
+     </TabItem>
+     <TabItem label="Fedora">
 
-  </TabItem>
-  <TabItem label="AppImage">
+       Download `hlabs-<version>-linux-x86_64.rpm`, then run `sudo dnf install ./hlabs-<version>-linux-x86_64.rpm`.
 
-    Download `hlabs-<version>-linux-x86_64.AppImage`, make it executable (`chmod +x`) and open it. The AppImage needs no administrator, so it uses ports 8443 and 8080 instead of 443 and 80, and it can't connect network drives.
+     </TabItem>
+     <TabItem label="AppImage">
 
-  </TabItem>
-</Tabs>
+       Download `hlabs-<version>-linux-x86_64.AppImage`, make it executable (`chmod +x`) and open it. The AppImage needs no administrator, so it uses ports 8443 and 8080 instead of 443 and 80, and it can't connect network drives.
 
-(On an arm64 computer the files say `aarch64`.)
+     </TabItem>
+   </Tabs>
 
-Then open **hlabs** from your applications. The first time, it sets up its background service, adds itself to the apps that open when you log in, and opens [setup](../../get-started/set-up/) in your browser.
+   On an arm64 computer the files say `aarch64`.
+
+2. Open **hlabs** from your applications. The first time, it sets up its background service and adds itself to the apps that open when you log in. Its icon appears in the top bar, with [its menu](#the-menu):
+
+   <img src={linuxTray.src} alt="The hlabs menu in GNOME's top bar and in KDE Plasma's system tray: hlabs · Running · 11 apps, Open Dashboard, Copy dashboard address, Back up now, Start at login, Pause all apps, Check for updates…, Reset a password…, Quit hlabs." width="900" loading="lazy" />
+
+3. [Setup](../../get-started/set-up/) opens in your browser: your admin account, two-factor login, where your data lives and a few apps to start with.
+
+   <img src={onbWelcome.src} alt="Setup's welcome screen with Get started." width="900" loading="lazy" />
+
+</Steps>
 
 ## The menu
-
-<img src={linuxTray.src} alt="The hlabs menu in GNOME's top bar and in KDE Plasma's system tray: hlabs · Running · 11 apps, Open Dashboard, Copy dashboard address, Back up now, Start at login, Pause all apps, Check for updates…, Reset a password…, Quit hlabs." width="900" loading="lazy" />
 
 Click the hlabs icon in the top bar. The first line says how hlabs is doing, such as **hlabs · Running · 11 apps**; it changes within a few seconds when something does. Then:
 

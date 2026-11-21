@@ -24,4 +24,4 @@ See also [Can't reach hlabs](../../get-started/cant-reach/#another-program-is-us
 
 ## Still stuck?
 
-Copy the diagnostics (below), then [open an issue on GitHub](https://github.com/haribrothers/hlabs/issues/new) and paste them in. They contain no passwords or file names.
+Copy the diagnostics (above), then [open an issue on GitHub](https://github.com/haribrothers/hlabs/issues/new?template=bug_report.yml) and paste them in. They contain no passwords or file names.

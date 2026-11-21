@@ -20,6 +20,7 @@ on:
       - scripts/site-check.ts
       - scripts/site-releases*.ts
       - scripts/site-headers.ts
+      - .github/ISSUE_TEMPLATE/**
       - wrangler.jsonc
       - scripts/install.sh
       - packages/shared/src/store.ts
@@ -53,7 +54,7 @@ jobs:
       - name: The help covers the product (US-SITE-07, 09, 10)
         run: pnpm site:check
       - run: pnpm --filter @hlabs/site exec playwright install --with-deps chromium
-      - name: The website's stories (US-SITE-01…05, 08, 12, 13), from fixtures, with Lighthouse
+      - name: The website's stories (US-SITE-01…09, 12, 13), from fixtures, with Lighthouse
         run: pnpm site:e2e
       - uses: actions/upload-artifact@v4
         if: failure()

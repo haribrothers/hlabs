@@ -10,11 +10,12 @@ If hlabs isn't answering, you see **Can't reach hlabs** instead of a browser err
 
 When hlabs knows why it isn't ready, the page says so: for example that it's starting (this usually takes less than a minute), or that it can't find its storage folder because a drive isn't connected.
 
-While you wait, check that:
+## What to try, in order
 
-1. The hlabs icon is in the menu bar (or tray) on the computer running hlabs.
-2. That computer is awake and on the same network as you, or on Tailscale.
-3. On a Linux server, hlabs is running: run `systemctl status hlabsd`.
+1. Check that the computer running hlabs is awake and on the same network as you, or on Tailscale.
+2. Check that the hlabs icon is in its menu bar (or tray). If it isn't, open hlabs from Applications (or your applications) again.
+3. On a Mac, if the menu says **Can't reach hlabs**, choose **Restart hlabs** (see [below](#in-the-menu-bar-on-the-mac-running-hlabs)).
+4. On a Linux server, run `systemctl status hlabsd`. If it isn't running, start it with `sudo systemctl restart hlabsd`.
 
 ## "You're offline" and "Reconnecting…"
 
@@ -50,3 +51,12 @@ Until then, **Open Dashboard** in the menu-bar app still opens the dashboard on 
 
 If it's Tailscale Serve, check `tailscale serve status` for an entry on port 443 that you made yourself, and turn it off with `tailscale serve --https=443 off` if you don't need it. hlabs never removes Serve entries it didn't make.
 
+## Collect diagnostics
+
+- **Mac or Linux desktop:** click the hlabs icon in the menu bar and choose **Copy diagnostics**.
+- **Linux server:** run `sudo hlabs status` and `sudo hlabs logs`.
+- **In the dashboard:** Settings › Advanced has the logs.
+
+## Still stuck?
+
+Copy the diagnostics (above), then [open an issue on GitHub](https://github.com/haribrothers/hlabs/issues/new?template=bug_report.yml) and paste them in. They contain no passwords or file names.
