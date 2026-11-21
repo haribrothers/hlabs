@@ -8,6 +8,9 @@
 //
 //   pnpm build:tray --dmg                                    also the disk image: dist/hlabs-<v>-mac-<arch>.dmg (D-142)
 //   pnpm build:tray (on Linux)                               dist/hlabs-<v>-linux-<arch>.{deb,rpm,AppImage} (D-145)
+//   pnpm build:tray --release                                a release build (release.yml, D-146): https updates only;
+//                                                            with TAURI_SIGNING_PRIVATE_KEY also the update archives,
+//                                                            dist/hlabs-<v>-mac-<arch>.app.tar.gz on a Mac
 //
 // Updates are signed with the development key (~/.tauri/hlabs-dev.key, or TAURI_SIGNING_PRIVATE_KEY). Serve
 // dist/updates (e.g. `python3 -m http.server 8090 -d dist/updates`) and start the app with
@@ -41,6 +44,8 @@ const version =
   option('--version') ??
   (JSON.parse(readFileSync(join(root, 'apps/daemon/package.json'), 'utf8')) as { version: string }).version;
 const update = flag('--update');
+/** A release (D-146): never plain-http updates; update archives when the release key is there. */
+const release = flag('--release');
 /** On Linux: the .deb, .rpm and AppImage (D-145) instead of hlabs.app. */
 const linux = process.platform === 'linux';
 const devKey = join(homedir(), '.tauri', 'hlabs-dev.key');
@@ -50,6 +55,10 @@ const env: NodeJS.ProcessEnv = {
   // The AppImage tools are AppImages themselves; this runs them where FUSE isn't (containers, CI).
   ...(process.platform === 'linux' ? { APPIMAGE_EXTRACT_AND_RUN: '1' } : {}),
 };
+// An empty secret in CI is no key.
+if (!env.TAURI_SIGNING_PRIVATE_KEY) delete env.TAURI_SIGNING_PRIVATE_KEY;
+const updaterArtifacts = update || (release && Boolean(env.TAURI_SIGNING_PRIVATE_KEY));
+if (release) env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD ??= '';
 if (update) {
   env.TAURI_SIGNING_PRIVATE_KEY ??= existsSync(devKey) ? readFileSync(devKey, 'utf8') : undefined;
   env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD ??= '';
@@ -74,12 +83,12 @@ run(
     '--config',
     'src-tauri/tauri.bundle.json',
     '--config',
-    // These builds check a local server over http (the release pipeline, phase 6, builds without this); what they
-    // download must still be signed with the hlabs key.
+    // Builds from here may check a local server over http; a release (D-146) never does. What either downloads must
+    // be signed with the hlabs key.
     JSON.stringify({
       version,
-      bundle: { createUpdaterArtifacts: update },
-      plugins: { updater: { dangerousInsecureTransportProtocol: true } },
+      bundle: { createUpdaterArtifacts: updaterArtifacts },
+      ...(release ? {} : { plugins: { updater: { dangerousInsecureTransportProtocol: true } } }),
     }),
     '--bundles',
     linux ? 'deb,rpm,appimage' : flag('--dmg') ? 'app,dmg' : 'app',
@@ -116,6 +125,12 @@ if (flag('--dmg')) {
   mkdirSync(join(root, 'dist'), { recursive: true });
   copyFileSync(join(dmgDir, built), dmg);
   say(`Disk image: ${dmg}`);
+}
+if (release && updaterArtifacts) {
+  // The update the Tauri updater downloads (release.yml signs it again with the others).
+  const archive = join(root, 'dist', `hlabs-${version}-mac-${process.arch === 'arm64' ? 'arm64' : 'x64'}.app.tar.gz`);
+  copyFileSync(join(tray, 'src-tauri/target/release/bundle/macos/hlabs.app.tar.gz'), archive);
+  say(`Update archive: ${archive}`);
 }
 if (!update) process.exit(0);
 

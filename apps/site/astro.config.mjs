@@ -83,6 +83,7 @@ export default defineConfig({
                 { label: 'The menu-bar app', link: '/developers/menu-bar-app/' },
                 { label: 'Building the app', link: '/developers/building/' },
                 { label: 'Updates and signing', link: '/developers/updates-and-signing/' },
+                { label: 'Releasing', link: '/developers/releasing/' },
                 { label: 'Troubleshooting', link: '/developers/troubleshooting/' },
               ],
             },

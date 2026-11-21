@@ -18,6 +18,7 @@ import { createHash } from 'node:crypto';
 import { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { installScript, signer } from './update-key.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const out = join(root, 'dist/linux');
@@ -58,8 +59,7 @@ const signEnv: NodeJS.ProcessEnv = {
   ...env,
   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD ?? '',
 };
-const tauri = (args: string[]) =>
-  execFileSync('pnpm', ['exec', 'tauri', 'signer', ...args], { cwd: join(root, 'apps/tray'), env: signEnv });
+const tauri = signer(signEnv);
 let publicKey: string;
 if (env.TAURI_SIGNING_PRIVATE_KEY) {
   const pub = env.HLABS_UPDATE_PUBLIC_KEY;
@@ -74,7 +74,7 @@ if (env.TAURI_SIGNING_PRIVATE_KEY) {
 
 writeFileSync(
   join(out, 'install.sh'),
-  readFileSync(join(root, 'scripts/install.sh'), 'utf8').replace('@HLABS_PUBLIC_KEY@', spkiBase64(publicKey)),
+  installScript(readFileSync(join(root, 'scripts/install.sh'), 'utf8'), publicKey),
   { mode: 0o755 },
 );
 // The installer goes in the tarball too: `hlabs uninstall` runs it (D-144).
@@ -92,11 +92,3 @@ writeFileSync(join(out, 'SHA256SUMS'), `${sha256}  ${tarball}\n`);
 
 for (const file of ['SHA256SUMS', tarball, 'install.sh']) tauri(['sign', join(out, file)]);
 say(`Done: ${out}`);
-
-/** The Ed25519 key of a minisign public key file (base64 of it, as `tauri signer` writes) as base64 SPKI DER. */
-function spkiBase64(minisignPublicKeyB64: string): string {
-  const line = Buffer.from(minisignPublicKeyB64.trim(), 'base64').toString('utf8').split('\n')[1]?.trim() ?? '';
-  const raw = Buffer.from(line, 'base64');
-  if (raw.length !== 42 || raw.subarray(0, 2).toString('latin1') !== 'Ed') throw new Error('Not a minisign public key');
-  return Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), raw.subarray(10)]).toString('base64');
-}

@@ -3,7 +3,12 @@
   "extends": ["//"],
   "tasks": {
     "test": {
-      "inputs": ["$TURBO_DEFAULT$", "../../scripts/install.sh", "../../scripts/linux/**"]
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../scripts/install.sh",
+        "../../scripts/linux/**",
+        "../../scripts/release-lib.ts"
+      ]
     }
   }
 }
