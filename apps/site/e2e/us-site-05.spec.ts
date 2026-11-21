@@ -24,12 +24,12 @@ test.describe('US-SITE-05', () => {
     expect(await (await request.get('/install.sh.sig')).text()).toBe(fixture('install.sh.sig'));
   });
 
-  test('is served as plain text for at most 5 minutes (Cloudflare Pages headers)', () => {
-    const headers = readFileSync(resolve(import.meta.dirname, '../public/_headers'), 'utf8');
+  test('is served as plain text for at most 5 minutes', async ({ request }) => {
     for (const path of ['/install.sh', '/install.sh.sha256', '/install.sh.sig']) {
-      const block = new RegExp(`^${path.replace(/\./g, '\\.')}\\n((?:  .+\\n?)+)`, 'm').exec(headers)?.[1] ?? '';
-      expect(block, path).toContain('Content-Type: text/plain');
-      const maxAge = Number(/max-age=(\d+)/.exec(block)?.[1]);
+      const headers = (await request.get(path)).headers();
+      expect(headers['content-type'], path).toBe('text/plain; charset=utf-8');
+      const maxAge = Number(/max-age=(\d+)/.exec(headers['cache-control'] ?? '')?.[1]);
+      expect(maxAge, path).toBeGreaterThan(0);
       expect(maxAge, path).toBeLessThanOrEqual(300);
     }
   });

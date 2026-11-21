@@ -47,12 +47,12 @@ Use the latest stable release of each item at scaffold time, within the major ve
 ## Website and help (`apps/site`, D-055)
 | Concern | Choice |
 | --- | --- |
-| Framework | Astro 5, static output |
+| Framework | Astro 7, static output (D-139) |
 | Docs | Starlight (sidebar, `<Steps>`, `<Tabs>`, dark/light, "Edit this page") |
 | Search | Pagefind (built into Starlight, runs in the browser) |
 | Styling | Tailwind CSS 4 with the `packages/ui` preset and tokens; Plus Jakarta Sans self-hosted |
 | Content | Markdown/MDX content collections; app catalogue loaded from `store/` through `@hlabs/app-manifest` |
-| Hosting | Cloudflare Pages (preview deploys per PR), deployed by `site.yml` |
+| Hosting | A Cloudflare Worker with static assets, built from GitHub by Workers Builds (preview addresses for branches), rebuilt by `release.yml` through a deploy hook (D-147) |
 | Analytics | None |
 
 ## Tray (`apps/tray`)

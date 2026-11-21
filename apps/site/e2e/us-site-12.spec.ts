@@ -1,5 +1,6 @@
 // US-SITE-12 · Visit a private, accessible site.
-import { expect, test } from '@playwright/test';
+import { chromium, expect, test } from '@playwright/test';
+import lighthouse from 'lighthouse';
 import { accessibleInBothThemes } from './helpers';
 
 const PAGES = ['/', '/download/', '/apps/', '/apps/immich/', '/releases/', '/privacy/', '/help/', '/help/install/mac/'];
@@ -76,4 +77,57 @@ test.describe('US-SITE-12', () => {
       await accessibleInBothThemes(page);
     });
   }
+
+  test('every page has the security headers, and nothing breaks its Content-Security-Policy', async ({ page }) => {
+    const refused: string[] = [];
+    page.on('console', (m) => {
+      if (/Content Security Policy|Refused to/i.test(m.text())) refused.push(`${page.url()}: ${m.text()}`);
+    });
+    page.on('pageerror', (e) => refused.push(`${page.url()}: ${e.message}`));
+    for (const path of PAGES) {
+      const response = await page.goto(path, { waitUntil: 'networkidle' });
+      const headers = response!.headers();
+      expect(headers['content-security-policy'], path).toContain("default-src 'self'");
+      expect(headers['content-security-policy'], path).toContain("frame-ancestors 'none'");
+      expect(headers['x-frame-options'], path).toBe('DENY');
+      expect(headers['x-content-type-options'], path).toBe('nosniff');
+      expect(headers['strict-transport-security'], path).toBe('max-age=31536000');
+    }
+    // Search too: Pagefind runs WebAssembly.
+    await page.goto('/help/');
+    await page.locator('html[data-search-keys]').waitFor({ state: 'attached' });
+    await page.keyboard.press('/');
+    await page.getByRole('dialog').getByRole('textbox').fill('backup');
+    await expect(page.locator('.pagefind-ui__result').first()).toBeVisible();
+    expect(refused).toEqual([]);
+  });
+
+  test('Lighthouse accessibility is 100 on the home page, the download page and a help page', async ({
+    baseURL,
+  }, info) => {
+    test.skip(info.project.name !== 'desktop', 'once is enough');
+    test.setTimeout(120_000);
+    const port = 9300 + info.workerIndex;
+    const browser = await chromium.launch({ args: [`--remote-debugging-port=${port}`] });
+    try {
+      for (const path of ['/', '/download/', '/help/install/mac/']) {
+        // Measured once the opening motion has finished (it takes about 1.7 s), as people read the page.
+        const result = await lighthouse(
+          new URL(path, baseURL).toString(),
+          { port, output: 'json', logLevel: 'error' },
+          {
+            extends: 'lighthouse:default',
+            settings: { onlyCategories: ['accessibility'], pauseAfterLoadMs: 2500, pauseAfterFcpMs: 2500 },
+          },
+        );
+        const category = result!.lhr.categories.accessibility!;
+        const failed = Object.values(result!.lhr.audits)
+          .filter((a) => a.score !== null && a.score < 1 && a.scoreDisplayMode === 'binary')
+          .map((a) => a.id);
+        expect({ path, score: category.score, failed }).toEqual({ path, score: 1, failed: [] });
+      }
+    } finally {
+      await browser.close();
+    }
+  });
 });

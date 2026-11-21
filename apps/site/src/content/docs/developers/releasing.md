@@ -25,7 +25,7 @@ The tag is the version: every build gets it. A tag without release notes stops a
 | mac (x64), best-effort | `macos-15-intel` | the same for Intel |
 | linux (x86_64), linux (aarch64) | `ubuntu-22.04`, `ubuntu-22.04-arm` | `.deb`, `.rpm`, `.AppImage` and the server tarball `hlabs-<v>-linux-<arch>.tar.gz` |
 
-When the release is published, the website's next build offers it on `/download/` and serves its `install.sh` (`scripts/site-releases.ts`); the site only takes an `install.sh` that matches the release's `SHA256SUMS`.
+When the release is published, `release.yml` starts the website's build through its deploy hook (the secret `CLOUDFLARE_SITE_DEPLOY_HOOK`, see [Publishing the website](../publishing-the-website/)), so `/download/` offers it and the site serves its `install.sh` within minutes; the site only takes an `install.sh` that matches the release's `SHA256SUMS`.
 
 The last job signs every file (`<file>.sig`), adds `install.sh` with the key written in, writes `SHA256SUMS` (signed) and `latest.json`, and creates the release `v<version>`. A beta tag makes a prerelease. Every signed release also replaces `latest.json` on the rolling `beta` release, so the beta channel never lags stable.
 
@@ -39,6 +39,7 @@ Without them the workflow still builds; it just signs less.
 | `HLABS_UPDATE_PUBLIC_KEY` | variable | Its public half, written into `install.sh`. |
 | `APPLE_CERTIFICATE` (base64 `.p12`), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY` | secrets | The Developer ID certificate the Mac builds are signed with. Needs the paid Apple Developer Program. |
 | `APPLE_ID`, `APPLE_PASSWORD` (an app-specific password), `APPLE_TEAM_ID` | secrets | Notarizing and stapling the Mac builds. |
+| `CLOUDFLARE_SITE_DEPLOY_HOOK` | secret | The website's deploy hook: rebuilds the site so `/download/` offers the release. Without it, the site shows the release at its next build. |
 
 ### The release key
 

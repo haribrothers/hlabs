@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "site:build": "astro build",
+    "site:build": "astro build && node ../../scripts/site-headers.ts",
     "preview": "astro preview",
     "test:e2e": "node e2e/build.ts && playwright test"
   },
@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
-    "@playwright/test": "^1.63.0"
+    "@playwright/test": "^1.63.0",
+    "lighthouse": "^13.6.0"
   }
 }

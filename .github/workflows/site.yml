@@ -1,6 +1,7 @@
 # Website and help (D-055, D-147): build the site with the latest releases, check the help can't fall behind the
-# product (site:check), and run the website's stories against a build made from fixtures (site:e2e, with axe).
-# Lighthouse and the Cloudflare Pages deploy arrive with part (d) of phase 6's website step.
+# product (site:check), and run the website's stories against a build made from fixtures (site:e2e: axe, the
+# Content-Security-Policy and Lighthouse). Publishing isn't here: Cloudflare's Workers Builds builds main and branch
+# previews from GitHub (apps/site/src/content/docs/developers/publishing-the-website.md).
 name: site
 
 on:
@@ -18,6 +19,8 @@ on:
       - docs/features/**
       - scripts/site-check.ts
       - scripts/site-releases*.ts
+      - scripts/site-headers.ts
+      - wrangler.jsonc
       - scripts/install.sh
       - packages/shared/src/store.ts
   push:
@@ -50,7 +53,7 @@ jobs:
       - name: The help covers the product (US-SITE-07, 09, 10)
         run: pnpm site:check
       - run: pnpm --filter @hlabs/site exec playwright install --with-deps chromium
-      - name: The website's stories (US-SITE-01…05, 08, 12, 13), from fixtures
+      - name: The website's stories (US-SITE-01…05, 08, 12, 13), from fixtures, with Lighthouse
         run: pnpm site:e2e
       - uses: actions/upload-artifact@v4
         if: failure()

@@ -6,7 +6,8 @@
 //   node scripts/site-releases.ts                        GitHub (GITHUB_TOKEN is used when set)
 //   HLABS_SITE_RELEASES_FIXTURE=<dir> node scripts/…     <dir>/releases.json (GitHub's shape) and <dir>/assets/<tag>/*
 //
-// Without the network the site still builds, saying there's no release yet; on CI that fails instead.
+// Without the network the site still builds, saying there's no release yet. On CI, and in Cloudflare's build
+// (HLABS_SITE_RELEASES_REQUIRED=1, D-147), that fails instead, so the live site keeps its download page.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -89,7 +90,7 @@ async function main() {
 
 main().catch((err: Error) => {
   process.stderr.write(`Couldn't read the releases: ${err.message}\n`);
-  if (process.env.CI || fixture) process.exit(1);
+  if (process.env.CI || process.env.HLABS_SITE_RELEASES_REQUIRED || fixture) process.exit(1);
   // Offline on a laptop: keep what's there, or say there's no release yet.
   if (!existsSync(out)) {
     clearInstall();

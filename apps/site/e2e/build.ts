@@ -29,4 +29,4 @@ const env = {
   HLABS_SITE_OUT_DIR: './dist-e2e',
 };
 execFileSync('node', [join(root, 'scripts/site-releases.ts')], { stdio: 'inherit', env });
-execFileSync('pnpm', ['exec', 'astro', 'build', '--silent'], { cwd: site, stdio: 'inherit', env });
+execFileSync('pnpm', ['run', 'site:build'], { cwd: site, stdio: 'inherit', env });

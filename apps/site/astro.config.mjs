@@ -128,6 +128,7 @@ export default defineConfig({
                 { label: 'Building the app', link: '/developers/building/' },
                 { label: 'Updates and signing', link: '/developers/updates-and-signing/' },
                 { label: 'Releasing', link: '/developers/releasing/' },
+                { label: 'Publishing the website', link: '/developers/publishing-the-website/' },
                 { label: 'Troubleshooting', link: '/developers/troubleshooting/' },
               ],
             },

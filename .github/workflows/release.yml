@@ -1,6 +1,7 @@
 # A release (D-146, 11 §CI): push a tag `v1.2.3` (stable) or `v1.2.3-beta.1` (beta) after committing its notes in
 # apps/site/src/content/releases/<version>.md. Every target is built, signed where the secrets allow (D-139), checked
-# into one signed SHA256SUMS and published as the GitHub release `v<version>` with the update manifest.
+# into one signed SHA256SUMS and published as the GitHub release `v<version>` with the update manifest. Then the
+# website rebuilds through its deploy hook, so /download/ offers it (D-147).
 #
 # A rehearsal builds everything and keeps it as workflow artifacts without publishing: run by hand with a version, or
 # on a pull request that changes how releases are made.
@@ -229,3 +230,14 @@ jobs:
             gh release create beta --prerelease --title "Beta channel" \
               --notes "The beta channel's update manifest. Releases are listed separately." --target "$GITHUB_SHA"
           gh release upload beta release/latest.json --clobber
+      - name: Rebuild the website, so /download/ offers it (D-147)
+        if: needs.prepare.outputs.rehearsal == 'false'
+        env:
+          DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_SITE_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "::notice::No CLOUDFLARE_SITE_DEPLOY_HOOK: the website shows this release at its next build"
+            exit 0
+          fi
+          curl -fsS --retry 3 -X POST "$DEPLOY_HOOK" >/dev/null
+          echo "Asked Cloudflare to rebuild the website"
