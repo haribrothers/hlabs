@@ -1,0 +1,120 @@
+<!doctype html>
+<!--
+  The disk image window's background (US-INST-03, D-142), from the MacInstall design: the wallpaper, the arrow, the
+  title and the line under it. Finder draws the two icons and their labels on top, at the positions in
+  tauri.conf.json (bundle.macOS.dmg). It draws labels black in light mode and white in dark mode, so each label sits on
+  a plate (#77718f) where both read at 4.5:1. `node apps/tray/dmg/render.mjs` renders it at 1x and 2x.
+  ?preview=light|dark adds pretend icons and labels to check the layout.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face {
+        font-family: 'Plus Jakarta Sans';
+        font-weight: 700;
+        src: url('FONT_700') format('woff2');
+      }
+      @font-face {
+        font-family: 'Plus Jakarta Sans';
+        font-weight: 500;
+        src: url('FONT_500') format('woff2');
+      }
+      :root {
+        /* docs/design/tokens.json: wall-base, wall-coral, wall-violet, wall-teal */
+        --wall-base: #1a1238;
+        --wall-coral: #f97b5c;
+        --wall-violet: #6d4aff;
+        --wall-teal: #0ea5a0;
+        --plate: #77718f;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 660px;
+        height: 400px;
+        overflow: hidden;
+      }
+      body {
+        position: relative;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background:
+          radial-gradient(circle at 12% 2%, color-mix(in srgb, var(--wall-coral) 75%, transparent) 0, transparent 38%),
+          radial-gradient(circle at 92% 12%, color-mix(in srgb, var(--wall-violet) 85%, transparent) 0, transparent 46%),
+          radial-gradient(ellipse 60% 45% at 52% 108%, color-mix(in srgb, var(--wall-teal) 80%, transparent) 0, transparent 100%),
+          var(--wall-base);
+      }
+      .arrow {
+        position: absolute;
+        left: 280px;
+        top: 160px;
+      }
+      .plate {
+        position: absolute;
+        top: 238px;
+        height: 22px;
+        border-radius: 11px;
+        background: var(--plate);
+        transform: translateX(-50%);
+      }
+      .title {
+        position: absolute;
+        top: 296px;
+        width: 100%;
+        text-align: center;
+        color: #fff;
+        font-size: 19px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+      }
+      .line {
+        position: absolute;
+        top: 326px;
+        width: 100%;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 13px;
+        font-weight: 500;
+      }
+      /* Preview only: what Finder draws. */
+      .icon {
+        position: absolute;
+        top: 106px;
+        width: 128px;
+        height: 128px;
+        transform: translateX(-50%);
+      }
+      .label {
+        position: absolute;
+        top: 241px;
+        transform: translateX(-50%);
+        font: 12px -apple-system, 'Helvetica Neue', sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="plate" style="left: 180px; width: 64px"></div>
+    <div class="plate" style="left: 480px; width: 100px"></div>
+    <svg class="arrow" width="100" height="20" viewBox="0 0 100 20" fill="none" stroke="rgba(255,255,255,0.85)"
+      stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 10h90M84 2l10 8-10 8" />
+    </svg>
+    <div class="title">Drag hlabs into Applications</div>
+    <div class="line">Then open it once. It lives in your menu bar and starts when you log in.</div>
+    <script>
+      const mode = new URLSearchParams(location.search).get('preview');
+      if (mode) {
+        const color = mode === 'dark' ? '#fff' : '#000';
+        for (const [x, src, text] of [
+          [180, 'PREVIEW_APP', 'hlabs'],
+          [480, 'PREVIEW_APPS', 'Applications'],
+        ]) {
+          document.body.insertAdjacentHTML(
+            'beforeend',
+            `<img class="icon" style="left:${x}px" src="${src}"><div class="label" style="left:${x}px;color:${color}">${text}</div>`,
+          );
+        }
+      }
+    </script>
+  </body>
+</html>
