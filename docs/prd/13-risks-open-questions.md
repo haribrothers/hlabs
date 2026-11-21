@@ -22,7 +22,7 @@ All answered on 27 Sep 2026:
 
 | ID | Question | Answer |
 | --- | --- | --- |
-| Q-01 | Apple Developer account and bundle id | Get an account before phase 6; bundle id `dev.hlabs.app` (D-050) |
+| Q-01 | Apple Developer account and bundle id | Get an account before phase 6; bundle id `dev.hlabs.app` (D-050). Not yet on 21 Nov 2026: phase 6 builds unsigned until the secrets exist (D-139) |
 | Q-02 | How Caddy reaches app containers on macOS | Loopback-published ports on every engine (D-049) |
 | Q-03 | Network shares | macOS File Sharing via `sharing` on Mac, Samba container on Linux, separate share password (D-051) |
 | Q-04 | Seed apps for the store | 14 apps (D-048) |
@@ -31,15 +31,15 @@ All answered on 27 Sep 2026:
 
 | ID | Question | Status |
 | --- | --- | --- |
-| Q-07 | Website domain (used for `SITE_URL`, the install command and help links). The bundle id `dev.hlabs.app` suggests `hlabs.dev`, which isn't live. Also: publish help at that domain, or bundle it with hlabs so links work offline and match the installed version? Until then, development opens the local site (D-128). | Open: needed before phase 6 |
-| Q-08 | Page designs for the website (home, download, app catalogue, help theme). | Open: design before phase 6; until then follow the design system and Starlight defaults |
+| Q-07 | Website domain (used for `SITE_URL`, the install command and help links). The bundle id `dev.hlabs.app` suggests `hlabs.dev`, which isn't live. Also: publish help at that domain, or bundle it with hlabs so links work offline and match the installed version? Until then, development opens the local site (D-128). | Answered 21 Nov 2026: `https://hlabs.h4loom.com`; help is published there, not bundled (D-139) |
+| Q-08 | Page designs for the website (home, download, app catalogue, help theme). | Open: designed on a "Phase 6 · Website" page of the canvas during phase 6 (D-139); until then follow the design system and Starlight defaults |
 
 New questions found during the build go here with the next free id (Q-09 onward).
 
 | ID | Question | Status |
 | --- | --- | --- |
 | Q-09 | D-036 hides controls whose phase hasn't shipped. Phase 0's Dock and tab bar show all areas as placeholder windows so the "working Dock" can be checked. From phase 1, should areas whose features haven't shipped (App Store until phase 2, Usage 4, Backups and Files 5) be hidden, leaving Home and Settings? | Answered 27 Sep 2026: hide them (D-056) |
-| Q-10 | D-055 names Astro 5; the current releases are Astro 7 and Starlight 0.42. Phase 0 pins Astro 5.18 and Starlight 0.37.7, the last Starlight that supports Astro 5. Move to Astro 7 before the site is built in phase 6? | Open: before phase 6 |
+| Q-10 | D-055 names Astro 5; the current releases are Astro 7 and Starlight 0.42. Phase 0 pins Astro 5.18 and Starlight 0.37.7, the last Starlight that supports Astro 5. Move to Astro 7 before the site is built in phase 6? | Answered 21 Nov 2026: yes, Astro 7 and Starlight 0.43 at the start of phase 6's website step (D-139) |
 | Q-11 | How does the 14-app install matrix run in CI: all apps on every PR, nightly only, or nightly plus a smoke set on PRs? | Answered 29 Sep 2026: nightly full matrix plus a two-app smoke set on every PR (D-071) |
 | Q-12 | How does Caddy get onto dev machines: a script that downloads the pinned binary, a system package, or a container? | Answered 29 Sep 2026: a script downloads the pinned binary (D-072) |
 | Q-13 | 02 §2.6 and US-APP-05 give each app a LAN fallback address `https://hlabs.local:<port>` (used when its mDNS name can't be published) on its 12000–12999 port. D-049 already publishes the app's web service on `127.0.0.1:<that port>`, and on Linux Caddy can't listen on `0.0.0.0:<port>` while Docker holds `127.0.0.1:<port>`. Options: (a) publish containers on a second loopback range (13000–13999) and keep 12000–12999 for the fallback and tailnet ports; (b) have Caddy listen on the LAN address itself (`<lan-ip>:<port>`), reloaded when the address changes; (c) drop the per-app fallback and show `https://<lan-ip>` addresses instead. | Answered (Hari, 30 Sep 2026): (a), a second loopback range. D-086. |
