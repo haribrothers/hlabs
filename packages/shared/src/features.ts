@@ -3,7 +3,7 @@
 // phase when its first story starts (D-092), so dev and e2e never preview controls nobody has built yet.
 export const SHIPPED_PHASE = 4;
 /** The phase being built: the dashboard's dev server (pnpm dev, e2e) previews it (D-092). */
-export const BUILDING_PHASE = 4;
+export const BUILDING_PHASE = 5;
 
 /** Set by the dashboard's Vite dev server only (HLABS_PREVIEW_PHASE, else BUILDING_PHASE); never in a build. */
 declare const __HLABS_PREVIEW_PHASE__: number | null | undefined;
@@ -34,6 +34,12 @@ export const FEATURE_PHASE = {
   liveUsage: 4,
   hlabsUpdates: 4,
   backups: 5,
+  /** "Another hlabs" as a backup destination: waits for the Backup receiver app (D-132, Q-18). */
+  backupToHlabs: 8,
+  /** "Details" on a failed backup and BackupRunDetail (F-BKP-05, US-BKP-15/16). */
+  backupRunDetail: 8,
+  /** "Change" beside the schedule and BackupSchedule (F-BKP-04, US-BKP-12…14). */
+  backupSchedule: 9,
   /** "Uninstall hlabs…" in the tray (US-INST-21, US-INST-22). */
   uninstall: 6,
   files: 5,
@@ -52,7 +58,19 @@ export const FEATURE_PHASE = {
   deployCustom: 8,
   moveAppData: 8,
   networkShares: 8,
-  trashScreen: 8,
+  trashScreen: 5,
+  /** External drives in Files' sidebar and their screen (F-FILE-06). */
+  externalDrives: 8,
+  /** Files' list view and multi-selection (F-FILE-08), its right-click menu (F-FILE-09), Move to (F-FILE-10) and
+   * Rename (F-FILE-11). */
+  filesListView: 5,
+  filesContextMenu: 5,
+  filesMove: 5,
+  /** Move to Trash with Undo, and delete for good on network drives (US-FILE-16). */
+  filesTrash: 5,
+  filesRename: 5,
+  /** "Share" (a link) in FilePreview (US-FILE-06). */
+  fileLinks: 9,
   aiAccess: 8,
   renameServer: 9,
   /** The certificate guide (F-SYS-03): "Get certificate" in Network & remote access. */

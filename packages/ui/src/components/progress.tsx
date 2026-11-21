@@ -12,9 +12,11 @@ export interface ProgressProps {
   'aria-label'?: string;
   /** Sizing where it sits in a row: the default minimum width (260px) suits a card, not a row's trailing slot. */
   className?: string;
+  /** 'success' for something finished (an upload that's done). Default the accent. */
+  tone?: 'accent' | 'success';
 }
 
-export function Progress({ value, label, detail, className, ...aria }: ProgressProps) {
+export function Progress({ value, label, detail, className, tone = 'accent', ...aria }: ProgressProps) {
   const v = Math.max(0, Math.min(100, Math.round(value || 0)));
   return (
     <div className={cn('hl-progress', className)}>
@@ -32,7 +34,10 @@ export function Progress({ value, label, detail, className, ...aria }: ProgressP
         aria-valuenow={v}
         aria-label={typeof label === 'string' ? label : aria['aria-label']}
       >
-        <div className="hl-progress-fill" style={{ width: `${v}%` }} />
+        <div
+          className={cn('hl-progress-fill', tone === 'success' && 'hl-progress-success')}
+          style={{ width: `${v}%` }}
+        />
       </div>
     </div>
   );

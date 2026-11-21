@@ -1,7 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { areaLabels } from '../copy/shell';
-import { AreaWindow } from '../shell/area-window';
+// The Dock's Backups tile (D-054) opens Backups in Settings, as the BackupsOverview screen draws it.
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/backups')({
-  component: () => <AreaWindow title={areaLabels.backups} />,
+  beforeLoad: () => {
+    throw redirect({ to: '/settings/$section', params: { section: 'backups' } });
+  },
 });

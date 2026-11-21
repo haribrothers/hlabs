@@ -72,6 +72,8 @@ export const HLABS_ERRORS = {
 
   // Storage, files and network
   STORAGE_NOT_WRITABLE: 'BAD_REQUEST',
+  /** A drive an app keeps folders on can't be disconnected (US-FILE-12): `detail.apps` names them. */
+  STORAGE_LOCATION_IN_USE: 'PRECONDITION_FAILED',
   NAS_UNREACHABLE: 'BAD_GATEWAY',
   NAS_AUTH_FAILED: 'BAD_REQUEST',
   NAS_READ_ONLY: 'BAD_REQUEST',
@@ -83,6 +85,14 @@ export const HLABS_ERRORS = {
   FILES_NAME_EXISTS: 'CONFLICT',
   FILES_INVALID_PATH: 'BAD_REQUEST',
   FILES_INVALID_NAME: 'BAD_REQUEST',
+  /** An app keeps this folder (or one inside it), or it's shared on the network; `detail.apps` names them. */
+  FILES_IN_USE: 'PRECONDITION_FAILED',
+  /** Trash only covers this computer: a network drive's items are deleted for good instead (files.delete). */
+  FILES_NO_TRASH: 'PRECONDITION_FAILED',
+  /** An upload chunk that doesn't start where the server is (US-FILE-09): `detail.offset` says where it is. */
+  UPLOAD_OFFSET_MISMATCH: 'CONFLICT',
+  /** The upload is being sent from another tab or device right now (US-FILE-09). */
+  UPLOAD_IN_PROGRESS: 'CONFLICT',
   NETWORK_PORT_IN_USE: 'CONFLICT',
   TAILSCALE_HTTPS_DISABLED: 'PRECONDITION_FAILED',
   /** Linux: the daemon's user isn't Tailscale's operator (D-104). Not FORBIDDEN: that would mean "no access". */

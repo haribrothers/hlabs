@@ -7,6 +7,7 @@ import { cn } from '../lib/cn';
 export const DropdownMenu = Radix.Root;
 export const DropdownMenuTrigger = Radix.Trigger;
 export const DropdownMenuGroup = Radix.Group;
+export const DropdownMenuSub = Radix.Sub;
 
 /**
  * Room the navigation takes at the bottom of the screen: the Dock (shelf 79px + 14px off the edge, plus a 12px gap; the
@@ -81,4 +82,32 @@ export function DropdownMenuLabel({ className, ...props }: ComponentProps<typeof
 
 export function DropdownMenuSeparator({ className, ...props }: ComponentProps<typeof Radix.Separator>) {
   return <Radix.Separator className={cn('hl-menu-sep', className)} {...props} />;
+}
+
+/** An item that opens a submenu ("Open with ›", US-FILE-21). */
+export function DropdownMenuSubTrigger({ className, children, ...props }: ComponentProps<typeof Radix.SubTrigger>) {
+  return (
+    <Radix.SubTrigger className={cn('hl-menu-item', className)} {...props}>
+      <span className="hl-menu-label">{children}</span>
+      <kbd className="hl-menu-kbd" aria-hidden="true">
+        ›
+      </kbd>
+    </Radix.SubTrigger>
+  );
+}
+
+export function DropdownMenuSubContent({
+  className,
+  sideOffset = 4,
+  ...props
+}: ComponentProps<typeof Radix.SubContent>) {
+  return (
+    <Radix.Portal>
+      <Radix.SubContent
+        sideOffset={sideOffset}
+        className={cn('hl-menu hl-menu-layer hl-glass hl-glass-3 hl-anim-menu', className)}
+        {...props}
+      />
+    </Radix.Portal>
+  );
 }

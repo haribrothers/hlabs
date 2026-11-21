@@ -115,6 +115,27 @@ describe('Dialog', () => {
     await waitFor(() => expect(trigger).toHaveFocus());
   });
 
+  it('Escape closes only the newest of two open dialogs, then the one below', async () => {
+    function Example() {
+      const [inner, setInner] = useState(false);
+      const [outer, setOuter] = useState(true);
+      return (
+        <ModalDialog open={outer} onOpenChange={setOuter} title="Install Immich">
+          <Button onClick={() => setInner(true)}>Change</Button>
+          {inner ? <ModalDialog open onOpenChange={setInner} title="Choose a folder" /> : null}
+        </ModalDialog>
+      );
+    }
+    render(<Example />);
+    await userEvent.click(screen.getByRole('button', { name: 'Change' }));
+    expect(await screen.findByRole('dialog', { name: 'Choose a folder' })).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Choose a folder' })).toBeNull());
+    expect(screen.getByRole('dialog', { name: 'Install Immich' })).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
   it('can refuse Escape while work is running', async () => {
     const onOpenChange = vi.fn();
     render(<ModalDialog open onOpenChange={onOpenChange} dismissible={false} title="Uninstalling Jellyfin" />);

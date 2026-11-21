@@ -162,7 +162,7 @@ Shipped 3 Oct 2026 (`SHIPPED_PHASE = 4`). "Done when" checked by hand on macOS w
 - [x] US-INST-02 · First launch hands off to onboarding in the browser (the daemon now serves the dashboard's build, so the setup URL opens at http://127.0.0.1:7474 without Vite; the tray opens setup by itself once per launch whenever onboarding is incomplete, not only on a first launch, as "Open setup is shown again" needs; checked live with a built .app as part of the phase's manual check)
 - [x] US-INST-05 · See status at a glance (the tray asks tray.status every 5 s while the menu is open and every 30 s while it's closed rather than listening to events; CPU and memory are read when asked until the sampler, US-USE-08, keeps them; following Reduce transparency in the tray is left with the reduceTransparency field until the tray has a solid look, which the design doesn't draw)
 - [x] US-INST-06 · Open the dashboard and copy its address (the tray's Rust side opens the browser and writes the clipboard, so the window needs neither permission)
-- [x] US-INST-07 · Back up now from the menu (hidden until backups ship in phase 5, D-036; phase 4 checks it's absent and that tray.quickAction backupNow is refused; its criteria are built and tested with backups)
+- [x] US-INST-07 · Back up now from the menu (hidden until backups ship in phase 5, D-036; the menu item was built in phase 5: "Last: 2h ago", "Backing up… 34%", "Last backup failed" with the red dot, the Backups page with no destination, "Busy, try later")
 - [x] US-INST-08 · Pause and resume all apps (pause_all and resume_all jobs; settings.paused is written before stopping, so an install that finishes meanwhile is stopped and resumed with the others; waiting for a running backup comes with backups, phase 5)
 - [x] US-INST-09 · Start at login (the tray reads the saved choice from tray.status, asked every 30 s while the menu is closed, rather than listening for startup.changeRequested, so a change in Settings reaches the OS within 30 s or when the tray next starts; in development the login item is pretended)
 - [x] US-SYS-42 · See why hlabs can't serve its address (added 3 Oct 2026 after Tailscale Serve held 443 on Hari's Mac, D-122; `pnpm dev` no longer touches the real Tailscale, D-121)
@@ -212,36 +212,48 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 
 ## Phase 5 · Backups and Files
 
-- [ ] US-FILE-01 · See my places in the sidebar
-- [ ] US-FILE-02 · Browse a folder in grid view
-- [ ] US-FILE-03 · Create a folder
-- [ ] US-FILE-04 · Search files
-- [ ] US-FILE-05 · Download files
-- [ ] US-FILE-06 · Preview a file
-- [ ] US-FILE-07 · Open a file with an app
-- [ ] US-FILE-08 · Upload files with progress
-- [ ] US-FILE-09 · Pause, resume and cancel uploads
-- [ ] US-FILE-10 · Handle name conflicts when uploading
-- [ ] US-FILE-11 · Connect an SMB or NFS drive
-- [ ] US-FILE-12 · Disconnect or recover a network drive
-- [ ] US-BKP-01 · See the last backup's status
-- [ ] US-BKP-02 · See destinations and the schedule summary
-- [ ] US-BKP-03 · Review recent runs and run history
-- [ ] US-BKP-04 · Back up now
-- [ ] US-BKP-05 · Run a backup
-- [ ] US-BKP-06 · Apply retention after each run
-- [ ] US-BKP-07 · Handle failed runs
-- [ ] US-BKP-08 · Choose a destination type and fill in its details
-- [ ] US-BKP-09 · Test the connection and add the destination
-- [ ] US-BKP-10 · See the encryption password once
-- [ ] US-BKP-11 · Edit or remove a destination
-- [ ] US-BKP-17 · Start a restore and pick a restore point
-- [ ] US-BKP-18 · Choose apps or folders and how to restore
-- [ ] US-BKP-19 · Confirm a restore with my password
-- [ ] US-BKP-20 · Watch a restore in progress
-- [ ] US-BKP-21 · Roll back automatically if a restore fails
-- [ ] US-BKP-22 · Cancel a restore only before swap-in
-- [ ] US-BKP-23 · Choose what's included in backups
+Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). Automated, 20 Nov 2026: #1 `apps/web/e2e/us-bkp-20.spec.ts` (real engine and restic: Vaultwarden and Paperless-ngx backed up to the pretend NAS, their data wiped, restored, both running again); #2 `apps/web/e2e/us-file-09.spec.ts` (an upload resumes after the connection drops). #3 (D-135) `apps/web/e2e/us-file-22.spec.ts` (renamed with F2, moved to another folder and back with Undo, moved to Trash and back with Undo, and restored from the Trash page, on the real daemon and disk), 20 Nov 2026. Still to check by hand: a real NAS and a cloud bucket as destinations, a restore after a real sleep/wake catch-up, the tray's "Back up now" (US-INST-07) with `pnpm dev:tray`.
+
+- [x] US-FILE-01 · See my places in the sidebar
+- [x] US-FILE-02 · Browse a folder in grid view
+- [x] US-FILE-03 · Create a folder
+- [x] US-FILE-04 · Search files
+- [x] US-FILE-05 · Download files
+- [x] US-FILE-06 · Preview a file
+- [x] US-FILE-07 · Open a file with an app
+- [x] US-FILE-08 · Upload files with progress
+- [x] US-FILE-09 · Pause, resume and cancel uploads
+- [x] US-FILE-10 · Handle name conflicts when uploading
+- [x] US-FILE-11 · Connect an SMB or NFS drive
+- [x] US-FILE-12 · Disconnect or recover a network drive
+- [x] US-FILE-25 · Choose a folder for an app
+- [x] US-FILE-24 · See skeletons while a folder loads (moved to phase 5, D-135; while loading, the breadcrumb is named from listings already fetched and the toolbar guesses read-only places by path)
+- [x] US-FILE-19 · Switch to list view and sort (moved to phase 5, D-135)
+- [x] US-FILE-20 · Select several items (moved to phase 5, D-135; the bar sits under the toolbar and a phone's Select mode, D-136; Move to… and Move to Trash join with US-FILE-22 and US-FILE-16)
+- [x] US-FILE-23 · Rename a file or folder (moved to phase 5, D-135; F2 and FilePreview's "•••"; the right-click menu and the phone's "•••" come with US-FILE-21)
+- [x] US-FILE-22 · Move items to another folder (moved to phase 5, D-135; from the selection bar, the preview's •••, and by dragging onto folders and sidebar places; the right-click menu's Move to… comes with US-FILE-21)
+- [x] US-FILE-16 · Move items to Trash with undo (moved to phase 5, D-135; files.delete for network drives; the right-click menu's Move to Trash comes with US-FILE-21)
+- [x] US-FILE-17 · Restore items from Trash (moved to phase 5, D-135)
+- [x] US-FILE-18 · Empty Trash manually and automatically (moved to phase 5, D-135; everyone's Trash, `allUsers`, stays with US-SYS-14)
+- [x] US-FILE-21 · Use the right-click menu (moved to phase 5, D-135; with the phone's "•••" sheet from US-PHONE-18; "Share…" on a folder waits for network shares, phase 8)
+- [x] US-BKP-01 · See the last backup's status
+- [x] US-BKP-02 · See destinations and the schedule summary
+- [x] US-BKP-03 · Review recent runs and run history
+- [x] US-BKP-04 · Back up now
+- [x] US-BKP-05 · Run a backup
+- [x] US-BKP-06 · Apply retention after each run
+- [x] US-BKP-07 · Handle failed runs
+- [x] US-BKP-08 · Choose a destination type and fill in its details
+- [x] US-BKP-09 · Test the connection and add the destination
+- [x] US-BKP-10 · See the encryption password once
+- [x] US-BKP-11 · Edit or remove a destination
+- [x] US-BKP-17 · Start a restore and pick a restore point
+- [x] US-BKP-18 · Choose apps or folders and how to restore
+- [x] US-BKP-19 · Confirm a restore with my password
+- [x] US-BKP-20 · Watch a restore in progress
+- [x] US-BKP-21 · Roll back automatically if a restore fails
+- [x] US-BKP-22 · Cancel a restore only before swap-in
+- [x] US-BKP-23 · Choose what's included in backups
 
 ## Phase 6 · Distribution
 
@@ -335,9 +347,6 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 - [ ] US-FILE-13 · Share a folder on the local network
 - [ ] US-FILE-14 · Detect and browse an external drive
 - [ ] US-FILE-15 · Eject an external drive
-- [ ] US-FILE-16 · Move items to Trash with undo
-- [ ] US-FILE-17 · Restore items from Trash
-- [ ] US-FILE-18 · Empty Trash manually and automatically
 - [ ] US-BKP-15 · Understand why a backup failed
 - [ ] US-BKP-16 · Download the log or try again
 - [ ] US-SYS-32 · Turn on AI access
@@ -354,12 +363,6 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 
 - [ ] US-HOME-21 · Use Home with Reduce transparency on
 - [ ] US-STORE-22 · Show skeletons while the store loads
-- [ ] US-FILE-19 · Switch to list view and sort
-- [ ] US-FILE-20 · Select several items
-- [ ] US-FILE-21 · Use the right-click menu
-- [ ] US-FILE-22 · Move items to another folder
-- [ ] US-FILE-23 · Rename a file or folder
-- [ ] US-FILE-24 · See skeletons while a folder loads
 - [ ] US-BKP-12 · Choose how often backups run
 - [ ] US-BKP-13 · Set how many restore points to keep
 - [ ] US-BKP-14 · Pause apps briefly for a consistent copy

@@ -2,7 +2,7 @@
 
 Files is the household's file browser: everyone signed in can browse, preview, upload and organise the files in their private Home folder, and admins also reach the Shared folder, app data, network drives and external drives. It replaces "copy it to the Mac mini over AirDrop" with one place that works the same from a laptop or a phone, and it can publish folders to the local network as SMB shares.
 
-**Screens:** `FilesBrowser` (P2), `FilePreview` (P2), `FilesUpload` (P2), `NetworkDrives` (P2), `FilesShare` (P3), `FilesExternal` (P3), `FilesTrash` (P3), `FilesList` (Nice to have), `FilesContextMenu` (Nice to have), `FilesMove` (Nice to have), `FilesRename` (Nice to have), `FilesLoading` (Nice to have).
+**Screens:** `FilesBrowser` (P2), `FilePreview` (P2), `FilesUpload` (P2), `NetworkDrives` (P2), `FolderPicker` (P1), `FilesShare` (P3), `FilesExternal` (P3), `FilesTrash` (P2), `FilesList` (P2), `FilesContextMenu` (P2), `FilesMove` (P2), `FilesRename` (P2), `FilesLoading` (P2).
 **Depends on:** 03-sign-in.md (sessions), 04-home.md (desktop windows, Dock, Spotlight), 06-apps.md (app folder mounts, Open with), 08-usage-backups.md (Use for backups), 09-account-people.md (member "See the Shared folder in Files" permission), 10-system-settings.md (SettingsStorage, storage root).
 
 ## Features
@@ -15,12 +15,13 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 | F-FILE-04 | Connect a network drive | P2 | 5 | `NetworkDrives` |
 | F-FILE-05 | Share a folder on the network | P3 | 8 | `FilesShare` |
 | F-FILE-06 | External drives | P3 | 8 | `FilesExternal` |
-| F-FILE-07 | Trash | P3 | 8 | `FilesTrash` |
-| F-FILE-08 | List view and multi-selection | Nice to have | 9 | `FilesList` |
-| F-FILE-09 | Right-click menu | Nice to have | 9 | `FilesContextMenu` |
-| F-FILE-10 | Move to | Nice to have | 9 | `FilesMove` |
-| F-FILE-11 | Rename | Nice to have | 9 | `FilesRename` |
-| F-FILE-12 | Loading, empty and error states | Nice to have | 9 | `FilesLoading` |
+| F-FILE-07 | Trash | P2 | 5 | `FilesTrash` |
+| F-FILE-08 | List view and multi-selection | P2 | 5 | `FilesList` |
+| F-FILE-09 | Right-click menu | P2 | 5 | `FilesContextMenu` |
+| F-FILE-10 | Move to | P2 | 5 | `FilesMove` |
+| F-FILE-11 | Rename | P2 | 5 | `FilesRename` |
+| F-FILE-12 | Loading, empty and error states | P2 | 5 | `FilesLoading` |
+| F-FILE-13 | Choose a folder for an app (folder picker) | P1 | 5 | `FolderPicker`, `InstallSheet` |
 
 ## User stories
 
@@ -36,7 +37,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - **Given** a network drive's status is not `mounted`, **when** the sidebar renders, **then** its row shows a StatusDot in the offline state and its name stays clickable.
 - **Given** the active place, **when** the user clicks another sidebar row, **then** that row is highlighted (`aria-current="page"`) and the main area shows its root; Photos and Downloads open `/home/Photos` and `/home/Downloads`.
 - **Given** the admin clicks "This computer", **then** the main area lists one folder per user's Home (by display name) and "Shared", so admins can reach every Home folder.
-- **Given** phase 5, **then** the Trash row and external drive rows are hidden until phase 8 ships (D-036).
+- **Given** phase 5, **then** the Trash row shows (Trash ships with Files, D-135) and external drive rows are hidden until phase 8 ships (D-036).
 
 **Implementation notes**
 - API: `files.list`, `storage.locations.list` (admin), `storage.summary` (admin, for the bar), `files.recent` (new, see API additions). Paths are virtual: `/home`, `/shared`, `/drives/<id>`, plus new admin-only `/users/<username>` and `/appdata/<appId>`.
@@ -283,7 +284,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - macOS `diskutil eject`; Linux UDisks2 `Unmount` + `PowerOff`.
 
 ### US-FILE-16 · Move items to Trash with undo
-**Feature:** F-FILE-07 · **Priority:** P3 · **Phase:** 8 · **Screens:** `FilesTrash`, `FilesBrowser`
+**Feature:** F-FILE-07 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesTrash`, `FilesBrowser`
 **As** anyone signed in, **I want** deleted files to go to Trash first, **so that** I can get them back after a mistake.
 
 **Acceptance criteria**
@@ -298,7 +299,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - UI: Toast with action, Dialog.
 
 ### US-FILE-17 · Restore items from Trash
-**Feature:** F-FILE-07 · **Priority:** P3 · **Phase:** 8 · **Screens:** `FilesTrash`
+**Feature:** F-FILE-07 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesTrash`
 **As** anyone signed in, **I want** to see what I deleted and restore it, **so that** I can undo a delete days later.
 
 **Acceptance criteria**
@@ -316,7 +317,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - UI: List, ListRow, Button, Badge for days left.
 
 ### US-FILE-18 · Empty Trash manually and automatically
-**Feature:** F-FILE-07 · **Priority:** P3 · **Phase:** 8 · **Screens:** `FilesTrash`
+**Feature:** F-FILE-07 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesTrash`
 **As** anyone signed in, **I want** Trash to clean itself up, **so that** deleted files don't fill the disk forever.
 
 **Acceptance criteria**
@@ -331,7 +332,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - Edge: a trash item whose owner was deleted is purged with the user's Home per 09-account-people.md.
 
 ### US-FILE-19 · Switch to list view and sort
-**Feature:** F-FILE-08 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `FilesList`
+**Feature:** F-FILE-08 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesList`
 **As** anyone signed in, **I want** a list with name, date and size columns, **so that** I can scan and sort many files.
 
 **Acceptance criteria**
@@ -345,14 +346,14 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - UI: List, ListRow, FileItem (row variant). Column headers are buttons with `aria-sort`.
 
 ### US-FILE-20 · Select several items
-**Feature:** F-FILE-08 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `FilesList`
+**Feature:** F-FILE-08 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesList`
 **As** anyone signed in, **I want** to select several files at once, **so that** I can move, download or delete them together.
 
 **Acceptance criteria**
-- **Given** list or grid view, **then** click selects one item, Cmd/Ctrl-click toggles an item, Shift-click selects a range, each row has a checkbox labelled "Select <name>", and Cmd/Ctrl+A selects all.
-- **Given** one or more items are selected, **then** a selection bar replaces the toolbar actions with "<n> selected", "Move to…", "Share", "Download", "Move to Trash" and "✕" (label "Clear selection").
+- **Given** list or grid view, **then** a click (or Enter) opens an item and selects nothing; selecting is a mode (D-137) started by "Select" in the toolbar, a long press on an item (which ticks it), or Cmd/Ctrl+A (which ticks all). While selecting, every item has a checkbox labelled "Select <name>", a click ticks or unticks one and Shift-click ticks the range from the last one.
+- **Given** selecting, **then** a selection bar under the toolbar (D-136) shows "<n> selected", "Select all", "Move to…", "Share", "Download", "Move to Trash" and "✕" (label "Clear selection"), which ends selecting.
 - **Given** a selection, **then** the footer reads "<n> items · <k> selected · <size of selected files>" (e.g. "12 items · 3 selected · 4.7 MB") and the hint "Shift-click to select a range" is shown.
-- **Given** Esc or "✕", **then** the selection clears.
+- **Given** Esc or "✕" ("Done" on a phone), **then** selecting ends and the ticks go.
 - **Given** "Share" with a selection that isn't exactly one folder, **then** it uses the device's share sheet for files (Web Share API) and is hidden where unsupported.
 - **Given** the folder changes, **then** the selection clears.
 
@@ -361,24 +362,25 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - Accessibility: the list uses `role="grid"` with `aria-selected`; selection count is announced via a live region.
 
 ### US-FILE-21 · Use the right-click menu
-**Feature:** F-FILE-09 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `FilesContextMenu`
+**Feature:** F-FILE-09 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesContextMenu`
 **As** anyone signed in, **I want** a right-click menu on files, **so that** common actions are one click away.
 
 **Acceptance criteria**
 - **Given** the user right-clicks a file (or presses Shift+F10 / the Menu key), **then** a Menu opens with "Open ↵", "Open with ›", "Share…", "Copy link", "Download", "Rename…", "Move to…", "Duplicate" and "Move to Trash ⌫", grouped with separators.
-- **Given** the item is not selected, **then** it becomes the only selection; if it is part of a multi-selection, the menu applies to all selected items and hides "Open", "Open with", "Copy link" and "Rename…".
+- **Given** a right-click, **then** nothing gets selected (D-137): the menu is for that item; on a ticked item while selecting it applies to all ticked items and hides "Open", "Open with", "Copy link" and "Rename…".
 - **Given** "Open with ›", **then** a submenu lists apps from `files.openWith`, or "No apps" (disabled).
 - **Given** "Copy link", **then** `https://<hostname>/files?path=<path>` is copied and the Toast "Link copied · only people who can open this folder can use it" is shown.
-- **Given** "Duplicate", **then** a copy named "<name> copy.<ext>" (then "copy 2") is created next to it and selected.
+- **Given** "Duplicate", **then** a copy named "<name> copy.<ext>" (then "copy 2") is created next to it and gets focus (D-137).
 - **Given** a read-only place, **then** Rename, Move to, Duplicate and Move to Trash are disabled.
 - **Given** the menu is open, **then** arrow keys move, Enter activates, Esc closes and returns focus to the item.
+- **Given** the phone layout or a device without hover, **then** every file and folder shows a "•••" button (label "More for <name>", 44 px target) that opens the same actions as a bottom sheet (US-PHONE-03); there, "Move to…" opens `FilesMove` full-screen as a folder picker and "Rename…" opens `FilesRename` as a sheet (from US-PHONE-18, D-135).
 
 **Implementation notes**
 - API: `files.copy` (Duplicate), `files.openWith`, plus the actions of other stories.
 - UI: Menu with shortcut hints. "Share…" on a folder opens FilesShare (US-FILE-13); on a file it uses the Web Share API.
 
 ### US-FILE-22 · Move items to another folder
-**Feature:** F-FILE-10 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `FilesMove`
+**Feature:** F-FILE-10 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesMove`
 **As** anyone signed in, **I want** to pick a destination folder from a tree, **so that** I can reorganise files without dragging.
 
 **Acceptance criteria**
@@ -396,14 +398,14 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - Edge: cancelling a cross-disk job leaves the source untouched and removes partial copies.
 
 ### US-FILE-23 · Rename a file or folder
-**Feature:** F-FILE-11 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `FilesRename`
+**Feature:** F-FILE-11 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesRename`
 **As** anyone signed in, **I want** to rename an item safely, **so that** I don't break the file type by accident.
 
 **Acceptance criteria**
 - **Given** "Rename…" on a file, **then** a Dialog "Rename" opens with a "New name" TextField containing the name without its extension (e.g. "Lease agreement"), selected, and the extension (".pdf") shown next to it, not editable.
 - **Given** a file with an extension, **then** the helper text reads "The .pdf ending is kept so apps still know how to open it." with the real extension.
 - **Given** a folder or a file without an extension, **then** the whole name is editable and no helper text is shown.
-- **Given** the user clicks "Rename" or presses Enter, **then** the item is renamed and stays selected; "Cancel" or Esc closes without changes.
+- **Given** the user clicks "Rename" or presses Enter, **then** the item is renamed and keeps focus (D-137); "Cancel" or Esc closes without changes.
 - **Given** the new name exists, is empty, contains "/" or is over 255 bytes, **then** the same inline errors as New folder are shown and "Rename" is disabled.
 - **Given** the item is mounted by an app or shared on the network, **then** a warning says "<App> uses this folder. Renaming it will break that." and requires a second click on "Rename anyway".
 
@@ -413,7 +415,7 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 - UI: Dialog, TextField, Button.
 
 ### US-FILE-24 · See skeletons while a folder loads
-**Feature:** F-FILE-12 · **Priority:** Nice to have · **Phase:** 9 · **Screens:** `FilesLoading`
+**Feature:** F-FILE-12 · **Priority:** P2 · **Phase:** 5 · **Screens:** `FilesLoading`
 **As** anyone signed in, **I want** a clear loading state, **so that** I know hlabs is working on a slow drive.
 
 **Acceptance criteria**
@@ -427,6 +429,29 @@ Files is the household's file browser: everyone signed in can browse, preview, u
 **Implementation notes**
 - UI: FileItem skeleton variant; TanStack Query cache keyed by path and sort.
 - Edge: switching folders while loading cancels the previous request.
+
+### US-FILE-25 · Choose a folder for an app
+**Feature:** F-FILE-13 · **Priority:** P1 · **Phase:** 5 · **Screens:** `FolderPicker`, `InstallSheet`
+**As** an admin installing an app, **I want** to choose which folder each of its folders points at, on this computer or a network drive, **so that** the app uses the files I already have where I keep them.
+
+Added with the phase 5 Files work (Hari, 15 Nov 2026, Q-17, D-131): US-STORE-08 asks for "Change" and a folder picker, D-083 left them for the Files phase, and US-FILE-11's "Let apps use this drive" needs them to mean anything. AppPermissions' "+ Give access to a folder" (US-APP-*, phase 7) reuses this picker.
+
+**Acceptance criteria**
+- **Given** the install sheet, **when** a folder row renders, **then** it shows its place ("Home › Photos"), its mode and role ("Read and write · where your library is stored") and a "Change" Button (accessible name "Change folder for <role or key>"); an optional folder keeps its Switch, and "Change" turns it on.
+- **Given** "Change", **then** the FolderPicker Dialog opens titled "Choose a folder for <App>" with the folder's role and mode under it, opened at the folder's current place (its parent when the folder doesn't exist yet).
+- **Given** the picker, **then** its places are Home, Shared (when the person may see it) and each network or external drive whose "Let apps use this drive" is on, in that order; a drive that isn't mounted is listed with "Offline" and can't be opened; App data, This computer and other people's Home folders are never offered.
+- **Given** a place, **then** the picker lists its folders only (files aren't shown), A to Z, with a breadcrumb; double-click, Enter or a tap opens a folder; the breadcrumb goes back up.
+- **Given** a folder is selected (or none, meaning the open one), **then** the primary Button reads "Use <folder name>" (e.g. "Use Photos archive", or "Use NAS · Media" at a drive's top); choosing it closes the picker and the row shows the new place ("NAS › Photos archive").
+- **Given** "+ New folder" in the picker, **then** the New folder dialog of US-FILE-03 makes a folder in the open one and selects it.
+- **Given** a folder that needs to write (manifest mode `rw`) and a read-only drive or folder, **then** "Use …" is disabled with "This folder is read only"; a `ro` folder may be anywhere and stays read only (US-STORE-08: the mode is never raised).
+- **Given** "Install", **then** each folder is sent as `{ target, storageLocationId, subpath, mode }` for the chosen place, and the app's compose file mounts that folder.
+- **Given** a member installing an app (when "Members can install apps" is on), **then** the picker offers only their Home (and Shared with the permission), and the daemon refuses any other folder with `FILES_ACCESS_DENIED`, whatever the request says.
+- **Given** keyboard use, **then** arrow keys move between folders, Enter opens, Escape closes the picker (back to the install sheet, nothing changed); on a phone the picker is a full-height sheet.
+
+**Implementation notes**
+- API: `files.list` (folders only: `kinds: ['folder']`) gains `location: { id, subpath } | null`, the storage location and subpath a virtual path resolves to (null for App data and the lists of places), so a choice is sent as the install's `mounts`; `storage.locations.list` (`appsAllowed`, `status`); `apps.install` `mounts` (US-STORE-08). `resolveMounts` checks a member's subpaths (`users/<username>/…`, `shared/…` with `can_see_shared`).
+- UI: Dialog (sheet on phone), FileItem (list rows), Breadcrumb, Button, the New folder dialog.
+- Edge: a folder chosen and then removed before Install: the install makes it again (as for defaults, US-STORE-08) or fails with the usual folder error if its drive went offline.
 
 ## API additions
 Merged into [05-api](../prd/05-api.md) under "Contract additions from the feature files".

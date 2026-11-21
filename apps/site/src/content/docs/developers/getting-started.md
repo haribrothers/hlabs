@@ -16,7 +16,7 @@ description: What to install, and running hlabs from its source code.
 git clone <your fork>
 cd hlabs
 pnpm install
-pnpm fetch-binaries   # Caddy and docker compose into .bin/, checked against pinned checksums
+pnpm fetch-binaries   # Caddy, docker compose and restic into .bin/, checked against pinned checksums
 ```
 
 ## Run it
@@ -42,6 +42,16 @@ HLABS_DEV_FAKE_TAILSCALE=0 pnpm dev:full
 ```
 
 It then adds Tailscale Serve entries to your real Tailscale. Remove them when you're done (`tailscale serve reset`), or they'll get in the way of an installed hlabs later.
+
+### Network drives in development
+
+Files' **+ Connect a drive** uses the drives on your real network. To try it without a NAS, start with a pretend one:
+
+```sh
+HLABS_DEV_FAKE_NAS=1 pnpm dev
+```
+
+It shows as **NAS** at `nas.local` with the SMB shares Media, Photos and Backups; its password is `nas-password`. The e2e tests always use it.
 
 ## Check your work
 

@@ -305,9 +305,9 @@ The phone layout of the hlabs dashboard: the same React SPA as the desktop, rend
 
 **Acceptance criteria**
 - **Given** I am in a folder, **when** the search field renders, **then** its placeholder reads "Search in <folder name>" (for example "Search in Documents") and results are scoped to that folder and below.
-- **Given** a row, **when** I tap its "•••" button (label "More for <name>"), **then** the actions of `FilesContextMenu` (07-files.md) open as a bottom sheet: open, download, share, rename, move, trash.
+- **Given** a row, **when** I tap its "•••" button (label "More for <name>"), **then** the actions of `FilesContextMenu` (07-files.md) open as a bottom sheet: open, download, share, rename, move, trash. (Built in phase 5 with US-FILE-21, D-135.)
 - **Given** "Share" in the action sheet, **when** the Web Share API supports files, **then** the file is shared through the OS share sheet; otherwise it downloads.
-- **Given** I choose "Move", **when** it is tapped, **then** `FilesMove` opens full-screen as a folder picker; "Rename" opens `FilesRename` as a sheet with the name selected minus the extension.
+- **Given** I choose "Move", **when** it is tapped, **then** `FilesMove` opens full-screen as a folder picker; "Rename" opens `FilesRename` as a sheet with the name selected minus the extension. (Built in phase 5 with US-FILE-21, D-135.)
 - **Given** the Trash location, **when** it lists, **then** row actions are "Restore" and "Delete forever", and "Empty trash" is available as in `FilesTrash`.
 
 **Implementation notes**

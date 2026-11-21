@@ -9,6 +9,8 @@ export const jobs: AppHandlers<DaemonContext>['jobs'] = {
   },
   list: (_input, ctx) => ({ items: ctx.services.jobs.listActive() }),
   cancel: ({ jobId }, ctx) => {
+    // A restore can be cancelled only before swap-in (US-BKP-22).
+    if (ctx.services.jobs.get(jobId)?.kind === 'restore') ctx.services.restores.assertCancellable(jobId);
     ctx.services.jobs.cancel(jobId);
     return { ok: true };
   },

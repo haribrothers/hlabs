@@ -100,7 +100,7 @@ export function Toaster() {
   const isAdmin = me.data?.role === 'admin';
   if (toasts.length === 0) return null;
   return (
-    <div className="pointer-events-none fixed inset-x-4 bottom-24 z-50 flex flex-col items-end gap-2 sm:inset-x-auto sm:right-6 sm:bottom-6">
+    <div className="pointer-events-none fixed inset-x-4 bottom-24 z-50 flex flex-col items-end gap-2 sm:inset-x-auto sm:right-6 sm:bottom-28">
       {/* Newest on top; the rest wait (US-STATE-16). */}
       {onScreen(toasts)
         .reverse()
@@ -119,6 +119,7 @@ export function Toaster() {
               tone={t.tone}
               title={t.title}
               leaving={t.leaving}
+              progress={t.progress}
               onDismiss={() => handled(t)}
               action={<ToastActions toast={t} actions={visibleActions(t.actions, { isAdmin })} />}
             >

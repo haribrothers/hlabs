@@ -6,7 +6,9 @@ import { hlabsError } from '@hlabs/api';
 import { parseShortVolume, type AppManifest, type ComposeFile } from '@hlabs/app-manifest';
 import { storageLocations, type HlabsDb } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
-import { join, normalize, posix } from 'node:path';
+import { constants } from 'node:fs';
+import { access, realpath } from 'node:fs/promises';
+import { dirname, join, normalize, posix, sep } from 'node:path';
 
 type ManifestFolder = AppManifest['folders'][number];
 
@@ -72,12 +74,41 @@ export function defaultFolder(db: HlabsDb, folder: ManifestFolder, username: str
   };
 }
 
+/** Who is installing, for the folders they may choose (US-FILE-25). */
+export interface MountOwner {
+  role: 'admin' | 'member';
+  username: string;
+  canSeeShared: boolean;
+}
+
+/** A member chooses only inside their own Home on the storage root, and Shared when they may see it (US-FILE-25). */
+function memberMayUse(location: { isRoot: boolean }, subpath: string, owner: MountOwner): boolean {
+  if (!location.isRoot) return false;
+  const [top, name] = subpath.split('/');
+  return (top === 'users' && name === owner.username) || (top === 'shared' && owner.canSeeShared);
+}
+
+/** The deepest part of `path` that exists, followed through symlinks. */
+async function nearestReal(path: string): Promise<string> {
+  for (let p = path; ; p = dirname(p)) {
+    const real = await realpath(p).catch(() => null);
+    if (real) return real;
+    if (dirname(p) === p) return p;
+  }
+}
+
 /**
  * Checks the requested folders against the manifest and storage: each is a manifest folder, its location exists,
- * allows apps and is online, its path stays inside the location, and its mode is no more than the manifest's. Required
- * folders must be there, except app-data ones, which need no location.
+ * allows apps and is online, its path stays inside the location (symlinks too), a member's is in their own Home or
+ * Shared (FILES_ACCESS_DENIED), its mode is no more than the manifest's, and a folder the app writes to isn't read
+ * only (FILES_READ_ONLY). Required folders must be there, except app-data ones, which need no location.
  */
-export function resolveMounts(db: HlabsDb, manifest: AppManifest, requested: MountRequest[]): ResolvedMount[] {
+export async function resolveMounts(
+  db: HlabsDb,
+  manifest: AppManifest,
+  requested: MountRequest[],
+  owner: MountOwner,
+): Promise<ResolvedMount[]> {
   const byKey = new Map(manifest.folders.map((f) => [f.key, f]));
   const seen = new Set<string>();
   const out: ResolvedMount[] = [];
@@ -91,13 +122,28 @@ export function resolveMounts(db: HlabsDb, manifest: AppManifest, requested: Mou
     if (!location || !location.appsAllowed) {
       throw hlabsError('NOT_FOUND', 'No such storage location', { folder: m.target });
     }
+    const subpath = safeSubpath(m.subpath);
+    if (owner.role !== 'admin' && !memberMayUse(location, subpath, owner)) {
+      throw hlabsError('FILES_ACCESS_DENIED', `Folder ${m.target} isn't yours to choose`, { folder: m.target });
+    }
     if (location.status !== 'ok') {
       throw hlabsError('NAS_UNREACHABLE', `${location.name} is offline`, { folder: m.target, location: location.name });
     }
-    const subpath = safeSubpath(m.subpath);
     const hostPath = normalize(join(location.path, subpath));
+    const base = await realpath(location.path).catch(() => location.path);
+    const real = await nearestReal(hostPath);
+    if (real !== base && !real.startsWith(base.endsWith(sep) ? base : base + sep)) {
+      throw hlabsError('FILES_INVALID_PATH', `Folder ${m.target} leads outside its drive`, { folder: m.target });
+    }
     // `ro` stays `ro` (US-STORE-08: the mode can't be raised above the manifest's).
     const mode = folder.mode === 'ro' ? 'ro' : m.mode;
+    if (mode === 'rw') {
+      const writable = await access(real, constants.W_OK).then(
+        () => true,
+        () => false,
+      );
+      if (!writable) throw hlabsError('FILES_READ_ONLY', `Folder ${m.target} is read only`, { folder: m.target });
+    }
     out.push({ target: m.target, storageLocationId: location.id, subpath, mode, hostPath });
   }
   for (const f of manifest.folders) {

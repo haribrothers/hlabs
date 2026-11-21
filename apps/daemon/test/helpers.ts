@@ -56,6 +56,7 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
     devNoEngineControl: true,
     // Never the real Tailscale on the machine running the tests.
     devFakeTailscale: true,
+    devFakeNas: false,
     ...overrides,
   };
 }
@@ -99,6 +100,8 @@ export async function startDaemon(
     sampleUsage: false,
     // No update checks on a timer; tests that check pass a source.
     checkUpdates: false,
+    // Backup tests tick the schedule themselves.
+    scheduleBackups: false,
     updateSource: new FakeUpdateSource(),
     ...options.boot,
   };

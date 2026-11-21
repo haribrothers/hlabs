@@ -8,7 +8,8 @@ test('US-SYS-26 the overnight switches are saved', async ({ page }) => {
   const apps = page.getByRole('switch', { name: 'Update apps automatically' });
   await expect(apps).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('switch', { name: 'Update hlabs automatically' })).toBeVisible();
-  await expect(page.getByRole('switch', { name: 'Back up app data before updating' })).toHaveCount(0);
+  // Backups arrive in phase 5, which the e2e dev server previews (D-092).
+  await expect(page.getByRole('switch', { name: 'Back up app data before updating' })).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   const before = await apps.isChecked();
   await apps.click();

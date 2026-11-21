@@ -208,6 +208,10 @@
     gap: var(--space-2);
     min-width: 240px;
   }
+  /* Side by side in a grid (Username and Password), fields share the row instead of spilling out of it. */
+  :where(.grid) > .hl-field {
+    min-width: 0;
+  }
   .hl-field-label {
     font: 600 13px/18px var(--hl-font-sans);
     color: var(--ink-muted);
@@ -245,6 +249,49 @@
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-wash);
   }
+  /* A suffix right after the typed text (TextField suffix, FilesRename's ".pdf"). */
+  .hl-input-suffixed {
+    display: flex;
+    align-items: center;
+    cursor: text;
+  }
+  .hl-input-suffixed:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-wash);
+  }
+  .hl-input-grow {
+    display: inline-grid;
+    min-width: 0;
+    max-width: 100%;
+    /* Room for the cursor after the last letter, so the suffix follows the name without a space. */
+    padding-right: 1px;
+  }
+  .hl-input-grow::after,
+  .hl-input-grow > input {
+    grid-area: 1 / 1;
+    font: inherit;
+    padding: 0;
+    margin: 0;
+  }
+  .hl-input-grow::after {
+    content: attr(data-value);
+    visibility: hidden;
+    white-space: pre;
+    overflow: hidden;
+  }
+  .hl-input-grow > input {
+    width: 100%;
+    min-width: 1ch;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    outline: none;
+  }
+  .hl-input-suffix {
+    flex-shrink: 0;
+    color: var(--ink-muted);
+    white-space: pre;
+  }
   .hl-field-error .hl-input {
     border: 1.5px solid var(--danger);
   }
@@ -271,6 +318,29 @@
     }
   }
   [data-reduce-motion='true'] .hl-spin {
+    animation: none;
+  }
+
+  /* Skeletons while something loads (FilesLoading): a slow shimmer, still with Reduce motion. */
+  .hl-skeleton {
+    background: linear-gradient(90deg, var(--surface-row) 25%, var(--surface-control) 50%, var(--surface-row) 75%);
+    background-size: 200% 100%;
+    animation: hl-skeleton 1.4s ease-in-out infinite;
+  }
+  @keyframes hl-skeleton {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hl-skeleton {
+      animation: none;
+    }
+  }
+  [data-reduce-motion='true'] .hl-skeleton {
     animation: none;
   }
 
@@ -511,6 +581,9 @@
     border-radius: var(--radius-pill);
     background: var(--accent);
     transition: width var(--hl-dur) var(--hl-ease);
+  }
+  .hl-progress-success {
+    background: var(--success);
   }
 
   /* Glass card (widget) */
@@ -1021,6 +1094,10 @@
     z-index: 40;
     justify-content: center;
   }
+  /* A bar that takes the tab bar's place for a moment (Files' selection bar, PhoneFilesSelect). */
+  [data-tab-bar-hidden='true'] .hl-nav-phone {
+    display: none;
+  }
 
   /* Scroll area inside a window: a thin, translucent scrollbar on a clear track, kept clear of the window's
      rounded edges by the window's own padding. */
@@ -1129,6 +1206,15 @@
     padding: var(--space-1);
     margin: calc(-1 * var(--space-1));
   }
+  /* A picker (FolderPicker): the same height whatever folder is open; its body fills it and scrolls inside. */
+  .hl-dialog-tall {
+    height: min(660px, calc(100dvh - 2 * var(--space-4)));
+  }
+  .hl-dialog-tall > .hl-dialog-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
   /* The search panel (Spotlight): centred near the top, its list scrolling inside. */
   .hl-command {
     position: fixed;
@@ -1172,6 +1258,10 @@
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
       padding-bottom: calc(var(--space-7) + env(safe-area-inset-bottom));
+    }
+    .hl-dialog-sheet.hl-dialog-tall {
+      height: calc(100dvh - var(--space-7));
+      max-height: none;
     }
     .hl-dialog-sheet .hl-dialog-actions {
       flex-direction: column;
@@ -1811,7 +1901,8 @@
     border-radius: 10px;
     overflow: hidden;
   }
-  .hl-file-thumb img {
+  .hl-file-thumb img,
+  .hl-file-thumb video {
     position: absolute;
     inset: 0;
     width: 100%;

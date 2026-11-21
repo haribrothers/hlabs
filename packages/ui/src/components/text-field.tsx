@@ -8,6 +8,11 @@ export interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: ReactNode;
   /** A small control inside the input's right edge, such as a show/hide password button. */
   trailing?: ReactNode;
+  /**
+   * Text that follows what's typed and can't be edited, such as a file's ".pdf" while renaming it (FilesRename).
+   * Needs a controlled `value`.
+   */
+  suffix?: ReactNode;
   ref?: Ref<HTMLInputElement>;
   /** How an error is announced: 'assertive' (role="alert", default) or 'polite' (after what's being read). */
   announce?: 'assertive' | 'polite';
@@ -19,6 +24,7 @@ export function TextField({
   hint,
   error,
   trailing,
+  suffix,
   announce = 'assertive',
   className,
   id,
@@ -28,7 +34,30 @@ export function TextField({
   const inputId = id ?? autoId;
   const messageId = `${inputId}-msg`;
   const message = error ?? hint;
-  const input = (
+  const input = suffix ? (
+    // The input grows with its text (an invisible copy sets the width), so the suffix sits right after the name.
+    <div
+      className="hl-input hl-input-suffixed"
+      onMouseDown={(e) => {
+        if (e.target instanceof HTMLInputElement) return;
+        e.preventDefault();
+        document.getElementById(inputId)?.focus();
+      }}
+    >
+      <span className="hl-input-grow" data-value={String(rest.value ?? '')}>
+        <input
+          id={inputId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={message ? messageId : undefined}
+          size={1}
+          {...rest}
+        />
+      </span>
+      <span className="hl-input-suffix" aria-hidden="true">
+        {suffix}
+      </span>
+    </div>
+  ) : (
     <input
       id={inputId}
       className="hl-input"

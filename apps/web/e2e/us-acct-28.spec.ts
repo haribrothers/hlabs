@@ -16,7 +16,8 @@ test('US-ACCT-28 a member sees their account and changes their own password', as
   const anu = await signedInAs(browser, info.project.use, FIRST_RUN_URL, member);
 
   await anu.goto('/settings/account');
-  await expect(anu.getByText(`${member.username} · Member`, { exact: true })).toBeVisible();
+  // With Files (phase 5) the line ends with the Home folder's size.
+  await expect(anu.getByText(new RegExp(`^${member.username} · Member( · .+ in Home folder)?$`))).toBeVisible();
   await expect(anu.getByText('Set when you joined hlabs')).toBeVisible();
   await expect(anu.getByRole('group', { name: 'Signed-in devices' }).getByText('This device')).toBeVisible();
 

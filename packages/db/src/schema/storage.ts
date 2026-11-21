@@ -54,13 +54,27 @@ export const trashItems = sqliteTable(
   (t) => [index('trash_items_owner_idx').on(t.ownerUserId, t.deletedAt)],
 );
 
-export const uploadSessions = sqliteTable('upload_sessions', {
-  id: id(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  path: text('path').notNull(),
-  size: integer('size').notNull(),
-  received: integer('received').notNull().default(0),
-  createdAt: ms('created_at').notNull(),
-});
+/** A resumable upload (US-FILE-08, US-FILE-09): bytes go to `.<name>.hlabs-part` in the folder until `received` = `size`. */
+export const uploadSessions = sqliteTable(
+  'upload_sessions',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** The folder it goes to (virtual path, resolved for `user_id`). */
+    path: text('path').notNull(),
+    /** The file's name as chosen. */
+    name: text('name').notNull(),
+    size: integer('size').notNull(),
+    received: integer('received').notNull().default(0),
+    /** What to do if `name` is taken when it finishes (US-FILE-10). */
+    onConflict: text('on_conflict', { enum: ['skip', 'keepBoth', 'replace'] })
+      .notNull()
+      .default('keepBoth'),
+    createdAt: ms('created_at').notNull(),
+    /** The last chunk; sessions idle for 24 h are removed with their partial file. */
+    updatedAt: ms('updated_at').notNull(),
+  },
+  (t) => [uniqueIndex('upload_sessions_target_idx').on(t.userId, t.path, t.name)],
+);

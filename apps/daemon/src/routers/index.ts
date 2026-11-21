@@ -5,7 +5,9 @@ import type { DaemonContext, Dispatcher } from '../context';
 import { account } from './account';
 import { apps } from './apps';
 import { auth } from './auth';
+import { backups } from './backups';
 import { events } from './events';
+import { files } from './files';
 import { home } from './home';
 import { invites } from './invites';
 import { network } from './network';
@@ -29,6 +31,7 @@ export const handlers: AppHandlers<DaemonContext> = {
   storage,
   store,
   home,
+  files,
   apps,
   account,
   settings,
@@ -38,6 +41,7 @@ export const handlers: AppHandlers<DaemonContext> = {
   network,
   tray,
   usage,
+  backups: backups as AppHandlers<DaemonContext>['backups'],
 };
 
 type Fn = (input: unknown, ctx: DaemonContext, signal: AbortSignal | undefined) => unknown;

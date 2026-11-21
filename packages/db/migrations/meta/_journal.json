@@ -22,6 +22,27 @@
       "when": 1790664369824,
       "tag": "0002_notifications_target",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794742773969,
+      "tag": "0003_upload_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1795106633496,
+      "tag": "0004_backups",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1795107615007,
+      "tag": "0005_restore_steps",
+      "breakpoints": true
     }
   ]
 }

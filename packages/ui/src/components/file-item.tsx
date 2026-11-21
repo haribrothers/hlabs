@@ -1,7 +1,7 @@
 // Files only (D-053): imports the Papirus icon data, so it lives on the @hlabs/ui/files entry.
 import { Share2 } from '@hlabs/icons';
 import { FileIcon, fileKindOf, type FileKind, type FolderKind } from '@hlabs/icons/files';
-import { useState, type MouseEvent } from 'react';
+import { useState, type MouseEvent, type ReactNode } from 'react';
 import { cn } from '../lib/cn';
 import { useUiStrings } from '../lib/strings';
 
@@ -16,8 +16,8 @@ export interface FileItemProps {
   path?: string;
   folderKind?: FolderKind;
   accent?: FileAccent;
-  /** "24 items" for folders, the size for files. */
-  meta?: string;
+  /** "24 items" for folders, the size for files (or where a search result is). */
+  meta?: ReactNode;
   /** List view only. */
   modified?: string;
   /** Photos and videos: shown instead of the icon once loaded. */
@@ -27,9 +27,17 @@ export interface FileItemProps {
   shared?: boolean;
   href?: string;
   role?: string;
+  /** Accessible name when it should differ from what's shown: "Bills, folder", "Lease agreement.pdf, 1.2 MB". */
+  label?: string;
+  /** Roving focus in a grid: 0 for the item that takes Tab, -1 for the rest. */
+  tabIndex?: number;
+  /** For moving focus with the arrow keys. */
+  dataPath?: string;
   onClick?: (e: MouseEvent) => void;
   onOpen?: () => void;
   onContextMenu?: (e: MouseEvent) => void;
+  onKeyDown?: (e: React.KeyboardEvent) => void;
+  onFocus?: () => void;
 }
 
 const GRID_ICON = 72;
@@ -57,13 +65,29 @@ function Glyph({ item, list }: { item: FileItemProps; list: boolean }) {
   return (
     <span className={cn('hl-file-thumb', list && 'hl-file-sm')}>
       {loaded ? null : icon}
-      <img
-        src={item.thumbnail}
-        alt=""
-        onLoad={() => setLoaded(true)}
-        onError={() => setFailed(true)}
-        style={loaded ? undefined : { opacity: 0 }}
-      />
+      {fileKind === 'video' ? (
+        // A video's first frame, decoded by the browser from its metadata (no thumbnail on the server).
+        <video
+          src={`${item.thumbnail}#t=0.1`}
+          preload="metadata"
+          muted
+          playsInline
+          aria-hidden="true"
+          tabIndex={-1}
+          onLoadedData={() => setLoaded(true)}
+          onError={() => setFailed(true)}
+          style={loaded ? undefined : { opacity: 0 }}
+        />
+      ) : (
+        <img
+          src={item.thumbnail}
+          alt=""
+          loading="lazy"
+          onLoad={() => setLoaded(true)}
+          onError={() => setFailed(true)}
+          style={loaded ? undefined : { opacity: 0 }}
+        />
+      )}
     </span>
   );
 }
@@ -91,7 +115,11 @@ export function FileItem(props: FileItemProps) {
   const common = {
     className,
     role: props.role,
+    'aria-label': props.label,
     'aria-selected': props.selected || undefined,
+    tabIndex: props.tabIndex,
+    'data-path': props.dataPath,
+    onFocus: props.onFocus,
     onClick: props.onClick,
     onDoubleClick: props.onOpen,
     onContextMenu: props.onContextMenu,
@@ -99,7 +127,9 @@ export function FileItem(props: FileItemProps) {
       if (e.key === 'Enter' && props.onOpen) {
         e.preventDefault();
         props.onOpen();
+        return;
       }
+      props.onKeyDown?.(e);
     },
   };
   return props.href ? (

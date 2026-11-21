@@ -197,11 +197,34 @@ export const errorCopy = {
       title: "hlabs can't connect to network drives here",
       body: 'Reinstall hlabs to add the missing helper.',
     }),
+    STORAGE_LOCATION_IN_USE: () => ({
+      title: 'An app uses this drive',
+      body: 'Choose another folder for it first.',
+    }),
     FILES_ACCESS_DENIED: () => ({ title: "You don't have access to that", body: 'Ask the person who shared it.' }),
     FILES_READ_ONLY: () => ({ title: 'This folder is read-only', body: 'Save it somewhere else.' }),
     FILES_NO_SPACE: () => ({ title: 'There’s no space left there', body: 'Free up some space, then try again.' }),
     FILES_NAME_EXISTS: () => ({ title: 'That name is taken', body: 'Choose another name.' }),
     FILES_INVALID_PATH: () => ({ title: "That place doesn't exist", body: 'It may have been moved or removed.' }),
+    FILES_NO_TRASH: () => ({
+      title: "Trash doesn't cover this drive",
+      body: 'Items on network drives are deleted for good instead.',
+    }),
+    FILES_IN_USE: (d) => {
+      const apps = Array.isArray(d?.apps) ? (d.apps as string[]) : [];
+      return {
+        title: 'Something uses this folder',
+        body: `${apps.length ? apps.join(', ') : 'An app'} would stop finding it if it changed.`,
+      };
+    },
+    UPLOAD_OFFSET_MISMATCH: () => ({
+      title: 'The upload got out of step',
+      body: 'Try again; it carries on where it stopped.',
+    }),
+    UPLOAD_IN_PROGRESS: () => ({
+      title: 'This file is uploading somewhere else',
+      body: 'Wait for it to finish there, or cancel it there.',
+    }),
     FILES_INVALID_NAME: () => ({ title: "That name won't work", body: 'Names can’t contain / or be empty.' }),
     TAILSCALE_PERMISSION_DENIED: () => ({
       title: 'Tailscale needs permission first',

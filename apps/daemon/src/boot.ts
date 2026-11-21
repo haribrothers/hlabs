@@ -9,9 +9,10 @@ import { registerEngineStart } from './engine/start-job';
 import { registerPause, resumeAfterQuit } from './apps/pause';
 import { registerHomeFolderTrash } from './users/home-trash-job';
 import { watchEngine } from './engine/watch';
-import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting } from '@hlabs/db';
+import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting, users } from '@hlabs/db';
+import { hlabsError } from '@hlabs/api';
 import { nextOrigins } from '@hlabs/shared';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, renameSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -65,6 +66,20 @@ import { LoginService } from './auth/login';
 import { OnboardingService } from './onboarding/service';
 import { NodeDriveProbe, type DriveProbe } from './platform/drives';
 import { LinuxNetworkMounter, MacNetworkMounter, type NetworkMounter } from './platform/network-mount';
+import { FilesJanitor } from './files/janitor';
+import { FakeNas } from './platform/fake-nas';
+import { LinuxDiscovery, MacDiscovery, type NetworkDiscovery } from './platform/network-discovery';
+import { Destinations } from './backups/destinations';
+import { ResticCli, type Restic } from './backups/restic';
+import { BackupService } from './backups/runner';
+import { PENDING_DB, RestoreService } from './backups/restore';
+import { PlanSizes } from './backups/plan';
+import { NetworkDrives } from './storage/drives';
+import { FilesService } from './files/service';
+import { Trash } from './files/trash';
+import { FileMover } from './files/move';
+import { FilesTrash } from './files/trash-actions';
+import { Uploads } from './files/uploads';
 import { NetworkStorage } from './storage/network';
 import { SystemHostStats, type HostStats } from './platform/host-stats';
 import { UsageHistory } from './usage/history';
@@ -112,6 +127,16 @@ export interface BootDeps {
   updateHealthWaitMs?: number;
   drives?: DriveProbe;
   mounter?: NetworkMounter;
+  /** Finds SMB and NFS servers (US-FILE-11). */
+  discovery?: NetworkDiscovery;
+  /** After a whole-system restore (US-BKP-18); tests pass a fake. */
+  restartDaemon?: () => void;
+  /** Run the backup schedule every minute and recover after a crash (off in most tests). */
+  scheduleBackups?: boolean;
+  /** restic for backups (D-133); tests pass a fake. */
+  restic?: Restic;
+  /** Check network drives every minute (off in most tests). */
+  watchDrives?: boolean;
   /** Downloads, tar and colima for the engine install (US-ONB-05). */
   installer?: InstallerHost;
   /** Restarts the engine (US-SYS-18); tests pass a fake. */
@@ -151,6 +176,17 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     logger.fatal({ err, dataDir: config.paths.dataDir }, 'data directory is not writable');
     readiness.fail('storage_unavailable');
     return null;
+  }
+  // A whole-system restore left the restored database (US-BKP-18): it goes in before anything opens the old one.
+  const pendingDb = join(config.paths.dataDir, PENDING_DB);
+  if (existsSync(pendingDb)) {
+    const current = join(config.paths.dataDir, 'hlabs.db');
+    for (const suffix of ['', '-wal', '-shm']) rmSync(`${current}${suffix}.before-restore`, { force: true });
+    for (const suffix of ['', '-wal', '-shm']) {
+      if (existsSync(`${current}${suffix}`)) renameSync(`${current}${suffix}`, `${current}${suffix}.before-restore`);
+    }
+    renameSync(pendingDb, current);
+    logger.info('put the restored database in place');
   }
   let db;
   try {
@@ -482,6 +518,60 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     },
     updateApp: (appId) => updates.update({ userId: null }, appId).jobId,
   });
+  // Network drives (US-FILE-11): the system's tools, or a pretend NAS in development (HLABS_DEV_FAKE_NAS).
+  const fakeNas = config.devFakeNas ? new FakeNas(join(config.paths.dataDir, 'fake-nas')) : null;
+  const mounter: NetworkMounter =
+    deps.mounter ??
+    fakeNas ??
+    (process.platform === 'darwin'
+      ? new MacNetworkMounter(config.netmountHelper)
+      : new LinuxNetworkMounter(config.privHelper, join(config.paths.dataDir, 'tmp')));
+  const discovery: NetworkDiscovery =
+    deps.discovery ??
+    fakeNas ??
+    (process.platform === 'darwin' ? new MacDiscovery() : new LinuxDiscovery(join(config.paths.dataDir, 'tmp')));
+  const mountsDir = join(config.paths.dataDir, 'mounts');
+  const files = new FilesService({ db, appDataDir: config.paths.appDataDir });
+  const trash = new Trash({ db });
+  const uploads = new Uploads({ db, files, trash, freeBytes: (path) => probe.freeBytes(path) });
+  const fileMover = new FileMover({ db, files, trash, jobs });
+  const filesTrash = new FilesTrash({ db, files, trash, jobs });
+  filesTrash.register();
+  fileMover.register();
+  const networkStorage = new NetworkStorage({ db, secrets, mounter, mountsDir });
+  const networkDrives = new NetworkDrives({ db, secrets, mounter, mountsDir, bus, logger });
+  const drives = deps.drives ?? new NodeDriveProbe();
+  const restic: Restic =
+    deps.restic ??
+    new ResticCli(join(config.resources.binDir, 'restic'), join(config.paths.dataDir, 'cache', 'restic'));
+  const login = new LoginService(db, sessions, totp, bus, () =>
+    nextOrigins({
+      dashboardUrl: config.dashboardUrl,
+      hostname: getSetting(db, 'hostname'),
+      apps: db.select({ hostname: apps.hostname, port: apps.portFallback }).from(apps).all(),
+      tailnet: getSetting(db, 'remote').tailnetName,
+      tailnetNode: getSetting(db, 'remote').nodeName,
+      tailnetDashboardPort: getSetting(db, 'remote').dashboardPort,
+      lanAddresses: lanAddresses(),
+      httpsPort: getSetting(db, 'network').ports.https,
+    }),
+  );
+  const destinations = new Destinations({
+    db,
+    secrets,
+    restic,
+    network: networkStorage,
+    networkDrives,
+    drives,
+    jobs,
+    logger,
+    dataDir: config.paths.dataDir,
+    confirmPassword: async (userId, password, action, ip) => {
+      const user = db.select().from(users).where(eq(users.id, userId)).get();
+      if (!user) throw hlabsError('AUTH_REQUIRED');
+      await login.confirmPassword({ user, password, action, ip });
+    },
+  });
   const services: Services = {
     config,
     logger,
@@ -513,20 +603,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     onboarding,
     sessions,
     totp,
-    login: new LoginService(db, sessions, totp, bus, () =>
-      nextOrigins({
-        dashboardUrl: config.dashboardUrl,
-        hostname: getSetting(db, 'hostname'),
-        apps: db.select({ hostname: apps.hostname, port: apps.portFallback }).from(apps).all(),
-        tailnet: getSetting(db, 'remote').tailnetName,
-        tailnetNode: getSetting(db, 'remote').nodeName,
-        tailnetDashboardPort: getSetting(db, 'remote').dashboardPort,
-        lanAddresses: lanAddresses(),
-        httpsPort: getSetting(db, 'network').ports.https,
-      }),
-    ),
+    login,
     notifications,
-    drives: deps.drives ?? new NodeDriveProbe(),
+    drives,
     system: probe,
     host,
     usage: sampler,
@@ -536,15 +615,53 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       keepAwake: getSetting(db, 'startup').keepAwake,
       appsRunning: db.select({ id: apps.id }).from(apps).where(eq(apps.state, 'running')).all().length,
     })),
-    network: new NetworkStorage({
+    network: networkStorage,
+    discovery,
+    networkDrives,
+    files,
+    fileMover,
+    filesTrash,
+    trash,
+    uploads,
+    filesJanitor: new FilesJanitor({ uploads, trash, logger }),
+    restic,
+    destinations,
+    backups: new BackupService({
       db,
+      bus,
+      jobs,
+      logger,
+      notifications,
+      destinations,
+      restic,
       secrets,
-      mounter:
-        deps.mounter ??
-        (process.platform === 'darwin'
-          ? new MacNetworkMounter(config.netmountHelper)
-          : new LinuxNetworkMounter(config.privHelper, join(config.paths.dataDir, 'tmp'))),
-      mountsDir: join(config.paths.dataDir, 'mounts'),
+      engine: () => engine.client,
+      apps: appService,
+      appDataDir: config.paths.appDataDir,
+      dataDir: config.paths.dataDir,
+    }),
+    planSizes: new PlanSizes(),
+    restores: new RestoreService({
+      db,
+      bus,
+      jobs,
+      logger,
+      notifications,
+      destinations,
+      restic,
+      secrets,
+      apps: appService,
+      freeBytes: (path) => probe.freeBytes(path),
+      confirmPassword: async (userId, password, action, ip) => {
+        const user = db.select().from(users).where(eq(users.id, userId)).get();
+        if (!user) throw hlabsError('AUTH_REQUIRED');
+        await login.confirmPassword({ user, password, action, ip });
+      },
+      appDataDir: config.paths.appDataDir,
+      dataDir: config.paths.dataDir,
+      // launchd and systemd start hlabsd again (D-133); the next start puts the restored database in place.
+      restartDaemon: deps.restartDaemon ?? (() => process.exit(75)),
+      removeAppFolder: (appId, folder) => installer.removeAppFolder(appId, folder),
     }),
   };
   holder.set(services);
@@ -562,6 +679,15 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     services.usageHistory.start();
   }
   if (deps.watchApps !== false) services.appWatch.start();
+  services.filesJanitor.start();
+  if (deps.watchDrives !== false) {
+    services.networkDrives.start();
+    services.destinations.start();
+  }
+  if (deps.scheduleBackups !== false) {
+    services.backups.start();
+    void services.restores.recover().catch((err) => logger.warn({ err }, 'restore recovery failed'));
+  }
   if (deps.checkUpdates !== false) {
     services.hlabsUpdates.start();
     services.autoUpdates.start();
@@ -607,6 +733,10 @@ export async function shutdown(services: Services | null): Promise<void> {
   services.usage.stop();
   services.usageHistory.stop();
   services.appWatch.stop();
+  services.filesJanitor.stop();
+  services.networkDrives.stop();
+  services.destinations.stop();
+  services.backups.stop();
   services.hlabsUpdates.stop();
   services.autoUpdates.stop();
   // The last finished minute is written before stopping, so a restart loses at most the minute in progress.

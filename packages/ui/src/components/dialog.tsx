@@ -1,5 +1,5 @@
 import * as RadixDialog from '@radix-ui/react-dialog';
-import { useId, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { useId, useLayoutEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { cn } from '../lib/cn';
 
 export interface DialogProps {
@@ -45,7 +45,19 @@ export interface ModalDialogProps extends Omit<DialogProps, 'className'> {
   initialFocus?: RefObject<HTMLElement | null>;
   /** Below the md breakpoint, a bottom sheet with full-width buttons. */
   sheetOnPhone?: boolean;
+  /** Where focus goes when it closes, when not back to what opened it (e.g. the folder New folder just made). */
+  finalFocus?: () => HTMLElement | null;
+  /** A fixed height whatever its content (a picker): its body grows to fill it; full height as a phone sheet. */
+  tall?: boolean;
 }
+
+/**
+ * The open modal dialogs, newest last. Escape closes only the newest, once per key press: Radix hands Escape to the
+ * layer that last rendered as the top one, and for a moment after a dialog opens over another (a picker over the
+ * install sheet) that is still the one below.
+ */
+const openDialogs: Array<{ escape: () => void }> = [];
+const escapes = new WeakSet<Event>();
 
 /** A modal dialog (Radix): scrim-strong behind, focus trapped, Escape closes, focus returns to the trigger. */
 export function ModalDialog({
@@ -60,11 +72,33 @@ export function ModalDialog({
   description,
   initialFocus,
   sheetOnPhone = false,
+  finalFocus,
+  tall = false,
 }: ModalDialogProps) {
   // Radix only restores focus to a Dialog.Trigger; remember whatever opened the dialog instead.
   const returnTo = useRef<HTMLElement | null>(null);
   const block = (e: Event) => {
     if (!dismissible) e.preventDefault();
+  };
+  const latest = useRef({ dismissible, onOpenChange });
+  useLayoutEffect(() => {
+    latest.current = { dismissible, onOpenChange };
+  });
+  useLayoutEffect(() => {
+    if (!open) return;
+    const me = {
+      escape: () => {
+        if (latest.current.dismissible) latest.current.onOpenChange(false);
+      },
+    };
+    openDialogs.push(me);
+    return () => void openDialogs.splice(openDialogs.indexOf(me), 1);
+  }, [open]);
+  const onEscape = (e: KeyboardEvent) => {
+    e.preventDefault();
+    if (escapes.has(e)) return;
+    escapes.add(e);
+    openDialogs.at(-1)?.escape();
   };
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
@@ -76,6 +110,7 @@ export function ModalDialog({
           className={cn(
             'hl-dialog hl-dialog-modal hl-glass hl-glass-3 hl-anim-dialog',
             sheetOnPhone && 'hl-dialog-sheet',
+            tall && 'hl-dialog-tall',
           )}
           style={width ? { width } : undefined}
           onOpenAutoFocus={(e) => {
@@ -85,11 +120,17 @@ export function ModalDialog({
             initialFocus.current.focus();
           }}
           onCloseAutoFocus={(e) => {
+            const to = finalFocus?.();
+            if (to?.isConnected) {
+              e.preventDefault();
+              to.focus();
+              return;
+            }
             if (!returnTo.current?.isConnected) return;
             e.preventDefault();
             returnTo.current.focus();
           }}
-          onEscapeKeyDown={block}
+          onEscapeKeyDown={onEscape}
           onPointerDownOutside={block}
           onInteractOutside={block}
         >

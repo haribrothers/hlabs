@@ -16,6 +16,7 @@ import {
   homeLayout,
   jobs,
   storageLocations,
+  users,
   type HlabsDb,
 } from '@hlabs/db';
 import { HOSTNAME_PATTERN, ulid } from '@hlabs/shared';
@@ -34,6 +35,7 @@ import type { CatalogService } from '../store/catalog';
 import type { StoreHost } from '../store/service';
 import { ComposeError, ENV_FILE } from './compose';
 import { isSecret, parseEnvFile, resolveEnv } from './env';
+import { includeNew } from '../backups/plan';
 import { appDataBindDirs, folderPaths, resolveMounts, type MountRequest } from './folders';
 import { waitHealthy, type HealthProbes } from './health';
 import { takenHostnames } from './hostnames';
@@ -249,7 +251,12 @@ export class InstallService {
     if (this.takenHostnames().includes(hostname)) throw hlabsError('HOSTNAME_TAKEN', undefined, { hostname });
 
     const env = resolveEnv(manifest, req.env, this.keptEnv(req.appId));
-    const mounts = resolveMounts(db, manifest, req.mounts);
+    const owner = db.select().from(users).where(eq(users.id, user.userId)).get();
+    const mounts = await resolveMounts(db, manifest, req.mounts, {
+      role: user.role,
+      username: owner?.username ?? '',
+      canSeeShared: user.role === 'admin' || !!owner?.canSeeShared,
+    });
     const port = await this.freePort();
     const now = (this.deps.now ?? Date.now)();
 
@@ -468,6 +475,8 @@ export class InstallService {
       this.deps.apps.transition(appId, 'starting');
       await this.deps.network.sync();
       this.deps.apps.transition(appId, 'running');
+      // "Include new apps automatically" (US-BKP-23, D-134).
+      includeNew(this.deps.db, { app: appId });
       report('network', 1, { address });
       // Paused from the menu bar while it installed: it finishes, then stops with the others (US-INST-08).
       await stopIfPaused(this.deps, appId);
@@ -652,7 +661,7 @@ export class InstallService {
         }
         tx.delete(appAccess).where(eq(appAccess.appId, appId)).run();
         const plan = tx.select().from(backupPlan).get();
-        if (plan && Array.isArray(plan.includeJson.apps)) {
+        if (plan?.includeJson) {
           tx.update(backupPlan)
             .set({ includeJson: { ...plan.includeJson, apps: plan.includeJson.apps.filter((id) => id !== appId) } })
             .run();
@@ -709,12 +718,30 @@ export class InstallService {
     });
   }
 
-  /**
-   * Deletes the app's data folder. Files the app wrote as root or another user can't be deleted by hlabs on Linux, so
-   * then they're removed from inside a container of one of the app's own images, run as root, and the rest after.
-   */
+  /** Deletes the app's data folder (see removeAppFolder). */
   private async removeAppData(app: { id: string; sourceId: string | null }, projectDir: string): Promise<void> {
-    const appData = join(this.deps.appDataDir, app.id);
+    await this.removeFolder(app, projectDir, join(this.deps.appDataDir, app.id));
+  }
+
+  /** Deletes a folder of the app's data that isn't its data folder: a restore's safety copy (US-BKP-19). */
+  async removeAppFolder(appId: string, folder: string): Promise<void> {
+    const app = this.deps.db
+      .select({ id: apps.id, sourceId: apps.sourceId })
+      .from(apps)
+      .where(eq(apps.id, appId))
+      .get();
+    await this.removeFolder(app ?? { id: appId, sourceId: null }, this.deps.apps.project(appId).dir, folder);
+  }
+
+  /**
+   * Files the app wrote as root or another user can't be deleted by hlabs on Linux, so then they're removed from
+   * inside a container of one of the app's own images, run as root, and the rest after.
+   */
+  private async removeFolder(
+    app: { id: string; sourceId: string | null },
+    projectDir: string,
+    appData: string,
+  ): Promise<void> {
     const gone = { recursive: true, force: true, maxRetries: 5, retryDelay: 200 } as const;
     try {
       rmSync(appData, gone);

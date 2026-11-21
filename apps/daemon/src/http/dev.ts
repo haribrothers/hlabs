@@ -1,6 +1,7 @@
 import { notificationActionsSchema, onboardingStepSchema, severitySchema } from '@hlabs/api';
 import {
   APP_STATES,
+  appMounts,
   apps,
   appSources,
   catalogApps,
@@ -24,6 +25,7 @@ import { createAdmin } from '../onboarding/create-admin';
 import { prepareStorageRoot, setStorageRoot } from '../onboarding/storage';
 import { cookieDomain, sessionCookie } from '../auth/sessions';
 import { FakeTailscale } from '../tailscale/fake';
+import { FakeNas } from '../platform/fake-nas';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { ServiceHolder } from '../services';
@@ -144,6 +146,22 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     return reply.header('set-cookie', sessionCookie(session.raw, { ...session, domain })).redirect('/');
   });
 
+  // Gives the first admin a known password, for e2e of actions that ask for it again (a restore, US-BKP-19).
+  const adminPasswordBody = z.object({ password: z.string().min(8) });
+  app.post('/dev/admin-password', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { password } = adminPasswordBody.parse(req.body ?? {});
+    const admin = services.db.select().from(users).where(eq(users.role, 'admin')).get();
+    if (!admin) return reply.code(404).send({ reason: 'no admin' });
+    services.db
+      .update(users)
+      .set({ passwordHash: await hashPassword(password) })
+      .where(eq(users.id, admin.id))
+      .run();
+    return { ok: true };
+  });
+
   // Ends every session of a user, as revoking from another device will (US-AUTH-15 e2e).
   const revokeBody = z.object({ username: z.string() });
   app.post('/dev/revoke-sessions', async (req, reply) => {
@@ -169,6 +187,8 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     stateDetail: z.record(z.string(), z.unknown()).optional(),
     /** Its own port (12000–12999), for its fallback and tailnet addresses (US-SYS-04 e2e). */
     port: z.number().int().min(12000).max(12999).optional(),
+    /** Folders on the storage root it uses, e.g. `users/<username>/Photos` (US-FILE-07 e2e: Open with). */
+    mounts: z.array(z.string()).optional(),
   });
   // The engine as stopped (or back), without touching the real one: e2e for the engine-stopped states (US-STATE-08…10).
   const engineBody = z.object({ running: z.boolean() });
@@ -178,6 +198,25 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     const { running } = engineBody.parse(req.body);
     const status = await services.engine.simulateStop(!running);
     return { state: status.state };
+  });
+
+  // The pretend NAS (HLABS_DEV_FAKE_NAS): e2e takes it offline and back (US-FILE-12), and can forget its drives.
+  const fakeNasBody = z.object({ online: z.boolean().default(true), forget: z.boolean().default(false) });
+  app.post('/dev/fake-nas', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    if (!(services.discovery instanceof FakeNas)) return reply.code(404).send({ reason: 'HLABS_DEV_FAKE_NAS is off' });
+    const { online, forget } = fakeNasBody.parse(req.body ?? {});
+    services.discovery.online = online;
+    if (forget) {
+      services.db
+        .delete(storageLocations)
+        .where(and(eq(storageLocations.kind, 'smb'), eq(storageLocations.isRoot, false)))
+        .run();
+    }
+    // Offline shows at once; coming back is left to Try again (or the next minute's check).
+    if (!online) await services.networkDrives.check();
+    return { online };
   });
 
   // The pretend Tailscale (HLABS_DEV_FAKE_TAILSCALE): e2e sets what it reports (US-SYS-02…04, US-ONB-17).
@@ -225,7 +264,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
   app.post('/dev/fake-app', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
-    const { id, name, remove, state, progress, embed, stateDetail: detail, port } = fakeApp.parse(req.body);
+    const { id, name, remove, state, progress, embed, stateDetail: detail, port, mounts } = fakeApp.parse(req.body);
     const stateDetail = detail ? JSON.stringify(detail) : null;
     const { db, bus } = services;
     if (remove) {
@@ -266,6 +305,15 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
       })
       .onConflictDoUpdate({ target: apps.id, set: { state, stateDetail, updatedAt: Date.now() } })
       .run();
+    const root = db.select().from(storageLocations).where(eq(storageLocations.isRoot, true)).get();
+    if (mounts && root) {
+      db.delete(appMounts).where(eq(appMounts.appId, id)).run();
+      for (const [i, subpath] of mounts.entries()) {
+        db.insert(appMounts)
+          .values({ id: ulid(), appId: id, target: `folder${i}`, storageLocationId: root.id, subpath })
+          .run();
+      }
+    }
     bus.emit('app.stateChanged', { appId: id, state, detail: null }, { kind: 'all' });
     if (progress !== undefined) bus.emit('app.installProgress', { appId: id, jobId: 'dev', progress }, { kind: 'all' });
     return { added: id };

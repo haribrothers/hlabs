@@ -55,14 +55,45 @@ export const storage = {
             path: z.string(),
             isRoot: z.boolean(),
             status: z.string(),
+            /** Mounted again at start and every minute while unreachable (US-FILE-11). */
+            autoMount: z.boolean(),
+            /** Offered to apps' folders (US-FILE-11). */
+            appsAllowed: z.boolean(),
+            /** Names of the apps that keep folders on it: it can't be disconnected while there are any (US-FILE-12). */
+            usedBy: z.array(z.string()),
+            /** Mounted but hlabs can't write to it: the FolderPicker tags it "Read only" (US-FILE-25). */
+            readOnly: z.boolean(),
           }),
         ),
       }),
     ),
-    discover: io(empty, pending),
-    testNetwork: io(networkLocationSchema, ok),
+    /** SMB and NFS servers that announced themselves within 5 s, with the shares a guest may list (US-FILE-11). */
+    discover: io(
+      empty,
+      z.object({
+        servers: z.array(
+          z.object({
+            name: z.string(),
+            host: z.string(),
+            protocol: z.enum(['smb', 'nfs']),
+            shares: z.array(z.string()).nullable(),
+          }),
+        ),
+      }),
+    ),
+    /**
+     * With a share: mounts it somewhere temporary, checks hlabs can write there, and unmounts (10 s at most). Without
+     * one: the shares the server lists, as `username` when given (a wrong password is NAS_AUTH_FAILED), else for a guest
+     * (`null` when it won't say).
+     */
+    testNetwork: io(
+      networkLocationSchema.extend({ share: z.string().optional() }),
+      z.object({ ok: z.literal(true), shares: z.array(z.string()).nullable().optional() }),
+    ),
     addNetwork: io(networkLocationSchema, z.object({ locationId: idSchema })),
     remove: io(z.object({ locationId: idSchema }), ok),
+    /** "Try again" on a drive that can't be reached (US-FILE-12): mounts it now. */
+    reconnect: io(z.object({ locationId: idSchema }), z.object({ status: z.enum(['ok', 'unreachable']) })),
     eject: io(z.object({ locationId: idSchema }), ok),
   },
   moveAllPlan: io(z.object({ destinationPath: z.string() }), pending),

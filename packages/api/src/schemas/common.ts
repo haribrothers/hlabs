@@ -108,6 +108,8 @@ export const jobKindSchema = z.enum([
   'resume_all',
   'prune_images',
   'files_move',
+  /** Emptying a big Trash (US-FILE-18). */
+  'empty_trash',
   /** A deleted person's Home folder going to the trash (US-ACCT-16). */
   'home_folder_trash',
   'diagnostics',

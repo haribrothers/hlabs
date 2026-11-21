@@ -20,7 +20,20 @@ import type { AppWatch } from './apps/app-watch';
 import type { ReinstallService } from './apps/reinstall';
 import type { SystemProbe } from './platform/system';
 import type { NotificationService } from './notifications/service';
+import type { FilesJanitor } from './files/janitor';
+import type { FilesService } from './files/service';
+import type { Trash } from './files/trash';
+import type { FileMover } from './files/move';
+import type { FilesTrash } from './files/trash-actions';
+import type { Uploads } from './files/uploads';
 import type { NetworkStorage } from './storage/network';
+import type { NetworkDrives } from './storage/drives';
+import type { NetworkDiscovery } from './platform/network-discovery';
+import type { Destinations } from './backups/destinations';
+import type { Restic } from './backups/restic';
+import type { BackupService } from './backups/runner';
+import type { RestoreService } from './backups/restore';
+import type { PlanSizes } from './backups/plan';
 import type { SecretStore } from './platform/secrets';
 import type { Readiness } from './readiness';
 import type { CatalogService } from './store/catalog';
@@ -97,7 +110,32 @@ export interface Services {
   /** Holds off sleep while apps run, when the setting is on (US-SYS-20). */
   keepAwake: KeepAwake;
   network: NetworkStorage;
+  /** SMB and NFS servers on the network (US-FILE-11). */
+  discovery: NetworkDiscovery;
+  /** Connected network drives: checked every minute, mounted again, disconnected (US-FILE-11, US-FILE-12). */
+  networkDrives: NetworkDrives;
+  /** Files: virtual paths, listings, uploads and downloads (07-files). */
+  files: FilesService;
+  /** Move to (US-FILE-22). */
+  fileMover: FileMover;
+  /** Trash, delete for good, restore (US-FILE-16…18). */
+  filesTrash: FilesTrash;
+  /** Where replaced and deleted files go (D-027). */
+  trash: Trash;
+  /** Resumable uploads (US-FILE-08, US-FILE-09). */
+  uploads: Uploads;
+  /** Removes idle uploads and month-old Trash. */
+  filesJanitor: FilesJanitor;
   notifications: NotificationService;
+  /** restic, the bundled binary or a fake (D-133). */
+  restic: Restic;
+  /** Where backups go (US-BKP-08…11). */
+  destinations: Destinations;
+  /** Backup runs, the schedule and the plan (US-BKP-01…07, US-BKP-23). */
+  backups: BackupService;
+  planSizes: PlanSizes;
+  /** Restores (US-BKP-17…22). */
+  restores: RestoreService;
 }
 
 /** Holds services once boot has created them; requests before then get DAEMON_STARTING. */

@@ -1,7 +1,7 @@
 // The install sheet (US-STORE-08…10): what an app will be able to reach (folders), what runs and where it opens
 // (includes, address, login), its settings, and "I understand" for risky access. A Dialog on desktop, a bottom sheet
-// on a phone. Install starts the job and opens its progress page (US-STORE-11, US-STORE-12). Changing a folder's place
-// needs the folder picker from Files (phase 5), so each folder uses its default until then (D-036).
+// on a phone. Install starts the job and opens its progress page (US-STORE-11, US-STORE-12). Each folder starts at its
+// default place; "Change" opens the FolderPicker to choose another (US-FILE-25).
 import type { StoreAppDetails } from '@hlabs/api';
 import { AlertTriangle, iconDefaults } from '@hlabs/icons';
 import { HOSTNAME_PATTERN } from '@hlabs/shared';
@@ -14,6 +14,7 @@ import { installCopy } from '../copy/install';
 import { useEngineRunning } from '../lib/engine-state';
 import { errorCode, errorData } from '../lib/error-copy';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { FolderPicker, type ChosenFolder } from '../files/folder-picker';
 import { StoreLogo } from './cards';
 
 const copy = installCopy;
@@ -28,6 +29,29 @@ export function placeLabel(place: NonNullable<Folder['default']>['place']): stri
     place.area
   ];
   return copy.place([area, place.path]);
+}
+
+/** Where a folder's default place is in Files, for the picker to open at; Home for app data. */
+export function defaultPath(d: Folder['default']): string {
+  if (!d) return '/home';
+  const sub = d.place.path ? `/${d.place.path}` : '';
+  if (d.place.area === 'shared') return `/shared${sub}`;
+  if (d.place.area === 'location' && d.storageLocationId)
+    return `/drives/${d.storageLocationId}${d.subpath ? `/${d.subpath}` : ''}`;
+  if (d.place.area === 'home') return `/home${sub}`;
+  return '/home';
+}
+
+/** A folder's place before anything is chosen: its manifest default, when it has one on a storage location. */
+function defaultChoice(f: Folder): (ChosenFolder & { available: boolean }) | null {
+  if (!f.default?.storageLocationId) return null;
+  return {
+    storageLocationId: f.default.storageLocationId,
+    subpath: f.default.subpath,
+    label: placeLabel(f.default.place),
+    path: defaultPath(f.default),
+    available: f.default.available,
+  };
 }
 
 /** A folder's role in words: "Read and write · where your library is stored". */
@@ -140,6 +164,11 @@ export function InstallSheet({
   const [enabled, setEnabled] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(details.folders.map((f) => [f.key, f.required || f.default !== null])),
   );
+  // Where each folder goes: its default until "Change" chooses another (US-FILE-25).
+  const [chosen, setChosen] = useState<Record<string, (ChosenFolder & { available: boolean }) | null>>(() =>
+    Object.fromEntries(details.folders.map((f) => [f.key, defaultChoice(f)])),
+  );
+  const [picking, setPicking] = useState<Folder | null>(null);
   const [hostname, setHostname] = useState(app.id);
   const [env, setEnv] = useState<Record<string, string>>(() =>
     Object.fromEntries(install.env.map((p) => [p.key, p.default ?? (p.type === 'boolean' ? 'false' : '')])),
@@ -151,8 +180,8 @@ export function InstallSheet({
 
   const address = details.address.replace(/^[^.]+/, '');
   const hostnameError = addressError(hostname, install.takenHostnames);
-  const offline = details.folders.find((f) => enabled[f.key] && f.default && !f.default.available);
-  const missing = details.folders.find((f) => f.required && !f.default);
+  const offline = details.folders.find((f) => enabled[f.key] && chosen[f.key] && !chosen[f.key]!.available);
+  const missing = details.folders.find((f) => f.required && !chosen[f.key] && f.default?.place.area !== 'appdata');
   const risks = useMemo(
     () => [
       ...(details.access.dockerSocket ? [copy.riskDocker] : []),
@@ -173,11 +202,11 @@ export function InstallSheet({
         hostname,
         acceptRisks: accepted,
         mounts: details.folders
-          .filter((f) => enabled[f.key] && f.default?.storageLocationId)
+          .filter((f) => enabled[f.key] && chosen[f.key])
           .map((f) => ({
             target: f.key,
-            storageLocationId: f.default!.storageLocationId!,
-            subpath: f.default!.subpath,
+            storageLocationId: chosen[f.key]!.storageLocationId,
+            subpath: chosen[f.key]!.subpath,
             mode: f.mode,
           })),
       }),
@@ -253,25 +282,39 @@ export function InstallSheet({
         {details.folders.length ? (
           <List label={copy.folders}>
             {details.folders.map((f) => {
-              const place = f.default ? placeLabel(f.default.place) : f.label;
+              const choice = chosen[f.key];
+              const appData = !choice && f.default?.place.area === 'appdata';
+              const place = choice ? choice.label : f.default ? placeLabel(f.default.place) : f.label;
               return (
                 <ListRow
                   key={f.key}
                   title={place}
                   subtitle={
-                    f.default && !f.default.available && enabled[f.key]
+                    choice && !choice.available && enabled[f.key]
                       ? copy.offline(place)
-                      : !f.default && f.required
+                      : !choice && !appData && f.required
                         ? copy.noDefault
                         : folderLine(f)
                   }
                   trailing={
-                    <Switch
-                      aria-label={copy.useFolder(place)}
-                      checked={!!enabled[f.key]}
-                      disabled={f.required || !f.default}
-                      onChange={(on) => setEnabled((e) => ({ ...e, [f.key]: on }))}
-                    />
+                    <span className="flex shrink-0 items-center gap-3">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        aria-label={copy.changeFor(f.label)}
+                        onClick={() => setPicking(f)}
+                      >
+                        {copy.change}
+                      </Button>
+                      {f.required ? null : (
+                        <Switch
+                          aria-label={copy.useFolder(f.label)}
+                          checked={!!enabled[f.key]}
+                          disabled={!choice && !appData}
+                          onChange={(on) => setEnabled((e) => ({ ...e, [f.key]: on }))}
+                        />
+                      )}
+                    </span>
                   }
                 />
               );
@@ -379,15 +422,27 @@ export function InstallSheet({
           </section>
         ) : null}
 
-        {offline?.default ? (
-          <p className="m-0 text-body-sm text-danger">{copy.offline(placeLabel(offline.default.place))}</p>
-        ) : null}
+        {offline ? <p className="m-0 text-body-sm text-danger">{copy.offline(chosen[offline.key]!.label)}</p> : null}
         {failure ? (
           <p role="alert" className="m-0 text-body-sm text-danger">
             {failure}
           </p>
         ) : null}
       </div>
+      {picking ? (
+        <FolderPicker
+          appName={app.name}
+          folder={{ label: picking.label, mode: picking.mode }}
+          start={chosen[picking.key]?.path ?? defaultPath(picking.default)}
+          onClose={() => setPicking(null)}
+          onChoose={(c) => {
+            setChosen((all) => ({ ...all, [picking.key]: { ...c, available: true } }));
+            // "Change" on an optional folder turns it on.
+            setEnabled((e) => ({ ...e, [picking.key]: true }));
+            setPicking(null);
+          }}
+        />
+      ) : null}
     </ModalDialog>
   );
 }

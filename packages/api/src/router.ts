@@ -142,6 +142,7 @@ export const appRouter = router({
     stat: q(p.authed, s.files.stat),
     recent: q(p.authed, s.files.recent),
     listTrash: q(p.authed, s.files.listTrash),
+    uploads: q(p.authed, s.files.uploads),
     openWith: q(p.authed, s.files.openWith),
     preview: q(p.authed, s.files.preview),
     search: q(p.authed, s.files.search),
@@ -150,6 +151,7 @@ export const appRouter = router({
     move: m(p.authed, s.files.move),
     copy: m(p.authed, s.files.copy),
     trash: m(p.authed, s.files.trash),
+    delete: m(p.authed, s.files.delete),
     restoreFromTrash: m(p.authed, s.files.restoreFromTrash),
     emptyTrash: m(p.authed, s.files.emptyTrash),
     shares: router({
@@ -168,6 +170,7 @@ export const appRouter = router({
       testNetwork: m(p.admin, s.storage.locations.testNetwork),
       addNetwork: m(p.admin, s.storage.locations.addNetwork),
       remove: m(p.admin, s.storage.locations.remove),
+      reconnect: m(p.admin, s.storage.locations.reconnect),
       eject: m(p.admin, s.storage.locations.eject),
     }),
     moveAllPlan: q(p.admin, s.storage.moveAllPlan),
@@ -205,6 +208,7 @@ export const appRouter = router({
     listSnapshots: q(p.admin, s.backups.listSnapshots),
     getSnapshot: q(p.admin, s.backups.getSnapshot),
     restore: m(p.admin, s.backups.restore),
+    getRestore: q(p.admin, s.backups.getRestore),
     exportRepoPassword: m(p.admin, s.backups.exportRepoPassword),
   }),
 

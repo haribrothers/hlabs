@@ -3,8 +3,8 @@
 // `sudo -n`, with SMB credentials in a 0600 file deleted after the mount (D-061). Behind an interface for tests.
 import { hlabsError } from '@hlabs/api';
 import { execFile } from 'node:child_process';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, rm, stat, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 
 export interface NetworkShare {
   protocol: 'smb' | 'nfs';
@@ -19,6 +19,18 @@ export interface NetworkMounter {
   /** Mounts the share and returns where. `target` is used where the platform allows it (not macOS SMB). */
   mount(share: NetworkShare, target: string): Promise<string>;
   unmount(mountPoint: string): Promise<void>;
+  /** Something is mounted there now. */
+  isMounted(mountPoint: string): Promise<boolean>;
+}
+
+/** A mount point is on another device than the folder it's in. */
+export async function isMountPoint(path: string): Promise<boolean> {
+  try {
+    const [here, parent] = await Promise.all([stat(path), stat(dirname(path))]);
+    return here.dev !== parent.dev;
+  } catch {
+    return false;
+  }
 }
 
 export interface ExecResult {
@@ -28,14 +40,24 @@ export interface ExecResult {
 }
 
 /** Runs a command without a shell; `stdin` is written and closed. Never rejects: the code tells. */
-export type Exec = (command: string, args: string[], opts?: { stdin?: string }) => Promise<ExecResult>;
+export type Exec = (
+  command: string,
+  args: string[],
+  /** `env` replaces the environment (secrets go here, never in `args`, 07 §7.7). */
+  opts?: { stdin?: string; env?: NodeJS.ProcessEnv },
+) => Promise<ExecResult>;
 
 export const nodeExec: Exec = (command, args, opts) =>
   new Promise((resolve) => {
-    const child = execFile(command, args, { timeout: 60_000 }, (err, stdout, stderr) => {
-      const code = err ? (typeof err.code === 'number' ? err.code : 127) : 0;
-      resolve({ code, stdout: String(stdout), stderr: String(stderr) });
-    });
+    const child = execFile(
+      command,
+      args,
+      { timeout: 60_000, ...(opts?.env ? { env: opts.env } : {}) },
+      (err, stdout, stderr) => {
+        const code = err ? (typeof err.code === 'number' ? err.code : 127) : 0;
+        resolve({ code, stdout: String(stdout), stderr: String(stderr) });
+      },
+    );
     child.stdin?.end(opts?.stdin ?? '');
   });
 
@@ -98,6 +120,8 @@ export class MacNetworkMounter implements NetworkMounter {
     const res = await this.exec('/usr/sbin/diskutil', ['unmount', mountPoint]);
     if (res.code !== 0) await this.exec('/sbin/umount', [mountPoint]);
   }
+
+  isMounted = isMountPoint;
 }
 
 export class LinuxNetworkMounter implements NetworkMounter {
@@ -133,4 +157,6 @@ export class LinuxNetworkMounter implements NetworkMounter {
   async unmount(mountPoint: string): Promise<void> {
     await this.exec('sudo', ['-n', this.helper, 'umount', mountPoint]);
   }
+
+  isMounted = isMountPoint;
 }

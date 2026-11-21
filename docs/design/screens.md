@@ -599,7 +599,7 @@ Shows: hlabs — Files · [Files] · [Locations] · Files · Recents · Home · 
 
 ### FilesList — List view & selection
 
-**Priority:** Nice to have · **Phase:** 9 · **Stories:** US-FILE-19, US-FILE-20
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-19, US-FILE-20
 
 ![FilesList](screens/FilesList.webp)
 
@@ -609,7 +609,7 @@ Shows: hlabs — Files · list view & selection · [Files] · [Locations] · Fil
 
 ### FilesContextMenu — Right-click menu
 
-**Priority:** Nice to have · **Phase:** 9 · **Stories:** US-FILE-21
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-21
 
 ![FilesContextMenu](screens/FilesContextMenu.webp)
 
@@ -637,9 +637,17 @@ Links to: `AppStore`, `BackupsOverview`, `FilePreview`, `FilesBrowser`, `FilesEx
 
 Shows: hlabs — Files · uploading · [Files] · [Locations] · Files · Recents · Home · Photos · Downloads · Shared with me · Locations · This computer · NAS · Media · [DRIVE NAME] · + Connect a drive · Other · App data · Trash · 114 GB of 256 GB used · [Breadcrumb] · Home · › · Documents · Search files · [Search] · [View] · [Grid view] · [List view] · Share folder · New folder · Upload · Bills · 24 items · Taxes · 12 items · Travel · 8 items · Work · 41 items · Scans · 17 items · Manuals · 9 items · Lease agreement.pdf · 1.2 MB · Kitchen plan.jpg · 3.4 MB · Budget 2026.xlsx · 84 KB · Letter draft.docx · 32 KB · Passport scan.png · 2.1 MB · Old laptop backup.zip · 4.8 GB · 12 items · 5.1 GB · Private to you · Hari's Home folder · [Uploads] · Uploading 3 files · About 1 min left · Tax return 2025.pdf · Done · Home video.mov · 62% · 1.1 of 1.8 GB · Receipts.zip · Waiting · Pause · Cancel all · Drop to upload to Documents · [Dock] · Home · App Store, 2 updates · Files · Usage · Backups · Settings · Jellyfin, open · Immich · Vaultwarden · Add to Dock · Search
 
+### FolderPicker — Choose a folder for an app
+
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-FILE-25 · Design: Home Cloud Dashboard canvas, page "Phase 5 · Choose a folder" (D-131): `InstallSheetChange`, `FolderPicker`, `FolderPickerReadOnly`, `InstallSheetChosen`, `FolderPickerMember`, `PhoneFolderPicker`.
+
+Links to: `InstallSheet`, `InstallProgress`, `AppDetails`
+
+Shows: Install Immich · Folder access · Home › Photos · Read and write · where your library is stored · [Change folder for Photo library] · Change · NAS · Archive › Photos 2010–2019 · Read only · import existing photos · [Change folder for Existing photos] · Change · [Give access to existing photos] · Choose a folder for Immich · Photo library · Read and write · [Places] · Places · Home · Shared · NAS · Media · NAS · Archive · Read only · NAS · Backups · Offline · [Breadcrumb] · Home › Photos · [Folders in Photos] · Camera roll · Holidays 2025 · Scans · [Open Scans] · › · No folders in <folder> · Use this folder, or make a new one inside it. · + New folder · This folder is read only · Cancel · Use Photos
+
 ### FilesMove — Move to
 
-**Priority:** Nice to have · **Phase:** 9 · **Stories:** US-FILE-22
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-22
 
 ![FilesMove](screens/FilesMove.webp)
 
@@ -649,7 +657,7 @@ Shows: hlabs — Files · move to · [Files] · [Locations] · Files · Recents 
 
 ### FilesRename — Rename
 
-**Priority:** Nice to have · **Phase:** 9 · **Stories:** US-FILE-23
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-23
 
 ![FilesRename](screens/FilesRename.webp)
 
@@ -689,7 +697,7 @@ Shows: hlabs — Files · external drive · [Files] · [Locations] · Files · R
 
 ### FilesTrash — Trash
 
-**Priority:** P3 · **Phase:** 8 · **Stories:** US-FILE-16, US-FILE-17, US-FILE-18
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-16, US-FILE-17, US-FILE-18
 
 ![FilesTrash](screens/FilesTrash.webp)
 
@@ -699,7 +707,7 @@ Shows: hlabs — Files · Trash · [Files] · [Locations] · Files · Recents ·
 
 ### FilesLoading — Loading
 
-**Priority:** Nice to have · **Phase:** 9 · **Stories:** US-FILE-24
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-24
 
 ![FilesLoading](screens/FilesLoading.webp)
 
@@ -1268,3 +1276,315 @@ Shows: [a Mac with hlabs installed from the browser] a window titled hlabs with 
 Links to: `Main`
 
 Shows: Can't reach hlabs · Trying again in 10 seconds… · 1 Check that this computer is on your home network or connected to Tailscale. · 2 Make sure the computer hlabs runs on is on and awake. · Try again
+
+## Added for phase 5 Backups (19 Nov 2026)
+
+On the Home Cloud Dashboard canvas, page "Phase 5 · Backups". The restore steps follow D-024 (stop, safety copy, copy, start) and replace `RestoreProgress`'s order; "Another hlabs" is left out until D-132's Backup receiver app.
+
+### BackupsEmpty — No backups yet
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-01
+
+![BackupsEmpty](screens/BackupsEmpty.webp)
+
+Shows: Backups · Restore… (off) · Back up now (off) · No backups yet · Add a destination to start backing up your apps and Home folders. · + Add a destination · Schedule and retention · Every day at 03:00 · Keeps 7 daily, 4 weekly and 6 monthly restore points · starts once a destination is added
+
+### BackupsFailed — Last backup failed, overdue
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-01, US-BKP-02, US-BKP-03
+
+![BackupsFailed](screens/BackupsFailed.webp)
+
+Shows: Last backup failed · 24 Sep, 03:00 · Overdue · 11 apps and 3 Home folders · next backup tonight at 03:00 · Details · NAS · nas.local/Backups · Unreachable · Edit · Recent runs · 24 Sep, 03:00 · NAS was not reachable · Failed · Details · 23 Sep, 03:30 · Retry · NAS was not reachable
+
+### BackupsRunning — Backing up now
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-03, US-BKP-04
+
+![BackupsRunning](screens/BackupsRunning.webp)
+
+Shows: Backing up… 42% (off) · Backup started · Last backup yesterday at 03:00 · Recent runs · Now · Backing up… 42% · Immich · 0.5 of 1.2 GB · Running
+
+### BackupAddNetwork — Add destination · network drive
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-08, US-BKP-09, US-BKP-10
+
+![BackupAddNetwork](screens/BackupAddNetwork.webp)
+
+Shows: Add a backup destination · Cloud storage · Network drive · External drive · Choose a connected drive · NAS · Media · NAS · Backups · Or enter a share address · smb://nas.local/Backups · Backups go in a folder named hlabs-backups on it · Encryption password · Copy · Save this password somewhere safe. Without it, these backups can't be restored, not even by the admin. · Connected · Cancel · Test connection · Add destination
+
+### BackupAddExternal — Add destination · external drive
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-08
+
+![BackupAddExternal](screens/BackupAddExternal.webp)
+
+Shows: Choose a drive · Backup disk · 2 TB · 1.4 TB free · Samsung T7 · Folder name · hlabs-backups · Made on the drive if it isn't there
+
+### BackupAddCloudError — Add destination · wrong key
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-08, US-BKP-09
+
+![BackupAddCloudError](screens/BackupAddCloudError.webp)
+
+Shows: Endpoint · Bucket · Access key · Secret key · Access key or secret key is wrong
+
+### BackupAddExisting — Add destination · backups already there
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-09
+
+![BackupAddExisting](screens/BackupAddExisting.webp)
+
+Shows: Backups already exist here. Enter their encryption password to use them. · Encryption password · That password doesn't open these backups
+
+### BackupEditDest — Edit destination
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-11
+
+![BackupEditDest](screens/BackupEditDest.webp)
+
+Shows: Edit Backblaze · Name · Cloud storage · s3…/hlabs-backups · The type and place can't change. To move backups, add another destination. · Access key · Secret key (Unchanged) · Show encryption password · Remove destination · Cancel · Save
+
+### BackupShowPassword — Show encryption password
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-10
+
+![BackupShowPassword](screens/BackupShowPassword.webp)
+
+Shows: Show encryption password · Enter your hlabs password to see the encryption password for Backblaze. · Your password · Cancel · Show
+
+### BackupPasswordShown — Encryption password shown
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-10
+
+![BackupPasswordShown](screens/BackupPasswordShown.webp)
+
+Shows: Encryption password for Backblaze · Copy · Keep it somewhere safe and private. Anyone with it and access to the bucket can read these backups. · Done
+
+### BackupRemoveDest — Remove destination
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-11
+
+![BackupRemoveDest](screens/BackupRemoveDest.webp)
+
+Shows: Stop backing up to NAS? · Existing backups stay on the NAS and can be added again later. · Cancel · Remove
+
+### RestoreConfirm — Confirm a restore
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-19
+
+![RestoreConfirm](screens/RestoreConfirm.webp)
+
+Shows: Replace Vaultwarden with its data from yesterday, 03:00? · Vaultwarden stops until the restore finishes. hlabs keeps a safety copy of today's data until it's done. · Your password · Needed for every restore · Cancel · Replace data
+
+### RestoreProgressCancel — Restore in progress, can cancel
+
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-BKP-20, US-BKP-22
+
+![RestoreProgressCancel](screens/RestoreProgressCancel.webp)
+
+Shows: Step 3 of 3 · Restoring Vaultwarden · From yesterday, 03:00 · replacing current data · Stopped Vaultwarden · Saved a safety copy of current data · Copying data from NAS · 134 of 210 MB · Starting Vaultwarden · If anything goes wrong, hlabs puts the safety copy back automatically. · Cancel restore · Hide
+
+### RestoreDone — Restore finished
+
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-BKP-21
+
+![RestoreDone](screens/RestoreDone.webp)
+
+Shows: Vaultwarden restored · From yesterday, 03:00 · replaced current data · Copied data from NAS · Started Vaultwarden · The safety copy has been deleted. · Done
+
+### RestoreFailed — Restore failed, rolled back
+
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-BKP-21
+
+![RestoreFailed](screens/RestoreFailed.webp)
+
+Shows: Restore didn't finish · Vaultwarden is back to how it was. · hlabs couldn't reach your NAS. It may have been asleep or off. Try again when it's back. · Copying data from NAS · Stopped at 134 of 210 MB · Put the safety copy back · Started Vaultwarden · Close
+
+### PhoneBackupsEmpty — Phone · Backups, none yet
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-01
+
+![PhoneBackupsEmpty](screens/PhoneBackupsEmpty.webp)
+
+Shows: ‹ Settings · Backups · No backups yet · + Add a destination · Schedule · Daily 03:00 · Restore… (off)
+
+### PhoneBackupAdd — Phone · add a destination
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-BKP-08
+
+![PhoneBackupAdd](screens/PhoneBackupAdd.webp)
+
+Shows: Add a backup destination · Cancel · Cloud storage · Network drive · External drive · Choose a connected drive · Encryption password · Copy · Test connection · Add destination
+
+### PhoneRestoreProgress — Phone · restore in progress
+
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-BKP-20, US-BKP-22
+
+![PhoneRestoreProgress](screens/PhoneRestoreProgress.webp)
+
+Shows: Restoring Vaultwarden · Cancel restore · Hide
+
+## Added for phase 5 Organise files (20 Nov 2026)
+
+On the Home Cloud Dashboard canvas, page "Phase 5 · Organise files" (D-135): the states `FilesList`, `FilesContextMenu`, `FilesMove`, `FilesRename`, `FilesLoading` and `FilesTrash` don't draw. They show phase 5 as it ships, without "Share folder" or external drives (phase 8, D-036). Toasts sit above the Dock. On a phone every item has "•••", "Select" turns on ticks, and the selection bar takes the tab bar's place.
+
+### FilesListLoading — List view loading, slow drive
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-24
+
+![FilesListLoading](screens/FilesListLoading.webp)
+
+Shows: NAS · Media › Movies · list view · Name ↑ · Modified · Size · 8 skeleton rows · Still loading… this drive is slow to respond
+
+### FilesGridSelect — Selecting in grid view
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-20
+
+![FilesGridSelect](screens/FilesGridSelect.webp)
+
+Shows: 3 selected · Move to… · Share · Download · Move to Trash · Clear selection · ticked tiles · an empty tick on the hovered tile · 12 items · 3 selected · 4.7 MB · Shift-click to select a range
+
+### FilesMenuMulti — Right-click menu for several items
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-21
+
+![FilesMenuMulti](screens/FilesMenuMulti.webp)
+
+Shows: 3 selected · Share… · Download · Move to… · Duplicate · Move to Trash ⌫ (no Open, Open with, Copy link or Rename…)
+
+### FilesMenuReadOnly — Open with, on a read-only drive
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-21
+
+![FilesMenuReadOnly](screens/FilesMenuReadOnly.webp)
+
+Shows: NAS · Media › Scans · no New folder or Upload · Open ↵ · Open with › Paperless-ngx, Stirling PDF · Share… · Copy link · Download · Rename… Move to… Duplicate Move to Trash (off) · Read only · NAS · Media
+
+### FilesRenameInUse — Rename a folder an app uses
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-23
+
+![FilesRenameInUse](screens/FilesRenameInUse.webp)
+
+Shows: Rename · Scanned letters · Paperless-ngx uses this folder. Renaming it will break that. · Cancel · Rename anyway
+
+### FilesRenameTaken — Rename, name already taken
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-23
+
+![FilesRenameTaken](screens/FilesRenameTaken.webp)
+
+Shows: Rename · Taxes · A folder called “Taxes” already exists here. · Cancel · Rename (off)
+
+### FilesDragMove — Drag items onto a folder
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-22
+
+![FilesDragMove](screens/FilesDragMove.webp)
+
+Shows: 2 ticked files dragged onto Taxes (highlighted) · Move 2 items to Taxes · Drop on a folder to move
+
+### FilesMovedUndo — Moved, with Undo
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-22
+
+![FilesMovedUndo](screens/FilesMovedUndo.webp)
+
+Shows: list view without the moved files · toast: Moved 3 items to Taxes · Undo
+
+### FilesMoveProgress — Moving to another disk
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-22
+
+![FilesMoveProgress](screens/FilesMoveProgress.webp)
+
+Shows: toast: Moving 3 items to NAS · Media · 1.9 of 4.8 GB · they leave Home once the copy is checked · progress bar
+
+### FilesTrashUndo — Moved to Trash, with Undo
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-16
+
+![FilesTrashUndo](screens/FilesTrashUndo.webp)
+
+Shows: grid without the two files · toast: 2 items moved to Trash · Undo
+
+### FilesDeleteForGood — Delete for good on a network drive
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-16
+
+![FilesDeleteForGood](screens/FilesDeleteForGood.webp)
+
+Shows: Delete 2 items for good? · They're on NAS · Media, and Trash only covers this computer, so they're deleted straight away. You can't undo this. · Cancel · Delete
+
+### FilesEmptyTrash — Empty trash?
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-18
+
+![FilesEmptyTrash](screens/FilesEmptyTrash.webp)
+
+Shows: Empty trash? · 4 items (14.2 MB) will be deleted for good. You can't undo this. · Cancel · Empty trash
+
+### FilesTrashEmpty — Trash is empty
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-17
+
+![FilesTrashEmpty](screens/FilesTrashEmpty.webp)
+
+Shows: Trash · Restore all (off) · Empty trash (off) · Items are deleted for good after 30 days. · Trash is empty
+
+### FilesRestoreFailed — Couldn't restore
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-17
+
+![FilesRestoreFailed](screens/FilesRestoreFailed.webp)
+
+Shows: Scan 0412.pdf · From NAS · Media › Scans · 4 days left (amber) · toast: Couldn't restore. NAS · Media isn't connected. · Scan 0412.pdf stays in Trash. Reconnect the drive in Files, then try again.
+
+### PhoneFilesMore — Phone · ••• on every item
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-21
+
+![PhoneFilesMore](screens/PhoneFilesMore.webp)
+
+Shows: Files · Recents · Home · Photos · Downloads · Home › Documents · Search in Documents · New folder · Upload · Select · tiles with More for <name> · 4 items · 1.3 MB
+
+### PhoneFilesActions — Phone · ••• actions sheet
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-21
+
+![PhoneFilesActions](screens/PhoneFilesActions.webp)
+
+Shows: Lease agreement.pdf · 1.2 MB · 12 Sep 2026 · Open · Open with › · Share… · Copy link · Download · Rename… · Move to… · Duplicate · Move to Trash
+
+### PhoneFilesSelect — Phone · selecting
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-20
+
+![PhoneFilesSelect](screens/PhoneFilesSelect.webp)
+
+Shows: 2 selected · Select all · Done · ticked tiles · bar in the tab bar's place: Move · Share · Download · Trash · 4 items · 2 selected · 1.3 MB
+
+### PhoneFilesMove — Phone · Move to, full screen
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-22
+
+![PhoneFilesMove](screens/PhoneFilesMove.webp)
+
+Shows: Cancel · Move 2 items to… · Home › Documents (current) › Bills, Taxes, Travel · Photos · Shared with me · NAS · Media · + New folder · Move to Taxes
+
+### PhoneFilesRename — Phone · Rename sheet
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-23
+
+![PhoneFilesRename](screens/PhoneFilesRename.webp)
+
+Shows: Rename · Lease agreement.pdf (name selected) · The .pdf ending is kept so apps still know how to open it. · Cancel · Rename
+
+### PhoneFilesTrash — Phone · Trash
+
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-FILE-17
+
+![PhoneFilesTrash](screens/PhoneFilesTrash.webp)
+
+Shows: Trash chip · Trash · Restore all · Empty trash · Items are deleted for good after 30 days. · rows with From … · deleted … · days left (4 days left in amber) · Restore

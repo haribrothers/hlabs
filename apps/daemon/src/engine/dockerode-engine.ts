@@ -103,6 +103,44 @@ export class DockerodeEngine implements ContainerEngine {
     }
   }
 
+  async pauseContainer(containerId: string) {
+    await this.docker.getContainer(containerId).pause();
+  }
+
+  async unpauseContainer(containerId: string) {
+    await this.docker.getContainer(containerId).unpause();
+  }
+
+  async execInContainer(containerId: string, command: string, signal?: AbortSignal) {
+    const exec = await this.slow.getContainer(containerId).exec({
+      Cmd: ['sh', '-c', command],
+      AttachStdout: true,
+      AttachStderr: true,
+    });
+    const stream = (await exec.start({ hijack: true, stdin: false })) as NodeJS.ReadableStream & {
+      destroy?: () => void;
+    };
+    const stop = () => stream.destroy?.();
+    signal?.addEventListener('abort', stop);
+    let output = '';
+    try {
+      for await (const chunk of stream) {
+        // Docker's multiplexed frames: an 8-byte header per frame.
+        let buf = chunk as Buffer;
+        while (buf.length >= 8) {
+          const size = buf.readUInt32BE(4);
+          output += buf.subarray(8, 8 + size).toString('utf8');
+          buf = buf.subarray(8 + size);
+        }
+        if (output.length > 64 * 1024) output = output.slice(-64 * 1024);
+      }
+    } finally {
+      signal?.removeEventListener('abort', stop);
+    }
+    const { ExitCode } = (await exec.inspect()) as { ExitCode: number | null };
+    return { exitCode: ExitCode ?? 1, output };
+  }
+
   async clearFolder(image: string, hostPath: string): Promise<void> {
     const container = await this.slow.createContainer({
       Image: image,

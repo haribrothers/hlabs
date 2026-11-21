@@ -56,6 +56,18 @@ If an app recommends more memory than hlabs has left, its page says so; you can 
 Choose **Install** on an app's page. Before anything happens, a sheet shows:
 
 - **Folder access**: where each folder the app asks for will be, such as **Home › Photos**, and whether the app can change what's in it or only look. A folder the app can do without has a switch, so you can leave it out. If a folder is on a network drive that's offline, **Install** stays off until the drive is back.
+
+### Choose a different folder
+
+Press **Change** beside a folder to pick where the app keeps it, for example the photos you already have on a network drive.
+
+- **Places** lists your Home, Shared (if you can see it) and each network drive that has **Let apps use this drive** on. A drive that's offline is listed but can't be opened until it's back.
+- Only folders are shown. Click a folder to select it, double-click it (or press **Enter**) to open it, and use the path at the top to go back up. On a phone, tap a folder to open it.
+- **Use** gives the app the selected folder, or the folder that's open if none is selected. **+ New folder** makes one inside the open folder.
+- A folder the app needs to change can't be on a drive or folder that's read only: **Use** stays off and says so. A folder the app only reads can be anywhere, and the app still only reads it.
+- If an admin lets members install apps, a member can only choose folders in their own Home, and Shared if they can see it.
+
+Choosing a folder doesn't move or copy anything. The app uses the files that are already there.
 - **Includes**: what runs, such as "Immich server · web app" and "PostgreSQL · database · private to this app".
 - **Address**: where the app will open, such as `https://immich.hlabs.local`. You can change the part before `.hlabs.local` (lowercase letters, numbers and dashes). **Login required** means people sign in with their hlabs account first; some apps also have their own login.
 - **Settings**: questions the app needs answered, such as an email address. Passwords the app needs for itself are made for you and never shown.

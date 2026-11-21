@@ -1,0 +1,1 @@
+ALTER TABLE `restores` ADD `steps_json` text DEFAULT '[]' NOT NULL;

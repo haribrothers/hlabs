@@ -21,6 +21,7 @@ import type { Logger } from '../logger';
 import type { NotificationService } from '../notifications/service';
 import type { SecretStore } from '../platform/secrets';
 import { inviteTokenHash } from './invites';
+import { includeNew } from '../backups/plan';
 
 /**
  * Failed accepts (a link that doesn't work) are recorded as log-in attempts under this name, which no username can
@@ -121,6 +122,8 @@ export async function acceptInvite(
       throw hlabsError('USERNAME_TAKEN');
     }
     tx.insert(users).values({ id: userId, username, displayName, role: used.role, passwordHash, createdAt: now }).run();
+    // Their Home folder joins the backups while "Include new apps automatically" is on (D-134).
+    includeNew(tx as unknown as HlabsDb, { folder: `users/${username}` });
     if (used.role === 'member') {
       const shared = tx
         .select({ appId: inviteAppAccess.appId })
