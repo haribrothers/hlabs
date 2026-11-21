@@ -1,0 +1,25 @@
+# hlabs on a Linux server (US-INST-23, D-140), installed by install.sh as /etc/systemd/system/hlabsd.service.
+# /opt/hlabs/current is the running version; an update switches it and the daemon stops, so systemd starts the new
+# one, and the watchdog switches back an update that never became ready (D-118).
+[Unit]
+Description=hlabs home cloud
+Documentation=https://hlabs.h4loom.com/help/
+After=network-online.target docker.service avahi-daemon.service
+Wants=network-online.target docker.service avahi-daemon.service
+
+[Service]
+Type=simple
+User=hlabs
+Group=hlabs
+Environment=NODE_ENV=production HLABS_HEADLESS=1 HLABS_INSTALL_ROOT=/opt/hlabs
+ExecStartPre=/opt/hlabs/current/node /opt/hlabs/current/hlabsd.mjs --update-watchdog
+ExecStart=/opt/hlabs/current/node /opt/hlabs/current/hlabsd.mjs
+Restart=always
+RestartSec=2
+# Caddy (a child of hlabsd) listens on ports 80 and 443 without running as root.
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+UMask=0027
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

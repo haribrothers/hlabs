@@ -3,8 +3,9 @@
 // dashboard's builds. `pnpm build:tray` runs this and then `tauri build` with the bundle config, so the .app's
 // Contents/Resources/daemon is this folder; the LaunchAgent runs `daemon/node daemon/hlabsd.mjs` (US-INST-01).
 // Unsigned and for this computer's platform only: signing, notarizing and other platforms are the release (phase 6).
+// `pnpm build:linux` uses the same bundle for the Linux server tarball (D-140), with `--out`.
 //
-//   node scripts/bundle-app.ts
+//   node scripts/bundle-app.ts [--out <dir>]
 import { execFileSync } from 'node:child_process';
 import {
   cpSync,
@@ -18,9 +19,11 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 
 const root = resolve(import.meta.dirname, '..');
-const out = join(root, 'apps/tray/src-tauri/resources/daemon');
+const { values } = parseArgs({ options: { out: { type: 'string' } } });
+const out = values.out ? resolve(values.out) : join(root, 'apps/tray/src-tauri/resources/daemon');
 const say = (line: string) => void process.stdout.write(`${line}\n`);
 const run = (cmd: string, args: string[]) => execFileSync(cmd, args, { cwd: root, stdio: 'inherit' });
 

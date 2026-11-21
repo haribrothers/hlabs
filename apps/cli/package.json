@@ -8,9 +8,11 @@
     "hlabs": "./src/main.ts"
   },
   "scripts": {
+    "build": "node build.mjs",
     "start": "tsx src/main.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:install": "vitest run --config vitest.install.config.ts"
   },
   "dependencies": {
     "@hlabs/api": "workspace:*"
@@ -18,6 +20,7 @@
   "devDependencies": {
     "@hlabs/config": "workspace:*",
     "@types/node": "^22.20.4",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "~5.9.3",
     "vite": "^8.3.1",

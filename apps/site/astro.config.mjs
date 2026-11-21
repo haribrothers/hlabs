@@ -5,7 +5,7 @@ import starlightSidebarTopics from 'starlight-sidebar-topics';
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
-  site: 'https://hlabs.dev', // SITE_URL, to be confirmed (Q-07)
+  site: 'https://hlabs.h4loom.com', // SITE_URL (D-139)
   integrations: [
     starlight({
       title: 'hlabs',
@@ -25,6 +25,7 @@ export default defineConfig({
                   items: [
                     { label: 'Welcome', link: '/help/' },
                     { label: 'Set up hlabs', link: '/help/get-started/set-up/' },
+                    { label: 'Install on a Linux server', link: '/help/get-started/install-linux/' },
                     { label: 'Log in', link: '/help/get-started/log-in/' },
                     { label: 'Your Home screen', link: '/help/get-started/home/' },
                     { label: 'Settings', link: '/help/get-started/settings/' },

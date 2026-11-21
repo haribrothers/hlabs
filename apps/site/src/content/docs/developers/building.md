@@ -1,6 +1,6 @@
 ---
 title: Building the app
-description: Building the Mac app with hlabs inside, and where an installed hlabs keeps things.
+description: Building the Mac app and the Linux server download, and where an installed hlabs keeps things.
 ---
 
 ## Build it
@@ -38,6 +38,35 @@ curl http://127.0.0.1:7474/healthz                          # is it up, and whic
 To remove a test install completely: stop it as above, then delete `~/Library/LaunchAgents/dev.hlabs.daemon.plist`, `/Applications/hlabs.app` and, if you want its data gone too, `~/Library/Application Support/hlabs`. Remove the keychain item `dev.hlabs` with Keychain Access.
 
 Each build ships a new, unsigned copy of Node.js, so macOS asks once per build whether it may read the keychain item: choose **Always Allow**.
+
+## The Linux server download
+
+On a Linux computer (x86_64 or arm64, the one it's for):
+
+```sh
+pnpm build:linux                        # this version (0.0.0)
+pnpm build:linux --version 0.0.1        # a version of your choice
+```
+
+It puts hlabsd, Node.js, Caddy, restic, docker compose, the `hlabs` command and the systemd unit into `dist/linux/hlabs-<version>-linux-<arch>.tar.gz`, and writes `SHA256SUMS`, `install.sh` and a signature for each. It signs with `TAURI_SIGNING_PRIVATE_KEY` (and `HLABS_UPDATE_PUBLIC_KEY`, its public half) when they're set. Otherwise it makes a key for this build (`dist/linux/build.key`) and writes its public half into that `install.sh`, so the install still checks a real signature.
+
+Install it on that computer, or on a test machine that can read `dist/linux`:
+
+```sh
+sudo HLABS_TARBALL=dist/linux/hlabs-0.0.0-linux-x86_64.tar.gz sh dist/linux/install.sh
+```
+
+| What | Where |
+| --- | --- |
+| hlabs | `/opt/hlabs/<version>`, with `/opt/hlabs/current` pointing at the one that runs |
+| The service | `/etc/systemd/system/hlabsd.service`, running as the `hlabs` user |
+| Its data | `/var/lib/hlabs` (`hlabs.db`, `storage/`, `tray.token`, `secret.key`) |
+| Its logs | `/var/lib/hlabs/logs/hlabsd.log`, and `journalctl -u hlabsd` |
+| The install's own log | `/var/log/hlabs-install.log` |
+| The `hlabs` command | `/usr/local/bin/hlabs` |
+| What it may run as root | `/usr/lib/hlabs/hlabs-priv`, allowed by `/etc/sudoers.d/hlabs` |
+
+`pnpm --filter @hlabs/cli test:install` installs the build for real and checks the result. It needs `sudo`, systemd and Docker, and it changes the machine, so CI runs it on its own runner (the `install (Linux)` job). On a Mac, an [OrbStack](https://orbstack.dev) Ubuntu machine works too: copy the repository into the machine rather than building in the shared folder, so the Mac's `node_modules` aren't replaced with Linux ones.
 
 ## The installable dashboard
 

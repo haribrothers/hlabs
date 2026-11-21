@@ -1,7 +1,9 @@
 // hlabsd entry point. `hlabsd --update-watchdog` is the headless start check (systemd ExecStartPre, D-118): it
-// switches `current` back when an update never became ready.
-import { boot, shutdown } from './boot';
+// switches `current` back when an update never became ready. `hlabsd --set-ports <https> <http>` saves the web ports
+// the Linux installer found free (D-140).
+import { boot, bundledMigrationsDir, shutdown } from './boot';
 import { loadConfig } from './config';
+import { setPorts } from './install/set-ports';
 import { createLogger } from './logger';
 import { Readiness } from './readiness';
 import { buildServer } from './server';
@@ -13,6 +15,14 @@ import { hasUpdateMarker } from './updates/marker';
 if (process.argv.includes('--update-watchdog')) {
   const root = process.env.HLABS_INSTALL_ROOT ?? '/opt/hlabs';
   process.stdout.write(`update watchdog: ${switchBackIfStale(root)}\n`);
+  process.exit(0);
+}
+
+const setPortsAt = process.argv.indexOf('--set-ports');
+if (setPortsAt >= 0) {
+  const { paths } = loadConfig();
+  const ports = setPorts(paths.dataDir, process.argv.slice(setPortsAt + 1), bundledMigrationsDir);
+  process.stdout.write(`ports: ${ports.https} ${ports.http}\n`);
   process.exit(0);
 }
 

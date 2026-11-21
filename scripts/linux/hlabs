@@ -1,0 +1,5 @@
+#!/bin/sh
+# The `hlabs` command on a Linux server (US-INST-25, D-140): /usr/local/bin/hlabs links here, and this runs the CLI
+# with the Node that hlabsd uses, from the same version folder.
+here="$(dirname "$(readlink -f "$0")")"
+exec "$here/../node" "$here/../cli.mjs" "$@"

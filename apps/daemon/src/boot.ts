@@ -94,7 +94,7 @@ import type { ServiceHolder, Services } from './services';
 declare const __HLABS_BUNDLE__: boolean | undefined;
 
 /** In the bundle, migrations are copied next to hlabsd.mjs; from source, @hlabs/db finds its own. */
-const bundledMigrationsDir =
+export const bundledMigrationsDir =
   typeof __HLABS_BUNDLE__ !== 'undefined' ? fileURLToPath(new URL('./migrations', import.meta.url)) : undefined;
 
 export interface BootDeps {
