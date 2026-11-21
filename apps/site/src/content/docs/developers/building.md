@@ -43,6 +43,12 @@ curl http://127.0.0.1:7474/healthz                          # is it up, and whic
 
 Each build ships a new, unsigned copy of Node.js, so macOS asks once per build whether it may read the keychain item: choose **Always Allow**.
 
+## The Linux desktop packages
+
+On Linux, `pnpm build:tray` builds the menu-bar app with hlabsd inside as a `.deb`, an `.rpm` and an AppImage: `dist/hlabs-<version>-linux-<arch>.{deb,rpm,AppImage}`. It needs Tauri's Linux libraries (`libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf`, and `rpm` for the `.rpm`).
+
+The `.deb` and `.rpm` put hlabs in `/usr/lib/hlabs` and run `apps/tray/src-tauri/linux/postinst.sh`, which lets Caddy use ports 80 and 443, and installs the sudoers rule for `hlabs-priv` and the polkit action for "Reset a password…". On first launch the app writes `~/.config/systemd/user/hlabsd.service` and `~/.config/autostart/hlabs.desktop`. The AppImage copies hlabsd to `~/.local/share/hlabs/daemon` and uses ports 8443 and 8080.
+
 ## The Linux server download
 
 On a Linux computer (x86_64 or arm64, the one it's for):

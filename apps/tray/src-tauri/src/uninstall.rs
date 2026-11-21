@@ -3,6 +3,9 @@
 //! follows a link or goes onto another disk (a network drive still mounted inside), and never touches the home folder
 //! itself or a folder above it.
 
+// The menu's Uninstall is a Mac thing (D-145).
+#![cfg_attr(not(target_os = "macos"), allow(dead_code))]
+
 use std::path::{Path, PathBuf};
 #[cfg(target_os = "macos")]
 use std::process::Command;

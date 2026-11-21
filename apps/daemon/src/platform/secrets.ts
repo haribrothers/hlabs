@@ -119,6 +119,33 @@ export function defaultSecretStoreKind(opts: { env: string; headless: boolean })
   return opts.env === 'production' && !opts.headless ? 'keychain' : 'file';
 }
 
-export function createSecretStore(kind: SecretStoreKind, dataDir: string): SecretStore {
-  return kind === 'keychain' ? new KeychainSecretStore() : new FileSecretStore(dataDir);
+/**
+ * Whether the keychain answers: on a Linux desktop, Secret Service may not be running (a minimal desktop, a session
+ * without a keyring). An entry that isn't there counts as answering.
+ */
+export function keychainAnswers(
+  entry: () => { getPassword(): string | null } = () => new Entry(KEYCHAIN_SERVICE, 'probe'),
+): boolean {
+  try {
+    entry().getPassword();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The store for this computer. On a Linux desktop without Secret Service the secrets go in the encrypted file store
+ * instead (D-145), so setup still works there.
+ */
+export function createSecretStore(
+  kind: SecretStoreKind,
+  dataDir: string,
+  opts: { platform?: NodeJS.Platform; answers?: () => boolean } = {},
+): SecretStore {
+  if (kind === 'file') return new FileSecretStore(dataDir);
+  if ((opts.platform ?? process.platform) === 'linux' && !(opts.answers ?? keychainAnswers)()) {
+    return new FileSecretStore(dataDir);
+  }
+  return new KeychainSecretStore();
 }

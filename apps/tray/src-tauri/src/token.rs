@@ -127,15 +127,54 @@ fn write_private(path: &std::path::Path, contents: &str) -> io::Result<()> {
     fs::write(path, contents)
 }
 
-/// The keychain in a release build; the token file in development, where the daemon keeps its
-/// secrets in files too (D-112).
+/// The keychain in a release build (Secret Service on a Linux desktop, falling back to the 0600 file when it doesn't
+/// answer, D-112, D-145); the token file in development, where the daemon keeps its secrets in files too.
 pub fn default_store(data_dir: &std::path::Path) -> Box<dyn TokenStore> {
+    let file = FileStore {
+        path: data_dir.join(TOKEN_FILE),
+    };
     if cfg!(debug_assertions) {
-        Box::new(FileStore {
-            path: data_dir.join(TOKEN_FILE),
-        })
-    } else {
-        Box::new(KeychainStore)
+        return Box::new(file);
+    }
+    if cfg!(target_os = "linux") {
+        return Box::new(Fallback {
+            primary: Box::new(KeychainStore),
+            file,
+        });
+    }
+    Box::new(KeychainStore)
+}
+
+/// Secret Service, or the file when Secret Service can't be reached (a desktop without a keyring); the daemon reads
+/// both (D-112).
+pub struct Fallback {
+    pub primary: Box<dyn TokenStore>,
+    pub file: FileStore,
+}
+
+impl TokenStore for Fallback {
+    fn get(&self) -> Result<Option<String>, TokenError> {
+        match self.primary.get() {
+            Ok(Some(token)) => Ok(Some(token)),
+            // Nothing there, or no Secret Service: the file may hold it.
+            Ok(None) | Err(_) => self.file.get(),
+        }
+    }
+
+    fn set(&self, token: &str) -> Result<(), TokenError> {
+        match self.primary.set(token) {
+            Ok(()) => {
+                // An older copy in the file would be read first by nothing, but it shouldn't linger.
+                let _ = self.file.delete();
+                Ok(())
+            }
+            Err(_) => self.file.set(token),
+        }
+    }
+
+    fn delete(&self) -> Result<(), TokenError> {
+        let _ = self.primary.delete();
+        self.file.delete()
     }
 }
 
@@ -169,6 +208,43 @@ pub mod tests {
             *self.token.lock().unwrap() = None;
             Ok(())
         }
+    }
+
+    #[test]
+    fn us_inst_27_without_secret_service_the_token_goes_in_the_0600_file() {
+        let dir = std::env::temp_dir().join(format!("us-inst-27-token-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        let store = Fallback {
+            primary: Box::new(MemoryStore {
+                denied: true,
+                ..Default::default()
+            }),
+            file: FileStore {
+                path: dir.join(TOKEN_FILE),
+            },
+        };
+        store.set("tok").unwrap();
+        assert_eq!(store.get().unwrap().as_deref(), Some("tok"));
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = fs::metadata(dir.join(TOKEN_FILE))
+                .unwrap()
+                .permissions()
+                .mode();
+            assert_eq!(mode & 0o777, 0o600);
+        }
+        // With Secret Service, it goes there and the file goes.
+        let store = Fallback {
+            primary: Box::new(MemoryStore::default()),
+            file: FileStore {
+                path: dir.join(TOKEN_FILE),
+            },
+        };
+        store.set("tok2").unwrap();
+        assert_eq!(store.get().unwrap().as_deref(), Some("tok2"));
+        assert!(!dir.join(TOKEN_FILE).exists());
+        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

@@ -7,6 +7,7 @@
 //   pnpm build:tray --version 0.0.4 --update --bad-signature signed with another key (it's refused)
 //
 //   pnpm build:tray --dmg                                    also the disk image: dist/hlabs-<v>-mac-<arch>.dmg (D-142)
+//   pnpm build:tray (on Linux)                               dist/hlabs-<v>-linux-<arch>.{deb,rpm,AppImage} (D-145)
 //
 // Updates are signed with the development key (~/.tauri/hlabs-dev.key, or TAURI_SIGNING_PRIVATE_KEY). Serve
 // dist/updates (e.g. `python3 -m http.server 8090 -d dist/updates`) and start the app with
@@ -40,8 +41,15 @@ const version =
   option('--version') ??
   (JSON.parse(readFileSync(join(root, 'apps/daemon/package.json'), 'utf8')) as { version: string }).version;
 const update = flag('--update');
+/** On Linux: the .deb, .rpm and AppImage (D-145) instead of hlabs.app. */
+const linux = process.platform === 'linux';
 const devKey = join(homedir(), '.tauri', 'hlabs-dev.key');
-const env: NodeJS.ProcessEnv = { ...process.env, HLABS_BUILD_VERSION: version };
+const env: NodeJS.ProcessEnv = {
+  ...process.env,
+  HLABS_BUILD_VERSION: version,
+  // The AppImage tools are AppImages themselves; this runs them where FUSE isn't (containers, CI).
+  ...(process.platform === 'linux' ? { APPIMAGE_EXTRACT_AND_RUN: '1' } : {}),
+};
 if (update) {
   env.TAURI_SIGNING_PRIVATE_KEY ??= existsSync(devKey) ? readFileSync(devKey, 'utf8') : undefined;
   env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD ??= '';
@@ -52,6 +60,11 @@ const run = (cmd: string, argv: string[], cwd = root) => execFileSync(cmd, argv,
 
 say(`Building hlabs ${version}${update ? ' as an update' : ''}…`);
 run('node', [join(root, 'scripts/bundle-app.ts')]);
+// Tauri copies resources next to the binary and into its bundle folders but never removes what has gone since, so a
+// file dropped from the daemon bundle would ship anyway: start from clean ones.
+for (const stale of ['target/release/daemon', 'target/release/bundle']) {
+  rmSync(join(tray, 'src-tauri', stale), { recursive: true, force: true });
+}
 run(
   'pnpm',
   [
@@ -69,10 +82,29 @@ run(
       plugins: { updater: { dangerousInsecureTransportProtocol: true } },
     }),
     '--bundles',
-    flag('--dmg') ? 'app,dmg' : 'app',
+    linux ? 'deb,rpm,appimage' : flag('--dmg') ? 'app,dmg' : 'app',
   ],
   tray,
 );
+if (linux) {
+  // Tauri names them hlabs_<v>_amd64.deb, hlabs-<v>-1.x86_64.rpm, hlabs_<v>_amd64.AppImage; releases use
+  // hlabs-<v>-linux-<arch>.<ext> (D-145).
+  const arch = process.arch === 'arm64' ? 'aarch64' : 'x86_64';
+  const bundles = join(tray, 'src-tauri/target/release/bundle');
+  mkdirSync(join(root, 'dist'), { recursive: true });
+  for (const [dir, ext] of [
+    ['deb', 'deb'],
+    ['rpm', 'rpm'],
+    ['appimage', 'AppImage'],
+  ] as const) {
+    const built = readdirSync(join(bundles, dir)).find((f) => f.endsWith(`.${ext}`));
+    if (!built) throw new Error(`No .${ext} in ${join(bundles, dir)}`);
+    const dest = join(root, 'dist', `hlabs-${version}-linux-${arch}.${ext}`);
+    copyFileSync(join(bundles, dir, built), dest);
+    say(`${ext}: ${dest}`);
+  }
+  process.exit(0);
+}
 const bundleDir = join(tray, 'src-tauri/target/release/bundle/macos');
 say(`hlabs.app: ${join(bundleDir, 'hlabs.app')}`);
 if (flag('--dmg')) {

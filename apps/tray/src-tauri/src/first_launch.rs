@@ -2,6 +2,9 @@
 //! Applications, so the background service never points at a copy that disappears (a disk image, Downloads). Both are
 //! native alerts, shown before the menu-bar app has anything on screen.
 
+// Mac only (US-INST-03, US-INST-04).
+#![cfg_attr(not(target_os = "macos"), allow(dead_code))]
+
 use std::path::{Path, PathBuf};
 use std::process::Command;
 

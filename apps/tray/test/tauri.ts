@@ -52,6 +52,7 @@ export function answer(a: Answers) {
       case 'notify':
       case 'quit_tray':
       case 'open_reset_window':
+      case 'set_native_menu':
         return null;
       case 'start_at_login_state':
         return a.startAtLogin ?? true;

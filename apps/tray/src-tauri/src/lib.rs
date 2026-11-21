@@ -10,9 +10,11 @@ mod health;
 mod icon;
 mod launchd;
 mod logs;
+mod native_menu;
 mod os_confirm;
 mod paths;
 mod quit;
+mod systemd;
 mod token;
 mod uninstall;
 mod updates;
@@ -544,6 +546,13 @@ fn set_icon(app: AppHandle, request: IconRequest) -> Result<(), String> {
     let tray = app.tray_by_id("hlabs").ok_or("no tray icon")?;
     let base = tauri::image::Image::from_bytes(BASE_ICON).map_err(|e| e.to_string())?;
     let (rgba, w, h) = (base.rgba().to_vec(), base.width(), base.height());
+    // Linux panels show the icon as it is, on a dark panel (D-145).
+    let linux = cfg!(target_os = "linux");
+    let rgba = if linux {
+        native_menu::white(&rgba)
+    } else {
+        rgba
+    };
     let result = match request.look.as_str() {
         "paused" => template_icon(&tray, icon::faded(&rgba, 0.5), w, h),
         "starting" if !request.reduce_motion => {
@@ -563,7 +572,11 @@ fn set_icon(app: AppHandle, request: IconRequest) -> Result<(), String> {
                 .as_deref()
                 .and_then(icon::parse_hex)
                 .ok_or("no dot colour")?;
-            let glyph = if request.dark { [255; 3] } else { [0; 3] };
+            let glyph = if request.dark || linux {
+                [255; 3]
+            } else {
+                [0; 3]
+            };
             tray.set_icon(Some(tauri::image::Image::new_owned(
                 icon::with_dot(&rgba, w, h, glyph, dot),
                 w,
@@ -576,6 +589,33 @@ fn set_icon(app: AppHandle, request: IconRequest) -> Result<(), String> {
     result.map_err(|e| e.to_string())?;
     tray.set_tooltip(Some(request.tooltip))
         .map_err(|e| e.to_string())
+}
+
+/// US-INST-26: on GNOME without the AppIndicator extension there's nowhere to show the icon; say so once (D-145).
+#[cfg(target_os = "linux")]
+fn appindicator_notice(app: &AppHandle) {
+    let app = app.clone();
+    std::thread::spawn(move || {
+        let flag = paths::data_dir().join(native_menu::APPINDICATOR_FLAG);
+        let desktop = std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default();
+        if !native_menu::needs_appindicator_notice(
+            &desktop,
+            native_menu::has_status_notifier_watcher(),
+            flag.exists(),
+        ) {
+            return;
+        }
+        use tauri_plugin_notification::NotificationExt;
+        let shown = app
+            .notification()
+            .builder()
+            .title(native_menu::APPINDICATOR_TITLE)
+            .body(native_menu::APPINDICATOR_BODY)
+            .show();
+        if shown.is_ok() {
+            let _ = std::fs::write(flag, "");
+        }
+    });
 }
 
 /// One macOS notification (US-INST-14: "hlabs: your apps are offline").
@@ -692,14 +732,78 @@ async fn wait_until_started(app: &AppHandle) {
     tauri::async_runtime::spawn(watch_health(app.clone()));
 }
 
-/// The bootstrap for a macOS release build that has the daemon bundled; `None` otherwise.
-fn bundled_bootstrap(
-    daemon_dir: std::path::PathBuf,
-) -> Option<bootstrap::Bootstrap<launchd::SystemRunner>> {
+/// How a release build with the daemon bundled sets hlabs up: the LaunchAgent on a Mac (US-INST-01), the systemd user
+/// unit on a Linux desktop (US-INST-27, D-145).
+enum Installer {
     #[cfg(target_os = "macos")]
-    if !cfg!(debug_assertions) && daemon_dir.join("node").exists() {
-        let home = std::path::PathBuf::from(std::env::var_os("HOME")?);
-        return Some(bootstrap::Bootstrap {
+    Mac(bootstrap::Bootstrap<launchd::SystemRunner>),
+    #[cfg(target_os = "linux")]
+    Linux(systemd::LinuxBootstrap<launchd::SystemRunner>),
+}
+
+impl Installer {
+    fn is_first_launch(&self, has_token: bool) -> bool {
+        match self {
+            #[cfg(target_os = "macos")]
+            Installer::Mac(b) => b.is_first_launch(has_token),
+            #[cfg(target_os = "linux")]
+            Installer::Linux(b) => b.is_first_launch(has_token),
+        }
+    }
+
+    fn prepare(&self) -> Result<(), String> {
+        match self {
+            #[cfg(target_os = "macos")]
+            Installer::Mac(b) => b.prepare(),
+            #[cfg(target_os = "linux")]
+            Installer::Linux(b) => b.prepare(),
+        }
+    }
+
+    fn install(&self, first: bool) -> Result<bootstrap::Launch, String> {
+        match self {
+            #[cfg(target_os = "macos")]
+            Installer::Mac(b) => b.install(first),
+            #[cfg(target_os = "linux")]
+            Installer::Linux(b) => b.install(first),
+        }
+    }
+
+    /// Start at login for this system: the login item and the LaunchAgent's RunAtLoad on a Mac; the autostart entry
+    /// and the unit's enablement on Linux.
+    fn start_at_login(&self) -> StartAtLogin {
+        match self {
+            #[cfg(target_os = "macos")]
+            Installer::Mac(b) => StartAtLogin {
+                login_item: Box::new(bootstrap::MainAppLoginItem),
+                plist: Some(b.layout.plist_path()),
+            },
+            #[cfg(target_os = "linux")]
+            Installer::Linux(b) => StartAtLogin {
+                login_item: Box::new(systemd::LinuxLoginItem {
+                    layout: b.layout.clone(),
+                    runner: launchd::SystemRunner,
+                }),
+                plist: None,
+            },
+        }
+    }
+}
+
+/// The installer for a release build that has the daemon bundled; `None` otherwise (development).
+#[cfg_attr(
+    not(any(target_os = "macos", target_os = "linux")),
+    allow(unused_variables)
+)]
+fn bundled_installer(daemon_dir: std::path::PathBuf, version: String) -> Option<Installer> {
+    if cfg!(debug_assertions) || !daemon_dir.join("node").exists() {
+        return None;
+    }
+    let home = std::path::PathBuf::from(std::env::var_os("HOME")?);
+    #[cfg(target_os = "macos")]
+    {
+        let _ = version;
+        return Some(Installer::Mac(bootstrap::Bootstrap {
             layout: bootstrap::Layout {
                 data_dir: paths::data_dir(),
                 launch_agents_dir: home.join("Library/LaunchAgents"),
@@ -709,10 +813,45 @@ fn bundled_bootstrap(
             },
             runner: launchd::SystemRunner,
             login_item: Box::new(bootstrap::MainAppLoginItem),
-        });
+        }));
     }
-    let _ = daemon_dir;
-    None
+    #[cfg(target_os = "linux")]
+    {
+        let appimage = std::env::var_os("APPIMAGE").map(std::path::PathBuf::from);
+        let data_dir = paths::data_dir();
+        let config_dir = std::env::var_os("XDG_CONFIG_HOME")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| home.join(".config"));
+        let layout = systemd::LinuxLayout {
+            daemon_dir: if appimage.is_some() {
+                data_dir.join("daemon")
+            } else {
+                daemon_dir.clone()
+            },
+            data_dir,
+            config_dir,
+            tray_exec: appimage
+                .clone()
+                .or_else(|| std::env::current_exe().ok())
+                .unwrap_or_else(|| "hlabs-tray".into()),
+            appimage: appimage.is_some(),
+        };
+        return Some(Installer::Linux(systemd::LinuxBootstrap {
+            login_item: Box::new(systemd::LinuxLoginItem {
+                layout: layout.clone(),
+                runner: launchd::SystemRunner,
+            }),
+            layout,
+            runner: launchd::SystemRunner,
+            bundled_daemon: appimage.is_some().then_some(daemon_dir),
+            version,
+        }));
+    }
+    #[allow(unreachable_code)]
+    {
+        let _ = home;
+        None
+    }
 }
 
 /// US-INST-03, US-INST-04 (D-142): "hlabs needs macOS 14 or later", or "Move hlabs to Applications?" for a release
@@ -796,6 +935,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .manage(IconPulse::default())
+        .manage(native_menu::NativeMenuState::default())
         .invoke_handler(tauri::generate_handler![
             daemon_call,
             tray_access,
@@ -816,6 +956,7 @@ pub fn run() {
             quit_tray,
             open_reset_window,
             reset_password,
+            native_menu::set_native_menu,
             open_uninstall_window,
             confirm_uninstall,
             uninstall_remove_hlabs,
@@ -840,7 +981,10 @@ pub fn run() {
                 token::default_store(&paths::data_dir()),
                 launchd::default_service(),
             );
-            let boot = bundled_bootstrap(app.path().resource_dir()?.join("daemon"));
+            let boot = bundled_installer(
+                app.path().resource_dir()?.join("daemon"),
+                app.package_info().version.to_string(),
+            );
             let first_launch = boot
                 .as_ref()
                 .is_some_and(|b| b.is_first_launch(guard.has_stored_token()));
@@ -850,12 +994,8 @@ pub fn run() {
                 }
             }
             app.manage(match &boot {
-                #[cfg(target_os = "macos")]
-                Some(b) => StartAtLogin {
-                    login_item: Box::new(bootstrap::MainAppLoginItem),
-                    plist: Some(b.layout.plist_path()),
-                },
-                _ => StartAtLogin {
+                Some(b) => b.start_at_login(),
+                None => StartAtLogin {
                     login_item: Box::new(bootstrap::MemoryLoginItem(
                         std::sync::atomic::AtomicBool::new(true),
                     )),
@@ -893,10 +1033,34 @@ pub fn run() {
 
             let icon =
                 tauri::image::Image::from_bytes(include_bytes!("../icons/hlabsTemplate@2x.png"))?;
-            TrayIconBuilder::with_id("hlabs")
+            // A Linux panel draws the icon as it is, and it's dark there (US-INST-26, D-145).
+            #[cfg(target_os = "linux")]
+            let icon = tauri::image::Image::new_owned(
+                native_menu::white(icon.rgba()),
+                icon.width(),
+                icon.height(),
+            );
+            let builder = TrayIconBuilder::with_id("hlabs");
+            // libayatana-appindicator shows no icon without a menu: a first one until the window sends its own.
+            #[cfg(target_os = "linux")]
+            let builder = builder.menu(&tauri::menu::Menu::with_items(
+                app,
+                &[&tauri::menu::MenuItem::with_id(
+                    app,
+                    "status",
+                    "hlabs",
+                    false,
+                    None::<&str>,
+                )?],
+            )?);
+            builder
                 .icon(icon)
                 .icon_as_template(true)
                 .tooltip("hlabs")
+                // US-INST-26: a native menu item was chosen; the menu window runs it.
+                .on_menu_event(|app, event| {
+                    let _ = app.emit_to(window::MENU_WINDOW, "native-menu", event.id().as_ref());
+                })
                 .on_tray_icon_event(|tray, event| {
                     if let TrayIconEvent::Click {
                         button: MouseButton::Left,
@@ -910,6 +1074,8 @@ pub fn run() {
                 })
                 .build(app)?;
             app.manage(window::MenuState::default());
+            #[cfg(target_os = "linux")]
+            appindicator_notice(app.handle());
             if let Some(menu) = app.get_webview_window(window::MENU_WINDOW) {
                 let handle = app.handle().clone();
                 menu.on_window_event(move |event| {

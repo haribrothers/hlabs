@@ -3,7 +3,8 @@
 import type { TrayStatus } from '@hlabs/api';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { invoke } from '@tauri-apps/api/core';
-import { TrayMenu, TraySetup, type MenuItem } from '@hlabs/ui';
+import { type MenuItem } from '@hlabs/ui';
+import { isLinux, TrayMenu, TraySetup } from './native-menu';
 import { useEffect, useState } from 'react';
 import { useAccess, type Access } from './access';
 import { backupItem, useBackUpNow } from './backup';
@@ -60,6 +61,8 @@ export function FirstLaunch({ boot, onOpenSetup }: { boot: BootState; onOpenSetu
         { label: t.stepBrowser, state: boot.setupOpened ? 'done' : started ? 'working' : 'pending' },
       ]}
       action={started ? { label: t.openSetup, onSelect: onOpenSetup } : undefined}
+      // Only the Linux menu shows these (D-145); the Mac's first-launch window has none.
+      items={[{ separator: true }, quitItem]}
     />
   );
 }
@@ -112,7 +115,8 @@ export function runningItems(actions: RunningActions = {}, phase?: number): Menu
     },
     { label: t.resetPassword, onSelect: () => void invoke('open_reset_window').catch(() => {}) },
     { separator: true },
-    ...(isFeatureEnabled('uninstall', phase)
+    // Not on Linux, where removing the package uninstalls hlabs (D-145).
+    ...(isFeatureEnabled('uninstall', phase) && !isLinux()
       ? [{ label: t.uninstall, onSelect: () => void invoke('open_uninstall_window').catch(() => {}) }]
       : []),
     quitItem,

@@ -22,6 +22,10 @@ The window then lists each step: **Stopping apps**, **Removing Colima** (if you 
 
 If a step doesn't finish, it says what to do. **Try again** carries on from that step; **Copy diagnostics** copies a report you can send when asking for help. hlabs stays in Applications until every step has finished.
 
+## On a Linux desktop
+
+Removing the package uninstalls hlabs: see [Install on a Linux desktop](../install-linux-desktop/#remove-hlabs).
+
 ## On a Linux server
 
 Run:
