@@ -32,7 +32,7 @@ All answered on 27 Sep 2026:
 | ID | Question | Status |
 | --- | --- | --- |
 | Q-07 | Website domain (used for `SITE_URL`, the install command and help links). The bundle id `dev.hlabs.app` suggests `hlabs.dev`, which isn't live. Also: publish help at that domain, or bundle it with hlabs so links work offline and match the installed version? Until then, development opens the local site (D-128). | Answered 21 Nov 2026: `https://hlabs.h4loom.com`; help is published there, not bundled (D-139) |
-| Q-08 | Page designs for the website (home, download, app catalogue, help theme). | Open: designed on a "Phase 6 · Website" page of the canvas during phase 6 (D-139); until then follow the design system and Starlight defaults |
+| Q-08 | Page designs for the website (home, download, app catalogue, help theme). | Answered 21 Nov 2026: designed on a "Phase 6 · Website" page of the canvas in part (b) of the website step (D-147) |
 
 New questions found during the build go here with the next free id (Q-09 onward).
 
