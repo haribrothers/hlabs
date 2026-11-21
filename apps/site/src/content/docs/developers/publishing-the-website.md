@@ -60,9 +60,13 @@ Only changes to the site start a build: its folder, the store's apps (the catalo
 
 ### 3. The deploy hook for releases
 
-1. **Settings** › **Build** › **Deploy Hooks** › **Add deploy hook**.
+Spine doesn't need this: its version is written into its site's files and merged before the tag, so that merge rebuilds the site. hlabs's site reads the releases from GitHub when it builds, and a release only exists once `release.yml` has published it, after the last push to `main`.
+
+The hook is made in Cloudflare, on the Worker; GitHub only keeps its address.
+
+1. In Cloudflare: **Workers & Pages** › `hlabs-site` › **Settings** › **Build** › **Deploy Hooks** › **Add deploy hook**. (No Build section there means the Worker isn't connected to GitHub: connect it under **Git repository**, or create it again with **Continue with GitHub**.)
 2. Name it `release.yml`, branch `main`, and **Create**. Copy the hook's address.
-3. In GitHub: the repo › **Settings** › **Secrets and variables** › **Actions** › **New repository secret**. Name it `CLOUDFLARE_SITE_DEPLOY_HOOK` and paste the address.
+3. In GitHub: the repo's **Settings** tab › **Secrets and variables** › **Actions** › **New repository secret**. Name it `CLOUDFLARE_SITE_DEPLOY_HOOK` and paste the address.
 
 Anyone with the address can start a build, so keep it only in that secret. If it ever leaks, delete the hook, make a new one and replace the secret. Without the secret, `release.yml` skips this step and the site shows the release at its next build.
 
