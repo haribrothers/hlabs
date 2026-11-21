@@ -1,6 +1,6 @@
 ---
 title: Install on a Linux server
-description: Install hlabs on a Linux computer without a desktop with one command, finish setup from another device, and upgrade it the same way.
+description: Install hlabs on a Linux computer without a desktop with one command, finish setup from another device, manage it with the hlabs command, and upgrade it the same way.
 features: [F-INST-09]
 ---
 
@@ -37,6 +37,15 @@ If a step fails, the line starts with ✗, says what went wrong and points to `/
 - Linux with systemd, on an x86_64 or arm64 computer.
 - Ubuntu 22.04, Debian 12, Fedora 39, RHEL 9 or newer (anything with OpenSSL 3). On other distributions, install [Docker Engine](https://docs.docker.com/engine/install/) first.
 - Ports 80 and 443. If another program uses one of them, hlabs uses 8080 or 8443 instead and says so, for example **Port 443 is used by nginx, using 8443 instead**. Every address hlabs prints then includes the port.
+
+## Manage hlabs from the command line
+
+On a server there's no menu bar, so the `hlabs` command does its job. Run it with `sudo`, or add yourself to the `hlabs` group (`sudo usermod -aG hlabs $USER`, then log in again).
+
+- **`hlabs status`** says what hlabs is doing, like the menu-bar app: whether it's running and how many apps, CPU, memory and free space, the last backup and the dashboard's address. It finishes with exit code 0 when everything is running, 1 when something needs looking at (an app that stopped working, the container engine, a web port another program took) and 2 when hlabs can't be reached.
+- **`hlabs logs`** shows what hlabs has been doing, newest last. Add `-f` to keep watching, or `--app immich` for one app's logs.
+- **`hlabs reset-password`** sets a new password for someone who forgot theirs. It only works with `sudo`, because being root on the server proves you can get to it. Choose the account, type the new password twice (at least 12 characters, and not a common one) and, if the account has two-factor, say whether to turn it off. They're signed out everywhere and log in with the new password.
+- **`hlabs setup-url`** prints the setup addresses until setup is finished.
 
 ## Check what you download
 

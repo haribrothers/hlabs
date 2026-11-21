@@ -13,6 +13,13 @@ export class CliError extends Error {
   }
 }
 
+/** hlabs answered with one of its error codes (`hlabsCode`, packages/api/src/errors.ts). */
+export class DaemonError extends CliError {
+  constructor(readonly hlabsCode: string | undefined) {
+    super(`hlabs answered with an error${hlabsCode ? ` (${hlabsCode})` : ''}`);
+  }
+}
+
 export interface DaemonClient {
   query<T>(path: string, input?: unknown): Promise<T>;
   mutate<T>(path: string, input?: unknown): Promise<T>;
@@ -79,7 +86,7 @@ export function daemonClient(options: ClientOptions): DaemonClient {
     if (code === 'TRAY_TOKEN_REJECTED') {
       throw new CliError("hlabs didn't accept its token. Restart it: sudo systemctl restart hlabsd", NO_ACCESS);
     }
-    throw new CliError(`hlabs answered with an error${code ? ` (${code})` : ''}`);
+    throw new DaemonError(code);
   };
   return {
     query: (path, input) => call(path, { method: 'GET', input }),

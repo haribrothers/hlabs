@@ -6,6 +6,7 @@ import { diagnosticsReport } from '../tray/diagnostics';
 import { dashboardUrl, trayStatus } from '../tray/status';
 import { trayResetPassword } from '../tray/reset-password';
 import { setupUrls } from '../tray/setup-url';
+import { trayAppLogs } from '../tray/app-logs';
 import { trayUsers } from '../tray/users';
 
 export const tray: AppHandlers<DaemonContext>['tray'] = {
@@ -17,6 +18,9 @@ export const tray: AppHandlers<DaemonContext>['tray'] = {
     await trayResetPassword(ctx.services, input);
     return { ok: true as const };
   },
+
+  // US-INST-25: one app's container logs for `hlabs logs --app` (the tray token calls tray.* only, D-035).
+  appLogs: (input, ctx) => trayAppLogs(ctx.services, input),
 
   // US-INST-17: the accounts "Reset a password…" offers.
   listUsers: (_input, ctx) => ({ users: trayUsers(ctx.services.db) }),

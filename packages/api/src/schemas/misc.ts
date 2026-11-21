@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { io } from '../trpc';
+import { logLineSchema } from './apps';
 import {
   appIdSchema,
   empty,
@@ -120,7 +121,16 @@ export const tray = {
     z.object({ action: z.enum(['openDashboard', 'copyAddress', 'backupNow', 'pauseAll', 'resumeAll']) }),
     z.union([ok, jobRefSchema, z.object({ url: z.string() })]),
   ),
-  resetPassword: io(z.object({ username: usernameSchema, newPassword: z.string(), disableTotp: z.boolean() }), ok),
+  resetPassword: io(
+    z.object({
+      username: usernameSchema,
+      newPassword: z.string(),
+      disableTotp: z.boolean(),
+      /** `cli`: `hlabs reset-password` on a Linux server (US-INST-25); recorded in the audit log. */
+      via: z.enum(['tray', 'cli']).optional(),
+    }),
+    ok,
+  ),
   /**
    * "Quit hlabs" (US-INST-10, D-120): stops every app (data untouched) and answers once they're stopped; the tray then
    * stops the daemon. The next start brings back the apps that were up. JOB_EXCLUSIVE_RUNNING during an update or a
@@ -137,7 +147,7 @@ export const tray = {
       since: z.number().int().optional(),
       follow: z.boolean().optional(),
     }),
-    pending,
+    z.object({ lines: z.array(logLineSchema) }),
   ),
   startEngine: io(empty, jobRefSchema),
   diagnostics: io(empty, z.object({ report: z.string() })),

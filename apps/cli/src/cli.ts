@@ -1,7 +1,13 @@
 // `hlabs`: status, logs, reset-password, uninstall and setup-url (D-018). Each command ships with its story:
 // setup-url with US-INST-24, status, logs and reset-password with US-INST-25, uninstall with phase 6's uninstall step.
+// They talk to hlabsd on loopback with the tray token (D-035), so they work for root and the hlabs group.
 import { parseArgs } from 'node:util';
 import { clientOptions, CliError, daemonClient, type DaemonClient } from './daemon';
+import type { Io } from './io';
+import { appLogs, daemonLogs } from './logs';
+import { terminalPrompt, type Prompt } from './prompt';
+import { resetPassword } from './reset-password';
+import { status } from './status';
 
 export const COMMANDS = {
   status: 'Show whether hlabs and its apps are running',
@@ -13,20 +19,29 @@ export const COMMANDS = {
 
 export type Command = keyof typeof COMMANDS;
 
-export interface Io {
-  out: (line: string) => void;
-  err: (line: string) => void;
-}
+export type { Io } from './io';
 
 export interface Deps {
   client: () => DaemonClient;
   sleep: (ms: number) => Promise<void>;
+  prompt: () => Prompt;
+  /** Root on Linux: sudo is the proof of local access for reset-password (D-035). */
+  isRoot: () => boolean;
+  /** `/var/lib/hlabs` (HLABS_DATA_DIR in development and tests). */
+  dataDir: string;
+  now: () => number;
+  /** Following logs stops when this is aborted (tests); Ctrl-C ends the process otherwise. */
+  signal?: AbortSignal;
 }
 
-const defaultDeps: Deps = {
+const defaultDeps = (): Deps => ({
   client: () => daemonClient(clientOptions()),
   sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-};
+  prompt: () => terminalPrompt(),
+  isRoot: () => process.getuid?.() === 0,
+  dataDir: clientOptions().dataDir,
+  now: Date.now,
+});
 
 export function help(): string {
   const width = Math.max(...Object.keys(COMMANDS).map((c) => c.length));
@@ -39,12 +54,17 @@ export function help(): string {
 }
 
 /** Runs the CLI and returns the exit code. */
-export async function run(argv: string[], io: Io, deps: Deps = defaultDeps): Promise<number> {
+export async function run(argv: string[], io: Io, deps: Deps = defaultDeps()): Promise<number> {
   const { positionals, values } = parseArgs({
     args: argv,
     allowPositionals: true,
     strict: false,
-    options: { help: { type: 'boolean', short: 'h' }, installer: { type: 'boolean' } },
+    options: {
+      help: { type: 'boolean', short: 'h' },
+      installer: { type: 'boolean' },
+      follow: { type: 'boolean', short: 'f' },
+      app: { type: 'string' },
+    },
   });
   const [command] = positionals;
   if (!command || values.help) {
@@ -57,6 +77,13 @@ export async function run(argv: string[], io: Io, deps: Deps = defaultDeps): Pro
   }
   try {
     if (command === 'setup-url') return await setupUrl(io, deps, values.installer === true);
+    if (command === 'status') return await status(io, deps.client(), deps.now());
+    if (command === 'logs') {
+      const follow = values.follow === true;
+      if (typeof values.app === 'string') return await appLogs(io, deps.client(), values.app, follow, deps);
+      return await daemonLogs(io, deps.dataDir, follow, deps);
+    }
+    if (command === 'reset-password') return await resetPassword(io, deps.client(), deps.prompt(), deps.isRoot());
   } catch (err) {
     if (!(err instanceof CliError)) throw err;
     io.err(err.message);

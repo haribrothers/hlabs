@@ -1,7 +1,8 @@
 // The tray's password reset (US-INST-18). The tray asks the Mac's login (Touch ID or the account password) first, so
 // whoever gets here can log in to the computer running hlabs (07 §7.2, D-009). It sets the new password, signs the
 // person out everywhere, clears their log-in lockouts and, if asked, turns their two-factor off; it's recorded in
-// password_resets (created_via tray, used at once) and the audit log.
+// password_resets (created_via tray, used at once) and the audit log. `hlabs reset-password` on a Linux server (US-INST-25)
+// does the same as root, the local-access proof there, and is recorded with via cli.
 import { hlabsError } from '@hlabs/api';
 import { auditLog, loginAttempts, passwordResets, users, type HlabsDb } from '@hlabs/db';
 import { passwordIssue, ulid } from '@hlabs/shared';
@@ -12,7 +13,7 @@ import type { TotpService } from '../auth/totp';
 
 export async function trayResetPassword(
   deps: { db: HlabsDb; sessions: SessionService; totp: TotpService },
-  input: { username: string; newPassword: string; disableTotp: boolean },
+  input: { username: string; newPassword: string; disableTotp: boolean; via?: 'tray' | 'cli' },
   now = Date.now(),
 ): Promise<void> {
   const { db } = deps;
@@ -42,7 +43,7 @@ export async function trayResetPassword(
         userId: null,
         action: 'user.passwordReset',
         target: user.id,
-        detailJson: { via: 'tray', totpDisabled },
+        detailJson: { via: input.via ?? 'tray', totpDisabled },
         ip: null,
       })
       .run();

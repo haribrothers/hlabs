@@ -15,7 +15,8 @@
     "test:install": "vitest run --config vitest.install.config.ts"
   },
   "dependencies": {
-    "@hlabs/api": "workspace:*"
+    "@hlabs/api": "workspace:*",
+    "@hlabs/shared": "workspace:*"
   },
   "devDependencies": {
     "@hlabs/config": "workspace:*",
