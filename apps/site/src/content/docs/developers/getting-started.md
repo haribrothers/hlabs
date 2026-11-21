@@ -6,7 +6,7 @@ description: What to install, and running hlabs from its source code.
 ## What you need
 
 - **macOS** (Apple silicon or Intel) or **Linux**. The menu-bar app runs on macOS for now; Linux gets it later.
-- **Node.js 22** (the repository's `.nvmrc` says which; `nvm use` picks it up) and **pnpm 9** (`corepack enable` gives you the version `package.json` names).
+- **Node.js 22.23.4 or newer** (the website's Astro needs it; `nvm install 22` gets the newest 22, and the repository's `.nvmrc` makes `nvm use` pick it) and **pnpm 9** (`corepack enable` gives you the version `package.json` names).
 - **A container engine**: OrbStack, Docker Desktop or Colima on a Mac; Docker Engine on Linux. hlabs runs apps in it.
 - For the menu-bar app: **Rust** 1.80 or later (`rustup`) and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) (on a Mac, the Xcode Command Line Tools).
 
