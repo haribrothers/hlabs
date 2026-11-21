@@ -18,21 +18,13 @@ CI (`site.yml`) still builds and checks every change to the site: `site:check`, 
 
 You need to be able to change the Cloudflare account that holds `h4loom.com`, and to change the GitHub repo's settings. In Cloudflare's dashboard, Workers and Pages share one place, and **Create** makes a Worker: that's what this setup expects, so don't look for a Pages option.
 
-### 1. A GitHub token for the build
-
-The build reads the latest releases from GitHub's API. Without a token, GitHub allows only a few requests an hour from each address, and Cloudflare's build machines are shared, so give the build a token that can only read public repositories.
-
-1. On GitHub: your picture › **Settings** › **Developer settings** › **Personal access tokens** › **Fine-grained tokens** › **Generate new token**.
-2. Name it `hlabs site build`, give it an expiry (a year), and under **Repository access** choose **Public repositories**. Add no permissions.
-3. **Generate token** and copy it. You'll paste it into Cloudflare in step 3; don't keep it anywhere else.
-
-### 2. Create the Worker from the repo
+### 1. Create the Worker from the repo
 
 1. In the Cloudflare dashboard, open **Workers & Pages** (under **Compute** in the sidebar) › **Create application**.
 2. Choose **Continue with GitHub** (or **Import a repository**), let the Cloudflare app see `haribrothers/hlabs`, and select the repo.
-3. Fill in the form with the settings in step 3, then **Create and deploy**. The first build publishes to `hlabs-site.<your-subdomain>.workers.dev`.
+3. Fill in the form with the settings in step 2, then **Create and deploy**. The first build publishes to `hlabs-site.<your-subdomain>.workers.dev`.
 
-### 3. Build settings
+### 2. Build settings
 
 For a Worker that already exists: **Workers & Pages** › `hlabs-site` › **Settings** › **Build**. Each part has its own edit (pencil) button, and changes apply to the next build.
 
@@ -43,16 +35,16 @@ For a Worker that already exists: **Workers & Pages** › `hlabs-site` › **Set
 | Build configuration | Deploy command | `npx wrangler deploy` (the default) |
 | Build configuration | Preview command | the default, `npx wrangler preview` (older screens: `npx wrangler versions upload`) |
 | Build configuration | Root directory | `/` (leave empty) |
-| Build variables and secrets | Variables | `NODE_VERSION` = `22.23.4`, `PNPM_VERSION` = `9.15.9`, `HLABS_SITE_RELEASES_REQUIRED` = `1` |
-| Build variables and secrets | Secret | `GITHUB_TOKEN` = the token from step 1 (choose **Secret**, not Text) |
+| Build variables and secrets | Variables | `PNPM_VERSION` = `9.15.9` |
 | Branch control | Production branch | `main` |
 | Branch control | Enable Preview Builds | On |
-| Build watch paths | Include paths | `apps/site/*`, `store/*`, `packages/ui/*`, `packages/icons/*`, `packages/shared/*`, `packages/app-manifest/*`, `scripts/site-releases*`, `scripts/site-headers.ts`, `package.json`, `pnpm-lock.yaml`, `turbo.json`, `wrangler.jsonc` |
+| Build watch paths | Include paths | `apps/site/*`, `store/*`, `scripts/site-*`, `wrangler.jsonc` |
 | Build watch paths | Exclude paths | none |
 
-- **Node:** Astro 7 needs Node 22.23.4 or newer. `NODE_VERSION` may be newer, but not 23 or later.
-- **Releases:** `HLABS_SITE_RELEASES_REQUIRED` makes the build stop when it can't read the releases, instead of publishing a download page that says there's no release.
-- **Only the build:** the variables and the secret apply only to the build. Nothing goes under **Settings › Variables and secrets** (the Worker's runtime): the site has no code.
+- **Node:** the build uses the version in `.nvmrc` (22). Cloudflare reads it like `nvm` does, so there's no `NODE_VERSION`.
+- **pnpm:** `PNPM_VERSION` keeps the build on the pnpm the lockfile was made with (`packageManager` in `package.json`).
+- **Releases:** Cloudflare sets `CI=true` in its builds, so when the build can't read the releases from GitHub it stops instead of publishing a download page without them, and the live site stays as it was.
+- **Nothing at runtime:** nothing goes under **Settings › Variables and secrets** (the Worker's runtime): the site has no code.
 
 These settings live only in Cloudflare's dashboard. `wrangler.jsonc` can't hold them: Workers Builds ignores Wrangler's `build` block.
 
@@ -64,9 +56,9 @@ A new Worker builds on any change (Include paths `*`). Until the paths are set, 
 2. Replace `*` with the include paths from the table, one per field. A trailing `*` matches everything under that folder.
 3. The **Production** and **Previews Base** tabs at the top of Builds each have their own paths: set and save both.
 
-The paths outside `apps/site` are what the site is built from: the store's apps, the packages that draw tiles, icons and the catalogue, and the scripts that read releases and add the security policy. If the site starts reading another file, add it here, or a change to it won't publish. Cloudflare builds regardless of the paths when a push has no file changes, 3,000 files or more, or 20 commits or more.
+Only changes to the site start a build: its folder, the store's apps (the catalogue is built from them), its build scripts and `wrangler.jsonc`. A change elsewhere that the site also uses, such as the design tokens in `packages/ui` or the lockfile, reaches it at the site's next build or the next release. Cloudflare builds regardless of the paths when a push has no file changes, 3,000 files or more, or 20 commits or more.
 
-### 4. The deploy hook for releases
+### 3. The deploy hook for releases
 
 1. **Settings** › **Build** › **Deploy Hooks** › **Add deploy hook**.
 2. Name it `release.yml`, branch `main`, and **Create**. Copy the hook's address.
@@ -74,7 +66,7 @@ The paths outside `apps/site` are what the site is built from: the store's apps,
 
 Anyone with the address can start a build, so keep it only in that secret. If it ever leaks, delete the hook, make a new one and replace the secret. Without the secret, `release.yml` skips this step and the site shows the release at its next build.
 
-### 5. The domain and HTTPS
+### 4. The domain and HTTPS
 
 **Settings** › **Domains & Routes**:
 
@@ -84,7 +76,7 @@ Anyone with the address can start a build, so keep it only in that secret. If it
 
 In the `h4loom.com` zone › **SSL/TLS** › **Edge Certificates**, check that **Always Use HTTPS** is on, **Minimum TLS Version** is TLS 1.2 and **Automatic HTTPS Rewrites** is on. If you set these up for Spine, they already apply. The site sends `Strict-Transport-Security` for `hlabs.h4loom.com` only; leave the zone's own HSTS setting as it is.
 
-### 6. Check it
+### 5. Check it
 
 1. Retry the latest build (**Deployments**), or push a commit that changes the site. The log ends with `pnpm site:build`'s "releases.json: stable …" line, the Astro build and Wrangler's upload.
 2. Open `https://hlabs.h4loom.com/`: the home page. `/download/` shows the latest release (or says there isn't one yet), and `/help/` the help.
@@ -93,7 +85,7 @@ In the `h4loom.com` zone › **SSL/TLS** › **Edge Certificates**, check that *
 
 ## When something goes wrong
 
-- **The build fails reading the releases:** the token has expired or was revoked. Make a new one (step 1) and replace the `GITHUB_TOKEN` secret, then retry the build.
+- **The build fails reading the releases:** GitHub didn't answer, or refused because of its limit on requests without a token from Cloudflare's shared build machines. Retry the build. If it keeps happening, give the build a token: on GitHub, **Settings** › **Developer settings** › **Fine-grained tokens**, with access to **Public repositories** only and no permissions, saved under **Build variables and secrets** as the secret `GITHUB_TOKEN`.
 - **"The Cloudflare application detection logic has been run in the root of a workspace":** Wrangler didn't find `wrangler.jsonc`. Check that **Root directory** is `/` and that the commit being built has the file.
 - **"Your Wrangler configuration is missing a `previews` block":** the branch predates that block; rebase it on `main`.
 - **A preview shows Cloudflare's plain "Not found" for a missing page:** previews don't use the site's `404.html`; production does.
