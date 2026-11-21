@@ -1,6 +1,6 @@
 ---
 title: Install on a Linux server
-description: Install hlabs on a Linux computer without a desktop with one command, and upgrade it the same way.
+description: Install hlabs on a Linux computer without a desktop with one command, finish setup from another device, and upgrade it the same way.
 features: [F-INST-09]
 ---
 
@@ -21,6 +21,14 @@ If you're not root, it asks for your password with `sudo`. It prints a line for 
 3. **The hlabs user and its data folder `/var/lib/hlabs`**: hlabs runs as its own user, and your apps' data and files live in this folder.
 4. **The systemd service `hlabsd.service`**: hlabs starts on boot.
 5. **Started hlabs**, with the web ports it uses.
+6. **Announced hlabs.local on your network**, so other devices at home can find it by name.
+7. **Finish setup in your browser**, followed by the setup address at `hlabs.local` and at the server's IP address. Open either one from your laptop or phone to [set up hlabs](../set-up/).
+
+If the server can't announce `hlabs.local` (Avahi isn't running), the installer says so and prints only the IP address.
+
+## Find the setup address again
+
+Run `hlabs setup-url` to print the setup addresses again. They keep working until setup is finished; after that, `hlabs setup-url` prints the dashboard's address instead. It works for root, with `sudo`, and for people in the `hlabs` group. Anyone else sees **Run with sudo or add yourself to the hlabs group**.
 
 If a step fails, the line starts with ✗, says what went wrong and points to `/var/log/hlabs-install.log`. Nothing you had is removed. Fix the problem and run the command again.
 

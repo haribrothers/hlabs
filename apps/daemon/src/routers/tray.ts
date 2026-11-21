@@ -2,10 +2,10 @@ import { hlabsError, type AppHandlers } from '@hlabs/api';
 import { getSetting, setSetting } from '@hlabs/db';
 import type { DaemonContext } from '../context';
 import { useOtherPort } from '../network/port-problem';
-import { lanAddresses } from '../mdns/publisher';
 import { diagnosticsReport } from '../tray/diagnostics';
 import { dashboardUrl, trayStatus } from '../tray/status';
 import { trayResetPassword } from '../tray/reset-password';
+import { setupUrls } from '../tray/setup-url';
 import { trayUsers } from '../tray/users';
 
 export const tray: AppHandlers<DaemonContext>['tray'] = {
@@ -76,12 +76,7 @@ export const tray: AppHandlers<DaemonContext>['tray'] = {
     return { ok: true as const };
   },
 
-  // US-INST-02: the tokenised setup URL the tray opens; null once onboarding is complete (D-013, D-035).
-  setupUrl: async (_input, ctx) => {
-    const { onboarding, config } = ctx.services;
-    return {
-      url: await onboarding.setupUrl(),
-      lanUrls: config.proxy === 'caddy' ? await onboarding.lanSetupUrls(lanAddresses()) : [],
-    };
-  },
+  // US-INST-02, US-INST-24: the tokenised setup URL the tray opens and `hlabs setup-url` prints; null once onboarding is
+  // complete (D-013, D-035).
+  setupUrl: (_input, ctx) => setupUrls(ctx.services),
 };

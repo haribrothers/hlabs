@@ -143,5 +143,9 @@ export const tray = {
   diagnostics: io(empty, z.object({ report: z.string() })),
   uninstallInfo: io(empty, pending),
   uninstall: io(z.object({ keepData: z.boolean(), removeColima: z.boolean() }), jobRefSchema),
-  setupUrl: io(empty, z.object({ url: z.string().nullable(), lanUrls: z.array(z.string()) })),
+  /** The setup URL, and with Caddy the same at each LAN address and at the published `.local` name (US-INST-24). */
+  setupUrl: io(
+    empty,
+    z.object({ url: z.string().nullable(), lanUrls: z.array(z.string()), mdnsUrl: z.string().nullable() }),
+  ),
 };

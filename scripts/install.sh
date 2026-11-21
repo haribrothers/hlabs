@@ -1,11 +1,11 @@
 #!/bin/sh
-# hlabs installer for Linux servers (US-INST-23, D-140):
+# hlabs installer for Linux servers (US-INST-23, US-INST-24, D-140):
 #
 #   curl -fsSL https://hlabs.h4loom.com/install.sh | sh
 #
 # Installs Docker Engine when it's missing, the hlabs user and its data in /var/lib/hlabs, hlabs itself in
 # /opt/hlabs/<version> (with the `current` link updates switch, D-118), the `hlabs` command and the systemd service
-# hlabsd.service, then starts it. Run it again to upgrade; your data stays.
+# hlabsd.service, then starts it and prints where to finish setup. Run it again to upgrade; your data stays.
 #
 # What it downloads is checked against SHA256SUMS, and SHA256SUMS against its signature by the hlabs update key
 # (D-141), with openssl. HLABS_VERSION=<v> installs that version instead of the latest; HLABS_TARBALL=<file> installs
@@ -414,6 +414,14 @@ main() {
     start
     ok "Started hlabs · proxy on $(ports_phrase)"
   fi
+  finish
+}
+
+# US-INST-24: whether hlabs.local was announced, where to finish setup, and the commands for later.
+finish() {
+  "$ROOT/current/bin/hlabs" setup-url --installer 2>>"$LOG" ||
+    note "Run hlabs setup-url to see where to finish setup"
+  say "Manage later with: ${BOLD}hlabs status${RESET} · ${BOLD}hlabs logs${RESET} · ${BOLD}hlabs setup-url${RESET} · ${BOLD}hlabs reset-password${RESET}"
 }
 
 [ -n "${HLABS_INSTALL_LIB:-}" ] || main "$@"
