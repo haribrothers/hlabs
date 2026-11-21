@@ -5,6 +5,7 @@
 mod access;
 mod bootstrap;
 mod daemon;
+mod first_launch;
 mod health;
 mod icon;
 mod launchd;
@@ -626,9 +627,81 @@ fn bundled_bootstrap(
     None
 }
 
+/// US-INST-03, US-INST-04 (D-142): "hlabs needs macOS 14 or later", or "Move hlabs to Applications?" for a release
+/// build that runs from anywhere else. True when an alert took over: it quits, or relaunches from Applications.
+#[cfg(target_os = "macos")]
+fn first_launch_alert(app: &mut tauri::App) -> tauri::Result<bool> {
+    use first_launch::*;
+    use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+
+    let quit_after = |handle: AppHandle, title: &str, message: &str| {
+        let h = handle.clone();
+        handle
+            .dialog()
+            .message(message)
+            .title(title)
+            .kind(MessageDialogKind::Warning)
+            .buttons(MessageDialogButtons::OkCustom(QUIT_BUTTON.into()))
+            .show(move |_| h.exit(0));
+    };
+
+    if !macos_supported(macos_version().as_deref()) {
+        app.set_activation_policy(tauri::ActivationPolicy::Regular);
+        quit_after(app.handle().clone(), TOO_OLD_TITLE, TOO_OLD_MESSAGE);
+        return Ok(true);
+    }
+    let bundled =
+        !cfg!(debug_assertions) && app.path().resource_dir()?.join("daemon/node").exists();
+    let here = std::env::current_exe()
+        .ok()
+        .and_then(|exe| app_bundle(&exe));
+    let home = std::env::var_os("HOME").map(std::path::PathBuf::from);
+    let (Some(here), Some(home), true) = (here, home, bundled) else {
+        return Ok(false);
+    };
+    if in_applications(&here, &home) {
+        return Ok(false);
+    }
+    app.set_activation_policy(tauri::ActivationPolicy::Regular);
+    let handle = app.handle().clone();
+    app.dialog()
+        .message(MOVE_MESSAGE)
+        .title(MOVE_TITLE)
+        .kind(MessageDialogKind::Info)
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            MOVE_BUTTON.into(),
+            QUIT_BUTTON.into(),
+        ))
+        .show(move |chosen| {
+            if !chosen {
+                return handle.exit(0);
+            }
+            let applications = std::path::Path::new("/Applications");
+            match move_to_applications(&here, applications, &home.join(".Trash")) {
+                Ok(dest) => {
+                    if let Err(err) = relaunch_after_exit(&dest) {
+                        eprintln!("hlabs tray: {err}");
+                    }
+                    handle.exit(0);
+                }
+                Err(err) => {
+                    eprintln!("hlabs tray: {err}");
+                    quit_after(handle, MOVE_FAILED_TITLE, MOVE_FAILED_MESSAGE);
+                }
+            }
+        });
+    Ok(true)
+}
+
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
+        // US-INST-04: opening hlabs again opens the running one's menu; the new copy quits.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(tray) = app.tray_by_id("hlabs") {
+                let rect = tray.rect().ok().flatten();
+                window::show_menu(app, rect.as_ref());
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_notification::init())
@@ -661,6 +734,12 @@ pub fn run() {
             quit_hlabs
         ])
         .setup(|app| {
+            // US-INST-03, US-INST-04: an old macOS, or a copy outside Applications, is dealt with before anything
+            // is set up.
+            #[cfg(target_os = "macos")]
+            if first_launch_alert(app)? {
+                return Ok(());
+            }
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 

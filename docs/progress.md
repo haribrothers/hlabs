@@ -257,8 +257,8 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 
 ## Phase 6 · Distribution
 
-- [ ] US-INST-03 · Install hlabs from the disk image
-- [ ] US-INST-04 · Launching from outside Applications
+- [ ] US-INST-03 · Install hlabs from the disk image (built; waits for signing and notarizing, D-139)
+- [x] US-INST-04 · Launching from outside Applications
 - [ ] US-INST-21 · Choose what to keep when uninstalling
 - [ ] US-INST-22 · Uninstall removes hlabs cleanly
 - [x] US-INST-23 · Install hlabs on a Linux server with one command

@@ -12,6 +12,10 @@ pnpm build:tray --version 0.0.1  # a version of your choice
 
 It builds the dashboard and hlabsd, puts them together with a Node.js runtime, Caddy and docker compose into the app, and builds the menu-bar app around them. The result is `apps/tray/src-tauri/target/release/bundle/macos/hlabs.app`; copy it to Applications and open it. The app isn't signed with an Apple certificate yet, so the first time macOS may ask you to confirm you want to open it.
 
+Add `--dmg` for the disk image as well: `dist/hlabs-<version>-mac-arm64.dmg` (`-x64` on an Intel Mac). Building it opens a Finder window for a moment, and the first time macOS asks whether your terminal may control Finder. The window's background is `apps/tray/dmg/background.html`; after changing it, run `node apps/tray/dmg/render.mjs` and commit the PNGs and the TIFF. `preview-light.png` and `preview-dark.png` show the layout with pretend icons.
+
+A build opened from anywhere but Applications asks to move itself there first (US-INST-04). To try a build without moving it, open the app from Applications.
+
 ## What it installs
 
 On first launch the app sets up hlabs as a background service for your user:

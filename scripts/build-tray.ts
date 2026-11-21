@@ -6,12 +6,23 @@
 //   pnpm build:tray --version 0.0.3 --update --broken        signed, but the archive won't install (it rolls back)
 //   pnpm build:tray --version 0.0.4 --update --bad-signature signed with another key (it's refused)
 //
+//   pnpm build:tray --dmg                                    also the disk image: dist/hlabs-<v>-mac-<arch>.dmg (D-142)
+//
 // Updates are signed with the development key (~/.tauri/hlabs-dev.key, or TAURI_SIGNING_PRIVATE_KEY). Serve
 // dist/updates (e.g. `python3 -m http.server 8090 -d dist/updates`) and start the app with
 // HLABS_UPDATE_ENDPOINT=http://127.0.0.1:8090/latest.json; HLABS_UPDATE_BASE changes the archive's address. Builds
 // from here may check over plain http (the Tauri updater refuses it otherwise in a release build).
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -58,12 +69,22 @@ run(
       plugins: { updater: { dangerousInsecureTransportProtocol: true } },
     }),
     '--bundles',
-    'app',
+    flag('--dmg') ? 'app,dmg' : 'app',
   ],
   tray,
 );
 const bundleDir = join(tray, 'src-tauri/target/release/bundle/macos');
 say(`hlabs.app: ${join(bundleDir, 'hlabs.app')}`);
+if (flag('--dmg')) {
+  // Tauri names it hlabs_<v>_aarch64.dmg; releases use hlabs-<v>-mac-arm64.dmg (US-INST-03).
+  const dmgDir = join(tray, 'src-tauri/target/release/bundle/dmg');
+  const built = readdirSync(dmgDir).find((f) => f.endsWith('.dmg'));
+  if (!built) throw new Error(`No disk image in ${dmgDir}`);
+  const dmg = join(root, 'dist', `hlabs-${version}-mac-${process.arch === 'arm64' ? 'arm64' : 'x64'}.dmg`);
+  mkdirSync(join(root, 'dist'), { recursive: true });
+  copyFileSync(join(dmgDir, built), dmg);
+  say(`Disk image: ${dmg}`);
+}
 if (!update) process.exit(0);
 
 // The update: its archive and signature, and the manifest that names them.

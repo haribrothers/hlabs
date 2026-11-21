@@ -25,6 +25,7 @@ export default defineConfig({
                   items: [
                     { label: 'Welcome', link: '/help/' },
                     { label: 'Set up hlabs', link: '/help/get-started/set-up/' },
+                    { label: 'Install on a Mac', link: '/help/get-started/install-mac/' },
                     { label: 'Install on a Linux server', link: '/help/get-started/install-linux/' },
                     { label: 'Log in', link: '/help/get-started/log-in/' },
                     { label: 'Your Home screen', link: '/help/get-started/home/' },
