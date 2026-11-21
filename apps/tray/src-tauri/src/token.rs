@@ -23,6 +23,8 @@ pub enum TokenError {
 pub trait TokenStore: Send + Sync {
     fn get(&self) -> Result<Option<String>, TokenError>;
     fn set(&self, token: &str) -> Result<(), TokenError>;
+    /// Forgets the token (uninstalling hlabs, US-INST-22); one that isn't there is fine.
+    fn delete(&self) -> Result<(), TokenError>;
 }
 
 /// A new token: 32 random bytes, base64url without padding (43 characters).
@@ -60,6 +62,13 @@ impl TokenStore for KeychainStore {
     fn set(&self, token: &str) -> Result<(), TokenError> {
         Self::entry()?.set_password(token).map_err(map_keyring)
     }
+
+    fn delete(&self) -> Result<(), TokenError> {
+        match Self::entry()?.delete_credential() {
+            Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+            Err(err) => Err(map_keyring(err)),
+        }
+    }
 }
 
 /// `<dataDir>/tray.token`, mode 0600.
@@ -87,6 +96,15 @@ impl TokenStore for FileStore {
         let tmp = self.path.with_extension("token.tmp");
         write_private(&tmp, &format!("{token}\n")).map_err(|e| TokenError::Store(e.to_string()))?;
         fs::rename(&tmp, &self.path).map_err(|e| TokenError::Store(e.to_string()))
+    }
+
+    fn delete(&self) -> Result<(), TokenError> {
+        match fs::remove_file(&self.path) {
+            Err(err) if err.kind() != io::ErrorKind::NotFound => {
+                Err(TokenError::Store(err.to_string()))
+            }
+            _ => Ok(()),
+        }
     }
 }
 
@@ -145,6 +163,10 @@ pub mod tests {
                 return Err(TokenError::AccessDenied);
             }
             *self.token.lock().unwrap() = Some(token.to_owned());
+            Ok(())
+        }
+        fn delete(&self) -> Result<(), TokenError> {
+            *self.token.lock().unwrap() = None;
             Ok(())
         }
     }

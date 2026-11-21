@@ -112,7 +112,9 @@ export function runningItems(actions: RunningActions = {}, phase?: number): Menu
     },
     { label: t.resetPassword, onSelect: () => void invoke('open_reset_window').catch(() => {}) },
     { separator: true },
-    ...(isFeatureEnabled('uninstall', phase) ? [{ label: t.uninstall }] : []),
+    ...(isFeatureEnabled('uninstall', phase)
+      ? [{ label: t.uninstall, onSelect: () => void invoke('open_uninstall_window').catch(() => {}) }]
+      : []),
     quitItem,
   ];
 }

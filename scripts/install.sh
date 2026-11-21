@@ -10,6 +10,9 @@
 # What it downloads is checked against SHA256SUMS, and SHA256SUMS against its signature by the hlabs update key
 # (D-141), with openssl. HLABS_VERSION=<v> installs that version instead of the latest; HLABS_TARBALL=<file> installs
 # a local build (its SHA256SUMS and SHA256SUMS.sig sit beside it).
+#
+#   … | sh -s -- --uninstall [--keep-data | --delete-everything] [--yes]     removes hlabs (D-144); so does
+#   sudo hlabs uninstall
 set -eu
 
 RELEASES="https://github.com/haribrothers/hlabs/releases"
@@ -379,7 +382,119 @@ start() {
   fi
 }
 
+# ── Uninstalling (D-144) ────────────────────────────────────────────────────────────────────────────────────────────
+# ask <question>: an answer from the terminal (the script itself may be on stdin, piped from curl).
+ask() {
+  printf '%s ' "$1" >/dev/tty
+  IFS= read -r ANSWER </dev/tty || ANSWER=''
+}
+has_tty() { (: </dev/tty) 2>/dev/null; }
+
+# Size in words, as hlabs writes it: "97 GB", "1.2 TB".
+size_words() {
+  awk -v b="$1" 'BEGIN {
+    gb = b / 1000000000
+    if (gb >= 1000) printf "%.1f TB", gb / 1000
+    else if (gb < 0.5) printf "less than 1 GB"
+    else printf "%d GB", gb + 0.5
+  }'
+}
+
+# Containers of compose projects named hlabs-*, for when hlabs itself doesn't answer.
+remove_app_containers() {
+  has docker || return 0
+  docker ps -a --format '{{.ID}} {{.Label "com.docker.compose.project"}}' 2>/dev/null |
+    awk '$2 ~ /^hlabs-/ { print $1 }' | while read -r id; do quietly docker rm -f "$id" || true; done
+  quietly docker network rm hlabs || true
+}
+
+# Network drives hlabs mounted under its data folder are unmounted before anything there is deleted.
+unmount_inside() {
+  findmnt -rn -o TARGET 2>/dev/null | awk -v d="$1/" 'index($0, d) == 1' | sort -r | while read -r target; do
+    quietly umount "$target" || quietly umount -l "$target" || true
+  done
+}
+
+uninstall() {
+  keep='' yes=''
+  for arg in "$@"; do
+    case "$arg" in
+      --keep-data) keep=yes ;;
+      --delete-everything) keep=no ;;
+      --yes) yes=yes ;;
+      --uninstall) ;;
+      *) fail "Unknown option $arg" "Use --keep-data or --delete-everything, and --yes to skip the questions" ;;
+    esac
+  done
+  need_root "$@"
+  : >"$LOG" && chmod 0600 "$LOG"
+  [ -L "$ROOT/current" ] || [ -f "$UNIT" ] || [ -d "$DATA" ] || fail "hlabs isn't installed on this server"
+  say "${BOLD}hlabs uninstaller${RESET}"
+
+  # What hlabs says about itself; nothing when it doesn't answer.
+  info="$("$ROOT/current/bin/hlabs" uninstall --daemon-info 2>>"$LOG" || true)"
+  apps="$(printf '%s' "$info" | sed -n 's/^apps=//p')"
+  bytes="$(printf '%s' "$info" | sed -n 's/^bytes=//p')"
+  storage="$(printf '%s' "$info" | sed -n 's/^storage=//p')"
+
+  if [ -z "$yes" ] || [ -z "$keep" ]; then
+    has_tty || fail "Run this in a terminal to answer its questions" "Or pass --yes with --keep-data or --delete-everything"
+  fi
+  if [ -z "$yes" ]; then
+    case "${apps:-}" in
+      '' | 0) what='' ;;
+      1) what=' Your app stops.' ;;
+      *) what=" All $apps apps stop." ;;
+    esac
+    ask "Uninstall hlabs from this server?$what [y/N]"
+    case "$ANSWER" in [yY] | [yY][eE][sS]) ;; *) say "Nothing was changed." && exit 0 ;; esac
+  fi
+  if [ -z "$keep" ]; then
+    ask "Keep your data in $DATA so you can reinstall later? [Y/n]"
+    case "$ANSWER" in [nN] | [nN][oO]) keep=no ;; *) keep=yes ;; esac
+  fi
+  if [ "$keep" = no ] && [ -z "$yes" ]; then
+    amount="everything"
+    [ -n "${bytes:-}" ] && amount="$(size_words "$bytes")"
+    ask "Type delete to delete $amount of apps and files. This can't be undone:"
+    [ "$ANSWER" = delete ] || { say "Nothing was changed." && exit 0; }
+  fi
+
+  # The daemon's part: every app down (with images and volumes when deleting), its network, Caddy and the names.
+  job_flag='--keep-data'
+  [ "$keep" = no ] && job_flag='--delete-everything'
+  if "$ROOT/current/bin/hlabs" uninstall --daemon-job "$job_flag" >>"$LOG" 2>&1; then
+    ok "Stopped every app"
+  else
+    remove_app_containers
+    ok "Stopped every app (hlabs wasn't answering, so their containers were removed directly)"
+  fi
+
+  quietly systemctl disable --now hlabsd.service || true
+  rm -f "$UNIT"
+  quietly systemctl daemon-reload || true
+  ok "Removed systemd service hlabsd.service"
+  rm -rf "$ROOT" /usr/local/bin/hlabs "$(dirname "$PRIV")" "$SUDOERS"
+  ok "Removed hlabs from $ROOT"
+
+  if [ "$keep" = no ]; then
+    unmount_inside "$DATA"
+    rm -rf --one-file-system "$DATA" || fail "Couldn't delete $DATA" "A drive may still be connected inside it"
+    if id hlabs >/dev/null 2>&1; then quietly userdel hlabs || true; fi
+    if getent group hlabs >/dev/null; then quietly groupdel hlabs || true; fi
+    ok "Deleted $DATA and the hlabs user"
+    case "${storage:-}" in
+      '' | "$DATA" | "$DATA"/*) ;;
+      *) note "Your files in $storage stay; delete them yourself if you don't need them" ;;
+    esac
+  else
+    ok "Kept your data in $DATA"
+  fi
+  say "Docker Engine and Avahi stay installed. Remove them with your package manager if nothing else uses them."
+}
+
 main() {
+  case "${1:-}" in --uninstall) uninstall "$@" && return ;; esac
   need_root "$@"
   umask 0022
   : >"$LOG" && chmod 0600 "$LOG"

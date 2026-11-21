@@ -1,6 +1,9 @@
 // `hlabs`: status, logs, reset-password, uninstall and setup-url (D-018). Each command ships with its story:
 // setup-url with US-INST-24, status, logs and reset-password with US-INST-25, uninstall with phase 6's uninstall step.
 // They talk to hlabsd on loopback with the tray token (D-035), so they work for root and the hlabs group.
+import { spawnSync } from 'node:child_process';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { clientOptions, CliError, daemonClient, type DaemonClient } from './daemon';
 import type { Io } from './io';
@@ -8,12 +11,13 @@ import { appLogs, daemonLogs } from './logs';
 import { terminalPrompt, type Prompt } from './prompt';
 import { resetPassword } from './reset-password';
 import { status } from './status';
+import { uninstall } from './uninstall';
 
 export const COMMANDS = {
   status: 'Show whether hlabs and its apps are running',
   logs: 'Show hlabs logs (-f to follow, --app <id> for one app)',
   'reset-password': 'Set a new password for a user (root only on Linux)',
-  uninstall: 'Remove hlabs from this server (--keep-data to keep your files)',
+  uninstall: 'Remove hlabs from this server (--keep-data or --delete-everything; root only)',
   'setup-url': 'Print the onboarding address with its setup token',
 } as const;
 
@@ -32,6 +36,8 @@ export interface Deps {
   now: () => number;
   /** Following logs stops when this is aborted (tests); Ctrl-C ends the process otherwise. */
   signal?: AbortSignal;
+  /** `hlabs uninstall`: runs this version's `install.sh --uninstall <args>` with the terminal (D-144). */
+  runInstaller: (args: string[]) => number;
 }
 
 const defaultDeps = (): Deps => ({
@@ -41,6 +47,11 @@ const defaultDeps = (): Deps => ({
   isRoot: () => process.getuid?.() === 0,
   dataDir: clientOptions().dataDir,
   now: Date.now,
+  runInstaller: (args) => {
+    // install.sh sits beside cli.mjs in the version folder (D-140).
+    const script = join(dirname(fileURLToPath(import.meta.url)), 'install.sh');
+    return spawnSync('/bin/sh', [script, '--uninstall', ...args], { stdio: 'inherit' }).status ?? 1;
+  },
 });
 
 export function help(): string {
@@ -64,6 +75,11 @@ export async function run(argv: string[], io: Io, deps: Deps = defaultDeps()): P
       installer: { type: 'boolean' },
       follow: { type: 'boolean', short: 'f' },
       app: { type: 'string' },
+      'keep-data': { type: 'boolean' },
+      'delete-everything': { type: 'boolean' },
+      yes: { type: 'boolean' },
+      'daemon-info': { type: 'boolean' },
+      'daemon-job': { type: 'boolean' },
     },
   });
   const [command] = positionals;
@@ -84,13 +100,21 @@ export async function run(argv: string[], io: Io, deps: Deps = defaultDeps()): P
       return await daemonLogs(io, deps.dataDir, follow, deps);
     }
     if (command === 'reset-password') return await resetPassword(io, deps.client(), deps.prompt(), deps.isRoot());
+    if (command === 'uninstall') {
+      return await uninstall(io, deps, {
+        keepData: values['keep-data'] === true,
+        deleteEverything: values['delete-everything'] === true,
+        yes: values.yes === true,
+        daemonInfo: values['daemon-info'] === true,
+        daemonJob: values['daemon-job'] === true,
+      });
+    }
   } catch (err) {
     if (!(err instanceof CliError)) throw err;
     io.err(err.message);
     return err.code;
   }
-  io.err(`hlabs ${command} isn't available in this version yet.`);
-  return 69;
+  return 0;
 }
 
 interface SetupUrls {

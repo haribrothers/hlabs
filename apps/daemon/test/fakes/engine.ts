@@ -44,6 +44,11 @@ export class FakeEngine implements ContainerEngine {
     this.networks.add(name);
   }
 
+  async removeNetwork(name: string) {
+    this.assertRunning();
+    this.networks.delete(name);
+  }
+
   async hasImage(ref: string) {
     this.assertRunning();
     return this.images.has(ref);

@@ -75,7 +75,7 @@ pub enum MoveError {
 }
 
 /// A name in `dir` that isn't taken: `hlabs.app`, then `hlabs 2.app`, `hlabs 3.app`…
-fn free_name(dir: &Path, stem: &str) -> PathBuf {
+pub(crate) fn free_name(dir: &Path, stem: &str) -> PathBuf {
     let first = dir.join(format!("{stem}.app"));
     if !first.exists() {
         return first;

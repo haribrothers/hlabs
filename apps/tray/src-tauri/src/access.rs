@@ -71,6 +71,13 @@ impl TokenGuard {
         }
     }
 
+    /// Uninstalling hlabs (US-INST-22): the stored token goes, and no call has one any more.
+    pub fn forget(&mut self) -> Result<(), String> {
+        self.store.delete().map_err(|e| e.to_string())?;
+        self.token = None;
+        Ok(())
+    }
+
     /// A call succeeded: the token works.
     pub fn succeeded(&mut self) {
         self.rejections = 0;

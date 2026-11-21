@@ -27,6 +27,7 @@ export default defineConfig({
                     { label: 'Set up hlabs', link: '/help/get-started/set-up/' },
                     { label: 'Install on a Mac', link: '/help/get-started/install-mac/' },
                     { label: 'Install on a Linux server', link: '/help/get-started/install-linux/' },
+                    { label: 'Uninstall hlabs', link: '/help/get-started/uninstall/' },
                     { label: 'Log in', link: '/help/get-started/log-in/' },
                     { label: 'Your Home screen', link: '/help/get-started/home/' },
                     { label: 'Settings', link: '/help/get-started/settings/' },

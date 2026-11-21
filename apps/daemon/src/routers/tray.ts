@@ -19,6 +19,21 @@ export const tray: AppHandlers<DaemonContext>['tray'] = {
     return { ok: true as const };
   },
 
+  // US-INST-21: what the uninstall window says.
+  uninstallInfo: (_input, ctx) => ctx.services.uninstall.info(),
+
+  // US-INST-22 (D-143, D-144): the daemon's part of uninstalling; the tray or install.sh does the rest after it.
+  uninstall: ({ keepData, removeColima, via }, ctx) => ({
+    jobId: ctx.services.uninstall.start({ keepData, removeColima, via: via ?? 'tray' }),
+  }),
+
+  // Following the uninstall job (the tray token may call tray.* only, D-035).
+  job: ({ jobId }, ctx) => {
+    const job = ctx.services.jobs.get(jobId);
+    if (!job || job.kind !== 'hlabs_uninstall') throw hlabsError('NOT_FOUND');
+    return job;
+  },
+
   // US-INST-25: one app's container logs for `hlabs logs --app` (the tray token calls tray.* only, D-035).
   appLogs: (input, ctx) => trayAppLogs(ctx.services, input),
 

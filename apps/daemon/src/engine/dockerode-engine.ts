@@ -27,6 +27,17 @@ export class DockerodeEngine implements ContainerEngine {
     return { version: info.ServerVersion ?? 'unknown', cpus: info.NCPU ?? 0, memoryBytes: info.MemTotal ?? 0 };
   }
 
+  async removeNetwork(name: string): Promise<void> {
+    const existing = await this.docker.listNetworks({ filters: { name: [name] } });
+    for (const n of existing.filter((n) => n.Name === name)) {
+      try {
+        await this.docker.getNetwork(n.Id).remove();
+      } catch (error) {
+        if ((error as { statusCode?: number }).statusCode !== 404) throw error;
+      }
+    }
+  }
+
   async ensureNetwork(name: string): Promise<void> {
     const existing = await this.docker.listNetworks({ filters: { name: [name] } });
     if (existing.some((n) => n.Name === name)) return;

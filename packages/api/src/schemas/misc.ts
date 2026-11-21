@@ -151,8 +151,25 @@ export const tray = {
   ),
   startEngine: io(empty, jobRefSchema),
   diagnostics: io(empty, z.object({ report: z.string() })),
-  uninstallInfo: io(empty, pending),
-  uninstall: io(z.object({ keepData: z.boolean(), removeColima: z.boolean() }), jobRefSchema),
+  /** What the uninstall window says (US-INST-21, D-143). */
+  uninstallInfo: io(
+    empty,
+    z.object({
+      appCount: z.number().int().nonnegative(),
+      /** What "Delete everything" removes; null when counting took over 10 s. */
+      dataBytes: z.number().nonnegative().nullable(),
+      storageRoot: z.string(),
+      /** The engine is hlabs's own Colima, so "Also remove Colima" is offered. */
+      colimaManaged: z.boolean(),
+    }),
+  ),
+  /** The `hlabs_uninstall` job (US-INST-22, D-143, D-144); `via: cli` from `hlabs uninstall`. */
+  uninstall: io(
+    z.object({ keepData: z.boolean(), removeColima: z.boolean(), via: z.enum(['tray', 'cli']).optional() }),
+    jobRefSchema,
+  ),
+  /** A job, for following `hlabs_uninstall` (the tray token may call tray.* only). */
+  job: io(jobRefSchema, jobSchema),
   /** The setup URL, and with Caddy the same at each LAN address and at the published `.local` name (US-INST-24). */
   setupUrl: io(
     empty,

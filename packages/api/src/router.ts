@@ -297,6 +297,7 @@ export const appRouter = router({
     uninstallInfo: q(p.tray, s.tray.uninstallInfo),
     uninstall: m(p.tray, s.tray.uninstall),
     setupUrl: q(p.tray, s.tray.setupUrl),
+    job: q(p.tray, s.tray.job),
   }),
 
   events: router({

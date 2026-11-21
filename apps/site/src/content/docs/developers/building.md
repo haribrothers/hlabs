@@ -39,7 +39,7 @@ curl http://127.0.0.1:7474/healthz                          # is it up, and whic
 
 "Quit hlabs" in the menu bar stops hlabs and every app it runs; opening the app starts them again.
 
-To remove a test install completely: stop it as above, then delete `~/Library/LaunchAgents/dev.hlabs.daemon.plist`, `/Applications/hlabs.app` and, if you want its data gone too, `~/Library/Application Support/hlabs`. Remove the keychain item `dev.hlabs` with Keychain Access.
+"Uninstall hlabs…" in the menu removes an install the way people will (it shows once phase 6 ships, or with `HLABS_PREVIEW_PHASE=6`). To remove a test install by hand: stop it as above, then delete `~/Library/LaunchAgents/dev.hlabs.daemon.plist`, `/Applications/hlabs.app` and, if you want its data gone too, `~/Library/Application Support/hlabs`. Remove the keychain item `dev.hlabs` with Keychain Access.
 
 Each build ships a new, unsigned copy of Node.js, so macOS asks once per build whether it may read the keychain item: choose **Always Allow**.
 
@@ -67,7 +67,7 @@ sudo HLABS_TARBALL=dist/linux/hlabs-0.0.0-linux-x86_64.tar.gz sh dist/linux/inst
 | Its data | `/var/lib/hlabs` (`hlabs.db`, `storage/`, `tray.token`, `secret.key`) |
 | Its logs | `/var/lib/hlabs/logs/hlabsd.log`, and `journalctl -u hlabsd` |
 | The install's own log | `/var/log/hlabs-install.log` |
-| The `hlabs` command | `/usr/local/bin/hlabs` |
+| The `hlabs` command | `/usr/local/bin/hlabs` (`sudo hlabs uninstall` removes it all, D-144) |
 | What it may run as root | `/usr/lib/hlabs/hlabs-priv`, allowed by `/etc/sudoers.d/hlabs` |
 
 `pnpm --filter @hlabs/cli test:install` installs the build for real and checks the result. It needs `sudo`, systemd and Docker, and it changes the machine, so CI runs it on its own runner (the `install (Linux)` job). On a Mac, an [OrbStack](https://orbstack.dev) Ubuntu machine works too: copy the repository into the machine rather than building in the shared folder, so the Mac's `node_modules` aren't replaced with Linux ones.

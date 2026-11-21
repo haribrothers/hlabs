@@ -21,8 +21,4 @@ describe('hlabs CLI (D-018)', () => {
     expect(code).toBe(2);
     expect(err).toContain('hlabs --help');
   });
-
-  it('reports that a command is not available yet', async () => {
-    expect((await capture(['uninstall'])).code).toBe(69);
-  });
 });

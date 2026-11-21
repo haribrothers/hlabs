@@ -87,6 +87,7 @@ export class PretendHlabs {
         isRoot: () => true,
         dataDir: this.dir,
         now: Date.now,
+        runInstaller: () => 0,
         ...over,
       },
     );

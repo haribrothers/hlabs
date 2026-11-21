@@ -4,7 +4,8 @@
 //   dist/linux/hlabs-<v>-linux-<x86_64|aarch64>.tar.gz   hlabsd and its bundle, Node, caddy, restic, compose, the
 //                                                        `hlabs` command, hlabs-priv, hlabsd.service and `version`
 //   dist/linux/SHA256SUMS                                its checksum
-//   dist/linux/install.sh                                the installer, with the public key written in
+//   dist/linux/install.sh                                the installer, with the public key written in (also in
+//                                                        the tarball, for `hlabs uninstall`)
 //   *.sig                                                signatures of each, by the update key (D-141)
 //
 //   pnpm build:linux [--version <v>]
@@ -52,15 +53,6 @@ for (const required of ['node', 'hlabsd.mjs', 'cli.mjs', 'bin/caddy', 'bin/resti
   if (!existsSync(join(stage, required))) throw new Error(`The download is missing ${required}`);
 }
 
-const tarball = `hlabs-${version}-linux-${arch}.tar.gz`;
-say(`Packing ${tarball}…`);
-run('tar', ['-czf', join(out, tarball), '-C', stage, '.']);
-rmSync(stage, { recursive: true, force: true });
-const sha256 = createHash('sha256')
-  .update(readFileSync(join(out, tarball)))
-  .digest('hex');
-writeFileSync(join(out, 'SHA256SUMS'), `${sha256}  ${tarball}\n`);
-
 // The signing key: the release's, or one made for this build.
 const signEnv: NodeJS.ProcessEnv = {
   ...env,
@@ -85,6 +77,19 @@ writeFileSync(
   readFileSync(join(root, 'scripts/install.sh'), 'utf8').replace('@HLABS_PUBLIC_KEY@', spkiBase64(publicKey)),
   { mode: 0o755 },
 );
+// The installer goes in the tarball too: `hlabs uninstall` runs it (D-144).
+copyFileSync(join(out, 'install.sh'), join(stage, 'install.sh'));
+chmodSync(join(stage, 'install.sh'), 0o755);
+
+const tarball = `hlabs-${version}-linux-${arch}.tar.gz`;
+say(`Packing ${tarball}…`);
+run('tar', ['-czf', join(out, tarball), '-C', stage, '.']);
+rmSync(stage, { recursive: true, force: true });
+const sha256 = createHash('sha256')
+  .update(readFileSync(join(out, tarball)))
+  .digest('hex');
+writeFileSync(join(out, 'SHA256SUMS'), `${sha256}  ${tarball}\n`);
+
 for (const file of ['SHA256SUMS', tarball, 'install.sh']) tauri(['sign', join(out, file)]);
 say(`Done: ${out}`);
 

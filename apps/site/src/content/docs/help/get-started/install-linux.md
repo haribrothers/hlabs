@@ -46,6 +46,7 @@ On a server there's no menu bar, so the `hlabs` command does its job. Run it wit
 - **`hlabs logs`** shows what hlabs has been doing, newest last. Add `-f` to keep watching, or `--app immich` for one app's logs.
 - **`hlabs reset-password`** sets a new password for someone who forgot theirs. It only works with `sudo`, because being root on the server proves you can get to it. Choose the account, type the new password twice (at least 12 characters, and not a common one) and, if the account has two-factor, say whether to turn it off. They're signed out everywhere and log in with the new password.
 - **`hlabs setup-url`** prints the setup addresses until setup is finished.
+- **`hlabs uninstall`** removes hlabs, keeping your data or deleting everything: see [Uninstall hlabs](../uninstall/).
 
 ## Check what you download
 

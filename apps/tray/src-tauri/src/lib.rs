@@ -14,6 +14,7 @@ mod os_confirm;
 mod paths;
 mod quit;
 mod token;
+mod uninstall;
 mod updates;
 mod window;
 
@@ -269,38 +270,125 @@ fn copy_text(app: AppHandle, text: String) -> Result<(), DaemonError> {
 /// brings the one already open forward. The menu closes.
 #[tauri::command]
 fn open_reset_window(app: AppHandle) -> Result<(), String> {
+    open_window(&app, "reset", "index.html?view=reset", 420.0, 400.0)
+}
+
+/// US-INST-21: the "Uninstall hlabs" window (TrayUninstall).
+#[tauri::command]
+fn open_uninstall_window(app: AppHandle) -> Result<(), String> {
+    open_window(&app, "uninstall", "index.html?view=uninstall", 440.0, 460.0)
+}
+
+/// A small glass window from the menu, which closes the menu; asked again, the open one comes forward.
+fn open_window(
+    app: &AppHandle,
+    label: &str,
+    url: &str,
+    width: f64,
+    height: f64,
+) -> Result<(), String> {
     if let Some(menu) = app.get_webview_window(window::MENU_WINDOW) {
         let _ = menu.hide();
     }
-    if let Some(existing) = app.get_webview_window("reset") {
+    if let Some(existing) = app.get_webview_window(label) {
         return existing.set_focus().map_err(|e| e.to_string());
     }
     use tauri::utils::{config::WindowEffectsConfig, WindowEffect, WindowEffectState};
-    tauri::WebviewWindowBuilder::new(
-        &app,
-        "reset",
-        tauri::WebviewUrl::App("index.html?view=reset".into()),
-    )
-    .title(app.package_info().name.clone())
-    .inner_size(420.0, 400.0)
-    .resizable(false)
-    .decorations(false)
-    .transparent(true)
-    .shadow(false)
-    .always_on_top(true)
-    .skip_taskbar(true)
-    .center()
-    .effects(WindowEffectsConfig {
-        effects: vec![WindowEffect::HudWindow],
-        state: Some(WindowEffectState::Active),
-        radius: Some(14.0),
-        color: None,
-        interactive: false,
+    tauri::WebviewWindowBuilder::new(app, label, tauri::WebviewUrl::App(url.into()))
+        .title(app.package_info().name.clone())
+        .inner_size(width, height)
+        .resizable(false)
+        .decorations(false)
+        .transparent(true)
+        .shadow(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .center()
+        .effects(WindowEffectsConfig {
+            effects: vec![WindowEffect::HudWindow],
+            state: Some(WindowEffectState::Active),
+            radius: Some(14.0),
+            color: None,
+            interactive: false,
+        })
+        .focused(true)
+        .build()
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
+/// US-INST-22: macOS confirms the person at the Mac before anything is removed (Touch ID or the login password).
+#[tauri::command]
+async fn confirm_uninstall() -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        os_confirm::default_confirm().confirm(uninstall::REASON)
     })
-    .focused(true)
-    .build()
-    .map(|_| ())
-    .map_err(|e| e.to_string())
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// US-INST-22 "Removing hlabs", after the daemon's job: the LaunchAgent is booted out (the daemon stops) and deleted,
+/// the login item and the tray token go. Development has none of these, so nothing happens there.
+#[tauri::command]
+async fn uninstall_remove_hlabs(
+    state: State<'_, StartAtLogin>,
+    daemon: State<'_, Daemon>,
+) -> Result<(), String> {
+    let Some(plist) = state.plist.clone() else {
+        return Ok(());
+    };
+    tauri::async_runtime::spawn_blocking(|| launchd::default_service().stop())
+        .await
+        .map_err(|e| e.to_string())??;
+    match std::fs::remove_file(&plist) {
+        Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
+            return Err(format!("{}: {e}", plist.display()))
+        }
+        _ => {}
+    }
+    state.login_item.unregister()?;
+    daemon.lock().forget()
+}
+
+/// US-INST-22 "Deleting data", with Delete everything: the data folder, the storage root and hlabs's keychain
+/// items, once the daemon has stopped (D-143). Development deletes nothing.
+#[tauri::command]
+async fn uninstall_delete_data(
+    state: State<'_, StartAtLogin>,
+    storage_root: String,
+) -> Result<(), String> {
+    if state.plist.is_none() {
+        return Ok(());
+    }
+    let home = std::path::PathBuf::from(std::env::var_os("HOME").ok_or("no home folder")?);
+    tauri::async_runtime::spawn_blocking(move || {
+        uninstall::delete_data(
+            &paths::data_dir(),
+            std::path::Path::new(&storage_root),
+            &home,
+        )?;
+        #[cfg(target_os = "macos")]
+        uninstall::delete_keychain_items()?;
+        Ok(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// US-INST-22: hlabs.app goes to the Trash and the menu-bar app quits (development only quits).
+#[tauri::command]
+fn uninstall_quit(app: AppHandle, state: State<'_, StartAtLogin>) -> Result<(), String> {
+    if state.plist.is_some() {
+        let bundle = std::env::current_exe()
+            .ok()
+            .and_then(|exe| first_launch::app_bundle(&exe));
+        let home = std::env::var_os("HOME").map(std::path::PathBuf::from);
+        if let (Some(bundle), Some(home)) = (bundle, home) {
+            uninstall::trash_app(&bundle, &home.join(".Trash"))?;
+        }
+    }
+    app.exit(0);
+    Ok(())
 }
 
 /// How a reset ended, for the window (US-INST-18).
@@ -728,6 +816,11 @@ pub fn run() {
             quit_tray,
             open_reset_window,
             reset_password,
+            open_uninstall_window,
+            confirm_uninstall,
+            uninstall_remove_hlabs,
+            uninstall_delete_data,
+            uninstall_quit,
             updates::check_update,
             updates::apply_update,
             quit::confirm_dialog,

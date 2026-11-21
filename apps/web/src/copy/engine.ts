@@ -65,5 +65,6 @@ export const engineCopy = {
     engine_switch: 'the engine switch',
     rename_host: 'the rename',
     factory_reset: 'the factory reset',
+    hlabs_uninstall: 'the uninstall',
   } as Record<string, string>,
 } as const;
