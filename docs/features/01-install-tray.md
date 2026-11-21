@@ -380,7 +380,7 @@ This module gets hlabs onto a computer and keeps it running: the macOS `.dmg` an
 - **Given** the script is run again on a machine that has hlabs, **when** it runs, **then** it upgrades in place (stop, replace binaries, start) and keeps data.
 
 **Implementation notes**
-- Script is POSIX `sh`, published with a checksum and GPG signature (07 §7.9); installs via tarball per arch.
+- Script is POSIX `sh`, published with a checksum and a signature from the hlabs update key (07 §7.9, D-141); installs via tarball per arch (D-140).
 - Edge cases: the chosen ports are saved to `settings` key `network.ports` so the daemon and Caddy use the same ones; if 8080/8443 are also taken, fail with "✗ Ports 443 and 8443 are both in use".
 
 ### US-INST-24 · Finish setup in the browser after the Linux install
@@ -403,7 +403,7 @@ This module gets hlabs onto a computer and keeps it running: the macOS `.dmg` an
 
 **Acceptance criteria**
 - **Given** `hlabs status`, **when** run by root or a member of the `hlabs` group, **then** it prints the same facts as the tray status line and stats (state, running apps, CPU, memory, free space, last backup, dashboard URL) and exits 0 when running, 1 when degraded, 2 when unreachable.
-- **Given** `hlabs logs`, **when** run by root or a member of the `hlabs` group, **then** it shows the daemon journal (`journalctl -u hlabsd`), with `-f` to follow and `--app <id>` for one app's container logs (read through the `tray.appLogs` procedure, since the tray token may call `tray.*` procedures only, D-035).
+- **Given** `hlabs logs`, **when** run by root or a member of the `hlabs` group, **then** it shows the daemon's log (`/var/lib/hlabs/logs/hlabsd.log`, the lines journald gets too, so the `hlabs` group can read it, D-140), with `-f` to follow and `--app <id>` for one app's container logs (read through the `tray.appLogs` procedure, since the tray token may call `tray.*` procedures only, D-035).
 - **Given** `hlabs reset-password`, **when** run as root (sudo is the local-access proof on headless Linux), **then** it prompts for the account (numbered list), a new password twice (same rules as US-INST-17) and "Also turn off two-factor? [y/N]" when the account has 2FA, then applies it with the same effects as US-INST-18.
 - **Given** a non-root user runs `hlabs reset-password`, **when** it starts, **then** it exits with "Run with sudo to reset a password", even if the user is in the `hlabs` group.
 - **Given** a user who is neither root nor in the `hlabs` group runs `hlabs status` or `hlabs logs`, **when** the token file can't be read, **then** it exits with "Run with sudo or add yourself to the hlabs group".

@@ -3,8 +3,9 @@
 // dashboard's builds. `pnpm build:tray` runs this and then `tauri build` with the bundle config, so the .app's
 // Contents/Resources/daemon is this folder; the LaunchAgent runs `daemon/node daemon/hlabsd.mjs` (US-INST-01).
 // Unsigned and for this computer's platform only: signing, notarizing and other platforms are the release (phase 6).
+// `pnpm build:linux` uses the same bundle for the Linux server tarball (D-140), with `--out`.
 //
-//   node scripts/bundle-app.ts
+//   node scripts/bundle-app.ts [--out <dir>]
 import { execFileSync } from 'node:child_process';
 import {
   cpSync,
@@ -18,9 +19,11 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 
 const root = resolve(import.meta.dirname, '..');
-const out = join(root, 'apps/tray/src-tauri/resources/daemon');
+const { values } = parseArgs({ options: { out: { type: 'string' } } });
+const out = values.out ? resolve(values.out) : join(root, 'apps/tray/src-tauri/resources/daemon');
 const say = (line: string) => void process.stdout.write(`${line}\n`);
 const run = (cmd: string, args: string[]) => execFileSync(cmd, args, { cwd: root, stdio: 'inherit' });
 
@@ -83,6 +86,9 @@ try {
     stdio: 'inherit',
   });
   renameSync(join(deps, 'node_modules'), join(out, 'node_modules'));
+  // hlabs runs on glibc Linux (D-140, D-145): native modules built for musl or another platform are dead weight, and
+  // the AppImage's linuxdeploy can't read them.
+  if (process.platform === 'linux') pruneForeignNatives(join(out, 'node_modules'));
 } finally {
   rmSync(deps, { recursive: true, force: true });
 }
@@ -112,3 +118,25 @@ for (const required of [
   if (!existsSync(join(out, required))) throw new Error(`The bundle is missing ${required}`);
 }
 say(`The daemon bundle is in ${out}`);
+
+/** Removes musl packages (`@img/sharp-linuxmusl-arm64`, `…-linux-arm64-musl`) and prebuilds for other platforms. */
+function pruneForeignNatives(modules: string): void {
+  const here = `linux-${process.arch}`;
+  const walk = (dir: string, depth: number) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (/musl/.test(entry.name)) {
+        rmSync(path, { recursive: true, force: true });
+        continue;
+      }
+      if (entry.isDirectory() && entry.name === 'prebuilds') {
+        for (const build of readdirSync(path)) {
+          if (!build.startsWith(here)) rmSync(join(path, build), { recursive: true, force: true });
+        }
+        continue;
+      }
+      if (entry.isDirectory() && depth < 6) walk(path, depth + 1);
+    }
+  };
+  walk(modules, 0);
+}

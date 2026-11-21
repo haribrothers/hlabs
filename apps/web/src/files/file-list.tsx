@@ -96,11 +96,19 @@ export function FileList({
   const [over, setOver] = useState<string | null>(null);
   const tabStop = items.some((e) => e.path === current) ? current : (items[0]?.path ?? null);
 
+  // Focus moves to `focusPath` once, when it shows up: a later reload of the list (an upload, an Undo) mustn't pull it
+  // back from wherever the person has moved it since.
+  const focused = useRef<string | null>(null);
   useEffect(() => {
-    if (!focusPath) return;
+    if (!focusPath) {
+      focused.current = null;
+      return;
+    }
+    if (focused.current === focusPath) return;
     const frame = requestAnimationFrame(() => {
       const el = ref.current?.querySelector<HTMLElement>(`[data-path="${CSS.escape(focusPath)}"]`);
       if (!el) return;
+      focused.current = focusPath;
       setCurrent(focusPath);
       el.focus();
       el.scrollIntoView?.({ block: 'nearest' });

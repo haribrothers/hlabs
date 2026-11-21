@@ -20,8 +20,16 @@ export interface ComposeRunner {
   up(project: ComposeProject): Promise<void>;
   stop(project: ComposeProject): Promise<void>;
   restart(project: ComposeProject): Promise<void>;
-  /** Removes the containers; the app's data folders stay. */
-  down(project: ComposeProject): Promise<void>;
+  /**
+   * Removes the containers; the app's data folders stay. Uninstalling hlabs with everything deleted (D-143) also
+   * removes the app's images and its named volumes.
+   */
+  down(project: ComposeProject, options?: DownOptions): Promise<void>;
+}
+
+export interface DownOptions {
+  removeImages?: boolean;
+  removeVolumes?: boolean;
 }
 
 /** A compose command failed. `portInUse` is set when a published port was taken. */
@@ -89,8 +97,13 @@ export class CliComposeRunner implements ComposeRunner {
     return this.run(project, ['restart']);
   }
 
-  down(project: ComposeProject) {
-    return this.run(project, ['down', '--remove-orphans']);
+  down(project: ComposeProject, options: DownOptions = {}) {
+    return this.run(project, [
+      'down',
+      '--remove-orphans',
+      ...(options.removeImages ? ['--rmi', 'all'] : []),
+      ...(options.removeVolumes ? ['--volumes'] : []),
+    ]);
   }
 
   /** The command and leading arguments for compose. */

@@ -175,6 +175,12 @@ export class NetworkDrives {
     this.deps.bus.emit('storage.locationChanged', { locationId: loc.id, change: 'removed' });
   }
 
+  /** Uninstalling hlabs (D-143): every network drive is unmounted and remembered; nothing on them changes. */
+  async unmountAll(): Promise<void> {
+    this.stop();
+    for (const loc of this.networkLocations()) await this.deps.mounter.unmount(loc.path).catch(() => {});
+  }
+
   start(intervalMs = DRIVE_CHECK_MS) {
     void this.check();
     this.timer = setInterval(() => void this.check(), intervalMs);

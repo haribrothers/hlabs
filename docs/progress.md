@@ -257,15 +257,15 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 
 ## Phase 6 · Distribution
 
-- [ ] US-INST-03 · Install hlabs from the disk image
-- [ ] US-INST-04 · Launching from outside Applications
-- [ ] US-INST-21 · Choose what to keep when uninstalling
-- [ ] US-INST-22 · Uninstall removes hlabs cleanly
-- [ ] US-INST-23 · Install hlabs on a Linux server with one command
-- [ ] US-INST-24 · Finish setup in the browser after the Linux install
-- [ ] US-INST-25 · Manage a headless install from the command line
-- [ ] US-INST-26 · Native tray menu on Linux desktops
-- [ ] US-INST-27 · First run on a Linux desktop
+- [ ] US-INST-03 · Install hlabs from the disk image (built; waits for signing and notarizing, D-139)
+- [x] US-INST-04 · Launching from outside Applications
+- [x] US-INST-21 · Choose what to keep when uninstalling
+- [x] US-INST-22 · Uninstall removes hlabs cleanly
+- [x] US-INST-23 · Install hlabs on a Linux server with one command
+- [x] US-INST-24 · Finish setup in the browser after the Linux install
+- [x] US-INST-25 · Manage a headless install from the command line
+- [x] US-INST-26 · Native tray menu on Linux desktops
+- [x] US-INST-27 · First run on a Linux desktop
 - [ ] US-SITE-01 · Understand hlabs from the home page
 - [ ] US-SITE-02 · Download the right build for my computer
 - [ ] US-SITE-03 · Browse the app catalogue

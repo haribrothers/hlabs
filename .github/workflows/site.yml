@@ -1,10 +1,21 @@
-# Website and help (D-055). Phase 0: build the site. site:check, axe and Cloudflare Pages
-# deploys arrive with the site content in phase 6.
+# Website and help (D-055, D-147): build the site and check the help can't fall behind the product (site:check).
+# axe, Lighthouse and the Cloudflare Pages deploy arrive with part (d) of phase 6's website step.
 name: site
 
 on:
   pull_request:
-    paths: ['apps/site/**', 'store/**', 'packages/ui/**', 'packages/icons/**', '.github/workflows/site.yml']
+    paths:
+      - apps/site/**
+      - store/**
+      - packages/ui/**
+      - packages/icons/**
+      - .github/workflows/site.yml
+      # What site:check compares the help with: help links, error messages, the features list.
+      - apps/web/src/**
+      - apps/tray/src/**
+      - apps/cli/src/**
+      - docs/features/**
+      - scripts/site-check.ts
   push:
     branches: [main]
     paths: ['apps/site/**', 'store/**', 'packages/ui/**', 'packages/icons/**']
@@ -29,3 +40,5 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm site:build
+      - name: The help covers the product (US-SITE-07, 09, 10)
+        run: pnpm site:check

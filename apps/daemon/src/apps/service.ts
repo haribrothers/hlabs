@@ -12,7 +12,14 @@ import { parse as parseYaml } from 'yaml';
 import type { EngineService } from '../engine/service';
 import type { EventBus } from '../events/bus';
 import type { Logger } from '../logger';
-import { COMPOSE_FILE, ComposeError, ENV_FILE, type ComposeProject, type ComposeRunner } from './compose';
+import {
+  COMPOSE_FILE,
+  ComposeError,
+  ENV_FILE,
+  type ComposeProject,
+  type ComposeRunner,
+  type DownOptions,
+} from './compose';
 import { checkHealthOnce, waitHealthy, type HealthProbes, type HealthResult } from './health';
 import { catalogManifest } from './list';
 import { loopbackPort } from './ports';
@@ -204,8 +211,8 @@ export class AppService {
     }
   }
 
-  async composeDown(appId: string): Promise<void> {
-    await this.deps.compose.down(this.project(appId));
+  async composeDown(appId: string, options?: DownOptions): Promise<void> {
+    await this.deps.compose.down(this.project(appId), options);
   }
 
   /**

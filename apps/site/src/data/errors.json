@@ -1,0 +1,530 @@
+[
+  {
+    "code": "ACCESS_DENIED",
+    "slug": "access-denied",
+    "title": "You don't have access to that",
+    "body": "Ask an admin if you need it."
+  },
+  {
+    "code": "APP_BUSY",
+    "slug": "app-busy",
+    "title": "The app is busy",
+    "body": "Wait for it to finish what it’s doing, then try again."
+  },
+  {
+    "code": "APP_DISK_FULL",
+    "slug": "app-disk-full",
+    "title": "There’s no space for this app",
+    "body": "Free up some disk space, then try again."
+  },
+  {
+    "code": "APP_ENV_INVALID",
+    "slug": "app-env-invalid",
+    "title": "A setting isn't right",
+    "body": "Check the app’s settings and try again."
+  },
+  {
+    "code": "APP_HAS_DEPENDENTS",
+    "slug": "app-has-dependents",
+    "title": "Other apps need this one",
+    "body": "Uninstall the apps that use it first."
+  },
+  {
+    "code": "APP_HEALTH_TIMEOUT",
+    "slug": "app-health-timeout",
+    "title": "The app didn't start in time",
+    "body": "Check its logs, then try again."
+  },
+  {
+    "code": "APP_NETWORK_UNREACHABLE",
+    "slug": "app-network-unreachable",
+    "title": "The app couldn't be downloaded",
+    "body": "Check your internet connection and try again."
+  },
+  {
+    "code": "APP_NO_PLATFORM",
+    "slug": "app-no-platform",
+    "title": "This app doesn't run on this computer",
+    "body": "It isn't made for this kind of processor."
+  },
+  {
+    "code": "APP_PORT_IN_USE",
+    "slug": "app-port-in-use",
+    "title": "The app couldn't start",
+    "body": "Port it needs is already in use by another program."
+  },
+  {
+    "code": "APP_REINSTALL_UNAVAILABLE",
+    "slug": "app-reinstall-unavailable",
+    "title": "This app can't be reinstalled",
+    "body": "Its saved settings are missing, so reinstalling would reset its passwords. Uninstall it and install it again instead."
+  },
+  {
+    "code": "APP_ROLLBACK_FAILED",
+    "slug": "app-rollback-failed",
+    "title": "The app couldn't be restored",
+    "body": "Neither the new version nor the previous one started. Check the app's logs."
+  },
+  {
+    "code": "APP_UPDATE_ROLLED_BACK",
+    "slug": "app-update-rolled-back",
+    "title": "The update didn't start",
+    "body": "hlabs went back to the previous version. Nothing was lost."
+  },
+  {
+    "code": "AUTH_CHALLENGE_EXPIRED",
+    "slug": "auth-challenge-expired",
+    "title": "That took too long",
+    "body": "Log in again from the start."
+  },
+  {
+    "code": "AUTH_INVALID_CREDENTIALS",
+    "slug": "auth-invalid-credentials",
+    "title": "That didn't match",
+    "body": "Check your username and password."
+  },
+  {
+    "code": "AUTH_INVALID_PASSWORD",
+    "slug": "auth-invalid-password",
+    "title": "That password isn't right",
+    "body": "Check it and try again."
+  },
+  {
+    "code": "AUTH_LOCKED",
+    "slug": "auth-locked",
+    "title": "Too many tries",
+    "body": "Wait 15 minutes, then try again."
+  },
+  {
+    "code": "AUTH_RECOVERY_INVALID",
+    "slug": "auth-recovery-invalid",
+    "title": "That recovery code didn't work",
+    "body": "Each code works once. Try another."
+  },
+  {
+    "code": "AUTH_REQUIRED",
+    "slug": "auth-required",
+    "title": "You're logged out",
+    "body": "Log in again to carry on."
+  },
+  {
+    "code": "AUTH_RESET_EXPIRED",
+    "slug": "auth-reset-expired",
+    "title": "This reset link has expired",
+    "body": "Ask an admin for a new one."
+  },
+  {
+    "code": "AUTH_SECRET_UNAVAILABLE",
+    "slug": "auth-secret-unavailable",
+    "title": "hlabs can't reach its keychain",
+    "body": "Unlock this computer, then try again."
+  },
+  {
+    "code": "AUTH_TOTP_INVALID",
+    "slug": "auth-totp-invalid",
+    "title": "That code didn't work",
+    "body": "Use the newest code from your authenticator app."
+  },
+  {
+    "code": "BACKUP_DEST_AUTH_FAILED",
+    "slug": "backup-dest-auth-failed",
+    "title": "The backup destination didn't accept that",
+    "body": "Check its username and password."
+  },
+  {
+    "code": "BACKUP_DEST_DUPLICATE",
+    "slug": "backup-dest-duplicate",
+    "title": "That destination is already added",
+    "body": "Choose a different one."
+  },
+  {
+    "code": "BACKUP_DEST_FULL",
+    "slug": "backup-dest-full",
+    "title": "The backup destination is full",
+    "body": "Free up space there or keep fewer backups."
+  },
+  {
+    "code": "BACKUP_DEST_UNREACHABLE",
+    "slug": "backup-dest-unreachable",
+    "title": "Can't reach the backup destination",
+    "body": "Check that it’s connected and on."
+  },
+  {
+    "code": "BACKUP_INTERRUPTED",
+    "slug": "backup-interrupted",
+    "title": "The backup was interrupted",
+    "body": "Run it again; it carries on where it stopped."
+  },
+  {
+    "code": "BACKUP_PREHOOK_FAILED",
+    "slug": "backup-prehook-failed",
+    "title": "An app couldn't get ready for the backup",
+    "body": "Check its logs, then run the backup again."
+  },
+  {
+    "code": "BACKUP_REPO_LOCKED",
+    "slug": "backup-repo-locked",
+    "title": "Another backup is using this destination",
+    "body": "Wait for it to finish, then try again."
+  },
+  {
+    "code": "BACKUP_REPO_PASSWORD_WRONG",
+    "slug": "backup-repo-password-wrong",
+    "title": "That backup password isn't right",
+    "body": "Use the password from when these backups were made."
+  },
+  {
+    "code": "CSRF_REJECTED",
+    "slug": "csrf-rejected",
+    "title": "That didn't go through",
+    "body": "Reload the page and try again."
+  },
+  {
+    "code": "DAEMON_STARTING",
+    "slug": "daemon-starting",
+    "title": "hlabs is starting",
+    "body": "This usually takes less than a minute. Try again then."
+  },
+  {
+    "code": "DISK_FULL",
+    "slug": "disk-full",
+    "title": "This computer is out of space",
+    "body": "Free up some disk space, then try again."
+  },
+  {
+    "code": "DNS_SERVER_AUTH_FAILED",
+    "slug": "dns-server-auth-failed",
+    "title": "Pi-hole refused the app password",
+    "body": "Make an app password in Pi-hole under Settings › Web interface / API, then paste it here."
+  },
+  {
+    "code": "DNS_SERVER_UNREACHABLE",
+    "slug": "dns-server-unreachable",
+    "title": "The DNS server isn't answering",
+    "body": "Check its address and that it is running, then try again."
+  },
+  {
+    "code": "ENGINE_DOWNLOAD_TIMEOUT",
+    "slug": "engine-download-timeout",
+    "title": "The download stalled",
+    "body": "Check your internet connection and try again."
+  },
+  {
+    "code": "ENGINE_INSTALL_UNSUPPORTED",
+    "slug": "engine-install-unsupported",
+    "title": "hlabs can't install an engine here",
+    "body": "Install Docker yourself, then try again."
+  },
+  {
+    "code": "ENGINE_START_FAILED",
+    "slug": "engine-start-failed",
+    "title": "The engine didn't start",
+    "body": "Try again, or restart this computer."
+  },
+  {
+    "code": "ENGINE_UNAVAILABLE",
+    "slug": "engine-unavailable",
+    "title": "The container engine isn't running",
+    "body": "Start it in Settings › Engine & startup."
+  },
+  {
+    "code": "FILES_ACCESS_DENIED",
+    "slug": "files-access-denied",
+    "title": "You don't have access to that",
+    "body": "Ask the person who shared it."
+  },
+  {
+    "code": "FILES_INVALID_NAME",
+    "slug": "files-invalid-name",
+    "title": "That name won't work",
+    "body": "Names can’t contain / or be empty."
+  },
+  {
+    "code": "FILES_INVALID_PATH",
+    "slug": "files-invalid-path",
+    "title": "That place doesn't exist",
+    "body": "It may have been moved or removed."
+  },
+  {
+    "code": "FILES_IN_USE",
+    "slug": "files-in-use",
+    "title": "Something uses this folder",
+    "body": "An app would stop finding it if it changed."
+  },
+  {
+    "code": "FILES_NAME_EXISTS",
+    "slug": "files-name-exists",
+    "title": "That name is taken",
+    "body": "Choose another name."
+  },
+  {
+    "code": "FILES_NO_SPACE",
+    "slug": "files-no-space",
+    "title": "There’s no space left there",
+    "body": "Free up some space, then try again."
+  },
+  {
+    "code": "FILES_NO_TRASH",
+    "slug": "files-no-trash",
+    "title": "Trash doesn't cover this drive",
+    "body": "Items on network drives are deleted for good instead."
+  },
+  {
+    "code": "FILES_READ_ONLY",
+    "slug": "files-read-only",
+    "title": "This folder is read-only",
+    "body": "Save it somewhere else."
+  },
+  {
+    "code": "HOSTNAME_TAKEN",
+    "slug": "hostname-taken",
+    "title": "That address is taken",
+    "body": "Choose another name."
+  },
+  {
+    "code": "INTERNAL",
+    "slug": "internal",
+    "title": "Something went wrong",
+    "body": "Try again. If it keeps happening, check the logs in Settings › Advanced."
+  },
+  {
+    "code": "INVITE_INVALID",
+    "slug": "invite-invalid",
+    "title": "This invite doesn't work anymore",
+    "body": "Ask the person who invited you for a new link."
+  },
+  {
+    "code": "JOB_EXCLUSIVE_RUNNING",
+    "slug": "job-exclusive-running",
+    "title": "hlabs is busy",
+    "body": "Wait for what it’s doing to finish, then try again."
+  },
+  {
+    "code": "JOB_NOT_CANCELLABLE",
+    "slug": "job-not-cancellable",
+    "title": "This can't be stopped now",
+    "body": "It will finish on its own shortly."
+  },
+  {
+    "code": "LAST_ADMIN",
+    "slug": "last-admin",
+    "title": "hlabs needs at least one admin",
+    "body": "Make someone else an admin first."
+  },
+  {
+    "code": "NAS_AUTH_FAILED",
+    "slug": "nas-auth-failed",
+    "title": "The NAS didn't accept that",
+    "body": "Check the username and password."
+  },
+  {
+    "code": "NAS_HELPER_MISSING",
+    "slug": "nas-helper-missing",
+    "title": "hlabs can't connect to network drives here",
+    "body": "Reinstall hlabs to add the missing helper."
+  },
+  {
+    "code": "NAS_READ_ONLY",
+    "slug": "nas-read-only",
+    "title": "That share is read-only",
+    "body": "Choose a share hlabs can write to."
+  },
+  {
+    "code": "NAS_UNREACHABLE",
+    "slug": "nas-unreachable",
+    "title": "Can't reach the NAS",
+    "body": "Check the address and that the NAS is on."
+  },
+  {
+    "code": "NETWORK_PORT_IN_USE",
+    "slug": "network-port-in-use",
+    "title": "That port is in use",
+    "body": "Another program is using it. Choose another port or close that program."
+  },
+  {
+    "code": "NOT_FOUND",
+    "slug": "not-found",
+    "title": "This isn't here any more",
+    "body": "It may have been removed or renamed."
+  },
+  {
+    "code": "NOT_IMPLEMENTED",
+    "slug": "not-implemented",
+    "title": "This isn't ready yet",
+    "body": "It arrives with a later update of hlabs."
+  },
+  {
+    "code": "ONBOARDING_COMPLETE",
+    "slug": "onboarding-complete",
+    "title": "hlabs is already set up",
+    "body": "Log in to carry on."
+  },
+  {
+    "code": "ONBOARDING_INCOMPLETE",
+    "slug": "onboarding-incomplete",
+    "title": "Setup isn't finished",
+    "body": "Go back and complete the missing step."
+  },
+  {
+    "code": "ONBOARDING_SETUP_TOKEN_REQUIRED",
+    "slug": "onboarding-setup-token-required",
+    "title": "Open setup from this computer",
+    "body": "Use the link from the hlabs menu bar app or the install script."
+  },
+  {
+    "code": "ONBOARDING_STEP_INVALID",
+    "slug": "onboarding-step-invalid",
+    "title": "That step isn't available yet",
+    "body": "Finish the steps before it first."
+  },
+  {
+    "code": "ONBOARDING_USERS_EXIST",
+    "slug": "onboarding-users-exist",
+    "title": "An admin already exists",
+    "body": "Log in with that account."
+  },
+  {
+    "code": "PASSWORD_TOO_COMMON",
+    "slug": "password-too-common",
+    "title": "That password is too common",
+    "body": "Choose one that’s harder to guess."
+  },
+  {
+    "code": "PASSWORD_TOO_SHORT",
+    "slug": "password-too-short",
+    "title": "That password is too short",
+    "body": "Use at least 12 characters."
+  },
+  {
+    "code": "PASSWORD_UNCHANGED",
+    "slug": "password-unchanged",
+    "title": "That's your current password",
+    "body": "Choose a new one."
+  },
+  {
+    "code": "RESTORE_NOT_CANCELLABLE",
+    "slug": "restore-not-cancellable",
+    "title": "The restore can't be stopped now",
+    "body": "Stopping it here could damage your data. It will finish soon."
+  },
+  {
+    "code": "STORAGE_LOCATION_IN_USE",
+    "slug": "storage-location-in-use",
+    "title": "An app uses this drive",
+    "body": "Choose another folder for it first."
+  },
+  {
+    "code": "STORAGE_NOT_WRITABLE",
+    "slug": "storage-not-writable",
+    "title": "hlabs can't save files there",
+    "body": "Choose a folder you can write to, or check the drive."
+  },
+  {
+    "code": "TAILSCALE_HTTPS_DISABLED",
+    "slug": "tailscale-https-disabled",
+    "title": "HTTPS is off in Tailscale",
+    "body": "Turn on HTTPS certificates in your Tailscale admin console."
+  },
+  {
+    "code": "TAILSCALE_NOT_RUNNING",
+    "slug": "tailscale-not-running",
+    "title": "Tailscale isn't running",
+    "body": "Open Tailscale on this computer so hlabs can take its addresses off your tailnet, then try again."
+  },
+  {
+    "code": "TAILSCALE_PERMISSION_DENIED",
+    "slug": "tailscale-permission-denied",
+    "title": "Tailscale needs permission first",
+    "body": "Run sudo tailscale set --operator=hlabs once on this computer, then try again."
+  },
+  {
+    "code": "TAILSCALE_SERVE_CONFLICT",
+    "slug": "tailscale-serve-conflict",
+    "title": "A port is already served",
+    "body": "Something else on this computer uses it with Tailscale Serve. Choose another port or stop that first."
+  },
+  {
+    "code": "TOTP_INVALID_CODE",
+    "slug": "totp-invalid-code",
+    "title": "That code didn't work",
+    "body": "Use the newest code from your authenticator app."
+  },
+  {
+    "code": "TOTP_REQUIRED_BY_ADMIN",
+    "slug": "totp-required-by-admin",
+    "title": "Two-factor login is required",
+    "body": "Your admin requires it for everyone, so it stays on."
+  },
+  {
+    "code": "TOTP_REQUIRED_SELF_FIRST",
+    "slug": "totp-required-self-first",
+    "title": "Turn on two-factor login first",
+    "body": "Set it up for your own account before requiring it for everyone."
+  },
+  {
+    "code": "TRAY_TOKEN_REJECTED",
+    "slug": "tray-token-rejected",
+    "title": "The menu bar app isn't connected",
+    "body": "Quit it and open it again."
+  },
+  {
+    "code": "UPDATE_CHECK_FAILED",
+    "slug": "update-check-failed",
+    "title": "Couldn't check for updates",
+    "body": "Check your internet connection."
+  },
+  {
+    "code": "UPDATE_DOWNLOAD_FAILED",
+    "slug": "update-download-failed",
+    "title": "The update couldn't be downloaded",
+    "body": "Nothing was changed. Check your internet connection and try again."
+  },
+  {
+    "code": "UPDATE_NOT_APPLIED",
+    "slug": "update-not-applied",
+    "title": "The update didn't start",
+    "body": "Make sure the hlabs menu-bar app is running on the computer, then try again."
+  },
+  {
+    "code": "UPDATE_NOT_AVAILABLE",
+    "slug": "update-not-available",
+    "title": "hlabs is up to date",
+    "body": "There is no newer version to install."
+  },
+  {
+    "code": "UPDATE_SIGNATURE_INVALID",
+    "slug": "update-signature-invalid",
+    "title": "This update couldn't be verified",
+    "body": "It wasn't installed. Try again later."
+  },
+  {
+    "code": "UPLOAD_IN_PROGRESS",
+    "slug": "upload-in-progress",
+    "title": "This file is uploading somewhere else",
+    "body": "Wait for it to finish there, or cancel it there."
+  },
+  {
+    "code": "UPLOAD_OFFSET_MISMATCH",
+    "slug": "upload-offset-mismatch",
+    "title": "The upload got out of step",
+    "body": "Try again; it carries on where it stopped."
+  },
+  {
+    "code": "USERNAME_INVALID",
+    "slug": "username-invalid",
+    "title": "That username won't work",
+    "body": "Use lowercase letters, numbers and dashes, starting with a letter."
+  },
+  {
+    "code": "USERNAME_TAKEN",
+    "slug": "username-taken",
+    "title": "That username is taken",
+    "body": "Choose another one."
+  },
+  {
+    "code": "VALIDATION_FAILED",
+    "slug": "validation-failed",
+    "title": "Something doesn't look right",
+    "body": "Check what you entered and try again."
+  }
+]

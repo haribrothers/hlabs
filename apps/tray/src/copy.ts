@@ -99,6 +99,46 @@ export const trayCopy = {
   installFailed: "The update couldn't be installed",
   resetPassword: 'Reset a password…',
   uninstall: 'Uninstall hlabs…',
+  /** US-INST-21, US-INST-22 (TrayUninstall, D-143): the uninstall window, then its steps. */
+  uninstallWindow: {
+    title: 'Uninstall hlabs?',
+    lead: (apps: number) =>
+      apps === 0
+        ? 'hlabs is removed from this Mac.'
+        : apps === 1
+          ? 'Your app stops and hlabs is removed from this Mac.'
+          : `All ${apps} apps stop and hlabs is removed from this Mac.`,
+    loading: 'Working out what hlabs keeps…',
+    whatToKeep: 'What to keep',
+    keep: 'Keep my data',
+    keepNote: (root: string) => `App data and Home folders stay in ${root}, so you can reinstall later`,
+    deleteAll: 'Delete everything',
+    deleteNote: (size: string | null, root: string) =>
+      size ? `Removes ${size}. This can't be undone.` : `Removes everything in ${root}. This can't be undone.`,
+    removeColima: 'Also remove Colima, which hlabs installed',
+    note: "Backups on your NAS aren't touched. Dragging hlabs to the Trash on its own would leave apps running in the background, so use this instead.",
+    cancel: 'Cancel',
+    submit: 'Uninstall',
+    unreachable: "hlabs isn't answering, so it can't be uninstalled now. Restart hlabs from the menu, then try again.",
+    progressTitle: 'Uninstalling hlabs',
+    keepingSubtitle: (root: string) => `Your data stays in ${root}`,
+    deletingSubtitle: 'Deleting everything',
+    stoppingApps: 'Stopping apps',
+    removingColima: 'Removing Colima',
+    removingHlabs: 'Removing hlabs',
+    deletingData: 'Deleting data',
+    stepStates: { done: 'done', working: 'in progress', pending: 'not started', failed: "didn't finish" },
+    busy: 'hlabs is busy with another task, like a backup or an update. Try again when it has finished.',
+    appsFailed: "Some apps couldn't be stopped. Try again, or copy the diagnostics to ask for help.",
+    colimaFailed: "Colima couldn't be removed. Try again, or copy the diagnostics to ask for help.",
+    removeFailed: "hlabs couldn't remove its background service. Try again.",
+    deleteFailed:
+      "Some of hlabs's data couldn't be deleted. Disconnect any drive connected inside your hlabs folder, then try again.",
+    quitFailed: "hlabs couldn't move itself to the Trash. Drag hlabs from Applications to the Trash.",
+    tryAgain: 'Try again',
+    copyDiagnostics: 'Copy diagnostics',
+    copied: 'Copied',
+  },
   quit: 'Quit hlabs',
   /** US-INST-10 (D-120): the warning before quitting stops hlabs and every app. */
   quitTitle: 'Quit hlabs?',

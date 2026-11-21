@@ -1,0 +1,41 @@
+---
+// One page per error code the dashboard can show (US-SITE-09, US-SITE-10, D-147), with the dashboard's own words.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { Aside, LinkCard } from '@astrojs/starlight/components';
+import { errorPages, moreFor, type ErrorPage } from '../../../lib/errors';
+
+export function getStaticPaths() {
+  return errorPages.map((error) => ({ params: { slug: error.slug }, props: { error } }));
+}
+
+const { error } = Astro.props as { error: ErrorPage };
+const more = moreFor(error.code);
+---
+
+<StarlightPage
+  frontmatter={{ title: error.title, description: `${error.title}: ${error.body}` }}
+  headings={[
+    { depth: 2, slug: 'what-to-do', text: 'What to do' },
+    { depth: 2, slug: 'if-it-keeps-happening', text: 'If it keeps happening' },
+    { depth: 2, slug: 'still-stuck', text: 'Still stuck?' },
+  ]}
+>
+  <p>For everyone who sees this message in hlabs.</p>
+  <Aside title="What hlabs says">
+    <strong>{error.title}</strong>. {error.body}
+  </Aside>
+  <h2 id="what-to-do">What to do</h2>
+  <p>{error.body}</p>
+  {more ? <LinkCard title={more.label} href={more.href} description="What it means, and what to try in order." /> : null}
+  <h2 id="if-it-keeps-happening">If it keeps happening</h2>
+  <p>
+    Copy the diagnostics: choose <strong>Copy diagnostics</strong> in the hlabs menu in your menu bar, or run{' '}
+    <code>sudo hlabs status</code> and <code>sudo hlabs logs</code> on a Linux server. The dashboard's logs are in
+    Settings › Advanced.
+  </p>
+  <h2 id="still-stuck">Still stuck?</h2>
+  <p>
+    <a href="https://github.com/haribrothers/hlabs/issues/new">Open an issue on GitHub</a> with the diagnostics and
+    the error code{' '}<code>{error.code}</code>.
+  </p>
+</StarlightPage>

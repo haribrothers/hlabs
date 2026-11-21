@@ -72,7 +72,7 @@ describe('schemas', () => {
 
 describe('helpUrl', () => {
   it('builds site links and rejects bad slugs', () => {
-    expect(helpUrl('backups/restore')).toBe('https://hlabs.dev/help/backups/restore/');
+    expect(helpUrl('backups/restore')).toBe('https://hlabs.h4loom.com/help/backups/restore/');
     expect(() => helpUrl('../etc')).toThrow();
   });
 
@@ -83,7 +83,7 @@ describe('helpUrl', () => {
     } finally {
       vi.unstubAllGlobals();
     }
-    expect(helpUrl('get-started/use-as-app')).toBe('https://hlabs.dev/help/get-started/use-as-app/');
+    expect(helpUrl('get-started/use-as-app')).toBe('https://hlabs.h4loom.com/help/get-started/use-as-app/');
   });
 });
 

@@ -104,7 +104,7 @@ const EXPECTED: Row[] = [
   ['tray.status', 'q', 'tray'], ['tray.listUsers', 'q', 'tray'], ['tray.quickAction', 'm', 'tray'],
   ['tray.resetPassword', 'm', 'tray'], ['tray.quit', 'm', 'tray'], ['tray.useOtherPort', 'm', 'tray'], ['tray.setStartAtLogin', 'm', 'tray'], ['tray.appLogs', 'q', 'tray'],
   ['tray.startEngine', 'm', 'tray'], ['tray.diagnostics', 'q', 'tray'], ['tray.uninstallInfo', 'q', 'tray'],
-  ['tray.uninstall', 'm', 'tray'], ['tray.setupUrl', 'q', 'tray'],
+  ['tray.uninstall', 'm', 'tray'], ['tray.setupUrl', 'q', 'tray'], ['tray.job', 'q', 'tray'],
 
   ['events.stream', 's', 'authed|tray'],
 ];

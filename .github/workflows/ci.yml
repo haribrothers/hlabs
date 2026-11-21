@@ -42,6 +42,29 @@ jobs:
       - name: Generated design tokens are current
         run: pnpm ui:tokens && git diff --exit-code packages/ui/src
 
+  # The Linux server install for real (US-INST-23…25, D-140): build the download on this runner, run install.sh as
+  # people will (with the local tarball), and check the server it leaves behind.
+  install:
+    name: install (Linux)
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:linux --version 0.0.0-ci
+      - run: pnpm --filter @hlabs/cli test:install
+      - name: What hlabs said
+        if: failure()
+        run: |
+          sudo cat /var/log/hlabs-install.log || true
+          sudo journalctl -u hlabsd --no-pager -n 200 || true
+          sudo tail -n 200 /var/lib/hlabs/logs/hlabsd.log || true
+
   # One job per Playwright project, side by side: each has its own instances, so the whole suite takes about as long as
   # its longest project instead of all of them in a row.
   e2e:

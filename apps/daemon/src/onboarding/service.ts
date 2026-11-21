@@ -173,15 +173,16 @@ export class OnboardingService {
   }
 
   /**
-   * The setup URL at each of this computer's LAN addresses, through Caddy's HTTPS port (D-035: what the Linux installer
-   * prints; the dashboard answers at https://<LAN IP>, US-SYS-41). Empty once onboarding is complete.
+   * The setup URL at each of these LAN addresses or names, through Caddy's HTTP port (D-035, D-140: what the Linux
+   * installer prints). Caddy serves the dashboard on plain HTTP until onboarding is done (D-013), and an https address
+   * would warn because the local CA isn't trusted yet. Empty once onboarding is complete.
    */
-  async lanSetupUrls(addresses: readonly string[]): Promise<string[]> {
+  async lanSetupUrls(hosts: readonly string[]): Promise<string[]> {
     const token = await this.setupToken();
     if (!token) return [];
-    const { https } = getSetting(this.db, 'network').ports;
-    const port = https === 443 ? '' : `:${https}`;
-    return addresses.map((address) => `https://${address}${port}/setup?token=${token}`);
+    const { http } = getSetting(this.db, 'network').ports;
+    const port = http === 80 ? '' : `:${http}`;
+    return hosts.map((host) => `http://${host}${port}/setup?token=${token}`);
   }
 
   private async setupToken(): Promise<string | null> {

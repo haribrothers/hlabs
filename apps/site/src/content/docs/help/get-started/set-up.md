@@ -1,7 +1,7 @@
 ---
 title: Set up hlabs
 description: Open setup the first time hlabs starts, and finish it on the computer running hlabs.
-features: [F-ONB-01, F-ONB-06, F-INST-01]
+features: [F-ONB-01, F-ONB-06, F-INST-01, F-ONB-02, F-ONB-03, F-ONB-04, F-ONB-05, F-ONB-07, F-ONB-08]
 ---
 
 For admins: the person who installed hlabs.

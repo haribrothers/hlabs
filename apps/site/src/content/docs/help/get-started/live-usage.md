@@ -1,7 +1,7 @@
 ---
 title: Live usage
 description: See how busy the computer running hlabs is, and which apps use the most.
-features: [F-USE-01]
+features: [F-USE-01, F-USE-02, F-USE-03, F-USE-04]
 ---
 
 For admins, and for family members their admin lets see it.
@@ -45,3 +45,8 @@ Press Tab to reach a chart, then use the **Left** and **Right** arrow keys to mo
 With high-contrast or forced colours turned on, each line has its own style (solid, dashed, dotted) and each part of a bar its own pattern, so you can tell them apart without colour.
 
 If the processor stays at 90% or more, or memory is 90% full, the tile says **High**. A busy computer can make apps slow; the per-app table below shows which app is using the most.
+
+## How hlabs measures
+
+hlabs reads how busy the computer and each app are every 5 seconds, and keeps the last hour of those readings in memory. Every minute it saves one averaged point, and every hour one more; minute points are kept for 7 days and hourly ones for 90 days, so the longer ranges stay quick. Measuring costs very little: under 2% of one processor core. If hlabs restarts, at most the last minute is lost. When the container engine is stopped, the computer's numbers carry on and the apps' are left out until it's back.
+

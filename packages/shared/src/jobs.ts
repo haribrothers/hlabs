@@ -7,4 +7,5 @@ export const EXCLUSIVE_JOB_KINDS = [
   'engine_switch',
   'rename_host',
   'factory_reset',
+  'hlabs_uninstall',
 ] as const;

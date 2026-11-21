@@ -1,7 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import { COMPOSE_FILE, ComposeError, type ComposeProject, type ComposeRunner } from '../../src/apps/compose';
+import {
+  COMPOSE_FILE,
+  ComposeError,
+  type ComposeProject,
+  type ComposeRunner,
+  type DownOptions,
+} from '../../src/apps/compose';
 import type { ContainerState } from '../../src/engine/types';
 import type { FakeEngine } from './engine';
 
@@ -64,8 +70,12 @@ export class FakeCompose implements ComposeRunner {
     }
   }
 
-  async down(project: ComposeProject) {
+  /** The options of each `down` (D-143's images and volumes), in order. */
+  readonly downOptions: Array<DownOptions | undefined> = [];
+
+  async down(project: ComposeProject, options?: DownOptions) {
     if (this.gate) await this.gate;
+    this.downOptions.push(options);
     this.record('down', project);
     this.engine.containers.delete(project.name);
   }

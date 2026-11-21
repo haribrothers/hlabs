@@ -32,6 +32,7 @@ import type { NetworkDiscovery } from './platform/network-discovery';
 import type { Destinations } from './backups/destinations';
 import type { Restic } from './backups/restic';
 import type { BackupService } from './backups/runner';
+import type { UninstallService } from './uninstall/service';
 import type { RestoreService } from './backups/restore';
 import type { PlanSizes } from './backups/plan';
 import type { SecretStore } from './platform/secrets';
@@ -136,6 +137,8 @@ export interface Services {
   planSizes: PlanSizes;
   /** Restores (US-BKP-17…22). */
   restores: RestoreService;
+  /** Uninstalling hlabs, the daemon's part (US-INST-21, US-INST-22, D-143). */
+  uninstall: UninstallService;
 }
 
 /** Holds services once boot has created them; requests before then get DAEMON_STARTING. */

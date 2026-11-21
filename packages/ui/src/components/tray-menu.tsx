@@ -1,4 +1,4 @@
-import { Check, Circle, iconDefaults, LoaderCircle, LogoMark, TriangleAlert } from '@hlabs/icons';
+import { Check, Circle, CircleAlert, iconDefaults, LoaderCircle, LogoMark, TriangleAlert } from '@hlabs/icons';
 import type { ReactNode } from 'react';
 import { cn } from '../lib/cn';
 import { Button } from './button';
@@ -111,20 +111,33 @@ export function TrayMenu({
   return <Menu label="hlabs" width={width} header={header} items={items} />;
 }
 
-export type TraySetupStepState = 'done' | 'working' | 'pending';
+export type TraySetupStepState = 'done' | 'working' | 'pending' | 'failed';
 
 export interface TraySetupProps {
   title: string;
   subtitle: string;
   steps: { label: string; state: TraySetupStepState }[];
-  /** Words for each state, for screen readers ("done", "in progress", "not started"). */
-  stateLabels: Record<TraySetupStepState, string>;
+  /** Words for each state, for screen readers ("done", "in progress", "not started", "failed"). */
+  stateLabels: Record<Exclude<TraySetupStepState, 'failed'>, string> & { failed?: string };
   action?: { label: string; onSelect: () => void; disabled?: boolean };
+  /** A second, quieter button beside `action` ("Copy diagnostics" after a failed step). */
+  secondaryAction?: { label: string; onSelect: () => void; disabled?: boolean };
+  /** What went wrong, under the steps; announced as an alert. */
+  problem?: string;
   width?: number;
 }
 
 /** The tray's first-launch window (TrayStates "First launch", US-INST-01): a checklist with progress. */
-export function TraySetup({ title, subtitle, steps, stateLabels, action, width = TRAY_WIDTH }: TraySetupProps) {
+export function TraySetup({
+  title,
+  subtitle,
+  steps,
+  stateLabels,
+  action,
+  secondaryAction,
+  problem,
+  width = TRAY_WIDTH,
+}: TraySetupProps) {
   const done = steps.filter((s) => s.state === 'done').length;
   const working = steps.some((s) => s.state === 'working') ? 0.5 : 0;
   const value = steps.length ? ((done + working) / steps.length) * 100 : 0;
@@ -144,6 +157,8 @@ export function TraySetup({ title, subtitle, steps, stateLabels, action, width =
           <li key={step.label} className={`hl-tray-step hl-tray-step-${step.state}`}>
             {step.state === 'done' ? (
               <Check aria-hidden {...iconDefaults} />
+            ) : step.state === 'failed' ? (
+              <CircleAlert aria-hidden {...iconDefaults} />
             ) : step.state === 'working' ? (
               <LoaderCircle aria-hidden className="hl-spin" {...iconDefaults} />
             ) : (
@@ -151,16 +166,36 @@ export function TraySetup({ title, subtitle, steps, stateLabels, action, width =
             )}
             <span>
               {step.label}
-              <span className="hl-sr"> ({stateLabels[step.state]})</span>
+              <span className="hl-sr"> ({stateLabels[step.state] ?? step.state})</span>
             </span>
           </li>
         ))}
       </ul>
       <Progress value={value} aria-label={title} className="hl-tray-progress" />
-      {action ? (
-        <Button size="sm" className="hl-tray-action" onClick={action.onSelect} disabled={action.disabled}>
-          {action.label}
-        </Button>
+      {problem ? (
+        <div className="hl-tray-note hl-tray-note-danger hl-tray-setup-problem" role="alert">
+          <span>{problem}</span>
+        </div>
+      ) : null}
+      {action || secondaryAction ? (
+        <div className="hl-tray-setup-actions">
+          {secondaryAction ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="hl-tray-action"
+              onClick={secondaryAction.onSelect}
+              disabled={secondaryAction.disabled}
+            >
+              {secondaryAction.label}
+            </Button>
+          ) : null}
+          {action ? (
+            <Button size="sm" className="hl-tray-action" onClick={action.onSelect} disabled={action.disabled}>
+              {action.label}
+            </Button>
+          ) : null}
+        </div>
       ) : null}
     </section>
   );

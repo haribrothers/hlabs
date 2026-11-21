@@ -10,9 +10,11 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/starlight": "~0.37.7",
+    "@astrojs/starlight": "~0.43.1",
+    "@hlabs/app-manifest": "workspace:*",
     "@hlabs/ui": "workspace:*",
-    "astro": "^5.18.2",
-    "starlight-sidebar-topics": "~0.6.2"
+    "astro": "^7.4.13",
+    "starlight-sidebar-topics": "~0.9.0",
+    "zod": "^4.6.5"
   }
 }

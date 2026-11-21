@@ -439,6 +439,7 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - Uninstall from the tray and `install.sh --uninstall`.
 - Release pipeline (07 §7.9, 11-testing-release).
 - Website and help at `apps/site` (D-055): home, download, app catalogue, install guides, help for every P1/P2 feature, troubleshooting and error pages, release notes; `install.sh` served from the site; `helpUrl` links from the product checked in CI.
+- Built in six steps (D-139): Linux server, Mac disk image, uninstall, Linux desktop, release pipeline, website. Builds are unsigned until the Apple Developer ID and the release update key exist; Linux downloads are signed with the update key (D-141).
 
 **Done when**
 - [ ] Clean macOS VM: download → first app running in ≤ 10 minutes.

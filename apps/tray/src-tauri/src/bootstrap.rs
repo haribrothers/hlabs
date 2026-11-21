@@ -2,6 +2,9 @@
 //! (US-INST-15), the LaunchAgent `dev.hlabs.daemon` that runs the bundled `node hlabsd.mjs`, loads it
 //! with `launchctl bootstrap`, registers itself as a login item and waits for `/healthz`.
 
+// The LaunchAgent is a Mac thing; a Linux desktop uses systemd.rs.
+#![cfg_attr(not(target_os = "macos"), allow(dead_code))]
+
 use crate::launchd::{service_target, Runner, LAUNCH_AGENT_LABEL};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
