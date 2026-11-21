@@ -89,6 +89,7 @@ In the `h4loom.com` zone › **SSL/TLS** › **Edge Certificates**, check that *
 
 ## When something goes wrong
 
+- **A push gets no "Workers Builds: hlabs-site" check at all:** Cloudflare's GitHub app can't see the repo. On GitHub: your picture › **Settings** › **Applications** › **Installed GitHub Apps** › **Cloudflare Workers and Pages** › **Configure**, and include `haribrothers/hlabs` under **Repository access**. Then push again, or start the build from **Deployments**.
 - **The build fails reading the releases:** GitHub didn't answer, or refused because of its limit on requests without a token from Cloudflare's shared build machines. Retry the build. If it keeps happening, give the build a token: on GitHub, **Settings** › **Developer settings** › **Fine-grained tokens**, with access to **Public repositories** only and no permissions, saved under **Build variables and secrets** as the secret `GITHUB_TOKEN`.
 - **"The Cloudflare application detection logic has been run in the root of a workspace":** Wrangler didn't find `wrangler.jsonc`. Check that **Root directory** is `/` and that the commit being built has the file.
 - **"Your Wrangler configuration is missing a `previews` block":** the branch predates that block; rebase it on `main`.
