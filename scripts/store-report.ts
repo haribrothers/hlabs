@@ -1,5 +1,6 @@
 // After the store matrix (US-STORE-26): the install rate and what failed in the run's summary, and with --issues
-// (the nightly run) an issue for each failing app, or a comment on the one already open for it.
+// (the nightly run) an issue for each failing app, or a comment on the one already open for it. Exits 1 when any
+// planned app didn't pass.
 //
 //   node scripts/store-report.ts --planned '["immich",…]' --results <results JSON, or a folder of them> [--issues]
 import { execFileSync } from 'node:child_process';
@@ -55,3 +56,6 @@ if (process.argv.includes('--issues') && r.failed.length) {
     process.stdout.write(`issue: ${line}\n`);
   }
 }
+
+// Red when any app didn't pass, including one whose result never arrived.
+if (r.failed.length) process.exitCode = 1;

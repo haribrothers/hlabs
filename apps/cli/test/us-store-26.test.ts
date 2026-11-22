@@ -197,6 +197,11 @@ describe('US-STORE-26', () => {
     const report = yml.jobs.report!;
     expect(report.needs).toEqual(['apps', 'matrix']);
     expect(report.if).toContain('always()');
+    const upload = yml.jobs.matrix!.steps.find((st) =>
+      (st as { uses?: string }).uses?.startsWith('actions/upload-artifact'),
+    );
+    // The results folder is hidden (.matrix-results), which upload-artifact skips unless told.
+    expect(upload!.with).toMatchObject({ path: '.matrix-results/', 'include-hidden-files': true });
     expect(report.permissions).toEqual({ contents: 'read', issues: 'write' });
     expect(runs('report')).toContain(
       'node scripts/store-report.ts --planned "$PLANNED" --results .matrix-results $ISSUES',
