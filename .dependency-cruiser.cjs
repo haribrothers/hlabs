@@ -50,7 +50,7 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: 'node_modules' },
-    exclude: { path: '(^|/)(dist|dist-pwa|dist-e2e|node_modules|coverage|src-tauri|\\.astro|\\.e2e)/' },
+    exclude: { path: '(^|/)(dist|dist-pwa|dist-e2e|dist-e2e-beta|node_modules|coverage|src-tauri|\\.astro|\\.e2e)/' },
     tsPreCompilationDeps: true,
     combinedDependencies: true,
     enhancedResolveOptions: {

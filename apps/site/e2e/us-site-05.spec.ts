@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
+import { BETA_ONLY_URL } from './helpers';
 
 const fixture = (name: string) =>
   readFileSync(resolve(import.meta.dirname, 'fixtures/releases/assets/v0.6.0', name), 'utf8');
@@ -41,5 +42,16 @@ test.describe('US-SITE-05', () => {
     await expect(
       page.getByText('curl -fsSL https://hlabs.h4loom.com/install.sh | sh -s -- --channel beta'),
     ).toBeVisible();
+  });
+
+  test("before the first stable release, it serves the beta's install.sh", async ({ request }) => {
+    const beta = (name: string) =>
+      readFileSync(resolve(import.meta.dirname, 'fixtures/releases/assets/v0.7.0-beta.1', name), 'utf8');
+    const script = await request.get(`${BETA_ONLY_URL}/install.sh`);
+    expect(script.ok()).toBe(true);
+    expect(await script.text()).toBe(beta('install.sh'));
+    expect(beta('SHA256SUMS')).toContain(
+      (await (await request.get(`${BETA_ONLY_URL}/install.sh.sha256`)).text()).trim(),
+    );
   });
 });

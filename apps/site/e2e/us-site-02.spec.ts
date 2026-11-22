@@ -1,6 +1,6 @@
 // US-SITE-02 · Download the right build for my computer (with the release fixture: 0.6.0 stable, 0.7.0-beta.1).
 import { expect, test, type Page } from '@playwright/test';
-import { FIXTURE, accessibleInBothThemes } from './helpers';
+import { BETA_ONLY_URL, FIXTURE, accessibleInBothThemes } from './helpers';
 
 const MAC =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140 Safari/537.36';
@@ -84,5 +84,27 @@ test.describe('US-SITE-02', () => {
   test('passes axe in both themes', async ({ page }) => {
     await page.goto('/download/');
     await accessibleInBothThemes(page);
+  });
+
+  test('before the first stable release, it offers the beta and says so', async ({ page }) => {
+    await page.goto(`${BETA_ONLY_URL}/download/`);
+    await expect(page.getByText(`Version ${FIXTURE.beta}`)).toBeVisible();
+    await expect(page.getByRole('status')).toContainText("There's no stable release yet: this is the beta.");
+    // Nothing to switch between.
+    await expect(page.getByRole('button', { name: 'Stable' })).toHaveCount(0);
+    const beta = page.getByRole('region', { name: 'Beta downloads' });
+    await expect(beta.getByRole('link', { name: 'Download for Mac (Apple silicon)' })).toHaveAttribute(
+      'href',
+      `${FIXTURE.releases}/v0.7.0-beta.1/hlabs-0.7.0-beta.1-mac-arm64.dmg`,
+    );
+    await expect(beta.locator('code').first()).toHaveText(
+      '$ curl -fsSL https://hlabs.h4loom.com/install.sh | sh -s -- --channel beta',
+    );
+    await accessibleInBothThemes(page);
+  });
+
+  test("the home page's install command asks for the beta while only a beta exists", async ({ page }) => {
+    await page.goto(`${BETA_ONLY_URL}/`);
+    await expect(page.locator('.terminal pre')).toContainText('install.sh | sh -s -- --channel beta');
   });
 });

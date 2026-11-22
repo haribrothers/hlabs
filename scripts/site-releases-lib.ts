@@ -31,7 +31,7 @@ export interface SiteReleases {
   stable: SiteRelease | null;
   /** The newest release of either channel: stable releases go to beta too (D-146). */
   beta: SiteRelease | null;
-  /** The install.sh this site serves, from the stable release. */
+  /** The install.sh this site serves: the stable release's, or the beta's until there's a stable release. */
   installScript: { version: string; sha256: string } | null;
 }
 
@@ -96,4 +96,20 @@ export async function latestReleases(
   };
   const stable = real.find((r) => !r.prerelease && !VERSION.exec(r.tag_name)![4]);
   return { repo, stable: await describe(stable), beta: await describe(real[0]), installScript: null };
+}
+
+/** The channel /download/ opens on: stable, or the beta while there's no stable release yet; null with neither. */
+export function firstChannel(data: Pick<SiteReleases, 'stable' | 'beta'>): 'stable' | 'beta' | null {
+  return data.stable ? 'stable' : data.beta ? 'beta' : null;
+}
+
+/** The release whose install.sh the site serves: the stable one, or the beta until there's a stable release. */
+export function installScriptRelease(data: Pick<SiteReleases, 'stable' | 'beta'>): SiteRelease | null {
+  return data.stable ?? data.beta;
+}
+
+/** The Linux server command for a channel (`--channel beta` installs the beta channel's version). */
+export function installCommand(channel: 'stable' | 'beta'): string {
+  const command = 'curl -fsSL https://hlabs.h4loom.com/install.sh | sh';
+  return channel === 'beta' ? `${command} -s -- --channel beta` : command;
 }

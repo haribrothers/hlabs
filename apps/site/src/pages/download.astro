@@ -7,6 +7,7 @@ import Page from '../layouts/Page.astro';
 import Sha from '../components/Sha.astro';
 import LogoMark from '../components/LogoMark.astro';
 import { allReleasesUrl, channelOf, siteReleases, type Arch, type Channel, type Download } from '../lib/releases';
+import { firstChannel, installCommand } from '../../../../scripts/site-releases-lib.ts';
 
 const data = siteReleases();
 const stable = channelOf(data.stable);
@@ -15,8 +16,11 @@ const channels = [
   { id: 'stable', c: stable },
   { id: 'beta', c: beta },
 ].filter((x): x is { id: string; c: Channel } => x.c !== null);
-const command = 'curl -fsSL https://hlabs.h4loom.com/install.sh | sh';
-const betaCommand = `${command} -s -- --channel beta`;
+// The page opens on stable, or on the beta while there's no stable release yet.
+const first = firstChannel(data);
+const betaOnly = first === 'beta';
+const command = installCommand('stable');
+const betaCommand = installCommand('beta');
 const archs: Array<{ id: Arch; label: string }> = [
   { id: 'x86_64', label: 'x86_64' },
   { id: 'aarch64', label: 'arm64' },
@@ -61,7 +65,7 @@ const hasScript = data.installScript !== null;
         ) : (
           <>
             {channels.map(({ id, c }) => (
-              <p class="lede rise rise-3 version-line" data-channel={id} hidden={id !== 'stable' || undefined}>
+              <p class="lede rise rise-3 version-line" data-channel={id} hidden={id !== first || undefined}>
                 Version {c.version} · {c.date} · <a href={`/releases/#${c.version}`}>What's new</a>
               </p>
             ))}
@@ -77,10 +81,11 @@ const hasScript = data.installScript !== null;
                 </div>
               </div>
             )}
-            <p class="callout fade beta-note" role="status" data-channel="beta" hidden>
+            <p class="callout fade beta-note" role="status" data-channel="beta" hidden={!betaOnly || undefined}>
               <Icon name="triangle-alert" size={18} />
               <span>
                 {/* US-SYS-30 (phase 7) adds a Beta switch to Settings › Updates; until then, say what happens. */}
+                {betaOnly && "There's no stable release yet: this is the beta. "}
                 Beta builds may have bugs. hlabs updates to the next stable version once one is newer than the beta.
                 {sameAsStable && ' The newest beta is the current stable version.'}
               </span>
@@ -97,7 +102,7 @@ const hasScript = data.installScript !== null;
         class="downloads"
         aria-label={id === 'stable' ? 'Stable downloads' : 'Beta downloads'}
         data-channel={id}
-        hidden={id !== 'stable' || undefined}
+        hidden={id !== first || undefined}
       >
         <div class="wrap stack" data-order>
           <article class="card dl-card mac" data-os="mac" aria-labelledby={`mac-${id}`}>

@@ -22,6 +22,7 @@ export const ignores = [
   '**/.astro/**',
   // The website built for its own tests, and what that build is made from (apps/site/e2e/build.ts).
   'apps/site/dist-e2e/**',
+  'apps/site/dist-e2e-beta/**',
   'apps/site/.e2e/**',
   'docs/**',
 ];

@@ -1,13 +1,13 @@
 // Serves dist-e2e for the site's tests, like Cloudflare serves the site: /x/ → x/index.html, unknown paths →
 // 404.html, and the headers from the built _headers (its Content-Security-Policy included, so every test runs under
 // it). (Astro's own `astro preview` runs one preview per project, which a developer's may already be.)
-//   node e2e/serve.ts <port>
+//   node e2e/serve.ts <port> [<folder>, dist-e2e unless given]
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize, resolve } from 'node:path';
 
-const root = resolve(import.meta.dirname, '../dist-e2e');
 const port = Number(process.argv[2] ?? 4521);
+const root = resolve(import.meta.dirname, '..', process.argv[3] ?? 'dist-e2e');
 const TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css',

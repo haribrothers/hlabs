@@ -1,7 +1,7 @@
 // Before the website builds (D-147, US-SITE-02, US-SITE-05): the latest stable and beta releases from GitHub, with
 // each file's size and SHA-256 (from the release's SHA256SUMS), into apps/site/src/data/releases.json; and the latest
-// stable release's install.sh with its .sig into apps/site/public/, plus install.sh.sha256. install.sh comes from the
-// release, never from main, and must match the release's SHA256SUMS.
+// stable release's install.sh with its .sig into apps/site/public/, plus install.sh.sha256 (the beta's, until there's
+// a stable release). install.sh comes from the release, never from main, and must match the release's SHA256SUMS.
 //
 //   node scripts/site-releases.ts                        GitHub (GITHUB_TOKEN is used when set)
 //   HLABS_SITE_RELEASES_FIXTURE=<dir> node scripts/…     <dir>/releases.json (GitHub's shape) and <dir>/assets/<tag>/*
@@ -11,7 +11,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { latestReleases, type GitHubRelease, type SiteReleases } from './site-releases-lib.ts';
+import { installScriptRelease, latestReleases, type GitHubRelease, type SiteReleases } from './site-releases-lib.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const site = join(root, 'apps/site');
@@ -58,13 +58,14 @@ async function main() {
     return sums?.toString('utf8') ?? null;
   });
 
-  // install.sh, from the latest stable release only, checked against that release's SHA256SUMS.
+  // install.sh, from the latest stable release (the beta until there is one), checked against its SHA256SUMS.
   clearInstall();
-  const stable = data.stable ? releases.find((r) => r.tag_name === data.stable!.tag) : undefined;
-  if (stable && data.stable) {
+  const from = installScriptRelease(data);
+  const stable = from ? releases.find((r) => r.tag_name === from.tag) : undefined;
+  if (stable && from) {
     const script = await asset(stable, 'install.sh');
     const sig = await asset(stable, 'install.sh.sig');
-    const listed = data.stable.files.find((f) => f.name === 'install.sh')?.sha256;
+    const listed = from.files.find((f) => f.name === 'install.sh')?.sha256;
     if (script && sig) {
       const sha = createHash('sha256').update(script).digest('hex');
       if (!listed || listed !== sha) {
@@ -74,7 +75,7 @@ async function main() {
       writeFileSync(join(publicDir, 'install.sh'), script);
       writeFileSync(join(publicDir, 'install.sh.sig'), sig);
       writeFileSync(join(publicDir, 'install.sh.sha256'), `${sha}  install.sh\n`);
-      data.installScript = { version: data.stable.version, sha256: sha };
+      data.installScript = { version: from.version, sha256: sha };
       say(`install.sh from ${stable.tag_name} (${sha.slice(0, 12)}…)`);
     } else {
       say(`${stable.tag_name} has no signed install.sh: the site serves none`);
