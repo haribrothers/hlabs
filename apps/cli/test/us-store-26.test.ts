@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 import {
   appsTouched,
   dailySample,
@@ -160,16 +161,46 @@ describe('US-STORE-26', () => {
   });
 
   it('store.yml chooses its apps this way and reports after them', () => {
-    const yml = readFileSync(join(ROOT, '.github/workflows/store.yml'), 'utf8');
-    expect(yml).toContain('node scripts/store-select.ts pr --base "origin/$BASE"');
-    expect(yml).toContain('node scripts/store-select.ts nightly --per-runner 5');
-    expect(yml).toContain('fetch-depth: 0');
-    expect(yml).toContain('shard: ${{ fromJson(needs.apps.outputs.shards) }}');
-    expect(yml).toContain(
-      '--results .matrix-results/${{ strategy.job-index }}.json --prune-images ${{ matrix.shard }}',
+    const text = readFileSync(join(ROOT, '.github/workflows/store.yml'), 'utf8');
+    type Step = { id?: string; run?: string; env?: Record<string, string>; with?: Record<string, unknown> };
+    type Job = { needs?: string[]; if?: string; steps: Step[]; permissions?: Record<string, string> } & Record<
+      string,
+      unknown
+    >;
+    const yml = parse(text) as {
+      on: { pull_request: { paths: string[] }; schedule: unknown[]; workflow_dispatch: { inputs: { apps: unknown } } };
+      jobs: Record<string, Job>;
+    };
+    const runs = (job: string) => yml.jobs[job]!.steps.map((s) => s.run ?? '').join('\n');
+
+    expect(Object.keys(yml.jobs)).toEqual(['lint', 'apps', 'matrix', 'report']);
+    expect(yml.on.workflow_dispatch.inputs.apps).toBeTruthy();
+    expect(yml.on.schedule).toHaveLength(1);
+    expect(yml.on.pull_request.paths).toEqual(
+      expect.arrayContaining(['store/**', 'scripts/store-select*.ts', 'scripts/store-report.ts']),
     );
-    expect(yml).toContain("ISSUES: ${{ github.event_name == 'schedule' && '--issues' || '' }}");
-    expect(yml).toMatch(/report:[\s\S]*issues: write/);
-    expect(yml).toMatch(/report:[\s\S]*if: always\(\)/);
+    expect(runs('lint')).toContain('pnpm store:lint');
+
+    expect(yml.jobs.apps!.steps[0]!.with).toEqual({ 'fetch-depth': 0 });
+    expect(runs('apps')).toContain('node scripts/store-select.ts pr --base "origin/$BASE"');
+    expect(runs('apps')).toContain('node scripts/store-select.ts nightly --per-runner 5');
+
+    expect(yml.jobs.matrix!.needs).toEqual(['lint', 'apps']);
+    expect(yml.jobs.matrix!.strategy).toEqual({
+      'fail-fast': false,
+      matrix: { shard: '${{ fromJson(needs.apps.outputs.shards) }}' },
+    });
+    expect(runs('matrix')).toContain(
+      'node scripts/store-matrix.ts --results .matrix-results/${{ strategy.job-index }}.json --prune-images ${{ matrix.shard }}',
+    );
+
+    const report = yml.jobs.report!;
+    expect(report.needs).toEqual(['apps', 'matrix']);
+    expect(report.if).toContain('always()');
+    expect(report.permissions).toEqual({ contents: 'read', issues: 'write' });
+    expect(runs('report')).toContain(
+      'node scripts/store-report.ts --planned "$PLANNED" --results .matrix-results $ISSUES',
+    );
+    expect(report.steps.at(-1)!.env!.ISSUES).toBe("${{ github.event_name == 'schedule' && '--issues' || '' }}");
   });
 });
