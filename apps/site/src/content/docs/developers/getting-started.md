@@ -62,6 +62,8 @@ pnpm test        # every package's unit tests (Vitest)
 pnpm test:e2e    # the dashboard in a real browser (Playwright, with axe)
 ```
 
+Each unit test run keeps what its tests write (a daemon's data per test, fake stores and drives) in one `hlabs-test-…` folder in the system temp folder, and removes it when the run ends. That's `/tmp` under `pnpm test`, because Turborepo doesn't pass `TMPDIR` on. A run that's stopped part-way leaves its folder behind; a later run removes it once it's a day old, along with the module copies Vitest leaves there.
+
 The end-to-end tests run their own hlabs on other ports (7574 for hlabs, 5273 for the dashboard) with their own data, so they never touch your development hlabs. The installable dashboard's tests (the `pwa` project) also build the dashboard into `apps/web/dist-pwa` and serve it on 5373, because its web manifest and service worker only exist in builds. The first run needs the browsers: `pnpm --filter @hlabs/web exec playwright install chromium`.
 
 For the menu-bar app's Rust code: `cd apps/tray/src-tauri && cargo test`.
