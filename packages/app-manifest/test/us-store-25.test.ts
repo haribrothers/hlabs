@@ -285,6 +285,23 @@ describe('US-STORE-25', () => {
       expect(attributionIssues(store)).toEqual([]);
     });
 
+    it('reads ATTRIBUTION.md with its table padded into columns, as the formatter leaves it', () => {
+      const { store } = writeDraft('vaultwarden', draft);
+      const padded = [
+        '# Attribution',
+        '',
+        '| App         | Drafted from      | Licence |',
+        '| ----------- | ----------------- | ------- |',
+        '| vaultwarden | Runtipi app store | GPL-3.0 |',
+        '',
+      ].join('\n');
+      writeFileSync(join(store, 'ATTRIBUTION.md'), padded);
+      expect(attributedApps(padded)).toEqual(['vaultwarden']);
+      expect(attributionIssues(store)).toEqual([]);
+      const next = withAttribution(padded, { id: 'sonarr', from: 'Runtipi app store', license: 'GPL-3.0' });
+      expect(attributedApps(next)).toEqual(['sonarr', 'vaultwarden']);
+    });
+
     it('checks the NOTICE and ATTRIBUTION.md go together', () => {
       const { store } = writeDraft('vaultwarden', draft);
       rmSync(join(store, 'ATTRIBUTION.md'));

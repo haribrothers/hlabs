@@ -690,14 +690,21 @@ export function withAttribution(existing: string | null, row: { id: string; from
   ];
   const rows = new Map<string, string>();
   for (const line of (existing ?? '').split('\n')) {
-    const m = /^\| ([a-z][a-z0-9-]*) \| (.+) \| (.+) \|$/.exec(line);
-    if (m && m[1] !== 'App') rows.set(m[1]!, line);
+    // Rows may be padded into columns (the formatter does that on commit).
+    const m = ATTRIBUTION_ROW.exec(line);
+    if (m) rows.set(m[1]!, `| ${m[1]} | ${m[2]} | ${m[3]} |`);
   }
   rows.set(row.id, `| ${row.id} | ${row.from} | ${row.license} |`);
   return [...head, ...[...rows.keys()].sort().map((k) => rows.get(k)!), ''].join('\n');
 }
 
+/** A row of store/ATTRIBUTION.md's table, padded or not: id, where it was drafted from, licence. */
+export const ATTRIBUTION_ROW = /^\|\s*([a-z][a-z0-9-]*)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/;
+
 /** The app ids listed in store/ATTRIBUTION.md. */
 export function attributedApps(text: string): string[] {
-  return [...text.matchAll(/^\| ([a-z][a-z0-9-]*) \| .+ \| .+ \|$/gm)].map((m) => m[1]!).filter((id) => id !== 'App');
+  return text.split('\n').flatMap((line) => {
+    const m = ATTRIBUTION_ROW.exec(line);
+    return m ? [m[1]!] : [];
+  });
 }

@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { isMap, isSeq, parse, parseDocument, type Node } from 'yaml';
 import { validateCompose, type ComposeFile, type ComposeIssue } from './compose';
 import { AppManifest } from './manifest';
+import { attributedApps } from './port';
 import { StoreCuration, StoreIndex } from './store-index';
 export { generateLibraryKey, keyFingerprint, signIndex, verifyIndex, type LibraryKey } from './signing';
 export { Registry, RegistryError, parseImageRef, pinned, type ImageManifest, type ImageRef } from './registry';
@@ -180,13 +181,7 @@ export function lintStore(storeDir: string, options = { requireDigest: true }): 
  */
 export function attributionIssues(storeDir: string): AppIssue[] {
   const file = join(storeDir, ATTRIBUTION_FILE);
-  const listed = new Set(
-    existsSync(file)
-      ? [...readFileSync(file, 'utf8').matchAll(/^\| ([a-z][a-z0-9-]*) \| .+ \| .+ \|$/gm)]
-          .map((m) => m[1]!)
-          .filter((id) => id !== 'App')
-      : [],
-  );
+  const listed = new Set(existsSync(file) ? attributedApps(readFileSync(file, 'utf8')) : []);
   const issues: AppIssue[] = [];
   const dirs = listAppDirs(storeDir);
   const ids = new Set(dirs.map((d) => d.split(/[\\/]/).at(-1)!));
