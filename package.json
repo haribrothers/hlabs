@@ -24,6 +24,8 @@
     "db:migrate": "pnpm --filter @hlabs/db db:migrate",
     "store:lint": "pnpm --filter @hlabs/app-manifest store:lint",
     "store:build": "pnpm --filter @hlabs/app-manifest store:build",
+    "store:port": "pnpm --filter @hlabs/app-manifest store:port",
+    "store:matrix": "node scripts/store-matrix.ts",
     "ui:tokens": "pnpm --filter @hlabs/ui tokens",
     "dev:tray": "node scripts/dev-tray.ts",
     "build:tray": "node scripts/build-tray.ts",

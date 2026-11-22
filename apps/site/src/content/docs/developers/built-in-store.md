@@ -12,9 +12,20 @@ pnpm store:lint          # every manifest and compose file follows the store's r
 pnpm store:build         # writes store/index.json
 ```
 
+## Port an app
+
+```sh
+pnpm store:port <id> --from runtipi:<id>                 # from Runtipi's app store (GPL-3.0)
+pnpm store:port <id> --from casaos:<Name>                # from CasaOS's app store (Apache-2.0), e.g. casaos:Jellyfin
+pnpm store:port <id> --from https://…/docker-compose.yml # from the project's own compose file
+                     [--web <service>:<port>]           # its web page, when the compose file has several ports
+```
+
+It drafts `store/apps/<id>/`: the manifest, a compose file under the store's rules with every image pinned by tag and digest, the logo when the source has an SVG or PNG, and for Runtipi or CasaOS a `NOTICE` and a row in `store/ATTRIBUTION.md`. What it can't decide (the description, whether the app has its own login, which folders are the person's, what extra ports are for) is left as a value starting `TODO`, and it lists them. `pnpm store:lint` fails until every one is resolved. It never reads Umbrel's catalogue, which has no licence. Set `GITHUB_TOKEN` if GitHub's limit for anonymous requests runs out.
+
 ## Install it for real
 
-`node scripts/store-matrix.ts <id> [<id>…]` installs each app with its defaults, opens it through Caddy at `https://<id>.hlabs.local`, restarts it and uninstalls it with its data. It needs Docker and `pnpm fetch-binaries`. It starts its own daemon (data in `.matrix-data`, daemon port 7674, Caddy on 9443 and 9080, containers named `hlabs-matrix-…`), so it never touches a hlabs you're running. With no ids it does every app, which takes a long time.
+`pnpm store:matrix <id> [<id>…]` installs each app with its defaults, opens it through Caddy at `https://<id>.hlabs.local`, restarts it and uninstalls it with its data. It needs Docker and `pnpm fetch-binaries`. It starts its own daemon (data in `.matrix-data`, daemon port 7674, Caddy on 9443 and 9080, containers named `hlabs-matrix-…`), so it never touches a hlabs you're running. With no ids it does every app, which takes a long time.
 
 - `--results <file>` also writes each app's result as JSON.
 - `--prune-images` removes every unused image on the machine after each app. It's for CI runners; don't use it on your own computer.

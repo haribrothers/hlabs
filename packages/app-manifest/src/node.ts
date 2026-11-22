@@ -6,10 +6,23 @@ import { parse } from 'yaml';
 import { validateCompose, type ComposeFile, type ComposeIssue } from './compose';
 import { AppManifest } from './manifest';
 import { StoreCuration, StoreIndex } from './store-index';
+export { Registry, RegistryError, parseImageRef, pinned, type ImageManifest, type ImageRef } from './registry';
 
 export const MANIFEST_FILE = 'hlabs-app.yml';
 export const COMPOSE_FILE = 'docker-compose.yml';
 export const CURATION_FILE = 'curation.yml';
+export const NOTICE_FILE = 'NOTICE';
+export const ATTRIBUTION_FILE = 'ATTRIBUTION.md';
+
+/** Values the porting helper left for a person to decide (US-STORE-25): any string starting "TODO". */
+export function findTodos(value: unknown, path: Array<string | number> = []): Array<{ path: string; text: string }> {
+  if (typeof value === 'string') {
+    return /^TODO\b/.test(value) ? [{ path: path.join('.') || '(root)', text: value.replace(/^TODO:?\s*/, '') }] : [];
+  }
+  if (Array.isArray(value)) return value.flatMap((v, i) => findTodos(v, [...path, i]));
+  if (value && typeof value === 'object') return Object.entries(value).flatMap(([k, v]) => findTodos(v, [...path, k]));
+  return [];
+}
 
 export interface AppIssue {
   file: string;
@@ -44,12 +57,20 @@ export function loadAppDir(dir: string, options: { requireDigest: boolean }): Lo
   const rawManifest = readYaml(join(dir, MANIFEST_FILE), issues, MANIFEST_FILE);
   const rawCompose = readYaml(join(dir, COMPOSE_FILE), issues, COMPOSE_FILE);
 
+  const todos = findTodos(rawManifest);
+  for (const t of todos) issues.push({ file: MANIFEST_FILE, path: t.path, code: 'TODO_LEFT', message: t.text });
+  for (const t of findTodos(rawCompose)) {
+    issues.push({ file: COMPOSE_FILE, path: t.path, code: 'TODO_LEFT', message: t.text });
+  }
+
   let manifest: AppManifest | null = null;
   if (rawManifest !== undefined) {
     const parsed = AppManifest.safeParse(rawManifest);
     if (parsed.success) manifest = parsed.data;
     else {
-      for (const i of parsed.error.issues) {
+      // A TODO is already reported; the schema's complaint about the same value adds nothing.
+      const underTodo = (path: string) => todos.some((t) => path === t.path || path.startsWith(`${t.path}.`));
+      for (const i of parsed.error.issues.filter((i) => !underTodo(i.path.join('.')))) {
         issues.push({
           file: MANIFEST_FILE,
           path: i.path.join('.') || '(root)',
@@ -106,6 +127,46 @@ export function listAppDirs(storeDir: string): string[] {
 /** Validates every app in a store folder. Built-in apps must pin images by digest. */
 export function lintStore(storeDir: string, options = { requireDigest: true }): LoadedApp[] {
   return listAppDirs(storeDir).map((dir) => loadAppDir(dir, options));
+}
+
+/**
+ * Apps drafted from another store's definition keep a NOTICE and a row in store/ATTRIBUTION.md (06, D-148):
+ * each one without the other is a problem.
+ */
+export function attributionIssues(storeDir: string): AppIssue[] {
+  const file = join(storeDir, ATTRIBUTION_FILE);
+  const listed = new Set(
+    existsSync(file)
+      ? [...readFileSync(file, 'utf8').matchAll(/^\| ([a-z][a-z0-9-]*) \| .+ \| .+ \|$/gm)]
+          .map((m) => m[1]!)
+          .filter((id) => id !== 'App')
+      : [],
+  );
+  const issues: AppIssue[] = [];
+  const dirs = listAppDirs(storeDir);
+  const ids = new Set(dirs.map((d) => d.split(/[\\/]/).at(-1)!));
+  for (const dir of dirs) {
+    const id = dir.split(/[\\/]/).at(-1)!;
+    if (existsSync(join(dir, NOTICE_FILE)) && !listed.has(id)) {
+      issues.push({
+        file: ATTRIBUTION_FILE,
+        path: id,
+        code: 'ATTRIBUTION_MISSING',
+        message: `apps/${id} has a NOTICE but isn't in ${ATTRIBUTION_FILE}`,
+      });
+    }
+  }
+  for (const id of listed) {
+    if (!ids.has(id) || !existsSync(join(storeDir, 'apps', id, NOTICE_FILE))) {
+      issues.push({
+        file: ATTRIBUTION_FILE,
+        path: id,
+        code: 'NOTICE_MISSING',
+        message: `${ATTRIBUTION_FILE} lists ${id}, which has no apps/${id}/${NOTICE_FILE}`,
+      });
+    }
+  }
+  return issues;
 }
 
 /** The store's curation (featured apps, rows, rank), or an empty one. Throws when the file is invalid. */

@@ -1,0 +1,7 @@
+Test input for the porting helper (US-STORE-25), copied unchanged except where noted:
+
+- runtipi-vaultwarden/, runtipi-immich/: from the Runtipi app store (https://github.com/runtipi/runtipi-appstore,
+  apps/vaultwarden and apps/immich at commit de46994842935e3bd3493bc946b8959fff9ae398), GNU General Public License v3.0.
+- casaos-jellyfin.yml: from the CasaOS app store (https://github.com/IceWhaleTech/CasaOS-AppStore, Apps/Jellyfin),
+  Apache License 2.0; translations other than en_US removed.
+- upstream-compose.yml: written for these tests.

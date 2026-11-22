@@ -4,6 +4,7 @@ One folder per app in `apps/<appId>/`: `hlabs-app.yml` (docs/prd/06-app-manifest
 
 - `pnpm store:lint` validates every app (manifest schema, compose rules, images pinned by tag and digest).
 - `pnpm store:build` writes `index.json`.
+- `pnpm store:port <id> --from runtipi:<id> | casaos:<Name> | <compose URL>` drafts a new app; resolve its `TODO`s, then `pnpm store:lint` and `pnpm store:matrix <id>`. Apps drafted from Runtipi or CasaOS keep a `NOTICE` and a row in `ATTRIBUTION.md`.
 
 Logos are the apps' own, from their upstream repositories; they belong to their projects. A logo that isn't square or runs to its edges is kept unchanged inside a square `logo.svg` with room around it (the upstream file embedded as an image), so it sits well on the app tile's gradient.
 
