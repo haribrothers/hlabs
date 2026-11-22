@@ -359,7 +359,12 @@ export class LoginService {
 
   /** A warning notification for one user, or for all admins (`userId` null), announced on the bus. */
   private notify(n: { userId: string | null; kind: string; title: string; body: string; now: number }) {
-    createNotification(this.db, this.bus, { ...n, severity: 'warning' });
+    // Opens Settings › Account, where sessions are (US-HOME-14).
+    createNotification(this.db, this.bus, {
+      ...n,
+      severity: 'warning',
+      actions: [{ kind: 'navigate', to: '/settings/account' }],
+    });
   }
 
   private audit(

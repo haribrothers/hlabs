@@ -7,6 +7,10 @@ export const toastCopy = {
   changePort: 'Change port',
   manageStorage: 'Manage storage',
   open: 'Open',
+  /** The App Store's updates (US-HOME-14). */
+  review: 'Review',
+  /** Settings › Account, where sessions are: a lock or a used recovery code (US-HOME-14). */
+  seeSessions: 'See sessions',
   /** An error's help page on the website (US-SITE-10), in a new tab. */
   learnMore: 'Learn more',
   newTab: '(opens in a new tab)',

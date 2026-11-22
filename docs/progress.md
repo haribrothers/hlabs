@@ -281,9 +281,9 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 
 ## Phase 7 · v1.0 completeness
 
-- [ ] US-HOME-13 · Open the notifications panel
-- [ ] US-HOME-14 · Act on and clear notifications
-- [ ] US-HOME-15 · See a friendly empty Home
+- [x] US-HOME-13 · Open the notifications panel (the bell shows the count as the story asks, not the dot drawn; checked at desktop and phone width)
+- [x] US-HOME-14 · Act on and clear notifications (D-155; "Review" opens `/store/updates`, which arrives with US-STORE-15 in group 4)
+- [x] US-HOME-15 · See a friendly empty Home (members allowed to install apps get the admin version)
 - [ ] US-HOME-16 · Enter and leave edit mode
 - [ ] US-HOME-17 · Rearrange apps and widgets
 - [ ] US-HOME-18 · Remove an app or widget from Home

@@ -20,6 +20,10 @@ const DESTINATIONS: ReadonlyArray<{
   { path: /^\/settings\/updates$/, action: { label: copy.viewDetails, admin: true, feature: 'hlabsUpdates' } },
   // SettingsNetwork (phase 3): another program holds hlabs's web port (US-SYS-42).
   { path: /^\/settings\/network$/, action: { label: copy.changePort, admin: true, feature: 'remoteAccess' } },
+  // The App Store's updates (phase 7, US-STORE-15): "2 app updates available".
+  { path: /^\/store\/updates$/, action: { label: copy.review, admin: true, feature: 'appUpdates' } },
+  // Settings › Account, where sessions are: repeated failed logins, a used recovery code (US-HOME-14).
+  { path: /^\/settings\/account$/, action: { label: copy.seeSessions, item: true } },
   // SettingsStorage (phase 7).
   { path: /^\/settings\/storage$/, action: { label: copy.manageStorage, admin: true, feature: 'storageSettings' } },
 ];

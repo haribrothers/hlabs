@@ -58,6 +58,13 @@ export const homeCopy = {
     started: (app: string) => `${app} started`,
     stopped: (app: string) => `${app} stopped`,
   },
+  /** Home with no apps yet (US-HOME-15). */
+  empty: {
+    welcome: (name: string) => `Welcome to hlabs, ${name}`,
+    title: 'No apps yet',
+    body: "Your apps appear here once they're installed. Most people start with a photo library, a media server and a password manager.",
+    askAdmin: (admin: string | null) => `Ask ${admin ?? 'your admin'} to share an app with you.`,
+  },
   greeting: {
     morning: (name: string) => `Good morning, ${name}`,
     afternoon: (name: string) => `Good afternoon, ${name}`,

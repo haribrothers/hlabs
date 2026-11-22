@@ -3,7 +3,7 @@
 import type { EventAudience, Notification, NotificationAction, Severity } from '@hlabs/api';
 import { notifications, type HlabsDb } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
-import { and, desc, eq, gte, inArray, isNull, lt, or, type SQL } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray, isNull, lt, or, type SQL } from 'drizzle-orm';
 import type { EventBus } from '../events/bus';
 
 export interface NewNotification {
@@ -112,7 +112,6 @@ export class NotificationService {
     return { items: page.map(toApi), nextCursor: rows.length > limit ? cursorOf(page.at(-1)!) : null };
   }
 
-  /** Marks these read (only ones the reader can see) and tells their other sessions, so the toasts go. */
   /**
    * hlabs itself marks the admins' notifications of a kind read once they no longer apply (US-STATE-10), only those
    * about `target` when given (an app that works again, US-APP-26).
@@ -153,15 +152,55 @@ export class NotificationService {
   }
 
   markRead(reader: Reader, ids: readonly string[], now = Date.now()): void {
+    this.setRead(and(visibleTo(reader), inArray(notifications.id, [...ids]), isNull(notifications.readAt))!, now);
+  }
+
+  /** Everything the reader can see, read (US-HOME-14). */
+  markAllRead(reader: Reader, now = Date.now()): void {
+    this.setRead(and(visibleTo(reader), isNull(notifications.readAt))!, now);
+  }
+
+  /** How many the reader hasn't read (the bell's badge, US-HOME-13). */
+  unreadCount(reader: Reader): number {
+    return (
+      this.db
+        .select({ n: count() })
+        .from(notifications)
+        .where(and(visibleTo(reader), isNull(notifications.readAt)))
+        .get()?.n ?? 0
+    );
+  }
+
+  /**
+   * Removes these from the reader's list (US-HOME-14). An all-admins notification is one shared item, so it goes for
+   * every admin, as reading it does (D-155).
+   */
+  dismiss(reader: Reader, ids: readonly string[]): void {
+    const rows = this.db
+      .delete(notifications)
+      .where(and(visibleTo(reader), inArray(notifications.id, [...ids])))
+      .returning({ id: notifications.id, userId: notifications.userId })
+      .all();
+    this.announce('notification.dismissed', rows);
+  }
+
+  private setRead(where: SQL, now: number): void {
     const rows = this.db
       .update(notifications)
       .set({ readAt: now })
-      .where(and(visibleTo(reader), inArray(notifications.id, [...ids]), isNull(notifications.readAt)))
+      .where(where)
       .returning({ id: notifications.id, userId: notifications.userId })
       .all();
+    this.announce('notification.read', rows);
+  }
+
+  /** One event per audience, so each person's other sessions follow. */
+  private announce(
+    type: 'notification.read' | 'notification.dismissed',
+    rows: Array<{ id: string; userId: string | null }>,
+  ) {
     const byAudience = new Map<string | null, string[]>();
     for (const r of rows) byAudience.set(r.userId, [...(byAudience.get(r.userId) ?? []), r.id]);
-    for (const [userId, readIds] of byAudience)
-      this.bus.emit('notification.read', { ids: readIds }, audienceOf(userId));
+    for (const [userId, ids] of byAudience) this.bus.emit(type, { ids }, audienceOf(userId));
   }
 }

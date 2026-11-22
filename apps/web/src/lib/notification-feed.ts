@@ -78,7 +78,7 @@ export class NotificationFeed {
     this.deps.show(toastFromNotification(n));
   }
 
-  onRead(event: EventOf<'notification.read'>): void {
+  onRead(event: EventOf<'notification.read' | 'notification.dismissed'>): void {
     this.aliveAt = this.now();
     this.deps.hide(event.data.ids);
   }

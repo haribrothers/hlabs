@@ -90,6 +90,17 @@ export const FEATURE_PHASE = {
 
 export type Feature = keyof typeof FEATURE_PHASE;
 
+/**
+ * Phase 7 is built in groups (D-151, D-156): its features that are built already, previewed on the dashboard's dev
+ * server with BUILDING_PHASE's, while the rest of the phase stays hidden. Add a feature when its group lands.
+ */
+export const BUILT_AHEAD: readonly Feature[] = ['notifications'];
+
+/** The dev server is previewing (never in a build or unit tests). */
+const PREVIEWING = typeof __HLABS_PREVIEW_PHASE__ !== 'undefined' && __HLABS_PREVIEW_PHASE__ !== null;
+
 export function isFeatureEnabled(feature: Feature, shippedPhase: number = VISIBLE_PHASE): boolean {
-  return FEATURE_PHASE[feature] <= shippedPhase;
+  if (FEATURE_PHASE[feature] <= shippedPhase) return true;
+  // Only for the dev server's own view, not a phase a caller (a test) asks about.
+  return PREVIEWING && shippedPhase === VISIBLE_PHASE && BUILT_AHEAD.includes(feature);
 }

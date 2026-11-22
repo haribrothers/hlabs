@@ -1,8 +1,9 @@
 // Main (US-HOME-01…05): the greeting over the wallpaper, the widgets row and the app grid.
-import { iconDefaults, LOGO_SCALE, LogoMark, Search } from '@hlabs/icons';
+import { iconDefaults, LOGO_SCALE, LogoMark, Plus, Search } from '@hlabs/icons';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { GlassCard, tokens } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { useSubscription } from '@trpc/tanstack-react-query';
 import { useEffect, useState } from 'react';
 import { homeCopy } from '../copy/home';
@@ -16,6 +17,7 @@ import { greetingFor } from './greeting';
 import { WidgetsRow } from './widgets';
 import { EngineBanner, StartEngineButton } from './engine-banner';
 import { useEngineRunning } from '../lib/engine-state';
+import { NotificationsBell } from './notifications';
 
 export function HomeView() {
   const trpc = useTRPC();
@@ -58,6 +60,10 @@ export function HomeView() {
 
   const name = me.data ? me.data.displayName.trim() || me.data.username : '';
   const showGreeting = me.data?.appearance.showGreeting ?? true;
+  // Nothing installed (or shared with me) yet: a welcome and where to start (US-HOME-15). Apps only removed from
+  // Home still count, since apps.list is what's installed and visible, not the layout.
+  const empty = apps.data?.apps.length === 0;
+  const canInstall = me.data?.canInstallApps ?? false;
 
   return (
     <div className="mx-auto flex w-full max-w-window flex-col items-center gap-8">
@@ -70,27 +76,67 @@ export function HomeView() {
           <LogoMark size={Math.round(tokens.SIZE_APP_ICON * LOGO_SCALE)} title="" />
         </GlassCard>
         <h1 className={showGreeting && name ? 'm-0 text-display-xl' : 'sr-only'}>
-          {name ? homeCopy.greeting[greetingFor(now)](name) : homeCopy.title}
+          {name ? (empty ? homeCopy.empty.welcome(name) : homeCopy.greeting[greetingFor(now)](name)) : homeCopy.title}
         </h1>
         {isFeatureEnabled('search') ? <SearchPill /> : null}
       </header>
       {me.data?.appearance.showWidgets !== false && layout.data ? (
         <WidgetsRow ids={layout.data.items.filter((i) => i.kind === 'widget').map((i) => i.id)} />
       ) : null}
-      {apps.data ? (
+      {empty ? (
+        <EmptyHome canInstall={canInstall && isFeatureEnabled('appStore')} offline={engineDown} />
+      ) : apps.data ? (
         <AppGrid
           apps={orderApps(
             apps.data.apps,
             (layout.data?.items ?? []).filter((i) => i.kind === 'app').map((i) => i.id),
           )}
           isAdmin={me.data?.role === 'admin'}
-          canInstall={me.data?.canInstallApps ?? false}
+          canInstall={canInstall}
           progress={progress}
           offline={engineDown}
         />
       ) : null}
       <EngineBanner down={engineDown} actions={me.data?.role === 'admin' ? <StartEngineButton /> : null} />
+      <NotificationsBell />
     </div>
+  );
+}
+
+/**
+ * Home before any app (US-HOME-15; HomeEmpty): the "Install app" tile, what people usually start with and the way
+ * to the App Store, or, for a member who can't install, who to ask.
+ */
+function EmptyHome({ canInstall, offline }: { canInstall: boolean; offline: boolean }) {
+  const trpc = useTRPC();
+  const account = useQuery({ ...trpc.account.get.queryOptions(), enabled: !canInstall, retry: false });
+  return (
+    <section
+      aria-labelledby="home-empty-title"
+      className="hl-glass hl-glass-1 flex w-full flex-wrap items-center gap-x-8 gap-y-4 rounded-xl border border-dashed border-border-glass px-10 py-8"
+    >
+      {canInstall && !offline ? (
+        <Link to="/store" className="hl-app" aria-label={homeCopy.installApp}>
+          <span className="hl-app-icon grid place-items-center rounded-icon border border-dashed border-border-glass">
+            <Plus aria-hidden {...iconDefaults} />
+          </span>
+          <span className="hl-app-name">{homeCopy.installApp}</span>
+        </Link>
+      ) : null}
+      <div className="flex min-w-0 flex-1 basis-72 flex-col gap-1.5">
+        <h2 id="home-empty-title" className="m-0 text-title-2">
+          {homeCopy.empty.title}
+        </h2>
+        <p className="m-0 text-body text-ink-muted">
+          {canInstall ? homeCopy.empty.body : homeCopy.empty.askAdmin(account.data?.adminName ?? null)}
+        </p>
+      </div>
+      {canInstall && !offline ? (
+        <Link to="/store" className="hl-btn hl-btn-primary hl-btn-md hl-focus">
+          {homeCopy.browseStore}
+        </Link>
+      ) : null}
+    </section>
   );
 }
 

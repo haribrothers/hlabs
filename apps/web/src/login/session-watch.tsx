@@ -46,7 +46,16 @@ export function SessionWatch() {
   );
   useSubscription(
     trpc.events.stream.subscriptionOptions(
-      { types: ['session.revoked', 'access.changed', 'notification.created', 'notification.read', 'system.status'] },
+      {
+        types: [
+          'session.revoked',
+          'access.changed',
+          'notification.created',
+          'notification.read',
+          'notification.dismissed',
+          'system.status',
+        ],
+      },
       {
         onStarted: () => void feed.onConnected(),
         onConnectionStateChange: (state) => {
@@ -59,7 +68,8 @@ export function SessionWatch() {
           // An admin changed what I can open (US-ACCT-26): Home's tiles, the Dock and app pages refetch now.
           else if (event.type === 'access.changed') void queryClient.invalidateQueries();
           else if (event.type === 'notification.created') feed.onCreated(event);
-          else if (event.type === 'notification.read') feed.onRead(event);
+          // Read or dismissed in another session (US-HOME-14): its toast goes here too.
+          else if (event.type === 'notification.read' || event.type === 'notification.dismissed') feed.onRead(event);
           // hlabs is about to stop for an update: every route gives way to "Updating hlabs" (US-STATE-01).
           else if (event.type === 'system.status' && event.data.state === 'updating') markUpdating();
         },

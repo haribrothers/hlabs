@@ -2055,3 +2055,14 @@
   transform-origin: var(--radix-dropdown-menu-content-transform-origin);
   animation: hl-menu-in var(--hl-dur-fast) var(--hl-ease);
 }
+/* A panel from a corner button, sliding in from the top-right (HomeNotifications, US-HOME-13). */
+@keyframes hl-panel-in {
+  from {
+    opacity: 0;
+    transform: translate(8px, -8px) scale(0.98);
+  }
+}
+.hl-anim-panel {
+  transform-origin: top right;
+  animation: hl-panel-in var(--hl-dur) var(--hl-ease);
+}

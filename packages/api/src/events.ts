@@ -67,6 +67,8 @@ export const eventSchemas = {
   'notification.created': notificationSchema.omit({ id: true, readAt: true }).extend({ notificationId: z.string() }),
   /** Marked read in one session; the others drop its toast. */
   'notification.read': z.object({ ids: z.array(z.string()).min(1) }),
+  /** Dismissed in one session (US-HOME-14): the others take it out of their panel and drop its toast. */
+  'notification.dismissed': z.object({ ids: z.array(z.string()).min(1) }),
   'usage.sample': usageSampleSchema,
   'update.available': z.object({ version: z.string(), channel: z.enum(['stable', 'beta']) }),
   'session.revoked': z.object({ sessionId: z.string() }),

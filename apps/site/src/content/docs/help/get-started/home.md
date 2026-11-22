@@ -1,7 +1,7 @@
 ---
 title: Your Home screen
 description: What Home shows when you open hlabs, and how to get around.
-features: [F-HOME-01, F-HOME-02, F-HOME-03, F-HOME-04, F-HOME-05, F-STATE-03]
+features: [F-HOME-01, F-HOME-02, F-HOME-03, F-HOME-04, F-HOME-05, F-HOME-06, F-HOME-07, F-STATE-03]
 ---
 
 For everyone who uses hlabs.
@@ -9,6 +9,8 @@ For everyone who uses hlabs.
 ## Greeting and wallpaper
 
 Home greets you by name: "Good morning" from 5:00 to 11:59, "Good afternoon" from 12:00 to 17:59 and "Good evening" from 18:00, using your device's clock. It changes on its own if you leave Home open. If you haven't set a display name, it uses your username.
+
+Until you have any apps, Home says "Welcome to hlabs" instead.
 
 Your wallpaper and accent colour are your own: other people on this hlabs keep theirs. Everyone starts with the Dusk wallpaper and the violet accent.
 
@@ -50,6 +52,21 @@ Selecting a stopped app doesn't open a blank page: hlabs says it's stopped, and 
 Right-click a tile (or press and hold it on a touch screen, or press Shift+F10 or the Menu key) for its menu. Admins can **Open** the app, go to its **Settings**, **View logs**, **Restart** or **Stop** it (**Start** when it's stopped), or **Uninstall…** it. The tile changes at once, and hlabs tells you when the app has restarted, started or stopped. While an app is installing, updating or being removed, only **View logs** is available. Members get **Open**. Press Esc to close the menu.
 
 New apps appear on Home as soon as they're installed, and removed apps disappear, without reloading the page. With a keyboard, use Tab to reach the apps and the arrow keys to move between them.
+
+## Before you have any apps
+
+With nothing installed yet, Home says **No apps yet** where your apps will be. Admins (and family members allowed to install apps) get the **Install app** tile and **Browse the App Store**; most people start with a photo library, a media server and a password manager. Family members who can't install apps are told which admin to ask to share one. As soon as the first app starts installing, its tile takes the place of the message.
+
+## Notifications
+
+The bell at the top right of Home shows how many notifications you haven't read. Select it to see them: today's first, then earlier ones, newest at the top. Each says what happened and when, and unread ones are highlighted with a dot. New ones appear as they arrive.
+
+- Many have a link to the fix, such as **View logs** for an app that couldn't start or **Review** for app updates. Following it marks the notification read. If the app it's about has been uninstalled since, hlabs says so instead.
+- A notification about repeated failed logins opens Settings › Account, where you can see where you're signed in.
+- **Mark all read** clears every highlight. To remove one from the list, point at it (or Tab to it) and select **×**.
+- Press Esc or select anywhere else to close the list.
+
+Admins share the notifications about hlabs itself, such as an app that stopped working: when one admin reads or removes one, it's read or removed for every admin. Family members only get their own, such as an app being shared with them.
 
 ## Search
 
