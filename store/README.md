@@ -10,3 +10,5 @@ Logos are the apps' own, from their upstream repositories; they belong to their 
 Some apps need a starting configuration to work behind hlabs: Home Assistant is told to trust the proxy, and AdGuard Home skips its setup wizard (which would move its web page to another port). Their compose files write that file on the first start and leave an existing one alone.
 
 Screenshots (`screenshots/1.webp`, 2, 3: three per app, so the details page's row is full; at most 5, 16:10, 1440×900) are taken by hlabs from each app running its pinned image with sample data: an example account called Alex, example logins, monitors, recipes, files and documents with invented companies, photos from picsum.photos (Unsplash licence), Blender open films and public-domain classics, and audiobook covers drawn for the purpose. They show nothing personal. Retake them when an app's look changes noticeably.
+
+Testing: `node scripts/store-matrix.ts <id>` installs, opens, restarts and uninstalls an app with the real engine. CI (`store.yml`) installs the apps a pull request changes plus the smoke set, and every app nightly (US-STORE-26); see the developer guide "The built-in store".

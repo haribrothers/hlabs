@@ -4,13 +4,17 @@
 //
 //   node scripts/store-matrix.ts                  every app in store/apps
 //   node scripts/store-matrix.ts uptime-kuma gitea  just these
+//   --results <file>   also write each app's result as JSON, for store-report.ts (US-STORE-26)
+//   --prune-images     CI only: after each app, remove every unused image on the machine, so a runner with several
+//                      apps doesn't fill its disk
 //
 // CI has no mDNS, so "opens at" is checked by asking Caddy for the app's name directly (TLS SNI and Host
 // <app>.hlabs.local, checked against hlabs's own CA), which is what a browser that resolves the name gets.
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { request } from 'node:https';
 import { join, resolve } from 'node:path';
+import type { MatrixResult } from './store-select-lib.ts';
 
 const REPO = resolve(import.meta.dirname, '..');
 const DATA_DIR = resolve(REPO, '.matrix-data');
@@ -228,7 +232,10 @@ async function main() {
   const all = readdirSync(join(REPO, 'store', 'apps')).filter((id) =>
     existsSync(join(REPO, 'store', 'apps', id, 'hlabs-app.yml')),
   );
-  const wanted = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const resultsAt = args.includes('--results') ? args[args.indexOf('--results') + 1] : undefined;
+  const prune = args.includes('--prune-images');
+  const wanted = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--results');
   const ids = wanted.length ? wanted : all;
   const unknown = ids.filter((id) => !all.includes(id));
   if (unknown.length) throw new Error(`not in store/apps: ${unknown.join(', ')}`);
@@ -245,7 +252,7 @@ async function main() {
     stop();
     process.exit(130);
   });
-  const results: Array<[string, string | null]> = [];
+  const results: MatrixResult[] = [];
   try {
     await until('the daemon', 120_000, async () => ((await fetch(`${DAEMON}/healthz`)).ok ? true : undefined));
     const seed = await fetch(`${DAEMON}/dev/seed`, {
@@ -261,8 +268,9 @@ async function main() {
     }).catch(() => undefined);
 
     for (const id of ids) {
+      const started = Date.now();
       const problem = await run(id).catch((err: unknown) => (err instanceof Error ? err.message : String(err)));
-      results.push([id, problem]);
+      results.push({ id, problem, seconds: Math.round((Date.now() - started) / 1000) });
       log(id, problem ? `FAILED: ${problem}` : 'ok');
       if (problem) {
         // Leave nothing behind for the next app.
@@ -271,13 +279,24 @@ async function main() {
           () => undefined,
         );
       }
+      if (prune) {
+        try {
+          execFileSync('docker', ['image', 'prune', '-af'], { stdio: 'ignore' });
+        } catch {
+          // A full disk shows up as the next app's failure.
+        }
+      }
     }
   } finally {
     stop();
+    if (resultsAt) {
+      // Apps never reached (the daemon didn't start) have no result; store-report.ts counts them as failed.
+      writeFileSync(resultsAt, JSON.stringify(results, null, 2));
+    }
   }
   say('\nStore matrix');
-  for (const [id, problem] of results) say(`  ${problem ? '✗' : '✓'} ${id}${problem ? ` — ${problem}` : ''}`);
-  if (results.some(([, problem]) => problem)) process.exit(1);
+  for (const { id, problem } of results) say(`  ${problem ? '✗' : '✓'} ${id}${problem ? ` — ${problem}` : ''}`);
+  if (results.length < ids.length || results.some((r) => r.problem)) process.exit(1);
 }
 
 await main();

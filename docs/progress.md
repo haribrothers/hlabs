@@ -299,7 +299,7 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [ ] US-STORE-23 · Find the apps people run on a home server
 - [ ] US-STORE-24 · Keep the built-in apps up to date
 - [ ] US-STORE-25 · Port an app with the porting helper
-- [ ] US-STORE-26 · Test only the apps a change touches
+- [x] US-STORE-26 · Test only the apps a change touches (D-152; checked locally with Uptime Kuma; the first nightly run with shards and issues happens once this is on `main`)
 - [ ] US-STORE-27 · Start my own app library
 - [ ] US-STORE-28 · Sign my library
 - [ ] US-STORE-29 · Copy a built-in app into my library

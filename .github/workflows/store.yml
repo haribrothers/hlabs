@@ -1,6 +1,8 @@
-# Built-in store: validate every app, and the install matrix (D-071, phase 2 "Done when"): each seeded app installs,
-# opens at https://<app>.hlabs.local, restarts and uninstalls on Linux with the real engine and Caddy
-# (scripts/store-matrix.ts). Nightly, on demand, and on pull requests that touch the store or the install path.
+# Built-in store: validate every app, and the install matrix (D-071, D-100): each app installs, opens at
+# https://<app>.hlabs.local, restarts and uninstalls on Linux with the real engine and Caddy (scripts/store-matrix.ts).
+# Which apps (US-STORE-26, scripts/store-select.ts): a pull request installs the apps it changes plus the smoke set,
+# and 10 apps that change daily when it touches the install path; the nightly run installs every app, five to a
+# runner, then reports the install rate and opens an issue for each failing app (scripts/store-report.ts).
 # Index signing (06 §Store index) arrives with app sources.
 name: store
 
@@ -13,65 +15,47 @@ on:
       - 'apps/daemon/src/caddy/**'
       - 'apps/daemon/src/engine/**'
       - 'scripts/store-matrix.ts'
+      - 'scripts/store-select*.ts'
+      - 'scripts/store-report.ts'
       - '.github/workflows/store.yml'
   schedule:
     - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
       apps:
-        description: 'App ids to check, comma-separated (empty: every app)'
-        required: false
-
-# A newer push makes a running check of an older one pointless.
-concurrency:
-  group: store-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
-
-jobs:
-  lint:
+    name: choose apps
     runs-on: ubuntu-latest
+    outputs:
+      planned: ${{ steps.select.outputs.planned }}
+      shards: ${{ steps.select.outputs.shards }}
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @hlabs/icons build
-      - run: pnpm store:lint
-      - run: pnpm store:build
-
-  apps:
-    name: list apps
-    runs-on: ubuntu-latest
-    outputs:
-      ids: ${{ steps.list.outputs.ids }}
-    steps:
-      - uses: actions/checkout@v5
-      - id: list
+      - id: select
         env:
+          EVENT: ${{ github.event_name }}
           WANTED: ${{ inputs.apps }}
+          BASE: ${{ github.base_ref }}
         run: |
-          if [ -n "$WANTED" ]; then
-            ids=$(echo "$WANTED" | tr ',' '\n' | sed 's/ //g' | grep -v '^$' | jq -R . | jq -sc .)
-          else
-            ids=$(ls store/apps | jq -R . | jq -sc .)
-          fi
-          echo "ids=$ids" >> "$GITHUB_OUTPUT"
+          case "$EVENT" in
+            pull_request) node scripts/store-select.ts pr --base "origin/$BASE" ;;
+            workflow_dispatch) node scripts/store-select.ts apps "$WANTED" ;;
+            *) node scripts/store-select.ts nightly --per-runner 5 ;;
+          esac
 
   matrix:
-    name: install ${{ matrix.app }}
+    name: install ${{ matrix.shard }}
     needs: [lint, apps]
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 240
     strategy:
       fail-fast: false
       matrix:
-        app: ${{ fromJson(needs.apps.outputs.ids) }}
+        shard: ${{ fromJson(needs.apps.outputs.shards) }}
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -84,15 +68,46 @@ jobs:
       - run: pnpm --filter @hlabs/icons build
       # AdGuard Home serves DNS on port 53, which Ubuntu's resolver stub holds: free it, keeping DNS working.
       - name: Free port 53
-        if: matrix.app == 'adguard-home'
+        if: contains(format(' {0} ', matrix.shard), ' adguard-home ')
         run: |
           sudo mkdir -p /etc/systemd/resolved.conf.d
           printf '[Resolve]\nDNSStubListener=no\n' | sudo tee /etc/systemd/resolved.conf.d/no-stub.conf
           sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
           sudo systemctl restart systemd-resolved
-      - run: node scripts/store-matrix.ts ${{ matrix.app }}
+      - run: mkdir -p .matrix-results
+      - run: node scripts/store-matrix.ts --results .matrix-results/${{ strategy.job-index }}.json --prune-images ${{ matrix.shard }}
       - name: Daemon and Caddy logs
         if: failure()
         run: |
           tail -n 200 .matrix-data/logs/*.log || true
           tail -n 100 .matrix-data/caddy/caddy.log || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: matrix-results-${{ strategy.job-index }}
+          path: .matrix-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  report:
+    name: install rate
+    needs: [apps, matrix]
+    if: always() && needs.apps.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: matrix-results-*
+          path: .matrix-results
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PLANNED: ${{ needs.apps.outputs.planned }}
+          ISSUES: ${{ github.event_name == 'schedule' && '--issues' || '' }}
+        run: node scripts/store-report.ts --planned "$PLANNED" --results .matrix-results $ISSUES
