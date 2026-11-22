@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@hlabs/api": "workspace:*",
+    "@hlabs/app-manifest": "workspace:*",
     "@hlabs/shared": "workspace:*"
   },
   "devDependencies": {

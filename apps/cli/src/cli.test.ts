@@ -9,11 +9,11 @@ async function capture(argv: string[]) {
 }
 
 describe('hlabs CLI (D-018)', () => {
-  it('lists the five commands in help', async () => {
+  it('lists the commands in help (library from phase 7, US-STORE-27)', async () => {
     const { code, out } = await capture(['--help']);
     expect(code).toBe(0);
     for (const c of Object.keys(COMMANDS)) expect(out).toContain(c);
-    expect(Object.keys(COMMANDS)).toEqual(['status', 'logs', 'reset-password', 'uninstall', 'setup-url']);
+    expect(Object.keys(COMMANDS)).toEqual(['status', 'logs', 'reset-password', 'uninstall', 'setup-url', 'library']);
   });
 
   it('says what to do for an unknown command', async () => {

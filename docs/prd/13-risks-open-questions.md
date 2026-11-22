@@ -62,3 +62,4 @@ New questions found during the build go here with the next free id (Q-09 onward)
 - `SysDaemonDown`: command reads `systemctl status hlabsd` (D-017).
 - `LinuxInstall`: service `hlabsd`, dashboard `hlabs.local` (D-017).
 - Accent picker shows Violet, Mint, Amber, Rose (D-023).
+| Q-22 | **`hlabs library` on a Mac** (US-STORE-27, 28): the `hlabs` command ships only in the Linux server tarball, so a Mac admin can't run `hlabs library init`, `check`, `index`, `keygen` or `sign`. Options: the menu-bar app offers "Install the hlabs command" (a link in /usr/local/bin, asking for the password once), or the library commands also run as `npx`/a download, or the dashboard gains Start a library and Sign (more UI). | Open (asked 23 Nov 2026) |

@@ -1,5 +1,6 @@
-// `hlabs`: status, logs, reset-password, uninstall and setup-url (D-018). Each command ships with its story:
-// setup-url with US-INST-24, status, logs and reset-password with US-INST-25, uninstall with phase 6's uninstall step.
+// `hlabs`: status, logs, reset-password, uninstall, setup-url (D-018) and library (US-STORE-27, 28). Each command ships
+// with its story: setup-url with US-INST-24, status, logs and reset-password with US-INST-25, uninstall with phase 6's
+// uninstall step, library with phase 7's own app libraries.
 // They talk to hlabsd on loopback with the tray token (D-035), so they work for root and the hlabs group.
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
@@ -7,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { clientOptions, CliError, daemonClient, type DaemonClient } from './daemon';
 import type { Io } from './io';
+import { library } from './library';
 import { appLogs, daemonLogs } from './logs';
 import { terminalPrompt, type Prompt } from './prompt';
 import { resetPassword } from './reset-password';
@@ -19,6 +21,7 @@ export const COMMANDS = {
   'reset-password': 'Set a new password for a user (root only on Linux)',
   uninstall: 'Remove hlabs from this server (--keep-data or --delete-everything; root only)',
   'setup-url': 'Print the onboarding address with its setup token',
+  library: 'Make your own app library: init, add, check, index, keygen, sign (hlabs library --help)',
 } as const;
 
 export type Command = keyof typeof COMMANDS;
@@ -80,9 +83,23 @@ export async function run(argv: string[], io: Io, deps: Deps = defaultDeps()): P
       yes: { type: 'boolean' },
       'daemon-info': { type: 'boolean' },
       'daemon-job': { type: 'boolean' },
+      replace: { type: 'boolean' },
     },
   });
   const [command] = positionals;
+  if (command === 'library') {
+    // Its own help: `hlabs library --help`.
+    try {
+      return await library(io, values.help ? [] : positionals.slice(1), {
+        client: deps.client,
+        replace: values.replace === true,
+      });
+    } catch (err) {
+      if (!(err instanceof CliError)) throw err;
+      io.err(err.message);
+      return err.code;
+    }
+  }
   if (!command || values.help) {
     io.out(help());
     return command || values.help ? 0 : 1;
