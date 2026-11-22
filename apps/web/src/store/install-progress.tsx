@@ -9,7 +9,6 @@ import { Badge, Button, GlassCard, ModalDialog, Progress, ScrollPane, TextField,
 import { INSTALL_STEPS } from '@hlabs/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useSubscription } from '@trpc/tanstack-react-query';
 import { useEffect, useRef, useState } from 'react';
 import { installCopy } from '../copy/install';
 import { categoryLabels, storeCopy } from '../copy/store';
@@ -25,6 +24,7 @@ import { StoreLogo } from './cards';
 import { storeTags } from './store-app';
 import { storeReturnHref } from './store-return';
 import { useInstalls } from './use-installs';
+import { useEventStream } from '../lib/use-event-stream';
 
 const copy = installCopy;
 const LOGO = tokens.SIZE_APP_ICON + tokens.SPACE_7;
@@ -205,28 +205,21 @@ export function InstallProgressPage({ appId }: { appId: string }) {
   const [announce, setAnnounce] = useState('');
   const lastDone = useRef<InstallStep | null>(null);
 
-  useSubscription(
-    trpc.events.stream.subscriptionOptions(
-      { types: ['app.installProgress', 'app.stateChanged', 'job.finished'] },
-      {
-        onData: ({ data: event }) => {
-          if (event.type === 'app.installProgress' && event.data.appId === appId) {
-            const { step: at, stepDetail } = event.data;
-            if (at && stepDetail) setSeen((m) => ({ ...m, [at]: { ...m[at], ...stepDetail } }));
-            setLive((l) => ({
-              progress: Math.max(l?.progress ?? 0, event.data.progress),
-              step: event.data.step ?? l?.step ?? null,
-              detail: event.data.stepDetail ?? {},
-              eta: event.data.etaSeconds ?? null,
-            }));
-          } else if (event.type !== 'app.installProgress') {
-            void queryClient.invalidateQueries({ queryKey: trpc.apps.get.queryKey({ appId }) });
-            if (jobId) void queryClient.invalidateQueries({ queryKey: trpc.jobs.get.queryKey({ jobId }) });
-          }
-        },
-      },
-    ),
-  );
+  useEventStream((event) => {
+    if (event.type === 'app.installProgress' && event.data.appId === appId) {
+      const { step: at, stepDetail } = event.data;
+      if (at && stepDetail) setSeen((m) => ({ ...m, [at]: { ...m[at], ...stepDetail } }));
+      setLive((l) => ({
+        progress: Math.max(l?.progress ?? 0, event.data.progress),
+        step: event.data.step ?? l?.step ?? null,
+        detail: event.data.stepDetail ?? {},
+        eta: event.data.etaSeconds ?? null,
+      }));
+    } else if (event.type === 'app.stateChanged' || event.type === 'job.finished') {
+      void queryClient.invalidateQueries({ queryKey: trpc.apps.get.queryKey({ appId }) });
+      if (jobId) void queryClient.invalidateQueries({ queryKey: trpc.jobs.get.queryKey({ jobId }) });
+    }
+  });
 
   const fromJob = readJobMessage(job.data?.message ?? null);
   const progress = Math.max(live?.progress ?? 0, job.data?.progress ?? 0);

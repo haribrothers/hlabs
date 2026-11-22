@@ -7,7 +7,6 @@ import { isFeatureEnabled, VISIBLE_PHASE, type ToastMutation } from '@hlabs/shar
 import { Button } from '@hlabs/ui';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useSubscription } from '@trpc/tanstack-react-query';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { notificationsCopy as copy } from '../copy/notifications';
 import { toastCopy } from '../copy/toasts';
@@ -18,6 +17,7 @@ import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
 import { errorLine } from '../lib/error-copy';
+import { useEventStream } from '../lib/use-event-stream';
 
 const PAGE = 50;
 
@@ -82,19 +82,12 @@ function Panel({ shippedPhase }: { shippedPhase: number }) {
   };
   // A new one: the badge counts it and, while the panel's open, it's at the top of Today (US-HOME-13). Read or
   // dismissed in another session: this one follows.
-  useSubscription(
-    trpc.events.stream.subscriptionOptions(
-      { types: ['notification.created', 'notification.read', 'notification.dismissed'] },
-      {
-        onData: ({ data: event }) => {
-          if (event.type === 'notification.created') {
-            queryClient.setQueryData(countKey, (c) => (c ? { count: c.count + 1 } : c));
-          }
-          refresh();
-        },
-      },
-    ),
-  );
+  useEventStream((event) => {
+    if (event.type === 'notification.created') {
+      queryClient.setQueryData(countKey, (c) => (c ? { count: c.count + 1 } : c));
+    } else if (event.type !== 'notification.read' && event.type !== 'notification.dismissed') return;
+    refresh();
+  });
 
   // Escape or a click outside closes it, and focus goes back to the bell.
   useEffect(() => {

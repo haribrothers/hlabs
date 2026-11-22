@@ -7,7 +7,6 @@ import { isFeatureEnabled } from '@hlabs/shared';
 import { Badge, Button, List, ListRow, tokens } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { useSubscription } from '@trpc/tanstack-react-query';
 import { useState, type ReactNode } from 'react';
 import { CopyAddress } from '../apps/app-access';
 import { networkCopy as copy } from '../copy/network';
@@ -18,6 +17,7 @@ import { DnsServerRows } from './dns-server';
 import { TailscaleRow, useRemoteStatus } from './remote-access';
 import { SubnetRouterOption, SubnetRouterRows } from './subnet-router';
 import { WebPortsDialog } from './web-ports-dialog';
+import { useEventStream } from '../lib/use-event-stream';
 
 const LOGO = tokens.SPACE_7;
 /** Fallback ports (D-016): when hlabs is on one of these, the usual one was taken. */
@@ -215,17 +215,11 @@ export function NetworkSection({ shippedPhase }: { shippedPhase?: number }) {
   const [changing, setChanging] = useState(false);
   const apps = useQuery({ ...trpc.apps.list.queryOptions(), retry: false });
   // Installs, uninstalls and the server coming back change the addresses (no polling).
-  useSubscription(
-    trpc.events.stream.subscriptionOptions(
-      { types: ['app.stateChanged', 'system.status'] },
-      {
-        onData: () => {
-          void queryClient.invalidateQueries({ queryKey: trpc.network.status.queryKey() });
-          void queryClient.invalidateQueries({ queryKey: trpc.apps.list.queryKey() });
-        },
-      },
-    ),
-  );
+  useEventStream((event) => {
+    if (event.type !== 'app.stateChanged' && event.type !== 'system.status') return;
+    void queryClient.invalidateQueries({ queryKey: trpc.network.status.queryKey() });
+    void queryClient.invalidateQueries({ queryKey: trpc.apps.list.queryKey() });
+  });
 
   if (status.isError) {
     return (
