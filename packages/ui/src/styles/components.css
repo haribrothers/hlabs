@@ -1818,6 +1818,17 @@
   .hl-tray-step-pending {
     color: var(--ink-muted);
   }
+  .hl-tray-step-failed svg {
+    color: var(--danger);
+  }
+  .hl-tray-setup-problem {
+    margin: 0 var(--space-2);
+  }
+  .hl-tray-setup-actions {
+    display: flex;
+    gap: var(--space-2);
+    padding: 0 var(--space-2);
+  }
   .hl-tray-progress {
     min-width: 0;
     padding: 0 var(--space-2);

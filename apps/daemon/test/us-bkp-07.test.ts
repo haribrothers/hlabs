@@ -41,7 +41,9 @@ describe('US-BKP-07', () => {
     t.app('vaultwarden');
     await t.nasDestination();
     t.s.backups.sleep = async () => {};
-    const at = (h: number, m = 0, d = 20) => new Date(2026, 10, d, h, m).getTime();
+    // Today's times: the retry is set from the real clock, so the runs must be on the same day for the next scheduled
+    // 03:00 (tomorrow's) to come after it.
+    const at = (h: number, m = 0) => new Date().setHours(h, m, 0, 0);
     t.s.backups.tick(at(2));
     t.restic.failNext('backup', 'BACKUP_DEST_FULL', 2);
     t.s.backups.tick(at(3, 1));

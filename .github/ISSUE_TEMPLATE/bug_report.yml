@@ -1,0 +1,44 @@
+# The help's "Still stuck?" links here (US-SITE-09).
+name: Something isn't working
+description: Tell us what went wrong, with the diagnostics hlabs copies for you.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for telling us. The diagnostics have no passwords or file names in them, but read them before you paste: this issue is public.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you saw, and any message hlabs showed (with its code, if it had one).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: hlabs version
+      description: In Settings › Updates, or `hlabs status` on a Linux server.
+      placeholder: 0.6.0
+  - type: dropdown
+    id: system
+    attributes:
+      label: Where does hlabs run?
+      options:
+        - Mac
+        - Linux server
+        - Linux desktop
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Mac or Linux desktop, menu-bar icon › Copy diagnostics. Linux server, the output of `sudo hlabs status` and `sudo hlabs logs`.
+      render: text

@@ -1,0 +1,243 @@
+# A release (D-146, 11 §CI): push a tag `v1.2.3` (stable) or `v1.2.3-beta.1` (beta) after committing its notes in
+# apps/site/src/content/releases/<version>.md. Every target is built, signed where the secrets allow (D-139), checked
+# into one signed SHA256SUMS and published as the GitHub release `v<version>` with the update manifest. Then the
+# website rebuilds through its deploy hook, so /download/ offers it (D-147).
+#
+# A rehearsal builds everything and keeps it as workflow artifacts without publishing: run by hand with a version, or
+# on a pull request that changes how releases are made.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to rehearse (nothing is published), e.g. 0.6.0-rehearsal.1'
+        required: true
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - scripts/build-tray.ts
+      - scripts/build-linux.ts
+      - scripts/bundle-app.ts
+      - scripts/release-*.ts
+      - scripts/update-key.ts
+      - apps/tray/src-tauri/tauri*.json
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.what.outputs.version }}
+      channel: ${{ steps.what.outputs.channel }}
+      rehearsal: ${{ steps.what.outputs.rehearsal }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: what
+        name: The version, the channel, and whether this publishes
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          case "$GITHUB_EVENT_NAME" in
+            push) version="${GITHUB_REF_NAME#v}"; rehearsal=false ;;
+            workflow_dispatch) version="${INPUT_VERSION#v}"; rehearsal=true ;;
+            *) version="0.0.0-pr.${PR_NUMBER}"; rehearsal=true ;;
+          esac
+          echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' ||
+            { echo "::error::\"$version\" isn't a version like 1.2.3"; exit 1; }
+          case "$version" in *-*) channel=beta ;; *) channel=stable ;; esac
+          if [ "$rehearsal" = false ] && [ ! -f "apps/site/src/content/releases/$version.md" ]; then
+            echo "::error::Write the release notes in apps/site/src/content/releases/$version.md before tagging"
+            exit 1
+          fi
+          {
+            echo "version=$version"
+            echo "channel=$channel"
+            echo "rehearsal=$rehearsal"
+          } >>"$GITHUB_OUTPUT"
+          echo "hlabs $version on $channel (rehearsal: $rehearsal)"
+
+  mac:
+    name: mac (${{ matrix.arch }})
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            arch: arm64
+            optional: false
+          # Intel Macs are best-effort (US-INST-03): a failure here doesn't stop the release.
+          - os: macos-15-intel
+            arch: x64
+            optional: true
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.optional }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/tray/src-tauri
+      - run: pnpm install --frozen-lockfile
+      - name: Signing, when its secrets are set (D-139)
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          # Tauri signs when a variable is there at all, so only those with a value are passed on.
+          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD \
+            APPLE_TEAM_ID TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD; do
+            value="$(printenv "$name" || true)"
+            [ -n "$value" ] && echo "$name=$value" >>"$GITHUB_ENV"
+          done
+          true
+      - run: pnpm build:tray --version ${{ needs.prepare.outputs.version }} --dmg --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-${{ matrix.arch }}
+          path: |
+            dist/hlabs-*.dmg
+            dist/hlabs-*.app.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+  linux:
+    name: linux (${{ matrix.arch }})
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 22.04's older glibc, so the builds run on more systems.
+          - os: ubuntu-22.04
+            arch: x86_64
+          - os: ubuntu-22.04-arm
+            arch: aarch64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/tray/src-tauri
+      - name: Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf rpm file
+      - run: pnpm install --frozen-lockfile
+      - name: The server download (D-140)
+        run: |
+          pnpm build:linux --version ${{ needs.prepare.outputs.version }}
+          mkdir -p dist
+          mv dist/linux/hlabs-*.tar.gz dist/
+      - name: The desktop packages (D-145)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: pnpm build:tray --version ${{ needs.prepare.outputs.version }} --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: |
+            dist/hlabs-*.tar.gz
+            dist/hlabs-*.deb
+            dist/hlabs-*.rpm
+            dist/hlabs-*.AppImage
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    needs: [prepare, mac, linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      CHANNEL: ${{ needs.prepare.outputs.channel }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+      - name: Sign, check and describe (D-146)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          HLABS_UPDATE_PUBLIC_KEY: ${{ vars.HLABS_UPDATE_PUBLIC_KEY }}
+          MAC_SIGNED: ${{ secrets.APPLE_CERTIFICATE != '' }}
+        run: |
+          node scripts/release-publish.ts --dir release --version "$VERSION" \
+            --notes "apps/site/src/content/releases/$VERSION.md" --repo "$GITHUB_REPOSITORY" \
+            $([ "$MAC_SIGNED" = true ] && echo --mac-signed)
+          ls -la release
+      - name: Keep the rehearsal
+        if: needs.prepare.outputs.rehearsal == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-rehearsal
+          path: |
+            release
+            release-body.md
+          retention-days: 7
+      - name: Publish the release
+        if: needs.prepare.outputs.rehearsal == 'false'
+        run: |
+          flags=""
+          # No update manifest means no signatures: a draft nobody updates to (D-139).
+          [ -f release/latest.json ] || flags="$flags --draft"
+          [ "$CHANNEL" = beta ] && flags="$flags --prerelease"
+          gh release create "v$VERSION" release/* --title "hlabs $VERSION" --notes-file release-body.md \
+            --verify-tag $flags
+      - name: Point the beta channel at it
+        # Stable releases go to beta too, so beta never lags stable.
+        if: needs.prepare.outputs.rehearsal == 'false' && hashFiles('release/latest.json') != ''
+        run: |
+          gh release view beta >/dev/null 2>&1 ||
+            gh release create beta --prerelease --title "Beta channel" \
+              --notes "The beta channel's update manifest. Releases are listed separately." --target "$GITHUB_SHA"
+          gh release upload beta release/latest.json --clobber
+      - name: Rebuild the website, so /download/ offers it (D-147)
+        if: needs.prepare.outputs.rehearsal == 'false'
+        env:
+          DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_SITE_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "::notice::No CLOUDFLARE_SITE_DEPLOY_HOOK: the website shows this release at its next build"
+            exit 0
+          fi
+          curl -fsS --retry 3 -X POST "$DEPLOY_HOOK" >/dev/null
+          echo "Asked Cloudflare to rebuild the website"

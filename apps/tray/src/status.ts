@@ -4,6 +4,7 @@ import type { TrayStatus } from '@hlabs/api';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useCallback, useEffect, useState } from 'react';
 import { daemon } from './daemon';
+import { isLinux } from './native-menu';
 
 export const OPEN_POLL_MS = 5_000;
 export const CLOSED_POLL_MS = 30_000;
@@ -11,8 +12,11 @@ export const BACKUP_POLL_MS = 1_000;
 
 /** Whether the menu is open: it has focus while it shows, and closes when it loses it. */
 export function useMenuOpen(): boolean {
-  const [open, setOpen] = useState(() => document.hasFocus());
+  // A Linux desktop doesn't say when its native menu opens (D-145), so it's treated as open: the status line changes
+  // within 5 s (US-INST-26).
+  const [open, setOpen] = useState(() => isLinux() || document.hasFocus());
   useEffect(() => {
+    if (isLinux()) return;
     const unlisten = getCurrentWindow().onFocusChanged(({ payload }) => setOpen(payload));
     return () => void unlisten.then((stop) => stop()).catch(() => {});
   }, []);

@@ -2,10 +2,12 @@
 // extension beside it, explained; folders edit the whole name; Rename or Enter renames and the item stays selected;
 // Cancel or Esc changes nothing; New folder's inline errors; a folder an app uses needs "Rename anyway".
 import type * as Shared from '@hlabs/shared';
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { daemonError, renderScreen } from '../test/render';
 import { filesHandlers, folder } from '../test/files';
+import { FileGrid } from './file-grid';
+import { FileList } from './file-list';
 import { FilesScreen } from './files-page';
 import { splitName } from './rename-dialog';
 
@@ -162,5 +164,46 @@ describe('US-FILE-23', () => {
     fireEvent.pointerDown(more, { button: 0, ctrlKey: false });
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Rename…' }));
     expect(await screen.findByRole('dialog', { name: 'Rename' })).toBeInTheDocument();
+  });
+});
+
+describe('US-FILE-23 · focus after a rename', () => {
+  const entries = (names: string[]) =>
+    names.map((name) => ({
+      name,
+      path: `/home/Documents/${name}`,
+      kind: 'file' as const,
+      size: 1,
+      childCount: null,
+      modifiedAt: 1,
+      mime: null,
+      previewUrl: null,
+    }));
+  const frame = () => act(() => new Promise((r) => requestAnimationFrame(() => r(undefined))));
+
+  it('moves to the renamed item once; a later reload of the list leaves it where the person moved it', async () => {
+    for (const View of ['grid', 'list'] as const) {
+      const props = {
+        label: 'Documents',
+        accent: 'blue' as never,
+        onOpen: () => {},
+        focusPath: '/home/Documents/Lease 2026.pdf',
+        sort: { by: 'name', dir: 'asc' } as never,
+        onSort: () => {},
+      };
+      const items = entries(['Lease 2026.pdf', 'notes.txt']);
+      const ui = (list: typeof items) =>
+        View === 'grid' ? <FileGrid {...props} items={list} /> : <FileList {...props} items={list} />;
+      const { rerender, unmount, container } = render(ui(items));
+      await frame();
+      const at = (name: string) => container.querySelector<HTMLElement>(`[data-path="/home/Documents/${name}"]`)!;
+      expect(at('Lease 2026.pdf')).toHaveFocus();
+      at('notes.txt').focus();
+      // The list reloads (an Undo, an upload finishing): new objects, same items.
+      rerender(ui(entries(['Lease 2026.pdf', 'notes.txt'])));
+      await frame();
+      expect(at('notes.txt')).toHaveFocus();
+      unmount();
+    }
   });
 });

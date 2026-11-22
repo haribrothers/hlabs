@@ -1,7 +1,7 @@
 ---
 title: People who use hlabs
 description: See everyone who has an account on your hlabs, and the invites still waiting.
-features: [F-ACCT-05, F-ACCT-07, F-ACCT-08]
+features: [F-ACCT-05, F-ACCT-07, F-ACCT-08, F-ACCT-06]
 ---
 
 For admins only.

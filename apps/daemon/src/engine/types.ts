@@ -53,6 +53,8 @@ export interface ContainerEngine {
   info(): Promise<EngineInfo>;
   /** Creates the shared bridge network if it doesn't exist. */
   ensureNetwork(name: string): Promise<void>;
+  /** Removes it, when it's there (uninstalling hlabs, D-143). */
+  removeNetwork(name: string): Promise<void>;
   hasImage(ref: string): Promise<boolean>;
   pullImage(ref: string, onProgress: (progress: PullProgress) => void, signal?: AbortSignal): Promise<void>;
   /** Containers labelled with the compose project, running or not. */

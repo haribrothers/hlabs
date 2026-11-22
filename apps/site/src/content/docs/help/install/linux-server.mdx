@@ -1,0 +1,96 @@
+---
+title: Install on a Linux server
+description: Install hlabs on a Linux computer without a desktop with one command, finish setup from another device, manage it with the hlabs command, and upgrade it the same way.
+features: [F-INST-09]
+---
+
+import { Steps } from '@astrojs/starlight/components';
+import linuxInstall from '../../../../assets/screens/LinuxInstall.webp';
+import onbWelcome from '../../../../assets/screens/OnbWelcome.webp';
+
+
+For admins: the person who installs hlabs.
+
+## Install
+
+<Steps>
+
+1. On the server, run:
+
+   ```sh
+   curl -fsSL https://hlabs.h4loom.com/install.sh | sh
+   ```
+
+   If you're not root, it asks for your password with `sudo`.
+
+2. Watch what it does. It prints a line for each thing:
+
+   <img src={linuxInstall.src} alt="A terminal running the hlabs installer: a line about the server, Docker Engine, the hlabs user, the service, the started proxy, hlabs.local announced, and where to finish setup." width="900" loading="lazy" />
+
+   - A line about the server, such as **Ubuntu 24.04 · x86_64 · 16 GB memory · 412 GB free**. If hlabs can't run there, this line has a ✗ and says why.
+   - **Docker Engine**: hlabs uses the one you have. Without one, it says **Docker Engine not found, installing from the official repository** and installs it from Docker's own repository.
+   - **The hlabs user and its data folder `/var/lib/hlabs`**: hlabs runs as its own user, and your apps' data and files live in this folder.
+   - **The systemd service `hlabsd.service`**: hlabs starts on boot.
+   - **Started hlabs**, with the web ports it uses.
+   - **Announced hlabs.local on your network**, so other devices at home can find it by name. If the server can't (Avahi isn't running), the installer says so and prints only the IP address.
+
+3. It ends with **Finish setup in your browser** and the setup address, at `hlabs.local` and at the server's IP address. Open either one from your laptop or phone and [set up hlabs](../../get-started/set-up/): your admin account, two-factor login and a few apps to start with.
+
+   <img src={onbWelcome.src} alt="Setup's welcome screen with Get started." width="900" loading="lazy" />
+
+</Steps>
+
+## Check the installer before running it
+
+Every release's `install.sh` is signed with the hlabs key. To check it first, download it with its checksum and signature, then run it:
+
+```sh
+curl -fsSLO https://hlabs.h4loom.com/install.sh
+curl -fsSLO https://hlabs.h4loom.com/install.sh.sha256
+sha256sum -c install.sh.sha256
+sh install.sh
+```
+
+The installer itself checks everything it downloads against `SHA256SUMS` and that file's signature, so a changed copy of the website alone can't give you a changed hlabs.
+
+To install the beta channel's version instead, add `--channel beta`:
+
+```sh
+curl -fsSL https://hlabs.h4loom.com/install.sh | sh -s -- --channel beta
+```
+
+Beta builds may have bugs. hlabs updates to the next stable version once one is newer than the beta you installed.
+
+## Find the setup address again
+
+Run `hlabs setup-url` to print the setup addresses again. They keep working until setup is finished; after that, `hlabs setup-url` prints the dashboard's address instead. It works for root, with `sudo`, and for people in the `hlabs` group. Anyone else sees **Run with sudo or add yourself to the hlabs group**.
+
+If a step fails, the line starts with ✗, says what went wrong and points to `/var/log/hlabs-install.log`. Nothing you had is removed. Fix the problem and run the command again.
+
+## What it needs
+
+- Linux with systemd, on an x86_64 or arm64 computer.
+- Ubuntu 22.04, Debian 12, Fedora 39, RHEL 9 or newer (anything with OpenSSL 3). On other distributions, install [Docker Engine](https://docs.docker.com/engine/install/) first.
+- Ports 80 and 443. If another program uses one of them, hlabs uses 8080 or 8443 instead and says so, for example **Port 443 is used by nginx, using 8443 instead**. Every address hlabs prints then includes the port.
+
+## Manage hlabs from the command line
+
+On a server there's no menu bar, so the `hlabs` command does its job. Run it with `sudo`, or add yourself to the `hlabs` group (`sudo usermod -aG hlabs $USER`, then log in again).
+
+- **`hlabs status`** says what hlabs is doing, like the menu-bar app: whether it's running and how many apps, CPU, memory and free space, the last backup and the dashboard's address. It finishes with exit code 0 when everything is running, 1 when something needs looking at (an app that stopped working, the container engine, a web port another program took) and 2 when hlabs can't be reached.
+- **`hlabs logs`** shows what hlabs has been doing, newest last. Add `-f` to keep watching, or `--app immich` for one app's logs.
+- **`hlabs reset-password`** sets a new password for someone who forgot theirs. It only works with `sudo`, because being root on the server proves you can get to it. Choose the account, type the new password twice (at least 12 characters, and not a common one) and, if the account has two-factor, say whether to turn it off. They're signed out everywhere and log in with the new password.
+- **`hlabs setup-url`** prints the setup addresses until setup is finished.
+- **`hlabs uninstall`** removes hlabs, keeping your data or deleting everything: see [Uninstall hlabs](../uninstall/).
+
+## Check what you download
+
+The installer checks hlabs against `SHA256SUMS`, and that file against its signature by the hlabs key, before it installs anything. If either doesn't match, it stops and installs nothing.
+
+## Upgrade
+
+Run the same command again. hlabs stops, the new version goes in next to the old one, and hlabs starts again. Your apps, files and settings stay. hlabs can also [update itself](../../get-started/updates/).
+
+## Install your first app
+
+Open the dashboard from your laptop or phone, open the **App Store** from the Dock, choose an app and **Install**. See [The App Store](../../apps/app-store/).

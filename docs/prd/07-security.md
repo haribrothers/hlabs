@@ -69,4 +69,4 @@ Uninstall with data deletion, restore, move all data, engine switch and factory 
 ## 7.9 Supply chain
 - pnpm with a lockfile and `pnpm audit` in CI; Renovate for updates.
 - Bundled binaries are downloaded at build time from pinned URLs with checksum verification and are code-signed with the app (macOS notarized).
-- Releases are signed (Tauri updater key; macOS Developer ID; Linux packages with a GPG key); checksums published.
+- Releases are signed (macOS Developer ID; the hlabs update key, a minisign key, for updates and for every Linux download and `install.sh`, D-141); checksums published. A GPG key comes only with an apt or dnf package repository.

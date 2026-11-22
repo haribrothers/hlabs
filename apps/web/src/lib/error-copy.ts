@@ -1,9 +1,11 @@
 // What an error means for people (US-STATE-17): the title and body for its hlabsCode, filled from its detail. An
 // unknown or missing code gets the generic copy, and nothing answering (offline, or hlabs down) the offline copy.
 // The raw message only goes to the browser console, never on screen.
+import { errorHelpSlug, helpUrl } from '@hlabs/shared';
 import { TRPCClientError } from '@trpc/client';
 import { errorCopy, type ErrorText } from '../copy/errors';
-import { showToast } from './toasts';
+import { toastCopy } from '../copy/toasts';
+import { showToast, type ToastAction } from './toasts';
 
 interface ErrorData {
   hlabsCode?: string;
@@ -46,11 +48,18 @@ export function codeLine(code: string, detail: Record<string, unknown> = {}): st
   return `${title}. ${body}`;
 }
 
-/** A mutation started from a button failed: say so in a danger toast (dialogs and forms show errors inline). The
- * same error again updates that toast. */
+/** "Learn more" for an error hlabs has words for: its page on the website (US-SITE-10). */
+export function learnMoreAction(code: string | null): ToastAction[] {
+  if (!code || !catalogue[code]) return [];
+  return [{ kind: 'help', label: toastCopy.learnMore, href: helpUrl(errorHelpSlug(code)) }];
+}
+
+/** A mutation started from a button failed: say so in a danger toast (dialogs and forms show errors inline), with
+ * "Learn more" when the error has a help page. The same error again updates that toast. */
 export function showErrorToast(err: unknown): number {
   const { title, body } = errorText(err);
-  return showToast({ tone: 'danger', title, body, key: `error:${errorCode(err) ?? 'unknown'}` });
+  const code = errorCode(err);
+  return showToast({ tone: 'danger', title, body, key: `error:${code ?? 'unknown'}`, actions: learnMoreAction(code) });
 }
 
 export const isForbidden = (err: unknown) => errorCode(err) === 'ACCESS_DENIED';
@@ -78,6 +87,12 @@ export function mutationErrorNotice(err: unknown, meta: Record<string, unknown> 
     showToast({ tone: 'danger', title: errorCopy.forbiddenToast, key: 'error:ACCESS_DENIED' });
   } else if (code === 'JOB_EXCLUSIVE_RUNNING') {
     const { title, body } = errorText(err);
-    showToast({ tone: 'warning', title, body, key: 'error:JOB_EXCLUSIVE_RUNNING' });
+    showToast({
+      tone: 'warning',
+      title,
+      body,
+      key: 'error:JOB_EXCLUSIVE_RUNNING',
+      actions: learnMoreAction(code),
+    });
   }
 }

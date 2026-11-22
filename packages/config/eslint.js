@@ -20,6 +20,9 @@ export const ignores = [
   '**/test-results/**',
   '**/routeTree.gen.ts',
   '**/.astro/**',
+  // The website built for its own tests, and what that build is made from (apps/site/e2e/build.ts).
+  'apps/site/dist-e2e/**',
+  'apps/site/.e2e/**',
   'docs/**',
 ];
 

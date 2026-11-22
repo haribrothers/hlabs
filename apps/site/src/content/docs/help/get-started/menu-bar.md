@@ -1,7 +1,7 @@
 ---
 title: The menu-bar app
 description: What the hlabs icon in the Mac menu bar shows and does.
-features: [F-INST-03]
+features: [F-INST-03, F-INST-06, F-INST-07]
 ---
 
 For admins on the Mac that runs hlabs.

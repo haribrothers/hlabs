@@ -6,12 +6,28 @@
 //   pnpm build:tray --version 0.0.3 --update --broken        signed, but the archive won't install (it rolls back)
 //   pnpm build:tray --version 0.0.4 --update --bad-signature signed with another key (it's refused)
 //
-// Updates are signed with the development key (~/.tauri/hlabs-dev.key, or TAURI_SIGNING_PRIVATE_KEY). Serve
+//   pnpm build:tray --dmg                                    also the disk image: dist/hlabs-<v>-mac-<arch>.dmg (D-142)
+//   pnpm build:tray (on Linux)                               dist/hlabs-<v>-linux-<arch>.{deb,rpm,AppImage} (D-145)
+//   pnpm build:tray --release                                a release build (release.yml, D-146): https updates only;
+//                                                            with TAURI_SIGNING_PRIVATE_KEY also the update archives,
+//                                                            dist/hlabs-<v>-mac-<arch>.app.tar.gz on a Mac
+//
+// Updates are signed with the development key (~/.tauri/hlabs-dev.key, or TAURI_SIGNING_PRIVATE_KEY); the app only
+// installs them with that key's public half in place of the release key (developers/updates-and-signing). Serve
 // dist/updates (e.g. `python3 -m http.server 8090 -d dist/updates`) and start the app with
 // HLABS_UPDATE_ENDPOINT=http://127.0.0.1:8090/latest.json; HLABS_UPDATE_BASE changes the archive's address. Builds
 // from here may check over plain http (the Tauri updater refuses it otherwise in a release build).
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -29,8 +45,21 @@ const version =
   option('--version') ??
   (JSON.parse(readFileSync(join(root, 'apps/daemon/package.json'), 'utf8')) as { version: string }).version;
 const update = flag('--update');
+/** A release (D-146): never plain-http updates; update archives when the release key is there. */
+const release = flag('--release');
+/** On Linux: the .deb, .rpm and AppImage (D-145) instead of hlabs.app. */
+const linux = process.platform === 'linux';
 const devKey = join(homedir(), '.tauri', 'hlabs-dev.key');
-const env: NodeJS.ProcessEnv = { ...process.env, HLABS_BUILD_VERSION: version };
+const env: NodeJS.ProcessEnv = {
+  ...process.env,
+  HLABS_BUILD_VERSION: version,
+  // The AppImage tools are AppImages themselves; this runs them where FUSE isn't (containers, CI).
+  ...(process.platform === 'linux' ? { APPIMAGE_EXTRACT_AND_RUN: '1' } : {}),
+};
+// An empty secret in CI is no key.
+if (!env.TAURI_SIGNING_PRIVATE_KEY) delete env.TAURI_SIGNING_PRIVATE_KEY;
+const updaterArtifacts = update || (release && Boolean(env.TAURI_SIGNING_PRIVATE_KEY));
+if (release) env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD ??= '';
 if (update) {
   env.TAURI_SIGNING_PRIVATE_KEY ??= existsSync(devKey) ? readFileSync(devKey, 'utf8') : undefined;
   env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD ??= '';
@@ -41,6 +70,11 @@ const run = (cmd: string, argv: string[], cwd = root) => execFileSync(cmd, argv,
 
 say(`Building hlabs ${version}${update ? ' as an update' : ''}…`);
 run('node', [join(root, 'scripts/bundle-app.ts')]);
+// Tauri copies resources next to the binary and into its bundle folders but never removes what has gone since, so a
+// file dropped from the daemon bundle would ship anyway: start from clean ones.
+for (const stale of ['target/release/daemon', 'target/release/bundle']) {
+  rmSync(join(tray, 'src-tauri', stale), { recursive: true, force: true });
+}
 run(
   'pnpm',
   [
@@ -50,20 +84,55 @@ run(
     '--config',
     'src-tauri/tauri.bundle.json',
     '--config',
-    // These builds check a local server over http (the release pipeline, phase 6, builds without this); what they
-    // download must still be signed with the hlabs key.
+    // Builds from here may check a local server over http; a release (D-146) never does. What either downloads must
+    // be signed with the hlabs key.
     JSON.stringify({
       version,
-      bundle: { createUpdaterArtifacts: update },
-      plugins: { updater: { dangerousInsecureTransportProtocol: true } },
+      bundle: { createUpdaterArtifacts: updaterArtifacts },
+      ...(release ? {} : { plugins: { updater: { dangerousInsecureTransportProtocol: true } } }),
     }),
     '--bundles',
-    'app',
+    linux ? 'deb,rpm,appimage' : flag('--dmg') ? 'app,dmg' : 'app',
   ],
   tray,
 );
+if (linux) {
+  // Tauri names them hlabs_<v>_amd64.deb, hlabs-<v>-1.x86_64.rpm, hlabs_<v>_amd64.AppImage; releases use
+  // hlabs-<v>-linux-<arch>.<ext> (D-145).
+  const arch = process.arch === 'arm64' ? 'aarch64' : 'x86_64';
+  const bundles = join(tray, 'src-tauri/target/release/bundle');
+  mkdirSync(join(root, 'dist'), { recursive: true });
+  for (const [dir, ext] of [
+    ['deb', 'deb'],
+    ['rpm', 'rpm'],
+    ['appimage', 'AppImage'],
+  ] as const) {
+    const built = readdirSync(join(bundles, dir)).find((f) => f.endsWith(`.${ext}`));
+    if (!built) throw new Error(`No .${ext} in ${join(bundles, dir)}`);
+    const dest = join(root, 'dist', `hlabs-${version}-linux-${arch}.${ext}`);
+    copyFileSync(join(bundles, dir, built), dest);
+    say(`${ext}: ${dest}`);
+  }
+  process.exit(0);
+}
 const bundleDir = join(tray, 'src-tauri/target/release/bundle/macos');
 say(`hlabs.app: ${join(bundleDir, 'hlabs.app')}`);
+if (flag('--dmg')) {
+  // Tauri names it hlabs_<v>_aarch64.dmg; releases use hlabs-<v>-mac-arm64.dmg (US-INST-03).
+  const dmgDir = join(tray, 'src-tauri/target/release/bundle/dmg');
+  const built = readdirSync(dmgDir).find((f) => f.endsWith('.dmg'));
+  if (!built) throw new Error(`No disk image in ${dmgDir}`);
+  const dmg = join(root, 'dist', `hlabs-${version}-mac-${process.arch === 'arm64' ? 'arm64' : 'x64'}.dmg`);
+  mkdirSync(join(root, 'dist'), { recursive: true });
+  copyFileSync(join(dmgDir, built), dmg);
+  say(`Disk image: ${dmg}`);
+}
+if (release && updaterArtifacts) {
+  // The update the Tauri updater downloads (release.yml signs it again with the others).
+  const archive = join(root, 'dist', `hlabs-${version}-mac-${process.arch === 'arm64' ? 'arm64' : 'x64'}.app.tar.gz`);
+  copyFileSync(join(tray, 'src-tauri/target/release/bundle/macos/hlabs.app.tar.gz'), archive);
+  say(`Update archive: ${archive}`);
+}
 if (!update) process.exit(0);
 
 // The update: its archive and signature, and the manifest that names them.

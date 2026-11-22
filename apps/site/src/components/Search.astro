@@ -1,0 +1,50 @@
+---
+// Starlight's search (Pagefind: it runs in the browser, so no query leaves the device), with what US-SITE-08 adds:
+// "/" opens it as well as ⌘K or Ctrl+K, and when nothing matches it points to Troubleshooting and GitHub.
+import Default from '@astrojs/starlight/components/Search.astro';
+---
+
+<Default {...Astro.props}><slot /></Default>
+
+<template id="search-nothing">
+  <p class="search-nothing" data-search-nothing>
+    Try <a href="/help/get-started/cant-reach/">Troubleshooting</a>, or ask on{' '}
+    <a href="https://github.com/haribrothers/hlabs/issues">GitHub</a>.
+  </p>
+</template>
+
+<script>
+  const typing = (el: EventTarget | null) =>
+    el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey || typing(e.target)) return;
+    const dialog = document.querySelector<HTMLDialogElement>('site-search dialog');
+    if (dialog?.open) return;
+    document.querySelector<HTMLButtonElement>('button[data-open-modal]')?.click();
+    e.preventDefault();
+  });
+  // Ready for "/" (the site's tests wait for this).
+  document.documentElement.toggleAttribute('data-search-keys', true);
+
+  // Pagefind writes its own message; when it says there's nothing, add where to look next.
+  const results = document.getElementById('starlight__search');
+  const template = document.getElementById('search-nothing') as HTMLTemplateElement | null;
+  if (results && template) {
+    new MutationObserver(() => {
+      const message = results.querySelector('.pagefind-ui__message');
+      const nothing = message?.textContent?.startsWith('No results for') ?? false;
+      const added = results.querySelector('[data-search-nothing]');
+      if (nothing && !added) message!.after(template.content.cloneNode(true));
+      if (!nothing && added) added.remove();
+    }).observe(results, { childList: true, subtree: true, characterData: true });
+  }
+</script>
+
+<style is:global>
+  .search-nothing {
+    margin: 0.5rem 0 0;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-2);
+  }
+</style>

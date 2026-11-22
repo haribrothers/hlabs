@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import { registerEngineRestart } from './engine/restart-job';
 import { registerEngineStart } from './engine/start-job';
 import { registerPause, resumeAfterQuit } from './apps/pause';
+import { UninstallService } from './uninstall/service';
 import { registerHomeFolderTrash } from './users/home-trash-job';
 import { watchEngine } from './engine/watch';
 import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting, users } from '@hlabs/db';
@@ -22,6 +23,7 @@ import { notifyPortProblem, returnToPorts, tailscaleServeHolds } from './network
 import { NetworkService, type PortProblem } from './network/service';
 import type { DaemonConfig } from './config';
 import type { InstallerHost } from './engine/colima-installer';
+import { removeColimaInstall } from './engine/colima-installer';
 import { engineDir, registerEngineInstall } from './engine/install-job';
 import { nodeInstallerHost } from './engine/installer-host';
 import { defaultCandidates, EngineService, type EngineServiceDeps } from './engine/service';
@@ -94,7 +96,7 @@ import type { ServiceHolder, Services } from './services';
 declare const __HLABS_BUNDLE__: boolean | undefined;
 
 /** In the bundle, migrations are copied next to hlabsd.mjs; from source, @hlabs/db finds its own. */
-const bundledMigrationsDir =
+export const bundledMigrationsDir =
   typeof __HLABS_BUNDLE__ !== 'undefined' ? fileURLToPath(new URL('./migrations', import.meta.url)) : undefined;
 
 export interface BootDeps {
@@ -663,7 +665,29 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       restartDaemon: deps.restartDaemon ?? (() => process.exit(75)),
       removeAppFolder: (appId, folder) => installer.removeAppFolder(appId, folder),
     }),
+    uninstall: new UninstallService({
+      db,
+      jobs,
+      logger,
+      dataDir: config.paths.dataDir,
+      storageRootDefault: config.paths.storageRootDefault,
+      apps: appService,
+      engine: () => engine.client,
+      colimaManaged: () => engine.lastCandidate?.kind === 'colima' && engine.lastCandidate.managedByHlabs,
+      networkDrives,
+      routing: network,
+      mdns,
+      proxy,
+      removeColima: () =>
+        removeColimaInstall({
+          engineDir: engineDir(config.paths.dataDir),
+          home: deps.home ?? homedir(),
+          io: deps.installer ?? nodeInstallerHost(),
+          appendLog: async (line) => logger.info({ line }, 'uninstall: colima'),
+        }),
+    }),
   };
+  services.uninstall.register();
   holder.set(services);
   // Keep awake follows the setting and whether any app runs.
   services.keepAwake.update();

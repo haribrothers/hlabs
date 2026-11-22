@@ -24,3 +24,13 @@ apps/web/e2e/.auth/
 apps/daemon/native/.build/
 
 apps/tray/src-tauri/resources/
+
+# Written by scripts/site-releases.ts when the site builds (D-147).
+apps/site/src/data/releases.json
+apps/site/public/install.sh
+apps/site/public/install.sh.sig
+apps/site/public/install.sh.sha256
+
+# The site tests' build (apps/site/e2e/build.ts).
+apps/site/dist-e2e/
+apps/site/.e2e/

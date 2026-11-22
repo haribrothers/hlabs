@@ -1,10 +1,29 @@
-# Website and help (D-055). Phase 0: build the site. site:check, axe and Cloudflare Pages
-# deploys arrive with the site content in phase 6.
+# Website and help (D-055, D-147): build the site with the latest releases, check the help can't fall behind the
+# product (site:check), and run the website's stories against a build made from fixtures (site:e2e: axe, the
+# Content-Security-Policy and Lighthouse). Publishing isn't here: Cloudflare's Workers Builds builds main and branch
+# previews from GitHub (apps/site/src/content/docs/developers/publishing-the-website.md).
 name: site
 
 on:
   pull_request:
-    paths: ['apps/site/**', 'store/**', 'packages/ui/**', 'packages/icons/**', '.github/workflows/site.yml']
+    paths:
+      - apps/site/**
+      - store/**
+      - packages/ui/**
+      - packages/icons/**
+      - .github/workflows/site.yml
+      # What site:check compares the help with: help links, error messages, the features list.
+      - apps/web/src/**
+      - apps/tray/src/**
+      - apps/cli/src/**
+      - docs/features/**
+      - scripts/site-check.ts
+      - scripts/site-releases*.ts
+      - scripts/site-headers.ts
+      - .github/ISSUE_TEMPLATE/**
+      - wrangler.jsonc
+      - scripts/install.sh
+      - packages/shared/src/store.ts
   push:
     branches: [main]
     paths: ['apps/site/**', 'store/**', 'packages/ui/**', 'packages/icons/**']
@@ -28,4 +47,18 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm site:build
+      - name: Build, with the latest releases from GitHub (D-147)
+        run: pnpm site:build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: The help covers the product (US-SITE-07, 09, 10)
+        run: pnpm site:check
+      - run: pnpm --filter @hlabs/site exec playwright install --with-deps chromium
+      - name: The website's stories (US-SITE-01…09, 12, 13), from fixtures, with Lighthouse
+        run: pnpm site:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: site-e2e
+          path: apps/site/test-results
+          retention-days: 7

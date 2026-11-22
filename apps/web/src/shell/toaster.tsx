@@ -62,6 +62,17 @@ function ToastActions({ toast, actions }: { toast: ToastItem; actions: ToastActi
           >
             {a.label}
           </Link>
+        ) : a.kind === 'help' ? (
+          <a
+            key={a.label}
+            href={a.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hl-btn hl-btn-secondary hl-btn-sm hl-focus"
+          >
+            {a.label}
+            <span className="sr-only">{` ${toastCopy.newTab}`}</span>
+          </a>
         ) : a.kind === 'retry' ? (
           <Button
             key={a.label}

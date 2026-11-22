@@ -14,7 +14,8 @@ const trayTokens = () => new TrayTokens({ read: async () => TOKEN });
 
 async function setupUrl(url: string) {
   const res = await fetch(`${url}/trpc/tray.setupUrl`, { headers: { authorization: `Bearer ${TOKEN}` } });
-  return ((await res.json()) as { result: { data: { url: string | null; lanUrls: string[] } } }).result.data;
+  return ((await res.json()) as { result: { data: { url: string | null; lanUrls: string[]; mdnsUrl: string | null } } })
+    .result.data;
 }
 
 describe('US-INST-02 · First launch hands off to onboarding in the browser', () => {
@@ -38,15 +39,15 @@ describe('US-INST-02 · First launch hands off to onboarding in the browser', ()
     expect(d.services!.onboarding.verifySetupToken(token)).toBe(true);
 
     await d.services!.onboarding.markComplete();
-    expect(await setupUrl(d.url)).toEqual({ url: null, lanUrls: [] });
+    expect(await setupUrl(d.url)).toEqual({ url: null, lanUrls: [], mdnsUrl: null });
   });
 
-  it("LAN setup URLs go through Caddy's HTTPS port at each LAN address (D-035)", async () => {
+  it("LAN setup URLs go through Caddy's HTTP port at each LAN address (D-035, D-140)", async () => {
     const d = await startDaemon({ trayTokens: trayTokens() });
     close = d.close;
     const urls = await d.services!.onboarding.lanSetupUrls(['192.168.1.40', '10.0.0.5']);
     const token = new URL((await d.services!.onboarding.setupUrl())!).searchParams.get('token');
-    expect(urls).toEqual([`https://192.168.1.40/setup?token=${token}`, `https://10.0.0.5/setup?token=${token}`]);
+    expect(urls).toEqual([`http://192.168.1.40/setup?token=${token}`, `http://10.0.0.5/setup?token=${token}`]);
     await d.services!.onboarding.markComplete();
     expect(await d.services!.onboarding.lanSetupUrls(['192.168.1.40'])).toEqual([]);
   });

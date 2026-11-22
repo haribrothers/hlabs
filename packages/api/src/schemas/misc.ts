@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { io } from '../trpc';
+import { logLineSchema } from './apps';
 import {
   appIdSchema,
   empty,
@@ -120,7 +121,16 @@ export const tray = {
     z.object({ action: z.enum(['openDashboard', 'copyAddress', 'backupNow', 'pauseAll', 'resumeAll']) }),
     z.union([ok, jobRefSchema, z.object({ url: z.string() })]),
   ),
-  resetPassword: io(z.object({ username: usernameSchema, newPassword: z.string(), disableTotp: z.boolean() }), ok),
+  resetPassword: io(
+    z.object({
+      username: usernameSchema,
+      newPassword: z.string(),
+      disableTotp: z.boolean(),
+      /** `cli`: `hlabs reset-password` on a Linux server (US-INST-25); recorded in the audit log. */
+      via: z.enum(['tray', 'cli']).optional(),
+    }),
+    ok,
+  ),
   /**
    * "Quit hlabs" (US-INST-10, D-120): stops every app (data untouched) and answers once they're stopped; the tray then
    * stops the daemon. The next start brings back the apps that were up. JOB_EXCLUSIVE_RUNNING during an update or a
@@ -137,11 +147,32 @@ export const tray = {
       since: z.number().int().optional(),
       follow: z.boolean().optional(),
     }),
-    pending,
+    z.object({ lines: z.array(logLineSchema) }),
   ),
   startEngine: io(empty, jobRefSchema),
   diagnostics: io(empty, z.object({ report: z.string() })),
-  uninstallInfo: io(empty, pending),
-  uninstall: io(z.object({ keepData: z.boolean(), removeColima: z.boolean() }), jobRefSchema),
-  setupUrl: io(empty, z.object({ url: z.string().nullable(), lanUrls: z.array(z.string()) })),
+  /** What the uninstall window says (US-INST-21, D-143). */
+  uninstallInfo: io(
+    empty,
+    z.object({
+      appCount: z.number().int().nonnegative(),
+      /** What "Delete everything" removes; null when counting took over 10 s. */
+      dataBytes: z.number().nonnegative().nullable(),
+      storageRoot: z.string(),
+      /** The engine is hlabs's own Colima, so "Also remove Colima" is offered. */
+      colimaManaged: z.boolean(),
+    }),
+  ),
+  /** The `hlabs_uninstall` job (US-INST-22, D-143, D-144); `via: cli` from `hlabs uninstall`. */
+  uninstall: io(
+    z.object({ keepData: z.boolean(), removeColima: z.boolean(), via: z.enum(['tray', 'cli']).optional() }),
+    jobRefSchema,
+  ),
+  /** A job, for following `hlabs_uninstall` (the tray token may call tray.* only). */
+  job: io(jobRefSchema, jobSchema),
+  /** The setup URL, and with Caddy the same at each LAN address and at the published `.local` name (US-INST-24). */
+  setupUrl: io(
+    empty,
+    z.object({ url: z.string().nullable(), lanUrls: z.array(z.string()), mdnsUrl: z.string().nullable() }),
+  ),
 };

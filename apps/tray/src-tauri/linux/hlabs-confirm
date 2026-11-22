@@ -1,0 +1,4 @@
+#!/bin/sh
+# "Reset a password…" on a Linux desktop (US-INST-26, D-145): polkit asks for the person's own password before pkexec
+# runs this, and that's all it's for.
+exit 0

@@ -1,7 +1,7 @@
 ---
 title: Manage an app
 description: See whether an app is running, and start, stop or restart it from App settings.
-features: [F-APP-02]
+features: [F-APP-02, F-APP-01, F-APP-03, F-APP-04, F-APP-09, F-STORE-09]
 ---
 
 For admins. Members can open the apps an admin shared with them, but not change them.

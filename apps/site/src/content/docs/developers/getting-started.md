@@ -6,7 +6,7 @@ description: What to install, and running hlabs from its source code.
 ## What you need
 
 - **macOS** (Apple silicon or Intel) or **Linux**. The menu-bar app runs on macOS for now; Linux gets it later.
-- **Node.js 22** (the repository's `.nvmrc` says which; `nvm use` picks it up) and **pnpm 9** (`corepack enable` gives you the version `package.json` names).
+- **Node.js 22.23.4 or newer** (the website's Astro needs it; `nvm install 22` gets the newest 22, and the repository's `.nvmrc` makes `nvm use` pick it) and **pnpm 9** (`corepack enable` gives you the version `package.json` names).
 - **A container engine**: OrbStack, Docker Desktop or Colima on a Mac; Docker Engine on Linux. hlabs runs apps in it.
 - For the menu-bar app: **Rust** 1.80 or later (`rustup`) and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) (on a Mac, the Xcode Command Line Tools).
 
@@ -65,3 +65,12 @@ pnpm test:e2e    # the dashboard in a real browser (Playwright, with axe)
 The end-to-end tests run their own hlabs on other ports (7574 for hlabs, 5273 for the dashboard) with their own data, so they never touch your development hlabs. The installable dashboard's tests (the `pwa` project) also build the dashboard into `apps/web/dist-pwa` and serve it on 5373, because its web manifest and service worker only exist in builds. The first run needs the browsers: `pnpm --filter @hlabs/web exec playwright install chromium`.
 
 For the menu-bar app's Rust code: `cd apps/tray/src-tauri && cargo test`.
+
+## The website and help
+
+`pnpm dev:site` serves the site with its help at `http://localhost:4321`. After changing help, run `pnpm site:build && pnpm site:check`. The check fails when a shipped P1 or P2 feature has no help page listing it in its `features` front matter, when a `helpUrl()` slug has no page, when a page doesn't start by saying who it's for, when a link inside the site is broken, when release notes use sections other than New, Improved, Fixed and Before you update, or when the app catalogue names the store's groups differently from the dashboard. The error pages (`/help/errors/<code>/`) use the dashboard's own words: after changing `apps/web/src/copy/errors.ts`, run `pnpm --filter @hlabs/web errors:export` and commit `apps/site/src/data/errors.json`, or the check fails.
+
+`pnpm site:build` first reads the latest releases from GitHub (`scripts/site-releases.ts`, with `GITHUB_TOKEN` if it's set) into `apps/site/src/data/releases.json`, and copies the latest stable release's `install.sh`, `install.sh.sig` and `install.sh.sha256` into `apps/site/public/`. Those files aren't committed. After the Astro build it adds the Content-Security-Policy to the built `_headers`, with the hash of each inline script (`scripts/site-headers.ts`). How the site is published: [Publishing the website](../publishing-the-website/). Offline, the site builds with what it had, or says there's no release yet. To see the download page with releases before there are any, build with the test fixtures: `HLABS_SITE_RELEASES_FIXTURE=apps/site/e2e/fixtures/releases node scripts/site-releases.ts`, then `pnpm --filter @hlabs/site site:build` (run `node scripts/site-releases.ts` again afterwards to go back).
+
+`pnpm site:e2e` builds the site from fixtures into `apps/site/dist-e2e` (releases and release notes from `apps/site/e2e/fixtures`, and a copy of `store/`) and runs the website's stories in Playwright on port 4521: axe in both themes, the Content-Security-Policy and other headers from `_headers` (the tests' server applies them as Cloudflare does), and Lighthouse accessibility on three pages. It never reaches the internet. The first run needs the browser: `pnpm --filter @hlabs/site exec playwright install chromium`.
+

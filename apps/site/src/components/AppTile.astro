@@ -1,0 +1,23 @@
+---
+// An app's tile, drawn by the dashboard's AppLogo: the manifest's logo on its gradient, or the gradient and its icon.
+import type { StoreApp } from '../lib/store';
+import { appTileHtml } from '../lib/react-static';
+
+interface Props {
+  app: StoreApp;
+  size: number;
+  decorative?: boolean;
+}
+const { app, size, decorative = true } = Astro.props;
+---
+
+<Fragment
+  set:html={appTileHtml({
+    name: app.name,
+    src: app.logo,
+    gradient: app.gradient,
+    fallback: app.fallback,
+    size,
+    decorative,
+  })}
+/>

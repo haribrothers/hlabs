@@ -2,10 +2,11 @@ import { hlabsError, type AppHandlers } from '@hlabs/api';
 import { getSetting, setSetting } from '@hlabs/db';
 import type { DaemonContext } from '../context';
 import { useOtherPort } from '../network/port-problem';
-import { lanAddresses } from '../mdns/publisher';
 import { diagnosticsReport } from '../tray/diagnostics';
 import { dashboardUrl, trayStatus } from '../tray/status';
 import { trayResetPassword } from '../tray/reset-password';
+import { setupUrls } from '../tray/setup-url';
+import { trayAppLogs } from '../tray/app-logs';
 import { trayUsers } from '../tray/users';
 
 export const tray: AppHandlers<DaemonContext>['tray'] = {
@@ -17,6 +18,24 @@ export const tray: AppHandlers<DaemonContext>['tray'] = {
     await trayResetPassword(ctx.services, input);
     return { ok: true as const };
   },
+
+  // US-INST-21: what the uninstall window says.
+  uninstallInfo: (_input, ctx) => ctx.services.uninstall.info(),
+
+  // US-INST-22 (D-143, D-144): the daemon's part of uninstalling; the tray or install.sh does the rest after it.
+  uninstall: ({ keepData, removeColima, via }, ctx) => ({
+    jobId: ctx.services.uninstall.start({ keepData, removeColima, via: via ?? 'tray' }),
+  }),
+
+  // Following the uninstall job (the tray token may call tray.* only, D-035).
+  job: ({ jobId }, ctx) => {
+    const job = ctx.services.jobs.get(jobId);
+    if (!job || job.kind !== 'hlabs_uninstall') throw hlabsError('NOT_FOUND');
+    return job;
+  },
+
+  // US-INST-25: one app's container logs for `hlabs logs --app` (the tray token calls tray.* only, D-035).
+  appLogs: (input, ctx) => trayAppLogs(ctx.services, input),
 
   // US-INST-17: the accounts "Reset a password…" offers.
   listUsers: (_input, ctx) => ({ users: trayUsers(ctx.services.db) }),
@@ -76,12 +95,7 @@ export const tray: AppHandlers<DaemonContext>['tray'] = {
     return { ok: true as const };
   },
 
-  // US-INST-02: the tokenised setup URL the tray opens; null once onboarding is complete (D-013, D-035).
-  setupUrl: async (_input, ctx) => {
-    const { onboarding, config } = ctx.services;
-    return {
-      url: await onboarding.setupUrl(),
-      lanUrls: config.proxy === 'caddy' ? await onboarding.lanSetupUrls(lanAddresses()) : [],
-    };
-  },
+  // US-INST-02, US-INST-24: the tokenised setup URL the tray opens and `hlabs setup-url` prints; null once onboarding is
+  // complete (D-013, D-035).
+  setupUrl: (_input, ctx) => setupUrls(ctx.services),
 };

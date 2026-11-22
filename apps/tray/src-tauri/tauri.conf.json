@@ -41,12 +41,52 @@
     "category": "Utility",
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.png"],
     "macOS": {
-      "minimumSystemVersion": "14.0"
+      "minimumSystemVersion": "11.0",
+      "dmg": {
+        "background": "../dmg/background.tiff",
+        "windowSize": {
+          "width": 660,
+          "height": 428
+        },
+        "appPosition": {
+          "x": 180,
+          "y": 125
+        },
+        "applicationFolderPosition": {
+          "x": 480,
+          "y": 125
+        }
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["avahi-utils"],
+        "files": {
+          "/usr/lib/hlabs/hlabs-priv": "../../daemon/native/hlabs-priv",
+          "/usr/lib/hlabs/hlabs-confirm": "linux/hlabs-confirm",
+          "/usr/share/polkit-1/actions/dev.hlabs.policy": "linux/dev.hlabs.policy"
+        },
+        "postInstallScript": "linux/postinst.sh",
+        "postRemoveScript": "linux/postrm.sh"
+      },
+      "rpm": {
+        "depends": ["libappindicator-gtk3", "avahi-tools"],
+        "files": {
+          "/usr/lib/hlabs/hlabs-priv": "../../daemon/native/hlabs-priv",
+          "/usr/lib/hlabs/hlabs-confirm": "linux/hlabs-confirm",
+          "/usr/share/polkit-1/actions/dev.hlabs.policy": "linux/dev.hlabs.policy"
+        },
+        "postInstallScript": "linux/postinst.sh",
+        "postRemoveScript": "linux/postrm.sh"
+      },
+      "appimage": {
+        "bundleMediaFramework": false
+      }
     }
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVDODhBNzA0NDlEQkI2NTEKUldSUnR0dEpCS2VJN0hIdTI3UTk5c2FsckgxeVlIWFc5RWFBcjIxMGpuOWp4ZTdRTzJSZk5jbHEK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEI3MEQ3OTk4MzJDQjZBRDIKUldUU2Fzc3ltSGtOdDhiUzVURk5qTUd1enAveVhNS1pWZGwrTGtEQllsakRwMTlkV1JiM3RyVVYK",
       "endpoints": ["https://github.com/haribrothers/hlabs/releases/latest/download/latest.json"]
     }
   }

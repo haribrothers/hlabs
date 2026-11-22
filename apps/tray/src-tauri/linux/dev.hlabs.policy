@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<!-- "Reset a password…" in the hlabs menu asks the person at the computer for their own password (US-INST-26, D-145). -->
+<policyconfig>
+  <vendor>hlabs</vendor>
+  <vendor_url>https://hlabs.h4loom.com</vendor_url>
+  <action id="dev.hlabs.confirm">
+    <description>Confirm it's you</description>
+    <message>Type your password to reset an hlabs password</message>
+    <defaults>
+      <allow_any>auth_self</allow_any>
+      <allow_inactive>auth_self</allow_inactive>
+      <allow_active>auth_self</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/hlabs/hlabs-confirm</annotate>
+  </action>
+</policyconfig>

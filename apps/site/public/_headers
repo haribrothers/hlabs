@@ -1,0 +1,25 @@
+# Headers Cloudflare adds to the website's files (D-147). The Content-Security-Policy for every page is added to the
+# built copy of this file by scripts/site-headers.ts, with the hash of each inline script the build made.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Strict-Transport-Security: max-age=31536000
+
+# Astro names these after their contents, so they never change.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# install.sh and its checksum and signature are plain text that changes with each stable release: nobody keeps an
+# old one for more than 5 minutes (US-SITE-05).
+/install.sh
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=300
+/install.sh.sha256
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=300
+/install.sh.sig
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=300

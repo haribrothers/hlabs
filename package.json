@@ -5,7 +5,7 @@
   "license": "AGPL-3.0-only",
   "packageManager": "pnpm@9.15.9",
   "engines": {
-    "node": ">=22 <25"
+    "node": ">=22.23.4 <25"
   },
   "scripts": {
     "dev": "turbo run dev --filter=@hlabs/daemon --filter=@hlabs/web",
@@ -27,8 +27,11 @@
     "ui:tokens": "pnpm --filter @hlabs/ui tokens",
     "dev:tray": "node scripts/dev-tray.ts",
     "build:tray": "node scripts/build-tray.ts",
+    "build:linux": "node scripts/build-linux.ts",
     "dev:site": "pnpm --filter @hlabs/site dev",
-    "site:build": "pnpm --filter @hlabs/site site:build",
+    "site:build": "turbo run build --filter=@hlabs/site^... && node scripts/site-releases.ts && pnpm --filter @hlabs/site site:build",
+    "site:check": "node scripts/site-check.ts",
+    "site:e2e": "turbo run build --filter=@hlabs/site^... && pnpm --filter @hlabs/site test:e2e",
     "test:e2e": "pnpm --filter @hlabs/web test:e2e"
   },
   "devDependencies": {

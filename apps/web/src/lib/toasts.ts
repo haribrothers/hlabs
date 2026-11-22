@@ -36,6 +36,12 @@ export type ToastAction =
       run: () => void;
     }
   | {
+      /** A page on the website, in a new tab: an error's help (US-SITE-10). */
+      kind: 'help';
+      label: string;
+      href: string;
+    }
+  | {
       kind: 'mutation';
       label: string;
       procedure: ToastMutation;

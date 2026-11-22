@@ -43,7 +43,8 @@ describe('US-INST-02 · First launch hands off to onboarding in the browser', ()
     const state = { setupUrl: URL as string | null };
     answer({ boot: boot({ setupOpened: true }), setupUrl: URL });
     tauri.invoke.mockImplementation(async (cmd: string, args?: { path?: string }) => {
-      if (cmd === 'daemon_call' && args?.path === 'tray.setupUrl') return { url: state.setupUrl, lanUrls: [] };
+      if (cmd === 'daemon_call' && args?.path === 'tray.setupUrl')
+        return { url: state.setupUrl, lanUrls: [], mdnsUrl: null };
       if (cmd === 'boot_state') return boot({ setupOpened: true });
       return 'ready';
     });

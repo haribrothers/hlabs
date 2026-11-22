@@ -1,0 +1,18 @@
+// The website (D-147), as Cloudflare serves it: a Worker with only static assets, `hlabs-site`, built by Workers
+// Builds from GitHub with `pnpm site:build`. The build settings, the domain and the deploy hook release.yml calls
+// live in Cloudflare's dashboard (apps/site/src/content/docs/developers/publishing-the-website.md).
+{
+  "name": "hlabs-site",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./apps/site/dist",
+    // A page that doesn't exist gets the site's 404 page.
+    "not_found_handling": "404-page",
+  },
+  "workers_dev": true,
+  "preview_urls": true,
+  // `wrangler preview` (Workers Builds' default for a branch) needs this block, even empty.
+  "previews": {},
+  // No telemetry.
+  "send_metrics": false,
+}

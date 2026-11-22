@@ -1,7 +1,7 @@
 ---
 title: Log in
 description: Choose your account or type your username, then enter your password.
-features: [F-AUTH-01, F-AUTH-02, F-AUTH-03, F-AUTH-04, F-AUTH-07, F-AUTH-08, F-AUTH-09]
+features: [F-AUTH-01, F-AUTH-02, F-AUTH-03, F-AUTH-04, F-AUTH-07, F-AUTH-08, F-AUTH-09, F-AUTH-05, F-AUTH-06]
 ---
 
 For everyone who uses hlabs.

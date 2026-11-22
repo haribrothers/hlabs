@@ -257,27 +257,27 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 
 ## Phase 6 · Distribution
 
-- [ ] US-INST-03 · Install hlabs from the disk image
-- [ ] US-INST-04 · Launching from outside Applications
-- [ ] US-INST-21 · Choose what to keep when uninstalling
-- [ ] US-INST-22 · Uninstall removes hlabs cleanly
-- [ ] US-INST-23 · Install hlabs on a Linux server with one command
-- [ ] US-INST-24 · Finish setup in the browser after the Linux install
-- [ ] US-INST-25 · Manage a headless install from the command line
-- [ ] US-INST-26 · Native tray menu on Linux desktops
-- [ ] US-INST-27 · First run on a Linux desktop
-- [ ] US-SITE-01 · Understand hlabs from the home page
-- [ ] US-SITE-02 · Download the right build for my computer
-- [ ] US-SITE-03 · Browse the app catalogue
-- [ ] US-SITE-04 · Read an app's page
-- [ ] US-SITE-05 · Install on Linux with the command from the site
-- [ ] US-SITE-06 · Follow a step-by-step install guide
-- [ ] US-SITE-07 · Find help for every part of hlabs
-- [ ] US-SITE-08 · Search the help
-- [ ] US-SITE-09 · Fix a problem from an error message
-- [ ] US-SITE-10 · Open the right help page from the dashboard
-- [ ] US-SITE-12 · Visit a private, accessible site
-- [ ] US-SITE-13 · Read release notes
+- [ ] US-INST-03 · Install hlabs from the disk image (built; waits for signing and notarizing, D-139)
+- [x] US-INST-04 · Launching from outside Applications
+- [x] US-INST-21 · Choose what to keep when uninstalling
+- [x] US-INST-22 · Uninstall removes hlabs cleanly
+- [x] US-INST-23 · Install hlabs on a Linux server with one command
+- [x] US-INST-24 · Finish setup in the browser after the Linux install
+- [x] US-INST-25 · Manage a headless install from the command line
+- [x] US-INST-26 · Native tray menu on Linux desktops
+- [x] US-INST-27 · First run on a Linux desktop
+- [x] US-SITE-01 · Understand hlabs from the home page
+- [ ] US-SITE-02 · Download the right build for my computer (built and tested; "shows it within 15 minutes" is checked once Cloudflare is set up and a release is published)
+- [x] US-SITE-03 · Browse the app catalogue
+- [x] US-SITE-04 · Read an app's page
+- [ ] US-SITE-05 · Install on Linux with the command from the site (built and tested; checked on hlabs.h4loom.com once Cloudflare is set up)
+- [x] US-SITE-06 · Follow a step-by-step install guide
+- [x] US-SITE-07 · Find help for every part of hlabs
+- [x] US-SITE-08 · Search the help
+- [x] US-SITE-09 · Fix a problem from an error message
+- [x] US-SITE-10 · Open the right help page from the dashboard
+- [x] US-SITE-12 · Visit a private, accessible site
+- [x] US-SITE-13 · Read release notes
 
 ## Phase 7 · v1.0 completeness
 

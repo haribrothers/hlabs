@@ -1,0 +1,137 @@
+---
+// The website's own pages (D-147): top bar, footer and theme. Help and developer docs use Starlight's layout.
+// No cookies, analytics or third-party scripts (US-SITE-12); everything works without JavaScript except the theme
+// button, Copy buttons and the catalogue's filter, which fall back to the system theme, selectable text and links.
+import '../styles/pages.css';
+import Icon from '../components/Icon.astro';
+import LogoMark from '../components/LogoMark.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Which top-bar link is this page. */
+  current?: 'apps' | 'help' | 'releases' | 'download';
+}
+const { title, description, current } = Astro.props;
+const fullTitle = title === 'hlabs' ? 'hlabs: your own cloud, at home' : `${title} · hlabs`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const nav = [
+  { id: 'apps', label: 'Apps', href: '/apps/' },
+  { id: 'help', label: 'Help', href: '/help/' },
+  { id: 'releases', label: 'Release notes', href: '/releases/' },
+] as const;
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="theme-color" content="#100c22" />
+    {/* The theme someone picked (shared with the help, Starlight's key) before the page paints. */}
+    <script is:inline>
+      try {
+        const t = localStorage.getItem('starlight-theme');
+        if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+  </head>
+  <body class="site">
+    <a href="#main" class="skip">Skip to content</a>
+    <header class="bar">
+      <div class="wrap bar-in">
+        <a href="/" class="brand" aria-label="hlabs home">
+          <LogoMark id="markBar" />
+          <span class="brand-word" aria-hidden="true">hlabs</span>
+        </a>
+        <nav class="nav" aria-label="Main">
+          {
+            nav.map((n) => (
+              <a class="nl" href={n.href} aria-current={current === n.id ? 'page' : undefined}>
+                {n.label}
+              </a>
+            ))
+          }
+          <a class="nl" href="https://github.com/haribrothers/hlabs">GitHub</a>
+        </nav>
+        <div class="bar-end">
+          <button type="button" class="icon-btn theme-btn" data-theme-toggle>
+            <span class="to-light"><Icon name="sun" size={18} /><span class="sr-only">Use the light theme</span></span>
+            <span class="to-dark"><Icon name="moon" size={18} /><span class="sr-only">Use the dark theme</span></span>
+          </button>
+          {
+            current !== 'download' && (
+              <a href="/download/" class="btn-secondary btn-sm bar-download">
+                Download
+              </a>
+            )
+          }
+          <details class="menu">
+            <summary class="icon-btn" aria-label="Menu"><Icon name="menu" size={18} /></summary>
+            <nav class="menu-list" aria-label="Menu">
+              <a href="/download/">Download</a>
+              {nav.map((n) => <a href={n.href}>{n.label}</a>)}
+              <a href="https://github.com/haribrothers/hlabs">GitHub</a>
+            </nav>
+          </details>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="foot">
+      <div class="wrap">
+        <div class="foot-cols">
+          <div>
+            <a href="/" class="brand" aria-label="hlabs home">
+              <LogoMark id="markFoot" width={30} />
+              <span class="brand-word" style="font-size: 19px" aria-hidden="true">hlabs</span>
+            </a>
+            <p style="font-size: 14px; color: var(--site-muted); margin: 14px 0 0; max-width: 280px; line-height: 1.6">
+              Your own cloud, at home. This site sets no cookies and has no analytics.
+            </p>
+          </div>
+          <nav aria-label="Product">
+            <span class="foot-head">Product</span>
+            <a class="fl" href="/download/">Download</a>
+            <a class="fl" href="/apps/">Apps</a>
+            <a class="fl" href="/releases/">Release notes</a>
+          </nav>
+          <nav aria-label="Help">
+            <span class="foot-head">Help</span>
+            <a class="fl" href="/help/">Help</a>
+            <a class="fl" href="/help/install/mac/">Install guides</a>
+            <a class="fl" href="/help/get-started/cant-reach/">Troubleshooting</a>
+            <a class="fl" href="/developers/">Developers</a>
+          </nav>
+          <nav aria-label="Project">
+            <span class="foot-head">Project</span>
+            <a class="fl" href="https://github.com/haribrothers/hlabs">GitHub</a>
+            <a class="fl" href="https://github.com/haribrothers/hlabs/blob/main/LICENSE">Licence: AGPL-3.0</a>
+            <a class="fl" href="https://creativecommons.org/licenses/by/4.0/">Docs licence: CC BY 4.0</a>
+            <a class="fl" href="/privacy/">Privacy</a>
+          </nav>
+        </div>
+        <div class="foot-base">
+          <span>© {year} hlabs contributors</span>
+          <span>hlabs.h4loom.com</span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      import '../scripts/site';
+    </script>
+  </body>
+</html>

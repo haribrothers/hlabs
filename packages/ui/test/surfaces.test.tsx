@@ -262,6 +262,31 @@ describe('TrayMenu and Stepper', () => {
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '75');
   });
 
+  it('TraySetup: a failed step says so, the problem is an alert, and it offers two buttons', () => {
+    const retry = vi.fn();
+    const copy = vi.fn();
+    render(
+      <TraySetup
+        title="Uninstalling hlabs"
+        subtitle="Keeping your data"
+        steps={[
+          { label: 'Stopping apps', state: 'done' },
+          { label: 'Removing hlabs', state: 'failed' },
+        ]}
+        stateLabels={{ done: 'done', working: 'in progress', pending: 'not started', failed: 'failed' }}
+        problem="launchctl said no."
+        action={{ label: 'Try again', onSelect: retry }}
+        secondaryAction={{ label: 'Copy diagnostics', onSelect: copy }}
+      />,
+    );
+    expect(screen.getAllByRole('listitem')[1]).toHaveTextContent('Removing hlabs (failed)');
+    expect(screen.getByRole('alert')).toHaveTextContent('launchctl said no.');
+    screen.getByRole('button', { name: 'Try again' }).click();
+    screen.getByRole('button', { name: 'Copy diagnostics' }).click();
+    expect(retry).toHaveBeenCalledOnce();
+    expect(copy).toHaveBeenCalledOnce();
+  });
+
   it('says which step of how many, with the current step marked', () => {
     render(<Stepper steps={['Welcome', 'System check', 'Account']} current={1} />);
     expect(screen.getByRole('navigation', { name: 'Setup progress' })).toHaveTextContent('Step 2 of 3 · System check');

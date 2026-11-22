@@ -1,6 +1,9 @@
 //! The daemon's background service (02 §2.3): the LaunchAgent `dev.hlabs.daemon` on macOS. The tray
 //! owns it (D-042). Commands run through `Runner` so tests can see exactly what would be run.
 
+// launchd is a Mac thing; a Linux desktop uses systemd.rs.
+#![cfg_attr(not(target_os = "macos"), allow(dead_code))]
+
 use std::process::Command;
 
 pub const LAUNCH_AGENT_LABEL: &str = "dev.hlabs.daemon";
@@ -132,8 +135,8 @@ impl DaemonService for NoService {
     }
 }
 
-/// The service for this build: the LaunchAgent in a macOS release build; nothing otherwise (the
-/// Linux desktop tray, with its systemd user unit, ships in phase 6).
+/// The service for this build: the LaunchAgent in a macOS release build, the systemd user unit in a Linux one
+/// (US-INST-27); nothing in development.
 pub fn default_service() -> Box<dyn DaemonService> {
     #[cfg(target_os = "macos")]
     if !cfg!(debug_assertions) {
@@ -150,6 +153,12 @@ pub fn default_service() -> Box<dyn DaemonService> {
                 .join(format!("{LAUNCH_AGENT_LABEL}.plist")),
         });
     }
+    #[cfg(target_os = "linux")]
+    if !cfg!(debug_assertions) {
+        return Box::new(crate::systemd::SystemdUser {
+            runner: SystemRunner,
+        });
+    }
     Box::new(NoService)
 }
 
@@ -163,6 +172,13 @@ pub mod tests {
     pub struct FakeRunner {
         pub calls: Mutex<Vec<String>>,
         pub code: i32,
+    }
+
+    impl FakeRunner {
+        /// The commands run so far.
+        pub fn calls(&self) -> Vec<String> {
+            self.calls.lock().unwrap().clone()
+        }
     }
 
     impl Runner for FakeRunner {

@@ -1,0 +1,13 @@
+---
+// A Lucide icon from @hlabs/icons, drawn when the site is built. Decorative: say what it means in text beside it.
+import { iconSvg } from '../lib/react-static';
+
+interface Props {
+  name: string;
+  size?: number;
+  strokeWidth?: number;
+}
+const { name, size = 20, strokeWidth = 2 } = Astro.props;
+---
+
+<Fragment set:html={iconSvg(name, size, strokeWidth)} />

@@ -1,0 +1,25 @@
+---
+// The hlabs mark in its gradient (LogoMark in @hlabs/icons), for the site's top bar and footer.
+import { MARK_DOTS, MARK_HEIGHT, MARK_PATH, MARK_WIDTH } from '@hlabs/icons';
+
+interface Props {
+  width?: number;
+  /** Tells gradients on one page apart. */
+  id: string;
+}
+const { width = 34, id } = Astro.props;
+const height = Math.round((width * MARK_HEIGHT) / MARK_WIDTH);
+const dots = ['var(--logo-coral)', 'var(--accent)', 'var(--logo-teal)'];
+---
+
+<svg width={width} height={height} viewBox={`0 0 ${MARK_WIDTH} ${MARK_HEIGHT}`} aria-hidden="true">
+  <defs>
+    <linearGradient id={id} x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" style="stop-color: var(--logo-coral)"></stop>
+      <stop offset="0.5" style="stop-color: var(--logo-violet)"></stop>
+      <stop offset="1" style="stop-color: var(--logo-teal)"></stop>
+    </linearGradient>
+  </defs>
+  <path d={MARK_PATH} fill={`url(#${id})`}></path>
+  {MARK_DOTS.map((cx, i) => <circle cx={cx} cy="125.5" r="9" style={`fill: ${dots[i]}`} />)}
+</svg>

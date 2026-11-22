@@ -1,0 +1,70 @@
+---
+// A download's SHA-256, with a Copy button (US-SITE-02).
+import type { Download } from '../lib/releases';
+import Icon from './Icon.astro';
+
+interface Props {
+  d: Download;
+}
+const { d } = Astro.props;
+---
+
+{
+  d.sha256 && (
+    <div class="sha">
+      <span class="sha-label">SHA-256</span>
+      <span class="mono sha-value">{d.sha256}</span>
+      <button type="button" class="icon-btn sha-copy" data-copy={d.sha256}>
+        <span class="done">
+          <Icon name="check" size={14} />
+        </span>
+        <span class="idle">
+          <Icon name="copy" size={14} />
+        </span>
+        <span class="sr-only" data-copy-label>
+          Copy the checksum
+        </span>
+      </button>
+    </div>
+  )
+}
+
+<style>
+  .sha {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+    padding: 6px 6px 6px 14px;
+    border-radius: 14px;
+    background: var(--site-card-2);
+    border: 1px solid var(--site-line);
+  }
+  .sha-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--site-faint);
+  }
+  .sha-value {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sha-copy {
+    width: 44px;
+    height: 44px;
+  }
+  .sha-copy .done {
+    display: none;
+    color: var(--site-ok);
+  }
+  .sha-copy[data-copied] .done {
+    display: inline-flex;
+  }
+  .sha-copy[data-copied] .idle {
+    display: none;
+  }
+</style>

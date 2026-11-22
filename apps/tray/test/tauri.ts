@@ -52,6 +52,7 @@ export function answer(a: Answers) {
       case 'notify':
       case 'quit_tray':
       case 'open_reset_window':
+      case 'set_native_menu':
         return null;
       case 'start_at_login_state':
         return a.startAtLogin ?? true;
@@ -75,7 +76,7 @@ export function answer(a: Answers) {
       case 'copy_text':
         return null;
       case 'daemon_call':
-        if (args?.path === 'tray.setupUrl') return { url: a.setupUrl ?? null, lanUrls: [] };
+        if (args?.path === 'tray.setupUrl') return { url: a.setupUrl ?? null, lanUrls: [], mdnsUrl: null };
         if (args?.path === 'tray.status') return a.status ?? null;
         if (args?.path === 'tray.startEngine') return { jobId: 'job1' };
         if (args?.path === 'tray.quickAction') return { jobId: 'job2' };
