@@ -23,3 +23,5 @@ rank:
     n8n,
     gitea,
   ]
+# Apps the update bot (store-updates.yml) leaves alone, pinned on purpose: say why next to each.
+hold: []

@@ -192,6 +192,7 @@ export function curationIssues(curation: StoreCuration, appIds: ReadonlySet<stri
   check(curation.featured, 'featured');
   curation.collections.forEach((c, i) => check(c.appIds, `collections[${i}].appIds`));
   check(curation.rank, 'rank');
+  check(curation.hold, 'hold');
   return issues;
 }
 

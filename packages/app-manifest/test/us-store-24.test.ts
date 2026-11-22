@@ -1,0 +1,258 @@
+// US-STORE-24 · Keep the built-in apps up to date. Which release the update bot proposes (src/updates.ts), the edits it
+// makes, the one pull request per app it opens or updates, and store-updates.yml. Registry and GitHub are fakes here;
+// `pnpm store:updates` runs them for real.
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
+import { curationIssues } from '../src/node';
+import { StoreCuration } from '../src/store-index';
+import {
+  applyPlan,
+  checkApp,
+  isMajor,
+  newestTag,
+  prBody,
+  proposeUpdate,
+  type AppForUpdate,
+  type PullRequestOps,
+  type UpdatePlan,
+} from '../src/updates';
+
+const ROOT = resolve(import.meta.dirname, '../../..');
+const D = (n: number) => `sha256:${String(n).repeat(64).slice(0, 64)}`;
+const BOTH = ['linux/amd64', 'linux/arm64'];
+
+const immich: AppForUpdate = {
+  id: 'immich',
+  name: 'Immich',
+  version: '3.2.2',
+  platforms: BOTH,
+  source: 'https://github.com/immich-app/immich',
+  images: [
+    { service: 'immich-server', image: `ghcr.io/immich-app/immich-server:v3.2.2@${D(1)}` },
+    { service: 'immich-machine-learning', image: `ghcr.io/immich-app/immich-machine-learning:v3.2.2@${D(2)}` },
+    { service: 'redis', image: `docker.io/valkey/valkey:9@${D(3)}` },
+    { service: 'database', image: `ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@${D(4)}` },
+  ],
+};
+
+/** A registry with these tags for every image, and these platforms for every new tag. */
+function lookups(tags: string[], platforms = [...BOTH, 'linux/arm/v7'], missing: string[] = []) {
+  const asked: string[] = [];
+  return {
+    asked,
+    look: {
+      tags: async (image: string) => {
+        asked.push(`tags ${image}`);
+        return tags;
+      },
+      manifest: async (image: string) => {
+        asked.push(`manifest ${image}`);
+        if (missing.includes(image)) throw new Error("doesn't exist");
+        return { digest: D(image.length % 10), platforms };
+      },
+    },
+  };
+}
+
+describe('US-STORE-24', () => {
+  describe('finds a newer release tag than the manifest’s version', () => {
+    it('takes the newest of the same pattern, numerically', () => {
+      expect(newestTag('2.5.5', ['2.5.4', '2.5.5', '2.5.9', '2.5.12', '2', '2.5', 'latest'])).toBe('2.5.12');
+      expect(newestTag('v3.2.2', ['v3.2.1', 'v3.10.0', 'v3.9.4', 'commit-abc', 'pr-123'])).toBe('v3.10.0');
+      expect(newestTag('35.0.1-apache', ['35.0.3-apache', '35.0.4-fpm', '36.0.0', '35.0.2-apache'])).toBe(
+        '35.0.3-apache',
+      );
+      expect(newestTag('2.5.5', ['2.5.4', '2.5.5'])).toBeNull();
+    });
+
+    it('skips pre-releases and tags that don’t look like its releases', () => {
+      expect(
+        newestTag('v3.2.2', [
+          'v3.3.0-rc.1',
+          'v3.3.0-beta',
+          'v3.3.0rc1',
+          'v3.3.0-alpine',
+          '3.3.0',
+          'v3.3',
+          'v3.2.3-dev',
+        ]),
+      ).toBeNull();
+      expect(newestTag('2026.9.4', ['2026.10.0b3', '2026.10.0.dev20261001', '2026.10.1', 'stable'])).toBe('2026.10.1');
+    });
+
+    it('moves every image that follows the version, and leaves the databases', async () => {
+      const { look, asked } = lookups(['v3.2.2', 'v3.4.2', 'v3.5.0-rc.1']);
+      const check = await checkApp(immich, look);
+      expect(check.kind).toBe('update');
+      const plan = (check as { plan: UpdatePlan }).plan;
+      expect(plan).toMatchObject({
+        id: 'immich',
+        fromVersion: '3.2.2',
+        toVersion: '3.4.2',
+        tag: 'v3.4.2',
+        major: false,
+      });
+      expect(plan.images.map((i) => `${i.service} ${i.to.split('@')[0]}`)).toEqual([
+        'immich-server ghcr.io/immich-app/immich-server:v3.4.2',
+        'immich-machine-learning ghcr.io/immich-app/immich-machine-learning:v3.4.2',
+      ]);
+      expect(plan.images.every((i) => /@sha256:[0-9a-f]{64}$/.test(i.to))).toBe(true);
+      // Tags are listed once, from the app's main image.
+      expect(asked.filter((a) => a.startsWith('tags'))).toEqual(['tags ghcr.io/immich-app/immich-server']);
+    });
+
+    it('keeps a tag’s suffix (Nextcloud’s -apache)', async () => {
+      const nextcloud: AppForUpdate = {
+        id: 'nextcloud',
+        name: 'Nextcloud',
+        version: '35.0.1',
+        platforms: BOTH,
+        images: [
+          { service: 'app', image: `docker.io/library/nextcloud:35.0.1-apache@${D(5)}` },
+          { service: 'cron', image: `docker.io/library/nextcloud:35.0.1-apache@${D(5)}` },
+          { service: 'db', image: `docker.io/library/postgres:18-alpine@${D(6)}` },
+        ],
+      };
+      const check = await checkApp(nextcloud, lookups(['35.0.1-apache', '35.0.3-apache', '35.0.3-fpm']).look);
+      const plan = (check as { plan: UpdatePlan }).plan;
+      expect(plan.toVersion).toBe('35.0.3');
+      expect(plan.images.map((i) => i.to.split('@')[0])).toEqual([
+        'docker.io/library/nextcloud:35.0.3-apache',
+        'docker.io/library/nextcloud:35.0.3-apache',
+      ]);
+    });
+
+    it('says when it’s up to date, and skips what it can’t move safely', async () => {
+      expect(await checkApp(immich, lookups(['v3.2.2']).look)).toEqual({ kind: 'current', id: 'immich' });
+      // The new version dropped arm64: not offered (the app's platforms must still be served).
+      expect(await checkApp(immich, lookups(['v3.4.2'], ['linux/amd64']).look)).toEqual({
+        kind: 'skipped',
+        id: 'immich',
+        reason: 'ghcr.io/immich-app/immich-server:v3.4.2 has no linux/arm64 image',
+      });
+      // One of its images has no such tag yet.
+      const half = await checkApp(
+        immich,
+        lookups(['v3.4.2'], BOTH, ['ghcr.io/immich-app/immich-machine-learning:v3.4.2']).look,
+      );
+      expect(half).toMatchObject({
+        kind: 'skipped',
+        reason: expect.stringContaining('immich-machine-learning:v3.4.2'),
+      });
+      // An app whose images don't carry its version.
+      const odd = { ...immich, version: '1.0', images: [{ service: 'x', image: `example/app:latest@${D(7)}` }] };
+      expect(await checkApp(odd, lookups([]).look)).toMatchObject({
+        kind: 'skipped',
+        reason: expect.stringContaining('follows its version'),
+      });
+    });
+  });
+
+  describe('opens or updates one pull request per app', () => {
+    const plan: UpdatePlan = {
+      id: 'immich',
+      name: 'Immich',
+      fromVersion: '2.9.1',
+      toVersion: '3.0.0',
+      tag: 'v3.0.0',
+      major: true,
+      images: [
+        {
+          service: 'immich-server',
+          from: `ghcr.io/immich-app/immich-server:v2.9.1@${D(1)}`,
+          to: `ghcr.io/immich-app/immich-server:v3.0.0@${D(8)}`,
+          platforms: [...BOTH, 'linux/arm/v7'],
+        },
+      ],
+    };
+
+    it('bumps version, revision, tag and digest, and nothing else', () => {
+      const manifest = "schema: 1\nid: immich\nname: Immich\nversion: '2.9.1'\nrevision: 3\n# keep me\ntagline: x\n";
+      const compose = `# From Immich's compose file\nservices:\n  immich-server:\n    image: ghcr.io/immich-app/immich-server:v2.9.1@${D(1)}\n  redis:\n    image: docker.io/valkey/valkey:9@${D(3)}\n`;
+      const out = applyPlan(manifest, compose, plan);
+      expect(out.manifest).toBe(
+        "schema: 1\nid: immich\nname: Immich\nversion: '3.0.0'\nrevision: 1\n# keep me\ntagline: x\n",
+      );
+      expect(out.compose).toBe(compose.replace(`v2.9.1@${D(1)}`, `v3.0.0@${D(8)}`));
+    });
+
+    it('links the release notes and says whether it looks like a major version change', () => {
+      const body = prBody(plan, 'https://github.com/immich-app/immich/releases/tag/v3.0.0');
+      expect(body).toContain('Updates **Immich** (`store/apps/immich`) from 2.9.1 to **3.0.0**.');
+      expect(body).toContain('`ghcr.io/immich-app/immich-server:v2.9.1` → `ghcr.io/immich-app/immich-server:v3.0.0`');
+      expect(body).toContain('linux/amd64, linux/arm64)');
+      expect(body).toContain('Release notes: https://github.com/immich-app/immich/releases/tag/v3.0.0');
+      expect(body).toContain('**This looks like a major version change** (2.9.1 → 3.0.0)');
+      expect(body).toContain('it is never merged automatically');
+      expect(prBody({ ...plan, major: false, toVersion: '2.9.2' }, null)).toContain(
+        'Not a major version change (2.9.1 → 2.9.2).',
+      );
+      expect(isMajor('0.107.79', '1.0.0')).toBe(true);
+      expect(isMajor('0.11.4', '0.13.4')).toBe(true);
+      expect(isMajor('1.27.3', '1.28.0')).toBe(false);
+      expect(isMajor('2026.9.4', '2026.11.2')).toBe(false);
+    });
+
+    function fakeOps(open: { number: number; title: string } | null) {
+      const calls: string[] = [];
+      const ops: PullRequestOps = {
+        openPullRequest: (branch) => (calls.push(`find ${branch}`), open),
+        pushBranch: (branch, files, message) =>
+          void calls.push(`push ${branch} ${Object.keys(files).join(',')} "${message}"`),
+        create: (branch, title, _body, labels) => (calls.push(`create ${branch} "${title}" ${labels.join(',')}`), 12),
+        edit: (number, title, _body, labels) => void calls.push(`edit #${number} "${title}" ${labels.join(',')}`),
+      };
+      return { ops, calls };
+    }
+    const files = { 'store/apps/immich/hlabs-app.yml': 'm', 'store/apps/immich/docker-compose.yml': 'c' };
+
+    it('opens one on store-update/<id>, labelled', () => {
+      const { ops, calls } = fakeOps(null);
+      expect(proposeUpdate(plan, files, null, ops)).toEqual({ action: 'opened', number: 12 });
+      expect(calls).toEqual([
+        'find store-update/immich',
+        'push store-update/immich store/apps/immich/hlabs-app.yml,store/apps/immich/docker-compose.yml "Store: update Immich to 3.0.0"',
+        'create store-update/immich "Store: update Immich to 3.0.0" store-update,store-update-major',
+      ]);
+    });
+
+    it('updates the open one when a newer version came out, and leaves it when nothing changed', () => {
+      const older = fakeOps({ number: 9, title: 'Store: update Immich to 2.9.5' });
+      expect(proposeUpdate(plan, files, null, older.ops)).toEqual({ action: 'updated', number: 9 });
+      expect(older.calls.at(-1)).toBe('edit #9 "Store: update Immich to 3.0.0" store-update,store-update-major');
+      const same = fakeOps({ number: 9, title: 'Store: update Immich to 3.0.0' });
+      expect(proposeUpdate(plan, files, null, same.ops)).toEqual({ action: 'unchanged', number: 9 });
+      expect(same.calls).toEqual(['find store-update/immich']);
+    });
+  });
+
+  it('leaves apps under `hold` in curation.yml alone', () => {
+    const curation = StoreCuration.parse({ hold: ['immich'] });
+    expect(curation.hold).toEqual(['immich']);
+    expect(curationIssues(StoreCuration.parse({ hold: ['nope'] }), new Set(['immich'])).map((i) => i.path)).toEqual([
+      'hold[0]',
+    ]);
+    const store = parse(readFileSync(resolve(ROOT, 'store/curation.yml'), 'utf8')) as { hold?: unknown };
+    expect(Array.isArray(store.hold)).toBe(true);
+    const cli = readFileSync(resolve(import.meta.dirname, '../src/cli/store-updates.ts'), 'utf8');
+    expect(cli).toContain("check = { kind: 'skipped', id: app.id, reason: 'held in curation.yml' }");
+  });
+
+  it('runs daily and by hand from store-updates.yml, and never merges', () => {
+    const text = readFileSync(resolve(ROOT, '.github/workflows/store-updates.yml'), 'utf8');
+    const yml = parse(text) as {
+      on: { schedule: Array<{ cron: string }>; workflow_dispatch: { inputs: { apps: unknown } } };
+      permissions: Record<string, string>;
+      jobs: { updates: { steps: Array<{ run?: string; env?: Record<string, string> }> } };
+    };
+    expect(yml.on.schedule[0]!.cron).toMatch(/^\d+ \d+ \* \* \*$/);
+    expect(yml.on.workflow_dispatch.inputs.apps).toBeTruthy();
+    expect(yml.permissions).toMatchObject({ contents: 'write', 'pull-requests': 'write' });
+    const step = yml.jobs.updates.steps.find((s) => s.run?.includes('store:updates'))!;
+    expect(step.run).toBe('pnpm store:updates --pr ${APPS:+--apps "$APPS"}');
+    expect(step.env!.STORE_UPDATES_DISPATCH).toBe("${{ secrets.STORE_UPDATES_TOKEN == '' && '1' || '' }}");
+    expect(text).not.toMatch(/pr merge|auto-?merge/i);
+  });
+});

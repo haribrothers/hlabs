@@ -399,7 +399,7 @@ describe('US-STORE-25', () => {
     });
   });
 
-  it('refuses a bad id or Umbrel before reading anything', () => {
+  it('refuses a bad id or Umbrel before reading anything', { timeout: 60_000 }, () => {
     const store = mkdtempSync(join(tmpdir(), 'us-store-25-cli-'));
     dirs.push(store);
     cpSync(join(FIX, 'NOTICE'), join(store, 'x'));

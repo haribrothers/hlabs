@@ -28,7 +28,7 @@ export const ASSET_TYPES: Record<string, string> = {
   '.jpeg': 'image/jpeg',
 };
 
-const EMPTY_CURATION: StoreCuration = { featured: [], collections: [], rank: [] };
+const EMPTY_CURATION: StoreCuration = { featured: [], collections: [], rank: [], hold: [] };
 
 export class CatalogService {
   /** The built-in store's featured apps, rows and rank, read at each sync. */
@@ -108,6 +108,7 @@ export class CatalogService {
           .map((c) => ({ ...c, appIds: known(c.appIds) }))
           .filter((c) => c.appIds.length > 0),
         rank: known(curation.rank),
+        hold: known(curation.hold),
       };
     } catch (err) {
       this.logger.warn({ err }, 'curation.yml is invalid; the store home shows all apps');

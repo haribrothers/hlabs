@@ -127,16 +127,20 @@ export class Registry {
     return { digest, platforms: [...new Set(platforms)].sort() };
   }
 
-  /** Every tag of the repository (following the registry's pages, up to `maxPages`). */
-  async tags(image: string | ImageRef, maxPages = 30): Promise<string[]> {
+  /**
+   * The repository's tags in the registry's order, following its pages up to `maxPages`. With `after` (a tag that
+   * exists), the listing starts after that tag. Registries order tags differently: Docker Hub alphabetically, GHCR
+   * in the order they were pushed, so on GHCR the tags after today's are the newer builds, which a repository with
+   * thousands of `commit-…` tags would otherwise push past the page limit.
+   */
+  async tags(image: string | ImageRef, options: { after?: string; maxPages?: number } = {}): Promise<string[]> {
     const ref = typeof image === 'string' ? parseImageRef(image) : image;
     const tags: string[] = [];
-    let path = 'tags/list?n=1000';
-    for (let page = 0; page < maxPages && path; page++) {
+    let path = `tags/list?n=1000${options.after ? `&last=${encodeURIComponent(options.after)}` : ''}`;
+    for (let page = 0; page < (options.maxPages ?? 30) && path; page++) {
       const res = await this.get(ref, path);
       if (!res.ok) throw new RegistryError(`${ref.name}: couldn't list tags (${res.status})`);
-      const body = (await res.json()) as { tags?: string[] | null };
-      tags.push(...(body.tags ?? []));
+      tags.push(...(((await res.json()) as { tags?: string[] | null }).tags ?? []));
       const link = res.headers.get('link');
       const next = link && /<([^>]+)>;\s*rel="next"/.exec(link)?.[1];
       path = next ? next.replace(/^\/v2\/[^?]*\/(tags\/list)/, '$1') : '';

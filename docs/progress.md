@@ -297,7 +297,7 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [ ] US-STORE-18 · See and manage app sources
 - [ ] US-STORE-19 · Add a source with a pinned signing key
 - [ ] US-STORE-23 · Find the apps people run on a home server
-- [ ] US-STORE-24 · Keep the built-in apps up to date
+- [x] US-STORE-24 · Keep the built-in apps up to date (D-154; `pnpm store:updates` checked against the real registries for all 14 apps, `--pr` against a throwaway clone with a stand-in `gh`; store-updates.yml first runs once it's on `main`; its checks need the `STORE_UPDATES_TOKEN` secret)
 - [x] US-STORE-25 · Port an app with the porting helper (D-153; checked for real: Vaultwarden drafted from Runtipi, its four TODOs resolved, then store:lint and store:matrix passed; Jellyfin drafted from CasaOS)
 - [x] US-STORE-26 · Test only the apps a change touches (D-152; checked locally and by a run of store.yml on the phase-7 branch with Uptime Kuma; the nightly schedule runs from `main`, so shards of five and issues are first seen after the phase is merged)
 - [ ] US-STORE-27 · Start my own app library

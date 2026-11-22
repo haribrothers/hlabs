@@ -90,7 +90,7 @@ describe('curation.yml', () => {
   it('is optional, and names only apps in the store', () => {
     const dir = join(tmpdir(), `curation-${process.pid}`);
     mkdirSync(dir, { recursive: true });
-    expect(loadCuration(dir)).toEqual({ featured: [], collections: [], rank: [] });
+    expect(loadCuration(dir)).toEqual({ featured: [], collections: [], rank: [], hold: [] });
     writeFileSync(
       join(dir, 'curation.yml'),
       'featured: [immich, ghost]\ncollections:\n  - { id: best, title: Best, appIds: [ghost] }\n',

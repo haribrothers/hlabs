@@ -423,8 +423,8 @@ The App Store is where people find self-hosted apps, see what each one needs and
 - **Given** Hari merges it, **when** a computer's store next syncs, **then** the update shows in Updates (US-STORE-15) as for any built-in app.
 
 **Implementation notes**
-- `scripts/store-updates.ts` (registry tags and digests through the OCI distribution API), `.github/workflows/store-updates.yml`; no auto-merge (D-148).
-- Edge: an app pinned on purpose (`hold: true` in `curation.yml`) is skipped.
+- `pnpm store:updates` (`packages/app-manifest/src/updates.ts` and `src/cli/store-updates.ts`, beside the registry client it shares with the porting helper: tags and digests through the OCI distribution API), `.github/workflows/store-updates.yml`; no auto-merge (D-148, D-154).
+- Edge: an app pinned on purpose (listed under `hold` in `curation.yml`) is skipped.
 
 ### US-STORE-25 · Port an app with the porting helper
 **Feature:** F-STORE-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** —

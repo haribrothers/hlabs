@@ -1,0 +1,53 @@
+# The built-in store's update bot (US-STORE-24, D-154): daily and by hand, `pnpm store:updates --pr` opens (or
+# updates) one pull request per app whose images have a newer release, on branch store-update/<id>. Nothing is ever
+# merged automatically: Hari reads it, the store matrix installs that app (US-STORE-26), then Hari merges.
+#
+# Pull requests opened with Actions' own token don't start other workflows. With the secret STORE_UPDATES_TOKEN (a
+# fine-grained token for this repository: Contents and Pull requests, read and write), they're opened as that
+# account and every check runs as on any pull request. Without it, the bot starts store.yml for the branch itself,
+# and ci.yml's checks wait until someone pushes to the branch.
+name: store-updates
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      apps:
+        description: 'App ids to check, comma-separated (empty: every app)'
+        required: false
+
+concurrency:
+  group: store-updates
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  updates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.STORE_UPDATES_TOKEN || github.token }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @hlabs/icons build
+      - run: |
+          git config user.name 'hlabs store bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - env:
+          GH_TOKEN: ${{ secrets.STORE_UPDATES_TOKEN || github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          STORE_UPDATES_DISPATCH: ${{ secrets.STORE_UPDATES_TOKEN == '' && '1' || '' }}
+          APPS: ${{ inputs.apps }}
+        run: pnpm store:updates --pr ${APPS:+--apps "$APPS"}
