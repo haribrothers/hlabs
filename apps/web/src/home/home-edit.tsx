@@ -1,6 +1,7 @@
 // Home's edit mode (US-HOME-16, 17, 18; HomeEdit): drag widgets within their row and apps within the grid (mouse, touch
 // with a long press, or Space and the arrow keys, each step announced), take things off Home with "–", add widgets, and
-// "Done" to save. Nothing in edit mode opens; "Install app" is hidden while editing.
+// "Done" to save. "Add app" brings back apps taken off Home. Nothing in edit mode opens; "Install app" is hidden while
+// editing.
 import {
   closestCenter,
   DndContext,
@@ -29,6 +30,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { editCopy as copy } from '../copy/home-edit';
 import { useTRPC } from '../lib/trpc';
 import type { HomeApp } from './home-app';
+import { AppPicker } from './app-picker';
 import { WidgetPicker } from './widget-picker';
 import { isAppWidget, LG_COLUMNS, MAX_WIDGETS, renderWidget } from './widgets';
 
@@ -146,6 +148,7 @@ export function EditHome({
   const navigate = useNavigate();
   const widgetName = useWidgetName();
   const [picking, setPicking] = useState(false);
+  const [pickingApp, setPickingApp] = useState(false);
   /** A drag is under way: Escape then cancels the drag, not edit mode. */
   const dragging = useRef(false);
   const sensors = useSensors(
@@ -161,12 +164,12 @@ export function EditHome({
   // Escape outside a drag or the picker throws away every change since edit mode started (US-HOME-16).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || dragging.current || picking || e.defaultPrevented) return;
+      if (e.key !== 'Escape' || dragging.current || picking || pickingApp || e.defaultPrevented) return;
       onCancel();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onCancel, picking]);
+  }, [onCancel, picking, pickingApp]);
 
   const start = () => (dragging.current = true);
   // The key that ended the drag is still being handled: let it finish before Escape means "leave".
@@ -271,6 +274,10 @@ export function EditHome({
           <Plus aria-hidden {...iconDefaults} className="size-4" />
           {copy.addWidget}
         </Button>
+        <Button variant="secondary" size="sm" onClick={() => setPickingApp(true)}>
+          <Plus aria-hidden {...iconDefaults} className="size-4" />
+          {copy.addApp}
+        </Button>
         {/* Everyone can change their own wallpaper (D-010); the page arrives with Appearance. */}
         {isFeatureEnabled('appearance', shippedPhase) ? (
           <Button
@@ -286,6 +293,18 @@ export function EditHome({
         </Button>
       </div>
 
+      <AppPicker
+        open={pickingApp}
+        onOpenChange={setPickingApp}
+        apps={draft.hidden.flatMap((id) => (apps.has(id) ? [apps.get(id)!] : []))}
+        onAdd={(id) =>
+          onChange({
+            ...draft,
+            apps: [...draft.apps.filter((a) => a !== id), id],
+            hidden: draft.hidden.filter((h) => h !== id),
+          })
+        }
+      />
       <WidgetPicker
         open={picking}
         onOpenChange={setPicking}

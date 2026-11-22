@@ -335,6 +335,7 @@ Home is the first screen every signed-in person sees: a greeting over the wallpa
 - **Given** edit mode, **when** I click "–" on an app tile (accessible name "Remove <App> from Home"), **then** the tile disappears from my Home only; the app keeps running and stays installed.
 - **Given** an app removed from Home, **when** I search for it with ⌘K, **then** it still appears under "Installed", with an extra action "Add <App> to Home".
 - **Given** I choose "Add <App> to Home", **when** the layout saves, **then** the tile is appended to the end of my grid.
+- **Given** edit mode, **when** I choose "Add app" in the toolbar, **then** "Add an app to Home" lists the apps taken off Home, each with "Add" (accessible name "Add <App> to Home"); with none it says "Every app is on Home." Add puts the app back at the end of the grid, saved with Done (Hari, 22 Nov 2026: ⌘K alone was too hidden).
 - **Given** removal, **when** it happens, **then** no uninstall, stop or confirmation dialog occurs.
 
 **Implementation notes**

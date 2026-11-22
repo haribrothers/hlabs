@@ -58,7 +58,7 @@ New apps appear on Home as soon as they're installed, and removed apps disappear
 To change what's on Home and in what order, choose **Edit Home**: in an app tile's menu, by right-clicking an empty part of the wallpaper, or by pressing and holding an empty part of Home. Home then says "Drag to rearrange":
 
 - Drag an app or a widget to a new place. Apps move within the grid and widgets within their row. With a keyboard, Tab to it, press Space to pick it up, the arrow keys to move it and Space to drop it (Esc puts it back). On a touch screen, press and hold, then drag.
-- Select **–** on an app to take it off Home. It stays installed and keeps running, and Search still finds it, with **Add <app> to Home** to bring it back. Select **–** on a widget to remove it.
+- Select **–** on an app to take it off Home. It stays installed and keeps running. To bring it back, select **Add app** in the editing bar and **Add** beside it; it goes back at the end of your apps. Search also finds it, with **Add <app> to Home**. Select **–** on a widget to remove it.
 - **Add widget** opens a list of widgets: hlabs's own (for admins also App status and Updates) and those your apps offer. Up to four fit on Home.
 - **Wallpaper** opens Settings › Appearance.
 - **Done** saves Home for every device you sign in on. Esc instead puts everything back as it was.

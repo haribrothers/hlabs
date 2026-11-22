@@ -1,5 +1,6 @@
 // US-HOME-16…19 · Home's edit mode in a real browser (first-run instance, three stand-in apps): right-click the wallpaper,
-// drag a tile with the mouse, take one off Home, add a widget from the picker, Done, and the order survives a reload.
+// drag a tile with the mouse, take one off Home, add a widget from the picker, Done, and the order survives a reload;
+// then "Add app" puts the app back.
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
@@ -74,4 +75,20 @@ test('US-HOME-16 edit Home: drag, remove, add a widget, Done; it persists', asyn
   await expect(page.getByRole('region', { name: 'Widgets' }).getByText('App status')).toBeVisible();
   const first = await after.locator('li').first().getAttribute('data-app');
   expect(first).toBe('edit-vault');
+
+  // The way back (US-HOME-18): "Add app" in edit mode lists Photo demo; Add and Done put it at the end.
+  await page.mouse.click(20, 400, { button: 'right' });
+  await page.getByRole('menuitem', { name: 'Edit Home' }).click();
+  await page.getByRole('toolbar', { name: 'Editing Home' }).getByRole('button', { name: 'Add app' }).click();
+  const appPicker = page.getByRole('dialog', { name: 'Add an app to Home' });
+  if (process.env.HLABS_SHOTS)
+    await page.screenshot({ path: `${process.env.HLABS_SHOTS}/app-picker-${info.project.name}.png` });
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await appPicker.getByRole('button', { name: 'Add Photo demo to Home' }).click();
+  await appPicker.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Drag to rearrange' })).toHaveCount(0);
+  await page.reload();
+  await expect(after.getByRole('button', { name: 'Open Photo demo' })).toBeVisible();
+  expect(await after.locator('li[data-app]').last().getAttribute('data-app')).toBe('edit-photos');
 });

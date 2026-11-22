@@ -138,6 +138,39 @@ describe('US-HOME-18', () => {
     expect(saved[0]!.hidden).toEqual(['vault']);
   });
 
+  it('"Add app" lists the apps taken off Home; Add puts one back at the end, saved with Done', async () => {
+    const { saved } = homeAt7({}, { hidden: ['vault'] });
+    await enterFromTile();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Jellyfin from Home' }));
+    fireEvent.click(
+      within(screen.getByRole('toolbar', { name: 'Editing Home' })).getByRole('button', { name: 'Add app' }),
+    );
+    const dialog = await screen.findByRole('dialog', { name: 'Add an app to Home' });
+    const list = within(dialog).getByRole('list', { name: 'Apps not on Home' });
+    expect(
+      within(list)
+        .getAllByRole('listitem')
+        .map((li) => li.querySelector('.truncate')?.textContent),
+    ).toEqual(['Vaultwarden', 'Jellyfin']);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add Vaultwarden to Home' }));
+    await waitFor(() => expect(within(list).queryByRole('button', { name: 'Add Vaultwarden to Home' })).toBeNull());
+    // Escape closes the sheet, not edit mode.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add an app to Home' })).toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    await waitFor(() => expect(saved).toHaveLength(1));
+    expect(saved[0]!.items.filter((i) => i.kind === 'app').map((i) => i.id)).toEqual(['immich', 'vault']);
+    expect(saved[0]!.hidden).toEqual(['jellyfin']);
+  });
+
+  it('with every app on Home, "Add app" says so', async () => {
+    homeAt7();
+    await enterFromTile();
+    fireEvent.click(screen.getByRole('button', { name: 'Add app' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add an app to Home' });
+    expect(dialog).toHaveTextContent('Every app is on Home.');
+  });
+
   it('an app taken off Home isn’t on the grid but is still installed', async () => {
     homeAt7({}, { hidden: ['vault'] });
     await screen.findByRole('button', { name: 'Open Jellyfin' });
