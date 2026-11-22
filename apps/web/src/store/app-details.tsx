@@ -1,13 +1,37 @@
 // App details (US-STORE-06): the app, its screenshots, what it is and does, the facts (version, what runs, where it
-// opens, what it needs), and the view's one white button: Install (the install sheet, US-STORE-08) or Open.
+// opens, what it needs, its source and whether that's signed), and the view's one white button: Install (the install
+// sheet, US-STORE-08) or Open. "…" has "Copy to my library…" for admins (US-STORE-29) and the app's website.
 import type { StoreAppDetails } from '@hlabs/api';
-import { ChevronLeft, ChevronRight, iconDefaults } from '@hlabs/icons';
-import { Badge, Button, GlassCard, ModalDialog, ScrollPane, tokens } from '@hlabs/ui';
+import {
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  ExternalLink,
+  iconDefaults,
+  MoreHorizontal,
+} from '@hlabs/icons';
+import { isFeatureEnabled } from '@hlabs/shared';
+import {
+  Badge,
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  GlassCard,
+  ModalDialog,
+  ScrollPane,
+  tokens,
+} from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { engineCopy } from '../copy/engine';
 import { categoryLabels, storeCopy } from '../copy/store';
+import { sourcesCopy } from '../copy/store-sources';
+import { useMe } from '../lib/use-me';
+import { CopyToLibrary } from './copy-to-library';
 import { useEngineRunning } from '../lib/engine-state';
 import { browser } from '../lib/browser';
 import { pageQuery } from '../lib/error-copy';
@@ -194,9 +218,39 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function AppDetails({ appId }: { appId: string }) {
+/** "…" beside Install: Copy to my library (admins) and the app's website. */
+function MoreMenu({ d, onCopy }: { d: StoreAppDetails; onCopy: (() => void) | null }) {
+  if (!onCopy && !d.website) return null;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="secondary" className="size-11 rounded-pill p-0" aria-label={sourcesCopy.more}>
+          <MoreHorizontal aria-hidden {...iconDefaults} className="size-5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-56">
+        {onCopy ? (
+          <DropdownMenuItem onSelect={onCopy}>
+            <Copy aria-hidden {...iconDefaults} className="size-4" />
+            {sourcesCopy.copyToLibrary}
+          </DropdownMenuItem>
+        ) : null}
+        {d.website ? (
+          <DropdownMenuItem onSelect={() => browser.open(d.website!)}>
+            <ExternalLink aria-hidden {...iconDefaults} className="size-4" />
+            {sourcesCopy.openWebsite}
+          </DropdownMenuItem>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export function AppDetails({ appId, shippedPhase }: { appId: string; shippedPhase?: number }) {
   const details = useAppDetails(appId);
   const installs = useInstalls();
+  const isAdmin = useMe().data?.role === 'admin';
+  const [copying, setCopying] = useState(false);
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { install?: true };
   const desktop = useIsDesktop();
@@ -234,11 +288,31 @@ export function AppDetails({ appId }: { appId: string }) {
           {tags.map((t) => (
             <Badge key={t}>{t}</Badge>
           ))}
-          <Badge>{d.source.official ? copy.officialSource : d.source.name}</Badge>
+          <Badge>{d.source.official ? copy.officialSource : sourcesCopy.fromSource(d.source.name)}</Badge>
+          {d.source.signed ? null : (
+            <Badge tone="warning">
+              <AlertTriangle aria-hidden {...iconDefaults} className="size-3.5" />
+              {sourcesCopy.notSigned}
+            </Badge>
+          )}
         </div>
       </div>
       <div className="flex flex-col items-start gap-2 md:items-end">
-        <PrimaryAction details={d} onInstall={onInstall} />
+        <div className="flex items-center gap-3">
+          <PrimaryAction details={d} onInstall={onInstall} />
+          <MoreMenu
+            d={d}
+            onCopy={isAdmin && isFeatureEnabled('storeSources', shippedPhase) ? () => setCopying(true) : null}
+          />
+        </div>
+        {isAdmin ? (
+          <CopyToLibrary
+            app={{ id: app.id, name: app.name, sourceId: d.source.id }}
+            logo={<StoreLogo app={app} size={tokens.SIZE_DOCK_TILE - tokens.SPACE_2} />}
+            open={copying}
+            onOpenChange={setCopying}
+          />
+        ) : null}
         <InstallSheet
           details={d}
           open={!!search.install}
@@ -304,6 +378,10 @@ export function AppDetails({ appId }: { appId: string }) {
                 <Fact label={copy.version} value={d.version} />
                 {d.services.length ? <Fact label={copy.runsAs} value={runsAs(d.services)} /> : null}
                 <Fact label={copy.opensAt} value={d.address} />
+                <Fact
+                  label={sourcesCopy.sourceFact}
+                  value={(d.source.signed ? sourcesCopy.sourceSigned : sourcesCopy.sourceNotSigned)(d.source.name)}
+                />
                 {d.folders.length ? (
                   <Fact label={copy.needsAccess} value={d.folders.map((f) => f.label).join(', ')} />
                 ) : null}

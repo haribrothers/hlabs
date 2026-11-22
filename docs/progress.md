@@ -294,15 +294,15 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-STORE-05 · Search results with filters (the daemon filters and counts; "Can't find an app?" shows with app sources, group 5)
 - [x] US-STORE-15 · See and apply available updates (`apps.updateAll`; the Dock badge; Update all in Settings › Updates too)
 - [x] US-STORE-16 · Check for updates and auto-update in the background (D-158: release dates, new access, the backup first, `app.updatesAvailable`)
-- [ ] US-STORE-18 · See and manage app sources
-- [ ] US-STORE-19 · Add a source with a pinned signing key
+- [x] US-STORE-18 · See and manage app sources (D-160: git sources over HTTPS raw files, folders under the storage root; feature `storeSources`)
+- [x] US-STORE-19 · Add a source with a pinned signing key (minisign-format ed25519; "Trust this source?" shows the fingerprint)
 - [ ] US-STORE-23 · Find the apps people run on a home server
 - [x] US-STORE-24 · Keep the built-in apps up to date (D-154; `pnpm store:updates` checked against the real registries for all 14 apps, `--pr` against a throwaway clone with a stand-in `gh`; store-updates.yml first runs once it's on `main`; its checks need the `STORE_UPDATES_TOKEN` secret)
 - [x] US-STORE-25 · Port an app with the porting helper (D-153; checked for real: Vaultwarden drafted from Runtipi, its four TODOs resolved, then store:lint and store:matrix passed; Jellyfin drafted from CasaOS)
 - [x] US-STORE-26 · Test only the apps a change touches (D-152; checked locally and by a run of store.yml on the phase-7 branch with Uptime Kuma; the nightly schedule runs from `main`, so shards of five and issues are first seen after the phase is merged)
-- [ ] US-STORE-27 · Start my own app library
-- [ ] US-STORE-28 · Sign my library
-- [ ] US-STORE-29 · Copy a built-in app into my library
+- [x] US-STORE-27 · Start my own app library (`hlabs library init/add/check/index`; Mac admins and the CLI: Q-22)
+- [x] US-STORE-28 · Sign my library (`hlabs library keygen/sign`, the key in hlabs's keychain)
+- [x] US-STORE-29 · Copy a built-in app into my library (a git library's copy downloads as a zip)
 - [ ] US-APP-13 · Edit environment variables
 - [ ] US-APP-14 · Secrets are hidden and can be revealed by an admin
 - [ ] US-APP-15 · Change web address and port

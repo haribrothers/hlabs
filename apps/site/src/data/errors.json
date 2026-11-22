@@ -312,6 +312,18 @@
     "body": "Make someone else an admin first."
   },
   {
+    "code": "LIBRARY_APP_EXISTS",
+    "slug": "library-app-exists",
+    "title": "Your library already has an app called that",
+    "body": "Choose another name."
+  },
+  {
+    "code": "LIBRARY_KEY_MISSING",
+    "slug": "library-key-missing",
+    "title": "There is no signing key on this computer",
+    "body": "Make one with hlabs library keygen, then sign again."
+  },
+  {
     "code": "NAS_AUTH_FAILED",
     "slug": "nas-auth-failed",
     "title": "The NAS didn't accept that",
@@ -406,6 +418,60 @@
     "slug": "restore-not-cancellable",
     "title": "The restore can't be stopped now",
     "body": "Stopping it here could damage your data. It will finish soon."
+  },
+  {
+    "code": "SOURCE_ADDRESS_INVALID",
+    "slug": "source-address-invalid",
+    "title": "That isn't a source address",
+    "body": "Paste an https:// address, such as https://github.com/you/your-app-store, or a folder path."
+  },
+  {
+    "code": "SOURCE_BUILTIN",
+    "slug": "source-builtin",
+    "title": "The built-in store can't be removed",
+    "body": "It comes with hlabs."
+  },
+  {
+    "code": "SOURCE_EMPTY",
+    "slug": "source-empty",
+    "title": "No hlabs apps found at this address",
+    "body": "A source needs apps in hlabs's format, with an index.json made by hlabs library index."
+  },
+  {
+    "code": "SOURCE_EXISTS",
+    "slug": "source-exists",
+    "title": "This source is already added",
+    "body": "It's in the list above."
+  },
+  {
+    "code": "SOURCE_INVALID",
+    "slug": "source-invalid",
+    "title": "Couldn't read this source",
+    "body": "Its files are too big or point outside it. Ask whoever runs it."
+  },
+  {
+    "code": "SOURCE_PATH_OUTSIDE",
+    "slug": "source-path-outside",
+    "title": "Choose a folder in hlabs",
+    "body": "A library folder has to be inside hlabs's storage, such as your Home folder."
+  },
+  {
+    "code": "SOURCE_PATH_SHARED",
+    "slug": "source-path-shared",
+    "title": "Choose a folder only admins can change",
+    "body": "Others could change apps in Shared or their own Home folder. Use your Home folder instead."
+  },
+  {
+    "code": "SOURCE_SIGNATURE_MISMATCH",
+    "slug": "source-signature-mismatch",
+    "title": "Signature doesn't match the saved key",
+    "body": "Its apps may have been changed by someone else, so hlabs stopped using it. Remove it, and add it again only if you trust the new key."
+  },
+  {
+    "code": "SOURCE_UNREACHABLE",
+    "slug": "source-unreachable",
+    "title": "Couldn't reach the repository",
+    "body": "Check the address and that this computer is online. A private repository can't be added."
   },
   {
     "code": "STORAGE_LOCATION_IN_USE",

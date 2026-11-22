@@ -298,6 +298,7 @@ export class StoreService {
         kind: (source?.kind ?? 'builtin') as 'builtin' | 'git' | 'index' | 'local',
       },
       version: m.version,
+      website: m.source ?? m.developer?.url ?? null,
       description: m.description,
       readme: this.catalog.readme(app.sourceId, appId),
       releaseNotes: m.releaseNotes ?? null,

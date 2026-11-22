@@ -117,6 +117,12 @@ const digestOf = (manifest: Buffer, compose: Buffer) =>
   `sha256:${createHash('sha256').update(manifest).update(compose).digest('hex')}`;
 
 /** "my-apps" → "My apps". */
+/** A folder as people know it: the home folder as `~` (`~/hlabs/users/hari/my-apps`). */
+const tildify = (path: string) => {
+  const home = homedir();
+  return path === home || path.startsWith(home + sep) ? `~${path.slice(home.length)}` : path;
+};
+
 const nameFromFolder = (path: string) => {
   const words = basename(path).replace(/[-_]+/g, ' ').trim();
   return words ? words[0]!.toUpperCase() + words.slice(1) : 'My apps';
@@ -510,7 +516,7 @@ export class SourcesService {
     return {
       id: row.id,
       name: builtin ? 'hlabs official' : row.name,
-      url: builtin ? '' : row.url,
+      url: builtin ? '' : row.kind === 'local' ? tildify(row.url) : row.url,
       kind: row.kind as SourceKind,
       appCount,
       lastSyncedAt: row.lastSyncedAt,

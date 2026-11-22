@@ -185,6 +185,45 @@ export const errorCopy = {
       body: "Neither the new version nor the previous one started. Check the app's logs.",
     }),
     HOSTNAME_TAKEN: () => ({ title: 'That address is taken', body: 'Choose another name.' }),
+    // App sources and libraries (US-STORE-18, 19, 27…29)
+    SOURCE_ADDRESS_INVALID: () => ({
+      title: "That isn't a source address",
+      body: 'Paste an https:// address, such as https://github.com/you/your-app-store, or a folder path.',
+    }),
+    SOURCE_UNREACHABLE: () => ({
+      title: "Couldn't reach the repository",
+      body: "Check the address and that this computer is online. A private repository can't be added.",
+    }),
+    SOURCE_EMPTY: () => ({
+      title: 'No hlabs apps found at this address',
+      body: "A source needs apps in hlabs's format, with an index.json made by hlabs library index.",
+    }),
+    SOURCE_INVALID: () => ({
+      title: "Couldn't read this source",
+      body: 'Its files are too big or point outside it. Ask whoever runs it.',
+    }),
+    SOURCE_SIGNATURE_MISMATCH: () => ({
+      title: "Signature doesn't match the saved key",
+      body: 'Its apps may have been changed by someone else, so hlabs stopped using it. Remove it, and add it again only if you trust the new key.',
+    }),
+    SOURCE_EXISTS: () => ({ title: 'This source is already added', body: "It's in the list above." }),
+    SOURCE_PATH_OUTSIDE: () => ({
+      title: 'Choose a folder in hlabs',
+      body: "A library folder has to be inside hlabs's storage, such as your Home folder.",
+    }),
+    SOURCE_PATH_SHARED: () => ({
+      title: 'Choose a folder only admins can change',
+      body: 'Others could change apps in Shared or their own Home folder. Use your Home folder instead.',
+    }),
+    SOURCE_BUILTIN: () => ({ title: "The built-in store can't be removed", body: 'It comes with hlabs.' }),
+    LIBRARY_APP_EXISTS: (d) => ({
+      title: `${str(d, 'library', 'Your library')} already has an app called ${str(d, 'id', 'that')}`,
+      body: 'Choose another name.',
+    }),
+    LIBRARY_KEY_MISSING: () => ({
+      title: 'There is no signing key on this computer',
+      body: 'Make one with hlabs library keygen, then sign again.',
+    }),
     // Storage, files and network
     STORAGE_NOT_WRITABLE: () => ({
       title: "hlabs can't save files there",

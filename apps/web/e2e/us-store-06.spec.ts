@@ -6,7 +6,8 @@ test('US-STORE-06 details show the app, its facts and Install; "App Store" goes 
   await page.getByRole('list', { name: 'Files & photos' }).getByRole('link', { name: 'Immich', exact: true }).click();
   await expect(page).toHaveURL(/\/store\/app\/immich$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Immich' })).toBeVisible();
-  await expect(page.getByText('hlabs official')).toBeVisible();
+  await expect(page.getByText('hlabs official', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('About this app').getByText('hlabs official · signed')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Install', exact: true })).toBeVisible();
 
   const facts = page.getByLabel('About this app');

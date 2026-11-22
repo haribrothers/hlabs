@@ -57,7 +57,10 @@ describe('US-STORE-05', () => {
     search('zzz', { empty: true });
     expect(await screen.findByText('No apps match “zzz”')).toBeInTheDocument();
     expect(screen.getByText(/Can’t find an app\?/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Add another app source' })).toHaveAttribute('href', '/store/sources');
+    expect(screen.getByRole('link', { name: 'Add another app source' })).toHaveAttribute(
+      'href',
+      '/store/sources?add=true',
+    );
   });
 
   it('with results an admin still finds "Can’t find an app?" below the list', async () => {

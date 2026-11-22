@@ -35,6 +35,7 @@ import { Route as SetupIndexRouteImport } from './routes/setup.index'
 import { Route as SetupStepRouteImport } from './routes/setup.$step'
 import { Route as StoreIndexRouteImport } from './routes/store.index'
 import { Route as StoreSearchRouteImport } from './routes/store.search'
+import { Route as StoreSourcesRouteImport } from './routes/store.sources'
 import { Route as StoreUpdatesRouteImport } from './routes/store.updates'
 import { Route as AppsAppIdLogsRouteImport } from './routes/apps_.$appId.logs'
 import { Route as AppsAppIdSettingsRouteImport } from './routes/apps_.$appId.settings'
@@ -174,6 +175,11 @@ const StoreSearchRoute = StoreSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => StoreRoute,
 } as any)
+const StoreSourcesRoute = StoreSourcesRouteImport.update({
+  id: '/sources',
+  path: '/sources',
+  getParentRoute: () => StoreRoute,
+} as any)
 const StoreUpdatesRoute = StoreUpdatesRouteImport.update({
   id: '/updates',
   path: '/updates',
@@ -240,6 +246,7 @@ export interface FileRoutesByFullPath {
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/store/search': typeof StoreSearchRoute
+  '/store/sources': typeof StoreSourcesRoute
   '/store/updates': typeof StoreUpdatesRoute
   '/login/': typeof LoginIndexRoute
   '/settings/': typeof SettingsIndexRoute
@@ -273,6 +280,7 @@ export interface FileRoutesByTo {
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/store/search': typeof StoreSearchRoute
+  '/store/sources': typeof StoreSourcesRoute
   '/store/updates': typeof StoreUpdatesRoute
   '/login': typeof LoginIndexRoute
   '/settings': typeof SettingsIndexRoute
@@ -310,6 +318,7 @@ export interface FileRoutesById {
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/store/search': typeof StoreSearchRoute
+  '/store/sources': typeof StoreSourcesRoute
   '/store/updates': typeof StoreUpdatesRoute
   '/login/': typeof LoginIndexRoute
   '/settings/': typeof SettingsIndexRoute
@@ -348,6 +357,7 @@ export interface FileRouteTypes {
     | '/settings/$section'
     | '/setup/$step'
     | '/store/search'
+    | '/store/sources'
     | '/store/updates'
     | '/login/'
     | '/settings/'
@@ -381,6 +391,7 @@ export interface FileRouteTypes {
     | '/settings/$section'
     | '/setup/$step'
     | '/store/search'
+    | '/store/sources'
     | '/store/updates'
     | '/login'
     | '/settings'
@@ -417,6 +428,7 @@ export interface FileRouteTypes {
     | '/settings/$section'
     | '/setup/$step'
     | '/store/search'
+    | '/store/sources'
     | '/store/updates'
     | '/login/'
     | '/settings/'
@@ -642,6 +654,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreSearchRouteImport
       parentRoute: typeof StoreRoute
     }
+    '/store/sources': {
+      id: '/store/sources'
+      path: '/sources'
+      fullPath: '/store/sources'
+      preLoaderRoute: typeof StoreSourcesRouteImport
+      parentRoute: typeof StoreRoute
+    }
     '/store/updates': {
       id: '/store/updates'
       path: '/updates'
@@ -731,6 +750,7 @@ const SetupRouteWithChildren = SetupRoute._addFileChildren(SetupRouteChildren)
 
 interface StoreRouteChildren {
   StoreSearchRoute: typeof StoreSearchRoute
+  StoreSourcesRoute: typeof StoreSourcesRoute
   StoreUpdatesRoute: typeof StoreUpdatesRoute
   StoreIndexRoute: typeof StoreIndexRoute
   StoreCategoryCategoryRoute: typeof StoreCategoryCategoryRoute
@@ -739,6 +759,7 @@ interface StoreRouteChildren {
 
 const StoreRouteChildren: StoreRouteChildren = {
   StoreSearchRoute: StoreSearchRoute,
+  StoreSourcesRoute: StoreSourcesRoute,
   StoreUpdatesRoute: StoreUpdatesRoute,
   StoreIndexRoute: StoreIndexRoute,
   StoreCategoryCategoryRoute: StoreCategoryCategoryRoute,

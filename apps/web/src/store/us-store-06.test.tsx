@@ -28,7 +28,7 @@ describe('US-STORE-06', () => {
   });
 
   it('names another source by its name, and shows Open when installed', async () => {
-    show(details({ source: { id: 'x', name: 'Family apps', official: false } }), [
+    show(details({ source: { id: 'x', name: 'Family apps', official: false, signed: true, kind: 'git' } }), [
       {
         id: 'immich',
         name: 'Immich',
@@ -38,7 +38,7 @@ describe('US-STORE-06', () => {
         urls: { local: 'https://immich.hlabs.local', tailnet: null },
       },
     ]);
-    expect(await screen.findByText('Family apps')).toBeInTheDocument();
+    expect(await screen.findByText('From Family apps')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'Open' })).toBeInTheDocument();
   });
 

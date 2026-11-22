@@ -93,6 +93,10 @@ export function StoreSidebar() {
                     {item.label}
                     <UpdatesBadge />
                   </Link>
+                ) : item.id === 'sources' ? (
+                  <Link to="/store/sources" className={sideItem} activeProps={{ 'aria-current': 'page' }}>
+                    {item.label}
+                  </Link>
                 ) : (
                   <a href={item.path} className={sideItem}>
                     {item.label}
@@ -134,7 +138,11 @@ function ManageMenu({ items }: { items: ManageItem[] }) {
             key={item.id}
             className="justify-between"
             onSelect={() =>
-              item.id === 'updates' ? void navigate({ to: '/store/updates' }) : window.location.assign(item.path)
+              item.id === 'updates'
+                ? void navigate({ to: '/store/updates' })
+                : item.id === 'sources'
+                  ? void navigate({ to: '/store/sources' })
+                  : window.location.assign(item.path)
             }
           >
             {item.label}
@@ -152,7 +160,7 @@ export function StoreChips() {
   const manage = manageItems(useMe().data?.role);
   return (
     <div className="flex items-center gap-2">
-      <nav aria-label={copy.categories} className="-mx-4 min-w-0 flex-1 overflow-x-auto px-4">
+      <nav aria-label={copy.categories} className="-ml-4 min-w-0 flex-1 overflow-x-auto pl-4">
         <ul className="m-0 flex w-max list-none gap-2 p-0">
           <li>
             <DiscoverLink className={chip}>{copy.discover}</DiscoverLink>

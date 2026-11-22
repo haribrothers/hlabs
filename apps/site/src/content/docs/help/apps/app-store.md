@@ -1,7 +1,7 @@
 ---
 title: The App Store
 description: Find apps for your hlabs, see what each one does, and install it.
-features: [F-STORE-01, F-STORE-02, F-STORE-03, F-STORE-04, F-STORE-05, F-STORE-06, F-STORE-07, F-FILE-13]
+features: [F-STORE-01, F-STORE-02, F-STORE-03, F-STORE-04, F-STORE-10, F-STORE-05, F-STORE-06, F-STORE-07, F-FILE-13]
 ---
 
 For admins, and for members when an admin has turned on **Members can install apps**.
@@ -98,6 +98,22 @@ The page says **Install failed** and "Nothing else was changed". The step that f
 **Remove partial install** deletes whatever the install created (its containers and its own data) after you confirm. Folders you chose, like your Photos, stay as they are. The app then shows **Install** in the store again.
 
 A failed install also sends a notification that brings you back to this page, and its Home tile shows **Error**.
+
+## App sources
+
+Admins see **App sources** at the bottom of the list on the left (on a phone, under **Manage apps**). A source is where apps come from: the App Store's own apps (**hlabs official**, which can't be removed), a git repository someone shares, or a folder of your own apps (see [Make your own app library](../your-own-library/)).
+
+Each source shows where it is, how many apps it has and when hlabs last checked it. hlabs checks every source by itself every few hours; **Check now** checks one straight away. If a check fails, the row says why, such as **Couldn't reach the repository**, and the apps it had stay in the App Store. **Signed** means hlabs can tell the apps haven't been changed since their author published them; **Not signed** means it can't.
+
+**Remove** takes a source's apps out of the App Store. Apps you installed from it stay installed and keep working, but they don't get updates; their settings say **Source removed · no updates**.
+
+### Add a source
+
+Under **Add a source**, choose **Git repository** and paste its address, such as `https://github.com/you/your-app-store`, or **Folder on this computer** and type the folder's path. Select **Add**. hlabs looks at it first and asks **Trust this source?** with its name, how many apps it has and, when it's signed, its signing key. Only add sources you trust. Apps from any source still ask for your approval before they get access to folders or devices.
+
+When you add a signed source, hlabs remembers its key. If the source is later signed with another key, hlabs stops using it and says **Signature doesn't match the saved key**: someone may have changed its apps. Remove it, and add it again only if you trust the new key.
+
+If there's nothing hlabs can use at the address, it says **No hlabs apps found at this address**. Sources have to be in hlabs's own app format.
 
 ## Updates
 

@@ -106,6 +106,7 @@ export const BUILT_AHEAD: readonly Feature[] = [
   'storeBrowse',
   'appUpdates',
   'updateAll',
+  'storeSources',
 ];
 
 /** The dev server is previewing (never in a build or unit tests). */

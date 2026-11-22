@@ -21,8 +21,11 @@ test('US-STORE-02 categories with apps, in order; keyboard moves through them; "
     'Monitoring',
   ]);
   await expect(nav.getByRole('link', { name: 'Discover' })).toHaveAttribute('aria-current', 'page');
-  // Updates is built (phase 7, group 4); App sources and Deploy your own app aren't yet.
-  await expect(page.getByRole('navigation', { name: 'Manage apps' }).getByRole('link')).toHaveText([/^Updates/]);
+  // Updates (phase 7, group 4) and App sources (group 5) are built; Deploy your own app isn't yet.
+  await expect(page.getByRole('navigation', { name: 'Manage apps' }).getByRole('link')).toHaveText([
+    /^Updates/,
+    'App sources',
+  ]);
 
   // Keyboard: each item takes focus with a visible ring, and Enter opens it.
   await nav.getByRole('link', { name: 'Discover' }).focus();

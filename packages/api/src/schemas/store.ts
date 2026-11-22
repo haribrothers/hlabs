@@ -156,6 +156,8 @@ export const storeAppDetailsSchema = z.object({
     kind: z.enum(['builtin', 'git', 'index', 'local']),
   }),
   version: z.string(),
+  /** The project's website (the manifest's `source`, else its developer's), for "Open the app's website". */
+  website: z.string().nullable(),
   description: z.string(),
   /** The app's README.md (markdown), shown instead of the description when present. */
   readme: z.string().nullable(),

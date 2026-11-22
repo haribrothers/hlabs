@@ -131,9 +131,13 @@ export function SearchResults({ query, shippedPhase = VISIBLE_PHASE }: { query: 
         {isAdmin && isFeatureEnabled('storeSources', shippedPhase) ? (
           <p className="m-0 text-body-sm text-ink-muted">
             {copy.cantFind}{' '}
-            <a href="/store/sources" className="hl-focus rounded-xs font-bold text-accent no-underline">
+            <Link
+              to="/store/sources"
+              search={{ add: true }}
+              className="hl-focus rounded-xs font-bold text-accent-link no-underline hover:underline"
+            >
               {copy.addSource}
-            </a>
+            </Link>
           </p>
         ) : null}
       </div>

@@ -119,6 +119,7 @@ export const appsCopy = {
   stoppedDisk: (size: string) => `Stopped · Disk ${size}`,
   countingDisk: 'Counting disk use…',
   upToDate: (version: string) => `Version ${version} · up to date`,
+  versionOnly: (version: string) => `Version ${version}`,
   updateAvailable: (version: string, next: string) => `Version ${version} · ${next} available`,
   // Updating, and an update that rolled back (US-APP-07, US-STORE-17)
   update: 'Update',

@@ -63,6 +63,8 @@ export function Segmented({ options, value, defaultValue, onChange, ...aria }: S
               <m.span
                 className="hl-seg-thumb"
                 layoutId={reduce ? undefined : `seg-${layoutId}`}
+                // Slide only when the choice changes, not when content above moves the control.
+                layoutDependency={current}
                 transition={motion.spring}
               />
             ) : null}
