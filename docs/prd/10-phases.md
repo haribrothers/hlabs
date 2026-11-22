@@ -486,6 +486,24 @@ Four tracks that don't wait for each other (D-151):
 - **C · Your own app library (D-149):** after sources (US-STORE-18, 19): the `hlabs library` commands, signing, the template repository and help guide, and "Copy to my library".
 - **D · Public apps (D-150):** first the threat model (07 §7.10) and a prototype with Tailscale Funnel and one or two apps (per-app addresses, phone apps behind the login, the hardening), reviewed with Hari; then the designs for `AppPublic` and `PublicSetup`; then the stories.
 
+**Work order** (Hari, 22 Nov 2026): the stories are built in groups, each finished without stopping except for a question. US-STORE-26 came first.
+
+| # | Group | Stories | Stops for |
+|---|---|---|---|
+| 1 | Store tools | US-STORE-25, 24 | — |
+| 2 | Notifications and empty Home | US-HOME-13, 14, 15 | — |
+| 3 | Edit Home, widgets and Dock | US-HOME-16, 17, 18, 19, 22, 20 | — |
+| 4 | Store browsing and updates | US-STORE-04, 05, 15, 16 | — |
+| 5 | App sources and your own library | US-STORE-18, 19, 27, 28, 29 | — |
+| 6 | The 100 apps | US-STORE-23, in waves of about 20 | Hari approves the list (Q-20) |
+| 7 | App configuration and usage | US-APP-13 to 21 | — |
+| 8 | Appearance | US-ACCT-32 to 35 | — |
+| 9 | Storage | US-SYS-11 to 14 | — |
+| 10 | System tools and reset | US-SYS-27 to 31, 37, 38 | — |
+| 11 | Public apps | prototype, then US-SYS-43, 44, US-APP-27 to 29 | Hari reviews the prototype (Q-19); live checks need a Cloudflare domain and a check from outside the home network |
+| 12 | Phone and PWA | US-PHONE-01 to 12, 23, 24 | Hari checks on iOS Safari and Android Chrome |
+| 13 | Docs screenshots | US-SITE-11 | — |
+
 **Done when**
 - [ ] All P2 stories pass; axe clean on every route; phone layouts verified on iOS Safari and Android Chrome.
 - [ ] The built-in store has the approved 100 apps and the nightly matrix installs ≥ 98 % of them.
