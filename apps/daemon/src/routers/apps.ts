@@ -1,6 +1,7 @@
 import type { AppHandlers } from '@hlabs/api';
 import { hlabsError } from '@hlabs/api';
 import { listApps } from '../apps/list';
+import { appUpdatesOf } from '../store/updates-list';
 import { auditLog } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { widgetKeyRef } from '../home/app-widgets';
@@ -65,6 +66,11 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
   watchLogs: (input, ctx, signal) =>
     ctx.services.logs.watch(input.appId, { service: input.service, since: input.since }, signal),
   update: (input, ctx) => ctx.services.updates.update(installer(ctx), input.appId),
+  /** Every app in the Updates list, in its order (US-STORE-15). */
+  updateAll: (_input, ctx) => {
+    const order = appUpdatesOf(ctx.services).pending.map((p) => p.appId);
+    return ctx.services.updates.updateAll(installer(ctx), order);
+  },
   retryInstall: (input, ctx) => ctx.services.installer.retry(installer(ctx), input.appId, input.portOverrides?.web),
   uninstall: (input, ctx) => ctx.services.installer.uninstall(installer(ctx), input.appId, input.keepData),
   reinstall: (input, ctx) => ctx.services.reinstalls.reinstall(installer(ctx), input.appId),

@@ -4,7 +4,7 @@
 import { curationIssues, loadAppDir, listAppDirs, loadCuration, type LoadedApp } from '@hlabs/app-manifest/node';
 import type { AppManifest, ComposeFile, StoreCuration } from '@hlabs/app-manifest';
 import { appSources, catalogApps, type HlabsDb } from '@hlabs/db';
-import { and, eq, notInArray } from 'drizzle-orm';
+import { and, eq, notInArray, sql } from 'drizzle-orm';
 import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { extname, join, sep } from 'node:path';
 import type { Logger } from '../logger';
@@ -71,10 +71,19 @@ export class CatalogService {
             manifestJson: manifest,
             updatedAt: now,
             firstSeenAt: now,
+            versionSeenAt: now,
           })
           .onConflictDoUpdate({
             target: [catalogApps.sourceId, catalogApps.appId],
-            set: { version: manifest.version, manifestJson: manifest, updatedAt: now },
+            set: {
+              version: manifest.version,
+              manifestJson: manifest,
+              updatedAt: now,
+              // Kept while it's the same version and revision; a new one starts its "released" clock.
+              versionSeenAt: sql`CASE WHEN ${catalogApps.version} = ${manifest.version}
+                AND coalesce(json_extract(${catalogApps.manifestJson}, '$.revision'), 0) = ${manifest.revision}
+                THEN ${catalogApps.versionSeenAt} ELSE ${now} END`,
+            },
           })
           .run();
       }

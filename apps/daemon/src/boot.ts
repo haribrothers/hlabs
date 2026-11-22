@@ -49,6 +49,8 @@ import { HlabsUpdates } from './updates/service';
 import { takeSwitchedBack, type HeadlessHost } from './updates/headless';
 import { nodeHeadlessHost } from './updates/headless-host';
 import { AUTO_UPDATED_KIND, AutoUpdates } from './updates/auto';
+import { StoreUpdateWatch } from './store/update-watch';
+import { installedManifests, pendingUpdate } from './store/updates-list';
 import {
   confirmHeadlessSwitch,
   registerSystemUpdate,
@@ -470,8 +472,12 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     engine,
     notifications,
     probes: deps.healthProbes,
+    backups: () => services.backups,
   });
   updates.register();
+  // App updates found by a store sync are announced once (US-STORE-16).
+  const installedManifest = installedManifests(appService);
+  const storeWatch = new StoreUpdateWatch({ db, bus, notifications, installed: installedManifest });
   const reinstalls = new ReinstallService({
     db,
     logger,
@@ -493,7 +499,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     logger,
     source: updateSource,
     version: config.version,
-    syncStore: () => catalog.syncBuiltin(),
+    syncStore: () => {
+      catalog.syncBuiltin();
+      storeWatch.afterSync();
+    },
     blocker: () => jobs.blocker('system_update'),
   });
   const systemUpdate: SystemUpdateDeps = {
@@ -520,6 +529,12 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       install: () => void startSystemUpdate(systemUpdate, null),
     },
     updateApp: (appId) => updates.update({ userId: null }, appId).jobId,
+    findUpdate: (appId) => {
+      const app = db.select().from(apps).where(eq(apps.id, appId)).get();
+      const u = app ? pendingUpdate(db, app, installedManifest) : null;
+      return u ? { to: u.store.version, newAccess: u.newAccess !== null } : null;
+    },
+    backupsDue: (until) => services.backups.dueBefore(until),
   });
   // Network drives (US-FILE-11): the system's tools, or a pretend NAS in development (HLABS_DEV_FAKE_NAS).
   const fakeNas = config.devFakeNas ? new FakeNas(join(config.paths.dataDir, 'fake-nas')) : null;
@@ -715,6 +730,11 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     void services.restores.recover().catch((err) => logger.warn({ err }, 'restore recovery failed'));
   }
   if (deps.checkUpdates !== false) {
+    try {
+      storeWatch.afterSync();
+    } catch (err) {
+      logger.warn({ err }, 'looking for app updates failed');
+    }
     services.hlabsUpdates.start();
     services.autoUpdates.start();
   }

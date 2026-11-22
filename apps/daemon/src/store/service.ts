@@ -53,7 +53,27 @@ export function currentHost(platform: NodeJS.Platform = process.platform, arch: 
 export interface StoreEntry {
   app: StoreApp;
   manifest: AppManifest;
+  /** When the app first appeared in its source (the "New" sort, US-STORE-04). */
+  firstSeenAt: number;
 }
+
+export type StoreSort = 'popular' | 'new' | 'name';
+
+export interface ListAppsInput {
+  category?: StoreCategoryGroup;
+  collection?: string;
+  query?: string;
+  sort?: StoreSort;
+  installedOnly?: boolean;
+  arm64Only?: boolean;
+  cursor?: string;
+  limit?: number;
+}
+
+/** A page's size unless asked otherwise (US-STORE-04). */
+export const PAGE_SIZE = 50;
+
+const byName = (a: StoreEntry, b: StoreEntry) => a.app.name.localeCompare(b.app.name, 'en', { sensitivity: 'base' });
 
 /** Lowercase without accents, for matching (US-STORE-05). */
 export const fold = (s: string) =>
@@ -146,6 +166,7 @@ export class StoreService {
       const logo = m.icon?.logo;
       byId.set(row.appId, {
         manifest: m,
+        firstSeenAt: row.firstSeenAt,
         app: {
           id: m.id,
           sourceId: row.sourceId,
@@ -164,7 +185,7 @@ export class StoreService {
         },
       });
     }
-    return [...byId.values()].sort((a, b) => a.app.name.localeCompare(b.app.name, 'en', { sensitivity: 'base' }));
+    return [...byId.values()].sort(byName);
   }
 
   /** Runs on this computer (an arm64 host needs an arm64 image). */
@@ -194,7 +215,12 @@ export class StoreService {
     };
   }
 
-  listApps(input: { category?: StoreCategoryGroup; collection?: string; query?: string }) {
+  /**
+   * A list of apps (US-STORE-01…05): a collection, a category or search results, sorted, filtered and a page at a time.
+   * Without `sort`, a collection keeps its curated order, search its relevance and everything else A–Z. Apps that run
+   * on this computer come first on arm64. `counts` are before `installedOnly` (the chips' numbers, US-STORE-05).
+   */
+  listApps(input: ListAppsInput) {
     let list = this.entries();
     let title: string | null = null;
     if (input.collection) {
@@ -208,9 +234,32 @@ export class StoreService {
       }
     }
     if (input.category) list = list.filter((e) => e.app.group === input.category);
-    const query = fold(input.query?.trim().slice(0, 100) ?? '');
+    const query = fold(input.query?.trim().slice(0, 100).trim() ?? '');
     if (query.length > 1) list = this.search(list, query);
-    return { host: this.host, title, items: this.compatibleFirst(list.map((e) => e.app)), nextCursor: null };
+    if (input.sort) list = this.sorted(list, input.sort);
+    if (input.arm64Only) list = list.filter((e) => e.app.arm64);
+    const counts = { all: list.length, installed: list.filter((e) => e.app.installed).length };
+    if (input.installedOnly) list = list.filter((e) => e.app.installed);
+
+    const items = this.compatibleFirst(list.map((e) => e.app));
+    const start = Math.max(0, Number.parseInt(input.cursor ?? '0', 10) || 0);
+    const end = start + (input.limit ?? PAGE_SIZE);
+    return {
+      host: this.host,
+      title,
+      items: items.slice(start, end),
+      counts,
+      nextCursor: end < items.length ? String(end) : null,
+    };
+  }
+
+  /** Popular: the built-in index's curated rank, then A–Z (hlabs collects no usage data); New: newest first. */
+  private sorted(list: StoreEntry[], sort: StoreSort): StoreEntry[] {
+    if (sort === 'name') return [...list].sort(byName);
+    if (sort === 'new') return [...list].sort((a, b) => b.firstSeenAt - a.firstSeenAt || byName(a, b));
+    const rank = new Map(this.catalog.curation.rank.map((id, i) => [id, i]));
+    const at = (e: StoreEntry) => rank.get(e.app.id) ?? Number.MAX_SAFE_INTEGER;
+    return [...list].sort((a, b) => at(a) - at(b) || byName(a, b));
   }
 
   /** Name, id, tagline, tags and description; name and id matches first (US-STORE-05). */

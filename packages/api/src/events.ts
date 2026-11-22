@@ -71,6 +71,10 @@ export const eventSchemas = {
   'notification.dismissed': z.object({ ids: z.array(z.string()).min(1) }),
   'usage.sample': usageSampleSchema,
   'update.available': z.object({ version: z.string(), channel: z.enum(['stable', 'beta']) }),
+  /** A store sync found app updates not announced before (US-STORE-16); admins only. */
+  'app.updatesAvailable': z.object({
+    apps: z.array(z.object({ appId: z.string(), name: z.string(), toVersion: z.string() })),
+  }),
   'session.revoked': z.object({ sessionId: z.string() }),
   /** Sent by `events.stream` itself (not the bus) when it can't resume from the client's lastEventId, such as after
    * a daemon restart or a gap longer than the buffer: the client refetches everything (US-STATE-18). */

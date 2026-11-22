@@ -4,6 +4,17 @@ import { io } from '../trpc';
 import { homeAppSchema } from './apps';
 import { appIdSchema, appRefSchema, appStateSchema, empty, idSchema, ok, pageInputSchema, pending } from './common';
 
+/** What an update asks for beyond the installed version (US-STORE-16, `newAccess` in @hlabs/app-manifest). */
+export const newAccessSchema = z.object({
+  folders: z.array(z.object({ key: z.string(), label: z.string(), mode: z.enum(['ro', 'rw']) })),
+  ports: z.array(z.object({ label: z.string(), host: z.number(), protocol: z.enum(['tcp', 'udp']) })),
+  permissions: z.object({
+    network: z.enum(['lan', 'internet']).nullable(),
+    gpu: z.boolean(),
+    dockerSocket: z.boolean(),
+  }),
+});
+
 /** App updates (US-SYS-25): installed apps with a newer store version, and updates that rolled back. */
 export const storeUpdatesSchema = z.object({
   pending: z.array(
@@ -16,6 +27,24 @@ export const storeUpdatesSchema = z.object({
       toVersion: z.string(),
       /** The new version's "What's new" (Markdown, the manifest's `releaseNotes`); null without notes. */
       releaseNotes: z.string().nullable(),
+      /** When this version reached the store ("released 2 days ago", US-STORE-15). */
+      releasedAt: z.number(),
+      /** What it asks for that the installed version didn't (US-STORE-16); null when nothing. It never updates by
+       * itself then. */
+      newAccess: newAccessSchema.nullable(),
+    }),
+  ),
+  /** Updates that finished in the last 14 days, newest first (US-STORE-15). */
+  recent: z.array(
+    z.object({
+      appId: z.string(),
+      name: z.string(),
+      icon: homeAppSchema.shape.icon,
+      version: z.string(),
+      at: z.number(),
+      automatic: z.boolean(),
+      /** It updated without the backup it asks for: there's no backup destination (US-STORE-16). */
+      notBackedUp: z.boolean(),
     }),
   ),
   /** Updates that didn't start and were rolled back, until an admin dismisses them (US-STORE-17). */
@@ -181,6 +210,8 @@ export const store = {
       /** A collection's title when `collection` was asked for. */
       title: z.string().nullable(),
       items: z.array(storeAppSchema),
+      /** Every match (after `arm64Only`, before `installedOnly`) and how many are installed: the chips' numbers. */
+      counts: z.object({ all: z.number().int().nonnegative(), installed: z.number().int().nonnegative() }),
       nextCursor: z.string().nullable(),
     }),
   ),

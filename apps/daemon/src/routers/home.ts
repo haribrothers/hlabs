@@ -3,7 +3,7 @@ import { hlabsError } from '@hlabs/api';
 import { users } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
 import type { DaemonContext } from '../context';
-import { listAppUpdates } from '../store/updates-list';
+import { appUpdatesOf } from '../store/updates-list';
 import { getLayout, saveDock, saveLayout } from '../home/layout';
 import { widgetCatalog } from '../home/widget-catalog';
 import { widgetData } from '../home/widget-data';
@@ -41,7 +41,7 @@ export const home: AppHandlers<DaemonContext>['home'] = {
     const { db } = ctx.services;
     const user = db.select({ username: users.username }).from(users).where(eq(users.id, id.userId)).get();
     if (!user) throw hlabsError('AUTH_REQUIRED');
-    const pendingUpdates = () => listAppUpdates(db, ctx.services.updates).pending.length;
+    const pendingUpdates = () => appUpdatesOf(ctx.services).pending.length;
     return widgetData(
       { db, appWidgets: ctx.services.appWidgets, pendingUpdates },
       { id: id.userId, username: user.username, role: id.role },

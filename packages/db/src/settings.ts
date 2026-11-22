@@ -59,6 +59,9 @@ export const settingsSchemas = {
         .default(null),
       /** The newest version `update.available` has been emitted for, so each version is announced once. */
       announced: z.string().nullable().default(null),
+      /** Each app's newest update already announced after a store sync (`<version>#<revision>`), so it's told once
+       * (US-STORE-16). */
+      announcedApps: z.record(z.string(), z.string()).default({}),
       /** The nights (local date the window opened, YYYY-MM-DD) automatic updates last ran, once a night (US-SYS-26). */
       autoNight: z
         .object({ hlabs: z.string().nullable().default(null), apps: z.string().nullable().default(null) })
@@ -72,6 +75,7 @@ export const settingsSchemas = {
       lastCheckedAt: null,
       latest: null,
       announced: null,
+      announcedApps: {},
       autoNight: { hlabs: null, apps: null },
     }),
   remote: z

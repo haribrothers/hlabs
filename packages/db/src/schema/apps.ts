@@ -46,6 +46,8 @@ export const catalogApps = sqliteTable(
     manifestJson: json<unknown>('manifest_json').notNull(),
     updatedAt: ms('updated_at').notNull(),
     firstSeenAt: ms('first_seen_at').notNull(),
+    /** When this version (or revision) first reached the catalogue: "released 2 days ago" in Updates (US-STORE-15). */
+    versionSeenAt: ms('version_seen_at').notNull().default(0),
   },
   (t) => [primaryKey({ columns: [t.sourceId, t.appId] })],
 );

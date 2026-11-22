@@ -3,7 +3,7 @@ import { hlabsError } from '@hlabs/api';
 import { users } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
 import type { DaemonContext } from '../context';
-import { listAppUpdates } from '../store/updates-list';
+import { appUpdatesOf } from '../store/updates-list';
 
 /** The signed-in user who may browse the store (US-STORE-01: members only with "Members can install apps"). */
 function browser(ctx: DaemonContext) {
@@ -14,8 +14,8 @@ function browser(ctx: DaemonContext) {
 }
 
 export const store: AppHandlers<DaemonContext>['store'] = {
-  /** US-SYS-25: installed apps with a newer version, and updates that rolled back. */
-  listUpdates: (_input, ctx) => listAppUpdates(ctx.services.db, ctx.services.updates),
+  /** US-STORE-15, US-SYS-25: updates waiting, rolled back and finished in the last 14 days. */
+  listUpdates: (_input, ctx) => appUpdatesOf(ctx.services),
   getHome: (_input, ctx) => {
     browser(ctx);
     return ctx.services.store.getHome();
