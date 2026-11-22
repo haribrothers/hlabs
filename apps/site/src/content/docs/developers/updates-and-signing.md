@@ -21,6 +21,8 @@ cat ~/.tauri/hlabs-dev.key.pub
 
 ## Test an update from start to finish
 
+hlabs trusts only the hlabs release key (key id `B70D799832CB6AD2`), whose private half is in `release.yml`'s secrets. To try an update you built yourself, first put your development key's public half in both places, as for a fork above, and don't commit that change.
+
 Build an older version to install, then a newer one as an update, and serve it from your computer:
 
 ```sh

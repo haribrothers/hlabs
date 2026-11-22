@@ -64,13 +64,26 @@ function release(signer = testSigner(), data = Buffer.from('tarball bytes')) {
 
 describe('US-SYS-23 · Update hlabs', () => {
   describe('signatures', () => {
-    it('accepts a file signed by `tauri signer` with the hlabs key, and nothing else', () => {
+    // The fixture is signed by `tauri signer` with a development key (fixtures/update/dev.key.pub); the release key's
+    // private half is only in release.yml's secrets.
+    const devKey = readFileSync(join(import.meta.dirname, 'fixtures/update/dev.key.pub'), 'utf8').trim();
+
+    it('accepts a file signed by `tauri signer` with the key it trusts, and nothing else', () => {
       const data = readFileSync(join(import.meta.dirname, 'fixtures/update/payload.txt'));
       const sig = readFileSync(join(import.meta.dirname, 'fixtures/update/payload.txt.sig'), 'utf8');
-      expect(verifySignature(data, sig, UPDATE_PUBLIC_KEY)).toBe(true);
-      expect(verifySignature(Buffer.concat([data, Buffer.from('!')]), sig, UPDATE_PUBLIC_KEY)).toBe(false);
+      expect(verifySignature(data, sig, devKey)).toBe(true);
+      expect(verifySignature(Buffer.concat([data, Buffer.from('!')]), sig, devKey)).toBe(false);
       expect(verifySignature(data, sig, testSigner().publicKey)).toBe(false);
-      expect(verifySignature(data, 'not a signature', UPDATE_PUBLIC_KEY)).toBe(false);
+      expect(verifySignature(data, 'not a signature', devKey)).toBe(false);
+    });
+
+    it('trusts the hlabs release key, so nothing signed with a development key installs', () => {
+      expect(Buffer.from(UPDATE_PUBLIC_KEY, 'base64').toString('utf8')).toMatch(
+        /^untrusted comment: minisign public key: B70D799832CB6AD2\nRW[A-Za-z0-9+/=]{54}\n$/,
+      );
+      const data = readFileSync(join(import.meta.dirname, 'fixtures/update/payload.txt'));
+      const sig = readFileSync(join(import.meta.dirname, 'fixtures/update/payload.txt.sig'), 'utf8');
+      expect(verifySignature(data, sig, UPDATE_PUBLIC_KEY)).toBe(false);
     });
   });
 
