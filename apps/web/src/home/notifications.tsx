@@ -241,7 +241,7 @@ function Panel({ shippedPhase }: { shippedPhase: number }) {
           id={panelId}
           role="dialog"
           aria-label={copy.title}
-          className="hl-glass hl-glass-3 hl-anim-panel mt-3 flex max-h-[min(640px,calc(100dvh-112px))] w-96 max-w-[calc(100vw-2rem)] flex-col overflow-y-auto rounded-xl p-2.5 shadow-window"
+          className="hl-glass hl-glass-3 hl-anim-panel mt-3 flex max-h-[min(640px,calc(100dvh-112px))] w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl p-2.5 shadow-window"
         >
           <div className="flex items-center justify-between px-3 pb-1.5 pt-2">
             <h2 className="m-0 text-headline">{copy.title}</h2>
@@ -249,26 +249,29 @@ function Panel({ shippedPhase }: { shippedPhase: number }) {
               {copy.markAllRead}
             </Button>
           </div>
-          {list.isError ? (
-            <p className="m-0 px-3 py-4 text-body-sm text-ink-muted">
-              {copy.couldntLoad}{' '}
-              <Button variant="link" onClick={() => void list.refetch()}>
-                {copy.retry}
-              </Button>
-            </p>
-          ) : list.isSuccess && items.length === 0 ? (
-            <p className="m-0 px-3 py-6 text-center text-body text-ink-muted">{copy.empty}</p>
-          ) : (
-            <>
-              {group(copy.today, today)}
-              {group(copy.earlier, earlier)}
-              {list.hasNextPage ? (
-                <Button variant="link" className="self-center" onClick={() => void list.fetchNextPage()}>
-                  {copy.showMore}
+          {/* Only the list scrolls, with a thin scrollbar inside the panel's rounded edge. */}
+          <div className="hl-scroll -mr-1 min-h-0 flex-1 overflow-y-auto pr-1">
+            {list.isError ? (
+              <p className="m-0 px-3 py-4 text-body-sm text-ink-muted">
+                {copy.couldntLoad}{' '}
+                <Button variant="link" onClick={() => void list.refetch()}>
+                  {copy.retry}
                 </Button>
-              ) : null}
-            </>
-          )}
+              </p>
+            ) : list.isSuccess && items.length === 0 ? (
+              <p className="m-0 px-3 py-6 text-center text-body text-ink-muted">{copy.empty}</p>
+            ) : (
+              <>
+                {group(copy.today, today)}
+                {group(copy.earlier, earlier)}
+                {list.hasNextPage ? (
+                  <Button variant="link" className="self-center" onClick={() => void list.fetchNextPage()}>
+                    {copy.showMore}
+                  </Button>
+                ) : null}
+              </>
+            )}
+          </div>
         </div>
       ) : null}
     </div>
