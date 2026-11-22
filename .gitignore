@@ -33,4 +33,5 @@ apps/site/public/install.sh.sha256
 
 # The site tests' build (apps/site/e2e/build.ts).
 apps/site/dist-e2e/
+apps/site/dist-e2e-beta/
 apps/site/.e2e/

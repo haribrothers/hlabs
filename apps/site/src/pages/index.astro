@@ -5,13 +5,15 @@ import AppTile from '../components/AppTile.astro';
 import Icon from '../components/Icon.astro';
 import Page from '../layouts/Page.astro';
 import { siteReleases } from '../lib/releases';
+import { installCommand } from '../../../../scripts/site-releases-lib.ts';
 import { storeApps } from '../lib/store';
 import dockHome from '../assets/screens/DockHome.webp';
 
 const apps = storeApps();
 const releases = siteReleases();
 const latest = releases.stable;
-const installCommand = 'curl -fsSL https://hlabs.h4loom.com/install.sh | sh';
+// The site's install.sh is the beta's until there's a stable release; then the command asks for the beta channel.
+const command = installCommand(releases.stable || !releases.beta ? 'stable' : 'beta');
 
 const steps = [
   {
@@ -220,7 +222,7 @@ const featureApps = ['jellyfin', 'vaultwarden', 'mealie', 'adguard-home'].map(ap
                       <span class="ok"><Icon name="check" size={20} /></span>
                     </div>
                     <div class="kicker" style="margin-top: 6px">Linux server</div>
-                    <div class="code"><div class="code-bar"><code><span class="prompt">$</span> {installCommand}</code></div></div>
+                    <div class="code"><div class="code-bar"><code><span class="prompt">$</span> {command}</code></div></div>
                   </div>
                 )}
                 {s.id === 'set-up' && (
@@ -451,7 +453,7 @@ const featureApps = ['jellyfin', 'vaultwarden', 'mealie', 'adguard-home'].map(ap
               <span class="mono" style="font-size: 12px; color: var(--site-code-faint)">Linux server</span>
               {
                 releases.installScript && (
-                  <button type="button" class="copy-btn" data-copy={installCommand}>
+                  <button type="button" class="copy-btn" data-copy={command}>
                     <span class="done"><Icon name="check" size={14} /></span>
                     <span data-copy-label>Copy</span>
                     <span class="sr-only"> the install command</span>
@@ -459,7 +461,7 @@ const featureApps = ['jellyfin', 'vaultwarden', 'mealie', 'adguard-home'].map(ap
                 )
               }
             </div>
-            <pre class="mono" tabindex="0" aria-label="What the install command prints"><code><span class="type t1"><span class="prompt">$</span> {installCommand}</span>
+            <pre class="mono" tabindex="0" aria-label="What the install command prints"><code><span class="type t1"><span class="prompt">$</span> {command}</span>
 <span class="type t2 faint"><span class="okc">✓</span> Ubuntu 24.04 on x86_64 with systemd</span>
 <span class="type t3 faint"><span class="okc">✓</span> Docker is installed</span>
 <span class="type t4 faint"><span class="okc">✓</span> hlabs downloaded and checked</span>

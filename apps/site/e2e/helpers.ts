@@ -35,3 +35,6 @@ export const FIXTURE = {
   beta: '0.7.0-beta.1',
   releases: 'https://github.com/haribrothers/hlabs/releases/download',
 };
+
+/** The site built with only the fixture's beta, before any stable release (e2e/build.ts, playwright.config.ts). */
+export const BETA_ONLY_URL = 'http://127.0.0.1:4522';

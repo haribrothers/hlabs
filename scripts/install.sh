@@ -214,8 +214,16 @@ fetch_release() {
     else
       base="$RELEASES/latest/download"
     fi
-    quietly download "$base/SHA256SUMS" "$WORK/SHA256SUMS" ||
-      fail "Couldn't download hlabs from $base" "Check this computer can reach github.com, then run this again"
+    if ! quietly download "$base/SHA256SUMS" "$WORK/SHA256SUMS"; then
+      # GitHub's "latest" is only ever a stable release: before the first one there's nothing there.
+      case "$base" in
+        */latest/download)
+          fail "Couldn't download hlabs from $base" \
+            "Check this computer can reach github.com. If hlabs has no stable release yet, install the beta: add -s -- --channel beta after sh"
+          ;;
+        *) fail "Couldn't download hlabs from $base" "Check this computer can reach github.com, then run this again" ;;
+      esac
+    fi
     quietly download "$base/SHA256SUMS.sig" "$WORK/SHA256SUMS.sig" || fail "Couldn't download hlabs's signature"
   fi
   verify_signature "$WORK/SHA256SUMS" "$WORK/SHA256SUMS.sig" ||

@@ -3,6 +3,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   compareVersions,
+  firstChannel,
+  installCommand,
+  installScriptRelease,
   latestReleases,
   parseChecksums,
   type GitHubRelease,
@@ -66,5 +69,22 @@ describe('US-SITE-02', () => {
   it('says when there is no release yet', async () => {
     const data = await latestReleases([release('beta', { prerelease: true })], 'x/y', async () => null);
     expect(data).toEqual({ repo: 'x/y', stable: null, beta: null, installScript: null });
+  });
+
+  it('opens on stable, or on the beta while there is no stable release, and serves that install.sh', async () => {
+    const both = await latestReleases([release('v0.6.0'), release('v0.7.0-beta.1')], 'x/y', async () => null);
+    expect(firstChannel(both)).toBe('stable');
+    expect(installScriptRelease(both)?.version).toBe('0.6.0');
+
+    const betaOnly = await latestReleases([release('v0.6.0-beta.1')], 'x/y', async () => null);
+    expect(firstChannel(betaOnly)).toBe('beta');
+    expect(installScriptRelease(betaOnly)?.version).toBe('0.6.0-beta.1');
+
+    const none = await latestReleases([], 'x/y', async () => null);
+    expect(firstChannel(none)).toBeNull();
+    expect(installScriptRelease(none)).toBeNull();
+
+    expect(installCommand('stable')).toBe('curl -fsSL https://hlabs.h4loom.com/install.sh | sh');
+    expect(installCommand('beta')).toBe('curl -fsSL https://hlabs.h4loom.com/install.sh | sh -s -- --channel beta');
   });
 });

@@ -113,4 +113,27 @@ describe('US-SITE-05', () => {
     expect(r.status).toBe(1);
     expect(r.err).toContain("✗ The beta channel's version isn't one hlabs knows");
   });
+
+  it("before the first stable release, publishes the beta's install.sh", () => {
+    const betaOnly = join(dir, 'beta-only');
+    cpSync(FIXTURE, betaOnly, { recursive: true });
+    const all = JSON.parse(readFileSync(join(FIXTURE, 'releases.json'), 'utf8')) as Array<{ prerelease: boolean }>;
+    writeFileSync(join(betaOnly, 'releases.json'), JSON.stringify(all.filter((r) => r.prerelease)));
+    const r = siteReleases(betaOnly);
+    expect(r.status).toBe(0);
+    expect(readFileSync(join(r.dir, 'public/install.sh'), 'utf8')).toBe(
+      readFileSync(join(FIXTURE, 'assets/v0.7.0-beta.1/install.sh'), 'utf8'),
+    );
+    expect(JSON.parse(readFileSync(join(r.dir, 'releases.json'), 'utf8')).installScript.version).toBe('0.7.0-beta.1');
+  });
+
+  it('without a stable release yet, plain install.sh says to add --channel beta', () => {
+    fake('curl', 'exit 22');
+    const r = sh(`WORK="${dir}"; CHANNEL=stable; fetch_release`);
+    expect(r.status).toBe(1);
+    expect(r.err).toContain(
+      "✗ Couldn't download hlabs from https://github.com/haribrothers/hlabs/releases/latest/download",
+    );
+    expect(r.err).toContain('If hlabs has no stable release yet, install the beta: add -s -- --channel beta after sh');
+  });
 });
