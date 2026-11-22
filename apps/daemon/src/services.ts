@@ -20,6 +20,7 @@ import type { AppWatch } from './apps/app-watch';
 import type { ReinstallService } from './apps/reinstall';
 import type { SystemProbe } from './platform/system';
 import type { NotificationService } from './notifications/service';
+import type { AppWidgets } from './home/app-widgets';
 import type { FilesJanitor } from './files/janitor';
 import type { FilesService } from './files/service';
 import type { Trash } from './files/trash';
@@ -128,6 +129,8 @@ export interface Services {
   /** Removes idle uploads and month-old Trash. */
   filesJanitor: FilesJanitor;
   notifications: NotificationService;
+  /** Apps' Home widgets, read from the apps (US-HOME-20). */
+  appWidgets: AppWidgets;
   /** restic, the bundled binary or a fake (D-133). */
   restic: Restic;
   /** Where backups go (US-BKP-08…11). */

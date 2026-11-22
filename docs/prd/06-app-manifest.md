@@ -94,9 +94,16 @@ web:
 widgets:                         # Home widgets the app can provide
   - id: library
     name: Photo library
-    template: stat               # stat | twoStat | list
-    endpoint: { service: immich-server, path: /api/server/statistics }
+    template: twoStat            # stat | twoStat | list
+    endpoint: { service: immich-server, path: /api/server/statistics }   # on the web service (D-049)
     refresh: 60                  # seconds
+    fields:                      # what fills the template, as paths in the JSON answer (D-157):
+      first: { value: photos, label: photos }      # stat: { value }; twoStat: { first, second };
+      second: { value: videos, label: videos }     # list: { items, title, detail? } (up to 3 rows)
+    auth:                        # optional: the endpoint needs a key made in the app; an admin pastes it in
+      header: x-api-key          # App settings and hlabs keeps it in the keychain. Such widgets are admins' only.
+      prefix: ''                 # before the key, e.g. "Token " or "Bearer "
+      help: Make a key in Immich under Account settings › API keys.
 public:                          # making the app public (D-150, 07 §7.10); defaults shown
   allowed: true                  # false: never public (admin tools such as Portainer)
   ownLoginSafe: false            # true: an admin may choose "<App>'s own login only" so its phone apps connect

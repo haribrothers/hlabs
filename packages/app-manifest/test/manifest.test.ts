@@ -75,9 +75,13 @@ ownLogin: true
 widgets:
   - id: library
     name: Photo library
-    template: stat
+    template: twoStat
     endpoint: { service: immich-server, path: /api/server/statistics }
     refresh: 60
+    fields:
+      first: { value: photos, label: photos }
+      second: { value: videos, label: videos }
+    auth: { header: x-api-key, help: Make a key in Immich under Account settings › API keys. }
 `);
 
 describe('AppManifest (06)', () => {

@@ -43,6 +43,13 @@
       "when": 1795107615007,
       "tag": "0005_restore_steps",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1795357832053,
+      "tag": "0006_home_hidden",
+      "breakpoints": true
     }
   ]
 }

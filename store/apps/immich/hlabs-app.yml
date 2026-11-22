@@ -39,3 +39,16 @@ backup:
   exclude: [thumbs/, encoded-video/]
   beforeUpdate: true
 permissions: { network: internet }
+# Home widget (US-HOME-20, D-157): the library's size, read with an admin's API key.
+widgets:
+  - id: library
+    name: Photo library
+    template: twoStat
+    endpoint: { service: immich-server, path: /api/server/statistics }
+    refresh: 300
+    fields:
+      first: { value: photos, label: photos }
+      second: { value: videos, label: videos }
+    auth:
+      header: x-api-key
+      help: In Immich, open Account settings › API keys and make a key with the server.statistics permission.

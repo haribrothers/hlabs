@@ -25,6 +25,7 @@ describe('US-HOME-02', () => {
         { kind: 'widget', id: 'backups' },
       ],
       dock: [],
+      hidden: [],
     });
   });
 

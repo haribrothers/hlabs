@@ -1,0 +1,1 @@
+ALTER TABLE `home_layout` ADD `hidden_json` text DEFAULT '[]' NOT NULL;

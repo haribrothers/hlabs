@@ -90,6 +90,7 @@ import { AppWatch } from './apps/app-watch';
 import { ReinstallService } from './apps/reinstall';
 import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
+import { AppWidgets } from './home/app-widgets';
 import type { Readiness } from './readiness';
 import type { ServiceHolder, Services } from './services';
 
@@ -575,6 +576,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     },
   });
   const services: Services = {
+    appWidgets: new AppWidgets({ db, secrets }),
     config,
     logger,
     readiness,

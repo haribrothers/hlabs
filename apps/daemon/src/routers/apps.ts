@@ -1,7 +1,10 @@
 import type { AppHandlers } from '@hlabs/api';
 import { hlabsError } from '@hlabs/api';
 import { listApps } from '../apps/list';
-import { visibleAppIds } from '../home/layout';
+import { auditLog } from '@hlabs/db';
+import { ulid } from '@hlabs/shared';
+import { widgetKeyRef } from '../home/app-widgets';
+import { appWidgetsOf, visibleAppIds } from '../home/layout';
 import type { DaemonContext } from '../context';
 
 /** The signed-in person, as an installer. */
@@ -65,6 +68,39 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
   retryInstall: (input, ctx) => ctx.services.installer.retry(installer(ctx), input.appId, input.portOverrides?.web),
   uninstall: (input, ctx) => ctx.services.installer.uninstall(installer(ctx), input.appId, input.keepData),
   reinstall: (input, ctx) => ctx.services.reinstalls.reinstall(installer(ctx), input.appId),
+  /** Whether this app's Home widgets need a key, and whether one is set (US-HOME-20, D-157). */
+  widgetKey: async ({ appId }, ctx) => {
+    const app = appWidgetsOf(ctx.services.db, appId);
+    if (!app) throw hlabsError('NOT_FOUND');
+    const keyed = app.widgets.find((w) => w.auth);
+    return {
+      needed: Boolean(keyed),
+      set: keyed ? Boolean(await ctx.services.secrets.get(widgetKeyRef(appId))) : false,
+      help: keyed?.auth?.help ?? null,
+    };
+  },
+  /** The key in the keychain (never SQLite or logs), audited without it (07 §7.7). */
+  setWidgetKey: async ({ appId, key }, ctx) => {
+    const user = installer(ctx);
+    const app = appWidgetsOf(ctx.services.db, appId);
+    if (!app?.widgets.some((w) => w.auth)) throw hlabsError('NOT_FOUND');
+    if (key === null) await ctx.services.secrets.delete(widgetKeyRef(appId));
+    else await ctx.services.secrets.set(widgetKeyRef(appId), key);
+    ctx.services.appWidgets.forget(appId);
+    ctx.services.db
+      .insert(auditLog)
+      .values({
+        id: ulid(),
+        at: Date.now(),
+        userId: user.userId,
+        action: key === null ? 'app.widget_key.removed' : 'app.widget_key.set',
+        target: appId,
+        detailJson: null,
+        ip: user.ip,
+      })
+      .run();
+    return { ok: true as const };
+  },
   /** Only the apps this person can open, enforced here, not in the UI (07 §7.4). */
   list: (_input, ctx) => {
     const id = ctx.identity;

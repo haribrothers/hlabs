@@ -149,6 +149,13 @@ export const apps = {
   uninstall: io(appRefSchema.extend({ keepData: z.boolean() }), jobRefSchema),
   /** Rebuilds the app, keeping its data and settings (US-APP-25): the job already going when there is one. */
   reinstall: io(appRefSchema, jobRefSchema),
+  /** An app's Home widgets that need an API key (US-HOME-20, D-157): whether one is needed and set, and where to make it. */
+  widgetKey: io(appRefSchema, z.object({ needed: z.boolean(), set: z.boolean(), help: z.string().nullable() })),
+  /** Adds (or with null removes) that key; kept in the keychain, never in SQLite. */
+  setWidgetKey: io(
+    appRefSchema.extend({ key: z.string().trim().min(1).max(500).nullable() }),
+    z.object({ ok: z.literal(true) }),
+  ),
   getConfig: io(appRefSchema, pending),
   setConfig: io(
     appRefSchema.extend({

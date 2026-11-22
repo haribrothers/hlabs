@@ -133,4 +133,6 @@ export const homeLayout = sqliteTable('home_layout', {
   itemsJson: json<HomeLayoutItem[]>('items_json').notNull().default([]),
   /** Pinned Dock apps, ordered, max 8 (D-054). */
   dockJson: json<string[]>('dock_json').notNull().default([]),
+  /** Apps taken off Home but still installed (US-HOME-18): not appended again as new. */
+  hiddenJson: json<string[]>('hidden_json').notNull().default([]),
 });

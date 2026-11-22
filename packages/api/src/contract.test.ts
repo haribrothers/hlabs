@@ -50,7 +50,7 @@ const EXPECTED: Row[] = [
   ['apps.revealSecret', 'm', 'admin'], ['apps.setMounts', 'm', 'admin'], ['apps.setPermissions', 'm', 'admin'],
   ['apps.setAutostart', 'm', 'admin'], ['apps.setAutoUpdate', 'm', 'admin'], ['apps.setAuthMode', 'm', 'admin'],
   ['apps.logs', 'q', 'admin'], ['apps.watchLogs', 's', 'admin'], ['apps.moveData', 'm', 'admin'],
-  ['apps.deployCustom', 'm', 'admin'],
+  ['apps.deployCustom', 'm', 'admin'], ['apps.widgetKey', 'q', 'admin'], ['apps.setWidgetKey', 'm', 'admin'],
 
   ['home.getLayout', 'q', 'authed'], ['home.saveLayout', 'm', 'authed'], ['home.saveDock', 'm', 'authed'],
   ['home.listWidgets', 'q', 'authed'], ['home.getWidgetData', 'q', 'authed'], ['home.searchEverything', 'q', 'authed'],

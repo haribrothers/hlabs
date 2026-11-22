@@ -1,9 +1,11 @@
 // Installed apps as Home shows them (US-HOME-03): name and icon from the app's catalog manifest, state, and the
 // addresses it opens at. Admins see every app; members only those shared with them.
-import { apps, catalogApps, getSetting, type HlabsDb } from '@hlabs/db';
-import { and, eq } from 'drizzle-orm';
+import { apps, getSetting, type HlabsDb } from '@hlabs/db';
 import { z } from 'zod';
 import { visibleAppIds } from '../home/layout';
+import { catalogRow } from './catalog-row';
+
+export { catalogRow };
 import { tailnetHost } from '../network/domains';
 import { tailnetAppPort } from '@hlabs/shared';
 
@@ -30,17 +32,6 @@ export function logoUrl(appId: string, logo: string | undefined): string | null 
 
 /** The name, icon and web bits of an installed app's catalog manifest (its own source first). */
 /** The app's listing in its source's catalogue (or any source's, for an app whose source is gone). */
-export function catalogRow(db: HlabsDb, app: { id: string; sourceId: string | null }) {
-  return (
-    (app.sourceId
-      ? db
-          .select()
-          .from(catalogApps)
-          .where(and(eq(catalogApps.sourceId, app.sourceId), eq(catalogApps.appId, app.id)))
-          .get()
-      : undefined) ?? db.select().from(catalogApps).where(eq(catalogApps.appId, app.id)).get()
-  );
-}
 
 export function catalogManifest(db: HlabsDb, app: { id: string; sourceId: string | null }) {
   const row = catalogRow(db, app);

@@ -9,12 +9,13 @@ import {
   iconDefaults,
   RotateCw,
   Search,
+  Plus,
   Settings,
   SlidersHorizontal,
   TextAlignStart,
 } from '@hlabs/icons';
 import { CommandPanel } from '@hlabs/ui';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { searchCopy } from '../copy/search';
@@ -111,6 +112,24 @@ function SearchBody({ input }: { input: React.RefObject<HTMLInputElement | null>
       if (!handledGlobally(err)) showErrorToast(err);
     },
   });
+  // An app taken off Home goes back at the end of the grid (US-HOME-18).
+  const queryClient = useQueryClient();
+  const addToHome = useMutation({
+    mutationFn: async (app: { id: string; name: string }) => {
+      const layout = await client.home.getLayout.query();
+      return client.home.saveLayout.mutate({
+        items: [...layout.items.filter((i) => !(i.kind === 'app' && i.id === app.id)), { kind: 'app', id: app.id }],
+        hidden: layout.hidden.filter((id) => id !== app.id),
+      });
+    },
+    onSuccess: (_saved, app) => {
+      void queryClient.invalidateQueries({ queryKey: trpc.home.getLayout.queryKey() });
+      showToast({ tone: 'success', title: copy.addedToHome(app.name) });
+    },
+    onError: (err) => {
+      if (!handledGlobally(err)) showErrorToast(err);
+    },
+  });
   const from = useLocation({ select: (l) => l.pathname });
   const run = (item: SearchItem) => {
     closeSearch();
@@ -126,6 +145,7 @@ function SearchBody({ input }: { input: React.RefObject<HTMLInputElement | null>
           settings: () => void navigate({ to: '/apps/$appId/settings', params: { appId: a.appId }, state: { from } }),
           restart: () => restart.mutate({ id: a.appId, name: a.appName }),
           logs: () => void navigate({ to: '/apps/$appId/logs', params: { appId: a.appId } }),
+          addToHome: () => addToHome.mutate({ id: a.appId, name: a.appName }),
         }[a.kind],
       ),
     ),
@@ -294,8 +314,11 @@ function IconTile({ icon: Glyph }: { icon: typeof Search }) {
   );
 }
 
-function actionItem(a: { kind: 'settings' | 'restart' | 'logs'; appId: string; appName: string }, run: () => void) {
-  const icon = { settings: SlidersHorizontal, restart: RotateCw, logs: TextAlignStart }[a.kind];
+function actionItem(
+  a: { kind: 'settings' | 'restart' | 'logs' | 'addToHome'; appId: string; appName: string },
+  run: () => void,
+) {
+  const icon = { settings: SlidersHorizontal, restart: RotateCw, logs: TextAlignStart, addToHome: Plus }[a.kind];
   return {
     id: `action:${a.kind}:${a.appId}`,
     group: 'actions',

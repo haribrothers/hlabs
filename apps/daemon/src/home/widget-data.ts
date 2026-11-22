@@ -1,18 +1,53 @@
-// Data for the system widgets that no other query serves (US-HOME-12): a member's "My files" and "Shared with you".
+// Data for the widgets that no other query serves: a member's "My files" and "Shared with you" (US-HOME-12), an
+// admin's "App status" and "Updates" (US-HOME-19), and apps' own widgets (US-HOME-20).
 import { apps, getSetting, type HlabsDb } from '@hlabs/db';
 import { inArray } from 'drizzle-orm';
 import { managingAdminName } from '../account/account';
 import { homeFolderBytes } from '../storage/home-folder';
-import { visibleAppIds } from './layout';
+import type { AppWidgets } from './app-widgets';
+import { visibleAppIds, widgetAllowed } from './layout';
 
 type Who = { id: string; username: string; role: 'admin' | 'member' };
-type WidgetData = { status: 'ok' | 'app_not_running' | 'error'; data?: unknown; updatedAt: number };
+type WidgetData = { status: 'ok' | 'app_not_running' | 'error' | 'needs_key'; data?: unknown; updatedAt: number };
 
 const RUNNING = new Set(['running']);
+/** States that mean an app needs looking at, for "App status". */
+const ATTENTION = new Set(['error', 'install_failed', 'update_failed']);
 
-export function widgetData(db: HlabsDb, who: Who, widgetIds: readonly string[], now = Date.now()) {
+export async function widgetData(
+  deps: { db: HlabsDb; appWidgets: AppWidgets; pendingUpdates: () => number },
+  who: Who,
+  widgetIds: readonly string[],
+  now = Date.now(),
+) {
+  const { db } = deps;
   const out: Record<string, WidgetData> = {};
+  const allowed = widgetAllowed(db, who);
   for (const id of new Set(widgetIds)) {
+    // A person's own summaries are always theirs to read; anything else only if it may be on their Home.
+    if (id !== 'my-files' && id !== 'shared-apps' && !allowed(id)) continue;
+    if (id === 'app-status') {
+      const states = db.select({ state: apps.state }).from(apps).all();
+      out[id] = {
+        status: 'ok',
+        data: {
+          running: states.filter((s) => RUNNING.has(s.state)).length,
+          stopped: states.filter((s) => s.state === 'stopped').length,
+          attention: states.filter((s) => ATTENTION.has(s.state)).length,
+        },
+        updatedAt: now,
+      };
+      continue;
+    }
+    if (id === 'updates') {
+      out[id] = { status: 'ok', data: { count: deps.pendingUpdates() }, updatedAt: now };
+      continue;
+    }
+    const app = await deps.appWidgets.data(id);
+    if (app) {
+      out[id] = app;
+      continue;
+    }
     if (id === 'my-files') {
       // The last photo backup from the phone needs Immich's own API; until hlabs reads it, the line stays hidden.
       out[id] = {

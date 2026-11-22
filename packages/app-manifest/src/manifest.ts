@@ -86,15 +86,46 @@ const health = z
     message: 'Pick one health check: http, tcp or container',
   });
 
+/** Where a value is in the endpoint's JSON answer: `photos`, `data.total`, `items[0].name` (US-HOME-20, D-157). */
+const valuePath = z
+  .string()
+  .regex(/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*|\[\d+\])*$/, 'Use a path like photos or data.total');
+/** One figure: the value and the word after it ("1 204 photos"). */
+const statField = z.object({ value: valuePath, label: z.string().min(1).max(30) }).strict();
+
 const widget = z
   .object({
     id: z.string().regex(/^[a-z][a-z0-9-]*$/),
     name: z.string().min(1),
     template: z.enum(['stat', 'twoStat', 'list']),
+    /** On the app's web service, the only one published (D-049). */
     endpoint: z.object({ service: serviceName, path: z.string().startsWith('/') }).strict(),
     refresh: z.number().int().min(10).default(60),
+    /** Which parts of the answer fill the template: stat `{ value }`, twoStat `{ first, second }`, list `{ items, title, detail? }`. */
+    fields: z.union([
+      z.object({ value: statField }).strict(),
+      z.object({ first: statField, second: statField }).strict(),
+      z.object({ items: valuePath, title: valuePath, detail: valuePath.optional() }).strict(),
+    ]),
+    /** The endpoint needs an API key made in the app: the header it goes in, and where to make it. */
+    auth: z
+      .object({
+        header: z.string().regex(/^[A-Za-z][A-Za-z0-9-]*$/),
+        /** Before the key in the header, e.g. "Token " or "Bearer ". */
+        prefix: z.string().max(20).optional(),
+        help: z.string().min(1).max(200),
+      })
+      .strict()
+      .optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (w) =>
+      (w.template === 'stat' && 'value' in w.fields) ||
+      (w.template === 'twoStat' && 'first' in w.fields) ||
+      (w.template === 'list' && 'items' in w.fields),
+    { message: 'fields must match the template', path: ['fields'] },
+  );
 
 export const AppManifest = z
   .object({
@@ -173,12 +204,25 @@ export const AppManifest = z
       m.folders.map((f) => f.key),
       'folders',
     );
+    m.widgets.forEach((w, i) => {
+      if (w.endpoint.service !== m.web.service)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['widgets', i, 'endpoint', 'service'],
+          message: 'A widget reads from the web service, the only one hlabs can reach',
+        });
+    });
+    unique(
+      m.widgets.map((w) => w.id),
+      'widgets',
+    );
     if (m.dependsOn.includes(m.id))
       ctx.addIssue({ code: 'custom', path: ['dependsOn'], message: 'An app cannot depend on itself' });
   });
 
 export type AppManifest = z.output<typeof AppManifest>;
 export type AppManifestInput = z.input<typeof AppManifest>;
+export type AppWidget = AppManifest['widgets'][number];
 
 /** `library` → `HLABS_FOLDER_LIBRARY` (06 §Variables available to compose). */
 export function folderVariable(key: string): string {

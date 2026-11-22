@@ -96,6 +96,7 @@ describe('US-HOME-03', () => {
         { kind: 'app', id: 'immich' },
       ],
       dock: ['immich'],
+      hidden: [],
     });
   });
 });
