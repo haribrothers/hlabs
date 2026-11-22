@@ -21,8 +21,8 @@ The App Store is where people find self-hosted apps, see what each one needs and
 | F-STORE-10 | App sources | P2 | 7 | `StoreSources`, `StoreSearch` |
 | F-STORE-11 | Deploy your own app | P3 | 8 | `DeployCustom` |
 | F-STORE-12 | Loading states | Nice to have | 9 | `StoreLoading` |
-| F-STORE-13 | A bigger built-in store (100 apps) | P2 | 7 | `AppStore`, `StoreCategory`, `AppDetails` |
-| F-STORE-14 | Your own app library | P2 | 7 | `StoreSources`, `AppDetails` |
+| F-STORE-13 | A bigger built-in store (100 apps) | P2 | 7 | `AppStore`, `StoreCategory`, `AppDetailsOverlap`, `AppDetailsX86` |
+| F-STORE-14 | Your own app library | P2 | 7 | `StoreSourcesLibrary`, `CopyToLibrary` |
 
 ## User stories
 
@@ -397,12 +397,12 @@ The App Store is where people find self-hosted apps, see what each one needs and
 - UI: GlassCard skeletons, Button.
 
 ### US-STORE-23 · Find the apps people run on a home server
-**Feature:** F-STORE-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppStore`, `StoreCategory`, `AppDetails`
+**Feature:** F-STORE-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppStore`, `StoreCategory`, `AppDetailsOverlap`, `AppDetailsX86`
 **As** an admin, **I want** the App Store to have the apps people usually run on a home server, **so that** I can set up everything I need from one place.
 
 **Acceptance criteria**
 - **Given** the built-in source, **when** phase 7 ships, **then** it has the 100 apps of the list approved for D-148, each in a store group (US-STORE-02) and each passing the install matrix (install, open, restart, uninstall, D-071).
-- **Given** an app whose `platforms` has no `linux/arm64`, **when** the store shows it on an arm64 computer, **then** its card and page show "x86 only" (US-STORE-03's notice), it's never featured there, and Install explains it can't run on this computer.
+- **Given** an app whose `platforms` has no `linux/arm64`, **when** the store shows it on an arm64 computer, **then** its card and page show an "x86 only" badge instead of the platform tag (US-STORE-01), it's never featured there, and Install is disabled with US-STORE-06's note ("There's no Apple Silicon version of this app yet."; on Linux, "There's no ARM64 version of this app yet.").
 - **Given** an app with `overlaps` (06), **when** its page renders, **then** a note says what hlabs already does, e.g. "hlabs already gives you remote access with Tailscale. Use this only if you need it for something else." for `remoteAccess`, "hlabs already backs up your apps and files." for `backups`, "hlabs already manages your apps; this one can control all of them." for `appManagement`.
 - **Given** an app ported from Runtipi or CasaOS, **when** its page's About section renders, **then** it credits the source ("Packaged with help from the Runtipi app store (GPL-3.0)").
 - **Given** the store home, **when** the catalogue has 100 apps, **then** "Popular with families" and Featured still come from `store/curation.yml`, and categories and search (US-STORE-04, 05) list them all.
@@ -451,7 +451,7 @@ The App Store is where people find self-hosted apps, see what each one needs and
 - `scripts/store-matrix.ts` takes app ids; `.github/workflows/store.yml` computes them from the diff and shards the nightly run.
 
 ### US-STORE-27 · Start my own app library
-**Feature:** F-STORE-14 · **Priority:** P2 · **Phase:** 7 · **Screens:** `StoreSources`
+**Feature:** F-STORE-14 · **Priority:** P2 · **Phase:** 7 · **Screens:** `StoreSourcesLibrary`
 **As** an admin who runs apps the store doesn't have, **I want** my own library of apps, **so that** I install and update them from the App Store like built-in ones.
 
 **Acceptance criteria**
@@ -467,7 +467,7 @@ The App Store is where people find self-hosted apps, see what each one needs and
 - Edge: a folder library is re-read at each sync, so a broken app shows on the source's row ("1 app has a problem") and is left out, while the rest still sync.
 
 ### US-STORE-28 · Sign my library
-**Feature:** F-STORE-14 · **Priority:** P2 · **Phase:** 7 · **Screens:** `StoreSources`
+**Feature:** F-STORE-14 · **Priority:** P2 · **Phase:** 7 · **Screens:** `StoreSourcesLibrary`
 **As** an admin who shares a library with others, **I want** to sign it, **so that** hlabs on other computers can tell it hasn't been changed.
 
 **Acceptance criteria**
@@ -479,7 +479,7 @@ The App Store is where people find self-hosted apps, see what each one needs and
 - CLI: `hlabs library keygen`, `hlabs library sign`; the same signature format the built-in index uses.
 
 ### US-STORE-29 · Copy a built-in app into my library
-**Feature:** F-STORE-14 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppDetails`, `StoreSources`
+**Feature:** F-STORE-14 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppDetailsOverlap`, `CopyToLibrary`
 **As** an admin who needs an app set up differently, **I want** to copy it into my own library, **so that** I can change it and keep it.
 
 **Acceptance criteria**

@@ -18,7 +18,7 @@ Everything that happens after an app is installed: opening it, checking that it 
 | F-APP-07 | Per-app usage | P2 | 7 | `AppUsageDetail` |
 | F-APP-08 | Move app data | P3 | 8 | `AppMoveData` |
 | F-APP-09 | Reinstall an app | P1 | 4 | `AppSettings`, `AppLogs`, `ReinstallConfirm`, `HomeStates` |
-| F-APP-10 | Make an app public | P2 | 7 | `AppSettings`, `AppPublic` (new) |
+| F-APP-10 | Make an app public | P2 | 7 | `AppSettingsPublic`, `AppPublic`, `AppPublicVisits` |
 
 ## User stories
 
@@ -475,7 +475,7 @@ Everything that happens after an app is installed: opening it, checking that it 
 - No backup is taken first: the data isn't touched. Once backups ship (phase 5) this can be revisited.
 
 ### US-APP-27 · Make an app public
-**Feature:** F-APP-10 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppSettings`, `AppPublic` (new)
+**Feature:** F-APP-10 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppSettingsPrivate`, `AppPublic`, `AppPublicFunnelFull`, `AppSettingsPublic`, `PhoneAppPublic`
 **As** an admin, **I want** to make one app reachable from the internet, **so that** people outside my tailnet can use it, such as a friend opening a shared album.
 
 **Acceptance criteria**
@@ -494,7 +494,7 @@ Everything that happens after an app is installed: opening it, checking that it 
 - Edge: uninstalling a public app makes it private first; stopping it leaves the address showing Caddy's "<App> isn't running" page.
 
 ### US-APP-28 · Choose who gets into a public app
-**Feature:** F-APP-10 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppPublic` (new)
+**Feature:** F-APP-10 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppPublic`, `AppPublicOwnLogin`, `PhoneAppPublic`
 **As** an admin, **I want** to decide how people sign in to a public app, **so that** it's safe and its phone apps still work when they need to.
 
 **Acceptance criteria**
@@ -508,7 +508,7 @@ Everything that happens after an app is installed: opening it, checking that it 
 - Edge: changing the login choice is audited and notifies the other admins.
 
 ### US-APP-29 · See who visits a public app
-**Feature:** F-APP-10 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppPublic` (new)
+**Feature:** F-APP-10 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppPublicVisits`
 **As** an admin, **I want** to see the requests to a public app, **so that** I notice when strangers are trying to get in.
 
 **Acceptance criteria**

@@ -21,7 +21,7 @@ The system half of Settings: how hlabs is reached on the home network and over T
 | F-SYS-10 | AI access (MCP) | P3 | 8 | `SettingsAI` |
 | F-SYS-11 | Factory reset | P2 | 7 | `FactoryReset` |
 | F-SYS-12 | About | P3 | 8 | `SettingsAbout` |
-| F-SYS-13 | Public access | P2 | 7 | `SettingsNetwork`, `PublicSetup` (new) |
+| F-SYS-13 | Public access | P2 | 7 | `SettingsNetworkPublic`, `PublicSetup`, `TrayPublic` |
 
 ## User stories
 
@@ -712,7 +712,7 @@ The system half of Settings: how hlabs is reached on the home network and over T
 - UI: Dialog, TextField (search), List/ListRow.
 
 ### US-SYS-43 · Set up a way to make apps public
-**Feature:** F-SYS-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** `SettingsNetwork`, `PublicSetup` (new)
+**Feature:** F-SYS-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** `SettingsNetworkPublicNone`, `PublicSetup`, `PublicRemove`
 **As** an admin, **I want** to choose how hlabs makes apps public, **so that** I can share apps without opening my router.
 
 **Acceptance criteria**
@@ -728,7 +728,7 @@ The system half of Settings: how hlabs is reached on the home network and over T
 - Data: `settings.public` (provider state), keychain `cloudflare-token`.
 
 ### US-SYS-44 · See and stop everything that's public
-**Feature:** F-SYS-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** `SettingsNetwork`
+**Feature:** F-SYS-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** `SettingsNetworkPublic`, `PublicTurnOffAll`, `TrayPublic`
 **As** an admin, **I want** one place that shows every public app and stops them all, **so that** I always know what strangers can reach.
 
 **Acceptance criteria**

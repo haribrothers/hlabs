@@ -1588,3 +1588,153 @@ Shows: Rename · Lease agreement.pdf (name selected) · The .pdf ending is kept 
 ![PhoneFilesTrash](screens/PhoneFilesTrash.webp)
 
 Shows: Trash chip · Trash · Restore all · Empty trash · Items are deleted for good after 30 days. · rows with From … · deleted … · days left (4 days left in amber) · Restore
+
+## Added for phase 7 (22 Nov 2026)
+
+On the Home Cloud Dashboard canvas, page "Phase 7 · Public apps and libraries" (D-148 to D-151). Only single apps go public, never the dashboard. The amber Public badge always has a globe and the word, so the state is never colour alone. While an app is public, "Update automatically" (and "Require hlabs login" with the hlabs login) are locked on. Placeholders in square brackets stand for real values.
+
+### SettingsNetworkPublicNone — Public access, nothing public yet
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-SYS-43, US-SYS-44
+
+![SettingsNetworkPublicNone](screens/SettingsNetworkPublicNone.webp)
+
+Links to: `PublicSetup`
+
+Shows: Network & remote access · Remote access · Tailscale · Connected · Public access · Make single apps reachable from the internet. Your dashboard never is. · Tailscale Funnel · Not allowed · Your tailnet's policy doesn't let this computer use Funnel… · Open the admin console · Check again · Cloudflare Tunnel · Set up… · Public apps · No apps are public.
+
+### PublicSetup — Set up Cloudflare Tunnel
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-SYS-43
+
+![PublicSetup](screens/PublicSetup.webp)
+
+Shows: Set up Cloudflare Tunnel · Domain · API token · Zone · DNS · Edit · Account · Cloudflare Tunnel · Edit · How to make the token · Cloudflare will see the traffic to your public apps. The token is kept in this computer's keychain… · Cancel · Check and set up (then: Token works for example.com · Tunnel "hlabs" made · Starting the connector…)
+
+### SettingsNetworkPublic — Everything that's public
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-SYS-43, US-SYS-44
+
+![SettingsNetworkPublic](screens/SettingsNetworkPublic.webp)
+
+Links to: `PublicRemove`, `AppPublicVisits`, `PublicTurnOffAll`
+
+Shows: Tailscale Funnel · On · 1 of 2 in use · Remove… · Cloudflare Tunnel · On · Remove… · Public apps · Immich · Public · https://photos.example.com · Cloudflare Tunnel · hlabs login with two-factor · since 3 Dec by Hari · Visits · Make private · Jellyfin · Tailscale Funnel · Jellyfin's own login · Turn off all public access… · Makes every app private. Funnel and Cloudflare Tunnel stay set up.
+
+### PublicTurnOffAll — Turn off all public access?
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-SYS-44
+
+![PublicTurnOffAll](screens/PublicTurnOffAll.webp)
+
+Shows: Turn off all public access? · the public apps with their addresses · The other admins get a notification, and the audit log records it. · Cancel · Turn off public access
+
+### PublicRemove — Remove a way to go public
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-SYS-43
+
+![PublicRemove](screens/PublicRemove.webp)
+
+Shows: Remove Cloudflare Tunnel? · hlabs makes these apps private first, then deletes the tunnel, its DNS records and the token from this computer. · Apps public through Tailscale Funnel stay public. · Cancel · Make private and remove
+
+### TrayPublic — Menu-bar app with public apps
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-SYS-44
+
+![TrayPublic](screens/TrayPublic.webp)
+
+Shows: Public: 2 apps · Immich, Jellyfin · Turn off public access… · Asks for Touch ID (the password on Linux)
+
+### AppSettingsPrivate — Access before going public
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-APP-27
+
+![AppSettingsPrivate](screens/AppSettingsPrivate.webp)
+
+Links to: `AppPublic`, `SettingsNetworkPublicNone`
+
+Shows: Public on the internet · Not public. Only your home network and tailnet can open Immich. · Make public… (or: Set up public access in Settings › Network first. · Open Network settings; or: Portainer can't be made public: it can control your other apps. · Never public)
+
+### AppPublic — Make an app public
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-APP-27, US-APP-28
+
+![AppPublic](screens/AppPublic.webp)
+
+Shows: Make Immich public · Way to the internet · Tailscale Funnel · Cloudflare Tunnel · Address · Who can get in · People with an hlabs account and access to Immich · They sign in to hlabs first, with two-factor. · Hari, Asha: Two-factor on · Ravi: Can't get in yet · Ravi hasn't turned on two-factor login yet, so can't get in until then. · Immich's own login only · Anyone on the internet can reach this address. hlabs asks for a login first. · Automatic updates stay on while Immich is public. · Cancel · Make public
+
+### AppPublicOwnLogin — The app's own login only
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-APP-28
+
+![AppPublicOwnLogin](screens/AppPublicOwnLogin.webp)
+
+Shows: Cloudflare Tunnel · photos .example.com · Immich's own login only · Anyone on the internet can reach Immich's sign-in page. Use a strong password for every Immich account. · I understand (Make public stays off until ticked)
+
+### AppPublicFunnelFull — Funnel already has two apps
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-APP-27
+
+![AppPublicFunnelFull](screens/AppPublicFunnelFull.webp)
+
+Shows: Tailscale Funnel can make two apps public at once. Make another app private first, or use Cloudflare Tunnel. · Make public (off)
+
+### AppSettingsPublic — A public app's settings
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-APP-27
+
+![AppSettingsPublic](screens/AppSettingsPublic.webp)
+
+Links to: `AppPublicVisits`, `AppPublic`
+
+Shows: Immich · Public · Public on the internet · https://photos.example.com · Cloudflare Tunnel · hlabs login with two-factor · since 3 Dec by Hari · Visits · Change… · Make private · Require hlabs login (locked on) · Update automatically · On while Immich is public (locked on)
+
+### AppPublicVisits — Visits to a public app
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-APP-29
+
+![AppPublicVisits](screens/AppPublicVisits.webp)
+
+Shows: Visits to Immich · Requests to https://photos.example.com in the last 7 days. Kept for 7 days, never in backups. · Make private · 203.0.113.24 is refused until 18:42… · All · Signed in · Asked to sign in · Refused · Too many tries · When · From (IP and country) · Page · Result · toast: Someone keeps trying to sign in to Immich · Make private · See visits
+
+### PhoneAppPublic — Phone · make an app public
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-APP-27, US-APP-28
+
+![PhoneAppPublic](screens/PhoneAppPublic.webp)
+
+Shows: AppPublic as a sheet; the choices scroll and Cancel · Make public stay at the bottom.
+
+### AppDetailsOverlap — App that overlaps hlabs, with Copy to my library
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-STORE-23, US-STORE-29
+
+![AppDetailsOverlap](screens/AppDetailsOverlap.webp)
+
+Links to: `CopyToLibrary`
+
+Shows: WireGuard Easy · Networking · Apple Silicon · hlabs official · Install · ••• (Copy to my library… · Open the app's website) · hlabs already gives you remote access with Tailscale. Use this only if you need it for something else. · Packaged with help from the Runtipi app store (GPL-3.0). · Source: hlabs official · signed
+
+### AppDetailsX86 — x86-only app on Apple Silicon
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-STORE-23
+
+![AppDetailsX86](screens/AppDetailsX86.webp)
+
+Shows: x86 only badge · Install (off) · There's no Apple Silicon version of this app yet. It runs on computers with an Intel or AMD chip. · Runs on: Intel and AMD (x86-64)
+
+### CopyToLibrary — Copy to my library
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-STORE-29
+
+![CopyToLibrary](screens/CopyToLibrary.webp)
+
+Shows: Copy WireGuard Easy to your library · Library · My apps (folder) · Family apps (git repository) · Name · wg-easy-custom · Copies its manifest, compose file and logo to apps/wg-easy-custom/… · Cancel · Copy (for a git library: …download the app's files as a zip… · Download zip)
+
+### StoreSourcesLibrary — Libraries in App sources
+
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-STORE-27, US-STORE-28
+
+![StoreSourcesLibrary](screens/StoreSourcesLibrary.webp)
+
+Shows: A source is a git repository or a folder of app manifests. · hlabs official · 100 apps · Signed · My apps · folder · Not signed · 1 app has a problem · apps/wiki/docker-compose.yml:12 Host networking isn't allowed. · Family apps · Signed · Key [KEY FINGERPRINT] · Add a source · Git repository · Folder on this computer · Choose folder… · Make your own app library
