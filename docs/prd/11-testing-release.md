@@ -22,7 +22,8 @@ Rules:
 | --- | --- | --- |
 | `ci.yml` | PR, push to main | install (pnpm cache) → lint → typecheck → unit/integration → build → e2e (Linux, Docker) → axe; `store:lint`; boundaries check |
 | `tray.yml` | PR touching `apps/tray` | `cargo clippy`, `cargo test`, `tauri build` (macOS arm64 and Linux x64, unsigned) |
-| `store.yml` | nightly, PR touching `store/` | store matrix; sign `index.json` on main |
+| `store.yml` | nightly, PR touching `store/` or the install path | PRs: the apps the PR changes plus the smoke set (a change to the install path adds 10 apps that change daily); nightly: every app, split across runners, an issue per failing app, the install rate in the summary (US-STORE-26, D-148); sign `index.json` on main |
+| `store-updates.yml` | daily, by hand | a pull request per built-in app with a newer image (version, tag and multi-arch digest), never merged by itself (US-STORE-24, D-148) |
 | `site.yml` | PR or push touching `apps/site`, `store/`, `packages/ui`, `packages/icons` or what `site:check` compares | `site:build` (with the latest releases from GitHub) → `site:check` (help slugs, error pages, feature coverage, links, release-note sections, store group names) → `site:e2e` (the website's stories against a build from fixtures, with axe on every page template in both themes) → Lighthouse (accessibility 100 on home, download and a help page). Publishing isn't here: Cloudflare's Workers Builds builds `main` and branch previews from GitHub (D-147) |
 | `release.yml` | tag `v*`; by hand for a rehearsal | check the release notes exist → build all targets → sign → notarize → one signed `SHA256SUMS` → GitHub release with the update manifest (`stable` or `beta` by tag; draft without the update key) → the website's deploy hook, so `/download/` offers it (D-146, D-147) |
 

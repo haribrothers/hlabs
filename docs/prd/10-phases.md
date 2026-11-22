@@ -478,17 +478,18 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 
 ## Phase 7 · v1.0 completeness
 
-**Goal:** Everything P2: the comfortable product.
+**Goal:** Everything P2: the comfortable product, with the apps people run on a home server, their own app libraries, and apps they can share on the internet.
 
-**Deliverables**
-- Notifications, empty Home, edit mode, widgets.
-- Store categories, search, updates list, sources.
-- App configuration, permissions, usage detail.
-- Appearance, storage, advanced, factory reset.
-- Phone layouts for log in, Home, store and app details; PWA.
+Four tracks that don't wait for each other (D-151):
+- **A · The comfortable product:** notifications, empty Home, edit mode, widgets; store categories, search, updates list, sources; app configuration, permissions, usage detail; appearance, storage, advanced, factory reset; phone layouts and the PWA.
+- **B · A bigger built-in store (D-148):** first the tools (the porting helper, the update bot, CI per changed app), then Hari approves the list of 100 apps, then they're ported in waves of about 20, each merged when its matrix passes.
+- **C · Your own app library (D-149):** after sources (US-STORE-18, 19): the `hlabs library` commands, signing, the template repository and help guide, and "Copy to my library".
+- **D · Public apps (D-150):** first the threat model (07 §7.10) and a prototype with Tailscale Funnel and one or two apps (per-app addresses, phone apps behind the login, the hardening), reviewed with Hari; then the designs for `AppPublic` and `PublicSetup`; then the stories.
 
 **Done when**
 - [ ] All P2 stories pass; axe clean on every route; phone layouts verified on iOS Safari and Android Chrome.
+- [ ] The built-in store has the approved 100 apps and the nightly matrix installs ≥ 98 % of them.
+- [ ] Public apps: the prototype's findings are in D-150 and Q-19 is closed; a public app is checked by hand through Funnel and through Cloudflare from outside the home network (login in front, 404s, headers, rate limit, turning it off).
 - [ ] **1.0 release.**
 
 **Stories**
@@ -513,6 +514,13 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-STORE-16 · Check for updates and auto-update in the background (P2)
 - US-STORE-18 · See and manage app sources (P2)
 - US-STORE-19 · Add a source with a pinned signing key (P2)
+- US-STORE-23 · Find the apps people run on a home server (P2, track B)
+- US-STORE-24 · Keep the built-in apps up to date (P2, track B)
+- US-STORE-25 · Port an app with the porting helper (P2, track B)
+- US-STORE-26 · Test only the apps a change touches (P2, track B)
+- US-STORE-27 · Start my own app library (P2, track C)
+- US-STORE-28 · Sign my library (P2, track C)
+- US-STORE-29 · Copy a built-in app into my library (P2, track C)
 
 *[Using & managing apps](../features/06-apps.md)*
 
@@ -525,6 +533,9 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-APP-19 · Require hlabs login in front of an app (P2)
 - US-APP-20 · Resource use tiles and 24-hour chart (P2)
 - US-APP-21 · Per-container usage (P2)
+- US-APP-27 · Make an app public (P2, track D)
+- US-APP-28 · Choose who gets into a public app (P2, track D)
+- US-APP-29 · See who visits a public app (P2, track D)
 
 *[Settings · account & people](../features/09-account-people.md)*
 
@@ -546,6 +557,8 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-SYS-31 · Restart hlabs (P2)
 - US-SYS-37 · Confirm a factory reset (P2)
 - US-SYS-38 · Reset hlabs (P2)
+- US-SYS-43 · Set up a way to make apps public (P2, track D)
+- US-SYS-44 · See and stop everything that's public (P2, track D)
 
 *[Phone](../features/12-phone.md)*
 

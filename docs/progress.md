@@ -296,6 +296,13 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [ ] US-STORE-16 · Check for updates and auto-update in the background
 - [ ] US-STORE-18 · See and manage app sources
 - [ ] US-STORE-19 · Add a source with a pinned signing key
+- [ ] US-STORE-23 · Find the apps people run on a home server
+- [ ] US-STORE-24 · Keep the built-in apps up to date
+- [ ] US-STORE-25 · Port an app with the porting helper
+- [ ] US-STORE-26 · Test only the apps a change touches
+- [ ] US-STORE-27 · Start my own app library
+- [ ] US-STORE-28 · Sign my library
+- [ ] US-STORE-29 · Copy a built-in app into my library
 - [ ] US-APP-13 · Edit environment variables
 - [ ] US-APP-14 · Secrets are hidden and can be revealed by an admin
 - [ ] US-APP-15 · Change web address and port
@@ -305,6 +312,9 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [ ] US-APP-19 · Require hlabs login in front of an app
 - [ ] US-APP-20 · Resource use tiles and 24-hour chart
 - [ ] US-APP-21 · Per-container usage
+- [ ] US-APP-27 · Make an app public
+- [ ] US-APP-28 · Choose who gets into a public app
+- [ ] US-APP-29 · See who visits a public app
 - [ ] US-ACCT-32 · Choose a wallpaper
 - [ ] US-ACCT-33 · Choose an accent colour
 - [ ] US-ACCT-34 · Home screen options
@@ -320,6 +330,8 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [ ] US-SYS-31 · Restart hlabs
 - [ ] US-SYS-37 · Confirm a factory reset
 - [ ] US-SYS-38 · Reset hlabs
+- [ ] US-SYS-43 · Set up a way to make apps public
+- [ ] US-SYS-44 · See and stop everything that's public
 - [ ] US-PHONE-01 · Switch to the phone layout with a bottom tab bar
 - [ ] US-PHONE-02 · Touch targets, safe areas and phone-friendly inputs
 - [ ] US-PHONE-03 · Bottom sheets with soft spring and drag to dismiss

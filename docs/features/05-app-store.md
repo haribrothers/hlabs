@@ -21,6 +21,8 @@ The App Store is where people find self-hosted apps, see what each one needs and
 | F-STORE-10 | App sources | P2 | 7 | `StoreSources`, `StoreSearch` |
 | F-STORE-11 | Deploy your own app | P3 | 8 | `DeployCustom` |
 | F-STORE-12 | Loading states | Nice to have | 9 | `StoreLoading` |
+| F-STORE-13 | A bigger built-in store (100 apps) | P2 | 7 | `AppStore`, `StoreCategory`, `AppDetails` |
+| F-STORE-14 | Your own app library | P2 | 7 | `StoreSources`, `AppDetails` |
 
 ## User stories
 
@@ -393,6 +395,101 @@ The App Store is where people find self-hosted apps, see what each one needs and
 **Implementation notes**
 - API: `store.getHome`, `store.listApps` (TanStack Query cache, stale time 5 min).
 - UI: GlassCard skeletons, Button.
+
+### US-STORE-23 · Find the apps people run on a home server
+**Feature:** F-STORE-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppStore`, `StoreCategory`, `AppDetails`
+**As** an admin, **I want** the App Store to have the apps people usually run on a home server, **so that** I can set up everything I need from one place.
+
+**Acceptance criteria**
+- **Given** the built-in source, **when** phase 7 ships, **then** it has the 100 apps of the list approved for D-148, each in a store group (US-STORE-02) and each passing the install matrix (install, open, restart, uninstall, D-071).
+- **Given** an app whose `platforms` has no `linux/arm64`, **when** the store shows it on an arm64 computer, **then** its card and page show "x86 only" (US-STORE-03's notice), it's never featured there, and Install explains it can't run on this computer.
+- **Given** an app with `overlaps` (06), **when** its page renders, **then** a note says what hlabs already does, e.g. "hlabs already gives you remote access with Tailscale. Use this only if you need it for something else." for `remoteAccess`, "hlabs already backs up your apps and files." for `backups`, "hlabs already manages your apps; this one can control all of them." for `appManagement`.
+- **Given** an app ported from Runtipi or CasaOS, **when** its page's About section renders, **then** it credits the source ("Packaged with help from the Runtipi app store (GPL-3.0)").
+- **Given** the store home, **when** the catalogue has 100 apps, **then** "Popular with families" and Featured still come from `store/curation.yml`, and categories and search (US-STORE-04, 05) list them all.
+
+**Implementation notes**
+- Data: `store/apps/<id>/` per app; `store/curation.yml`; `store/ATTRIBUTION.md`; manifest `overlaps`, `public` (06).
+- UI: AppDetails note (Callout), Badge "x86 only".
+- Edge: an app that stops passing the nightly matrix is marked in `store/curation.yml` as `held` and hidden from the store until fixed (it stays installable for people who have it).
+
+### US-STORE-24 · Keep the built-in apps up to date
+**Feature:** F-STORE-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** —
+**As** the person who looks after the built-in store, **I want** a pull request whenever an app has a new version, **so that** 100 apps stay current without checking each by hand.
+
+**Acceptance criteria**
+- **Given** `store-updates.yml` runs (daily, and by hand), **when** an app's image has a newer release tag than the manifest's `version`, **then** it opens (or updates) one pull request per app that bumps `version`, `revision`, the image tag and its multi-arch digest, with the project's release notes linked.
+- **Given** that pull request, **when** CI runs, **then** it installs only that app (US-STORE-26), plus the smoke set, and the pull request says whether its tags look like a major version change.
+- **Given** a pre-release or a tag that doesn't match the app's usual pattern, **then** it's skipped.
+- **Given** Hari merges it, **when** a computer's store next syncs, **then** the update shows in Updates (US-STORE-15) as for any built-in app.
+
+**Implementation notes**
+- `scripts/store-updates.ts` (registry tags and digests through the OCI distribution API), `.github/workflows/store-updates.yml`; no auto-merge (D-148).
+- Edge: an app pinned on purpose (`hold: true` in `curation.yml`) is skipped.
+
+### US-STORE-25 · Port an app with the porting helper
+**Feature:** F-STORE-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** —
+**As** someone adding an app to the built-in store, **I want** a first draft of its hlabs files, **so that** porting 100 apps is checking and testing, not typing.
+
+**Acceptance criteria**
+- **Given** `pnpm store:port <name> --from <upstream compose URL | runtipi:<id> | casaos:<id>>`, **then** it writes `store/apps/<id>/` with a draft `hlabs-app.yml` (name, tagline, category, developer, source, licence, web service and port, folders from its volumes, env prompts, permissions), a `docker-compose.yml` following the compose rules (images pinned by tag and digest, data under `${HLABS_APP_DATA}`, no named volumes), the logo when the project publishes one, and a `NOTICE` for a Runtipi or CasaOS source.
+- **Given** something it can't decide (which volume is the user's library, whether the app has its own login), **then** it leaves a `TODO` in the manifest that `pnpm store:lint` fails on until a person resolves it.
+- **Given** the draft, **when** `pnpm store:lint` passes, **then** `pnpm store:matrix <id>` installs, opens, restarts and uninstalls it locally.
+
+**Implementation notes**
+- `packages/app-manifest/src/cli/store-port.ts`; reuses the manifest schema and compose validator.
+- Edge: it never copies from Umbrel's catalogue (no licence, D-148).
+
+### US-STORE-26 · Test only the apps a change touches
+**Feature:** F-STORE-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** —
+**As** the person who looks after the built-in store, **I want** pull requests to install only the apps they change, **so that** CI stays fast with 100 apps.
+
+**Acceptance criteria**
+- **Given** a pull request that changes `store/apps/<id>/`, **then** the matrix installs those apps plus the smoke set (D-071); changes to the install path (daemon, app-manifest) run the smoke set and a sample of 10 apps that changes daily.
+- **Given** the nightly run, **then** every app installs, split across runners, and a failing app opens (or updates) an issue naming it; the install rate across the store (≥ 98 %, 00) is in the run's summary.
+
+**Implementation notes**
+- `scripts/store-matrix.ts` takes app ids; `.github/workflows/store.yml` computes them from the diff and shards the nightly run.
+
+### US-STORE-27 · Start my own app library
+**Feature:** F-STORE-14 · **Priority:** P2 · **Phase:** 7 · **Screens:** `StoreSources`
+**As** an admin who runs apps the store doesn't have, **I want** my own library of apps, **so that** I install and update them from the App Store like built-in ones.
+
+**Acceptance criteria**
+- **Given** `hlabs library init ~/hlabs/my-apps`, **then** it makes the folder with a README, an `apps/` folder and an example app, and says how to add it in the App Store.
+- **Given** `hlabs library add <id>`, **then** it adds `apps/<id>/` with a manifest and compose file to fill in; `hlabs library check` checks every app with the store's validator (06) and lists problems with file and line, e.g. "apps/wiki/docker-compose.yml:12 Host networking isn't allowed".
+- **Given** `hlabs library index`, **then** it writes `index.json` (06 › Your own library).
+- **Given** App sources › Add a source, **when** I choose the folder (under the storage root) or paste the library's git URL, **then** it's added as in US-STORE-19, and its apps appear in the store under their categories with "From My apps" on their page.
+- **Given** a library on GitHub, **then** the template repository (linked from the help guide "Make your own app library") has a workflow that checks and indexes it on every push.
+
+**Implementation notes**
+- CLI: `apps/cli` `library` commands, using `@hlabs/app-manifest`; help: `apps/site/src/content/docs/help/apps/your-own-library.md`.
+- API: `store.sources.add` (local path under the storage root, D-149).
+- Edge: a folder library is re-read at each sync, so a broken app shows on the source's row ("1 app has a problem") and is left out, while the rest still sync.
+
+### US-STORE-28 · Sign my library
+**Feature:** F-STORE-14 · **Priority:** P2 · **Phase:** 7 · **Screens:** `StoreSources`
+**As** an admin who shares a library with others, **I want** to sign it, **so that** hlabs on other computers can tell it hasn't been changed.
+
+**Acceptance criteria**
+- **Given** `hlabs library keygen`, **then** it makes an ed25519 key pair, keeps the private key in the keychain (or a 0600 file on a headless Linux server, 07 §7.7) and prints the public key's fingerprint.
+- **Given** `hlabs library sign`, **then** it writes `index.json.sig`; adding the library shows that fingerprint in "Trust this source?" (US-STORE-19), and later syncs verify it.
+- **Given** an unsigned library, **then** it can still be added, with "This source isn't signed. Updates can't be verified." (US-STORE-19), and its apps' pages say "Not signed".
+
+**Implementation notes**
+- CLI: `hlabs library keygen`, `hlabs library sign`; the same signature format the built-in index uses.
+
+### US-STORE-29 · Copy a built-in app into my library
+**Feature:** F-STORE-14 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppDetails`, `StoreSources`
+**As** an admin who needs an app set up differently, **I want** to copy it into my own library, **so that** I can change it and keep it.
+
+**Acceptance criteria**
+- **Given** an admin with a folder library, **when** they choose "Copy to my library" on a built-in app's page, **then** they pick the library and a name, and its manifest, compose file and logo are copied to `apps/<id>-custom/` (or the name given), with a note in its README saying where it came from.
+- **Given** the copy, **when** the library syncs, **then** it's a separate app: it can be installed next to the original, follows the same compose rules, and its updates come only from the library ("Updates: from My apps").
+- **Given** a library that's a git repository, **then** "Copy to my library" downloads the app's files as a zip to add to the repository instead.
+
+**Implementation notes**
+- API: `store.copyToLibrary` (admin): `{ appId, sourceId, newId? }` → `{ appId }`, audited.
+- Edge: ids clash → "My apps already has an app called <id>-custom: choose another name".
 
 ## API additions
 Merged into [05-api](../prd/05-api.md) under "Contract additions from the feature files".

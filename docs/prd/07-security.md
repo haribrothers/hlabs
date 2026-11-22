@@ -3,10 +3,10 @@
 hlabs holds a household's photos, passwords and documents. Security rules here are requirements, not guidance.
 
 ## 7.1 Principles
-1. **Nothing leaves the house unless the user turns it on.** No telemetry, no analytics, no crash reporting by default. The only outbound calls are: store index sync, image pulls, hlabs update checks, Tailscale (if enabled), backup destinations (if configured), an ntfy server for push notifications (only if the admin configures one, D-033), the API of a Pi-hole on another device (only if chosen as the local DNS server, D-106), and on macOS the container engine download when no engine is found (pinned and checksum-verified, D-057). Each is listed in Settings › Advanced › "What hlabs connects to".
+1. **Nothing leaves the house unless the user turns it on.** No telemetry, no analytics, no crash reporting by default. The only outbound calls are: store index sync, image pulls, hlabs update checks, Tailscale (if enabled), backup destinations (if configured), an ntfy server for push notifications (only if the admin configures one, D-033), the API of a Pi-hole on another device (only if chosen as the local DNS server, D-106), on macOS the container engine download when no engine is found (pinned and checksum-verified, D-057), app libraries an admin adds (D-149), and for apps an admin makes public, Tailscale Funnel or Cloudflare (its API and the tunnel, D-150). Each is listed in Settings › Advanced › "What hlabs connects to".
 2. **The daemon is never directly exposed.** It binds to `127.0.0.1`; Caddy is the only listener on the network.
 3. **Least privilege.** The daemon runs as the logged-in user (macOS, Linux desktop) or a dedicated `hlabs` user (headless). Privileged operations (binding 80/443 on Linux, mounting SMB on Linux) go through a minimal helper with an allow-list of commands.
-4. **Public internet exposure is out of scope.** No port forwarding, no Tailscale Funnel, no dynamic DNS in v1.
+4. **Only single apps go public, and only through hlabs** (D-150, §7.10). The dashboard and the daemon never do. No port forwarding, UPnP or dynamic DNS.
 
 ## 7.2 Authentication
 - Passwords: min 12 characters, checked against a bundled list of the 100k most common passwords; Argon2id (`m=64 MiB, t=3, p=1`).
@@ -70,3 +70,24 @@ Uninstall with data deletion, restore, move all data, engine switch and factory 
 - pnpm with a lockfile and `pnpm audit` in CI; Renovate for updates.
 - Bundled binaries are downloaded at build time from pinned URLs with checksum verification and are code-signed with the app (macOS notarized).
 - Releases are signed (macOS Developer ID; the hlabs update key, a minisign key, for updates and for every Linux download and `install.sh`, D-141); checksums published. A GPG key comes only with an apt or dnf package repository.
+
+## 7.10 Public apps (D-150)
+An admin can make one app at a time reachable from the internet, through Tailscale Funnel or Cloudflare Tunnel. Everything here applies to both.
+
+**What we protect against**
+- Strangers finding the address and trying passwords, or exploiting a bug in the app (the address is public and scanned).
+- A public app becoming a way into the rest of hlabs: the dashboard, other apps, the files.
+- Admins making something public without meaning to, or forgetting that it is.
+- A stolen or leaked Cloudflare token.
+
+**Controls**
+1. **Never public**: the dashboard, the daemon (`127.0.0.1` only) and apps whose manifest says `public.allowed: false` (Portainer and other admin tools). Only the app's own web service is reachable, at its own address; other apps and the dashboard's paths answer 404 there.
+2. **Admins only, one app at a time**: a confirmation names the app and its public address; the change is in `audit_log` and every other admin gets a notification. Members can't make anything public.
+3. **A login in front**: Caddy's forward auth (US-APP-19) with hlabs's login, and two-factor required for everyone allowed into that app; people without access to the app get 403. "<App>'s own login only" is offered only when the manifest says `public.ownLoginSafe: true`, with a warning naming who can then reach the sign-in page.
+4. **Hardening at Caddy** for public addresses: HTTPS only (HTTP is refused, not redirected), HSTS, the headers of the dashboard, a rate limit on login paths (and hlabs's lockout, §7.2), a request size limit unless the app's manifest asks for more (uploads), and hlabs's own cookies never sent to the app.
+5. **Visible and easy to stop**: a "Public" badge on the app everywhere it appears; Settings › Network › Public access lists every public app with its provider, address, who can get in and its access log (time, address, path, status; kept 7 days, admins only); **Turn off all public access** there and in the menu-bar app.
+6. **Kept current**: automatic updates can't be turned off for a public app while it's public.
+7. **Secrets**: the Cloudflare API token (scoped to the one zone's tunnel and DNS) is in the keychain, never in SQLite or logs; removing the provider deletes it and the tunnel. Funnel needs nothing stored: it uses the Tailscale log-in hlabs already has, and the tailnet's policy must allow Funnel for the node.
+
+**Tests**: e2e makes an app public with fake providers and checks the login in front, two-factor, 403 for others, the 404s, the headers, the rate limit and turning it all off; the prototype (D-150) checks the real providers by hand before the stories are built.
+
