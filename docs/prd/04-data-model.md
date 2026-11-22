@@ -27,7 +27,7 @@ Secrets never go in SQLite in plain text: passwords are Argon2id hashes, TOTP se
 | `app_env` | `app_id`, `key`, `value` or `secret_ref`, `is_secret` | User-provided env from manifest prompts / AppConfig. |
 | `app_mounts` | `id`, `app_id`, `target` (container path key from manifest), `storage_location_id`, `subpath`, `mode` (`ro`\|`rw`) | Folder access chosen in InstallSheet / AppPermissions. |
 | `app_access` | `app_id`, `user_id` | Members only; admins can open every app. |
-| `home_layout` | `user_id`, `items_json`, `dock_json` | Ordered app ids + widgets per user (HomeEdit); `dock_json` = the person's pinned Dock apps, ordered, max 8 (D-054). |
+| `home_layout` | `user_id`, `items_json`, `dock_json`, `hidden_json` | Ordered app ids + widgets per user (HomeEdit; at most 4 widgets, app widgets as `app:<appId>:<widgetId>`); `dock_json` = the person's pinned Dock apps, ordered, max 8 (D-054); `hidden_json` = apps they took off Home, still installed and not appended again as new (US-HOME-18). |
 
 ### Storage, files, network
 | Table | Columns | Notes |

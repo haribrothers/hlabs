@@ -1,7 +1,7 @@
 ---
 title: Your Home screen
 description: What Home shows when you open hlabs, and how to get around.
-features: [F-HOME-01, F-HOME-02, F-HOME-03, F-HOME-04, F-HOME-05, F-HOME-06, F-HOME-07, F-STATE-03]
+features: [F-HOME-01, F-HOME-02, F-HOME-03, F-HOME-04, F-HOME-05, F-HOME-06, F-HOME-07, F-HOME-08, F-HOME-09, F-STATE-03]
 ---
 
 For everyone who uses hlabs.
@@ -53,6 +53,18 @@ Right-click a tile (or press and hold it on a touch screen, or press Shift+F10 o
 
 New apps appear on Home as soon as they're installed, and removed apps disappear, without reloading the page. With a keyboard, use Tab to reach the apps and the arrow keys to move between them.
 
+## Arrange Home
+
+To change what's on Home and in what order, choose **Edit Home**: in an app tile's menu, by right-clicking an empty part of the wallpaper, or by pressing and holding an empty part of Home. Home then says "Drag to rearrange":
+
+- Drag an app or a widget to a new place. Apps move within the grid and widgets within their row. With a keyboard, Tab to it, press Space to pick it up, the arrow keys to move it and Space to drop it (Esc puts it back). On a touch screen, press and hold, then drag.
+- Select **–** on an app to take it off Home. It stays installed and keeps running, and Search still finds it, with **Add <app> to Home** to bring it back. Select **–** on a widget to remove it.
+- **Add widget** opens a list of widgets: hlabs's own (for admins also App status and Updates) and those your apps offer. Up to four fit on Home.
+- **Wallpaper** opens Settings › Appearance.
+- **Done** saves Home for every device you sign in on. Esc instead puts everything back as it was.
+
+Some app widgets, such as Immich's photo library, read the app with an API key you make in the app. Until an admin adds it in the app's settings (**Home widget**), the widget says so. hlabs keeps the key in this computer's keychain. Those widgets show figures for everyone using the app, so only admins can add them.
+
 ## Before you have any apps
 
 With nothing installed yet, Home says **No apps yet** where your apps will be. Admins (and family members allowed to install apps) get the **Install app** tile and **Browse the App Store**; most people start with a photo library, a media server and a password manager. Family members who can't install apps are told which admin to ask to share one. As soon as the first app starts installing, its tile takes the place of the message.
@@ -96,6 +108,8 @@ The Dock at the bottom of the screen takes you to each part of hlabs; a dot mark
 Parts of hlabs that haven't arrived yet aren't shown in the Dock. The App Store, Files, Usage and Backups appear as they're added.
 
 Family members see Home, Files and Settings in their Dock, plus Usage and the App Store when an admin allows them.
+
+You can keep up to eight apps in the Dock, so they're a click away from anywhere. Select **+** to choose from the apps you can open, or drag an app from Home onto the Dock. Right-click (or press and hold) a pinned app for **Open**, **Open in a new tab**, **App settings** (admins) and **Remove from Dock**. Drag pinned apps sideways to reorder them, or press Alt with the left or right arrow key. Everyone has their own Dock, the same on each device. Apps you can no longer open leave it by themselves.
 
 ## Home for family members
 

@@ -49,6 +49,8 @@ export const FEATURE_PHASE = {
   /** "Update all" in Settings › Updates (US-SYS-25). */
   updateAll: 7,
   homeEdit: 7,
+  /** Pinned apps in the Dock (US-HOME-22). */
+  dockPins: 7,
   widgets: 7,
   storeSources: 7,
   appearance: 7,
@@ -94,7 +96,7 @@ export type Feature = keyof typeof FEATURE_PHASE;
  * Phase 7 is built in groups (D-151, D-156): its features that are built already, previewed on the dashboard's dev
  * server with BUILDING_PHASE's, while the rest of the phase stays hidden. Add a feature when its group lands.
  */
-export const BUILT_AHEAD: readonly Feature[] = ['notifications'];
+export const BUILT_AHEAD: readonly Feature[] = ['notifications', 'homeEdit', 'widgets', 'dockPins'];
 
 /** The dev server is previewing (never in a build or unit tests). */
 const PREVIEWING = typeof __HLABS_PREVIEW_PHASE__ !== 'undefined' && __HLABS_PREVIEW_PHASE__ !== null;

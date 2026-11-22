@@ -30,6 +30,7 @@ test('US-HOME-07 right-clicking a tile opens its menu; Esc returns to the tile; 
     'Restart',
     'Stop',
     'Uninstall…',
+    'Edit Home',
   ]);
   await page.keyboard.press('Escape');
   await expect(menu).toHaveCount(0);

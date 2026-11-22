@@ -284,12 +284,12 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-HOME-13 · Open the notifications panel (the bell shows the count as the story asks, not the dot drawn; checked at desktop and phone width)
 - [x] US-HOME-14 · Act on and clear notifications (D-155; "Review" opens `/store/updates`, which arrives with US-STORE-15 in group 4)
 - [x] US-HOME-15 · See a friendly empty Home (members allowed to install apps get the admin version)
-- [ ] US-HOME-16 · Enter and leave edit mode
-- [ ] US-HOME-17 · Rearrange apps and widgets
-- [ ] US-HOME-18 · Remove an app or widget from Home
-- [ ] US-HOME-19 · Add a widget from the picker
-- [ ] US-HOME-22 · Pin my favourite apps to the Dock
-- [ ] US-HOME-20 · Show app widgets with live data
+- [x] US-HOME-16 · Enter and leave edit mode ("Wallpaper" shows once Appearance is built, group 8)
+- [x] US-HOME-17 · Rearrange apps and widgets (dnd-kit; the pick-up announcement is followed at once by "<App>, position 1 of N")
+- [x] US-HOME-18 · Remove an app or widget from Home
+- [x] US-HOME-19 · Add a widget from the picker (with Remote access and Backups widgets, which were missing)
+- [x] US-HOME-22 · Pin my favourite apps to the Dock
+- [x] US-HOME-20 · Show app widgets with live data (D-157: fields and admins' API keys; widgets for Immich, Jellyfin and Paperless-ngx, not checked against live apps yet)
 - [ ] US-STORE-04 · Browse a category
 - [ ] US-STORE-05 · Search results with filters
 - [ ] US-STORE-15 · See and apply available updates

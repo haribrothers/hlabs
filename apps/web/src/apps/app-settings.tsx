@@ -23,6 +23,7 @@ import { useNow } from '../lib/use-now';
 import { AdminOnly } from './admin-only';
 import { AppAccess } from './app-access';
 import { AppBehaviour } from './app-behaviour';
+import { AppWidgetKey } from './app-widget-key';
 import { AppStorage, AppVersion } from './app-storage';
 import { UpdateButton, useAppUpdate } from './app-update';
 import { statusDot } from './status-dot';
@@ -120,6 +121,7 @@ function AppSettingsView({ appId, onClose, onOpenLogs }: SettingsProps) {
         <Actions app={app} onOpenLogs={onOpenLogs} onReinstall={() => setReinstalling(true)} />
         <AppAccess app={app} />
         <AppBehaviour app={app} />
+        <AppWidgetKey app={app} />
         <AppStorage app={app} />
         <footer className="flex items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">

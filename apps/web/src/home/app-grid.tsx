@@ -3,7 +3,7 @@
 // phase 2 (D-036); members only while they're allowed to install (US-HOME-11, US-ACCT-20).
 import { appTileLook, Plus, iconDefaults } from '@hlabs/icons';
 import { isFeatureEnabled } from '@hlabs/shared';
-import { AppIcon, type AppIconState } from '@hlabs/ui';
+import { AppIcon, DOCK_DRAG_TYPE, type AppIconState } from '@hlabs/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useRef, type KeyboardEvent } from 'react';
@@ -72,6 +72,8 @@ export function AppGrid({
   canInstall = isAdmin,
   progress,
   offline = false,
+  onEditHome,
+  dockDrag = false,
 }: {
   apps: readonly HomeApp[];
   isAdmin: boolean;
@@ -80,6 +82,10 @@ export function AppGrid({
   progress?: ReadonlyMap<string, number>;
   /** The container engine has stopped: every app is offline and its tile can't be used (US-STATE-08). */
   offline?: boolean;
+  /** "Edit Home" in each tile's menu (US-HOME-16). */
+  onEditHome?: () => void;
+  /** Tiles can be dragged onto the Dock to pin them (US-HOME-22). */
+  dockDrag?: boolean;
 }) {
   const openApp = useOpenApp(isAdmin);
   const command = useTileCommands(apps);
@@ -94,13 +100,23 @@ export function AppGrid({
       {apps.map((app) => {
         const look = appTileLook(app.name, app.icon);
         return (
-          <li key={app.id} className="flex justify-center" data-app={app.id}>
+          <li
+            key={app.id}
+            className="flex justify-center"
+            data-app={app.id}
+            draggable={dockDrag && !offline}
+            onDragStart={(e) => {
+              e.dataTransfer.setData(DOCK_DRAG_TYPE, app.id);
+              e.dataTransfer.effectAllowed = 'copy';
+            }}
+          >
             <TileMenu
               app={app}
               isAdmin={isAdmin}
               disabled={offline}
               onOpen={() => openApp(app)}
               onCommand={(action) => command(app, action)}
+              onEditHome={onEditHome}
             >
               <AppIcon
                 name={app.name}

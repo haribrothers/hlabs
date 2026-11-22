@@ -1022,6 +1022,16 @@
     margin: 0 9px;
     background: rgba(255, 255, 255, 0.3);
   }
+  /* Where an app dragged onto the Dock will land (US-HOME-22). */
+  .hl-dock-gap {
+    width: var(--size-dock-tile);
+    height: var(--size-dock-tile);
+    margin: 0 3px;
+    border-radius: var(--radius-icon);
+    border: 1.5px dashed rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.08);
+    transition: width var(--hl-dur-fast) var(--hl-ease);
+  }
   .hl-dock-add .hl-dock-tile {
     background: rgba(255, 255, 255, 0.06);
     border: 1.5px dashed rgba(255, 255, 255, 0.45);

@@ -1,15 +1,19 @@
-// Main (US-HOME-01…05): the greeting over the wallpaper, the widgets row and the app grid.
+// Main (US-HOME-01…05): the greeting over the wallpaper, the widgets row and the app grid; and its edit mode
+// (US-HOME-16…19): from a tile's menu, a right-click on the wallpaper, or a long press on an empty part of Home.
 import { iconDefaults, LOGO_SCALE, LogoMark, Plus, Search } from '@hlabs/icons';
-import { isFeatureEnabled } from '@hlabs/shared';
-import { GlassCard, tokens } from '@hlabs/ui';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { isFeatureEnabled, VISIBLE_PHASE } from '@hlabs/shared';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, GlassCard, tokens } from '@hlabs/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useSubscription } from '@trpc/tanstack-react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { homeCopy } from '../copy/home';
 import { searchCopy } from '../copy/search';
 import { isMac, openSearch } from '../search/search-state';
-import { useTRPC } from '../lib/trpc';
+import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { showToast } from '../lib/toasts';
+import { editCopy } from '../copy/home-edit';
+import { EditHome, type Draft } from './home-edit';
 import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
 import { AppGrid, orderApps } from './app-grid';
@@ -19,7 +23,8 @@ import { EngineBanner, StartEngineButton } from './engine-banner';
 import { useEngineRunning } from '../lib/engine-state';
 import { NotificationsBell } from './notifications';
 
-export function HomeView() {
+/** `shippedPhase`: the phase whose controls show (tests set it; D-036). */
+export function HomeView({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: number } = {}) {
   const trpc = useTRPC();
   const me = useMe();
   const queryClient = useQueryClient();
@@ -65,6 +70,52 @@ export function HomeView() {
   const empty = apps.data?.apps.length === 0;
   const canInstall = me.data?.canInstallApps ?? false;
 
+  // Edit mode (US-HOME-16): a copy of Home being changed; "Done" saves it, Escape throws it away.
+  const client = useTRPCClient();
+  const editable = isFeatureEnabled('homeEdit', shippedPhase) && Boolean(layout.data && apps.data) && !engineDown;
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const hidden = new Set(layout.data?.hidden ?? []);
+  const shown = apps.data
+    ? orderApps(
+        apps.data.apps.filter((a) => !hidden.has(a.id)),
+        (layout.data?.items ?? []).filter((i) => i.kind === 'app').map((i) => i.id),
+      )
+    : [];
+  const startEdit = () => {
+    if (!layout.data || !apps.data) return;
+    setDraft({
+      widgets: layout.data.items.filter((i) => i.kind === 'widget').map((i) => i.id),
+      apps: shown.map((a) => a.id),
+      hidden: layout.data.hidden,
+    });
+  };
+  const save = useMutation({
+    mutationFn: (d: Draft) =>
+      client.home.saveLayout.mutate({
+        items: [
+          ...d.widgets.map((id) => ({ kind: 'widget' as const, id })),
+          ...d.apps.map((id) => ({ kind: 'app' as const, id })),
+        ],
+        hidden: d.hidden,
+      }),
+    onSuccess: (saved) => {
+      queryClient.setQueryData(trpc.home.getLayout.queryKey(), (old) => (old ? { ...old, ...saved } : old));
+      setDraft(null);
+    },
+    // Edit mode stays open with the changes.
+    onError: () => showToast({ tone: 'danger', title: editCopy.couldntSave }),
+  });
+  const appsById = new Map((apps.data?.apps ?? []).map((a) => [a.id, a]));
+  const startEditRef = useRef(startEdit);
+  useEffect(() => {
+    startEditRef.current = startEdit;
+  });
+  const [wallpaperMenu, setWallpaperMenu] = useState<{ x: number; y: number } | null>(null);
+  useEmptyAreaGestures(editable && !draft, {
+    onContextMenu: (x, y) => setWallpaperMenu({ x, y }),
+    onLongPress: () => startEditRef.current(),
+  });
+
   return (
     <div className="mx-auto flex w-full max-w-window flex-col items-center gap-8">
       <header className="flex flex-col items-center gap-4 text-center">
@@ -76,31 +127,125 @@ export function HomeView() {
           <LogoMark size={Math.round(tokens.SIZE_APP_ICON * LOGO_SCALE)} title="" />
         </GlassCard>
         <h1 className={showGreeting && name ? 'm-0 text-display-xl' : 'sr-only'}>
-          {name ? (empty ? homeCopy.empty.welcome(name) : homeCopy.greeting[greetingFor(now)](name)) : homeCopy.title}
+          {draft
+            ? editCopy.dragToRearrange
+            : name
+              ? empty
+                ? homeCopy.empty.welcome(name)
+                : homeCopy.greeting[greetingFor(now)](name)
+              : homeCopy.title}
         </h1>
         {isFeatureEnabled('search') ? <SearchPill /> : null}
       </header>
-      {me.data?.appearance.showWidgets !== false && layout.data ? (
-        <WidgetsRow ids={layout.data.items.filter((i) => i.kind === 'widget').map((i) => i.id)} />
+      {draft ? (
+        <EditHome
+          draft={draft}
+          onChange={setDraft}
+          apps={appsById}
+          saving={save.isPending}
+          onDone={() => save.mutate(draft)}
+          onCancel={() => setDraft(null)}
+          shippedPhase={shippedPhase}
+        />
       ) : null}
-      {empty ? (
+      {!draft && me.data?.appearance.showWidgets !== false && layout.data ? (
+        <WidgetsRow
+          ids={layout.data.items.filter((i) => i.kind === 'widget').map((i) => i.id)}
+          shippedPhase={shippedPhase}
+        />
+      ) : null}
+      {draft ? null : empty ? (
         <EmptyHome canInstall={canInstall && isFeatureEnabled('appStore')} offline={engineDown} />
       ) : apps.data ? (
         <AppGrid
-          apps={orderApps(
-            apps.data.apps,
-            (layout.data?.items ?? []).filter((i) => i.kind === 'app').map((i) => i.id),
-          )}
+          apps={shown}
           isAdmin={me.data?.role === 'admin'}
           canInstall={canInstall}
           progress={progress}
           offline={engineDown}
+          onEditHome={editable ? startEdit : undefined}
+          dockDrag={isFeatureEnabled('dockPins', shippedPhase)}
         />
       ) : null}
       <EngineBanner down={engineDown} actions={me.data?.role === 'admin' ? <StartEngineButton /> : null} />
-      <NotificationsBell />
+      <NotificationsBell shippedPhase={shippedPhase} />
+      {wallpaperMenu ? (
+        <DropdownMenu
+          open
+          onOpenChange={(o) => {
+            if (!o) setWallpaperMenu(null);
+          }}
+          modal
+        >
+          <DropdownMenuTrigger asChild>
+            <span
+              aria-hidden
+              tabIndex={-1}
+              className="pointer-events-none fixed size-0"
+              style={{ left: wallpaperMenu.x, top: wallpaperMenu.y }}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" aria-label={editCopy.enter} className="min-w-44">
+            <DropdownMenuItem onSelect={startEdit}>{editCopy.enter}</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
     </div>
   );
+}
+
+/** How long a press on an empty part of Home takes to start edit mode (D-045). */
+const LONG_PRESS_MS = 500;
+/** A pointer that moves this far is scrolling or selecting, not pressing. */
+const MOVE_PX = 10;
+/** Tiles, widgets, controls and dialogs aren't the empty part of Home. */
+const NOT_EMPTY = 'a, button, input, select, textarea, [role="dialog"], [role="menu"], .hl-card, .hl-app, [data-app]';
+
+/** A right-click or a long press on Home's wallpaper, not on anything on it (US-HOME-16). */
+function useEmptyAreaGestures(
+  on: boolean,
+  h: { onContextMenu: (x: number, y: number) => void; onLongPress: () => void },
+) {
+  const handlers = useRef(h);
+  useEffect(() => {
+    handlers.current = h;
+  });
+  useEffect(() => {
+    const main = document.getElementById('main');
+    if (!on || !main) return;
+    const empty = (t: EventTarget | null) => t instanceof Element && !t.closest(NOT_EMPTY);
+    let press: { timer: ReturnType<typeof setTimeout>; x: number; y: number } | null = null;
+    const end = () => {
+      if (press) clearTimeout(press.timer);
+      press = null;
+    };
+    const onContext = (e: MouseEvent) => {
+      if (!empty(e.target)) return;
+      e.preventDefault();
+      end();
+      handlers.current.onContextMenu(e.clientX, e.clientY);
+    };
+    const onDown = (e: PointerEvent) => {
+      if (e.button !== 0 || !empty(e.target)) return;
+      press = { x: e.clientX, y: e.clientY, timer: setTimeout(() => handlers.current.onLongPress(), LONG_PRESS_MS) };
+    };
+    const onMove = (e: PointerEvent) => {
+      if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > MOVE_PX) end();
+    };
+    main.addEventListener('contextmenu', onContext);
+    main.addEventListener('pointerdown', onDown);
+    main.addEventListener('pointermove', onMove);
+    main.addEventListener('pointerup', end);
+    main.addEventListener('pointercancel', end);
+    return () => {
+      end();
+      main.removeEventListener('contextmenu', onContext);
+      main.removeEventListener('pointerdown', onDown);
+      main.removeEventListener('pointermove', onMove);
+      main.removeEventListener('pointerup', end);
+      main.removeEventListener('pointercancel', end);
+    };
+  }, [on]);
 }
 
 /**

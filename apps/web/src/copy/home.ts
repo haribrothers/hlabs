@@ -4,6 +4,8 @@ export const homeCopy = {
   widgets: 'Widgets',
   apps: 'Apps',
   openApp: (name: string) => `Open ${name}`,
+  /** Starts Home's edit mode (US-HOME-16). */
+  editHome: 'Edit Home',
   installApp: 'Install app',
   storage: 'Storage',
   /** The Live usage widget (US-HOME-02, phase 4). */
@@ -58,6 +60,26 @@ export const homeCopy = {
     started: (app: string) => `${app} started`,
     stopped: (app: string) => `${app} stopped`,
   },
+  /** The widgets added with the picker (US-HOME-02, 19, 20). */
+  remoteAccess: 'Remote access',
+  connected: 'Connected',
+  off: 'Off',
+  tailscale: 'Tailscale',
+  setUpRemote: 'Set up remote access',
+  backups: 'Backups',
+  notSetUp: 'Not set up',
+  notYet: 'Not yet',
+  lastBackupFailed: 'Last backup failed',
+  backupLine: (apps: number, where: string) => `${apps === 1 ? '1 app' : `${apps} apps`} → ${where} · restic`,
+  appStatus: 'App status',
+  running: 'running',
+  stopped: 'stopped',
+  needAttention: 'need attention',
+  updates: 'Updates',
+  appUpdates: (n: number) => (n === 0 ? 'Apps are up to date' : n === 1 ? '1 app update' : `${n} app updates`),
+  appWidgetTitle: (app: string, widget: string) => `${app} · ${widget}`,
+  appNotRunning: (app: string) => `${app} isn't running`,
+  needsKey: (app: string) => `Add an API key in ${app}'s settings`,
   /** Home with no apps yet (US-HOME-15). */
   empty: {
     welcome: (name: string) => `Welcome to hlabs, ${name}`,

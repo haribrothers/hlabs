@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { Dock, TabBar, UiStringsProvider, type AreaItem } from '../src/index';
+import { Dock, DOCK_DRAG_TYPE, TabBar, UiStringsProvider, type AreaItem } from '../src/index';
 
 const AREAS: AreaItem[] = [
   { id: 'home', label: 'Home' },
@@ -14,8 +14,8 @@ const AREAS: AreaItem[] = [
 
 describe('Dock (D-054)', () => {
   const apps = [
-    { id: 'immich', name: 'Immich', logo: '/logo.svg', open: true },
-    { id: 'jellyfin', name: 'Jellyfin', colors: ['#000000', '#111111'] as const, badge: 3 },
+    { id: 'immich', name: 'Immich', logo: '/logo.svg', open: true, pinned: true },
+    { id: 'jellyfin', name: 'Jellyfin', colors: ['#000000', '#111111'] as const, badge: 3, pinned: true },
   ];
 
   it('orders areas, pinned apps, the + tile and Search, and marks the current area', () => {
@@ -77,6 +77,58 @@ describe('Dock (D-054)', () => {
     expect(onAppMenu).toHaveBeenCalledWith('jellyfin', expect.anything());
     expect(onOpenApp).not.toHaveBeenCalled();
     vi.useRealTimers();
+  });
+
+  it('US-HOME-22: Shift+F10 opens a pinned app’s menu; Alt+Left/Right moves it; an open-only app has neither', () => {
+    const onAppMenu = vi.fn();
+    const onMoveApp = vi.fn();
+    render(
+      <Dock
+        areas={AREAS}
+        apps={[...apps, { id: 'gitea', name: 'Gitea', open: true }]}
+        onAppMenu={onAppMenu}
+        onMoveApp={onMoveApp}
+      />,
+    );
+    const jelly = screen.getByRole('button', { name: 'Jellyfin' });
+    fireEvent.keyDown(jelly, { key: 'F10', shiftKey: true });
+    expect(onAppMenu).toHaveBeenCalledWith('jellyfin', jelly);
+    fireEvent.keyDown(jelly, { key: 'ArrowLeft', altKey: true });
+    expect(onMoveApp).toHaveBeenCalledWith('jellyfin', 0);
+    fireEvent.keyDown(jelly, { key: 'ArrowRight', altKey: true });
+    expect(onMoveApp).toHaveBeenCalledTimes(1); // already last of the pinned apps
+    const gitea = screen.getByRole('button', { name: 'Gitea, open' });
+    fireEvent.contextMenu(gitea);
+    fireEvent.keyDown(gitea, { key: 'ContextMenu' });
+    expect(onAppMenu).toHaveBeenCalledTimes(1);
+  });
+
+  it('US-HOME-22: the + tile gives its tile; an app dragged from Home opens a gap and drops where it lands', () => {
+    const onAdd = vi.fn();
+    const onDropApp = vi.fn();
+    render(<Dock areas={AREAS} apps={apps} onAdd={onAdd} onDropApp={onDropApp} />);
+    const add = screen.getByRole('button', { name: 'Add to Dock' });
+    fireEvent.click(add);
+    expect(onAdd).toHaveBeenCalledWith(add);
+    const nav = screen.getByRole('navigation');
+    const dataTransfer = { types: [DOCK_DRAG_TYPE], getData: () => 'vault', dropEffect: '' };
+    fireEvent.dragOver(nav, { dataTransfer, clientX: 0 });
+    expect(nav.querySelector('.hl-dock-gap')).not.toBeNull();
+    fireEvent.drop(nav, { dataTransfer, clientX: 0 });
+    // jsdom lays nothing out, so it lands after the pinned apps.
+    expect(onDropApp).toHaveBeenCalledWith('vault', 2);
+    expect(nav.querySelector('.hl-dock-gap')).toBeNull();
+  });
+
+  it('US-HOME-22: a full Dock opens no gap and drops nothing', () => {
+    const onDropApp = vi.fn();
+    render(<Dock areas={AREAS} apps={apps} onDropApp={onDropApp} canDrop={false} />);
+    const nav = screen.getByRole('navigation');
+    const dataTransfer = { types: [DOCK_DRAG_TYPE], getData: () => 'vault', dropEffect: '' };
+    fireEvent.dragOver(nav, { dataTransfer, clientX: 0 });
+    fireEvent.drop(nav, { dataTransfer, clientX: 0 });
+    expect(nav.querySelector('.hl-dock-gap')).toBeNull();
+    expect(onDropApp).not.toHaveBeenCalled();
   });
 
   it('turns magnification off when asked', () => {

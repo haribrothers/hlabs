@@ -24,6 +24,8 @@ Under **Behaviour**:
 
 Each switch saves as soon as you change it. If it can't be saved, it moves back and hlabs tells you why.
 
+An app whose Home widget needs an API key, such as Immich's photo library, has a **Home widget** section. Make a key in the app (the section says where), then choose **Add key…** and paste it. hlabs keeps it in this computer's keychain and uses it only to read the widget's figures; **Remove** deletes it.
+
 ## Storage and version
 
 Under **Storage and resources**:

@@ -4,6 +4,7 @@
 import {
   ExternalLink,
   iconDefaults,
+  LayoutGrid,
   Play,
   RotateCw,
   SlidersHorizontal,
@@ -56,6 +57,7 @@ export function TileMenu({
   isAdmin,
   onOpen,
   onCommand,
+  onEditHome,
   disabled = false,
   children,
 }: {
@@ -65,6 +67,8 @@ export function TileMenu({
   disabled?: boolean;
   onOpen: () => void;
   onCommand: (command: TileCommand) => void;
+  /** "Edit Home" at the end of the menu (US-HOME-16), when edit mode is available. */
+  onEditHome?: () => void;
   children: ReactNode;
 }) {
   const navigate = useNavigate();
@@ -151,7 +155,10 @@ export function TileMenu({
     items.push(<DropdownMenuSeparator key="sep-uninstall" />);
     item('uninstall', copy.uninstall, Trash2, () => setUninstalling(true), { danger: true });
   }
-  // "Edit Home" (US-HOME-16) joins the end of this menu in phase 7 (D-036).
+  if (onEditHome) {
+    items.push(<DropdownMenuSeparator key="sep-edit" />);
+    item('edit', homeCopy.editHome, LayoutGrid, onEditHome);
+  }
 
   if (disabled) return children;
   return (
