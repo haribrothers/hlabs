@@ -1,0 +1,34 @@
+schema: 1
+id: komga
+name: Komga
+version: '1.30.1'
+revision: 1
+tagline: A library server for your comics and manga
+description: |
+  Komga organises your comics, manga and magazines into series and reading lists, and serves them to
+  the browser and to reader apps like Tachiyomi and Panels. The first visit sets up your admin account.
+category: books
+developer: { name: Gauthier Roebroeck, url: https://komga.org }
+source: https://github.com/gotson/komga
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#005ed3', '#002252']
+  fallback: library
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 1024 }
+web: { service: komga, port: 25600, embed: true }
+folders:
+  - key: comics
+    label: Comics and manga
+    description: Your comics and manga
+    target: /comics
+    default: shared:Comics
+    mode: ro
+    required: true
+ownLogin: true
+backup:
+  pause: [komga]
+  exclude: [config/logs/]
+  beforeUpdate: true
+permissions: { network: internet }

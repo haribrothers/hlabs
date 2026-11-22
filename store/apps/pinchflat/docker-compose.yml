@@ -1,0 +1,7 @@
+services:
+  pinchflat:
+    image: docker.io/keglin/pinchflat:v2025.6.6@sha256:4e975edf58f0861a5cbfe8fc6aac4851ff5a02dfc3f05ffeea4982e3084a5a4a
+    user: ${PUID}:${PGID}
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config
+      - ${HLABS_FOLDER_VIDEOS}:/downloads

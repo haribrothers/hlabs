@@ -1,0 +1,9 @@
+services:
+  calibre-web:
+    image: lscr.io/linuxserver/calibre-web:0.6.27@sha256:18b65a754ec18f119af36ad672b5f1e64543c89648febd6df6edf64f5ec4c5b8
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config
+      - ${HLABS_FOLDER_BOOKS}:/books

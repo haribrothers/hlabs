@@ -285,9 +285,16 @@ export function AppDetails({ appId, shippedPhase }: { appId: string; shippedPhas
         <h1 className="m-0 text-display font-bold">{app.name}</h1>
         <p className="m-0 text-body text-ink">{app.tagline}</p>
         <div className="flex flex-wrap gap-1.5">
-          {tags.map((t) => (
-            <Badge key={t}>{t}</Badge>
-          ))}
+          {tags.map((t) =>
+            t === copy.x86Only ? (
+              <Badge key={t} tone="warning">
+                <AlertTriangle aria-hidden {...iconDefaults} className="size-3.5" />
+                {t}
+              </Badge>
+            ) : (
+              <Badge key={t}>{t}</Badge>
+            ),
+          )}
           <Badge>{d.source.official ? copy.officialSource : sourcesCopy.fromSource(d.source.name)}</Badge>
           {d.source.signed ? null : (
             <Badge tone="warning">
@@ -320,7 +327,6 @@ export function AppDetails({ appId, shippedPhase }: { appId: string; shippedPhas
             if (!open) void navigate({ to: '/store/app/$appId', params: { appId }, search: {}, replace: true });
           }}
         />
-        {noPlatform ? <p className="m-0 max-w-xs text-body-sm text-ink-muted">{copy.noArm64[host.os]}</p> : null}
       </div>
     </header>
   );
@@ -350,6 +356,17 @@ export function AppDetails({ appId, shippedPhase }: { appId: string; shippedPhas
         <div className="flex flex-col gap-6">
           {desktop ? null : appHeader}
           <DetailsRolledBack appId={appId} installed={installs.byId.has(appId)} />
+          {noPlatform ? (
+            <p
+              role="note"
+              className="m-0 flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-body-sm text-ink"
+            >
+              <AlertTriangle aria-hidden {...iconDefaults} className="mt-0.5 size-4 shrink-0 text-warning" />
+              <span>
+                {copy.noArm64[host.os]} {copy.runsOnIntel}
+              </span>
+            </p>
+          ) : null}
           <RequirementNotes d={d} />
           <Screenshots urls={d.screenshots} name={app.name} />
           <div className="grid gap-8 lg:grid-cols-[1fr_23rem]">
@@ -369,6 +386,11 @@ export function AppDetails({ appId, shippedPhase }: { appId: string; shippedPhas
                     </p>
                   ))
                 )}
+                {d.packagedFrom ? (
+                  <p className="m-0 text-body-sm text-ink-muted">
+                    {copy.packagedWith(d.packagedFrom.store, d.packagedFrom.license)}
+                  </p>
+                ) : null}
               </section>
               {d.releaseNotes ? <WhatsNew notes={d.releaseNotes.trim()} /> : null}
               <AccessList d={d} />
@@ -376,6 +398,7 @@ export function AppDetails({ appId, shippedPhase }: { appId: string; shippedPhas
             <div className="flex flex-col gap-6">
               <dl aria-label={copy.facts} className="m-0 flex flex-col gap-2">
                 <Fact label={copy.version} value={d.version} />
+                {noPlatform ? <Fact label={copy.runsOn} value={copy.intelAndAmd} /> : null}
                 {d.services.length ? <Fact label={copy.runsAs} value={runsAs(d.services)} /> : null}
                 <Fact label={copy.opensAt} value={d.address} />
                 <Fact

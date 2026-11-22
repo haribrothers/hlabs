@@ -52,12 +52,12 @@ describe('US-STORE-01', () => {
     expect(cardAction({ ...app, installed: true }, undefined, undefined, at)).toEqual({ kind: 'installed' });
   });
 
-  it('tags: "Apple Silicon" on an arm64 Mac, "ARM64" on arm64 Linux, none without an arm64 image or host', () => {
+  it('tags: "Apple Silicon" on an arm64 Mac, "ARM64" on arm64 Linux, none on an x86 computer', () => {
     const app = storeApp('immich', 'Immich', { tags: ['local-ai', 'something-else'] });
     expect(storeTags(app, { os: 'macos', arm64: true })).toEqual(['Apple Silicon', 'Local AI']);
     expect(storeTags(app, { os: 'linux', arm64: true })).toEqual(['ARM64', 'Local AI']);
     expect(storeTags(app, { os: 'linux', arm64: false })).toEqual(['Local AI']);
-    expect(storeTags({ ...app, arm64: false }, { os: 'macos', arm64: true })).toEqual(['Local AI']);
+    expect(storeTags({ ...app, arm64: false }, { os: 'macos', arm64: true })).toEqual(['x86 only', 'Local AI']);
   });
 
   it('shows Featured and the rows with "See all"; the card body and Install go to the details', async () => {

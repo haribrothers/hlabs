@@ -1,0 +1,34 @@
+schema: 1
+id: pinchflat
+name: Pinchflat
+version: '2025.6.6'
+revision: 1
+tagline: Keep copies of the YouTube channels you follow
+description: |
+  Pick channels or playlists and Pinchflat downloads new videos as they come out into your YouTube
+  folder, with artwork and details that Jellyfin and Plex show. It has no login of its own.
+category: media
+developer: { name: Kieran Eglin, url: https://github.com/kieraneglin/pinchflat }
+source: https://github.com/kieraneglin/pinchflat
+license: AGPL-3.0
+icon:
+  logo: logo.png
+  gradient: ['#14b8a6', '#134e4a']
+  fallback: video
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 512 }
+web: { service: pinchflat, port: 8945, embed: true }
+folders:
+  - key: videos
+    label: Videos
+    description: Where downloaded videos are saved
+    target: /downloads
+    default: shared:Media/YouTube
+    mode: rw
+    required: true
+ownLogin: false
+backup:
+  pause: [pinchflat]
+  exclude: [logs/]
+  beforeUpdate: true
+permissions: { network: internet }

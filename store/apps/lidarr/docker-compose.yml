@@ -1,0 +1,13 @@
+services:
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:3.1.6@sha256:8fb40ada166dd1880cb1b166df5bcbb081107523f20ab60df05c313e2052a467
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      LIDARR__AUTH__METHOD: External
+      LIDARR__AUTH__REQUIRED: DisabledForLocalAddresses
+      LIDARR__LOG__ANALYTICSENABLED: 'False'
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config
+      - ${HLABS_FOLDER_MUSIC}:/music
+      - ${HLABS_FOLDER_DOWNLOADS}:/downloads

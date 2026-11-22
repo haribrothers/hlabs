@@ -219,6 +219,21 @@ export class CatalogService {
     return existsSync(file) ? readFileSync(file, 'utf8') : null;
   }
 
+  /**
+   * The app store an app's files were drafted from, from its NOTICE ("…from the Runtipi app store…",
+   * "Licence: … (GPL-3.0).") (D-148, US-STORE-23); null without one.
+   */
+  packagedFrom(sourceId: string, appId: string): { store: 'Runtipi' | 'CasaOS'; license: string } | null {
+    const root = this.dirOf(sourceId);
+    if (!root) return null;
+    const file = join(root, 'apps', appId, 'NOTICE');
+    if (!existsSync(file)) return null;
+    const text = readFileSync(file, 'utf8');
+    const store = /\b(Runtipi|CasaOS) app store\b/.exec(text)?.[1] as 'Runtipi' | 'CasaOS' | undefined;
+    const license = /^Licence:.*\(([^()]+)\)\.?\s*$/m.exec(text)?.[1];
+    return store && license ? { store, license } : null;
+  }
+
   /** Manifest and compose file to install from, validated again (the folder may have changed since sync). */
   get(appId: string, sourceId: string = BUILTIN_SOURCE_ID): CatalogApp | null {
     const root = this.dirOf(sourceId);

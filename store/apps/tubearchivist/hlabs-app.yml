@@ -1,0 +1,50 @@
+schema: 1
+id: tubearchivist
+name: Tube Archivist
+version: '0.6.0'
+revision: 1
+tagline: Your own searchable YouTube library
+description: |
+  Subscribe to channels and Tube Archivist downloads their videos, with comments and subtitles, into
+  a library you can search and watch in the browser. Choose its username and password when you install
+  it. It needs about 2 GB of memory for its search engine.
+category: media
+developer: { name: Tube Archivist, url: https://www.tubearchivist.com }
+source: https://github.com/tubearchivist/tubearchivist
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#039a86', '#06302b']
+  fallback: video
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 2560, disk: 4096 }
+web: { service: tubearchivist, port: 8000, embed: true }
+health: { service: tubearchivist, container: true, timeout: 600 }
+folders:
+  - key: videos
+    label: Videos
+    description: Where downloaded videos are saved
+    target: /youtube
+    default: shared:Media/YouTube
+    mode: rw
+    required: true
+env:
+  - key: TA_USERNAME
+    label: Username
+    default: admin
+    required: true
+  - key: TA_PASSWORD
+    type: secret
+    label: Password
+    description: For signing in to Tube Archivist; you can change it later in its settings
+    required: true
+  - key: ELASTIC_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [tubearchivist, tubearchivist-es, tubearchivist-redis]
+  exclude: [cache/]
+  beforeUpdate: true
+permissions: { network: internet }

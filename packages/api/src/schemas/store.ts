@@ -161,6 +161,8 @@ export const storeAppDetailsSchema = z.object({
   description: z.string(),
   /** The app's README.md (markdown), shown instead of the description when present. */
   readme: z.string().nullable(),
+  /** Drafted from another app store's definition (its NOTICE file, D-148): credited under About (US-STORE-23). */
+  packagedFrom: z.object({ store: z.enum(['Runtipi', 'CasaOS']), license: z.string() }).nullable(),
   releaseNotes: z.string().nullable(),
   /** Up to 5 screenshot URLs. */
   screenshots: z.array(z.string()),

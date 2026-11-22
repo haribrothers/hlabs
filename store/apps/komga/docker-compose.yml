@@ -1,0 +1,7 @@
+services:
+  komga:
+    image: ghcr.io/gotson/komga:1.30.1@sha256:d43bb3b57aeeafd274ea805214f5da71ff9306accf012fb14cc13dedc3307212
+    user: ${PUID}:${PGID}
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config
+      - ${HLABS_FOLDER_COMICS}:/comics:ro

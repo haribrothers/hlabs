@@ -1,0 +1,35 @@
+schema: 1
+id: navidrome
+name: Navidrome
+version: '0.64.2'
+revision: 1
+tagline: Your music collection, streamed anywhere
+description: |
+  Listen to the music on your drives in the browser or in any Subsonic app on your phone, with
+  playlists, favourites and your own scrobbles. The first visit sets up your admin account.
+category: media
+developer: { name: Navidrome, url: https://www.navidrome.org }
+source: https://github.com/navidrome/navidrome
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#0084ff', '#002a5c']
+  fallback: music
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: navidrome, port: 4533, embed: true }
+health: { service: navidrome, http: /ping, timeout: 120 }
+folders:
+  - key: music
+    label: Music
+    description: Your music library
+    target: /music
+    default: shared:Media/Music
+    mode: ro
+    required: true
+ownLogin: true
+backup:
+  pause: [navidrome]
+  exclude: [cache/]
+  beforeUpdate: true
+permissions: { network: internet }

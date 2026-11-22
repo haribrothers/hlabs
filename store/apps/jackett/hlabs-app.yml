@@ -1,0 +1,27 @@
+schema: 1
+id: jackett
+name: Jackett
+version: '0.25.24'
+revision: 1
+tagline: Search hundreds of torrent sites from Sonarr and Radarr
+description: |
+  Jackett turns hundreds of torrent sites into one kind of search that Sonarr, Radarr and Lidarr
+  understand. Prowlarr does the same with less setting up; use Jackett if you already know it. Other
+  apps reach it at http://jackett:9117.
+category: media
+developer: { name: Jackett, url: https://github.com/Jackett/Jackett }
+source: https://github.com/Jackett/Jackett
+license: GPL-2.0
+icon:
+  logo: logo.svg
+  gradient: ['#4b5563', '#111827']
+  fallback: search
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 512 }
+web: { service: jackett, port: 9117, embed: true }
+ownLogin: false
+backup:
+  pause: [jackett]
+  exclude: [Jackett/log.txt]
+  beforeUpdate: true
+permissions: { network: internet }

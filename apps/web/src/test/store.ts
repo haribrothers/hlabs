@@ -29,6 +29,7 @@ export function details(extra: Partial<StoreAppDetails> = {}): StoreAppDetails {
     website: null,
     description: 'Back up photos and videos\nfrom every phone.\n\nShare albums with family.',
     readme: null,
+    packagedFrom: null,
     releaseNotes: null,
     screenshots: [],
     services: [

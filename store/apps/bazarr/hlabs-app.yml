@@ -1,0 +1,41 @@
+schema: 1
+id: bazarr
+name: Bazarr
+version: '1.6.2'
+revision: 1
+tagline: Subtitles for your films and shows, found and kept in step
+description: |
+  Bazarr works with Sonarr and Radarr to find subtitles in the languages you choose and saves them next
+  to each episode and film. Connect it to http://sonarr:8989 and http://radarr:7878 with their API keys.
+category: media
+developer: { name: Bazarr, url: https://www.bazarr.media }
+source: https://github.com/morpheus65535/bazarr
+license: GPL-3.0
+icon:
+  logo: logo.png
+  gradient: ['#4a5568', '#1a202c']
+  fallback: subtitles
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 512 }
+web: { service: bazarr, port: 6767, embed: true }
+folders:
+  - key: tv
+    label: TV shows
+    description: Your TV library
+    target: /tv
+    default: shared:Media/TV
+    mode: rw
+    required: true
+  - key: movies
+    label: Movies
+    description: Your movie library
+    target: /movies
+    default: shared:Media/Movies
+    mode: rw
+    required: true
+ownLogin: false
+backup:
+  pause: [bazarr]
+  exclude: [log/, cache/]
+  beforeUpdate: true
+permissions: { network: internet }

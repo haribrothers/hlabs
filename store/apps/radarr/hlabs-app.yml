@@ -1,0 +1,45 @@
+# Radarr's own login is replaced by the hlabs login (RADARR__AUTH__METHOD=External), as AdGuard Home's is (D-085);
+# its usage reporting is off.
+schema: 1
+id: radarr
+name: Radarr
+version: '6.4.4'
+revision: 1
+tagline: Finds and downloads the films on your wish list
+description: |
+  Add the films you want and Radarr finds them, sends them to your download app and files them in
+  your Movies folder with the right name, ready for Jellyfin or Plex.
+  Its own login is turned off (the hlabs login protects it). Other apps reach it at http://radarr:7878; it reaches your download apps the same way, e.g. http://qbittorrent:8080.
+category: media
+developer: { name: Radarr, url: https://radarr.video }
+source: https://github.com/Radarr/Radarr
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#ffc230', '#a35f00']
+  fallback: film
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: radarr, port: 7878, embed: true }
+health: { service: radarr, http: /ping, timeout: 180 }
+folders:
+  - key: movies
+    label: Movies
+    description: Your movie library
+    target: /movies
+    default: shared:Media/Movies
+    mode: rw
+    required: true
+  - key: downloads
+    label: Downloads
+    description: Where downloads land; the same folder in every download app
+    target: /downloads
+    default: shared:Downloads
+    mode: rw
+    required: true
+ownLogin: false
+backup:
+  pause: [radarr]
+  exclude: [logs/, MediaCover/]
+  beforeUpdate: true
+permissions: { network: internet }

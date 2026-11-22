@@ -1,0 +1,17 @@
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:5.3.0@sha256:afed7399d0f336ee22d6d011b3c8c50a44e3810f0af6e3c4083d79e566f1677a
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /config/qBittorrent
+        [ -f /config/qBittorrent/qBittorrent.conf ] || printf '%s\n' '[BitTorrent]' 'Session\DefaultSavePath=/downloads/' 'Session\TempPathEnabled=true' 'Session\TempPath=/downloads/incomplete/' '[Preferences]' 'WebUI\AuthSubnetWhitelistEnabled=true' 'WebUI\AuthSubnetWhitelist=10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16' > /config/qBittorrent/qBittorrent.conf
+        exec /init
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      WEBUI_PORT: '8080'
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config
+      - ${HLABS_FOLDER_DOWNLOADS}:/downloads

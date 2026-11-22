@@ -25,31 +25,31 @@ Approved by Hari on 23 Nov 2026 (D-161, answering Q-20). The 14 apps of D-048 pl
 
 ## Wave 1: media and books (23)
 
-| App                              | Group | ARM64    | Needs                                                         | hlabs already does | Public       | Drafted from |
-| -------------------------------- | ----- | -------- | ------------------------------------------------------------- | ------------------ | ------------ | ------------ |
-| Calibre-Web (`calibre-web`)      | Books | yes      | —                                                             | —                  | check        | Runtipi      |
-| Komga (`komga`)                  | Books | yes      | —                                                             | —                  | check        | Runtipi      |
-| Kavita (`kavita`)                | Books | yes      | —                                                             | —                  | check        | Runtipi      |
-| BookLore (`booklore`)            | Books | yes      | —                                                             | —                  | check        | Upstream     |
-| qBittorrent (`qbittorrent`)      | Media | yes      | Raw port 6881 tcp/udp (peers)                                 | —                  | never        | Runtipi      |
-| Navidrome (`navidrome`)          | Media | yes      | —                                                             | —                  | candidate    | Runtipi      |
-| Sonarr (`sonarr`)                | Media | yes      | —                                                             | —                  | never        | Runtipi      |
-| Jackett (`jackett`)              | Media | yes      | —                                                             | —                  | never        | Runtipi      |
-| Transmission (`transmission`)    | Media | yes      | Raw port 51413 tcp/udp (peers)                                | —                  | never        | Runtipi      |
-| Radarr (`radarr`)                | Media | yes      | —                                                             | —                  | never        | Runtipi      |
-| RomM (`romm`)                    | Media | yes      | —                                                             | —                  | check        | Runtipi      |
-| Prowlarr (`prowlarr`)            | Media | yes      | Its own FlareSolverr for sites behind a browser check         | —                  | never        | Runtipi      |
-| Tautulli (`tautulli`)            | Media | yes      | —                                                             | —                  | never        | Runtipi      |
-| Lidarr (`lidarr`)                | Media | yes      | —                                                             | —                  | never        | Runtipi      |
-| Pinchflat (`pinchflat`)          | Media | x86 only | —                                                             | —                  | no own login | Runtipi      |
-| Emby (`emby`)                    | Media | yes      | Closed source; GPU device optional                            | —                  | candidate    | Runtipi      |
-| Bazarr (`bazarr`)                | Media | yes      | —                                                             | —                  | never        | Runtipi      |
-| Plex (`plex`)                    | Media | yes      | Closed source; plex.tv account; GPU device optional           | —                  | candidate    | Runtipi      |
-| SABnzbd (`sabnzbd`)              | Media | yes      | —                                                             | —                  | never        | Runtipi      |
-| MeTube (`metube`)                | Media | yes      | —                                                             | —                  | no own login | Runtipi      |
-| Jellyseerr (`jellyseerr`)        | Media | yes      | —                                                             | —                  | check        | CasaOS       |
-| Deluge (`deluge`)                | Media | yes      | Raw port 6881 tcp/udp (peers)                                 | —                  | never        | Runtipi      |
-| Tube Archivist (`tubearchivist`) | Media | yes      | Elasticsearch and Redis inside the app (about 2 GB of memory) | —                  | check        | Runtipi      |
+| App                              | Group | ARM64 | Needs                                                         | hlabs already does | Public       | Drafted from |
+| -------------------------------- | ----- | ----- | ------------------------------------------------------------- | ------------------ | ------------ | ------------ |
+| Calibre-Web (`calibre-web`)      | Books | yes   | —                                                             | —                  | check        | Runtipi      |
+| Komga (`komga`)                  | Books | yes   | —                                                             | —                  | check        | Runtipi      |
+| Kavita (`kavita`)                | Books | yes   | —                                                             | —                  | check        | Runtipi      |
+| BookLore (`booklore`)            | Books | yes   | —                                                             | —                  | check        | Upstream     |
+| qBittorrent (`qbittorrent`)      | Media | yes   | Raw port 6881 tcp/udp (peers)                                 | —                  | never        | Runtipi      |
+| Navidrome (`navidrome`)          | Media | yes   | —                                                             | —                  | candidate    | Runtipi      |
+| Sonarr (`sonarr`)                | Media | yes   | —                                                             | —                  | never        | Runtipi      |
+| Jackett (`jackett`)              | Media | yes   | —                                                             | —                  | never        | Runtipi      |
+| Transmission (`transmission`)    | Media | yes   | Raw port 51413 tcp/udp (peers)                                | —                  | never        | Runtipi      |
+| Radarr (`radarr`)                | Media | yes   | —                                                             | —                  | never        | Runtipi      |
+| RomM (`romm`)                    | Media | yes   | —                                                             | —                  | check        | Runtipi      |
+| Prowlarr (`prowlarr`)            | Media | yes   | Its own FlareSolverr for sites behind a browser check         | —                  | never        | Runtipi      |
+| Tautulli (`tautulli`)            | Media | yes   | —                                                             | —                  | never        | Runtipi      |
+| Lidarr (`lidarr`)                | Media | yes   | —                                                             | —                  | never        | Runtipi      |
+| Pinchflat (`pinchflat`)          | Media | yes   | —                                                             | —                  | no own login | Runtipi      |
+| Emby (`emby`)                    | Media | yes   | Closed source; GPU device optional                            | —                  | candidate    | Runtipi      |
+| Bazarr (`bazarr`)                | Media | yes   | —                                                             | —                  | never        | Runtipi      |
+| Plex (`plex`)                    | Media | yes   | Closed source; plex.tv account; GPU device optional           | —                  | candidate    | Runtipi      |
+| SABnzbd (`sabnzbd`)              | Media | yes   | —                                                             | —                  | never        | Runtipi      |
+| MeTube (`metube`)                | Media | yes   | —                                                             | —                  | no own login | Runtipi      |
+| Seerr (`seerr`)                  | Media | yes   | — (was Jellyseerr; renamed in 2025)                           | —                  | check        | Upstream     |
+| Deluge (`deluge`)                | Media | yes   | Raw port 6881 tcp/udp (peers)                                 | —                  | never        | Runtipi      |
+| Tube Archivist (`tubearchivist`) | Media | yes   | Elasticsearch and Redis inside the app (about 2 GB of memory) | —                  | check        | Runtipi      |
 
 ## Wave 2: files and productivity (23)
 
@@ -131,4 +131,4 @@ Approved by Hari on 23 Nov 2026 (D-161, answering Q-20). The 14 apps of D-048 pl
 
 ## Left out
 
-Cloudflared (public apps use hlabs's own controls, D-150); Bitcoin and Lightning apps (D-148); Readarr (retired in 2025); Pingvin Share (archived); the original File Browser and Python Matter Server (archived; their successors are listed); Nginx Proxy Manager (needs ports 80 and 443, which Caddy holds); Homarr, Homepage and Heimdall (hlabs is the dashboard); MinIO (community edition cut back in 2025); Overseerr (Jellyseerr covers it); Mosquitto and FlareSolverr on their own (no web page: inside Zigbee2MQTT and Prowlarr instead). Cut to make 100, and first in line to replace an app that can't be packaged: NZBGet, Autobrr, ownCloud Infinite Scale, Resilio Sync, ConvertX, Scrypted, WatchYourLAN, MySpeed, Gatus, CyberChef, Semaphore, LocalAI, Flowise.
+Cloudflared (public apps use hlabs's own controls, D-150); Bitcoin and Lightning apps (D-148); Readarr (retired in 2025); Pingvin Share (archived); the original File Browser and Python Matter Server (archived; their successors are listed); Nginx Proxy Manager (needs ports 80 and 443, which Caddy holds); Homarr, Homepage and Heimdall (hlabs is the dashboard); MinIO (community edition cut back in 2025); Overseerr (merged into Seerr); Mosquitto and FlareSolverr on their own (no web page: inside Zigbee2MQTT and Prowlarr instead). Cut to make 100, and first in line to replace an app that can't be packaged: NZBGet, Autobrr, ownCloud Infinite Scale, Resilio Sync, ConvertX, Scrypted, WatchYourLAN, MySpeed, Gatus, CyberChef, Semaphore, LocalAI, Flowise.

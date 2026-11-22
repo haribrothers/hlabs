@@ -1,0 +1,45 @@
+# Lidarr's own login is replaced by the hlabs login (LIDARR__AUTH__METHOD=External), as AdGuard Home's is (D-085);
+# its usage reporting is off.
+schema: 1
+id: lidarr
+name: Lidarr
+version: '3.1.6'
+revision: 1
+tagline: Finds and downloads albums by the artists you follow
+description: |
+  Follow artists and Lidarr finds their albums, sends them to your download app and files them in your
+  Music folder with tags and artwork, ready for Navidrome, Jellyfin or Plex.
+  Its own login is turned off (the hlabs login protects it). Other apps reach it at http://lidarr:8686; it reaches your download apps the same way, e.g. http://qbittorrent:8080.
+category: media
+developer: { name: Lidarr, url: https://lidarr.audio }
+source: https://github.com/Lidarr/Lidarr
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#00a65b', '#0b3d2a']
+  fallback: music
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: lidarr, port: 8686, embed: true }
+health: { service: lidarr, http: /ping, timeout: 180 }
+folders:
+  - key: music
+    label: Music
+    description: Your music library
+    target: /music
+    default: shared:Media/Music
+    mode: rw
+    required: true
+  - key: downloads
+    label: Downloads
+    description: Where downloads land; the same folder in every download app
+    target: /downloads
+    default: shared:Downloads
+    mode: rw
+    required: true
+ownLogin: false
+backup:
+  pause: [lidarr]
+  exclude: [logs/, MediaCover/]
+  beforeUpdate: true
+permissions: { network: internet }

@@ -80,8 +80,16 @@ export const storeCopy = {
     macos: "There's no Apple Silicon version of this app yet.",
     linux: "There's no ARM64 version of this app yet.",
   },
+  /** After noArm64 in the AppDetailsX86 banner (US-STORE-23). */
+  runsOnIntel: 'It runs on computers with an Intel or AMD chip.',
+  runsOn: 'Runs on',
+  intelAndAmd: 'Intel and AMD (x86-64)',
   /** The "platform" tag: an arm64 image on an arm64 computer. */
   arm64Tag: { macos: 'Apple Silicon', linux: 'ARM64' },
+  /** In place of the platform tag on an arm64 computer, for an app without an arm64 image (US-STORE-23). */
+  x86Only: 'x86 only',
+  /** Under About, for an app drafted from another store's definition (US-STORE-23, D-148). */
+  packagedWith: (store: string, license: string) => `Packaged with help from the ${store} app store (${license})`,
 } as const;
 
 /** Store groups (US-STORE-02), in the order the daemon returns them. */

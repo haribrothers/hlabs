@@ -1,7 +1,7 @@
 ---
 title: The App Store
 description: Find apps for your hlabs, see what each one does, and install it.
-features: [F-STORE-01, F-STORE-02, F-STORE-03, F-STORE-04, F-STORE-10, F-STORE-05, F-STORE-06, F-STORE-07, F-FILE-13]
+features: [F-STORE-01, F-STORE-02, F-STORE-03, F-STORE-04, F-STORE-10, F-STORE-05, F-STORE-06, F-STORE-07, F-STORE-13, F-FILE-13]
 ---
 
 For admins, and for members when an admin has turned on **Members can install apps**.
@@ -129,6 +129,10 @@ hlabs backs up an app's data before updating it. If you have no backup destinati
 
 ## Apple Silicon and ARM64
 
-On a Mac with Apple Silicon, apps that have a version for it are tagged **Apple Silicon** (**ARM64** on an ARM Linux computer). Apps without one are listed after the others and are never featured, and their page says there's no version for your computer yet instead of offering to install.
+On a Mac with Apple Silicon, apps that have a version for it are tagged **Apple Silicon** (**ARM64** on an ARM Linux computer). Apps without one are tagged **x86 only**: they're listed after the others and never featured, and their page says there's no version for your computer yet (they run on computers with an Intel or AMD chip) instead of offering to install.
+
+## Where the apps come from
+
+The hlabs team packages every app in the App Store and tests that it installs, opens, restarts and uninstalls. Some were packaged with help from other home-server app stores; their page says so under **About**, for example **Packaged with help from the Runtipi app store (GPL-3.0)**. Each app's logo and software belong to its own project.
 
 Choose **Back to Home** to close the App Store.

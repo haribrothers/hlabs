@@ -1,0 +1,33 @@
+schema: 1
+id: metube
+name: MeTube
+version: '2026.11.22'
+revision: 1
+tagline: Save a video from YouTube and many other sites
+description: |
+  Paste a link and MeTube saves the video, or just its sound, into your Downloads folder. It works with
+  YouTube and hundreds of other sites. It has no login of its own.
+category: media
+developer: { name: Alex, url: https://github.com/alexta69/metube }
+source: https://github.com/alexta69/metube
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#ef4444', '#7f1d1d']
+  fallback: video
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: metube, port: 8081, embed: true }
+folders:
+  - key: downloads
+    label: Downloads
+    description: Where saved videos go
+    target: /downloads
+    default: shared:Downloads/MeTube
+    mode: rw
+    required: true
+ownLogin: false
+backup:
+  pause: [metube]
+  beforeUpdate: true
+permissions: { network: internet }

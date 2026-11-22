@@ -107,6 +107,6 @@ describe('US-STORE-06', () => {
   it('on an arm64 computer, an app without an arm64 image can’t be installed and says why', async () => {
     show(details({ app: storeApp('immich', 'Immich', { arm64: false }) }));
     expect(await screen.findByRole('button', { name: 'Install' })).toBeDisabled();
-    expect(screen.getByText("There's no Apple Silicon version of this app yet.")).toBeInTheDocument();
+    expect(screen.getByRole('note')).toHaveTextContent("There's no Apple Silicon version of this app yet.");
   });
 });

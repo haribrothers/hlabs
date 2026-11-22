@@ -301,6 +301,7 @@ export class StoreService {
       website: m.source ?? m.developer?.url ?? null,
       description: m.description,
       readme: this.catalog.readme(app.sourceId, appId),
+      packagedFrom: this.catalog.packagedFrom(app.sourceId, appId),
       releaseNotes: m.releaseNotes ?? null,
       screenshots: this.catalog.screenshots(app.sourceId, appId).map((f) => storeAssetUrl(app.sourceId, appId, f)),
       services: Object.entries(compose?.services ?? {}).map(([name, svc]) => ({
