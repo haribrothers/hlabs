@@ -97,7 +97,12 @@ describe('US-HOME-19', () => {
       { status: string; data: unknown }
     >;
     expect(data['app-status']).toMatchObject({ status: 'ok', data: { running: 3, stopped: 1, attention: 1 } });
-    expect(data.updates).toMatchObject({ status: 'ok', data: { count: expect.any(Number) } });
+    // The ones not running, by name for the widget's line: the one needing attention first.
+    expect((data['app-status']!.data as { notRunning: Array<{ id: string; state: string }> }).notRunning).toEqual([
+      expect.objectContaining({ id: 'n8n', name: 'n8n', state: 'error', icon: expect.any(Object) }),
+      expect.objectContaining({ id: 'gitea', name: 'Gitea', state: 'stopped' }),
+    ]);
+    expect(data.updates).toMatchObject({ status: 'ok', data: { count: expect.any(Number), apps: expect.any(Array) } });
   });
 
   it('an uninstalled app’s widget leaves the layout on the next read', async () => {

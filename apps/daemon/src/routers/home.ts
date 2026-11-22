@@ -41,7 +41,8 @@ export const home: AppHandlers<DaemonContext>['home'] = {
     const { db } = ctx.services;
     const user = db.select({ username: users.username }).from(users).where(eq(users.id, id.userId)).get();
     if (!user) throw hlabsError('AUTH_REQUIRED');
-    const pendingUpdates = () => appUpdatesOf(ctx.services).pending.length;
+    const pendingUpdates = () =>
+      appUpdatesOf(ctx.services).pending.map(({ appId, name, icon }) => ({ id: appId, name, icon }));
     return widgetData(
       { db, appWidgets: ctx.services.appWidgets, pendingUpdates },
       { id: id.userId, username: user.username, role: id.role },

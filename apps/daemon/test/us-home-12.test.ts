@@ -62,7 +62,10 @@ describe('US-HOME-12', () => {
       running: 2,
       adminName: 'Hari',
       canInstall: false,
+      // Their logos, for the widget (Phase 7 · Widgets).
+      apps: expect.arrayContaining([expect.objectContaining({ id: expect.any(String), name: expect.any(String) })]),
     });
+    expect((await widgets(['shared-apps']))['shared-apps']!.data.apps).toHaveLength(3);
     setSetting(db, 'people', { ...getSetting(db, 'people'), membersCanInstall: true });
     expect((await widgets(['shared-apps']))['shared-apps']!.data.canInstall).toBe(true);
     // Unknown widgets are left out.

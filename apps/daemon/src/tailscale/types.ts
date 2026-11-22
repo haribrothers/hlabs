@@ -18,6 +18,8 @@ export type TailscaleState =
       httpsEnabled: boolean;
       /** When this computer's key expires (ms), or null when it doesn't. */
       keyExpiry: number | null;
+      /** Other devices on the tailnet that are online now (the Remote access widget). */
+      peersOnline?: number;
     };
 
 /** Tailscale Serve's config (ipn.ServeConfig): only the parts hlabs reads or writes; the rest is kept as it is. */

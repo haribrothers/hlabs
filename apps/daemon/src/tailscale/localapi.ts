@@ -127,6 +127,7 @@ interface StatusJson {
   MagicDNSSuffix?: string;
   CertDomains?: string[] | null;
   Self?: { DNSName?: string; KeyExpiry?: string };
+  Peer?: Record<string, { Online?: boolean }> | null;
 }
 
 /** The state from a LocalAPI status (exported for tests). */
@@ -143,6 +144,7 @@ export function stateFromStatus(s: StatusJson): TailscaleState {
       nodeName,
       httpsEnabled: (s.CertDomains?.length ?? 0) > 0,
       keyExpiry: Number.isFinite(expiry) ? expiry : null,
+      peersOnline: Object.values(s.Peer ?? {}).filter((p) => p.Online).length,
     };
   }
   if (s.BackendState === 'Stopped') return { kind: 'stopped' };

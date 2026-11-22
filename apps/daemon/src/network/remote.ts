@@ -32,6 +32,8 @@ export interface RemoteStatus {
   url: string | null;
   loginUrl: string | null;
   keyExpiry: number | null;
+  /** Devices on the tailnet online now, this computer included; null without asking Tailscale (US-HOME-02). */
+  devicesOnline: number | null;
 }
 
 export type ConnectResult =
@@ -339,6 +341,7 @@ export class RemoteService {
       url: connected ? tailnetDashboardUrl(this.deps.db) : null,
       loginUrl: null,
       keyExpiry: null,
+      devicesOnline: null,
     };
   }
 
@@ -357,6 +360,7 @@ export class RemoteService {
         url: null,
         loginUrl: null,
         keyExpiry: null,
+        devicesOnline: null,
       };
     }
     const ts = await this.state();
@@ -389,6 +393,7 @@ export class RemoteService {
       url: state === 'connected' ? tailnetDashboardUrl(this.deps.db) : null,
       loginUrl: state === 'waiting' ? this.loginUrl : null,
       keyExpiry: ts.kind === 'running' ? ts.keyExpiry : null,
+      devicesOnline: state === 'connected' && ts.kind === 'running' ? (ts.peersOnline ?? 0) + 1 : null,
     };
   }
 }
