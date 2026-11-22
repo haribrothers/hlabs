@@ -12,7 +12,7 @@ export const SEARCH_DELAY_MS = 200;
 export const SEARCH_FIELD_ID = 'store-search';
 
 /** Queries are trimmed and at most 100 characters (US-STORE-05). */
-export const cleanQuery = (q: string) => q.trim().slice(0, 100);
+export const cleanQuery = (q: string) => q.trim().slice(0, 100).trim();
 
 export function StoreSearchField({ desktop }: { desktop: boolean }) {
   const navigate = useNavigate();

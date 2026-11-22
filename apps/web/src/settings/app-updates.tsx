@@ -1,7 +1,7 @@
 // App updates in Settings › Updates (US-SYS-25): each installed app with a newer version, "<old> → <new>", its
 // release notes ("What's new") and "Update", which shows the update's progress; an app that updated drops off, one
-// that rolled back says "Rolled back" and links to what happened (the app's page, US-STORE-17). "Update all" waits
-// for phase 7 (D-036).
+// that rolled back says "Rolled back" and links to what happened (the app's page, US-STORE-17). "Update all" (phase 7)
+// queues them all, one at a time (US-STORE-15).
 import type { StoreUpdates } from '@hlabs/api';
 import { AppLogo, appTileLook } from '@hlabs/icons';
 import { isFeatureEnabled } from '@hlabs/shared';
@@ -40,8 +40,17 @@ export function AppUpdates() {
     },
   });
 
+  const startAll = useMutation({
+    mutationFn: () => client.apps.updateAll.mutate(),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: trpc.jobs.list.queryKey() }),
+    onError: (err) => {
+      if (!handledGlobally(err)) showErrorToast(err);
+    },
+  });
+
   const u = updates.data;
   if (!u) return null;
+  const anyUpdating = jobs.data?.items.some((j) => j.kind === 'app_update') ?? false;
   const rolledBack = new Set(u.rolledBack.map((r) => r.appId));
   const progressOf = (appId: string) =>
     jobs.data?.items.find((j) => j.kind === 'app_update' && j.target === appId)?.progress ?? null;
@@ -53,7 +62,13 @@ export function AppUpdates() {
           {u.pending.length ? copy.appUpdates(u.pending.length) : copy.appUpdatesTitle}
         </h2>
         {isFeatureEnabled('updateAll') && u.pending.length > 1 ? (
-          <Button size="sm" variant="secondary">
+          <Button
+            size="sm"
+            variant="secondary"
+            busy={startAll.isPending}
+            disabled={anyUpdating}
+            onClick={() => startAll.mutate()}
+          >
             {copy.updateAll}
           </Button>
         ) : null}

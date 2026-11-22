@@ -1,7 +1,7 @@
 ---
 title: The App Store
 description: Find apps for your hlabs, see what each one does, and install it.
-features: [F-STORE-01, F-STORE-04, F-STORE-05, F-STORE-06, F-STORE-07, F-FILE-13]
+features: [F-STORE-01, F-STORE-02, F-STORE-03, F-STORE-04, F-STORE-05, F-STORE-06, F-STORE-07, F-FILE-13]
 ---
 
 For admins, and for members when an admin has turned on **Members can install apps**.
@@ -22,11 +22,13 @@ Select an app's name or card to see its page.
 
 The list on the left starts with **Discover** (the store's front page) and has one entry for each kind of app the store has, such as **Files & photos**, **Security** or **Monitoring**. Choose one to see every app of that kind. On a phone the categories are a row you can swipe along above the apps.
 
+Above a category's apps, **Popular**, **New** and **A–Z** change the order. Popular is the order the hlabs store recommends (hlabs doesn't count who installs what); New puts the apps added to the store most recently first. Your choice is remembered in this browser. Beside it, the category says how many apps it has; on a Mac with Apple Silicon, apps that run on it come first. Long lists load more apps as you scroll.
+
 You can move through the list with the Tab key and open an entry with Enter.
 
 ## Search
 
-The search field at the top says how many apps you can search. Start typing: after a moment the results appear, matching app names first and then what the apps do. The chips above the results narrow them to apps you've installed or, on a Mac with Apple Silicon, to apps that have a version for it. Press Enter to search straight away, and Escape (or clear the field) to go back to where you were. On a computer, press **/** anywhere in the App Store to jump to the search field.
+The search field at the top says how many apps you can search. Start typing: after a moment the results appear, matching app names first and then what the apps do. Type at least two letters. The search looks at app names, what they do, their tags and descriptions, and doesn't mind capital letters or accents. The chips above the results say how many apps matched and how many of those you've installed; choose **Installed** to see only those or, on a Mac with Apple Silicon, **Apple Silicon only** for apps that have a version for it. Press Enter to search straight away, and Escape (or clear the field) to go back to where you were. On a computer, press **/** anywhere in the App Store to jump to the search field.
 
 ## An app's page
 
@@ -96,6 +98,18 @@ The page says **Install failed** and "Nothing else was changed". The step that f
 **Remove partial install** deletes whatever the install created (its containers and its own data) after you confirm. Folders you chose, like your Photos, stay as they are. The app then shows **Install** in the store again.
 
 A failed install also sends a notification that brings you back to this page, and its Home tile shows **Error**.
+
+## Updates
+
+Admins see **Updates** at the bottom of the list on the left (on a phone, under **Manage apps**), with the number of apps that have a newer version. The App Store's icon in the Dock shows the same number.
+
+Each app shows the version you have, the new one and when it reached your App Store, for example **1.2 → 1.3 · released 2 days ago**. Choose **What's new** to read what changed and **Hide notes** to close it. **Update** installs it: the row shows how far it has got, and when it's done the app moves to **Recently updated**. **Update all** updates every app in the list, one after another; the button counts them, such as **Updating 1 of 3…**, and if one doesn't work the others still update.
+
+If a new version asks for more than the one you have, such as another folder, a port or the internet, the row says **Needs your approval: asks for new access**. Choose **Review** to see only what's new. Such an app never updates by itself; update it when you're happy with it.
+
+**Recently updated** lists the updates of the last two weeks, and says which ones hlabs did by itself overnight. When there's nothing to update, the page says **All apps are up to date** and when hlabs last looked; **Check now** looks again. hlabs looks by itself every 6 hours and sends admins a notification when it finds updates.
+
+hlabs backs up an app's data before updating it. If you have no backup destination yet, the update still happens and says **Not backed up: no backup destination**. You can turn this off in Settings › Updates.
 
 ## Apple Silicon and ARM64
 

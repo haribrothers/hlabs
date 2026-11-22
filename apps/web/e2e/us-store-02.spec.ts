@@ -1,7 +1,7 @@
 // US-STORE-02 · Navigate with the categories sidebar (main instance, admin). Categories come from the built-in store.
 import { expect, test } from '@playwright/test';
 
-test('US-STORE-02 categories with apps, in order; keyboard moves through them; no "Manage apps" before phase 7', async ({
+test('US-STORE-02 categories with apps, in order; keyboard moves through them; "Manage apps" has only what’s built', async ({
   page,
 }, info) => {
   test.skip(info.project.name === 'phone', 'The phone uses chips (next test)');
@@ -21,7 +21,8 @@ test('US-STORE-02 categories with apps, in order; keyboard moves through them; n
     'Monitoring',
   ]);
   await expect(nav.getByRole('link', { name: 'Discover' })).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByRole('navigation', { name: 'Manage apps' })).toHaveCount(0);
+  // Updates is built (phase 7, group 4); App sources and Deploy your own app aren't yet.
+  await expect(page.getByRole('navigation', { name: 'Manage apps' }).getByRole('link')).toHaveText([/^Updates/]);
 
   // Keyboard: each item takes focus with a visible ring, and Enter opens it.
   await nav.getByRole('link', { name: 'Discover' }).focus();

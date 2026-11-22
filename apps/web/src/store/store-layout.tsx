@@ -6,6 +6,7 @@ import { ChevronLeft, iconDefaults } from '@hlabs/icons';
 import { GlassCard, ScrollPane } from '@hlabs/ui';
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { storeCopy } from '../copy/store';
 import { useIsDesktop } from '../lib/use-media';
 import { StoreChips, StoreSidebar } from './categories';
@@ -17,9 +18,22 @@ const copy = storeCopy;
 /** Lets a view put its title in the window's header. */
 const TitleContext = createContext<(title: string) => void>(() => {});
 
+/**
+ * Where a view's own button goes in the header, in place of the search field (Updates' "Update all"), and saying the
+ * view has one.
+ */
+const ActionContext = createContext<{
+  /** Inside the store window (which has the header). */
+  inWindow: boolean;
+  slot: HTMLElement | null;
+  setHasAction: (has: boolean) => void;
+}>({ inWindow: false, slot: null, setHasAction: () => {} });
+
 export function StoreLayout() {
   const desktop = useIsDesktop();
   const [title, setTitle] = useState('');
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  const [hasAction, setHasAction] = useState(false);
   const href = useRouterState({ select: (s) => s.location.href });
   const scroller = useRef<HTMLDivElement>(null);
   useStoreScrollMemory(href, desktop ? scroller : null);
@@ -81,12 +95,15 @@ export function StoreLayout() {
           header={
             <div className="flex items-center justify-between gap-6">
               <h2 className="m-0 min-w-0 truncate text-title-1 font-bold">{title}</h2>
-              <StoreSearchField desktop />
+              <div ref={setSlot} className={hasAction ? 'contents' : 'hidden'} />
+              {hasAction ? null : <StoreSearchField desktop />}
             </div>
           }
         >
           <TitleContext.Provider value={setTitle}>
-            <Outlet />
+            <ActionContext.Provider value={{ inWindow: true, slot, setHasAction }}>
+              <Outlet />
+            </ActionContext.Provider>
           </TitleContext.Provider>
         </ScrollPane>
       </div>
@@ -99,19 +116,38 @@ export function StoreView({
   title,
   children,
   phoneTitle = true,
+  action = null,
 }: {
   title: string;
   children: ReactNode;
   /** Off where the phone's "App Store" title already names the view (Discover). */
   phoneTitle?: boolean;
+  /** A button for the header, in place of the search field on desktop; under the title on a phone. */
+  action?: ReactNode;
 }) {
   const desktop = useIsDesktop();
   const setTitle = useContext(TitleContext);
+  const { inWindow, slot, setHasAction } = useContext(ActionContext);
   useLayoutEffect(() => setTitle(title), [setTitle, title]);
-  if (desktop) return <>{children}</>;
+  const hasAction = action !== null;
+  useLayoutEffect(() => {
+    setHasAction(hasAction);
+    return () => setHasAction(false);
+  }, [setHasAction, hasAction]);
+  // In the window's header (once it's there); outside the store window, beside the title as on a phone.
+  if (desktop && (inWindow || !action))
+    return (
+      <>
+        {action && slot ? createPortal(action, slot) : null}
+        {children}
+      </>
+    );
   return (
     <section className="flex flex-col gap-4">
-      <h2 className={phoneTitle ? 'm-0 text-title-1' : 'sr-only'}>{title}</h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className={phoneTitle ? 'm-0 text-title-1' : 'sr-only'}>{title}</h2>
+        {action}
+      </div>
       {children}
     </section>
   );

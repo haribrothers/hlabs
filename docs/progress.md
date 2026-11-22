@@ -290,10 +290,10 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-HOME-19 · Add a widget from the picker (with Remote access and Backups widgets, which were missing)
 - [x] US-HOME-22 · Pin my favourite apps to the Dock
 - [x] US-HOME-20 · Show app widgets with live data (D-157: fields and admins' API keys; widgets for Immich, Jellyfin and Paperless-ngx, not checked against live apps yet)
-- [ ] US-STORE-04 · Browse a category
-- [ ] US-STORE-05 · Search results with filters
-- [ ] US-STORE-15 · See and apply available updates
-- [ ] US-STORE-16 · Check for updates and auto-update in the background
+- [x] US-STORE-04 · Browse a category (Popular, New, A–Z remembered per browser; pages of 50; feature `storeBrowse`)
+- [x] US-STORE-05 · Search results with filters (the daemon filters and counts; "Can't find an app?" shows with app sources, group 5)
+- [x] US-STORE-15 · See and apply available updates (`apps.updateAll`; the Dock badge; Update all in Settings › Updates too)
+- [x] US-STORE-16 · Check for updates and auto-update in the background (D-158: release dates, new access, the backup first, `app.updatesAvailable`)
 - [ ] US-STORE-18 · See and manage app sources
 - [ ] US-STORE-19 · Add a source with a pinned signing key
 - [ ] US-STORE-23 · Find the apps people run on a home server

@@ -73,16 +73,22 @@ describe('US-STORE-03', () => {
 
 describe('US-STORE-03 · results, as the StoreSearch screen draws them', () => {
   const results = (arm64 = true) => ({
-    'store.listApps': () => ({
-      host: { os: 'macos', arm64 },
-      title: null,
-      nextCursor: null,
-      items: [
+    // Filters and counts as the daemon does them (US-STORE-05).
+    'store.listApps': (input: unknown) => {
+      const { installedOnly, arm64Only } = input as { installedOnly?: boolean; arm64Only?: boolean };
+      const matches = [
         storeApp('immich', 'Immich', { installed: true, group: 'files', tagline: 'Phone photo backup' }),
         storeApp('photoprism', 'PhotoPrism', { group: 'files', tagline: 'Browse photos', arm64: false }),
         storeApp('piwigo', 'Piwigo', { group: 'files', tagline: 'Photo gallery' }),
-      ],
-    }),
+      ].filter((a) => !arm64Only || a.arm64);
+      return {
+        host: { os: 'macos', arm64 },
+        title: null,
+        nextCursor: null,
+        counts: { all: matches.length, installed: matches.filter((a) => a.installed).length },
+        items: matches.filter((a) => !installedOnly || a.installed),
+      };
+    },
     'apps.list': () => ({
       apps: [
         {
@@ -115,13 +121,19 @@ describe('US-STORE-03 · results, as the StoreSearch screen draws them', () => {
     const all = await screen.findByRole('button', { name: 'All · 3' });
     expect(all).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'Installed · 1' }));
-    expect(within(screen.getByRole('list', { name: 'Results for “photo”' })).getAllByRole('listitem')).toHaveLength(1);
+    await waitFor(() =>
+      expect(within(screen.getByRole('list', { name: 'Results for “photo”' })).getAllByRole('listitem')).toHaveLength(
+        1,
+      ),
+    );
     fireEvent.click(all);
     fireEvent.click(screen.getByRole('button', { name: 'Apple Silicon only' }));
-    const names = within(screen.getByRole('list', { name: 'Results for “photo”' }))
-      .getAllByRole('listitem')
-      .map((r) => within(r).getAllByRole('link')[0]!.textContent);
-    expect(names).toEqual(['Immich', 'Piwigo']);
+    const names = () =>
+      within(screen.getByRole('list', { name: 'Results for “photo”' }))
+        .getAllByRole('listitem')
+        .map((r) => within(r).getAllByRole('link')[0]!.textContent);
+    await waitFor(() => expect(names()).toEqual(['Immich', 'Piwigo']));
+    expect(screen.getByRole('button', { name: 'All · 2' })).toBeInTheDocument();
   });
 
   it('no "Apple Silicon only" off arm64; no "Add another app source" before phase 7 (D-036)', async () => {

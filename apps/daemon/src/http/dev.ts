@@ -189,6 +189,8 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     port: z.number().int().min(12000).max(12999).optional(),
     /** Folders on the storage root it uses, e.g. `users/<username>/Photos` (US-FILE-07 e2e: Open with). */
     mounts: z.array(z.string()).optional(),
+    /** A stand-in for the built-in store's app at this older version: it has an update (US-STORE-15 e2e). */
+    behind: z.string().optional(),
   });
   // The engine as stopped (or back), without touching the real one: e2e for the engine-stopped states (US-STATE-08…10).
   const engineBody = z.object({ running: z.boolean() });
@@ -264,7 +266,18 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
   app.post('/dev/fake-app', async (req, reply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
-    const { id, name, remove, state, progress, embed, stateDetail: detail, port, mounts } = fakeApp.parse(req.body);
+    const {
+      id,
+      name,
+      remove,
+      state,
+      progress,
+      embed,
+      stateDetail: detail,
+      port,
+      mounts,
+      behind,
+    } = fakeApp.parse(req.body);
     const stateDetail = detail ? JSON.stringify(detail) : null;
     const { db, bus } = services;
     if (remove) {
@@ -280,6 +293,23 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
       .values({ id: 'dev', kind: 'local', name: 'Development', url: 'dev:' })
       .onConflictDoNothing()
       .run();
+    if (behind !== undefined) {
+      db.insert(apps)
+        .values({
+          id,
+          sourceId: 'builtin',
+          version: behind,
+          state,
+          hostname: id,
+          portFallback: port ?? null,
+          installedAt: Date.now(),
+          updatedAt: Date.now(),
+        })
+        .onConflictDoUpdate({ target: apps.id, set: { state, version: behind, sourceId: 'builtin' } })
+        .run();
+      bus.emit('app.stateChanged', { appId: id, state, detail: null }, { kind: 'all' });
+      return { added: id };
+    }
     db.insert(catalogApps)
       .values({
         sourceId: 'dev',

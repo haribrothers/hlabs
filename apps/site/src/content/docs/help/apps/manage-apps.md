@@ -21,6 +21,7 @@ If hlabs can't announce the app's name on your network, the address is the hlabs
 Under **Behaviour**:
 
 - **Start automatically**: the app starts when hlabs starts, for example after this computer restarts. Turn it off for apps you only use now and then; they stay stopped until you start them.
+- **Update automatically**: hlabs installs the app's new versions overnight, between 3 and 5 am, when **Update apps automatically** is on in Settings › Updates. A version that asks for new access waits for you in the App Store's Updates. Apps you deployed yourself never update by themselves.
 
 Each switch saves as soon as you change it. If it can't be saved, it moves back and hlabs tells you why.
 
@@ -37,7 +38,7 @@ At the bottom, the version says whether it's up to date, or which newer version 
 
 ## Update an app
 
-When the App Store has a newer version, choose **Update** beside it. The app restarts while it updates, and the top of App settings says how far it has got, such as "Updating… 40%". Your settings and data stay as they are.
+When the App Store has a newer version, choose **Update** beside it, here or in the App Store's **Updates**. The app restarts while it updates, and the top of App settings says how far it has got, such as "Updating… 40%". Your settings and data stay as they are.
 
 If the new version doesn't start, hlabs puts the previous version back and starts it again, so an update never leaves an app broken. Admins get a notification, and the app's page in the App Store says "<App>'s update didn't start, so hlabs rolled it back". From there:
 

@@ -36,6 +36,11 @@ export const storeCopy = {
   filters: 'Filter results',
   cantFind: 'Can’t find an app?',
   addSource: 'Add another app source',
+  // Browse a category (US-STORE-04)
+  sortLabel: 'Sort apps',
+  sorts: { popular: 'Popular', new: 'New', name: 'A–Z' },
+  compatibleFirst: { macos: 'showing Apple Silicon compatible first', linux: 'showing ARM64 compatible first' },
+  loadingMore: 'Loading more apps…',
   // App details (US-STORE-06)
   officialSource: 'hlabs official',
   about: 'About',

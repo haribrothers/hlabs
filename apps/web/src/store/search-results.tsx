@@ -1,18 +1,16 @@
 // Search results as the StoreSearch screen draws them (US-STORE-03, with US-STORE-05's layout): "Results for “q”", chips
 // "All · N", "Installed · N" and (on arm64) "Apple Silicon only", then one list: logo, name, "tagline · category", and
-// "Installed" with Open or a white Install. "Can't find an app? Add another app source" joins with app sources
-// (phase 7, D-036).
+// "Installed" with Open or a white Install. The daemon filters and counts (US-STORE-05); one character asks for nothing.
+// "Can't find an app? Add another app source" joins with app sources (phase 7, D-036).
 import type { StoreApp } from '@hlabs/api';
-import { isFeatureEnabled } from '@hlabs/shared';
+import { isFeatureEnabled, VISIBLE_PHASE } from '@hlabs/shared';
 import { Badge, Button, cn, tokens } from '@hlabs/ui';
-import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { categoryLabels, storeCopy } from '../copy/store';
 import { browser } from '../lib/browser';
-import { pageQuery } from '../lib/error-copy';
-import { useTRPC } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
+import { MoreOnScroll, useAppPages } from './app-pages';
 import { detailsPath, StoreLogo } from './cards';
 import { cardAction, type StoreHost } from './store-app';
 import { StoreView } from './store-layout';
@@ -73,25 +71,24 @@ function ResultRow({ app, installs }: { app: StoreApp; installs: Installs }) {
   );
 }
 
-export function SearchResults({ query }: { query: string }) {
-  const trpc = useTRPC();
-  const list = useQuery({ ...trpc.store.listApps.queryOptions({ query }), retry: false, ...pageQuery });
-  const installs = useInstalls();
+export function SearchResults({ query, shippedPhase = VISIBLE_PHASE }: { query: string; shippedPhase?: number }) {
   const isAdmin = useMe().data?.role === 'admin';
   const [installedOnly, setInstalledOnly] = useState(false);
   const [arm64Only, setArm64Only] = useState(false);
+  // One character finds too much to be useful: nothing is asked for (US-STORE-05).
+  const searching = query.length > 1;
+  const { query: pages, first, items } = useAppPages({ query, installedOnly, arm64Only }, searching);
+  const installs = useInstalls();
   const title = copy.resultsFor(query);
-  if (!list.data) return <StoreView title={title}>{null}</StoreView>;
+  if (!searching || !first) return <StoreView title={title}>{null}</StoreView>;
 
-  const host: StoreHost = list.data.host;
-  const all = list.data.items;
-  const installedCount = all.filter((a) => a.installed).length;
-  const shown = all.filter((a) => (!installedOnly || a.installed) && (!arm64Only || a.arm64));
+  const host: StoreHost = first.host;
+  const { all, installed } = first.counts;
 
   return (
     <StoreView title={title}>
       <div className="flex flex-col gap-5 pb-6">
-        {all.length ? (
+        {all || installedOnly || arm64Only ? (
           <div role="group" aria-label={copy.filters} className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -99,7 +96,7 @@ export function SearchResults({ query }: { query: string }) {
               aria-pressed={!installedOnly}
               onClick={() => setInstalledOnly(false)}
             >
-              {copy.filterAll(all.length)}
+              {copy.filterAll(all)}
             </button>
             <button
               type="button"
@@ -107,7 +104,7 @@ export function SearchResults({ query }: { query: string }) {
               aria-pressed={installedOnly}
               onClick={() => setInstalledOnly(true)}
             >
-              {copy.filterInstalled(installedCount)}
+              {copy.filterInstalled(installed)}
             </button>
             {host.arm64 ? (
               <button
@@ -121,16 +118,17 @@ export function SearchResults({ query }: { query: string }) {
             ) : null}
           </div>
         ) : null}
-        {shown.length ? (
+        {items.length ? (
           <ul aria-label={title} className="m-0 list-none overflow-hidden rounded-xl bg-surface-row p-0">
-            {shown.map((app) => (
+            {items.map((app) => (
               <ResultRow key={app.id} app={app} installs={installs} />
             ))}
           </ul>
         ) : (
           <p className="m-0 text-body text-ink-muted">{copy.noResults(query)}</p>
         )}
-        {isAdmin && isFeatureEnabled('storeSources') ? (
+        <MoreOnScroll query={pages} />
+        {isAdmin && isFeatureEnabled('storeSources', shippedPhase) ? (
           <p className="m-0 text-body-sm text-ink-muted">
             {copy.cantFind}{' '}
             <a href="/store/sources" className="hl-focus rounded-xs font-bold text-accent no-underline">

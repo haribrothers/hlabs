@@ -30,7 +30,7 @@ If hlabs is busy with something that can't be interrupted, such as a restore, **
 
 ## Update your apps
 
-Under **App updates**, each app with a newer version shows the version you have and the new one, for example **1.2 → 1.3**. Choose **What's new** to read what changed, and **Update** to install it; the row shows how far the update has got, and goes away when it's done. Your app's data stays as it is.
+Under **App updates**, each app with a newer version shows the version you have and the new one, for example **1.2 → 1.3**. Choose **What's new** to read what changed, and **Update** to install it; the row shows how far the update has got, and goes away when it's done. Your app's data stays as it is. With more than one, **Update all** updates them one after another. The App Store's **Updates** shows the same list, with the updates of the last two weeks.
 
 If an app's new version doesn't start, hlabs puts the version you had back and the row says **Rolled back**. Choose it to see what happened and try again. When there's nothing to update, it says **All apps are up to date**.
 
@@ -40,8 +40,9 @@ Under **Automatic updates**:
 
 - **Update hlabs automatically** installs a new version of hlabs overnight, between 3 and 5 am. It's on to begin with.
 - **Update apps automatically** updates apps overnight too, but only the apps you've allowed in their own settings.
+- **Back up app data before updating** backs up each app to your backup destination just before it updates, whether you update it or hlabs does. Without a destination, the update still happens and the App Store's Updates says it wasn't backed up. If the backup fails, the app isn't updated and keeps running the version you have.
 
-hlabs updates itself first, then your apps. If a backup or something else that can't be interrupted is running, it waits for it to finish; if that takes past 5 am, it tries again the next night. In the morning, a notification says what was updated, and anything that was rolled back because it didn't start.
+hlabs updates itself first, then your apps, after that night's backup. If a backup or something else that can't be interrupted is running, it waits for it to finish; if that takes past 5 am, it tries again the next night. In the morning, a notification says what was updated, and anything that was rolled back because it didn't start. An app whose new version asks for more access, such as another folder or a port, isn't updated by itself: it waits in the App Store's Updates for you to review it.
 
 ## Check for updates
 

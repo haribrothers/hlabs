@@ -10,6 +10,7 @@ import { openSearch } from '../search/search-state';
 import { Spotlight, useSearchShortcut } from '../search/spotlight';
 import { useMe } from '../lib/use-me';
 import { useDockPins } from './dock-pins';
+import { usePendingUpdates } from './pending-updates';
 import { AREA_PATHS, areaForPath, navigationAreas, phoneAreas, storeBadge, type NavAccess } from './areas';
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -24,11 +25,11 @@ export function Shell({ children }: { children: ReactNode }) {
   // The person's wallpaper and accent (US-HOME-01); signed out (development pages) it's the defaults.
   const appearance = me?.appearance;
   useAppearance(appearance);
-  // Members see fewer areas (US-HOME-05). The update count comes from the App Store updates list (phase 7).
+  // Members see fewer areas (US-HOME-05). The update count comes from the App Store updates list (phase 7, admins).
   const access: NavAccess | undefined = me
     ? { role: me.role, canSeeUsage: me.canSeeUsage, canInstallApps: me.canInstallApps }
     : undefined;
-  const store = storeBadge(0, { access });
+  const store = storeBadge(usePendingUpdates(me?.role === 'admin'), { access });
   const areas = navigationAreas({ access });
   const tabs = phoneAreas({ access }).map((a) => (a.id === 'store' && store ? { ...a, badge: store } : a));
   // Pinned apps, then open windows (US-HOME-22, US-HOME-23).

@@ -46,8 +46,10 @@ export const FEATURE_PHASE = {
   notifications: 7,
   /** The App Store updates list (F-STORE-08) and the Dock's update badge (US-HOME-05). */
   appUpdates: 7,
-  /** "Update all" in Settings › Updates (US-SYS-25). */
+  /** "Update all" in Settings › Updates (US-SYS-25) and the App Store's Updates (US-STORE-15). */
   updateAll: 7,
+  /** A category's sort (Popular, New, A–Z) and its count line (US-STORE-04). */
+  storeBrowse: 7,
   homeEdit: 7,
   /** Pinned apps in the Dock (US-HOME-22). */
   dockPins: 7,
@@ -96,7 +98,15 @@ export type Feature = keyof typeof FEATURE_PHASE;
  * Phase 7 is built in groups (D-151, D-156): its features that are built already, previewed on the dashboard's dev
  * server with BUILDING_PHASE's, while the rest of the phase stays hidden. Add a feature when its group lands.
  */
-export const BUILT_AHEAD: readonly Feature[] = ['notifications', 'homeEdit', 'widgets', 'dockPins'];
+export const BUILT_AHEAD: readonly Feature[] = [
+  'notifications',
+  'homeEdit',
+  'widgets',
+  'dockPins',
+  'storeBrowse',
+  'appUpdates',
+  'updateAll',
+];
 
 /** The dev server is previewing (never in a build or unit tests). */
 const PREVIEWING = typeof __HLABS_PREVIEW_PHASE__ !== 'undefined' && __HLABS_PREVIEW_PHASE__ !== null;
