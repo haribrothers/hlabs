@@ -212,7 +212,9 @@ export class InstallService {
       dataFolder: tildePath(join(this.deps.appDataDir, appId)),
       disk: (await this.deps.disk?.get(appId)) ?? null,
       version: app.version,
-      latestVersion: latestVersion(app.version, catalogRow(db, app)?.version),
+      // An app whose source was removed has nothing to update from (US-STORE-18).
+      latestVersion: app.sourceId === null ? null : latestVersion(app.version, catalogRow(db, app)?.version),
+      sourceRemoved: app.sourceId === null && !app.custom,
       services: this.deps.apps.services(appId),
       dependents: this.dependents(appId),
       autostart: app.autostart,

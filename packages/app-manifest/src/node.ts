@@ -2,10 +2,11 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parse } from 'yaml';
+import { isMap, isSeq, parse, parseDocument, type Node } from 'yaml';
 import { validateCompose, type ComposeFile, type ComposeIssue } from './compose';
 import { AppManifest } from './manifest';
 import { StoreCuration, StoreIndex } from './store-index';
+export { generateLibraryKey, keyFingerprint, signIndex, verifyIndex, type LibraryKey } from './signing';
 export { Registry, RegistryError, parseImageRef, pinned, type ImageManifest, type ImageRef } from './registry';
 
 export const MANIFEST_FILE = 'hlabs-app.yml';
@@ -29,6 +30,44 @@ export interface AppIssue {
   path: string;
   code: string;
   message: string;
+  /** The line in `file` the problem is on (1-based), when it can be found (`hlabs library check`, US-STORE-27). */
+  line?: number;
+}
+
+/** The 1-based line of a dotted path (`services.wiki.network_mode`) in YAML text, or of its nearest parent there. */
+export function lineOf(text: string, path: string): number | undefined {
+  if (!path || path.startsWith('(')) return undefined;
+  let node: unknown;
+  try {
+    node = parseDocument(text).contents;
+  } catch {
+    return undefined;
+  }
+  // Where the deepest part of the path found starts: a mapping's key, or a list's item.
+  let at: number | undefined;
+  for (const key of path.split('.')) {
+    if (isMap(node)) {
+      const pair = node.items.find((p) => String((p.key as { value?: unknown } | null)?.value) === key);
+      if (!pair) break;
+      at = (pair.key as Node | null)?.range?.[0] ?? at;
+      node = pair.value;
+    } else if (isSeq(node)) {
+      const item = node.items[Number(key)] as Node | undefined;
+      if (!item) break;
+      at = item.range?.[0] ?? at;
+      node = item;
+    } else break;
+  }
+  return at === undefined ? undefined : text.slice(0, at).split('\n').length;
+}
+
+/** Adds lines to issues from the files' text. */
+function withLines(issues: AppIssue[], texts: Record<string, string | undefined>): AppIssue[] {
+  return issues.map((i) => {
+    const text = texts[i.file];
+    const line = text === undefined ? undefined : lineOf(text, i.path);
+    return line === undefined ? i : { ...i, line };
+  });
 }
 
 export interface LoadedApp {
@@ -112,7 +151,13 @@ export function loadAppDir(dir: string, options: { requireDigest: boolean }): Lo
     if (composeIssues.length === 0) compose = rawCompose as ComposeFile;
   }
 
-  return { dir, manifest, compose, issues };
+  const text = (name: string) => (existsSync(join(dir, name)) ? readFileSync(join(dir, name), 'utf8') : undefined);
+  return {
+    dir,
+    manifest,
+    compose,
+    issues: withLines(issues, { [MANIFEST_FILE]: text(MANIFEST_FILE), [COMPOSE_FILE]: text(COMPOSE_FILE) }),
+  };
 }
 
 export function listAppDirs(storeDir: string): string[] {
@@ -196,10 +241,16 @@ export function curationIssues(curation: StoreCuration, appIds: ReadonlySet<stri
   return issues;
 }
 
-export function buildStoreIndex(storeDir: string, source: { id: string; name: string }): StoreIndex {
-  const apps = lintStore(storeDir);
-  const broken = apps.filter((a) => a.issues.length > 0);
-  if (broken.length) throw new Error(`Fix store:lint issues first (${broken.length} app(s))`);
+export function buildStoreIndex(
+  storeDir: string,
+  source: { id: string; name: string },
+  options: { requireDigest?: boolean; skipBroken?: boolean } = {},
+): StoreIndex {
+  const all = lintStore(storeDir, { requireDigest: options.requireDigest ?? true });
+  const broken = all.filter((a) => a.issues.length > 0);
+  // A library indexes the apps that pass and says which don't (US-STORE-27); the built-in store must be clean.
+  if (broken.length && !options.skipBroken) throw new Error(`Fix store:lint issues first (${broken.length} app(s))`);
+  const apps = all.filter((a) => a.issues.length === 0);
   const curation = loadCuration(storeDir);
   if (curationIssues(curation, new Set(apps.map((a) => a.manifest!.id))).length) {
     throw new Error('Fix store:lint issues in curation.yml first');

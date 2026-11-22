@@ -113,8 +113,21 @@ export const trayUserSchema = z.object({
 });
 export type TrayUser = z.infer<typeof trayUserSchema>;
 
+/** A library signing key's public half (US-STORE-28); the private half never leaves the daemon's keychain. */
+const libraryKeySchema = z.object({ publicKey: z.string(), fingerprint: z.string() });
+
 export const tray = {
   status: io(empty, trayStatusSchema),
+  /**
+   * `hlabs library keygen` (US-STORE-28): an ed25519 key for signing libraries, kept in the keychain (or the encrypted
+   * file on a headless server). With one already, it's returned (`existed`) unless `replace`.
+   */
+  libraryKeygen: io(
+    z.object({ replace: z.boolean().default(false) }),
+    libraryKeySchema.extend({ existed: z.boolean() }),
+  ),
+  /** `hlabs library sign`: index.json's bytes (base64, ≤ 1 MB) → its minisign signature with that key. */
+  librarySign: io(z.object({ data: z.string().max(1_400_000) }), libraryKeySchema.extend({ signature: z.string() })),
   /** Enabled accounts, admins first, then by name (US-INST-17). */
   listUsers: io(empty, z.object({ users: z.array(trayUserSchema) })),
   quickAction: io(

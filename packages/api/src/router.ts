@@ -99,6 +99,7 @@ export const appRouter = router({
       remove: m(p.admin, s.store.sources.remove),
       sync: m(p.admin, s.store.sources.sync),
     }),
+    copyToLibrary: m(p.admin, s.store.copyToLibrary),
   }),
 
   apps: router({
@@ -298,6 +299,8 @@ export const appRouter = router({
     diagnostics: q(p.tray, s.tray.diagnostics),
     uninstallInfo: q(p.tray, s.tray.uninstallInfo),
     uninstall: m(p.tray, s.tray.uninstall),
+    libraryKeygen: m(p.tray, s.tray.libraryKeygen),
+    librarySign: m(p.tray, s.tray.librarySign),
     setupUrl: q(p.tray, s.tray.setupUrl),
     job: q(p.tray, s.tray.job),
   }),

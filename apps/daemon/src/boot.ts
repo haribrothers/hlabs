@@ -50,6 +50,8 @@ import { takeSwitchedBack, type HeadlessHost } from './updates/headless';
 import { nodeHeadlessHost } from './updates/headless-host';
 import { AUTO_UPDATED_KIND, AutoUpdates } from './updates/auto';
 import { StoreUpdateWatch } from './store/update-watch';
+import { SourcesService } from './store/sources';
+import { rootLocation } from './apps/folders';
 import { installedManifests, pendingUpdate } from './store/updates-list';
 import {
   confirmHeadlessSwitch,
@@ -122,6 +124,8 @@ export interface BootDeps {
   watchApps?: boolean;
   /** Where hlabs's update manifest comes from (US-SYS-24); tests pass a fake. */
   updateSource?: UpdateSource;
+  /** How app sources are fetched (US-STORE-18); tests serve a library from disk. */
+  sourceFetch?: (url: string, init: { signal: AbortSignal; redirect: 'follow' }) => Promise<Response>;
   /** Tests turn the 6-hour update check off. */
   checkUpdates?: boolean;
   /** Headless updates' downloads, tar and restart; tests pass a fake. */
@@ -330,8 +334,17 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
 
   // 4. The built-in store, then reconcile installed apps with the engine.
   readiness.step(3);
-  const catalog = new CatalogService(db, config.resources.storeDir, logger);
+  const catalog = new CatalogService(db, config.resources.storeDir, logger, join(config.paths.dataDir, 'sources'));
   const { synced, skipped } = catalog.syncBuiltin();
+  // Other app sources (US-STORE-18): read from their last copy now, synced again with the update check.
+  const sources = new SourcesService({
+    db,
+    catalog,
+    logger,
+    dataDir: config.paths.dataDir,
+    storageRoot: () => rootLocation(db)?.path ?? null,
+    fetch: deps.sourceFetch,
+  });
   logger.info({ apps: synced.length, skipped: skipped.length }, 'built-in store loaded');
   // Health waits take up to minutes, so apps come up in the background; /healthz doesn't wait for them.
   // How many reconciles are waiting or running: while any is, the tray says "Starting" (US-INST-11).
@@ -499,8 +512,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     logger,
     source: updateSource,
     version: config.version,
-    syncStore: () => {
+    syncStore: async () => {
       catalog.syncBuiltin();
+      await sources.syncAll();
       storeWatch.afterSync();
     },
     blocker: () => jobs.blocker('system_update'),
@@ -603,6 +617,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     proxy,
     mdns,
     catalog,
+    sources,
     store,
     installer,
     appDisk: disk,

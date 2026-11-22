@@ -1,6 +1,7 @@
 // App logos and screenshots (US-STORE-01, US-STORE-06, US-HOME-03), for anyone signed in:
 //   GET /api/store/apps/:sourceId/:appId/assets/*   a catalogue app's
 //   GET /api/apps/:appId/assets/*                   an installed app's (from the source it came from)
+//   GET /api/store/copy/:token.zip                  "Copy to my library" for a git library (admins, once, US-STORE-29)
 // SVGs are served with a CSP that forbids scripts, so opening one directly can't run anything.
 import { apps } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
@@ -38,4 +39,19 @@ export function registerAppAssets(app: FastifyInstance, holder: ServiceHolder, d
   };
   app.get('/api/store/apps/:sourceId/:appId/assets/*', { logLevel: 'warn' }, serve);
   app.get('/api/apps/:appId/assets/*', { logLevel: 'warn' }, serve);
+
+  app.get<{ Params: { file: string } }>('/api/store/copy/:file', async (req, reply) => {
+    const services = holder.current;
+    if (!services) return reply.code(503).send();
+    const session = services.sessions.resolve(readCookie(req.headers.cookie, SESSION_COOKIE));
+    if (!devAnonymousAdmin && session?.role !== 'admin') return reply.code(404).send();
+    const token = req.params.file.replace(/\.zip$/, '');
+    const zip = services.sources.takeZip(token);
+    if (!zip) return reply.code(404).send();
+    return reply
+      .header('content-type', 'application/zip')
+      .header('content-disposition', `attachment; filename="${zip.name}"`)
+      .header('cache-control', 'no-store')
+      .send(zip.data);
+  });
 }

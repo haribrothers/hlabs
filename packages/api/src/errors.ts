@@ -70,6 +70,29 @@ export const HLABS_ERRORS = {
   APP_ROLLBACK_FAILED: 'INTERNAL_SERVER_ERROR',
   HOSTNAME_TAKEN: 'CONFLICT',
 
+  // App sources and libraries (US-STORE-18, 19, 27…29)
+  /** Not an https address or a folder path. */
+  SOURCE_ADDRESS_INVALID: 'BAD_REQUEST',
+  /** The address didn't answer (offline, a typo, a private repository). */
+  SOURCE_UNREACHABLE: 'BAD_GATEWAY',
+  /** Nothing in hlabs's app format there: no index.json, or a folder without apps. */
+  SOURCE_EMPTY: 'NOT_FOUND',
+  /** What's there isn't readable as a source (too big, files outside it). */
+  SOURCE_INVALID: 'BAD_REQUEST',
+  /** The index isn't signed by the key saved when the source was added; the source is off until added again. */
+  SOURCE_SIGNATURE_MISMATCH: 'PRECONDITION_FAILED',
+  SOURCE_EXISTS: 'CONFLICT',
+  /** A library folder must be under the storage root. */
+  SOURCE_PATH_OUTSIDE: 'BAD_REQUEST',
+  /** A library folder can't be where members can change it: Shared or a member's Home. */
+  SOURCE_PATH_SHARED: 'BAD_REQUEST',
+  /** The built-in source can't be removed. */
+  SOURCE_BUILTIN: 'PRECONDITION_FAILED',
+  /** "Copy to my library": the library already has an app with that id (`detail.id`). */
+  LIBRARY_APP_EXISTS: 'CONFLICT',
+  /** `hlabs library sign` without a key made by `hlabs library keygen` on this computer. */
+  LIBRARY_KEY_MISSING: 'NOT_FOUND',
+
   // Storage, files and network
   STORAGE_NOT_WRITABLE: 'BAD_REQUEST',
   /** A drive an app keeps folders on can't be disconnected (US-FILE-12): `detail.apps` names them. */

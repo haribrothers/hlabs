@@ -291,8 +291,11 @@ export class StoreService {
       app,
       source: {
         id: app.sourceId,
-        name: source?.name ?? app.sourceId,
+        name: app.sourceId === BUILTIN_SOURCE_ID ? 'hlabs official' : (source?.name ?? app.sourceId),
         official: app.sourceId === BUILTIN_SOURCE_ID,
+        // The built-in store ships signed with hlabs; another source is signed when its key was pinned (US-STORE-28).
+        signed: app.sourceId === BUILTIN_SOURCE_ID || !!source?.publicKey,
+        kind: (source?.kind ?? 'builtin') as 'builtin' | 'git' | 'index' | 'local',
       },
       version: m.version,
       description: m.description,

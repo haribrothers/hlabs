@@ -8,6 +8,7 @@ import { trayResetPassword } from '../tray/reset-password';
 import { setupUrls } from '../tray/setup-url';
 import { trayAppLogs } from '../tray/app-logs';
 import { trayUsers } from '../tray/users';
+import { libraryKeygen, librarySign } from '../store/library-keys';
 
 export const tray: AppHandlers<DaemonContext>['tray'] = {
   // US-INST-05: state, apps, CPU, memory, free space and the dashboard's address.
@@ -23,6 +24,8 @@ export const tray: AppHandlers<DaemonContext>['tray'] = {
   uninstallInfo: (_input, ctx) => ctx.services.uninstall.info(),
 
   // US-INST-22 (D-143, D-144): the daemon's part of uninstalling; the tray or install.sh does the rest after it.
+  libraryKeygen: ({ replace }, ctx) => libraryKeygen(ctx.services.secrets, replace ?? false),
+  librarySign: ({ data }, ctx) => librarySign(ctx.services.secrets, data),
   uninstall: ({ keepData, removeColima, via }, ctx) => ({
     jobId: ctx.services.uninstall.start({ keepData, removeColima, via: via ?? 'tray' }),
   }),

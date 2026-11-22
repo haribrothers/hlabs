@@ -35,7 +35,8 @@ export const appUpdatesOf = (s: { db: HlabsDb; updates: Pick<UpdateService, 'rol
 
 /** One installed app's pending update, or null: its store manifest, versions and the access it adds. */
 export function pendingUpdate(db: HlabsDb, app: typeof apps.$inferSelect, installed: InstalledManifest) {
-  if (app.custom || !SETTLED(app.state)) return null;
+  // Custom apps never update; one whose source was removed has none to update from (US-STORE-18).
+  if (app.custom || app.sourceId === null || !SETTLED(app.state)) return null;
   const row = catalogRow(db, app);
   if (!row) return null;
   const parsed = AppManifest.safeParse(row.manifestJson);

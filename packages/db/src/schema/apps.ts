@@ -32,7 +32,12 @@ export const appSources = sqliteTable('app_sources', {
   /** Pinned ed25519 key of the source's index signature. */
   publicKey: text('public_key'),
   lastSyncedAt: ms('last_synced_at'),
+  /** What went wrong with the last sync, as an hlabs error code (the dashboard says it in words, US-STORE-18). */
   lastError: text('last_error'),
+  /** Apps left out at the last sync and why, with file and line (US-STORE-27): `[{ appId, file, line?, message }]`. */
+  problemsJson: json<Array<{ appId: string; file: string; line?: number; message: string }>>('problems_json')
+    .notNull()
+    .default([]),
 });
 
 export const catalogApps = sqliteTable(

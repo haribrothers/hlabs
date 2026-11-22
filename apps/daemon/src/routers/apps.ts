@@ -38,6 +38,8 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
   install: (input, ctx) =>
     ctx.services.installer.begin(installer(ctx), {
       ...input,
+      // From the source it's listed in (a library app isn't in the built-in store, US-STORE-27).
+      source: input.source ?? ctx.services.sources.sourceOf(input.appId) ?? undefined,
       env: input.env ?? {},
       mounts: (input.mounts ?? []).map((m) => ({ ...m, subpath: m.subpath ?? '', mode: m.mode ?? 'rw' })),
       acceptRisks: input.acceptRisks ?? false,

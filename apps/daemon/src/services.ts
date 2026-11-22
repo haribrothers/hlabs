@@ -42,6 +42,7 @@ import type { CatalogService } from './store/catalog';
 import type { StoreService } from './store/service';
 import type { AppDiskUsage } from './apps/disk';
 import type { AutoUpdates } from './updates/auto';
+import type { SourcesService } from './store/sources';
 import type { SystemUpdateDeps } from './updates/install';
 import type { HlabsUpdates } from './updates/service';
 import type { InstallService } from './apps/install';
@@ -65,6 +66,8 @@ export interface Services {
   proxy: ProxyManager;
   mdns: MdnsPublisher;
   catalog: CatalogService;
+  /** App sources beyond the built-in store (US-STORE-18, 19, 27…29). */
+  sources: SourcesService;
   store: StoreService;
   /** Installs apps (US-STORE-08…14). */
   installer: InstallService;

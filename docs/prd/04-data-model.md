@@ -72,6 +72,7 @@ These columns were introduced while writing the stories and are part of the sche
 | `users` | `password_changed_at`, `can_see_shared` (default false), `can_see_usage` (default false), `share_password_ref` (network-share password in the form the share server needs, D-051) | 09-account-people, 07-files |
 | `invites` | `token_ref` (keychain ref so an admin can copy the link again while it's pending) | 09-account-people |
 | `app_sources` | kind `local`; `public_key` (pinned ed25519 key) | 05-app-store |
+| `app_sources` | `problems_json` (apps left out at the last sync and why, `[{ appId, file, line?, message }]`, US-STORE-27; migration 0008); `last_error` holds an hlabs code; `public_key` is the pinned minisign public key text (D-160) | 05-app-store |
 | `catalog_apps` | `first_seen_at` (for the "New" sort); `version_seen_at` (when this version or revision first reached the catalogue: "released 2 days ago" in Updates, D-158; migration 0007) | 05-app-store |
 | `apps` | `net_internet` (bool), `net_apps` (bool), `data_location_id` | 06-apps |
 | `storage_locations` | `auto_mount` (default true), `apps_allowed` (default true) | 07-files |

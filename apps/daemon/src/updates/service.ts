@@ -17,8 +17,8 @@ export interface HlabsUpdatesDeps {
   source: UpdateSource;
   /** The version running now. */
   version: string;
-  /** Refreshes the store index (built-in store; other sources from phase 7). */
-  syncStore: () => void;
+  /** Refreshes the store: the built-in store and every source an admin added (US-STORE-18). */
+  syncStore: () => void | Promise<void>;
   /** The job "Update now" would have to wait for (D-020), or null. */
   blocker?: () => string | null;
   now?: () => number;
@@ -68,7 +68,7 @@ export class HlabsUpdates {
   private async run(): Promise<UpdateStatus> {
     const { db, bus, source, logger } = this.deps;
     try {
-      this.deps.syncStore();
+      await this.deps.syncStore();
     } catch (err) {
       logger.warn({ err }, 'store sync failed');
     }
