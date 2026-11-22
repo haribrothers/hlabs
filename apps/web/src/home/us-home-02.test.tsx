@@ -40,7 +40,7 @@ describe('US-HOME-02', () => {
   it("a failed query shows Couldn't load with a retry button", async () => {
     const calls = vi.fn(() => Promise.reject(daemonError('INTERNAL')));
     renderScreen(StorageWidget, { 'storage.summary': calls });
-    expect(await screen.findByText("Couldn't load")).toBeInTheDocument();
+    expect(await screen.findByText("Couldn't load storage")).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => expect(calls).toHaveBeenCalledTimes(2));
   });

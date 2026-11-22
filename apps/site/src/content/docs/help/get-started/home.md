@@ -16,9 +16,14 @@ Your wallpaper and accent colour are your own: other people on this hlabs keep t
 
 ## Widgets
 
-Admins see a row of widgets under the greeting. **Storage** shows how much space is left on this computer and what's using it. Select it to open Usage. If a widget can't load, it says so and has a button to try again; the others keep working.
+Admins see a row of widgets under the greeting:
 
-More widgets (live usage, remote access and backups) appear as those parts of hlabs arrive.
+- **Live usage**: how busy the processor is and how much memory is in use. Select it to open Usage.
+- **Storage**: how much space is left on this computer and what apps and the system use. It says **Almost full** when less than a tenth is free.
+- **Remote access**: your hlabs address on your tailnet, how many of your devices are online, and the DNS server and HTTPS it uses; or **Set up remote access** when it's off.
+- **Backups**: when the last backup worked, what goes where, and a bar for each recent backup. A failed one turns red and says why; **Choose where** appears until you have somewhere to back up to.
+
+Each widget names its state at the top right, such as **Connected**, **Failed** or **Needs you**, in colour and in words. If a widget can't load, it says so and has **Try again**; the others keep working. On a phone, two widgets sit side by side.
 
 ## Your apps
 

@@ -1,107 +1,171 @@
-// The widgets added with the picker (US-HOME-02, 19, 20): Remote access, Backups, App status, Updates, and apps' own
-// widgets. Each is a level-1 glass card like Storage; one that can't load says so and can be tried again.
-import { appTileLook, iconDefaults, RotateCw } from '@hlabs/icons';
+// The widgets beyond Storage and Live usage (US-HOME-02, 19, 20), as Phase 7 · Widgets draws them: Remote access,
+// Backups, App status, Updates, and apps' own widgets. Each card names its state top right (in colour and words), shows
+// one main figure, and ends with what's behind it or what to do next.
 import type { AppWidgetData } from '@hlabs/api';
-import { StatusDot } from '@hlabs/ui';
+import { AppLogo, appTileLook, Check, iconDefaults } from '@hlabs/icons';
+import { isFeatureEnabled } from '@hlabs/shared';
+import { tokens } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { homeCopy } from '../copy/home';
 import { timeAgo } from '../lib/relative-time';
 import { useTRPC } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
 import { useOpenApp } from './use-open-app';
+import {
+  AppLogos,
+  Bar,
+  Chips,
+  GoOn,
+  Hero,
+  HeroLine,
+  RunBars,
+  Sub,
+  WidgetCard,
+  WidgetCouldntLoad,
+  WidgetSkeleton,
+  WidgetState,
+} from './widget-card';
 
 const copy = homeCopy;
-export const WIDGET_CARD = 'hl-card hl-glass hl-glass-1 flex min-h-40 flex-col gap-3 text-left text-ink no-underline';
+const w = copy.widget;
 /** How often an app widget asks again while Home is showing (US-HOME-20); paused while the tab is hidden. */
 export const APP_WIDGET_REFRESH_MS = 60_000;
+/** How many recent backups the Backups widget draws. */
+export const RECENT_RUNS = 7;
 const numbers = new Intl.NumberFormat('en');
+const clock = new Intl.DateTimeFormat('en', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-function Title({ children }: { children: ReactNode }) {
-  return <h2 className="m-0 text-body-sm font-normal text-ink-muted">{children}</h2>;
-}
-
-/** A widget that couldn't load: what failed, and a way to try again. */
-function CouldntLoad({ title, retry }: { title: ReactNode; retry: () => void }) {
+/** "Connected" on a computer, "On" where two widgets share a phone's width. */
+function Short({ long, short }: { long: string; short: string }) {
   return (
-    <div className={WIDGET_CARD}>
-      <Title>{title}</Title>
-      <div className="flex items-center gap-2">
-        <p className="m-0 text-body">{copy.couldntLoad}</p>
-        <button
-          type="button"
-          className="hl-focus grid size-11 place-items-center rounded-pill bg-transparent text-ink"
-          aria-label={copy.retry}
-          onClick={retry}
-        >
-          <RotateCw aria-hidden {...iconDefaults} />
-        </button>
-      </div>
-    </div>
+    <>
+      <span className="md:hidden">{short}</span>
+      <span className="max-md:hidden">{long}</span>
+    </>
   );
 }
 
-function Loading({ title }: { title: ReactNode }) {
-  return (
-    <div className={`${WIDGET_CARD} animate-pulse`} aria-busy="true">
-      <Title>{title}</Title>
-    </div>
-  );
-}
-
-/** Remote access (US-HOME-02): connected or not, and the address on the tailnet. Opens Settings › Network. */
+/** Remote access (US-HOME-02): the tailnet, how many devices are online, the DNS server and HTTPS. Opens Settings › Network. */
 export function RemoteAccessWidget() {
   const trpc = useTRPC();
-  const status = useQuery({ ...trpc.network.status.queryOptions({ probe: false }), retry: false });
-  if (status.isPending) return <Loading title={copy.remoteAccess} />;
-  if (status.isError) return <CouldntLoad title={copy.remoteAccess} retry={() => void status.refetch()} />;
-  const r = status.data.remote;
-  const on = r.state === 'connected';
+  const status = useQuery({ ...trpc.network.status.queryOptions(), retry: false });
+  if (status.isPending) return <WidgetSkeleton title={copy.remoteAccess} />;
+  if (status.isError) return <WidgetCouldntLoad title={copy.remoteAccess} retry={() => void status.refetch()} />;
+  const { remote: r, dns } = status.data;
+  const target = { to: '/settings/$section', params: { section: 'network' } } as const;
+  if (r.state !== 'connected') {
+    return (
+      <WidgetCard title={copy.remoteAccess} state={<WidgetState tone="muted">{copy.off}</WidgetState>} target={target}>
+        <HeroLine size="md">{w.remoteOffLine}</HeroLine>
+        <GoOn>{copy.setUpRemote}</GoOn>
+      </WidgetCard>
+    );
+  }
+  // The dashboard's address on the tailnet (US-HOME-02, D-012).
+  const name = r.url ? new URL(r.url).host : (r.tailnet ?? '');
+  const devices = r.devicesOnline;
+  const chips = [...(dns.kind !== 'none' ? [w.dnsChip[dns.kind]] : []), w.https];
   return (
-    <Link to="/settings/$section" params={{ section: 'network' }} className={`${WIDGET_CARD} hl-focus`}>
-      <div className="flex items-center justify-between gap-2">
-        <Title>{copy.remoteAccess}</Title>
-        <StatusDot status={on ? 'running' : 'stopped'}>{on ? copy.connected : copy.off}</StatusDot>
-      </div>
-      {on ? (
-        <>
-          <p className="m-0 truncate text-title-2 font-bold">{r.url ? new URL(r.url).host : (r.tailnet ?? '')}</p>
-          <p className="m-0 text-body-sm text-ink-muted">{copy.tailscale}</p>
-        </>
-      ) : (
-        <p className="m-0 text-body text-ink-muted">{copy.setUpRemote}</p>
-      )}
-    </Link>
+    <WidgetCard
+      title={copy.remoteAccess}
+      state={
+        <WidgetState tone="ok">
+          <Short long={copy.connected} short={w.on} />
+        </WidgetState>
+      }
+      target={target}
+    >
+      <HeroLine
+        sub={
+          devices !== null ? <Short long={w.tailscaleDevices(devices)} short={w.devices(devices)} /> : copy.tailscale
+        }
+      >
+        {name}
+      </HeroLine>
+      <Chips items={chips} />
+    </WidgetCard>
   );
 }
 
-/** Backups (US-HOME-02): when the last one worked, how many apps, where; a failure or "Not set up". Opens Backups. */
+/** Backups (US-HOME-02): when the last one worked, what goes where, and the recent runs; a failure, a backup going on,
+ * or "Not set up". Opens Backups. */
 export function BackupsWidget() {
   const trpc = useTRPC();
   const overview = useQuery({ ...trpc.backups.overview.queryOptions(), retry: false });
-  if (overview.isPending) return <Loading title={copy.backups} />;
-  if (overview.isError) return <CouldntLoad title={copy.backups} retry={() => void overview.refetch()} />;
+  if (overview.isPending) return <WidgetSkeleton title={copy.backups} />;
+  if (overview.isError) return <WidgetCouldntLoad title={copy.backups} retry={() => void overview.refetch()} />;
   const o = overview.data;
+  const target = { to: '/backups' } as const;
   const where = o.destinations[0]?.name ?? null;
+  if (!where) {
+    return (
+      <WidgetCard title={copy.backups} state={<WidgetState tone="warn">{copy.notSetUp}</WidgetState>} target={target}>
+        <HeroLine sub={<span className="max-md:hidden">{w.noCopy}</span>}>{w.notBackedUpYet}</HeroLine>
+        <GoOn>{w.chooseWhere}</GoOn>
+      </WidgetCard>
+    );
+  }
+  const recent = o.chart.slice(-RECENT_RUNS);
+  const most = Math.max(1, ...recent.map((r) => r.bytesAdded ?? 0));
+  const runs = recent.map((r) => ({
+    failed: r.status === 'failed',
+    height: Math.max(0.3, (r.bytesAdded ?? 0) / most),
+  }));
+  if (o.running) {
+    return (
+      <WidgetCard
+        title={copy.backups}
+        state={
+          <WidgetState tone="accent" short={w.working}>
+            {w.backingUp}
+          </WidgetState>
+        }
+        target={target}
+      >
+        <Hero value={`${Math.round(o.running.progress)}%`} unit={o.running.message ?? where} />
+        <Bar parts={[{ pct: o.running.progress, className: 'bg-accent' }]} />
+      </WidgetCard>
+    );
+  }
+  const apps = o.included.apps === 1 ? '1 app' : `${o.included.apps} apps`;
+  if (o.lastRun?.status === 'failed') {
+    const dest = o.lastRun.destinationName ?? where;
+    return (
+      <WidgetCard title={copy.backups} state={<WidgetState tone="bad">{w.failed}</WidgetState>} target={target}>
+        <HeroLine
+          sub={
+            <>
+              {o.lastRun.error === 'BACKUP_DEST_UNREACHABLE' ? w.couldntReach(dest) : w.couldntFinish}
+              <span className="max-md:hidden">
+                {' · '}
+                {o.lastSuccessAt ? w.lastWorkedShort(timeAgo(o.lastSuccessAt)) : w.neverWorkedShort}
+              </span>
+            </>
+          }
+        >
+          {copy.lastBackupFailed}
+        </HeroLine>
+        <RunBars runs={runs} />
+      </WidgetCard>
+    );
+  }
   return (
-    <Link to="/backups" className={`${WIDGET_CARD} hl-focus`}>
-      <Title>{copy.backups}</Title>
-      {!where ? (
-        <p className="m-0 text-title-2 font-bold">{copy.notSetUp}</p>
-      ) : o.lastRun?.status === 'failed' ? (
-        <StatusDot status="failed">{copy.lastBackupFailed}</StatusDot>
-      ) : (
-        <>
-          <p className="m-0 text-title-2 font-bold">{o.lastSuccessAt ? timeAgo(o.lastSuccessAt) : copy.notYet}</p>
-          <p className="m-0 text-body-sm text-ink-muted">{copy.backupLine(o.included.apps, where)}</p>
-        </>
-      )}
-    </Link>
+    <WidgetCard title={copy.backups} target={target}>
+      <HeroLine sub={<Short long={copy.backupLine(o.included.apps, where)} short={w.backupTo(apps, where)} />}>
+        {o.lastSuccessAt ? timeAgo(o.lastSuccessAt) : copy.notYet}
+      </HeroLine>
+      {runs.length ? <RunBars runs={runs} /> : null}
+    </WidgetCard>
   );
 }
 
 type WidgetEntry = { status: 'ok' | 'app_not_running' | 'error' | 'needs_key'; data?: unknown; updatedAt: number };
+type NamedApp = {
+  id: string;
+  name: string;
+  icon: { logoUrl: string | null; gradient: [string, string] | null; fallback: string | null };
+};
 
 function useWidgetData(id: string, refetchInterval?: number) {
   const trpc = useTRPC();
@@ -113,68 +177,127 @@ function useWidgetData(id: string, refetchInterval?: number) {
   });
 }
 
-/** App status (US-HOME-19): how many apps run, are stopped or need looking at. Opens Usage's app list. */
+/** App status (US-HOME-19): how many apps run, a bar of running, stopped and needing attention, and which. Opens Usage. */
 export function AppStatusWidget() {
   const data = useWidgetData('app-status');
-  if (data.isPending) return <Loading title={copy.appStatus} />;
+  if (data.isPending) return <WidgetSkeleton title={copy.appStatus} />;
   if (data.isError || data.data?.status !== 'ok')
-    return <CouldntLoad title={copy.appStatus} retry={() => void data.refetch()} />;
-  const s = data.data.data as { running: number; stopped: number; attention: number };
+    return <WidgetCouldntLoad title={copy.appStatus} retry={() => void data.refetch()} />;
+  const s = data.data.data as {
+    running: number;
+    stopped: number;
+    attention: number;
+    notRunning?: Array<NamedApp & { state: string }>;
+  };
+  const total = Math.max(1, s.running + s.stopped + s.attention);
+  const named = s.notRunning ?? [];
+  const firstAttention = named.find((a) => a.state !== 'stopped');
+  const firstStopped = named.find((a) => a.state === 'stopped');
+  const line = s.attention
+    ? w.couldntStart(firstAttention?.name ?? '')
+    : s.stopped
+      ? w.stoppedNamed(s.stopped, firstStopped?.name ?? '')
+      : w.allRunning;
   return (
-    <Link to="/usage" className={`${WIDGET_CARD} hl-focus`}>
-      <Title>{copy.appStatus}</Title>
-      <p className="m-0 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <Figure value={s.running} label={copy.running} />
-        <Figure value={s.stopped} label={copy.stopped} />
-        {s.attention ? <Figure value={s.attention} label={copy.needAttention} /> : null}
-      </p>
-    </Link>
+    <WidgetCard
+      title={copy.appStatus}
+      state={
+        s.attention ? (
+          <WidgetState tone="warn" short={w.needsYou}>
+            {w.needsAttention(s.attention)}
+          </WidgetState>
+        ) : (
+          <WidgetState tone="ok">{w.allGood}</WidgetState>
+        )
+      }
+      target={{ to: '/usage' }}
+    >
+      <Hero value={numbers.format(s.running)} unit={copy.running} />
+      <div className="flex flex-col gap-1.5 md:gap-2">
+        <Bar
+          label={line}
+          parts={[
+            { pct: (s.running / total) * 100, className: 'bg-success' },
+            { pct: (s.stopped / total) * 100, className: 'bg-ink-muted' },
+            { pct: (s.attention / total) * 100, className: 'bg-warning' },
+          ]}
+        />
+        <Sub className="max-md:hidden">{line}</Sub>
+      </div>
+    </WidgetCard>
   );
 }
 
-/** Updates (US-HOME-19): how many app updates are waiting. Opens the App Store's updates. */
+/** Updates (US-HOME-19): how many app updates wait, which apps, and Review. Opens the App Store's Updates. */
 export function UpdatesWidget() {
   const data = useWidgetData('updates');
-  if (data.isPending) return <Loading title={copy.updates} />;
+  if (data.isPending) return <WidgetSkeleton title={copy.updates} />;
   if (data.isError || data.data?.status !== 'ok')
-    return <CouldntLoad title={copy.updates} retry={() => void data.refetch()} />;
-  const { count } = data.data.data as { count: number };
+    return <WidgetCouldntLoad title={copy.updates} retry={() => void data.refetch()} />;
+  const { count, apps = [] } = data.data.data as { count: number; apps?: NamedApp[] };
+  const target = isFeatureEnabled('appUpdates') ? ({ to: '/store/updates' } as const) : ({ to: '/store' } as const);
+  if (count === 0) {
+    return (
+      <WidgetCard
+        title={copy.updates}
+        state={
+          <WidgetState tone="ok" icon={<Check aria-hidden {...iconDefaults} className="size-3.5" />}>
+            {w.upToDate}
+          </WidgetState>
+        }
+        target={target}
+      >
+        <HeroLine>{w.allUpToDate}</HeroLine>
+      </WidgetCard>
+    );
+  }
   return (
-    <Link to="/store" className={`${WIDGET_CARD} hl-focus`}>
-      <Title>{copy.updates}</Title>
-      <p className="m-0 text-title-2 font-bold">{copy.appUpdates(count)}</p>
-    </Link>
+    <WidgetCard title={copy.updates} target={target}>
+      <div className="flex min-w-0 flex-col gap-1">
+        <Hero value={count} unit={w.appUpdates(count)} />
+        <Sub className="max-md:hidden">{apps.map((a) => a.name).join(', ')}</Sub>
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <AppLogos apps={apps} stacked />
+        <GoOn>{w.review}</GoOn>
+      </div>
+    </WidgetCard>
   );
 }
 
-function Figure({ value, label, muted = false }: { value: string | number; label: string; muted?: boolean }) {
+function Figures({
+  pairs,
+  muted = false,
+}: {
+  pairs: Array<{ value: string | number; label: string }>;
+  muted?: boolean;
+}) {
+  // Two figures share a phone card at a smaller size; one takes the width.
+  const two = pairs.length > 1;
   return (
-    <span className={`inline-flex items-baseline gap-1.5 ${muted ? 'opacity-50' : ''}`}>
-      <span className="text-title-1 font-bold tabular-nums">
-        {typeof value === 'number' ? numbers.format(value) : value}
-      </span>
-      <span className="text-body-sm font-semibold text-ink-muted">{label}</span>
-    </span>
+    <div className={`grid min-w-0 gap-3 ${two ? 'grid-cols-2' : 'grid-cols-1'} ${muted ? 'opacity-45' : ''}`}>
+      {pairs.map((p, i) => (
+        <p key={i} className="m-0 flex min-w-0 flex-col gap-0.5">
+          <span className={`truncate font-bold tabular-nums md:text-title-1 ${two ? 'text-headline' : 'text-title-2'}`}>
+            {typeof p.value === 'number' ? numbers.format(p.value) : p.value}
+          </span>
+          <span className="truncate text-caption text-ink-muted md:text-label md:font-normal">{p.label}</span>
+        </p>
+      ))}
+    </div>
   );
 }
 
 /** An app widget's template filled in: text only, so an app can't put markup on Home (US-HOME-20). */
 export function AppWidgetBody({ data, muted = false }: { data: AppWidgetData; muted?: boolean }) {
-  if (data.template === 'stat') return <Figure value={data.value.value} label={data.value.label} muted={muted} />;
-  if (data.template === 'twoStat') {
-    return (
-      <p className="m-0 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <Figure value={data.first.value} label={data.first.label} muted={muted} />
-        <Figure value={data.second.value} label={data.second.label} muted={muted} />
-      </p>
-    );
-  }
+  if (data.template === 'stat') return <Figures pairs={[data.value]} muted={muted} />;
+  if (data.template === 'twoStat') return <Figures pairs={[data.first, data.second]} muted={muted} />;
   return (
-    <ul className={`m-0 flex list-none flex-col gap-1 p-0 ${muted ? 'opacity-50' : ''}`}>
+    <ul className={`m-0 flex list-none flex-col gap-1.5 p-0 md:gap-2 ${muted ? 'opacity-45' : ''}`}>
       {data.rows.map((r, i) => (
-        <li key={i} className="flex min-w-0 justify-between gap-3 text-body-sm">
+        <li key={i} className="flex min-w-0 justify-between gap-3 text-caption md:text-label md:font-normal">
           <span className="truncate font-semibold">{r.title}</span>
-          {r.detail ? <span className="truncate text-ink-muted">{r.detail}</span> : null}
+          {r.detail ? <span className="shrink-0 text-ink-muted">{r.detail}</span> : null}
         </li>
       ))}
     </ul>
@@ -182,8 +305,8 @@ export function AppWidgetBody({ data, muted = false }: { data: AppWidgetData; mu
 }
 
 /**
- * An app's own widget (US-HOME-20): refreshed every minute while Home is visible, "<App> isn't running" when it's
- * stopped, "Couldn't load" (with the last good figures greyed) when it doesn't answer, and for an admin a way to add
+ * An app's own widget (US-HOME-20): its logo and name, the figures, refreshed every minute while Home is visible;
+ * "Stopped" when the app is, "Couldn't load" with the last figures greyed and their time, and for an admin a way to add
  * the API key it needs. Opens the app as its tile does.
  */
 export function AppWidget({ id }: { id: string }) {
@@ -194,51 +317,81 @@ export function AppWidget({ id }: { id: string }) {
   const catalog = useQuery({ ...trpc.home.listWidgets.queryOptions(), retry: false });
   const appsList = useQuery({ ...trpc.apps.list.queryOptions(), retry: false });
   const data = useWidgetData(id, APP_WIDGET_REFRESH_MS);
-  const entry = catalog.data?.apps.find((w) => w.id === id);
+  const entry = catalog.data?.apps.find((x) => x.id === id);
   const app = appsList.data?.apps.find((a) => a.id === appId);
-  const title = entry ? copy.appWidgetTitle(entry.appName, entry.name) : (app?.name ?? '');
-  const look = app ? appTileLook(app.name, app.icon) : null;
-
-  if (data.isPending) return <Loading title={title} />;
+  const appName = entry?.appName ?? app?.name ?? '';
   const d = data.data;
-  const body: ReactNode =
-    data.isError || !d ? (
-      <p className="m-0 text-body">{copy.couldntLoad}</p>
-    ) : d.status === 'app_not_running' ? (
-      <p className="m-0 text-body text-ink-muted">{copy.appNotRunning(entry?.appName ?? app?.name ?? '')}</p>
-    ) : d.status === 'needs_key' ? (
-      <p className="m-0 text-body text-ink-muted">{copy.needsKey(entry?.appName ?? app?.name ?? '')}</p>
-    ) : d.status === 'error' ? (
-      <div className="flex flex-col gap-1">
-        <p className="m-0 text-body-sm">{copy.couldntLoad}</p>
-        {d.data ? <AppWidgetBody data={d.data as AppWidgetData} muted /> : null}
-      </div>
-    ) : (
-      <AppWidgetBody data={d.data as AppWidgetData} />
-    );
-  const header = (
-    <span className="flex items-center gap-2">
-      {look ? <span aria-hidden className="size-3 shrink-0 rounded-xs" style={{ background: look.colors[0] }} /> : null}
-      <Title>{title}</Title>
+  const stopped = d?.status === 'app_not_running';
+  const size = tokens.SPACE_5;
+  const look = app ? appTileLook(app.name, app.icon, size) : null;
+  const title: ReactNode = (
+    <span className="flex min-w-0 items-center gap-2">
+      {app && look ? (
+        <span className={stopped ? 'grayscale' : ''}>
+          <AppLogo
+            decorative
+            name={app.name}
+            src={app.icon.logoUrl}
+            colors={look.colors}
+            fallbackIcon={look.fallbackIcon}
+            size={size}
+            radius={tokens.SPACE_1 + tokens.SPACE_1 / 2}
+          />
+        </span>
+      ) : null}
+      {entry ? (
+        <span className="truncate">
+          {/* On a phone the logo names the app. */}
+          <span className="max-md:sr-only">{copy.appWidgetTitle(entry.appName, '')}</span>
+          {entry.name}
+        </span>
+      ) : (
+        <span className="truncate">{appName}</span>
+      )}
     </span>
   );
-  // Adding the key happens in the app's settings (admins).
+
+  if (data.isPending) return <WidgetSkeleton title={title} />;
   if (d?.status === 'needs_key' && isAdmin) {
     return (
-      <Link to="/apps/$appId/settings" params={{ appId }} state={{ from: '/' }} className={`${WIDGET_CARD} hl-focus`}>
-        {header}
-        {body}
-      </Link>
+      <WidgetCard title={title} target={{ to: '/apps/$appId/settings', params: { appId }, state: { from: '/' } }}>
+        <HeroLine size="md">{w.addKeyLine}</HeroLine>
+        <GoOn>{w.addKey}</GoOn>
+      </WidgetCard>
+    );
+  }
+  const open = { onClick: () => (app ? openApp(app) : undefined) };
+  if (data.isError || !d || d.status === 'needs_key') {
+    return (
+      <WidgetCard title={title} state={<WidgetState tone="warn">{w.couldntLoadState}</WidgetState>} target={open}>
+        <HeroLine size="md">{copy.couldntLoad}</HeroLine>
+      </WidgetCard>
+    );
+  }
+  if (stopped) {
+    return (
+      <WidgetCard title={title} state={<WidgetState tone="muted">{w.stoppedState}</WidgetState>} target={open}>
+        <HeroLine size="md" sub={<span className="max-md:hidden">{w.appStopped}</span>}>
+          {copy.appNotRunning(appName)}
+        </HeroLine>
+      </WidgetCard>
+    );
+  }
+  if (d.status === 'error') {
+    return (
+      <WidgetCard title={title} state={<WidgetState tone="warn">{w.couldntLoadState}</WidgetState>} target={open}>
+        {d.data ? (
+          <AppWidgetBody data={d.data as AppWidgetData} muted />
+        ) : (
+          <HeroLine size="md">{copy.couldntLoad}</HeroLine>
+        )}
+        {d.data ? <Sub className="max-md:hidden">{w.figuresFrom(clock.format(d.updatedAt))}</Sub> : null}
+      </WidgetCard>
     );
   }
   return (
-    <button
-      type="button"
-      onClick={() => (app ? openApp(app) : undefined)}
-      className={`${WIDGET_CARD} hl-focus cursor-pointer border-0`}
-    >
-      {header}
-      {body}
-    </button>
+    <WidgetCard title={title} target={open}>
+      <AppWidgetBody data={d.data as AppWidgetData} />
+    </WidgetCard>
   );
 }

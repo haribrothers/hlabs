@@ -206,7 +206,7 @@ export function EditHome({
           <SortableContext items={shownWidgets} strategy={rectSortingStrategy}>
             <ul
               aria-label={copy.widgets}
-              className={`m-0 grid w-full grid-cols-1 gap-4 p-0 sm:grid-cols-2 ${LG_COLUMNS[shownWidgets.length] ?? 'lg:grid-cols-4'}`}
+              className={`m-0 grid w-full grid-cols-2 gap-2.5 p-0 md:gap-4 ${LG_COLUMNS[shownWidgets.length] ?? 'lg:grid-cols-4'}`}
             >
               {shownWidgets.map((id) => (
                 <Sortable

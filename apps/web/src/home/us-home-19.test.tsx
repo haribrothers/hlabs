@@ -64,11 +64,11 @@ describe('US-HOME-19', () => {
     expect(within(dialog).getByRole('button', { name: 'Close' })).toBeInTheDocument();
     const system = within(dialog).getByRole('region', { name: 'System' });
     await within(system).findByText('11');
-    expect(within(system).getByText('2 app updates')).toBeInTheDocument();
+    expect(system).toHaveTextContent('2 app updates');
     expect(within(system).getByRole('button', { name: 'Added' })).toBeDisabled();
     expect(within(system).getByRole('button', { name: 'Add App status' })).toBeEnabled();
     const apps = within(dialog).getByRole('region', { name: 'From your apps' });
-    expect(within(apps).getByText('Monitors')).toBeInTheDocument();
+    expect(within(apps).getAllByText('Monitors').length).toBeGreaterThan(0);
     expect(await within(apps).findByText('12')).toBeInTheDocument();
     expect(dialog).toHaveTextContent('Apps can offer widgets through their manifest. Up to 4 widgets fit on Home.');
   });

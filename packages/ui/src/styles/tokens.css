@@ -79,6 +79,8 @@
   --size-control: 44px;
   --size-window: 1240px;
   --size-dock-tile: 56px;
+  --size-widget: 156px;
+  --size-widget-phone: 122px;
 }
 
 [data-theme='solid'] {

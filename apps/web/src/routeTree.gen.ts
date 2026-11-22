@@ -19,6 +19,7 @@ import { Route as TrustRouteImport } from './routes/trust'
 import { Route as UsageRouteImport } from './routes/usage'
 import { Route as AppsAppIdRouteImport } from './routes/apps.$appId'
 import { Route as DevUiRouteImport } from './routes/dev/ui'
+import { Route as DevWidgetsRouteImport } from './routes/dev/widgets'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as LoginCodeRouteImport } from './routes/login.code'
@@ -91,6 +92,11 @@ const AppsAppIdRoute = AppsAppIdRouteImport.update({
 const DevUiRoute = DevUiRouteImport.update({
   id: '/dev/ui',
   path: '/dev/ui',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevWidgetsRoute = DevWidgetsRouteImport.update({
+  id: '/dev/widgets',
+  path: '/dev/widgets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
@@ -222,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/usage': typeof UsageRoute
   '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
+  '/dev/widgets': typeof DevWidgetsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
   '/login/forgot': typeof LoginForgotRoute
@@ -254,6 +261,7 @@ export interface FileRoutesByTo {
   '/usage': typeof UsageRoute
   '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
+  '/dev/widgets': typeof DevWidgetsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
   '/login/forgot': typeof LoginForgotRoute
@@ -290,6 +298,7 @@ export interface FileRoutesById {
   '/usage': typeof UsageRoute
   '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
+  '/dev/widgets': typeof DevWidgetsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
   '/login/forgot': typeof LoginForgotRoute
@@ -327,6 +336,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/apps/$appId'
     | '/dev/ui'
+    | '/dev/widgets'
     | '/invite/$token'
     | '/login/code'
     | '/login/forgot'
@@ -359,6 +369,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/apps/$appId'
     | '/dev/ui'
+    | '/dev/widgets'
     | '/invite/$token'
     | '/login/code'
     | '/login/forgot'
@@ -394,6 +405,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/apps/$appId'
     | '/dev/ui'
+    | '/dev/widgets'
     | '/invite/$token'
     | '/login/code'
     | '/login/forgot'
@@ -430,6 +442,7 @@ export interface RootRouteChildren {
   UsageRoute: typeof UsageRoute
   AppsAppIdRoute: typeof AppsAppIdRoute
   DevUiRoute: typeof DevUiRoute
+  DevWidgetsRoute: typeof DevWidgetsRoute
   InviteTokenRoute: typeof InviteTokenRoute
   LoginCodeRoute: typeof LoginCodeRoute
   LoginForgotRoute: typeof LoginForgotRoute
@@ -515,6 +528,13 @@ declare module '@tanstack/react-router' {
       path: '/dev/ui'
       fullPath: '/dev/ui'
       preLoaderRoute: typeof DevUiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/widgets': {
+      id: '/dev/widgets'
+      path: '/dev/widgets'
+      fullPath: '/dev/widgets'
+      preLoaderRoute: typeof DevWidgetsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
@@ -738,6 +758,7 @@ const rootRouteChildren: RootRouteChildren = {
   UsageRoute: UsageRoute,
   AppsAppIdRoute: AppsAppIdRoute,
   DevUiRoute: DevUiRoute,
+  DevWidgetsRoute: DevWidgetsRoute,
   InviteTokenRoute: InviteTokenRoute,
   LoginCodeRoute: LoginCodeRoute,
   LoginForgotRoute: LoginForgotRoute,

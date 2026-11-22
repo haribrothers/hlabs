@@ -1,7 +1,25 @@
 import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { extendTailwindMerge } from 'tailwind-merge';
 
-/** shadcn's class helper: conditional classes, later Tailwind utilities win. */
+/**
+ * The type scale's sizes (tokens.json `text-*`). tailwind-merge doesn't know them, so it took `text-caption` for a colour
+ * and dropped it beside `text-success`: listed here, a size and a colour live together.
+ */
+const TEXT_SIZES = [
+  'display-xl',
+  'display',
+  'title-1',
+  'title-2',
+  'headline',
+  'body',
+  'body-sm',
+  'label',
+  'caption',
+  'tab-label',
+];
+
+const merge = extendTailwindMerge({ extend: { classGroups: { 'font-size': [{ text: TEXT_SIZES }] } } });
+
 export function cn(...inputs: ClassValue[]): string {
-  return twMerge(clsx(inputs));
+  return merge(clsx(inputs));
 }

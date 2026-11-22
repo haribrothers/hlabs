@@ -27,6 +27,12 @@ const catalog = () => ({
     },
   ],
 });
+/** The widget's card, found by its title "<App> · <widget>" (on a phone the logo stands for the app's name). */
+const card = async () => {
+  const el = (await screen.findByText('Photo library')).closest('button')!;
+  expect(el).toHaveTextContent('Immich · Photo library');
+  return el;
+};
 const figures = {
   template: 'twoStat',
   first: { value: 1204, label: 'photos' },
@@ -49,8 +55,7 @@ function widget(entry: () => unknown, role: 'admin' | 'member' = 'admin') {
 describe('US-HOME-20', () => {
   it('shows the app’s figures under "<App> · <widget>"', async () => {
     widget(() => ({ status: 'ok', data: figures, updatedAt: 1 }));
-    const card = (await screen.findByText('Immich · Photo library')).closest('button')!;
-    expect(card).toHaveTextContent('1,204photos87videos');
+    expect(await card()).toHaveTextContent('1,204photos87videos');
   });
 
   it('asks again every 60 seconds while Home is showing', async () => {
@@ -61,7 +66,7 @@ describe('US-HOME-20', () => {
       data: { ...figures, first: { value: ++n, label: 'photos' } },
       updatedAt: 1,
     }));
-    await screen.findByText('Immich · Photo library');
+    await card();
     const before = calls.filter((c) => c.path === 'home.getWidgetData').length;
     await act(async () => void vi.advanceTimersByTime(60_000));
     await waitFor(() => expect(calls.filter((c) => c.path === 'home.getWidgetData').length).toBe(before + 1));
@@ -75,12 +80,12 @@ describe('US-HOME-20', () => {
   it('"Couldn’t load", with the last good figures greyed', async () => {
     widget(() => ({ status: 'error', data: figures, updatedAt: 1 }));
     expect(await screen.findByText("Couldn't load")).toBeInTheDocument();
-    expect(screen.getByText('1,204').closest('.opacity-50')).not.toBeNull();
+    expect(screen.getByText('1,204').closest('.opacity-45')).not.toBeNull();
   });
 
   it('without its key an admin is sent to the app’s settings to add one; members never see such a widget', async () => {
     widget(() => ({ status: 'needs_key', updatedAt: 1 }));
-    const link = await screen.findByRole('link', { name: /Add an API key in Immich's settings/ });
+    const link = await screen.findByRole('link', { name: /Add an API key/ });
     fireEvent.click(link);
     expect(await screen.findByRole('heading', { name: 'Immich settings' })).toBeInTheDocument();
   });
@@ -88,7 +93,7 @@ describe('US-HOME-20', () => {
   it('opens the app as its tile does (a new tab for an app that doesn’t embed)', async () => {
     const open = vi.spyOn(browser, 'open').mockImplementation(() => {});
     widget(() => ({ status: 'ok', data: figures, updatedAt: 1 }));
-    fireEvent.click((await screen.findByText('Immich · Photo library')).closest('button')!);
+    fireEvent.click(await card());
     await waitFor(() => expect(open).toHaveBeenCalledWith('https://immich.hlabs.local'));
     open.mockRestore();
   });

@@ -70,6 +70,8 @@
   --spacing-control: 44px;
   --spacing-window: 1240px;
   --spacing-dock-tile: 56px;
+  --spacing-widget: 156px;
+  --spacing-widget-phone: 122px;
 }
 
 @theme inline {

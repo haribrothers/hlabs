@@ -15,7 +15,10 @@ describe('US-HOME-02 · Live usage widget', () => {
   it('shows CPU 18% and Memory 9.4 / 16 GB, and opens Usage', async () => {
     const { router } = renderScreen(LiveUsageWidget, { 'usage.current': () => sample });
     const link = await screen.findByRole('link', { name: /Live usage/ });
-    await waitFor(() => expect(link).toHaveTextContent('CPU18%Memory9.4 / 16 GB'));
+    await waitFor(() => expect(link).toHaveTextContent(/CPU\s*18%/));
+    // A computer shows used of total; a phone, where two widgets share the width, the percent.
+    expect(link).toHaveTextContent('9.4 / 16 GB');
+    expect(link).toHaveTextContent('59%');
     fireEvent.click(link);
     await waitFor(() => expect(router.state.location.pathname).toBe('/usage'));
   });

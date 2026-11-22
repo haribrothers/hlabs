@@ -45,7 +45,7 @@ export function visibleWidgets(ids: readonly string[], shippedPhase?: number): s
   return ids.filter((id) => renderWidget(id, shippedPhase) !== null).slice(0, MAX_WIDGETS);
 }
 
-/** Two to four widgets share the row's width (exported for edit mode, which draws the same row) on a wide screen (a member's two are half each, US-HOME-12). */
+/** Two to four widgets share the row's width (exported for edit mode, which draws the same row) on a wide screen (a member’s two are half each, US-HOME-12); a phone shows two side by side (PhoneHomeWidgets). */
 export const LG_COLUMNS: Record<number, string> = { 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' };
 
 export function WidgetsRow({ ids, shippedPhase }: { ids: readonly string[]; shippedPhase?: number }) {
@@ -54,7 +54,7 @@ export function WidgetsRow({ ids, shippedPhase }: { ids: readonly string[]; ship
   return (
     <section
       aria-label={homeCopy.widgets}
-      className={`grid w-full grid-cols-1 gap-4 sm:grid-cols-2 ${LG_COLUMNS[shown.length] ?? 'lg:grid-cols-4'}`}
+      className={`grid w-full grid-cols-2 gap-2.5 md:gap-4 ${LG_COLUMNS[shown.length] ?? 'lg:grid-cols-4'}`}
     >
       {shown.map((id) => renderWidget(id, shippedPhase))}
     </section>
