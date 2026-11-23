@@ -84,7 +84,7 @@ These columns were introduced while writing the stories and are part of the sche
 | `jobs` | `kind` value `app_reinstall` (an app job: serial per app, refused while an exclusive job runs) | 06-apps (US-APP-25) |
 | `app_public` (new table) | `app_id` (PK), `address`, `hostname` (under the Cloudflare domain, D-171), `access` (`hlabs`\|`ownLogin`), `enabled_by`, `enabled_at` | 06-apps (US-APP-27…29, D-150). A row means the app is public; removed when it's made private. |
 | `jobs` | `kind` values `public_on`, `public_off` (app jobs) and `public_off_all` (exclusive) | 06-apps, 10-system-settings (US-APP-27, US-SYS-44) |
-| `settings` | key `public` `{ cloudflare: { domain, tunnelId, accountId } \| null }`; the Cloudflare token is keychain item `cloudflare-token`, never here | 10-system-settings (US-SYS-43) |
+| `settings` | key `public` `{ cloudflare: { domain, tunnelId, accountId, records: [{ id, name }] } \| null }` (`records`: the DNS records hlabs made, the only ones it changes, D-171); the Cloudflare credential is keychain item `cloudflare-credential`, never here | 10-system-settings (US-SYS-43) |
 | `app_sources` | `kind` `local` for a folder library under the storage root; `problem_count` (apps left out at the last sync) | 05-app-store (US-STORE-27, D-149) |
 | `jobs` | `kind` values `diagnostics` (the bundle, US-SYS-28) and `daemon_restart` (stops the apps, then hlabsd exits 75 to be started again; not exclusive, refused while an exclusive job runs, US-SYS-31) | 10-system-settings |
 | `settings` | key `connections`: last contact per outbound service, written as it happens (at most once a minute each): `updateCheck`, `engineDownload`, `tailscale`, `backup:<destinationId>`, `ntfy` (D-169) | 10-system-settings (US-SYS-29) |

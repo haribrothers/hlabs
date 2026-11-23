@@ -88,7 +88,7 @@ An admin can make an app reachable from the internet, one app at a time, through
 4. **Hardening at Caddy** for public addresses: HTTPS only (HTTP is refused, not redirected), HSTS, the headers of the dashboard, a rate limit on login paths (and hlabs's lockout, §7.2), a request size limit unless the app's manifest asks for more (uploads), and hlabs's own cookies never sent to the app.
 5. **Visible and easy to stop**: a "Public" badge on the app everywhere it appears; Settings › Network › Public access lists every public app with its provider, address, who can get in and its access log (time, address, path, status; kept 7 days, admins only); **Turn off all public access** there and in the menu-bar app.
 6. **Kept current**: automatic updates can't be turned off for a public app while it's public.
-7. **Secrets**: the Cloudflare API token (scoped to the one zone's tunnel and DNS) is in the keychain, never in SQLite or logs; removing the provider deletes it and the tunnel.
+7. **Secrets and the domain**: the Cloudflare credential (from signing in to Cloudflare, or an API token scoped to the one zone's tunnel and DNS) is in the keychain, never in SQLite or logs; removing Cloudflare Tunnel deletes it, the tunnel and its records. hlabs only ever changes the DNS records it made, never the domain's other records (D-171).
 
 **Tests**: e2e makes an app public with fake providers and checks the login in front, two-factor, 403 for others, the 404s, the headers, the rate limit and turning it all off; the prototype (D-171) checks the real tunnel by hand, from outside the home network, before the stories are built.
 

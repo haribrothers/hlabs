@@ -717,14 +717,15 @@ The system half of Settings: how hlabs is reached on the home network and over T
 
 **Acceptance criteria**
 - **Given** Settings › Network & remote access, **then** a "Public access" group says "Make single apps reachable from the internet. Your dashboard never is." and, until it's set up, "Public apps go through Cloudflare Tunnel, at names under a domain of yours. Your tailnet stays private." with "Set up Cloudflare Tunnel…".
-- **Given** "Set up Cloudflare Tunnel…", **then** `PublicSetup` asks for a domain on my Cloudflare account and an API token, says what the token needs ("Zone · DNS · Edit and Account · Cloudflare Tunnel · Edit, for this domain only") and "Cloudflare will see the traffic to your public apps.", checks the token, creates the tunnel and starts its connector; the token goes to the keychain (07 §7.7).
+- **Given** "Set up Cloudflare Tunnel…", **then** `PublicSetup` says what's needed first ("A domain of yours, added to your Cloudflare account", with a help link for adding one) and "Cloudflare will see the traffic to your public apps.", and offers **"Sign in to Cloudflare"**: hlabs shows Cloudflare's sign-in link (opened in a new tab), I approve and pick the domain there, and hlabs receives a credential for that domain only, then creates the tunnel and starts its connector, all without leaving hlabs (D-171). "Use an API token instead" stays as a fallback: it says what the token needs ("Zone · DNS · Edit and Account · Cloudflare Tunnel · Edit, for this domain only") and checks it. The credential or token goes to the keychain (07 §7.7).
+- **Given** the domain has other DNS records (a website, email), **then** hlabs only ever creates, changes and deletes the records it made for its public apps (kept in `settings.public`), never anyone else's, and refuses a name that's already in the domain's DNS (`PUBLIC_HOSTNAME_TAKEN`).
 - **Given** Cloudflare Tunnel is set up, **when** I remove it, **then** every public app is made private first (listed in the confirmation), then the tunnel, its DNS records and the token are deleted.
 - **Given** "What hlabs connects to" (US-SYS-29), **then** it lists Cloudflare while the tunnel is set up.
 
 **Implementation notes**
-- API: `public.status` (admin) → `{ cloudflare: { state, domain?, reason? }, apps: [...] }`; `public.setupCloudflare { domain, token }`, `public.remove`; audited.
+- API: `public.status` (admin) → `{ cloudflare: { state, domain?, reason? }, apps: [...] }`; `public.cloudflareSignIn` → `{ url }` then `public.status` until the domain is chosen, or `public.setupCloudflare { domain, token }`; `public.remove`; audited.
 - The `cloudflared` connector is a bundled binary like Caddy (pinned, checksum-verified, 07 §7.9), run by the daemon, its credentials in the data dir (0600).
-- Data: `settings.public` (the tunnel's state), keychain `cloudflare-token`.
+- Data: `settings.public` (the tunnel's state and the DNS records hlabs made), keychain `cloudflare-credential` (the sign-in's credential or the token).
 
 ### US-SYS-44 · See and stop everything that's public
 **Feature:** F-SYS-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** `SettingsNetworkPublic`, `PublicTurnOffAll`, `TrayPublic`

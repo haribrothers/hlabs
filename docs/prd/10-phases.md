@@ -484,7 +484,7 @@ Four tracks that don't wait for each other (D-151):
 - **A · The comfortable product:** notifications, empty Home, edit mode, widgets; store categories, search, updates list, sources; app configuration, permissions, usage detail; appearance, storage, advanced, factory reset; phone layouts and the PWA.
 - **B · A bigger built-in store (D-148):** first the tools (the porting helper, the update bot, CI per changed app), then Hari approves the list of 100 apps, then they're ported in waves of about 20, each merged when its matrix passes.
 - **C · Your own app library (D-149):** after sources (US-STORE-18, 19): the `hlabs library` commands, signing, the template repository and help guide, and "Copy to my library".
-- **D · Public apps (D-150, D-171):** first the threat model (07 §7.10) and a prototype with Cloudflare Tunnel on Hari's domain and one test app (its own name, hlabs's login with two-factor in front on that name, phone apps behind the login, the hardening), reviewed with Hari; then the public-access designs redrawn without Funnel; then the stories. Waits for Hari's domain on Cloudflare.
+- **D · Public apps (D-150, D-171):** first the threat model (07 §7.10) and a prototype with Cloudflare Tunnel on Hari's domain and one test app (its own name, hlabs's login with two-factor in front on that name, phone apps behind the login, the hardening), on the development Mac, reviewed with Hari (a quick tunnel first, then Hari's domain on Cloudflare); then the public-access designs redrawn without Funnel; then the stories.
 
 **Work order** (Hari, 22 Nov 2026): the stories are built in groups, each finished without stopping except for a question. US-STORE-26 came first.
 
