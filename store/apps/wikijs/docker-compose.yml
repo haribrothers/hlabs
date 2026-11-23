@@ -8,6 +8,9 @@ services:
       DB_USER: wikijs
       DB_PASS: ${DB_PASSWORD}
       DB_NAME: wiki
+      # The admin account a first start creates (without these, Wiki.js makes admin@example.com with a default password).
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASS: ${ADMIN_PASS}
     depends_on:
       wikijs-db:
         condition: service_healthy

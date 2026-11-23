@@ -1,12 +1,14 @@
 services:
   openclaw:
     image: ghcr.io/openclaw/openclaw:2026.11.7@sha256:461cc655301409901f2df11d6ec9f029f9709e4607826e9780fd74f8e1d12a16
-    # A first start writes the gateway's starting config (local mode); OpenClaw fills in the rest.
+    # A first start writes the gateway's starting config (local mode); OpenClaw fills in the rest. Its page is reached
+    # through hlabs at addresses that change (this computer's name, Tailscale), so the Control UI accepts the address it
+    # was opened at (Caddy keeps the Host); the gateway token and hlabs's sign-in still guard it.
     entrypoint:
       - /bin/sh
       - -c
       - |
-        [ -f /home/node/.openclaw/openclaw.json ] || printf '%s\n' '{"gateway": {"mode": "local"}}' > /home/node/.openclaw/openclaw.json
+        [ -f /home/node/.openclaw/openclaw.json ] || printf '%s\n' '{"gateway": {"mode": "local", "controlUi": {"dangerouslyAllowHostHeaderOriginFallback": true}}}' > /home/node/.openclaw/openclaw.json
         exec tini -s -- node /app/docker-entrypoint.mjs node dist/index.js gateway --bind lan --port 18789
     environment:
       HOME: /home/node
