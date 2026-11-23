@@ -39,6 +39,9 @@ export const installCopy = {
   riskDocker: 'It can control Docker, so it can start, stop and change every app on hlabs.',
   riskPort: (label: string, port: number) => `It opens port ${port} (${label}) to your network.`,
   riskGpu: 'It uses your graphics card.',
+  riskDevice: (label: string, path: string) => `It can use ${label} (${path}) when it's plugged in.`,
+  riskCapability: (cap: string) =>
+    cap === 'NET_ADMIN' ? "It can change this computer's network settings, as a VPN needs." : `It needs ${cap}.`,
   understand: 'I understand',
   cancel: 'Cancel',
   install: 'Install',

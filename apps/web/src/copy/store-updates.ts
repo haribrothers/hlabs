@@ -30,6 +30,8 @@ export const storeUpdatesCopy = {
   network: { lan: 'Your home network', internet: 'The internet' },
   gpu: 'The graphics card (GPU)',
   dockerSocket: 'Docker, to run other containers',
+  device: (label: string, path: string) => `${label} (${path})`,
+  capability: (cap: string) => (cap === 'NET_ADMIN' ? 'Network settings (NET_ADMIN)' : cap),
   close: 'Close',
   // No updates
   upToDate: 'All apps are up to date',

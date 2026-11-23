@@ -74,6 +74,10 @@ export const storeCopy = {
   gpuNote: 'Uses your graphics card to run faster.',
   docker: 'Control of your other apps (Docker)',
   dockerNote: 'Can start, stop and change every app on hlabs.',
+  deviceNote: (path: string) => `Device ${path} · Used only when it's plugged in`,
+  capability: (cap: string) => (cap === 'NET_ADMIN' ? 'Network settings' : cap),
+  capabilityNote: (cap: string) =>
+    cap === 'NET_ADMIN' ? "Can change this computer's network settings, as a VPN needs" : `Linux capability ${cap}`,
   risky: 'Risky',
   needsFirst: (name: string) => `Needs ${name} installed first`,
   noArm64: {

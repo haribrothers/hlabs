@@ -63,3 +63,23 @@ describe('US-STORE-23 · AppDetailsOverlap', () => {
     expect(screen.queryByRole('note')).toBeNull();
   });
 });
+
+describe('US-STORE-23 · devices and capabilities (D-163)', () => {
+  it('"What it can access" lists a device and a capability as risky access', async () => {
+    show(
+      details({
+        access: {
+          network: 'internet',
+          ports: [],
+          gpu: false,
+          dockerSocket: false,
+          devices: [{ path: '/dev/ttyUSB0', label: 'Zigbee USB adapter' }],
+          capabilities: ['NET_ADMIN'],
+        },
+      }),
+    );
+    const list = await screen.findByRole('list', { name: 'What it can access' });
+    expect(list).toHaveTextContent("Zigbee USB adapterDevice /dev/ttyUSB0 · Used only when it's plugged in");
+    expect(list).toHaveTextContent("Network settingsCan change this computer's network settings, as a VPN needs");
+  });
+});

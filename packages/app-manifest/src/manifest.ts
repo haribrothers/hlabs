@@ -179,9 +179,25 @@ export const AppManifest = z
         network: z.enum(['none', 'lan', 'internet']).default('internet'),
         gpu: z.boolean().default(false),
         dockerSocket: z.boolean().default(false),
+        /**
+         * Devices it may use (a Zigbee adapter), passed in only when present on the computer: none on a Mac, where
+         * Docker can't reach USB (D-163). Risky: installing asks for "I understand".
+         */
+        devices: z
+          .array(
+            z
+              .object({
+                path: z.string().regex(/^\/dev\/[A-Za-z0-9._/-]+$/, 'A device path under /dev'),
+                label: z.string().min(1),
+              })
+              .strict(),
+          )
+          .default([]),
+        /** Linux capabilities it needs, from an allow-list (a VPN's NET_ADMIN, D-163). Risky. */
+        capabilities: z.array(z.enum(['NET_ADMIN'])).default([]),
       })
       .strict()
-      .default({ network: 'internet', gpu: false, dockerSocket: false }),
+      .default({ network: 'internet', gpu: false, dockerSocket: false, devices: [], capabilities: [] }),
     // Optional fields added in schema 1 (D-019).
     releaseNotes: z.string().optional(),
     ownLogin: z.boolean().default(false),
@@ -233,5 +249,11 @@ export function folderVariable(key: string): string {
 
 /** True when installing needs the "risky permissions" acknowledgement (US-STORE-10). */
 export function hasRiskyPermissions(m: AppManifest): boolean {
-  return m.permissions.dockerSocket || m.permissions.gpu || m.ports.length > 0;
+  return (
+    m.permissions.dockerSocket ||
+    m.permissions.gpu ||
+    m.ports.length > 0 ||
+    m.permissions.devices.length > 0 ||
+    m.permissions.capabilities.length > 0
+  );
 }

@@ -43,7 +43,7 @@ export function details(extra: Partial<StoreAppDetails> = {}): StoreAppDetails {
       { key: 'library', label: 'Your Photos folder', description: null, mode: 'rw', required: true, default: null },
     ],
     requirements: { memoryBytes: null, diskBytes: null, memoryFreeBytes: null, diskFreeBytes: null },
-    access: { network: 'internet', ports: [], gpu: false, dockerSocket: false },
+    access: { network: 'internet', ports: [], gpu: false, dockerSocket: false, devices: [], capabilities: [] },
     dependsOn: [],
     install: {
       webAuth: 'hlabs',

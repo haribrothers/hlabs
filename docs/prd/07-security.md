@@ -54,6 +54,7 @@ Enforced in the daemon (procedure middleware + service checks) **and** at Caddy 
 
 ## 7.6 Apps and containers
 - Manifest rules (06) forbid privileged containers, host networking and Docker socket access unless explicitly declared; such permissions show a red warning in InstallSheet and require an admin to tick "I understand".
+- Devices and Linux capabilities count as risky access too (D-163): an app declares them (`permissions.devices`, `permissions.capabilities` from an allow-list of `NET_ADMIN`), the install sheet and an update's Review list them, and the validator refuses any it doesn't declare, along with other host namespaces and security options. Host networking stays forbidden: it would put an app on the network without Caddy and the hlabs login.
 - Built-in store images are pinned by digest; source indexes are signed (ed25519).
 - Every app is behind forward auth by default. Opting out (`auth: none`) shows "This app has its own login" in AppPermissions.
 - Container logs may contain secrets: logs are admin-only and never included in diagnostics exports without redaction.

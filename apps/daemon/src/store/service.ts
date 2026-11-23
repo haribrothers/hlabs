@@ -330,6 +330,8 @@ export class StoreService {
         ports: m.ports.map((p) => ({ label: p.label, host: p.host, protocol: p.protocol })),
         gpu: m.permissions.gpu,
         dockerSocket: m.permissions.dockerSocket,
+        devices: m.permissions.devices.map((d) => ({ path: d.path, label: d.label })),
+        capabilities: m.permissions.capabilities,
       },
       install: {
         webAuth: m.web.auth,

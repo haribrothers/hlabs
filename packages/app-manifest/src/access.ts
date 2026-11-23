@@ -9,7 +9,14 @@ export interface NewAccess {
   folders: Array<{ key: string; label: string; mode: 'ro' | 'rw' }>;
   ports: Array<{ label: string; host: number; protocol: 'tcp' | 'udp' }>;
   /** Only what grew: `network` is the new level when it reaches further (none < lan < internet). */
-  permissions: { network: 'lan' | 'internet' | null; gpu: boolean; dockerSocket: boolean };
+  permissions: {
+    network: 'lan' | 'internet' | null;
+    gpu: boolean;
+    dockerSocket: boolean;
+    /** Devices and capabilities it didn't ask for before (D-163). */
+    devices: Array<{ path: string; label: string }>;
+    capabilities: string[];
+  };
 }
 
 const REACH = { none: 0, lan: 1, internet: 2 } as const;
@@ -33,8 +40,21 @@ export function newAccess(current: Access, next: Access): NewAccess | null {
     network,
     gpu: next.permissions.gpu && !current.permissions.gpu,
     dockerSocket: next.permissions.dockerSocket && !current.permissions.dockerSocket,
+    devices: (next.permissions.devices ?? [])
+      .filter((d) => !(current.permissions.devices ?? []).some((c) => c.path === d.path))
+      .map((d) => ({ path: d.path, label: d.label })),
+    capabilities: (next.permissions.capabilities ?? []).filter(
+      (c) => !(current.permissions.capabilities ?? []).includes(c),
+    ),
   };
-  const any = folders.length || ports.length || network || permissions.gpu || permissions.dockerSocket;
+  const any =
+    folders.length ||
+    ports.length ||
+    network ||
+    permissions.gpu ||
+    permissions.dockerSocket ||
+    permissions.devices.length ||
+    permissions.capabilities.length;
   return any ? { folders, ports, permissions } : null;
 }
 

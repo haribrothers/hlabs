@@ -82,6 +82,10 @@ permissions:                     # shown to the user; enforced where possible
   network: lan                   # none | lan | internet (default internet)
   gpu: false
   dockerSocket: false            # true requires an admin warning at install
+  devices:                       # optional (D-163): passed in only when present on the computer (never on a Mac)
+    - { path: /dev/ttyUSB0, label: Zigbee USB adapter }
+  capabilities: []               # optional (D-163), from an allow-list: NET_ADMIN (a VPN). Devices and capabilities
+                                 # are risky: the install sheet lists them and asks for "I understand"
 ```
 
 ## Optional fields added in schema 1
@@ -115,7 +119,8 @@ The index may also carry optional `featured: [appId]`, `collections: [{ title, a
 
 ## Compose rules (enforced by the validator)
 - Use `${HLABS_APP_DATA}/<dir>` for app-private volumes and `${HLABS_FOLDER_<key>}` for folder requests. No other host bind mounts.
-- No `ports:` except those declared under `ports` above. No `privileged: true`, no `network_mode: host`, no `pid: host`, no `/var/run/docker.sock` unless `permissions.dockerSocket: true`.
+- No `ports:` except those declared under `ports` above. No `privileged: true`, no `network_mode: host`, no `pid: host`, `ipc: host`, `uts: host`, `userns_mode: host` or `cgroup: host`, no `/var/run/docker.sock` unless `permissions.dockerSocket: true`.
+- `devices:` only for paths under `permissions.devices`, `cap_add:` only for `permissions.capabilities`, `sysctls:` only `net.*` and only with `NET_ADMIN` declared, `security_opt:` only `no-new-privileges` (D-163). hlabs leaves out a device that isn't on the computer.
 - Images must be pinned by tag **and** digest in the built-in store (`image: ghcr.io/…:v1.135.3@sha256:…`). An app whose image has no arm64 build lists only `linux/amd64` in `platforms` and shows "x86 only" (D-148).
 - An app ported from another store's definition (Runtipi, GPL-3.0; CasaOS, Apache-2.0) keeps a `NOTICE` file next to its manifest naming the source and its licence, and appears in `store/ATTRIBUTION.md` (D-148). `pnpm store:lint` checks both. A draft from the porting helper (`pnpm store:port`, US-STORE-25, D-153) marks what a person must decide with values starting `TODO`; `pnpm store:lint` refuses any manifest or compose value that starts `TODO`.
 - hlabs injects: a loopback port mapping `127.0.0.1:<port + 1000>:<web.port>` for the web service (D-049, D-086: the app's port is 12000–12999, its loopback port 13000–13999), network `hlabs` (external), labels `dev.hlabs.app=<id>`, `restart: unless-stopped`, log options (json-file, 10 MB × 3), and `TZ`.

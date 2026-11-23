@@ -27,6 +27,8 @@ export interface RenderInput {
   pgid: number;
   /** Values for the manifest's env prompts (generated secrets included). */
   env: Record<string, string>;
+  /** The manifest's devices that exist on this computer; the others are left out (D-163). */
+  presentDevices?: string[];
 }
 
 export interface RenderedApp {
@@ -83,6 +85,16 @@ export function renderApp(input: RenderInput): RenderedApp {
     const environment = toRecord(svc.environment);
     environment.TZ ??= '${TZ}';
     svc.environment = environment;
+
+    if (Array.isArray(svc.devices)) {
+      const present = new Set(input.presentDevices ?? []);
+      const devices = svc.devices.filter((d) => {
+        const source = typeof d === 'string' ? d.split(':')[0] : (d as { source?: string }).source;
+        return !!source && present.has(source);
+      });
+      if (devices.length) svc.devices = devices;
+      else delete svc.devices;
+    }
 
     // Published ports: only what hlabs adds.
     const ports: string[] = [];

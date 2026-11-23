@@ -588,6 +588,7 @@ export class InstallService {
       puid: process.getuid?.() ?? 1000,
       pgid: process.getgid?.() ?? 1000,
       env,
+      presentDevices: manifest.permissions.devices.map((d) => d.path).filter((d) => existsSync(d)),
     });
     this.deps.apps.writeProject(manifest.id, rendered, manifest);
   }
@@ -831,6 +832,8 @@ export function riskList(m: AppManifest): string[] {
     ...(m.permissions.dockerSocket ? ['dockerSocket'] : []),
     ...(m.permissions.gpu ? ['gpu'] : []),
     ...m.ports.map((p) => `port:${p.host}/${p.protocol}`),
+    ...m.permissions.devices.map((d) => `device:${d.path}`),
+    ...m.permissions.capabilities.map((c) => `capability:${c}`),
   ];
 }
 

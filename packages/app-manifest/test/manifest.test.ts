@@ -97,7 +97,13 @@ describe('AppManifest (06)', () => {
     const { permissions: _p, ...rest } = example;
     const m = AppManifest.parse({ ...rest, ports: [] });
     expect(m.web.embed).toBe(false);
-    expect(m.permissions).toEqual({ network: 'internet', gpu: false, dockerSocket: false });
+    expect(m.permissions).toEqual({
+      network: 'internet',
+      gpu: false,
+      dockerSocket: false,
+      devices: [],
+      capabilities: [],
+    });
     expect(hasRiskyPermissions(m)).toBe(false);
   });
 

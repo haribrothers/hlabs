@@ -62,7 +62,14 @@ describe('US-STORE-07', () => {
           },
           { key: 'import', label: 'Existing photos', description: null, mode: 'ro', required: false, default: null },
         ],
-        access: { network: 'lan', ports: [{ label: 'DNS', host: 53, protocol: 'udp' }], gpu: true, dockerSocket: true },
+        access: {
+          network: 'lan',
+          ports: [{ label: 'DNS', host: 53, protocol: 'udp' }],
+          gpu: true,
+          dockerSocket: true,
+          devices: [],
+          capabilities: [],
+        },
       }),
     );
     const list = await screen.findByRole('list', { name: 'What it can access' });
@@ -79,7 +86,11 @@ describe('US-STORE-07', () => {
   });
 
   it('network: "No network" and "Internet"', async () => {
-    show(details({ access: { network: 'none', ports: [], gpu: false, dockerSocket: false } }));
+    show(
+      details({
+        access: { network: 'none', ports: [], gpu: false, dockerSocket: false, devices: [], capabilities: [] },
+      }),
+    );
     expect(await screen.findByText('No network')).toBeInTheDocument();
   });
 

@@ -187,6 +187,8 @@ export function InstallSheet({
       ...(details.access.dockerSocket ? [copy.riskDocker] : []),
       ...details.access.ports.map((p) => copy.riskPort(p.label, p.host)),
       ...(details.access.gpu ? [copy.riskGpu] : []),
+      ...details.access.devices.map((d) => copy.riskDevice(d.label, d.path)),
+      ...details.access.capabilities.map((c) => copy.riskCapability(c)),
     ],
     [details.access],
   );

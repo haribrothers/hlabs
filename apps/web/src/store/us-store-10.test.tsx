@@ -70,7 +70,14 @@ describe('US-STORE-10', () => {
     const { calls } = sheet(
       details({
         folders: [],
-        access: { network: 'lan', ports: [{ label: 'DNS', host: 53, protocol: 'udp' }], gpu: true, dockerSocket: true },
+        access: {
+          network: 'lan',
+          ports: [{ label: 'DNS', host: 53, protocol: 'udp' }],
+          gpu: true,
+          dockerSocket: true,
+          devices: [],
+          capabilities: [],
+        },
         install: { ...details().install, risky: true },
       }),
     );

@@ -164,6 +164,8 @@ function ReviewAccess({ app, onClose }: { app: Pending | null; onClose: () => vo
         ...(access.permissions.network ? [copy.network[access.permissions.network]] : []),
         ...(access.permissions.gpu ? [copy.gpu] : []),
         ...(access.permissions.dockerSocket ? [copy.dockerSocket] : []),
+        ...access.permissions.devices.map((d) => copy.device(d.label, d.path)),
+        ...access.permissions.capabilities.map((c) => copy.capability(c)),
       ]
     : [];
   const section = (title: string, items: string[]) =>

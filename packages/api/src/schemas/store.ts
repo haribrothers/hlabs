@@ -55,6 +55,8 @@ export const newAccessSchema = z.object({
     network: z.enum(['lan', 'internet']).nullable(),
     gpu: z.boolean(),
     dockerSocket: z.boolean(),
+    devices: z.array(z.object({ path: z.string(), label: z.string() })),
+    capabilities: z.array(z.string()),
   }),
 });
 
@@ -210,6 +212,9 @@ export const storeAppDetailsSchema = z.object({
     ports: z.array(z.object({ label: z.string(), host: z.number(), protocol: z.enum(['tcp', 'udp']) })),
     gpu: z.boolean(),
     dockerSocket: z.boolean(),
+    /** Devices it uses when they're plugged in, and Linux capabilities it needs (D-163). Both risky. */
+    devices: z.array(z.object({ path: z.string(), label: z.string() })),
+    capabilities: z.array(z.string()),
   }),
   /** Other apps it needs installed first. */
   dependsOn: z.array(z.object({ appId: z.string(), name: z.string(), installed: z.boolean() })),

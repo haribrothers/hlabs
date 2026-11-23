@@ -23,7 +23,7 @@ describe('US-STORE-16', () => {
               newAccess: {
                 folders: [{ key: 'music', label: 'Music', mode: 'ro' }],
                 ports: [{ label: 'Sync', host: 22000, protocol: 'udp' }],
-                permissions: { network: 'internet', gpu: false, dockerSocket: false },
+                permissions: { network: 'internet', gpu: false, dockerSocket: false, devices: [], capabilities: [] },
               },
             },
           ],

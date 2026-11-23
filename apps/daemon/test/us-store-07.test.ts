@@ -78,12 +78,16 @@ describe('US-STORE-07', () => {
       ports: [{ label: 'DNS', host: 53, protocol: 'udp' }],
       gpu: true,
       dockerSocket: true,
+      devices: [],
+      capabilities: [],
     });
     expect((await store.getApp('immich')).access).toEqual({
       network: 'internet',
       ports: [],
       gpu: false,
       dockerSocket: false,
+      devices: [],
+      capabilities: [],
     });
   });
 

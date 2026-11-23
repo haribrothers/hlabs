@@ -100,6 +100,12 @@ export function AccessList({ d }: { d: StoreAppDetails }) {
         ))}
         {access.gpu ? <Row title={copy.gpu} detail={copy.gpuNote} /> : null}
         {access.dockerSocket ? <Row title={copy.docker} detail={copy.dockerNote} risky /> : null}
+        {access.devices.map((d) => (
+          <Row key={d.path} title={d.label} detail={copy.deviceNote(d.path)} risky />
+        ))}
+        {access.capabilities.map((c) => (
+          <Row key={c} title={copy.capability(c)} detail={copy.capabilityNote(c)} risky />
+        ))}
       </ul>
     </section>
   );

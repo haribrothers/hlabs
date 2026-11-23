@@ -115,7 +115,7 @@ describe('US-STORE-16 · new access', () => {
         { key: 'music', label: 'Music', mode: 'ro' },
       ],
       ports: [{ label: 'Sync', host: 22000, protocol: 'udp' }],
-      permissions: { network: 'internet', gpu: true, dockerSocket: false },
+      permissions: { network: 'internet', gpu: true, dockerSocket: false, devices: [], capabilities: [] },
     });
     // Less access isn't new access.
     expect(newAccess(next as never, base as never)).toBeNull();
@@ -135,7 +135,7 @@ describe('US-STORE-16 · new access', () => {
     expect(list.pending[0]!.newAccess).toEqual({
       folders: [],
       ports: [{ label: 'Push', host: 3901, protocol: 'tcp' }],
-      permissions: { network: null, gpu: false, dockerSocket: false },
+      permissions: { network: null, gpu: false, dockerSocket: false, devices: [], capabilities: [] },
     });
   });
 });
