@@ -41,7 +41,7 @@ const EXPECTED: Row[] = [
   ['store.getHome', 'q', 'authed'], ['store.listApps', 'q', 'authed'], ['store.getApp', 'q', 'authed'],
   ['store.listCategories', 'q', 'authed'], ['store.listUpdates', 'q', 'admin'], ['store.sources.list', 'q', 'admin'],
   ['store.sources.inspect', 'q', 'admin'], ['store.sources.add', 'm', 'admin'], ['store.sources.remove', 'm', 'admin'],
-  ['store.sources.sync', 'm', 'admin'],
+  ['store.sources.sync', 'm', 'admin'], ['store.copyToLibrary', 'm', 'admin'],
 
   ['apps.list', 'q', 'authed'], ['apps.get', 'q', 'authed'], ['apps.install', 'm', 'authed'],
   ['apps.retryInstall', 'm', 'admin'], ['apps.start', 'm', 'admin'], ['apps.stop', 'm', 'admin'],
@@ -105,6 +105,7 @@ const EXPECTED: Row[] = [
   ['tray.resetPassword', 'm', 'tray'], ['tray.quit', 'm', 'tray'], ['tray.useOtherPort', 'm', 'tray'], ['tray.setStartAtLogin', 'm', 'tray'], ['tray.appLogs', 'q', 'tray'],
   ['tray.startEngine', 'm', 'tray'], ['tray.diagnostics', 'q', 'tray'], ['tray.uninstallInfo', 'q', 'tray'],
   ['tray.uninstall', 'm', 'tray'], ['tray.setupUrl', 'q', 'tray'], ['tray.job', 'q', 'tray'],
+  ['tray.libraryKeygen', 'm', 'tray'], ['tray.librarySign', 'm', 'tray'],
 
   ['events.stream', 's', 'authed|tray'],
 ];

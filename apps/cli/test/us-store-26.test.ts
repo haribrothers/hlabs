@@ -124,7 +124,8 @@ describe('US-STORE-26', () => {
 
       const all = report(
         HUNDRED,
-        HUNDRED.map((id) => ({ id, problem: id === 'app-3' ? 'boom' : null, seconds: 1 })),
+        // One of them fails, whichever ids the store has by then.
+        HUNDRED.map((id) => ({ id, problem: id === HUNDRED[3] ? 'boom' : null, seconds: 1 })),
       );
       expect(all.markdown).toContain('99 of 100 apps (99.0 %)**, target ≥ 98 % ✓');
     });
