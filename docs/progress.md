@@ -338,7 +338,7 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [ ] US-PHONE-04 · Back navigation and resuming after the phone sleeps
 - [ ] US-PHONE-05 · Log in on a phone
 - [ ] US-PHONE-06 · Two-factor, lockout and forgot password on phone
-- [ ] US-PHONE-07 · Phone Home header and stacked widgets
+- [ ] US-PHONE-07 · Phone Home header and widgets
 - [ ] US-PHONE-08 · App grid and opening apps on phone
 - [ ] US-PHONE-09 · Search from Home on phone
 - [ ] US-PHONE-10 · Browse the App Store on phone
