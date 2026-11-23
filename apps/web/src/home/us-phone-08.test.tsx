@@ -139,9 +139,9 @@ describe('US-PHONE-08', () => {
     // Focus is on the menu, not on Open.
     await waitFor(() => expect(document.activeElement).toBe(items));
     // A tap inside the menu (its heading) keeps it; one on the dimmed Home around it closes it.
-    fireEvent.pointerDown(within(items).getByText(/Running/));
+    fireEvent.click(within(items).getByText(/Running/));
     expect(screen.getByRole('menu', { name: /Jellyfin/ })).toBeInTheDocument();
-    fireEvent.pointerDown(document.querySelector('.hl-p-menu-layer')!);
+    fireEvent.click(document.querySelector('.hl-p-menu-layer')!);
     await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
   });
 

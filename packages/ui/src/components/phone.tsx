@@ -351,8 +351,10 @@ export function PhoneMenuLayer({
           onOpenAutoFocus={onOpenAutoFocus}
           onPointerDownOutside={() => onOpenChange(false)}
           // The layer covers the screen, so a tap around the menu lands inside it, not outside: anything that isn't
-          // the menu closes it (iOS's own context menus close the same way).
-          onPointerDown={(e) => {
+          // the menu closes it (iOS's own context menus close the same way). On the click, the tap's last event:
+          // closing on its first left the rest of the tap to land on the Home tile under it, which opened the menu
+          // again.
+          onClick={(e) => {
             if (!(e.target as Element).closest('[role="menu"]')) onOpenChange(false);
           }}
         >

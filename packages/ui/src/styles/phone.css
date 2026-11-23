@@ -772,15 +772,31 @@
     .hl-btn-link {
       min-height: var(--size-control);
     }
-    .hl-switch {
+    /* A 44px tap target with a 32px track drawn inside it (::before). Safari on iPhone paints a button's background
+       under its borders whatever background-clip says, so the track is its own shape and the button stays clear. */
+    .hl-switch,
+    .hl-switch[aria-checked='true'] {
+      position: relative;
       width: calc(var(--size-control) + var(--space-2));
       height: var(--size-control);
-      border: 6px solid transparent;
-      border-width: 6px 0;
-      padding: 2px;
-      background-clip: padding-box;
+      border: 0;
+      padding: 0 2px;
+      align-items: center;
+      background: transparent;
+    }
+    .hl-switch::before {
+      content: '';
+      position: absolute;
+      inset: 6px 0;
+      border-radius: var(--radius-pill);
+      background: var(--surface-control);
+      transition: background var(--hl-dur) ease;
+    }
+    .hl-switch[aria-checked='true']::before {
+      background: var(--accent-strong);
     }
     .hl-switch .hl-switch-knob {
+      position: relative;
       width: calc(var(--size-control) - var(--space-4));
       height: calc(var(--size-control) - var(--space-4));
     }
@@ -873,6 +889,8 @@
     inset: 0;
     z-index: 61;
     outline: none;
+    /* Safari on iPhone sends a tap's click only to elements that look clickable; this one closes the menu. */
+    cursor: pointer;
   }
   .hl-p-menu-tile {
     position: fixed;
@@ -883,6 +901,7 @@
   }
   .hl-p-menu {
     position: fixed;
+    cursor: default;
     display: flex;
     flex-direction: column;
     border-radius: var(--radius-lg);
