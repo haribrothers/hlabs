@@ -61,6 +61,8 @@ export const filesCopy = {
   moveToFolder: (folder: string) => `Move to ${folder}`,
   folders: 'Folders',
   current: 'current',
+  /** The folder they're in, at the right of its row on a phone (PhoneRedesignA_FilesMove). */
+  currentPhone: 'Current',
   movedOne: (name: string, folder: string) => `Moved “${name}” to ${folder}`,
   movedMany: (n: number, folder: string) => `Moved ${n} items to ${folder}`,
   movingOne: (name: string, folder: string) => `Moving “${name}” to ${folder}`,
@@ -137,6 +139,8 @@ export const filesCopy = {
   newFolder: 'New folder',
   upload: 'Upload',
   readOnly: 'This folder is read only',
+  /** A phone's "+" in Files' bar (PhoneRedesignA_Files). */
+  addHere: 'Add to this folder',
   // New folder (US-FILE-03)
   newFolderTitle: 'New folder',
   folderName: 'Name',
@@ -251,6 +255,9 @@ export const filesCopy = {
   // Choose a folder for an app (US-FILE-25)
   picker: {
     title: (app: string) => `Choose a folder for ${app}`,
+    /** A phone sheet's bar says less (PhoneRedesignA_FolderPicker); the app is in its accessible name and the line. */
+    phoneTitle: 'Choose a folder',
+    phoneFor: (app: string, line: string) => `For ${app} · ${line}`,
     forLine: (label: string, mode: string) => `${label} · ${mode}`,
     places: 'Places',
     folders: (name: string) => `Folders in ${name}`,

@@ -14,6 +14,13 @@ export const peopleCopy = {
   appsAccess: 'Apps access',
   resetPassword: 'Reset password',
   moreOptions: (name: string) => `More options for ${name}`,
+  /** The ••• of a pending invite's row on a phone. */
+  inviteOptions: 'More options for this invite',
+  /** Under Reset password… in a person's sheet on a phone. */
+  resetLinkNote: 'Makes a link that works once, for 15 minutes',
+  /** "@anu · Member · 4 apps" under a name in their sheet. */
+  sheetLine: (username: string, role: string, apps: string | null) =>
+    [`@${username}`, role, ...(apps ? [apps] : [])].join(' · '),
   makeAdmin: 'Make admin',
   makeMember: 'Make member',
   disable: 'Disable',

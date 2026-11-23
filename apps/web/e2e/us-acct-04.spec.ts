@@ -23,8 +23,8 @@ test('US-ACCT-04 this device first, then the others', async ({ page, request, br
 
   await page.goto('/settings/account');
   const list = page.getByRole('group', { name: 'Signed-in devices' });
-  await expect(list.locator('.hl-list-row')).toHaveCount(2);
-  await expect(list.locator('.hl-list-row').first()).toContainText('This device');
-  await expect(list.locator('.hl-list-row').first()).toContainText('This computer · active now');
-  await expect(list.locator('.hl-list-row').nth(1)).toContainText('iPhone · Safari');
+  await expect(list.locator('.hl-list-row, .hl-p-row')).toHaveCount(2);
+  await expect(list.locator('.hl-list-row, .hl-p-row').first()).toContainText('This device');
+  await expect(list.locator('.hl-list-row, .hl-p-row').first()).toContainText('This computer · active now');
+  await expect(list.locator('.hl-list-row, .hl-p-row').nth(1)).toContainText('iPhone · Safari');
 });

@@ -22,7 +22,9 @@ test('US-ACCT-32 pick Ocean, upload my own photo, and a file that is not a photo
   const wallpapers = page.getByRole('group', { name: 'Wallpaper' });
   const wallpaper = page.getByTestId('wallpaper');
   await expect(wallpapers.getByRole('button', { name: 'Dusk' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(wallpapers.getByRole('button', { name: 'Upload photo' })).toContainText('+ Upload photo');
+  // On a phone the tile shows a photo glyph instead of the words (US-PHONE-28).
+  if (!info.project.name.includes('phone'))
+    await expect(wallpapers.getByRole('button', { name: 'Upload photo' })).toContainText('+ Upload photo');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
   // A thumbnail changes the wallpaper behind the window at once, and it's kept for the account.

@@ -4,7 +4,7 @@
 import type { Notification } from '@hlabs/api';
 import { Bell, Check, CircleX, Download, iconDefaults, Info, Lock, TriangleAlert, X } from '@hlabs/icons';
 import { isFeatureEnabled, VISIBLE_PHASE, type ToastMutation } from '@hlabs/shared';
-import { Button, ModalDialog, useIsPhone } from '@hlabs/ui';
+import { BottomSheet, Button, SheetHeader, useIsPhone } from '@hlabs/ui';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
@@ -24,8 +24,8 @@ import { useHistoryLayer } from '../lib/history-layer';
 const PAGE = 50;
 
 /** The tile beside each item: what kind of news it is, never by colour alone. */
-function SeverityIcon({ n }: { n: Notification }) {
-  const props = { ...iconDefaults, 'aria-hidden': true as const, className: 'size-4' };
+function SeverityIcon({ n, phone = false }: { n: Notification; phone?: boolean }) {
+  const props = { ...iconDefaults, 'aria-hidden': true as const, className: phone ? 'size-4.5' : 'size-4' };
   const [icon, tone]: [ReactNode, string] = n.kind.startsWith('auth.')
     ? [<Lock key="i" {...props} />, 'text-warning']
     : /update/.test(n.kind) && n.severity === 'info'
@@ -38,7 +38,11 @@ function SeverityIcon({ n }: { n: Notification }) {
             ? [<Check key="i" {...props} />, 'text-success']
             : [<Info key="i" {...props} />, 'text-accent'];
   return (
-    <span className={`grid size-9 shrink-0 place-items-center rounded-sm bg-surface-control ${tone}`}>{icon}</span>
+    <span
+      className={`grid shrink-0 place-items-center ${phone ? 'hl-p-sq' : 'size-9 rounded-sm bg-surface-control'} ${tone}`}
+    >
+      {icon}
+    </span>
   );
 }
 
@@ -205,7 +209,26 @@ function Panel({ shippedPhase, inline }: { shippedPhase: number; inline: boolean
   const earlier = items.filter((n) => !isToday(n.createdAt, now));
 
   const group = (label: string, rows: Notification[]) =>
-    rows.length ? (
+    rows.length && sheet ? (
+      // PhoneRedesignA_Notifications: "Today" and "Earlier" over inset boxes of rows.
+      <section aria-label={label} className="hl-p-group-wrap">
+        <h3 className="hl-p-label">{label}</h3>
+        <ul className="hl-p-group">
+          {rows.map((n) => (
+            <Item
+              key={n.id}
+              n={n}
+              now={now}
+              isAdmin={isAdmin}
+              shippedPhase={shippedPhase}
+              onAct={act}
+              onDismiss={dismiss}
+              phone
+            />
+          ))}
+        </ul>
+      </section>
+    ) : rows.length ? (
       <section aria-label={label} className="flex flex-col">
         <h3 className="m-0 px-3 pb-1 pt-2.5 text-caption font-semibold uppercase tracking-wide text-ink-muted">
           {label}
@@ -282,17 +305,35 @@ function Panel({ shippedPhase, inline }: { shippedPhase: number; inline: boolean
   );
 
   if (sheet)
+    // PhoneRedesignA_Notifications (US-PHONE-27): a full-height sheet named like a page, "Mark all read" and "✕"
+    // beside its title, then the groups.
     return (
       <>
         {bell}
-        <ModalDialog
+        <BottomSheet
           open={open}
           onOpenChange={(o) => (o ? setOpen(true) : void closeSheet())}
-          title={copy.title}
-          actions={markAll}
+          titled
+          full
+          closeButton={false}
         >
-          <div className="-mx-2 flex flex-col">{body}</div>
-        </ModalDialog>
+          <SheetHeader
+            large
+            title={copy.title}
+            trailing={
+              <button
+                type="button"
+                className="hl-p-tbtn hl-focus"
+                disabled={unread === 0}
+                onClick={() => void markRead('all')}
+              >
+                {copy.markAllRead}
+              </button>
+            }
+            onClose={() => void closeSheet()}
+          />
+          <div className="hl-sheet-scroll flex flex-col gap-5 pb-6">{body}</div>
+        </BottomSheet>
       </>
     );
 
@@ -326,7 +367,10 @@ function Item({
   shippedPhase,
   onAct,
   onDismiss,
+  phone = false,
 }: {
+  /** A row of the phone's sheet (PhoneRedesignA_Notifications). */
+  phone?: boolean;
   n: Notification;
   now: number;
   isAdmin: boolean;
@@ -338,6 +382,63 @@ function Item({
   const itemLink = actions.find((a) => a.kind === 'navigate' && a.item);
   const inline = actions.filter((a) => a !== itemLink);
   const unread = n.readAt === null;
+  const title =
+    itemLink && itemLink.kind === 'navigate' ? (
+      <Link
+        to={itemLink.to}
+        onClick={(e) => {
+          e.preventDefault();
+          onAct(n, itemLink);
+        }}
+        className="hl-focus hl-p-note-title text-ink underline underline-offset-2"
+      >
+        {n.title}
+      </Link>
+    ) : (
+      <span className="hl-p-note-title">{n.title}</span>
+    );
+  if (phone)
+    return (
+      <li className="hl-p-note">
+        <SeverityIcon n={n} phone />
+        <div className="hl-p-note-main">
+          <div className="flex items-start gap-2">
+            {title}
+            <time className="hl-p-note-time" dateTime={new Date(n.createdAt).toISOString()}>
+              {notificationTime(n.createdAt, now)}
+            </time>
+            {unread ? (
+              <span className="hl-p-note-dot">
+                <span className="sr-only">{copy.unread}</span>
+              </span>
+            ) : null}
+          </div>
+          {n.body ? <p className="hl-p-note-body">{n.body}</p> : null}
+          {inline.length ? (
+            <span className="flex flex-wrap gap-x-4">
+              {inline.map((a) => (
+                <button
+                  key={a.label}
+                  type="button"
+                  onClick={() => onAct(n, a)}
+                  className="hl-p-link hl-focus font-semibold"
+                >
+                  {a.label}
+                </button>
+              ))}
+            </span>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          aria-label={copy.dismiss(n.title)}
+          onClick={() => onDismiss(n)}
+          className="hl-p-note-dismiss hl-focus"
+        >
+          <X aria-hidden {...iconDefaults} />
+        </button>
+      </li>
+    );
   return (
     <li
       className={`group relative flex gap-3 rounded-md p-3 hover:bg-surface-row focus-within:bg-surface-row ${unread ? 'bg-accent-wash' : ''}`}

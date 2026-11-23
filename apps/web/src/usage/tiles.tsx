@@ -20,6 +20,8 @@ function Tile({
   detail,
   trend,
   high = false,
+  meter,
+  phone = false,
   selected,
   onSelect,
 }: {
@@ -30,7 +32,26 @@ function Tile({
   detail: ReactNode;
   trend?: number[];
   high?: boolean;
+  /** On a phone, how full it is (0–100) as a bar under the line, in place of the trend (PhoneRedesignA_Usage). */
+  meter?: number | null;
+  phone?: boolean;
 }) {
+  if (phone)
+    return (
+      <button type="button" aria-pressed={selected} aria-live="off" onClick={onSelect} className="hl-p-tile hl-focus">
+        <span className="flex items-center justify-between gap-2">
+          <span className="hl-p-tile-label">{label}</span>
+          {high ? <Badge tone="warning">{copy.high}</Badge> : null}
+        </span>
+        <span className={`hl-p-tile-value tabular-nums ${high ? 'text-warning' : ''}`}>{value}</span>
+        <span className="hl-p-tile-detail">{detail}</span>
+        {meter != null ? (
+          <span aria-hidden className="hl-p-meter">
+            <span style={{ width: `${Math.min(100, Math.max(0, meter))}%` }} />
+          </span>
+        ) : null}
+      </button>
+    );
   return (
     <button
       type="button"
@@ -64,7 +85,10 @@ export function UsageTiles({
   points,
   selected,
   onSelect,
+  phone = false,
 }: {
+  /** The phone's tiles (US-PHONE-27): a bar of how full each is instead of a trend. */
+  phone?: boolean;
   selected: TileId;
   onSelect: (tile: TileId) => void;
   current: UsageSample | null;
@@ -82,7 +106,11 @@ export function UsageTiles({
   const storage = overview?.storage;
 
   return (
-    <div role="group" aria-label={copy.summary} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div
+      role="group"
+      aria-label={copy.summary}
+      className={phone ? 'grid grid-cols-2 gap-2.5' : 'grid grid-cols-2 gap-3 lg:grid-cols-4'}
+    >
       <Tile
         selected={selected === 'cpu'}
         onSelect={() => onSelect('cpu')}
@@ -91,6 +119,8 @@ export function UsageTiles({
         detail={overview ? copy.cores(overview.cpuModel, overview.cores) : ''}
         trend={known(recent.map((p) => p.cpu))}
         high={cpuHigh}
+        phone={phone}
+        meter={host?.cpu}
       />
       <Tile
         selected={selected === 'memory'}
@@ -100,6 +130,8 @@ export function UsageTiles({
         detail={memTotal ? copy.memoryOf(formatMemory(memTotal), formatMemory(byApps)) : ''}
         trend={known(recent.map((p) => p.memBytes))}
         high={memHigh}
+        phone={phone}
+        meter={host?.memBytes != null && memTotal > 0 ? (host.memBytes / memTotal) * 100 : null}
       />
       <Tile
         selected={selected === 'storage'}
@@ -107,6 +139,8 @@ export function UsageTiles({
         label={copy.storage}
         value={storage ? formatBytes(storage.usedBytes) : copy.noValue}
         detail={storage ? copy.storageOf(formatBytes(storage.totalBytes)) : ''}
+        phone={phone}
+        meter={storage && storage.totalBytes > 0 ? (storage.usedBytes / storage.totalBytes) * 100 : null}
       />
       <Tile
         selected={selected === 'network'}
@@ -115,6 +149,7 @@ export function UsageTiles({
         value={host?.netRx != null ? formatRate(host.netRx) : copy.noValue}
         detail={copy.networkDetail(host?.netTx != null ? formatRate(host.netTx) : copy.noValue)}
         trend={known(recent.map((p) => p.netRx))}
+        phone={phone}
       />
     </div>
   );

@@ -16,7 +16,9 @@ const MAX_SHOWN = 4;
 
 const STEP = 'hl-focus rounded-xs text-title-2 text-ink-muted no-underline hover:text-ink';
 
-export function Breadcrumb({ crumbs }: { crumbs: Crumb[] }) {
+/** `phone`: 15px steps in the link colour (PhoneRedesignA_Files). */
+export function Breadcrumb({ crumbs, phone = false }: { crumbs: Crumb[]; phone?: boolean }) {
+  const step = phone ? 'hl-focus rounded-xs' : STEP;
   const navigate = useNavigate();
   if (!crumbs.length) return null;
   // First, "…" for the middle, and the last two.
@@ -24,15 +26,21 @@ export function Breadcrumb({ crumbs }: { crumbs: Crumb[] }) {
   const shown: Array<Crumb | 'more'> =
     folded.length > 0 ? [crumbs[0]!, 'more', ...crumbs.slice(crumbs.length - 2)] : crumbs;
   return (
-    <nav aria-label={copy.breadcrumb} className="min-w-0">
-      <ol className="m-0 flex min-w-0 list-none items-center gap-2 p-0">
+    <nav aria-label={copy.breadcrumb} className={phone ? 'hl-p-crumbs min-w-0' : 'min-w-0'}>
+      <ol className={phone ? 'min-w-0' : 'm-0 flex min-w-0 list-none items-center gap-2 p-0'}>
         {shown.map((c, i) => (
           <Fragment key={c === 'more' ? 'more' : c.path}>
-            {i > 0 ? <ChevronRight aria-hidden {...iconDefaults} className="size-4 shrink-0 text-ink-muted" /> : null}
+            {i > 0 ? (
+              <ChevronRight
+                aria-hidden
+                {...iconDefaults}
+                className={phone ? undefined : 'size-4 shrink-0 text-ink-muted'}
+              />
+            ) : null}
             <li className="min-w-0 truncate">
               {c === 'more' ? (
                 <DropdownMenu>
-                  <DropdownMenuTrigger className={`${STEP} border-0 bg-transparent px-1`} aria-label={copy.moreFolders}>
+                  <DropdownMenuTrigger className={`${step} border-0 bg-transparent px-1`} aria-label={copy.moreFolders}>
                     …
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="min-w-48">
@@ -47,11 +55,11 @@ export function Breadcrumb({ crumbs }: { crumbs: Crumb[] }) {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : i === shown.length - 1 ? (
-                <h1 className="m-0 truncate text-title-2 text-ink" aria-current="page">
+                <h1 className={phone ? 'truncate' : 'm-0 truncate text-title-2 text-ink'} aria-current="page">
                   {crumbName(c)}
                 </h1>
               ) : (
-                <Link to="/files" search={{ path: c.path }} className={STEP}>
+                <Link to="/files" search={{ path: c.path }} className={step}>
                   {crumbName(c)}
                 </Link>
               )}

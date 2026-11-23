@@ -4,7 +4,7 @@
 // "Cancel restore" shows until swap-in; Hide leaves it running and a notification says when it's done.
 import { CircleCheck, CircleX, Circle, iconDefaults, LoaderCircle } from '@hlabs/icons';
 import { formatBytes, formatDuration } from '@hlabs/shared';
-import { Badge, Button, ModalDialog, Progress, cn } from '@hlabs/ui';
+import { Badge, Button, ModalDialog, Progress, cn, useIsPhone } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { backupsCopy as copy } from '../copy/backups';
@@ -428,6 +428,9 @@ export function RestoreProgress({ jobId, onClose }: { jobId: string; onClose: ()
     onError: (err) => showErrorToast(err),
     onSettled: () => void queryClient.invalidateQueries({ queryKey: key }),
   });
+  // On a phone (PhoneRedesignA_RestoreProgress): a sheet over Backups with the step, a large title, the bar with its
+  // percentage, the steps as an inset list and the two buttons side by side (US-PHONE-26).
+  const phone = useIsPhone();
   const r = view.data;
   const what = useMemo(() => (r ? (r.items.length === 1 ? r.items[0]!.label : null) : null), [r]);
   if (!r) return null;
@@ -508,7 +511,7 @@ export function RestoreProgress({ jobId, onClose }: { jobId: string; onClose: ()
       sheetOnPhone
       width="min(600px, 100%)"
       title={
-        <span className="flex flex-col gap-1">
+        <span className={cn('flex flex-col gap-1', phone && 'hl-p-restore-title')}>
           <span className="text-body-sm font-normal text-ink-muted">{copy.step(3)}</span>
           <span>{title}</span>
           <span className="text-body-sm font-normal text-ink-muted">
@@ -524,18 +527,18 @@ export function RestoreProgress({ jobId, onClose }: { jobId: string; onClose: ()
         finished ? (
           <Button onClick={onClose}>{r.status === 'succeeded' ? copy.done : copy.close}</Button>
         ) : (
-          <div className="flex w-full flex-col gap-3 md:flex-row md:items-center">
+          <div className={cn('flex w-full gap-3 md:flex-row md:items-center', phone ? 'flex-row' : 'flex-col')}>
             {r.cancellable ? (
               <Button
                 variant="secondary"
-                className="text-danger md:mr-auto"
+                className={cn('text-danger md:mr-auto', phone && 'flex-1')}
                 busy={cancel.isPending}
                 onClick={() => cancel.mutate()}
               >
                 {copy.cancelRestore}
               </Button>
             ) : null}
-            <Button variant="secondary" onClick={onClose} className="md:ml-auto">
+            <Button variant="secondary" onClick={onClose} className={cn('md:ml-auto', phone && 'flex-1')}>
               {copy.hide}
             </Button>
           </div>
@@ -551,8 +554,22 @@ export function RestoreProgress({ jobId, onClose }: { jobId: string; onClose: ()
             {codeLine(r.error)}
           </p>
         ) : null}
-        {r.status === 'running' ? <Progress value={pct} aria-label={title} className="min-w-0" /> : null}
-        <ol className="m-0 list-none overflow-hidden rounded-lg bg-surface-input p-0" aria-label={title}>
+        {r.status === 'running' ? (
+          phone ? (
+            <div className="flex items-center gap-4">
+              <Progress value={pct} aria-label={title} className="min-w-0 flex-1" />
+              <span aria-hidden className="shrink-0 text-body font-semibold tabular-nums">
+                {pct}%
+              </span>
+            </div>
+          ) : (
+            <Progress value={pct} aria-label={title} className="min-w-0" />
+          )
+        ) : null}
+        <ol
+          className={cn('m-0 list-none overflow-hidden p-0', phone ? 'hl-p-group' : 'rounded-lg bg-surface-input')}
+          aria-label={title}
+        >
           {r.steps.map((s, i) => (
             <li
               key={`${s.kind}:${s.appId ?? i}`}

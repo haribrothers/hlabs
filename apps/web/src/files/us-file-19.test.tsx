@@ -138,7 +138,7 @@ describe('US-FILE-19', () => {
     await waitFor(() => expect(router.state.location.search).toEqual({ path: '/home/Documents/Bills' }));
   });
 
-  it('a phone shows the grid without the toggle (its list layout is US-PHONE-16)', async () => {
+  it('a phone shows its own inset list without the toggle (US-PHONE-25)', async () => {
     window.matchMedia = ((query: string) => ({
       matches: !query.includes('min-width'),
       media: query,

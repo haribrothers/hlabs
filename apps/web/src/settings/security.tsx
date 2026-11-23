@@ -1,11 +1,13 @@
 // Account › Security (US-ACCT-06, US-ACCT-08): the password row and its Change dialog, two-factor login and the
 // recovery codes, which open TwoFactorManage.
-import { Badge, Button, List, ListRow } from '@hlabs/ui';
+import { iconDefaults, KeyRound, ShieldCheck, Smartphone } from '@hlabs/icons';
+import { Badge, Button, InsetGroup, InsetRowButton, List, ListRow } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { accountCopy } from '../copy/account';
 import { timeAgo } from '../lib/relative-time';
 import { useTRPC } from '../lib/trpc';
+import { useIsDesktop } from '../lib/use-media';
 import { ChangePassword } from './change-password';
 import { TurnOnTwoFactor } from './turn-on-two-factor';
 import { TwoFactorManage } from './two-factor-manage';
@@ -23,6 +25,7 @@ export function Security({
   onTwoFactorClosed?: () => void;
 }) {
   const trpc = useTRPC();
+  const desktop = useIsDesktop();
   const account = useQuery({ ...trpc.account.get.queryOptions(), retry: false });
   const [changing, setChanging] = useState(false);
   // Which two-factor dialog is open: from Manage, View or Turn on, or straight from /settings/account/two-factor
@@ -37,17 +40,63 @@ export function Security({
     setDialog(null);
     onTwoFactorClosed?.();
   };
+  const passwordLine =
+    changedAt !== null
+      ? copy.passwordChangedAgo(timeAgo(changedAt))
+      : a.role === 'member'
+        ? copy.passwordJoined
+        : copy.passwordSetUp;
+  const dialogs = (
+    <>
+      {changing ? <ChangePassword onClose={() => setChanging(false)} /> : null}
+      {dialog === 'manage' && on ? <TwoFactorManage account={a} onClose={closeDialog} /> : null}
+      {dialog === 'turnOn' ? <TurnOnTwoFactor onClose={closeDialog} /> : null}
+    </>
+  );
+  // A phone (PhoneRedesignA_Account): each row is the button, with an icon square, its state at the right and a
+  // chevron; the rows keep the desktop buttons' names ("Change password", "Manage two-factor login"…).
+  if (!desktop)
+    return (
+      <InsetGroup role="group" label={copy.security}>
+        <InsetRowButton
+          icon={<KeyRound aria-hidden {...iconDefaults} />}
+          title={copy.password}
+          subtitle={passwordLine}
+          value={copy.change}
+          chevron
+          aria-label={`${copy.change} ${copy.password.toLowerCase()}`}
+          onClick={() => setChanging(true)}
+        />
+        <InsetRowButton
+          icon={<Smartphone aria-hidden {...iconDefaults} />}
+          title={copy.twoFactor}
+          subtitle={on ? copy.authenticatorApp : undefined}
+          value={on ? <span className="text-success">{copy.on}</span> : copy.twoFactorOff}
+          chevron
+          aria-label={on ? copy.manageTwoFactor : copy.turnOnTwoFactor}
+          onClick={() => setDialog(on ? 'manage' : 'turnOn')}
+        />
+        {on ? (
+          <InsetRowButton
+            icon={<ShieldCheck aria-hidden {...iconDefaults} />}
+            title={copy.recoveryCodes}
+            subtitle={copy.unusedOf(a.recoveryCodesUnused)}
+            trailing={
+              a.recoveryCodesUnused <= RUNNING_LOW ? <Badge tone="warning">{copy.runningLow}</Badge> : undefined
+            }
+            chevron
+            aria-label={copy.viewRecoveryCodes}
+            onClick={() => setDialog('manage')}
+          />
+        ) : null}
+        {dialogs}
+      </InsetGroup>
+    );
   return (
     <List label={copy.security}>
       <ListRow
         title={copy.password}
-        subtitle={
-          changedAt !== null
-            ? copy.passwordChangedAgo(timeAgo(changedAt))
-            : a.role === 'member'
-              ? copy.passwordJoined
-              : copy.passwordSetUp
-        }
+        subtitle={passwordLine}
         trailing={
           <Button
             variant="secondary"
@@ -93,9 +142,7 @@ export function Security({
           }
         />
       ) : null}
-      {changing ? <ChangePassword onClose={() => setChanging(false)} /> : null}
-      {dialog === 'manage' && on ? <TwoFactorManage account={a} onClose={closeDialog} /> : null}
-      {dialog === 'turnOn' ? <TurnOnTwoFactor onClose={closeDialog} /> : null}
+      {dialogs}
     </List>
   );
 }

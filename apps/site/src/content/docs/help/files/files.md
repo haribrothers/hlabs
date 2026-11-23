@@ -10,7 +10,7 @@ Choose **Files** in the Dock (or the tab bar on a phone) to see the files you ke
 
 ## Your places
 
-The list on the left has every place you can open. On a phone, the same places are a row of buttons above your files.
+The list on the left has every place you can open. On a phone, the same places are a row of buttons under the search field.
 
 - **Recents:** the 50 files you changed most recently, newest first, with the folder each one is in.
 - **Home:** your own folder. The first time you open Files, hlabs makes **Photos**, **Documents** and **Downloads** in it for you; folders you already have are left as they are.
@@ -38,6 +38,10 @@ If someone removes a folder while you have it open, Files says **This folder no 
 
 While a folder loads, Files shows grey placeholders where the items will be; the path at the top and the buttons still work. A network drive that is slow to answer adds **Still loading… this drive is slow to respond**. If the folder can't be loaded, choose **Try again**.
 
+### On a phone
+
+On a phone, Files has a large **Files** title with **+** and **Select** above it, then the search field, your places as a row of buttons, and the path to the open folder (for example **Home › Documents**). The folder is a list: each row shows the item's icon (or a small picture of a photo), its name, and how many items a folder holds or a file's size and when it changed. Tap a row to open it, and tap **•••** at the end of a row for what you can do with it. **+** offers **New folder** and **Upload**.
+
 ### List view and sorting
 
 Choose the list button beside the search field to see the folder as a list with each item's **Name**, when it was **Modified** and its **Size** (for a folder, how many items it holds). Recent changes say **Yesterday**, **2 days ago** or **3 weeks ago**; older ones show the date.
@@ -48,17 +52,17 @@ Choose a column's name to sort by it, and choose it again to turn the order arou
 
 A click opens a file or folder. To work on several at once, choose **Select** beside the buttons at the top (or press and hold an item, or press **⌘A**, Ctrl+A on Windows and Linux). Every item then shows a tick box: click items to tick them, or hold **Shift** and click to tick everything between. **Select all** ticks the whole folder.
 
-A bar says how many are ticked, with what you can do with them: **Download** saves them (several come as one zip file), and **Share** sends files with your device's share sheet where it can. At the bottom, Files adds up how much the ticked files take. Choose **✕** or press **Esc** to stop selecting; opening another folder stops it too. On a phone, the buttons along the bottom act on the ticked items, and **Done** stops selecting.
+A bar says how many are ticked, with what you can do with them: **Download** saves them (several come as one zip file), and **Share** sends files with your device's share sheet where it can. At the bottom, Files adds up how much the ticked files take. Choose **✕** or press **Esc** to stop selecting; opening another folder stops it too. On a phone, tap **Select**: tap rows to tick them, **Select all** ticks the whole folder, the buttons along the bottom (where the tab bar was) act on the ticked items, and **Done** stops selecting.
 
 ### The right-click menu
 
 Right-click a file or folder (or select it and press **Shift+F10** or the Menu key) for everything you can do with it: **Open**, **Open with** an app that uses its folder, **Share…** (files, with your device's share sheet), **Copy link**, **Download**, **Rename…**, **Move to…**, **Duplicate** and **Move to Trash**. **Copy link** copies an address to the item; only people who can open its folder can use it. **Duplicate** makes a copy beside it, such as **Lease agreement copy.pdf**. While you're selecting, right-clicking a ticked item makes the menu act on all ticked items. In a folder you can only read, the options that change things are greyed out.
 
-On a phone, tap **•••** on any file or folder for the same options.
+On a phone, tap **•••** on any file or folder for the same options: **Open**, **Share** and **Download** across the top, then the rest, with **Move to Trash** on its own at the bottom.
 
 ### Move items to another folder
 
-Right-click an item and choose **Move to…**, or tick several and choose **Move to…** (on a phone, **Move** along the bottom), or open a file and choose **•••** › **Move to…**. Pick a folder in the list (it opens at the folder you're in, marked **current**) and choose **Move to** *folder*. **+ New folder** makes a folder inside the one you picked. You can also drag items onto a folder, or onto a place on the left.
+Right-click an item and choose **Move to…**, or tick several and choose **Move to…** (on a phone, **Move** along the bottom), or open a file and choose **•••** › **Move to…**. Pick a folder in the list (it opens at the folder you're in, marked **current**) and choose **Move to** *folder*. On a phone this fills the screen, with **Cancel** at the top and **New folder** beside **Move to** *folder* at the bottom. **+ New folder** makes a folder inside the one you picked. You can also drag items onto a folder, or onto a place on the left.
 
 Moving within the same disk is instant, and the message at the bottom has **Undo** to put them back. Moving to another disk, such as a network drive, or more than 1 GB, carries on in the background with a bar showing how far it got; the items leave where they were only once their copy is checked. If something with the same name is already there, Files asks whether to skip it, keep both (the moved one gets a number) or replace the one that's there (it goes to the Trash).
 
@@ -70,7 +74,7 @@ Trash only covers this computer. On a network drive, Files asks **Delete … for
 
 ### Get something back from the Trash
 
-Choose **Trash** on the left (on a phone, the **Trash** button above your files). It lists what you deleted, newest first, with the folder it came from, when you deleted it and how many days are left before it's deleted for good (30 in all). Choose **Restore** to put an item back where it was, or **Restore all**. If its folder is gone, Files makes it again; if something with the same name is there now, the restored one gets a number, such as **Lease (2).pdf**. Everyone has their own Trash: nobody else sees what you deleted.
+Choose **Trash** on the left (on a phone, the **Trash** button in the row of places). It lists what you deleted, newest first, with the folder it came from, when you deleted it and how many days are left before it's deleted for good (30 in all). Choose **Restore** to put an item back where it was (on a phone, the round arrow at the end of its row), or **Restore all**. If its folder is gone, Files makes it again; if something with the same name is there now, the restored one gets a number, such as **Lease (2).pdf**. Everyone has their own Trash: nobody else sees what you deleted.
 
 Items are deleted for good 30 days after you deleted them. To free the space sooner, choose **Empty trash**: Files says how many items and how much space, and asks first, because they can't be brought back. Only your own Trash is emptied.
 
@@ -82,7 +86,7 @@ If an app keeps its data in a folder (or a folder inside it), Files says so befo
 
 ## Make a folder
 
-Choose **New folder** at the top, type a name (or keep **Untitled folder**) and choose **Create**, or press Return. The new folder is selected so you can open it straight away.
+Choose **New folder** at the top (on a phone, **+** › **New folder**), type a name (or keep **Untitled folder**) and choose **Create**, or press Return. The new folder is selected so you can open it straight away.
 
 A name can't be empty, contain "/" or be very long, and there can't already be a file or folder with that name in the same place; Files tells you which one it is so you can choose another name. In places you can't change, such as App data, **New folder** and **Upload** are greyed out and say **This folder is read only**.
 
@@ -94,7 +98,7 @@ Files shows up to 200 results; if there are more, it says **Showing the first 20
 
 ## Upload files
 
-Open the folder you want them in, choose **Upload** and pick one or more files, or drag files from your computer onto the folder (Files says **Drop to upload to** and the folder's name). Folders can't be uploaded yet: pick the files inside instead.
+Open the folder you want them in, choose **Upload** (on a phone, **+** › **Upload**) and pick one or more files, or drag files from your computer onto the folder (Files says **Drop to upload to** and the folder's name). Folders can't be uploaded yet: pick the files inside instead.
 
 The **Uploads** panel shows each file: **Waiting**, how far along it is (for example **62% · 1.1 of 1.8 GB**) or **Done**, and about how long is left. Files go one at a time, in the order you chose them. When they're all done, the panel closes after a few seconds and says how many were uploaded. If there isn't enough space on the disk for a file (hlabs keeps 1 GB free), it says **Not enough space** and goes on to the next.
 

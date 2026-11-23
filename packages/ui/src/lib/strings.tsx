@@ -41,6 +41,10 @@ export interface UiStrings {
   done: string;
   /** A sheet's close button (US-PHONE-03). */
   close: string;
+  /** A sheet bar's way out (PhoneRedesignA_FilesMove, D-172). */
+  cancel: string;
+  /** The ••• button of a phone row: "More for Taxes". */
+  more: (name: string) => string;
   /** A sheet's grabber, for screen readers it's decorative; the close button closes it. */
   back: string;
 }
@@ -76,6 +80,8 @@ export const defaultStrings: UiStrings = {
   shared: 'Shared',
   done: 'done',
   close: 'Close',
+  cancel: 'Cancel',
+  more: (name) => `More for ${name}`,
   back: 'Back',
 };
 

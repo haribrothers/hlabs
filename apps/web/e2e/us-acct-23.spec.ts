@@ -7,7 +7,7 @@ test('US-ACCT-23 the preview opens in a new tab, disabled, and the invite still 
   context,
 }, info) => {
   await page.goto('/settings/users');
-  await page.getByRole('button', { name: 'Invite someone' }).click();
+  await page.getByRole('button', { name: 'Invite someone' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Invite someone' });
   await expect(dialog.getByRole('textbox', { name: 'Invite link' })).toHaveValue(/\/invite\//);
   if (process.env.HLABS_SHOTS)

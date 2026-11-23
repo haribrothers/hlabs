@@ -28,3 +28,12 @@ export async function homeFolder(page: Page, name: string, files: Record<string,
   }
   return { dir, path: `/home/${name}`, remove: () => rmSync(dir, { recursive: true, force: true }) };
 }
+
+/**
+ * New folder or Upload: a button in the toolbar on a computer; on a phone a row of the sheet "+" opens
+ * (PhoneRedesignA_Files, US-PHONE-25).
+ */
+export async function folderAction(page: Page, phone: boolean, name: 'New folder' | 'Upload') {
+  if (phone) await page.getByRole('button', { name: 'Add to this folder' }).click();
+  return page.getByRole('button', { name, exact: true });
+}

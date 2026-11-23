@@ -7,6 +7,7 @@ import { filesCopy as copy } from '../copy/files';
 import { useIsDesktop } from '../lib/use-media';
 import { useTRPC } from '../lib/trpc';
 import { FileGrid } from './file-grid';
+import { PhoneFileList } from './phone-file-list';
 import type { FilesMe } from './places';
 
 /** "Home › Documents" for `/home/Documents/a.pdf`; the tops of places by their names. */
@@ -28,17 +29,24 @@ export function RecentsView({
   const desktop = useIsDesktop();
   const recent = useQuery({ ...trpc.files.recent.queryOptions(), staleTime: 30_000, refetchInterval: 4 * 60_000 });
   const items = recent.data?.items ?? [];
-  const title = <h1 className="m-0 text-title-2">{copy.recents}</h1>;
+  const title = <h1 className={desktop ? 'm-0 text-title-2' : 'hl-p-sec-title'}>{copy.recents}</h1>;
   const content =
     recent.data && items.length === 0 ? (
       <p className="m-0 py-16 text-center text-body text-ink-muted">{copy.noRecents}</p>
-    ) : (
+    ) : desktop ? (
       <FileGrid
         items={items}
         label={copy.recents}
         accent={me.accent}
         onOpen={(e) => onOpenFile(e, items)}
-        openOnClick={!desktop}
+        below={(e) => folderLine(e.path)}
+      />
+    ) : (
+      <PhoneFileList
+        items={items}
+        label={copy.recents}
+        accent={me.accent}
+        onOpen={(e) => onOpenFile(e, items)}
         below={(e) => folderLine(e.path)}
       />
     );

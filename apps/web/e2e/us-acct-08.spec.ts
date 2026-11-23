@@ -10,7 +10,7 @@ test('US-ACCT-08 Security shows two-factor and the codes; Manage opens TwoFactor
   test.setTimeout(90_000);
   await finishOnboardingWithTwoFactor(page, request);
   await page.goto('/settings/account');
-  await expect(page.getByText('On · authenticator app')).toBeVisible();
+  await expect(page.getByText(/^On( · authenticator app)?$/)).toBeVisible();
   await expect(page.getByText('10 of 10 unused')).toBeVisible();
 
   const manage = page.getByRole('button', { name: 'Manage two-factor login' });

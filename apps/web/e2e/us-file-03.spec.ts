@@ -2,13 +2,13 @@
 import { expect, test } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { homeFolder } from './files';
+import { folderAction, homeFolder } from './files';
 
 test('US-FILE-03 New folder creates a folder and focuses it; a taken name is said inline', async ({ page }, info) => {
   const f = await homeFolder(page, `New folder ${info.project.name}`, { 'Bills/a.pdf': 'x' });
   try {
     await page.goto(`/files?path=${encodeURIComponent(f.path)}`);
-    await page.getByRole('button', { name: 'New folder' }).click();
+    await (await folderAction(page, info.project.name === 'phone', 'New folder')).click();
     const dialog = page.getByRole('dialog', { name: 'New folder' });
     const name = dialog.getByRole('textbox', { name: 'Name' });
     await expect(name).toHaveValue('Untitled folder');

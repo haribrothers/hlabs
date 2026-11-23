@@ -2,6 +2,7 @@
 // connects to (US-SYS-29), Beta updates (US-SYS-30), Restart hlabs (US-SYS-31) and the factory reset (US-SYS-37, 38).
 // "Terminal" and "API tokens" aren't built (13 Open questions), and AI access waits for its phase (D-036).
 import { EXCLUSIVE_JOB_KINDS, isFeatureEnabled } from '@hlabs/shared';
+import { FileDown, FlaskConical, Globe, RotateCcw, ScrollText, Sparkles, TriangleAlert } from '@hlabs/icons';
 import { Button, List, ListRow, Switch } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -14,9 +15,11 @@ import { handledGlobally } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useEventStream } from '../lib/use-event-stream';
+import { useIsDesktop } from '../lib/use-media';
 import { ConnectionsDialog } from './connections-dialog';
 import { FactoryResetDialog } from './factory-reset-dialog';
 import { HlabsLogs } from './hlabs-logs';
+import { RowEnd, RowIcon } from './phone-rows';
 
 /** How often a diagnostics job is asked about while it's built. */
 const JOB_POLL_MS = 1_000;
@@ -29,6 +32,8 @@ function fileName(res: Response): string {
 
 function Troubleshooting() {
   const client = useTRPCClient();
+  // A phone (PhoneRedesignA_Advanced): icon squares, and the rows that open something are buttons with a chevron.
+  const phone = !useIsDesktop();
   const [open, setOpen] = useState<'logs' | 'connections' | null>(null);
   const diagnostics = useMutation({
     mutationFn: async () => {
@@ -50,16 +55,28 @@ function Troubleshooting() {
   });
   return (
     <List label={copy.troubleshooting}>
+      {phone ? (
+        <ListRow
+          leading={<RowIcon icon={ScrollText} />}
+          title={copy.logs}
+          subtitle={copy.logsNote}
+          trailing={<RowEnd chevron />}
+          label={`${copy.view} ${copy.logs}`}
+          onPress={() => setOpen('logs')}
+        />
+      ) : (
+        <ListRow
+          title={copy.logs}
+          subtitle={copy.logsNote}
+          trailing={
+            <Button variant="secondary" size="sm" onClick={() => setOpen('logs')}>
+              {copy.view}
+            </Button>
+          }
+        />
+      )}
       <ListRow
-        title={copy.logs}
-        subtitle={copy.logsNote}
-        trailing={
-          <Button variant="secondary" size="sm" onClick={() => setOpen('logs')}>
-            {copy.view}
-          </Button>
-        }
-      />
-      <ListRow
+        leading={phone ? <RowIcon icon={FileDown} /> : undefined}
         title={copy.diagnostics}
         subtitle={copy.diagnosticsNote}
         trailing={
@@ -68,20 +85,31 @@ function Troubleshooting() {
           </Button>
         }
       />
-      <ListRow
-        title={copy.connections}
-        subtitle={copy.connectionsNote}
-        trailing={
-          <Button
-            variant="secondary"
-            size="sm"
-            aria-label={`${copy.view} ${copy.connections}`}
-            onClick={() => setOpen('connections')}
-          >
-            {copy.view}
-          </Button>
-        }
-      />
+      {phone ? (
+        <ListRow
+          leading={<RowIcon icon={Globe} />}
+          title={copy.connections}
+          subtitle={copy.connectionsNote}
+          trailing={<RowEnd chevron />}
+          label={`${copy.view} ${copy.connections}`}
+          onPress={() => setOpen('connections')}
+        />
+      ) : (
+        <ListRow
+          title={copy.connections}
+          subtitle={copy.connectionsNote}
+          trailing={
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-label={`${copy.view} ${copy.connections}`}
+              onClick={() => setOpen('connections')}
+            >
+              {copy.view}
+            </Button>
+          }
+        />
+      )}
       {open === 'logs' ? <HlabsLogs onClose={() => setOpen(null)} /> : null}
       {open === 'connections' ? <ConnectionsDialog onClose={() => setOpen(null)} /> : null}
     </List>
@@ -117,10 +145,12 @@ function Developer({ shippedPhase }: { shippedPhase?: number }) {
     },
   });
   const beta = status.data?.channel === 'beta';
+  const phone = !useIsDesktop();
   return (
     <List label={copy.developer}>
       {isFeatureEnabled('aiAccess', shippedPhase) ? (
         <ListRow
+          leading={phone ? <RowIcon icon={Sparkles} /> : undefined}
           title={copy.ai}
           subtitle={copy.aiNote}
           trailing={
@@ -131,6 +161,7 @@ function Developer({ shippedPhase }: { shippedPhase?: number }) {
         />
       ) : null}
       <ListRow
+        leading={phone ? <RowIcon icon={FlaskConical} /> : undefined}
         title={copy.beta}
         subtitle={copy.betaNote}
         trailing={
@@ -155,6 +186,7 @@ function DangerZone({ withReset, shippedPhase }: { withReset: boolean; shippedPh
     }
   });
   const exclusive = active.data?.items.find((j) => EXCLUSIVE.has(j.kind)) ?? null;
+  const phone = !useIsDesktop();
 
   const restart = async () => {
     await confirm({
@@ -172,6 +204,7 @@ function DangerZone({ withReset, shippedPhase }: { withReset: boolean; shippedPh
   return (
     <List label={copy.dangerZone} tone="danger">
       <ListRow
+        leading={phone ? <RowIcon icon={RotateCcw} /> : undefined}
         title={copy.restart}
         subtitle={exclusive ? copy.restartBlocked(jobNames[exclusive.kind] ?? exclusive.kind) : copy.restartNote}
         trailing={
@@ -187,6 +220,7 @@ function DangerZone({ withReset, shippedPhase }: { withReset: boolean; shippedPh
       />
       {withReset ? (
         <ListRow
+          leading={phone ? <RowIcon icon={TriangleAlert} /> : undefined}
           title={copy.reset}
           subtitle={copy.resetNote}
           trailing={

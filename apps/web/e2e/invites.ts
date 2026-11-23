@@ -7,7 +7,7 @@ export async function createInvite(
   opts: { name?: string; role?: 'Member' | 'Admin'; apps?: string[] } = {},
 ): Promise<string> {
   await page.goto('/settings/users');
-  await page.getByRole('button', { name: 'Invite someone' }).click();
+  await page.getByRole('button', { name: 'Invite someone' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Invite someone' });
   const link = dialog.getByRole('textbox', { name: 'Invite link' });
   await expect(link).toHaveValue(/\/invite\//);

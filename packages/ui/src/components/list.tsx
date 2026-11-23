@@ -37,6 +37,8 @@ export interface ListRowProps {
   onPress?: () => void;
   /** The button's tooltip, with `onPress`. */
   hint?: string;
+  /** The row's accessible name as a button or link, when its text isn't the best one ("View hlabs logs"). */
+  label?: string;
   /** Full-width content under the row, such as a Progress bar and a note. */
   below?: ReactNode;
   /** Something switched off, such as a disabled person: the leading visual fades and the title turns muted. */
@@ -51,6 +53,7 @@ export function ListRow({
   href,
   onPress,
   hint,
+  label,
   below,
   dimmed = false,
 }: ListRowProps) {
@@ -68,13 +71,19 @@ export function ListRow({
   const className = cn('hl-list-row', below && 'hl-list-row-below', dimmed && 'hl-list-row-dimmed');
   if (onPress) {
     return (
-      <button type="button" title={hint} onClick={onPress} className={`${className} hl-row-link hl-row-button`}>
+      <button
+        type="button"
+        title={hint}
+        aria-label={label}
+        onClick={onPress}
+        className={`${className} hl-row-link hl-row-button`}
+      >
         {inner}
       </button>
     );
   }
   return href ? (
-    <a href={href} className={`${className} hl-row-link`}>
+    <a href={href} aria-label={label} className={`${className} hl-row-link`}>
       {inner}
     </a>
   ) : (

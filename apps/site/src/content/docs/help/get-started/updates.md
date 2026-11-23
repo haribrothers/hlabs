@@ -30,7 +30,7 @@ If hlabs is busy with something that can't be interrupted, such as a restore, **
 
 ## Update your apps
 
-Under **App updates**, each app with a newer version shows the version you have and the new one, for example **1.2 → 1.3**. Choose **What's new** to read what changed, and **Update** to install it; the row shows how far the update has got, and goes away when it's done. Your app's data stays as it is. With more than one, **Update all** updates them one after another. The App Store's **Updates** shows the same list, with the updates of the last two weeks.
+Under **App updates**, each app with a newer version shows the version you have and the new one, for example **1.2 → 1.3**. Choose **What's new** to read what changed, and **Update** to install it; the row shows how far the update has got, and goes away when it's done. Your app's data stays as it is. With more than one, **Update all** updates them one after another. The App Store's **Updates** shows the same list, with the updates of the last two weeks. On a phone, **Update all** is at the top right of the App Store's **Updates**, and each app has a small **Update** button at the end of its row.
 
 If an app's new version doesn't start, hlabs puts the version you had back and the row says **Rolled back**. Choose it to see what happened and try again. When there's nothing to update, it says **All apps are up to date**.
 

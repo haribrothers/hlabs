@@ -38,6 +38,8 @@ function networkPeak(points: UsagePoint[], range: UsageRange) {
 }
 
 const SIZE = { width: 960, height: 180 } as const;
+/** On a phone the chart is drawn near the size it shows at, so its labels stay readable. */
+const PHONE_SIZE = { width: 340, height: 160 } as const;
 
 export function MainChart({
   metric,
@@ -47,7 +49,10 @@ export function MainChart({
   memory,
   storage,
   memTotalBytes,
+  phone = false,
 }: {
+  /** A phone (US-PHONE-27): drawn about as wide as the screen, in an inset box. */
+  phone?: boolean;
   metric: TileId;
   /** The host's points over the range. */
   points: UsagePoint[];
@@ -61,6 +66,7 @@ export function MainChart({
   const labels = known.map((p) => timeLabel(p.ts, range));
   const name = { cpu: copy.cpu, memory: copy.memory, network: copy.network, storage: copy.storage }[metric];
   const title = copy.chartTitle(name, copy.over[range]);
+  const size = phone ? PHONE_SIZE : SIZE;
 
   let chart: ReactNode = null;
   if (metric === 'storage') {
@@ -86,7 +92,7 @@ export function MainChart({
         labels={cpu.map((p) => timeLabel(p.ts, range))}
         max={100}
         formatValue={formatPercent}
-        {...SIZE}
+        {...size}
       />
     ) : null;
   } else if (metric === 'network') {
@@ -100,7 +106,7 @@ export function MainChart({
         ]}
         labels={labels}
         formatValue={formatRate}
-        {...SIZE}
+        {...size}
       />
     ) : null;
   } else if (memory && memory.ts.length) {
@@ -115,14 +121,14 @@ export function MainChart({
         labels={memory.ts.map((ts) => timeLabel(ts, range))}
         max={memTotalBytes || undefined}
         formatValue={formatMemory}
-        {...SIZE}
+        {...size}
       />
     );
   }
 
   return (
     <section
-      className={`rounded-lg bg-surface-row p-4 transition-opacity ${loading ? 'opacity-50' : ''}`}
+      className={`${phone ? 'hl-p-card' : 'rounded-lg bg-surface-row p-4'} transition-opacity ${loading ? 'opacity-50' : ''}`}
       aria-busy={loading || undefined}
     >
       {chart ?? (

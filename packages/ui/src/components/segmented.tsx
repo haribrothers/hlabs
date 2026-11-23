@@ -8,10 +8,12 @@ export interface SegmentedProps {
   defaultValue?: string;
   onChange?: (value: string) => void;
   'aria-label'?: string;
+  /** True: the iOS segmented control across the whole width (a phone page's choices, D-172). */
+  fill?: boolean;
 }
 
 /** Two to five mutually exclusive options that apply at once (a radio group). */
-export function Segmented({ options, value, defaultValue, onChange, ...aria }: SegmentedProps) {
+export function Segmented({ options, value, defaultValue, onChange, fill = false, ...aria }: SegmentedProps) {
   const [inner, setInner] = useState(defaultValue ?? options[0]?.value);
   const current = value ?? inner;
   const reduce = useReduceMotion();
@@ -43,7 +45,12 @@ export function Segmented({ options, value, defaultValue, onChange, ...aria }: S
   };
 
   return (
-    <div role="radiogroup" aria-label={aria['aria-label']} className="hl-seg" onKeyDown={onKeyDown}>
+    <div
+      role="radiogroup"
+      aria-label={aria['aria-label']}
+      className={fill ? 'hl-seg hl-seg-fill' : 'hl-seg'}
+      onKeyDown={onKeyDown}
+    >
       {options.map((o, i) => {
         const checked = o.value === current;
         return (

@@ -17,6 +17,8 @@ export const accountCopy = {
   roles: { admin: 'Admin', member: 'Member' },
   who: (username: string, role: string) => `${username} · ${role}`,
   editProfile: 'Edit profile',
+  /** The bar's button on a phone (PhoneRedesignA_Account); its accessible name stays "Edit profile". */
+  edit: 'Edit',
   profileTitle: 'Edit profile',
   displayName: 'Display name',
   enterName: 'Enter a name',

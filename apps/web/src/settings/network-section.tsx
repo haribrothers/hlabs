@@ -1,7 +1,7 @@
 // Settings › Network & remote access, Home network (US-SYS-01): the local address (and its home.arpa name, D-105),
 // HTTPS, web ports, the local DNS server (US-SYS-06) and every app's address. Follows app and system changes without
 // polling.
-import { AppLogo, appTileLook } from '@hlabs/icons';
+import { AppLogo, appTileLook, House, Lock, Network } from '@hlabs/icons';
 import type { NetworkStatus } from '@hlabs/api';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { Badge, Button, List, ListRow, tokens } from '@hlabs/ui';
@@ -13,6 +13,7 @@ import { networkCopy as copy } from '../copy/network';
 import type { HomeApp } from '../home/home-app';
 import { useTRPC } from '../lib/trpc';
 import { useIsDesktop } from '../lib/use-media';
+import { RowEnd, RowIcon } from './phone-rows';
 import { DnsServerRows } from './dns-server';
 import { TailscaleRow, useRemoteStatus } from './remote-access';
 import { SubnetRouterOption, SubnetRouterRows } from './subnet-router';
@@ -58,13 +59,25 @@ function HomeNetwork({
   onChangePorts: () => void;
 }) {
   const { home, ports } = status;
+  // A phone (PhoneRedesignA_Network): icon squares, the address as the row's value, Web ports a row you tap.
+  const phone = !useIsDesktop();
   return (
     <List label={copy.homeNetwork}>
       <ListRow
-        title={copy.localAddress}
+        leading={phone ? <RowIcon icon={House} /> : undefined}
+        title={
+          phone ? (
+            <span className="flex items-baseline justify-between gap-2">
+              {copy.localAddress}
+              <span className="hl-p-row-value font-mono">{bare(home.localAddress)}</span>
+            </span>
+          ) : (
+            copy.localAddress
+          )
+        }
         subtitle={
           <span className="flex flex-col gap-0.5">
-            {mono(bare(home.localAddress))}
+            {phone ? null : mono(bare(home.localAddress))}
             <span>{copy.dnsName(bare(home.dnsAddress))}</span>
             {home.published ? null : (
               <>
@@ -87,6 +100,7 @@ function HomeNetwork({
         }
       />
       <ListRow
+        leading={phone ? <RowIcon icon={Lock} /> : undefined}
         title={copy.https}
         subtitle={copy.httpsHint}
         trailing={
@@ -98,15 +112,26 @@ function HomeNetwork({
           ) : null
         }
       />
-      <ListRow
-        title={copy.webPorts}
-        subtitle={portsLine(ports)}
-        trailing={
-          <Button variant="secondary" size="sm" onClick={onChangePorts}>
-            {copy.change}
-          </Button>
-        }
-      />
+      {phone ? (
+        <ListRow
+          leading={<RowIcon icon={Network} />}
+          title={copy.webPorts}
+          subtitle={portsLine(ports)}
+          trailing={<RowEnd chevron />}
+          label={`${copy.change} ${copy.webPorts.toLowerCase()}`}
+          onPress={onChangePorts}
+        />
+      ) : (
+        <ListRow
+          title={copy.webPorts}
+          subtitle={portsLine(ports)}
+          trailing={
+            <Button variant="secondary" size="sm" onClick={onChangePorts}>
+              {copy.change}
+            </Button>
+          }
+        />
+      )}
       <DnsServerRows dns={status.dns} />
     </List>
   );

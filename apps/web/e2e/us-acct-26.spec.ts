@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
 import { createMember, signedInAs, removeFakeApps } from './invites';
 import { finishOnboarding } from './onboarding';
+import { peopleAction, peopleRow } from './people';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
@@ -24,7 +25,7 @@ test("US-ACCT-26 removing an app takes its tile off the member's open Home withi
   await expect(tile).toBeVisible();
 
   await page.goto('/settings/users');
-  await page.locator('.hl-list-row', { hasText: name }).getByRole('button', { name: 'Apps access' }).click();
+  await peopleAction(page, info, peopleRow(page, name), 'Apps access');
   const dialog = page.getByRole('dialog', { name: /What Anu can open/ });
   await dialog.getByRole('switch', { name: 'Shared demo' }).click();
   await dialog.getByRole('button', { name: 'Save' }).click();
@@ -32,7 +33,7 @@ test("US-ACCT-26 removing an app takes its tile off the member's open Home withi
 
   await expect(tile).toBeHidden({ timeout: 2_000 });
   // And back: it reappears, no new log-in.
-  await page.locator('.hl-list-row', { hasText: name }).getByRole('button', { name: 'Apps access' }).click();
+  await peopleAction(page, info, peopleRow(page, name), 'Apps access');
   await page
     .getByRole('dialog', { name: /What Anu can open/ })
     .getByRole('switch', { name: 'Shared demo' })

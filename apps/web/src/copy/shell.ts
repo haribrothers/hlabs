@@ -33,5 +33,7 @@ export const uiStrings: Partial<UiStrings> = {
   addToDock: 'Add to Dock',
   dismiss: 'Dismiss',
   close: 'Close',
+  cancel: 'Cancel',
+  more: (name: string) => `More for ${name}`,
   back: 'Back',
 };

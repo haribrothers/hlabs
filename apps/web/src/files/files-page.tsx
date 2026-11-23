@@ -17,6 +17,7 @@ import { OpenWith } from './open-with';
 import { useFileUploads } from './use-file-uploads';
 import { SearchField, useDebouncedQuery } from './search';
 import { FilesChips, FilesSidebar, useDrives } from './sidebar';
+import { FilesPhoneHeader } from './phone-header';
 import { ConnectDriveDialog } from './connect-drive-dialog';
 import { DisconnectDriveDialog } from './disconnect-drive-dialog';
 import { useTRPCClient } from '../lib/trpc';
@@ -128,7 +129,7 @@ export function FilesPage({ at }: FilesPageProps) {
         onOpenFile={onOpenFile}
         focusPath={focusPath}
         searchQuery={searchQuery}
-        // A phone shows the grid: its list layout is US-PHONE-16 (phase 9), and PhoneFilesMore has no toggle.
+        // A phone shows its own inset list (US-PHONE-25) and has no toggle.
         view={desktop ? prefs.view : 'grid'}
         sort={prefs.sort}
         onSort={prefs.sortBy}
@@ -162,6 +163,11 @@ export function FilesPage({ at }: FilesPageProps) {
         )}
         onRetryDrive={async (locationId) => {
           await trpcClient.storage.locations.reconnect.mutate({ locationId });
+        }}
+        places={desktop ? undefined : <FilesChips me={filesMe} at={at} />}
+        onAdd={{
+          onNewFolder: () => setNewFolder(true),
+          onUpload: (folderName) => uploads.choose(folderPath, folderName),
         }}
         onDropFiles={(data, folderName) => uploads.drop(data, folderPath, folderName)}
         notice={(folderName) => uploads.notice(folderPath, folderName)}
@@ -247,11 +253,16 @@ export function FilesPage({ at }: FilesPageProps) {
 
   if (!desktop) {
     return (
-      <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
-        <p className="m-0 text-display" aria-hidden="true">
-          {copy.title}
-        </p>
-        <FilesChips me={filesMe} at={at} />
+      // PhoneRedesignA_Files: the folder brings its own bar, title, search and places; Recents and Trash have them here.
+      <div className="flex min-h-0 w-full flex-1 flex-col">
+        {at.view === 'folder' ? null : (
+          <>
+            <FilesPhoneHeader />
+            <div className="mt-3 mb-4">
+              <FilesChips me={filesMe} at={at} />
+            </div>
+          </>
+        )}
         {main}
         {dialogs}
       </div>

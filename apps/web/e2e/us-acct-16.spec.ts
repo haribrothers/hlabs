@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
 import { createMember, signedInAs } from './invites';
 import { finishOnboarding } from './onboarding';
+import { peopleAction, peopleRow } from './people';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
@@ -17,9 +18,8 @@ test('US-ACCT-16 delete a member: they leave Users and their browser is signed o
   const anu = await signedInAs(browser, info.project.use, FIRST_RUN_URL, member);
 
   await page.goto('/settings/users');
-  const row = page.locator('.hl-list-row', { hasText: 'Anu' });
-  await row.getByRole('button', { name: 'More options for Anu' }).click();
-  await page.getByRole('menuitem', { name: 'Delete…' }).click();
+  const row = peopleRow(page, 'Anu');
+  await peopleAction(page, info, row, 'Delete…', true);
   const dialog = page.getByRole('alertdialog', { name: 'Delete Anu?' });
   await expect(dialog.getByRole('checkbox', { name: /Also delete their Home folder/ })).not.toBeChecked();
   if (process.env.HLABS_SHOTS)

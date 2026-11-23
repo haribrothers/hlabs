@@ -15,6 +15,8 @@ Four tiles sum it up:
 - **Storage:** space used on the disk where hlabs keeps your files (an external drive, if that's where they are).
 - **Network:** data coming in each second, and going out.
 
+On a phone the tiles are two to a row, and CPU, Memory and Storage show how full they are as a bar; the time range sits across the screen under the title.
+
 ## Look back in time
 
 Below the tiles, a chart shows how busy the processor has been, and its highest point, for example **Peak 46% at 16:32**. Choose a tile to chart that instead:
@@ -34,7 +36,7 @@ Family members only see Usage if their admin turned on **See live usage** for me
 
 Below the chart, a table lists your apps with their **CPU**, **Memory**, **Network** and **Status**. CPU is each app's share of the whole computer, on the same scale as the CPU tile; Network is data in and out together.
 
-The table starts with the app using the most memory at the top. Choose a column's name to sort by it, most first (App and Status go A to Z); choose it again to reverse the order. hlabs remembers your choice on this browser. Numbers update every few seconds, but the rows only change places every 10 seconds, so they don't move while you're reading. On a phone, the table shows the app, the column you sorted by and its status.
+The table starts with the app using the most memory at the top. Choose a column's name to sort by it, most first (App and Status go A to Z); choose it again to reverse the order. hlabs remembers your choice on this browser. Numbers update every few seconds, but the rows only change places every 10 seconds, so they don't move while you're reading. On a phone, the table shows the app, the column you sorted by and its status, under a heading that says what it's sorted by, such as **Apps by memory**.
 
 Apps that aren't running show **—** instead of numbers and always sit below the running ones. Their status says why: **Stopped**, **Starting**, **Restarting**, **Updating**, or **Error** if the app isn't responding (see [Manage an app](/help/apps/manage-apps/) to restart it or read its logs). If you haven't installed any apps yet, the table says **No apps yet**; choose **Browse the App Store** to find some.
 

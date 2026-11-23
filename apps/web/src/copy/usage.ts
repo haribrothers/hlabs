@@ -45,6 +45,8 @@ export const usageCopy = {
   noValue: '—',
   /** The per-app table (US-USE-06, US-USE-07). */
   appsTable: 'Apps',
+  /** Over the table on a phone (US-PHONE-27): "Apps by memory". */
+  appsBy: (column: string) => `Apps by ${column}`,
   columns: { app: 'App', cpu: 'CPU', memory: 'Memory', network: 'Network', status: 'Status' },
   noApps: 'No apps yet',
   browseStore: 'Browse the App Store',

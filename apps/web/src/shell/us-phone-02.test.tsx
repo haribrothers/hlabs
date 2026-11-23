@@ -37,7 +37,8 @@ describe('US-PHONE-02', () => {
   it('on a phone controls get 44 px hit areas, rows 48 px, and fields at least 16 px text', () => {
     const phone = ui.slice(ui.indexOf('Touch (US-PHONE-02)'));
     expect(phone).toMatch(/\.hl-btn-sm \{[^}]*height: var\(--size-control\)/);
-    expect(phone).toMatch(/\.hl-switch \{[^}]*height: var\(--size-control\)/);
+    // The switch: a 44px target with its 32px track drawn inside (::before).
+    expect(phone).toMatch(/\.hl-switch,\s*\.hl-switch\[aria-checked='true'\] \{[^}]*height: var\(--size-control\)/);
     // Rows are 48px (size-row, D-172: 44–48px rows), above the 44px target.
     expect(phone).toMatch(/\.hl-list-row \{\s*min-height: var\(--size-row\)/);
     expect(ui).toMatch(/\.hl-p-row \{[^}]*min-height: var\(--size-row\)/s);

@@ -263,7 +263,7 @@ export function FilesChips({ me, at }: { me: { role: 'admin' | 'member'; canSeeS
     nav.current?.querySelector('[aria-current="page"]')?.scrollIntoView?.({ inline: 'nearest', block: 'nearest' });
   }, [active]);
   return (
-    <nav ref={nav} aria-label={copy.places} className="-mx-4 shrink-0 overflow-x-auto px-4">
+    <nav ref={nav} aria-label={copy.places} className="-mx-4 shrink-0 overflow-x-auto px-4 [scrollbar-width:none]">
       <ul className="m-0 flex list-none gap-2 p-0">
         {rows.map((r) => (
           <li key={r.key} className="shrink-0">
@@ -271,8 +271,9 @@ export function FilesChips({ me, at }: { me: { role: 'admin' | 'member'; canSeeS
               to="/files"
               search={r.path === null ? { view: r.view ?? 'recents' } : { path: r.path }}
               aria-current={active === r.key ? 'page' : undefined}
-              className="hl-focus inline-flex min-h-11 items-center rounded-pill bg-surface-control px-4 text-body text-ink no-underline aria-[current=page]:bg-fill-primary aria-[current=page]:font-semibold aria-[current=page]:text-ink-on-light"
+              className="hl-p-chip"
             >
+              {r.view === 'trash' ? <Trash2 aria-hidden {...iconDefaults} /> : null}
               {r.label}
             </Link>
           </li>

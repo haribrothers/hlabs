@@ -2,9 +2,9 @@
 // a share address) or an external drive; "Another hlabs" waits for the Backup receiver app (D-132). A six-word
 // encryption password is made when the dialog opens, shown with Copy and the warning, and forgotten on Cancel.
 // "Test connection" checks within 20 s; backups already there ask for their own password instead.
-import { AlertTriangle, Copy, Info, iconDefaults } from '@hlabs/icons';
+import { AlertTriangle, Check, Copy, Info, iconDefaults } from '@hlabs/icons';
 import { dicewarePassword, formatBytes } from '@hlabs/shared';
-import { Button, ModalDialog, TextField, cn } from '@hlabs/ui';
+import { Button, InsetRowButton, ModalDialog, TextField, cn, useIsPhone } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState, type ReactNode } from 'react';
 import { backupsCopy as copy } from '../copy/backups';
@@ -61,6 +61,18 @@ function Radio({
   title: ReactNode;
   line?: ReactNode;
 }) {
+  // On a phone (PhoneRedesignA_BackupAdd): an inset row with a checkmark at the right when chosen.
+  if (useIsPhone())
+    return (
+      <InsetRowButton
+        role="radio"
+        aria-checked={checked}
+        onClick={onSelect}
+        title={title}
+        subtitle={line}
+        trailing={checked ? <Check aria-hidden {...iconDefaults} className="hl-p-check" /> : undefined}
+      />
+    );
   return (
     <button
       type="button"
@@ -192,6 +204,19 @@ export function AddDestinationDialog({ onClose }: { onClose: () => void }) {
     changed();
   };
   const types: Kind[] = ['cloud', 'network', 'external'];
+  const phone = useIsPhone();
+  /** A labelled list of choices: an inset group on a phone, a box on desktop. */
+  const choices = (label: string, id: string, rows: ReactNode) =>
+    phone ? (
+      <div className="hl-p-group-wrap">
+        <span id={id} className="hl-p-label">
+          {label}
+        </span>
+        <div role="radiogroup" aria-labelledby={id} className="hl-p-group">
+          {rows}
+        </div>
+      </div>
+    ) : null;
 
   return (
     <ModalDialog
@@ -201,6 +226,8 @@ export function AddDestinationDialog({ onClose }: { onClose: () => void }) {
       sheetOnPhone
       width="min(640px, 100%)"
       title={copy.addTitle}
+      // A phone: Cancel in the sheet's bar, Test connection and Add destination stacked at the bottom (US-PHONE-26).
+      sheetBar={phone ? { cancelLabel: copy.cancel } : undefined}
       actions={
         <div className="flex w-full flex-col gap-3 md:flex-row md:items-center md:justify-end">
           {result && 'ok' in result ? (
@@ -211,9 +238,11 @@ export function AddDestinationDialog({ onClose }: { onClose: () => void }) {
               {copy.connected}
             </p>
           ) : null}
-          <Button variant="secondary" onClick={onClose} disabled={busy}>
-            {copy.cancel}
-          </Button>
+          {phone ? null : (
+            <Button variant="secondary" onClick={onClose} disabled={busy}>
+              {copy.cancel}
+            </Button>
+          )}
           <Button
             variant="secondary"
             onClick={() => test.mutate()}
@@ -229,24 +258,40 @@ export function AddDestinationDialog({ onClose }: { onClose: () => void }) {
       }
     >
       <div className="flex flex-col gap-4 text-ink">
-        <div role="radiogroup" aria-label={copy.type} className="grid gap-2.5 md:grid-cols-3">
-          {types.map((k) => (
-            <button
-              key={k}
-              type="button"
-              role="radio"
-              aria-checked={kind === k}
-              onClick={() => pick(k)}
-              className={cn(
-                'hl-focus flex min-h-13 cursor-pointer flex-col items-start gap-1 rounded-lg border-2 border-solid bg-surface-input px-3.5 py-3 text-left font-sans',
-                kind === k ? 'border-accent' : 'border-transparent',
-              )}
-            >
-              <span className="text-body font-semibold text-ink">{copy.types[k].name}</span>
-              <span className="text-body-sm text-ink-muted">{copy.types[k].line}</span>
-            </button>
-          ))}
-        </div>
+        {phone ? (
+          choices(
+            copy.type,
+            'dest-type',
+            types.map((k) => (
+              <Radio
+                key={k}
+                checked={kind === k}
+                onSelect={() => pick(k)}
+                title={copy.types[k].name}
+                line={copy.types[k].line}
+              />
+            )),
+          )
+        ) : (
+          <div role="radiogroup" aria-label={copy.type} className="grid gap-2.5 md:grid-cols-3">
+            {types.map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={kind === k}
+                onClick={() => pick(k)}
+                className={cn(
+                  'hl-focus flex min-h-13 cursor-pointer flex-col items-start gap-1 rounded-lg border-2 border-solid bg-surface-input px-3.5 py-3 text-left font-sans',
+                  kind === k ? 'border-accent' : 'border-transparent',
+                )}
+              >
+                <span className="text-body font-semibold text-ink">{copy.types[k].name}</span>
+                <span className="text-body-sm text-ink-muted">{copy.types[k].line}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {kind === 'cloud' ? (
           <>
@@ -293,9 +338,28 @@ export function AddDestinationDialog({ onClose }: { onClose: () => void }) {
 
         {kind === 'network' ? (
           <>
-            <div className="flex flex-col gap-2">
-              <span className="text-label">{copy.chooseDrive}</span>
-              {network.length ? (
+            <div className={phone ? 'contents' : 'flex flex-col gap-2'}>
+              {phone ? null : <span className="text-label">{copy.chooseDrive}</span>}
+              {network.length && phone ? (
+                choices(
+                  copy.chooseDrive,
+                  'dest-network',
+                  network.map((l) => (
+                    <Radio
+                      key={l.id}
+                      checked={locationId === l.id}
+                      onSelect={() => {
+                        setLocationId(l.id);
+                        setAddress('');
+                        setExisting(false);
+                        changed();
+                      }}
+                      title={l.name}
+                      line={l.kind.toUpperCase()}
+                    />
+                  )),
+                )
+              ) : network.length ? (
                 <div
                   role="radiogroup"
                   aria-label={copy.chooseDrive}
@@ -359,9 +423,27 @@ export function AddDestinationDialog({ onClose }: { onClose: () => void }) {
 
         {kind === 'external' ? (
           <>
-            <div className="flex flex-col gap-2">
-              <span className="text-label">{copy.chooseExternal}</span>
-              {drives.data?.drives.length ? (
+            <div className={phone ? 'contents' : 'flex flex-col gap-2'}>
+              {phone ? null : <span className="text-label">{copy.chooseExternal}</span>}
+              {drives.data?.drives.length && phone ? (
+                choices(
+                  copy.chooseExternal,
+                  'dest-external',
+                  drives.data.drives.map((d) => (
+                    <Radio
+                      key={d.path}
+                      checked={drivePath === d.path}
+                      onSelect={() => {
+                        setDrivePath(d.path);
+                        setExisting(false);
+                        changed();
+                      }}
+                      title={d.name}
+                      line={copy.free(formatBytes(d.freeBytes))}
+                    />
+                  )),
+                )
+              ) : drives.data?.drives.length ? (
                 <div
                   role="radiogroup"
                   aria-label={copy.chooseExternal}
@@ -410,6 +492,39 @@ export function AddDestinationDialog({ onClose }: { onClose: () => void }) {
               error={result && 'error' in result && result.error === copy.wrongRepoPassword ? result.error : undefined}
               onChange={(e) => (setTheirPassword(e.target.value), changed())}
             />
+          </>
+        ) : phone ? (
+          // PhoneRedesignA_BackupAdd: the password in an inset box with Copy at its right, the warning under it.
+          <>
+            <div className="hl-p-group-wrap">
+              <span id="enc-label" className="hl-p-label">
+                {copy.encryptionPassword}
+              </span>
+              <div className="hl-p-group">
+                <div className="hl-p-row">
+                  <textarea
+                    aria-labelledby="enc-label"
+                    readOnly
+                    rows={2}
+                    value={generated}
+                    className="hl-p-input hl-p-secret font-mono"
+                  />
+                  <button
+                    type="button"
+                    className="hl-p-tbtn hl-focus -mr-2"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(generated).then(() => setCopied(true));
+                    }}
+                  >
+                    {copied ? copy.copied : copy.copy}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p className="m-0 flex gap-2.5 text-footnote text-ink-muted">
+              <AlertTriangle aria-hidden {...iconDefaults} className="mt-0.5 size-4.5 shrink-0 text-warning" />
+              {copy.saveWarning}
+            </p>
           </>
         ) : (
           <>

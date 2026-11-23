@@ -3,7 +3,7 @@
 // selects, a double-click, Enter or › opens; on a phone a tap opens. "Use <folder>" takes the selected folder, or the
 // open one; a folder the app writes to can't be on a read-only place. "+ New folder" makes one here and selects it.
 // What's chosen is sent as the install's `mounts` (the daemon checks it again).
-import { ChevronRight, iconDefaults, Lock, X } from '@hlabs/icons';
+import { ChevronLeft, ChevronRight, FolderPlus, iconDefaults, Lock } from '@hlabs/icons';
 import { FileIcon } from '@hlabs/icons/files';
 import { Button, ModalDialog, cn } from '@hlabs/ui';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -123,6 +123,13 @@ export function FolderPicker({
     );
   };
 
+  const readOnlyLine = blocked ? (
+    <p role="status" className="m-0 flex items-center justify-center gap-1.5 text-body-sm text-ink">
+      <Lock aria-hidden {...iconDefaults} className="size-3.5" />
+      {copy.readOnly}
+    </p>
+  ) : null;
+
   // Arrow keys move between folders, Enter opens (US-FILE-25); Escape is the dialog's.
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const options = [...(list.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])];
@@ -151,56 +158,64 @@ export function FolderPicker({
         tall
         width="min(760px, 100%)"
         title={
-          <span className="flex items-start gap-3">
-            <span className="flex min-w-0 flex-1 flex-col gap-1">
-              <span>{copy.title(appName)}</span>
-              <span className="text-body-sm font-normal text-ink-muted">
-                {copy.forLine(folder.label, installCopy.folderMode[folder.mode])}
+          desktop ? (
+            <span className="flex items-start gap-3">
+              <span className="flex min-w-0 flex-1 flex-col gap-1">
+                <span>{copy.title(appName)}</span>
+                <span className="text-body-sm font-normal text-ink-muted">
+                  {copy.forLine(folder.label, installCopy.folderMode[folder.mode])}
+                </span>
               </span>
             </span>
-            {/* On a phone the sheet closes from its corner, leaving New folder and Use side by side (PhoneFolderPicker). */}
-            {desktop ? null : (
-              <button
-                type="button"
-                aria-label={filesCopy.cancel}
-                onClick={onClose}
-                className="hl-focus flex size-11 shrink-0 items-center justify-center rounded-pill border-0 bg-surface-control text-ink"
-              >
-                <X aria-hidden {...iconDefaults} className="size-4" />
-              </button>
-            )}
-          </span>
+          ) : (
+            // PhoneRedesignA_FolderPicker: "Choose a folder" in the bar; the app is in its name and the line under it.
+            <>
+              <span className="sr-only">{copy.title(appName)}</span>
+              <span aria-hidden>{copy.phoneTitle}</span>
+            </>
+          )
         }
+        sheetBar={{ cancelLabel: filesCopy.cancel }}
         actions={
-          <div className="flex w-full flex-wrap items-center gap-3">
-            {blocked ? (
-              <p
-                role="status"
-                className="m-0 flex items-center justify-center gap-1.5 text-body-sm text-ink max-md:order-first max-md:w-full"
+          desktop ? (
+            <div className="flex w-full flex-wrap items-center gap-3">
+              {readOnlyLine}
+              <Button
+                variant="secondary"
+                onClick={() => setMaking(true)}
+                disabled={!first || readOnly}
+                className="order-first mr-auto shrink-0"
               >
-                <Lock aria-hidden {...iconDefaults} className="size-3.5" />
-                {copy.readOnly}
-              </p>
-            ) : null}
-            <Button
-              variant="secondary"
-              onClick={() => setMaking(true)}
-              disabled={!first || readOnly}
-              className="shrink-0 md:order-first md:mr-auto"
-            >
-              {copy.newFolder}
-            </Button>
-            {desktop ? (
+                {copy.newFolder}
+              </Button>
               <Button variant="secondary" onClick={onClose}>
                 {filesCopy.cancel}
               </Button>
-            ) : null}
-            <Button onClick={use} disabled={!first?.location || blocked} className="min-w-0 truncate max-md:flex-1">
-              {copy.use(chosenName)}
-            </Button>
-          </div>
+              <Button onClick={use} disabled={!first?.location || blocked} className="min-w-0 truncate">
+                {copy.use(chosenName)}
+              </Button>
+            </div>
+          ) : (
+            <>
+              {readOnlyLine}
+              <div className="hl-sheet-actions-row">
+                <Button variant="secondary" onClick={() => setMaking(true)} disabled={!first || readOnly}>
+                  <FolderPlus aria-hidden {...iconDefaults} className="size-5" />
+                  {filesCopy.newFolder}
+                </Button>
+                <Button onClick={use} disabled={!first?.location || blocked} className="min-w-0 truncate">
+                  {copy.use(chosenName)}
+                </Button>
+              </div>
+            </>
+          )
         }
       >
+        {desktop ? null : (
+          <p className="hl-sheet-sub">
+            {copy.phoneFor(appName, copy.forLine(folder.label, installCopy.folderMode[folder.mode]))}
+          </p>
+        )}
         <div className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row md:gap-5">
           <Places places={places} current={place?.key ?? null} desktop={desktop} onOpen={(p) => open(p)} />
           <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
@@ -211,7 +226,11 @@ export function FolderPicker({
               aria-label={copy.folders(here)}
               aria-busy={q.isPending || undefined}
               onKeyDown={onKeyDown}
-              className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto rounded-lg bg-surface-input p-1.5"
+              className={
+                desktop
+                  ? 'flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto rounded-lg bg-surface-input p-1.5'
+                  : 'hl-p-group flex flex-col'
+              }
             >
               {q.isError ? (
                 <p role="alert" className="m-auto p-6 text-center text-body-sm text-ink">
@@ -239,12 +258,21 @@ export function FolderPicker({
                       data-path={f.path}
                       onClick={() => (desktop ? setSelected(f.name) : open(f.path))}
                       onDoubleClick={() => open(f.path)}
-                      className={cn(
-                        'hl-focus flex min-h-11 cursor-pointer select-none items-center gap-3 rounded-md py-0 pl-3.5 pr-1.5 text-body text-ink hover:bg-surface-control',
-                        isSelected && 'bg-accent-wash hover:bg-accent-wash',
-                      )}
+                      className={
+                        desktop
+                          ? cn(
+                              'hl-focus flex min-h-11 cursor-pointer select-none items-center gap-3 rounded-md py-0 pl-3.5 pr-1.5 text-body text-ink hover:bg-surface-control',
+                              isSelected && 'bg-accent-wash hover:bg-accent-wash',
+                            )
+                          : 'hl-p-pick-row'
+                      }
                     >
-                      <FileIcon folder path={f.path} accent={me?.appearance.accent as FilesMe['accent']} size={24} />
+                      <FileIcon
+                        folder
+                        path={f.path}
+                        accent={me?.appearance.accent as FilesMe['accent']}
+                        size={desktop ? 24 : 28}
+                      />
                       <span className="min-w-0 flex-1 truncate">{f.name}</span>
                       <span
                         aria-hidden
@@ -252,9 +280,13 @@ export function FolderPicker({
                           e.stopPropagation();
                           open(f.path);
                         }}
-                        className="flex size-8 shrink-0 items-center justify-center rounded-pill text-ink-muted hover:bg-surface-control hover:text-ink"
+                        className={
+                          desktop
+                            ? 'flex size-8 shrink-0 items-center justify-center rounded-pill text-ink-muted hover:bg-surface-control hover:text-ink'
+                            : 'hl-p-chev'
+                        }
                       >
-                        <ChevronRight {...iconDefaults} className="size-4" />
+                        <ChevronRight {...iconDefaults} className={desktop ? 'size-4' : undefined} />
                       </span>
                     </div>
                   );
@@ -313,19 +345,23 @@ function Places({
             aria-current={on ? 'location' : undefined}
             aria-disabled={p.offline || undefined}
             onClick={() => (p.offline ? null : onOpen(p.path))}
-            className={cn(
-              'hl-focus flex shrink-0 items-center gap-2.5 border-0 font-sans text-body text-ink',
+            // A phone: the place chips (PhoneRedesignA_FolderPicker), the open one white.
+            data-on={on || undefined}
+            className={
               desktop
-                ? 'min-h-10 w-full rounded-md bg-transparent px-3 text-left hover:bg-surface-control'
-                : 'min-h-11 rounded-pill bg-surface-control px-4 whitespace-nowrap',
-              on && (desktop ? 'bg-surface-control font-semibold' : 'bg-fill-primary font-semibold text-ink-on-light'),
-              p.offline ? 'cursor-default opacity-55' : 'cursor-pointer',
-            )}
+                ? cn(
+                    'hl-focus flex shrink-0 items-center gap-2.5 border-0 font-sans text-body text-ink',
+                    'min-h-10 w-full rounded-md bg-transparent px-3 text-left hover:bg-surface-control',
+                    on && 'bg-surface-control font-semibold',
+                    p.offline ? 'cursor-default opacity-55' : 'cursor-pointer',
+                  )
+                : cn('hl-p-chip gap-2', p.offline && 'cursor-default opacity-55')
+            }
           >
             {desktop ? <FileIcon folder path={p.path} size={20} /> : null}
-            <span className="min-w-0 flex-1 truncate">{p.label}</span>
+            <span className={desktop ? 'min-w-0 flex-1 truncate' : undefined}>{p.label}</span>
             {p.offline || p.readOnly ? (
-              <span className="text-caption font-semibold text-ink-muted">
+              <span className={desktop ? 'text-caption font-semibold text-ink-muted' : 'text-caption font-semibold'}>
                 {p.offline ? filesCopy.offline : copy.readOnlyTag}
               </span>
             ) : null}
@@ -349,30 +385,47 @@ function PickerCrumbs({
   if (!crumbs.length) return <div className="min-h-7" />;
   const parent = crumbs.at(-2);
   return (
-    <nav aria-label={filesCopy.breadcrumb} className="flex min-h-7 min-w-0 items-center gap-1">
+    <nav
+      aria-label={filesCopy.breadcrumb}
+      className={desktop ? 'flex min-h-7 min-w-0 items-center gap-1' : 'hl-p-crumbs flex min-w-0 items-center gap-1'}
+    >
       {!desktop && parent ? (
         <button
           type="button"
           aria-label={copy.up(crumbName(parent))}
           onClick={() => onOpen(parent.path)}
-          className="hl-focus -ml-2 flex size-11 shrink-0 items-center justify-center rounded-pill border-0 bg-transparent text-ink"
+          className="hl-p-back hl-focus -ml-2 shrink-0"
         >
-          <ChevronRight aria-hidden {...iconDefaults} className="size-5 rotate-180" />
+          <ChevronLeft aria-hidden {...iconDefaults} className="hl-p-back-chevron" />
         </button>
       ) : null}
-      <ol className="m-0 flex min-w-0 list-none flex-wrap items-center gap-2 p-0 text-body font-bold">
+      <ol
+        className={
+          desktop ? 'm-0 flex min-w-0 list-none flex-wrap items-center gap-2 p-0 text-body font-bold' : 'min-w-0'
+        }
+      >
         {crumbs.map((c, i) => (
           <li key={c.path} className="flex min-w-0 items-center gap-2">
-            {i > 0 ? <ChevronRight aria-hidden {...iconDefaults} className="size-4 shrink-0 text-ink-muted" /> : null}
+            {i > 0 ? (
+              <ChevronRight
+                aria-hidden
+                {...iconDefaults}
+                className={desktop ? 'size-4 shrink-0 text-ink-muted' : undefined}
+              />
+            ) : null}
             {i === crumbs.length - 1 ? (
-              <span aria-current="location" className="truncate text-ink">
+              <span aria-current="location" className={desktop ? 'truncate text-ink' : 'truncate'}>
                 {crumbName(c)}
               </span>
             ) : (
               <button
                 type="button"
                 onClick={() => onOpen(c.path)}
-                className="hl-focus truncate rounded-xs border-0 bg-transparent p-0 font-sans font-bold text-ink-muted hover:text-ink"
+                className={
+                  desktop
+                    ? 'hl-focus truncate rounded-xs border-0 bg-transparent p-0 font-sans font-bold text-ink-muted hover:text-ink'
+                    : 'hl-focus truncate rounded-xs border-0 bg-transparent p-0'
+                }
               >
                 {crumbName(c)}
               </button>

@@ -117,7 +117,10 @@ export function AppTable({
   apps,
   current,
   onBrowseStore,
+  phone = false,
 }: {
+  /** A phone (US-PHONE-27): "Apps by memory" over an inset box. */
+  phone?: boolean;
   apps: HomeApp[];
   current: UsageSample | null;
   /** "Browse the App Store" when there are no apps, for someone who may install them. */
@@ -136,15 +139,17 @@ export function AppTable({
 
   if (apps.length === 0) {
     return (
-      <section className="flex flex-col items-center gap-3 rounded-lg bg-surface-row px-4 py-10 text-center">
+      <section
+        className={`flex flex-col items-center gap-3 px-4 py-10 text-center ${phone ? 'hl-p-card' : 'rounded-lg bg-surface-row'}`}
+      >
         <h2 className="m-0 text-body font-semibold">{copy.noApps}</h2>
         {onBrowseStore ? <Button onClick={onBrowseStore}>{copy.browseStore}</Button> : null}
       </section>
     );
   }
 
-  return (
-    <section className="overflow-hidden rounded-lg bg-surface-row">
+  const box = (
+    <section className={phone ? 'hl-p-group' : 'overflow-hidden rounded-lg bg-surface-row'}>
       <table className="w-full border-collapse text-body-sm">
         <caption className="sr-only">{copy.appsTable}</caption>
         <thead>
@@ -211,5 +216,15 @@ export function AppTable({
         </tbody>
       </table>
     </section>
+  );
+  if (!phone) return box;
+  // PhoneRedesignA_Usage: the table under "Apps by memory" (or by whatever it's sorted by on a phone).
+  return (
+    <div className="hl-p-group-wrap mt-1">
+      <h2 className="hl-p-label">
+        {copy.appsBy(phoneMetric === 'cpu' ? copy.columns.cpu : copy.columns[phoneMetric].toLowerCase())}
+      </h2>
+      {box}
+    </div>
   );
 }

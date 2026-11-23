@@ -2,6 +2,7 @@
 // which drives are connected (US-SYS-12), and cleaning up unused app images (US-SYS-13) and everyone's trash
 // (US-SYS-14). Sizes are decimal (GB = 10^9 bytes) with at most one decimal.
 import type { AppRouter } from '@hlabs/api';
+import { Folder, HardDrive } from '@hlabs/icons';
 import type { inferRouterOutputs } from '@trpc/server';
 import { formatBytes, isFeatureEnabled } from '@hlabs/shared';
 import { Badge, Button, List, ListRow, StackedBar } from '@hlabs/ui';
@@ -12,6 +13,8 @@ import { confirm } from '../lib/confirm';
 import { showErrorToast } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { useIsDesktop } from '../lib/use-media';
+import { RowIcon } from './phone-rows';
 import { ConnectDriveDialog } from '../files/connect-drive-dialog';
 import { DriveEvents } from '../files/sidebar';
 
@@ -97,10 +100,13 @@ function DataLocation({
   appDataPath: string;
   shippedPhase?: number;
 }) {
+  // A phone (PhoneRedesignA_Storage): a folder square at the start of each place.
+  const phone = !useIsDesktop();
   return (
     <List label={copy.dataLocation}>
       {root ? (
         <ListRow
+          leading={phone ? <RowIcon icon={Folder} /> : undefined}
           title={mono(root.address ?? root.displayPath)}
           subtitle={copy.rootNote}
           trailing={
@@ -113,7 +119,11 @@ function DataLocation({
           }
         />
       ) : null}
-      <ListRow title={mono(appDataPath)} subtitle={`${copy.appData} · ${copy.appDataNote}`} />
+      <ListRow
+        leading={phone ? <RowIcon icon={Folder} /> : undefined}
+        title={mono(appDataPath)}
+        subtitle={`${copy.appData} · ${copy.appDataNote}`}
+      />
     </List>
   );
 }
@@ -140,6 +150,7 @@ function Drives({ drives }: { drives: Location[] }) {
   const queryClient = useQueryClient();
   const [connecting, setConnecting] = useState(false);
   const refresh = () => queryClient.invalidateQueries({ queryKey: trpc.storage.locations.list.queryKey() });
+  const phone = !useIsDesktop();
 
   const disconnect = async (d: Location) => {
     const ok = await confirm({
@@ -162,6 +173,7 @@ function Drives({ drives }: { drives: Location[] }) {
         return (
           <ListRow
             key={d.id}
+            leading={phone ? <RowIcon icon={HardDrive} tone={on ? 'files' : undefined} /> : undefined}
             title={d.name}
             subtitle={driveLine(d)}
             trailing={

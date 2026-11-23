@@ -1,6 +1,6 @@
 ---
 title: Use hlabs on your phone
-description: The tab bar, pages and sheets, Home, the App Store and logging in on a phone.
+description: The tab bar, pages and sheets, Home, the App Store, Files, Usage, Backups, Settings and logging in on a phone.
 features: [F-PHONE-01, F-PHONE-02, F-PHONE-03, F-PHONE-04, F-PHONE-09]
 ---
 
@@ -37,6 +37,24 @@ Arranging Home and adding widgets is done on a computer; your phone shows the sa
 The App Store has a search field, the categories as a row you can swipe along, **Featured** apps you can swipe through, and lists of apps, each with one button: **Install**, **Open**, or what it's doing, such as **Installing… 42%**. Admins see **Updates** with a count at the top when apps have newer versions.
 
 Tap **Install** to see what the app can access, then **Install** at the bottom of the sheet. The sheet closes and the app's button, and its tile on Home, show how far the install has got. If it fails, a sheet says why, with **Try again**.
+
+## Files
+
+**Files** has the same places as on a computer, as a row of buttons under the search field; **Trash** is the last one. A folder is a list: tap a row to open it, or tap **•••** at its end to open, download, rename, move or delete it. **+** at the top makes a new folder or uploads files from your phone. Tap **Select** to tick several items; the buttons along the bottom, where the tab bar was, move, share, download or delete them, and **Done** stops selecting. In **Trash**, tap the round arrow on a row to put it back, or **Restore all**. See [Files](../../files/files/).
+
+## Live usage and notifications
+
+**Usage** shows the time range across the screen and the tiles two to a row, with the chart and your apps under them. The bell on Home opens your notifications in a sheet, grouped into **Today** and **Earlier**, with **Mark all read** at the top.
+
+## Settings
+
+**Settings** lists its sections as rows; tap one to go into it, and **‹ Settings** to come back. Each section shows its settings as rows, with the current value at the right and an arrow on the rows you can tap. Things you'd change in a dialog on a computer open as a sheet.
+
+- **Account**: your name and picture at the top, with **Edit** at the top right. Tap **Password**, **Two-factor login** or **Recovery codes** to change them; **Sign out** at the end of another device's row signs it out.
+- **Users** (admins): everyone in one list with their role. Tap **•••** on a person's row for **Apps access**, **Reset password…**, **Make admin**, **Disable** and **Delete…**, or on a waiting invite for **Copy link** and **Revoke**. **Invite someone** is at the end of the list and at the top right; the invite opens as a sheet with **Member** or **Admin** side by side.
+- **Backups** (admins): when the last backup ran and when the next one is, with the last ten as bars and **Back up now**, then your destinations, the schedule and **Restore…** as rows, and the recent runs. Adding a destination and a restore that's running open as sheets.
+- **Updates**: **Update now** for hlabs, then each app with a small **Update** button; **Update all** is at the top right of the App Store's **Updates**.
+- **Engine & startup**, **Network & remote access**, **Storage** and **Advanced** work as on a computer, laid out as rows.
 
 ## Log in
 

@@ -1,5 +1,6 @@
 // Resources for apps (US-SYS-19): CPU, memory and disk for hlabs's own Colima, applied by restarting the engine
 // (US-SYS-18). Other engines show what they report, read-only; Linux has no such section (containers use the host).
+import { Cpu, HardDrive, MemoryStick } from '@hlabs/icons';
 import { Button, List, ListRow } from '@hlabs/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useId, useState } from 'react';
@@ -7,6 +8,8 @@ import { engineCopy } from '../copy/engine';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import type { EngineOverview } from './engine-types';
+import { useIsDesktop } from '../lib/use-media';
+import { RowEnd, RowIcon } from './phone-rows';
 
 const copy = engineCopy;
 const GIB = 2 ** 30;
@@ -53,6 +56,7 @@ export function EngineResources({ resources, engineName }: { resources: Resource
   const client = useTRPCClient();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const phone = !useIsDesktop();
   const l = resources.limits;
   const start = {
     cpus: resources.cpus ?? 1,
@@ -92,14 +96,25 @@ export function EngineResources({ resources, engineName }: { resources: Resource
 
   if (!resources.editable) {
     const show = (n: number | null, gb = false) => (n === null ? copy.unknown : gb ? copy.gb(gib(n)) : String(n));
+    // A phone (PhoneRedesignA_Engine): icon squares and the values in the faint colour.
+    const value = (text: string) => (phone ? <RowEnd value={text} /> : <span className="tabular-nums">{text}</span>);
     return (
       <List label={label}>
-        <ListRow title={copy.cpus} trailing={<span className="tabular-nums">{show(resources.cpus)}</span>} />
         <ListRow
-          title={copy.memory}
-          trailing={<span className="tabular-nums">{show(resources.memoryBytes, true)}</span>}
+          leading={phone ? <RowIcon icon={Cpu} /> : undefined}
+          title={copy.cpus}
+          trailing={value(show(resources.cpus))}
         />
-        <ListRow title={copy.disk} trailing={<span className="tabular-nums">{show(resources.diskBytes, true)}</span>} />
+        <ListRow
+          leading={phone ? <RowIcon icon={MemoryStick} /> : undefined}
+          title={copy.memory}
+          trailing={value(show(resources.memoryBytes, true))}
+        />
+        <ListRow
+          leading={phone ? <RowIcon icon={HardDrive} /> : undefined}
+          title={copy.disk}
+          trailing={value(show(resources.diskBytes, true))}
+        />
         <ListRow title={<span className="text-ink-muted">{copy.changeIn(engineName)}</span>} />
       </List>
     );

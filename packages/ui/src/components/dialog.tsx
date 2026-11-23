@@ -2,7 +2,7 @@ import * as RadixDialog from '@radix-ui/react-dialog';
 import { useId, useLayoutEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { cn } from '../lib/cn';
 import { useIsPhone } from '../lib/media';
-import { BottomSheet } from './sheet';
+import { BottomSheet, SheetBar } from './sheet';
 import { useUiStrings } from '../lib/strings';
 import { Children, isValidElement } from 'react';
 
@@ -72,6 +72,12 @@ export interface ModalDialogProps extends Omit<DialogProps, 'className'> {
   tall?: boolean;
   /** A symbol above the title, such as the warning of a factory reset (decorative: the title says it). */
   icon?: ReactNode;
+  /**
+   * As a phone sheet (D-172): the title in the sheet's own bar with "Cancel" at its left (closing it) and `trailing`
+   * at its right, the body scrolling under it and the actions stacked full width at the bottom. Leave Cancel out of
+   * `actions` on a phone then: the bar has it.
+   */
+  sheetBar?: { cancelLabel?: string; trailing?: ReactNode };
 }
 
 /**
@@ -99,6 +105,7 @@ export function ModalDialog({
   finalFocus,
   tall = false,
   icon,
+  sheetBar,
 }: ModalDialogProps) {
   const sheet = useIsPhone() && sheetOnPhone;
   const t = useUiStrings();
@@ -157,6 +164,36 @@ export function ModalDialog({
       {actions ? <div className="hl-dialog-actions">{actions}</div> : null}
     </>
   );
+  if (sheet && sheetBar)
+    return (
+      <BottomSheet
+        open={open}
+        onOpenChange={onOpenChange}
+        titled
+        described={Boolean(description)}
+        role={role}
+        dismissible={dismissible}
+        guarded={guarded}
+        full={tall}
+        closeButton={false}
+        className="hl-dialog hl-dialog-sheet hl-dialog-barred"
+        onOpenAutoFocus={onOpenAutoFocus}
+        onCloseAutoFocus={onCloseAutoFocus}
+        onEscapeKeyDown={onEscape}
+      >
+        <SheetBar
+          title={title}
+          cancelLabel={sheetBar.cancelLabel}
+          onCancel={dismissible ? () => onOpenChange(false) : undefined}
+          trailing={sheetBar.trailing}
+        />
+        {description ? (
+          <RadixDialog.Description className="hl-dialog-body">{description}</RadixDialog.Description>
+        ) : null}
+        {children ? <div className="hl-dialog-body">{children}</div> : null}
+        {actions ? <div className="hl-sheet-footer hl-sheet-actions">{actions}</div> : null}
+      </BottomSheet>
+    );
   if (sheet)
     return (
       <BottomSheet

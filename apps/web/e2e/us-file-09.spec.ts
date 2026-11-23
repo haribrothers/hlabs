@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { homeFolder } from './files';
+import { folderAction, homeFolder } from './files';
 
 test('US-FILE-09 an upload whose connection drops carries on and finishes with every byte', async ({ page }, info) => {
   const f = await homeFolder(page, `Resume ${info.project.name}`);
@@ -19,7 +19,7 @@ test('US-FILE-09 an upload whose connection drops carries on and finishes with e
   try {
     await page.goto(`/files?path=${encodeURIComponent(f.path)}`);
     const chooser = page.waitForEvent('filechooser');
-    await page.getByRole('button', { name: 'Upload' }).click();
+    await (await folderAction(page, info.project.name === 'phone', 'Upload')).click();
     await (await chooser).setFiles([{ name: 'Home video.mov', mimeType: 'video/quicktime', buffer: content }]);
     await expect(
       page.getByRole('region', { name: 'Uploads' }).getByRole('heading', { name: '1 file uploaded' }),
@@ -46,7 +46,7 @@ test('US-FILE-09 Pause stops sending, Resume carries on, Cancel all removes what
   try {
     await page.goto(`/files?path=${encodeURIComponent(f.path)}`);
     const chooser = page.waitForEvent('filechooser');
-    await page.getByRole('button', { name: 'Upload' }).click();
+    await (await folderAction(page, info.project.name === 'phone', 'Upload')).click();
     await (
       await chooser
     ).setFiles([

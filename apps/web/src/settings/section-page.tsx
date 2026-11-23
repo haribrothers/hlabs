@@ -9,6 +9,7 @@ import { useMe } from '../lib/use-me';
 import { AccessDenied } from '../shell/access-denied';
 import { BackupsActions, BackupsSection } from '../backups/backups-section';
 import { AccountSection } from './account-section';
+import { EditProfileButton } from './profile';
 import { AdvancedSection } from './advanced-section';
 import { AppearanceSection } from './appearance-section';
 import { EngineSection, EngineStatus } from './engine-section';
@@ -39,6 +40,21 @@ const ASIDE: Partial<Record<SectionId, ComponentType>> = {
   backups: BackupsActions,
 };
 
+/**
+ * On a phone (D-172): what goes at the right of the bar instead ("Edit", the person-plus), and the sections whose
+ * aside is in their content instead (the engine's state is in its card, PhoneRedesignA_Engine).
+ */
+const PHONE_BAR: Partial<Record<SectionId, ComponentType>> = {
+  account: EditProfileButton,
+  users: InviteButton,
+};
+const PHONE_NO_ASIDE = new Set<SectionId>(['users', 'engine']);
+
+/** The browser tab's title (outside the component, so the React compiler leaves `document` alone). */
+const setDocumentTitle = (title: string) => {
+  document.title = title;
+};
+
 export function SectionPage({
   id,
   openTwoFactor,
@@ -60,7 +76,7 @@ export function SectionPage({
   const label = access?.kind === 'ok' ? access.section.label : null;
   useEffect(() => {
     if (!label) return;
-    document.title = settingsCopy.sectionTitle(label);
+    setDocumentTitle(settingsCopy.sectionTitle(label));
     heading.current?.focus();
   }, [label]);
 
@@ -68,6 +84,7 @@ export function SectionPage({
   if (access.kind !== 'ok') return <AccessDenied kind={access.kind} />;
   const Content = CONTENT[access.section.id];
   const Aside = ASIDE[access.section.id];
+  const PhoneBar = PHONE_BAR[access.section.id];
   const content = Content ? (
     <Content openTwoFactor={openTwoFactor} next={next} shippedPhase={shippedPhase} />
   ) : (
@@ -86,7 +103,8 @@ export function SectionPage({
             label: settingsCopy.back,
             onBack: () => (router.history.canGoBack() ? router.history.back() : void navigate({ to: '/settings' })),
           }}
-          trailing={Aside ? <Aside /> : undefined}
+          barTrailing={PhoneBar ? <PhoneBar /> : undefined}
+          trailing={Aside && !PHONE_NO_ASIDE.has(access.section.id) ? <Aside /> : undefined}
         />
         {content}
       </section>

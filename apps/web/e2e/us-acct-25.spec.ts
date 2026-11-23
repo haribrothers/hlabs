@@ -2,6 +2,7 @@
 import { expect, test } from '@playwright/test';
 import { MAIN_URL } from './instances';
 import { createMember } from './invites';
+import { peopleAction, peopleRow } from './people';
 
 test('US-ACCT-25 the Shared folder switch saves with Apps access; live usage waits for the members policy', async ({
   page,
@@ -10,8 +11,8 @@ test('US-ACCT-25 the Shared folder switch saves with Apps access; live usage wai
   const name = `Options ${info.project.name} ${Date.now()}`;
   await createMember(page, request, MAIN_URL, { name });
   await page.goto('/settings/users');
-  const row = page.locator('.hl-list-row', { hasText: name });
-  await row.getByRole('button', { name: 'Apps access' }).click();
+  const row = peopleRow(page, name);
+  await peopleAction(page, info, row, 'Apps access');
   let dialog = page.getByRole('dialog', { name: new RegExp(`What ${name} can open`) });
   await expect(dialog.getByText('Their own Home folder is always private')).toBeVisible();
   await dialog.getByRole('switch', { name: 'See the Shared folder in Files' }).click();
@@ -21,7 +22,7 @@ test('US-ACCT-25 the Shared folder switch saves with Apps access; live usage wai
   await dialog.getByRole('button', { name: 'Save' }).click();
   await expect(dialog).toBeHidden();
 
-  await row.getByRole('button', { name: 'Apps access' }).click();
+  await peopleAction(page, info, row, 'Apps access');
   dialog = page.getByRole('dialog', { name: new RegExp(`What ${name} can open`) });
   await expect(dialog.getByRole('switch', { name: 'See the Shared folder in Files' })).toHaveAttribute(
     'aria-checked',

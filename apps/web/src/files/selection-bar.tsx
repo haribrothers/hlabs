@@ -108,23 +108,24 @@ function PhoneAction({
   onClick?: () => void;
   href?: string;
 }) {
-  const className = `hl-focus flex h-13.5 min-w-16 flex-1 flex-col items-center justify-center gap-0.5 rounded-pill border-0 bg-transparent text-caption font-semibold no-underline ${
-    danger ? 'text-danger' : 'text-ink'
-  } ${disabled ? 'pointer-events-none opacity-45' : ''}`;
+  const content = (
+    <>
+      <span className="hl-tab-glyph">{icon}</span>
+      <span className="hl-tab-label">{label}</span>
+    </>
+  );
   return href && !disabled ? (
-    <a href={href} download className={className}>
-      {icon}
-      {label}
+    <a href={href} download className="hl-tab" data-danger={danger || undefined}>
+      {content}
     </a>
   ) : (
-    <button type="button" className={className} disabled={disabled} onClick={onClick}>
-      {icon}
-      {label}
+    <button type="button" className="hl-tab" data-danger={danger || undefined} disabled={disabled} onClick={onClick}>
+      {content}
     </button>
   );
 }
 
-/** A phone's selection bar, where the tab bar is (PhoneFilesSelect). */
+/** A phone's selection bar, docked where the tab bar is (PhoneRedesignA_FilesSelect). */
 export function PhoneSelectionBar({ entries, actions }: { entries: FileEntry[]; actions: SelectionActions }) {
   const none = entries.length === 0;
   // The tab bar steps aside while this bar is up.
@@ -134,13 +135,12 @@ export function PhoneSelectionBar({ entries, actions }: { entries: FileEntry[]; 
       delete document.documentElement.dataset.tabBarHidden;
     };
   }, []);
-  const icon = 'size-5';
   return (
-    <div className="fixed inset-x-4 bottom-[calc(22px+env(safe-area-inset-bottom))] z-50 flex justify-center">
-      <div role="toolbar" aria-label={copy.selectedLabel(entries.length)} className="hl-tabbar-glass w-full">
+    <div className="hl-p-selbar">
+      <div role="toolbar" aria-label={copy.selectedLabel(entries.length)} className="hl-tabbar">
         {actions.onMove ? (
           <PhoneAction
-            icon={<FolderInput aria-hidden {...iconDefaults} className={icon} />}
+            icon={<FolderInput aria-hidden {...iconDefaults} />}
             label={copy.moveShort}
             disabled={none}
             onClick={actions.onMove}
@@ -148,21 +148,21 @@ export function PhoneSelectionBar({ entries, actions }: { entries: FileEntry[]; 
         ) : null}
         {actions.onShare ? (
           <PhoneAction
-            icon={<Share aria-hidden {...iconDefaults} className={icon} />}
+            icon={<Share aria-hidden {...iconDefaults} />}
             label={copy.share}
             disabled={none}
             onClick={actions.onShare}
           />
         ) : null}
         <PhoneAction
-          icon={<Download aria-hidden {...iconDefaults} className={icon} />}
+          icon={<Download aria-hidden {...iconDefaults} />}
           label={copy.download}
           disabled={none}
           href={downloadUrlOf(entries.map((e) => e.path))}
         />
         {actions.onTrash ? (
           <PhoneAction
-            icon={<Trash2 aria-hidden {...iconDefaults} className={icon} />}
+            icon={<Trash2 aria-hidden {...iconDefaults} />}
             label={copy.trashShort}
             danger
             disabled={none}

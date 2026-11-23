@@ -2,11 +2,12 @@
 // compact centred title as the page scrolls, a back button named after where you came from, inset grouped lists with
 // 44–48px rows and 17px text, the search field, section headings and the small pill buttons of App Store rows.
 // Only the phone layout (< 768px) uses them; the desktop is unchanged.
-import { ChevronLeft, ChevronRight, iconDefaults, Search, X } from '@hlabs/icons';
+import { ChevronLeft, ChevronRight, iconDefaults, MoreHorizontal, Search, X } from '@hlabs/icons';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import {
   forwardRef,
   useEffect,
+  useId,
   useRef,
   useState,
   type ButtonHTMLAttributes,
@@ -15,6 +16,7 @@ import {
   type Ref,
 } from 'react';
 import { cn } from '../lib/cn';
+import { useUiStrings } from '../lib/strings';
 
 /**
  * Whether `el` has scrolled out of view under the compact bar. Uses the viewport, so it works for the page's own
@@ -98,7 +100,8 @@ export function PhoneHeader({
         <span className="hl-p-bar-side hl-p-bar-end">{barTrailing}</span>
       </div>
       {back || barTrailing ? (
-        <div className="hl-p-nav">
+        // Once the compact bar shows, this row is out of view: inert, so its buttons aren't there twice.
+        <div className="hl-p-nav" inert={collapsed || undefined}>
           {back ? <PhoneBackButton {...back} /> : <span />}
           {barTrailing ? <span className="hl-p-bar-end">{barTrailing}</span> : null}
         </div>
@@ -145,6 +148,7 @@ export function InsetGroup({
   className,
   labelId,
   as = 'div',
+  role,
 }: {
   label?: ReactNode;
   footer?: ReactNode;
@@ -152,12 +156,16 @@ export function InsetGroup({
   className?: string;
   labelId?: string;
   as?: 'div' | 'ul';
+  /** 'group': named by its label as a group of rows (as the design system's List is), not a page region. */
+  role?: 'group';
 }) {
   const Box = as;
+  const ownId = useId();
+  const id = labelId ?? (role ? ownId : undefined);
   return (
-    <section className={cn('hl-p-group-wrap', className)} aria-labelledby={label && labelId ? labelId : undefined}>
+    <section className={cn('hl-p-group-wrap', className)} role={role} aria-labelledby={label && id ? id : undefined}>
       {label ? (
-        <h2 className="hl-p-label" id={labelId}>
+        <h2 className="hl-p-label" id={id}>
           {label}
         </h2>
       ) : null}
@@ -237,7 +245,7 @@ export function InsetRow({ className, danger, accent, ...content }: InsetRowProp
 /** A row that is a button. */
 export const InsetRowButton = forwardRef<
   HTMLButtonElement,
-  InsetRowProps & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'title'>
+  InsetRowProps & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'title' | 'value'>
 >(function InsetRowButton(
   { className, danger, accent, icon, tone, leading, title, subtitle, value, trailing, chevron, ...button },
   ref,
@@ -363,5 +371,41 @@ export function PhoneMenuLayer({
         </RadixDialog.Content>
       </RadixDialog.Portal>
     </RadixDialog.Root>
+  );
+}
+
+/**
+ * The ••• button at the end of a phone row (PhoneRedesignA_Files, _Users): a 44px target that opens the row's action
+ * sheet. Named after the row: "More for Taxes".
+ */
+export const MoreButton = forwardRef<
+  HTMLButtonElement,
+  Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {
+    name: string;
+    /** Its whole accessible name, when not "More for <name>" ("More options for Anu"). */
+    label?: string;
+  }
+>(function MoreButton({ name, label, className, ...button }, ref) {
+  const t = useUiStrings();
+  return (
+    <button
+      ref={ref}
+      type="button"
+      aria-label={label ?? t.more(name)}
+      aria-haspopup="dialog"
+      className={cn('hl-p-more hl-focus', className)}
+      {...button}
+    >
+      <MoreHorizontal aria-hidden {...iconDefaults} />
+    </button>
+  );
+});
+
+/** A rounded box on a phone page that isn't a list (Backups' last run, Storage's disk, Engine's state). */
+export function PhoneCard({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn('hl-p-card', className)} {...rest}>
+      {children}
+    </div>
   );
 }

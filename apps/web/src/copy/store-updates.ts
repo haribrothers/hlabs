@@ -2,6 +2,9 @@
 export const storeUpdatesCopy = {
   title: 'Updates',
   updateAll: (n: number) => `Update all (${n})`,
+  /** In a phone's bar (US-PHONE-27); its name still says how many. */
+  updateAllShort: 'Update all',
+  restartBriefly: 'apps restart briefly while they update',
   updatingOf: (i: number, n: number) => `Updating ${i} of ${n}…`,
   versions: (from: string, to: string, released: string) => `${from} → ${to} · released ${released}`,
   whatsNew: "What's new",

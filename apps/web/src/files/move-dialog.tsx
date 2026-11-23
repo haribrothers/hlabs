@@ -3,12 +3,13 @@
 // the current folder and for any folder being moved (or inside one). "+ New folder" makes one inside the selected
 // folder and selects it. On a phone it's a full-height sheet (PhoneFilesMove).
 import type { FileEntry } from '@hlabs/api';
-import { ChevronRight, iconDefaults } from '@hlabs/icons';
+import { Check, ChevronRight, FolderPlus, iconDefaults } from '@hlabs/icons';
 import { FileIcon } from '@hlabs/icons/files';
 import { Button, ModalDialog } from '@hlabs/ui';
 import type { FileAccent } from '@hlabs/ui/files';
 import { useQuery } from '@tanstack/react-query';
-import { useRef, useState, type KeyboardEvent } from 'react';
+import { useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { useIsDesktop } from '../lib/use-media';
 import { filesCopy as copy } from '../copy/files';
 import { useTRPC } from '../lib/trpc';
 import { NewFolderDialog } from './new-folder-dialog';
@@ -31,6 +32,8 @@ export function blockedTarget(target: string, from: string, moving: FileEntry[])
 }
 
 interface TreeCtx {
+  /** A phone: rows of an inset list, a tick on the chosen folder (PhoneRedesignA_FilesMove). */
+  phone: boolean;
   from: string;
   accent: FileAccent;
   expanded: Set<string>;
@@ -50,6 +53,42 @@ function Node({ path, name, depth, ctx }: { path: string; name: string; depth: n
   });
   const items = children.data?.items ?? [];
   const selected = ctx.selected === path;
+  const loading =
+    open && children.isLoading ? (
+      <p className="m-0 py-2 text-body-sm text-ink-muted" style={{ paddingLeft: `${36 + (depth + 1) * 22}px` }}>
+        {copy.picker.loading}
+      </p>
+    ) : null;
+  const kids = open
+    ? items.map((c) => <Node key={c.path} path={c.path} name={c.name} depth={depth + 1} ctx={ctx} />)
+    : null;
+  if (ctx.phone)
+    return (
+      <>
+        <button
+          type="button"
+          role="treeitem"
+          aria-level={depth + 1}
+          aria-expanded={open}
+          aria-selected={selected}
+          data-tree-path={path}
+          tabIndex={selected || (ctx.selected === null && depth === 0 && path === '/home') ? 0 : -1}
+          className="hl-p-tree-row"
+          style={{ '--hl-depth': depth } as CSSProperties}
+          onClick={() => {
+            ctx.select(path, name);
+            ctx.toggle(path, true);
+          }}
+        >
+          <FileIcon folder path={path} accent={ctx.accent} size={24} />
+          <span className="hl-p-tree-name">{name}</span>
+          {path === ctx.from ? <span className="text-ink-faint">{copy.currentPhone}</span> : null}
+          {selected ? <Check aria-hidden {...iconDefaults} /> : null}
+        </button>
+        {kids}
+        {loading}
+      </>
+    );
   return (
     <>
       <button
@@ -82,12 +121,8 @@ function Node({ path, name, depth, ctx }: { path: string; name: string; depth: n
         <span className="min-w-0 flex-1 truncate">{name}</span>
         {path === ctx.from ? <span className="text-caption text-ink-muted">{copy.current}</span> : null}
       </button>
-      {open ? items.map((c) => <Node key={c.path} path={c.path} name={c.name} depth={depth + 1} ctx={ctx} />) : null}
-      {open && children.isLoading ? (
-        <p className="m-0 py-2 text-body-sm text-ink-muted" style={{ paddingLeft: `${36 + (depth + 1) * 22}px` }}>
-          {copy.picker.loading}
-        </p>
-      ) : null}
+      {kids}
+      {loading}
     </>
   );
 }
@@ -112,10 +147,12 @@ export function MoveDialog({
   const [selected, setSelected] = useState<{ path: string; name: string } | null>(null);
   const [making, setMaking] = useState(false);
   const tree = useRef<HTMLDivElement>(null);
+  const phone = !useIsDesktop();
   const blocked = !selected || blockedTarget(selected.path, from, entries);
   const title = entries.length === 1 ? copy.moveOne(entries[0]!.name) : copy.moveMany(entries.length);
 
   const ctx: TreeCtx = {
+    phone,
     from,
     accent,
     expanded,
@@ -155,24 +192,38 @@ export function MoveDialog({
         sheetOnPhone
         tall
         title={title}
+        // A phone (PhoneRedesignA_FilesMove): Cancel and the title in the bar, New folder beside Move at the bottom.
+        sheetBar={{ cancelLabel: copy.cancel }}
         actions={
-          <div className="flex w-full flex-col gap-3 md:flex-row md:items-center">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="md:mr-auto"
-              disabled={!selected}
-              onClick={() => setMaking(true)}
-            >
-              {copy.picker.newFolder}
-            </Button>
-            <Button variant="secondary" onClick={onClose}>
-              {copy.cancel}
-            </Button>
-            <Button disabled={blocked} onClick={() => selected && onMove(selected.path, selected.name)}>
-              {selected ? copy.moveToFolder(selected.name) : copy.moveTo}
-            </Button>
-          </div>
+          phone ? (
+            <div className="hl-sheet-actions-row">
+              <Button variant="secondary" disabled={!selected} onClick={() => setMaking(true)}>
+                <FolderPlus aria-hidden {...iconDefaults} className="size-5" />
+                {copy.newFolder}
+              </Button>
+              <Button disabled={blocked} onClick={() => selected && onMove(selected.path, selected.name)}>
+                {selected ? copy.moveToFolder(selected.name) : copy.moveTo}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex w-full flex-col gap-3 md:flex-row md:items-center">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="md:mr-auto"
+                disabled={!selected}
+                onClick={() => setMaking(true)}
+              >
+                {copy.picker.newFolder}
+              </Button>
+              <Button variant="secondary" onClick={onClose}>
+                {copy.cancel}
+              </Button>
+              <Button disabled={blocked} onClick={() => selected && onMove(selected.path, selected.name)}>
+                {selected ? copy.moveToFolder(selected.name) : copy.moveTo}
+              </Button>
+            </div>
+          )
         }
       >
         <div
@@ -180,7 +231,7 @@ export function MoveDialog({
           role="tree"
           aria-label={copy.folders}
           onKeyDown={onKeyDown}
-          className="max-h-[50dvh] overflow-y-auto rounded-md bg-surface-row p-1.5 max-md:max-h-none"
+          className={phone ? 'hl-p-group' : 'max-h-[50dvh] overflow-y-auto rounded-md bg-surface-row p-1.5'}
         >
           {roots.map((r) => (
             <Node key={r.path} path={r.path} name={r.name} depth={0} ctx={ctx} />

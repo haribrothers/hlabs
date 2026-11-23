@@ -1,12 +1,14 @@
 // InviteDialog (US-ACCT-21…23): opening it makes a pending invite straight away (Member, no apps) and shows its link.
 // Changes save as they're made, so the same link always reflects them. Done keeps the invite; Close (or Escape)
 // revokes it unless the link was copied, because then it may already have been sent.
-import { Button, ChoiceList, ModalDialog, TextField } from '@hlabs/ui';
+import { Copy, iconDefaults } from '@hlabs/icons';
+import { Button, ChoiceList, ModalDialog, Segmented, TextField } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { peopleCopy as copy } from '../copy/people';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { useIsDesktop } from '../lib/use-media';
 import { AppSwitchList } from './app-switch-list';
 import { HomeLink } from './home-link';
 
@@ -34,6 +36,7 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
   const [role, setRole] = useState<Role>('member');
   const [appIds, setAppIds] = useState<ReadonlySet<string>>(new Set());
   const apps = useQuery({ ...trpc.apps.list.queryOptions(), retry: false });
+  const desktop = useIsDesktop();
   // Role and app changes save one after another, so the last choice is the one kept.
   const saves = useRef<Promise<unknown>>(Promise.resolve());
   const saveChoice = (change: { role?: Role; appIds?: string[] }) => {
@@ -128,6 +131,128 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
     onClose();
   };
 
+  const appsChoice =
+    role === 'admin' ? (
+      <p className="m-0 text-body text-ink-muted">{copy.adminsOpenEverything}</p>
+    ) : apps.data && apps.data.apps.length === 0 ? (
+      <p className="m-0 text-body text-ink-muted">{copy.noAppsYet}</p>
+    ) : apps.data ? (
+      <AppSwitchList label={copy.appsTheyCanOpen} apps={apps.data.apps} checked={appIds} onToggle={toggleApp} />
+    ) : null;
+  const linkField = desktop ? (
+    <input
+      readOnly
+      aria-labelledby="invite-link-label"
+      value={invite?.url ?? copy.creatingLink}
+      onFocus={(e) => e.currentTarget.select()}
+      className="hl-focus min-w-0 flex-1 rounded-sm bg-surface-input px-3 py-2.5 font-mono text-mono text-ink"
+    />
+  ) : (
+    // The whole link shows on a phone, on two lines.
+    <textarea
+      readOnly
+      rows={2}
+      aria-labelledby="invite-link-label"
+      value={invite?.url ?? copy.creatingLink}
+      onFocus={(e) => e.currentTarget.select()}
+      className="hl-focus w-full min-w-0 resize-none rounded-xs border-0 bg-transparent p-0 font-mono text-body text-ink"
+    />
+  );
+  const previewLink = invite ? (
+    <a
+      href={previewHref(invite.url)}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={copy.previewNewTab}
+      className="hl-focus rounded-xs font-semibold text-accent-link no-underline"
+    >
+      {copy.preview}
+    </a>
+  ) : null;
+  const createFailed = (
+    <div role="alert" className="flex items-center gap-3 text-body">
+      <span>{copy.createFailed}</span>
+      <Button variant="secondary" size="sm" onClick={() => create.mutate()}>
+        {copy.tryAgain}
+      </Button>
+    </div>
+  );
+
+  // A phone (PhoneRedesignA_Invite): Close and Done in the sheet's bar; the link first with a white Copy link under
+  // it, then their name, the role as a segmented control and the apps as an inset list.
+  if (!desktop)
+    return (
+      <ModalDialog
+        open
+        onOpenChange={(open) => (open ? null : close())}
+        title={copy.inviteTitle}
+        tall
+        sheetBar={{
+          cancelLabel: copy.close,
+          trailing: (
+            <button
+              type="button"
+              className="hl-p-tbtn hl-p-tbtn-strong hl-focus"
+              disabled={!invite}
+              onClick={() => void done()}
+            >
+              {copy.done}
+            </button>
+          ),
+        }}
+      >
+        <div className="flex flex-col gap-5">
+          <section aria-labelledby="invite-link-label" className="hl-p-group-wrap">
+            <h3 id="invite-link-label" className="hl-p-label">
+              {copy.inviteLink}
+            </h3>
+            {create.isError ? (
+              <div className="hl-p-card">{createFailed}</div>
+            ) : (
+              <>
+                <div className="hl-p-card flex flex-col gap-1 break-all">
+                  {linkField}
+                  {invite?.homeUrl ? <HomeLink url={invite.homeUrl} familyHint /> : null}
+                </div>
+                <button type="button" className="hl-p-primary hl-focus mt-3" disabled={!invite} onClick={copyLink}>
+                  <Copy aria-hidden {...iconDefaults} />
+                  {copied ? copy.copied : copy.copyLink}
+                </button>
+                <p className="hl-p-foot mt-2">
+                  {copy.worksOnce} {previewLink}
+                </p>
+              </>
+            )}
+          </section>
+          <TextField
+            label={copy.theirName}
+            placeholder={copy.theirNamePlaceholder}
+            autoComplete="off"
+            maxLength={40}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <div className="hl-p-group-wrap">
+            <span className="hl-p-label" aria-hidden>
+              {copy.role}
+            </span>
+            <Segmented
+              fill
+              aria-label={copy.role}
+              value={role}
+              onChange={(v) => chooseRole(v as Role)}
+              options={[
+                { value: 'member', label: copy.roles.member },
+                { value: 'admin', label: copy.roles.admin },
+              ]}
+            />
+            <p className="hl-p-foot">{role === 'admin' ? copy.roleAdmin : copy.roleMember}</p>
+          </div>
+          {appsChoice}
+        </div>
+      </ModalDialog>
+    );
+
   return (
     <ModalDialog
       open
@@ -170,52 +295,24 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
             ]}
           />
         </div>
-        {role === 'admin' ? (
-          <p className="m-0 text-body text-ink-muted">{copy.adminsOpenEverything}</p>
-        ) : apps.data && apps.data.apps.length === 0 ? (
-          <p className="m-0 text-body text-ink-muted">{copy.noAppsYet}</p>
-        ) : apps.data ? (
-          <AppSwitchList label={copy.appsTheyCanOpen} apps={apps.data.apps} checked={appIds} onToggle={toggleApp} />
-        ) : null}
+        {appsChoice}
         <section aria-labelledby="invite-link-label" className="flex flex-col gap-2 rounded-md bg-surface-row p-4">
           <span id="invite-link-label" className="text-body-sm font-semibold text-ink">
             {copy.inviteLink}
           </span>
           {create.isError ? (
-            <div role="alert" className="flex items-center gap-3 text-body">
-              <span>{copy.createFailed}</span>
-              <Button variant="secondary" size="sm" onClick={() => create.mutate()}>
-                {copy.tryAgain}
-              </Button>
-            </div>
+            createFailed
           ) : (
             <>
               <div className="flex items-center gap-2">
-                <input
-                  readOnly
-                  aria-labelledby="invite-link-label"
-                  value={invite?.url ?? copy.creatingLink}
-                  onFocus={(e) => e.currentTarget.select()}
-                  className="hl-focus min-w-0 flex-1 rounded-sm bg-surface-input px-3 py-2.5 font-mono text-mono text-ink"
-                />
+                {linkField}
                 <Button variant="secondary" size="md" onClick={copyLink} disabled={!invite}>
                   {copied ? copy.copied : copy.copy}
                 </Button>
               </div>
               {invite?.homeUrl ? <HomeLink url={invite.homeUrl} familyHint /> : null}
               <p className="m-0 text-body-sm text-ink-muted">
-                {copy.worksOnce}{' '}
-                {invite ? (
-                  <a
-                    href={previewHref(invite.url)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={copy.previewNewTab}
-                    className="hl-focus rounded-xs font-semibold text-accent-link no-underline"
-                  >
-                    {copy.preview}
-                  </a>
-                ) : null}
+                {copy.worksOnce} {previewLink}
               </p>
             </>
           )}

@@ -22,6 +22,8 @@ Someone who has been disabled is shown faded, with a **Disabled** label. They ca
 
 Invites that haven't been used yet are listed under the people, with when the link was made, how many days it has left and the role it gives. Invites that were used or have expired aren't listed.
 
+On a phone, everyone is in one list with their role at the right. Tap **•••** on a person's row for everything you can do for them: **Apps access**, **Reset password…**, **Make admin**, **Disable** and **Delete…**. On a waiting invite, **•••** has **Copy link** and **Revoke**. **Invite someone** is at the end of the list and as the person-with-a-plus at the top right; the invite opens as a sheet with **Close** and **Done** at its top and **Member** or **Admin** side by side.
+
 ## Invite someone
 
 hlabs doesn't send email, so you invite people with a link. In **Settings › Users**, choose **Invite someone**. A link is made straight away; it works once and expires after 7 days.

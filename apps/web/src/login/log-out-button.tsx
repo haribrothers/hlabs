@@ -6,7 +6,8 @@ import { accountCopy } from '../copy/account';
 import { useTRPCClient } from '../lib/trpc';
 import { setLoggingOut, useSignedOutHere } from './session-watch';
 
-export function LogOutButton() {
+/** `phone`: a red row in an inset group of its own (PhoneRedesignA_Account). */
+export function LogOutButton({ phone = false }: { phone?: boolean }) {
   const client = useTRPCClient();
   const signedOut = useSignedOutHere();
   const logout = useMutation({
@@ -19,6 +20,20 @@ export function LogOutButton() {
       setLoggingOut(false);
     },
   });
+  if (phone)
+    return (
+      <div className="hl-p-group">
+        <button
+          type="button"
+          className="hl-p-row hl-p-row-danger hl-focus"
+          disabled={logout.isPending}
+          aria-busy={logout.isPending || undefined}
+          onClick={() => logout.mutate()}
+        >
+          {accountCopy.logOut}
+        </button>
+      </div>
+    );
   return (
     <Button variant="secondary" busy={logout.isPending} onClick={() => logout.mutate()}>
       {accountCopy.logOut}

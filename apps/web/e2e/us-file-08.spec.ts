@@ -3,14 +3,14 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { homeFolder } from './files';
+import { folderAction, homeFolder } from './files';
 
 test('US-FILE-08 upload picked files into the open folder', async ({ page }, info) => {
   const f = await homeFolder(page, `Upload ${info.project.name}`);
   try {
     await page.goto(`/files?path=${encodeURIComponent(f.path)}`);
     const chooser = page.waitForEvent('filechooser');
-    await page.getByRole('button', { name: 'Upload' }).click();
+    await (await folderAction(page, info.project.name === 'phone', 'Upload')).click();
     await (
       await chooser
     ).setFiles([

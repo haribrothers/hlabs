@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { accountCopy } from '../copy/account';
 import { useTRPC } from '../lib/trpc';
+import { useIsDesktop } from '../lib/use-media';
 import { useMe } from '../lib/use-me';
 import { LogOutButton } from '../login/log-out-button';
 import { Profile } from './profile';
@@ -33,6 +34,7 @@ function ManagedByNote() {
 
 export function AccountSection({ openTwoFactor = false, next }: { openTwoFactor?: boolean; next?: string }) {
   const navigate = useNavigate();
+  const desktop = useIsDesktop();
   return (
     <div className="flex flex-col gap-6">
       <ManagedByNote />
@@ -52,9 +54,13 @@ export function AccountSection({ openTwoFactor = false, next }: { openTwoFactor?
         }
       />
       <SignedInDevices />
-      <div>
-        <LogOutButton />
-      </div>
+      {desktop ? (
+        <div>
+          <LogOutButton />
+        </div>
+      ) : (
+        <LogOutButton phone />
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 // Trash (US-FILE-17, FilesTrash): "Trash", "Restore all" and "Empty trash", the 30-day note, then this person's items
 // newest first: where each came from and when, the days left (amber at 7 or fewer) and Restore. Restoring puts an
 // item back where it was; a drive that isn't connected says so and the item stays. An empty Trash says so.
+import { Clock, iconDefaults, RotateCcw } from '@hlabs/icons';
 import { fileKindOf, FileIcon } from '@hlabs/icons/files';
 import { formatBytes } from '@hlabs/shared';
 import { Button, ScrollPane } from '@hlabs/ui';
@@ -170,10 +171,72 @@ export function TrashView({ accent }: { accent: FileAccent }) {
   );
 
   if (!desktop) {
+    // PhoneRedesignA_FilesTrash: "Trash" with Restore all and Empty trash beside it, the note, then an inset list
+    // whose rows restore with a round button.
+    const busyAll = restore.isPending && restore.variables === undefined;
     return (
-      <div className="flex min-w-0 flex-col gap-4">
-        {header}
-        {body}
+      <div className="flex min-w-0 flex-col">
+        <div className="flex items-center gap-4">
+          <h1 className="hl-p-sec-title flex-1">{copy.trashTitle}</h1>
+          <button
+            type="button"
+            className="hl-p-tlink hl-focus"
+            disabled={empty || !query.isSuccess || busyAll}
+            aria-busy={busyAll || undefined}
+            onClick={() => restore.mutate(undefined)}
+          >
+            {copy.restoreAll}
+          </button>
+          <button
+            type="button"
+            className="hl-p-tlink hl-focus"
+            data-danger=""
+            disabled={empty || !query.isSuccess}
+            onClick={() => void emptyTrash()}
+          >
+            {copy.emptyTrash}
+          </button>
+        </div>
+        <p className="m-0 mb-3 text-body-sm text-ink-muted">{copy.trashNote}</p>
+        {empty || !query.isSuccess ? (
+          body
+        ) : (
+          <ul aria-label={copy.trashTitle} className="hl-p-group">
+            {items.map((item) => {
+              const left = daysLeft(item.deletedAt, now);
+              const busy = restore.isPending && restore.variables?.[0] === item.id;
+              return (
+                <li key={item.id} className="hl-p-row hl-p-file">
+                  <span aria-hidden className="hl-p-file-icon">
+                    {item.kind === 'folder' ? (
+                      <FileIcon folder="plain" accent={accent} size={36} />
+                    ) : (
+                      <FileIcon kind={fileKindOf(item.name, item.mime)} name={item.name} mime={item.mime} size={36} />
+                    )}
+                  </span>
+                  <span className="hl-p-row-text">
+                    <span className="hl-p-row-title truncate">{item.name}</span>
+                    <span className="hl-p-row-sub">{copy.trashFrom(item.from, deletedWhen(item.deletedAt, now))}</span>
+                    <span className={`hl-p-row-sub ${left <= 7 ? 'hl-p-days font-semibold text-warning' : ''}`}>
+                      {left <= 7 ? <Clock aria-hidden {...iconDefaults} /> : null}
+                      {copy.daysLeft(left)}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    className="hl-p-round"
+                    aria-label={copy.restoreLabel(item.name)}
+                    aria-busy={busy || undefined}
+                    disabled={busy}
+                    onClick={() => restore.mutate([item.id])}
+                  >
+                    <RotateCcw aria-hidden {...iconDefaults} />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     );
   }

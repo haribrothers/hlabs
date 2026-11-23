@@ -1,6 +1,7 @@
 // Settings › Appearance (US-ACCT-32…35, SettingsAppearance): everyone's own look, applied at once and saved for
 // their account. Wallpaper (Dusk, Ocean, Forest or their own photo), accent colour, what Home shows, and reduce
 // transparency and motion. A change shows straight away; one that fails to save goes back and says so.
+import { Check, iconDefaults, ImagePlus } from '@hlabs/icons';
 import { List, ListRow, Switch } from '@hlabs/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
@@ -21,6 +22,7 @@ import { csrfHeaders } from '../lib/csrf';
 import { handledGlobally } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { useIsDesktop } from '../lib/use-media';
 import { useMe } from '../lib/use-me';
 
 type Change = Partial<{
@@ -129,6 +131,8 @@ function WallpaperPicker({
   const queryClient = useQueryClient();
   const trpc = useTRPC();
   const own = appearance.customWallpaperUrl;
+  // A phone (PhoneRedesignA_Appearance): four tall tiles in a box, a tick on the chosen one, a photo glyph to upload.
+  const phone = !useIsDesktop();
 
   const choose = async (file: File | undefined) => {
     if (!file) return;
@@ -159,7 +163,13 @@ function WallpaperPicker({
         className={`hl-wallpick-thumb ${WALLPAPERS[id]}`}
         style={id === 'custom' ? wallpaperStyle({ wallpaper: id, customWallpaperUrl: own }) : undefined}
         aria-hidden="true"
-      />
+      >
+        {phone && appearance.wallpaper === id ? (
+          <span className="hl-wallpick-check">
+            <Check {...iconDefaults} />
+          </span>
+        ) : null}
+      </span>
       <span>{copy.wallpapers[id]}</span>
     </button>
   );
@@ -180,7 +190,9 @@ function WallpaperPicker({
           disabled={uploading}
           onClick={() => input.current?.click()}
         >
-          <span className="hl-wallpick-thumb">{uploading ? copy.uploading : copy.uploadPhoto}</span>
+          <span className="hl-wallpick-thumb">
+            {uploading ? copy.uploading : phone ? <ImagePlus aria-hidden {...iconDefaults} /> : copy.uploadPhoto}
+          </span>
           <span>{own ? copy.newPhoto : copy.wallpapers.custom}</span>
         </button>
       </div>
@@ -205,6 +217,8 @@ function WallpaperPicker({
 /** Four swatches as a radio group (US-ACCT-33): arrow keys move the choice, which applies at once. */
 function AccentPicker({ accent, onPick }: { accent: Accent; onPick: (accent: Accent) => void }) {
   const labelId = useId();
+  // A phone names each colour under its swatch (PhoneRedesignA_Appearance).
+  const phone = !useIsDesktop();
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     // From the swatch that has focus: quick presses run ahead of the saved choice.
@@ -247,7 +261,14 @@ function AccentPicker({ accent, onPick }: { accent: Accent; onPick: (accent: Acc
             data-accent={id}
             onClick={() => onPick(id)}
           >
-            <span className="hl-swatch-dot" aria-hidden="true" />
+            <span className="hl-swatch-dot" aria-hidden="true">
+              {phone && accent === id ? <Check {...iconDefaults} /> : null}
+            </span>
+            {phone ? (
+              <span className="hl-swatch-name" aria-hidden="true">
+                {copy.accents[id]}
+              </span>
+            ) : null}
           </button>
         ))}
       </div>

@@ -76,7 +76,7 @@ With nothing installed yet, Home says **No apps yet** where your apps will be. A
 
 ## Notifications
 
-The bell at the top right of Home shows how many notifications you haven't read. Select it to see them: today's first, then earlier ones, newest at the top. Each says what happened and when, and unread ones are highlighted with a dot. New ones appear as they arrive.
+The bell at the top right of Home shows how many notifications you haven't read. Select it to see them: today's first, then earlier ones, newest at the top. Each says what happened and when, and unread ones are highlighted with a dot. New ones appear as they arrive. On a phone they open in a sheet from the bottom of the screen, with **Mark all read** and **✕** beside its title.
 
 - Many have a link to the fix, such as **View logs** for an app that couldn't start or **Review** for app updates. Following it marks the notification read. If the app it's about has been uninstalled since, hlabs says so instead.
 - A notification about repeated failed logins opens Settings › Account, where you can see where you're signed in.

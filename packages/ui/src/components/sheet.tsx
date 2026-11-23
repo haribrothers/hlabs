@@ -261,3 +261,72 @@ export function BottomSheet({
 /** A sheet's title (names the sheet for screen readers): pass `titled` to BottomSheet when you use it. */
 export const SheetTitle = RadixDialog.Title;
 export const SheetDescription = RadixDialog.Description;
+
+/**
+ * A sheet's own bar (PhoneRedesignA_FilesMove, _FilesRename, _BackupAdd, _Invite): "Cancel" at the left, the title in
+ * the middle (it names the sheet: pass `titled` to BottomSheet), and an action such as "Done" at the right.
+ */
+export function SheetBar({
+  title,
+  cancelLabel,
+  onCancel,
+  trailing,
+}: {
+  title: ReactNode;
+  /** "Cancel" or "Close"; no button when `onCancel` isn't given. */
+  cancelLabel?: string;
+  onCancel?: () => void;
+  trailing?: ReactNode;
+}) {
+  const t = useUiStrings();
+  return (
+    <div className="hl-sheet-bar">
+      <span className="justify-self-start">
+        {onCancel ? (
+          <button type="button" className="hl-p-tbtn hl-focus" onClick={onCancel}>
+            {cancelLabel ?? t.cancel}
+          </button>
+        ) : null}
+      </span>
+      <RadixDialog.Title className="hl-sheet-bar-title">{title}</RadixDialog.Title>
+      <span className="hl-p-bar-end justify-self-end">{trailing}</span>
+    </div>
+  );
+}
+
+/**
+ * The top of an action sheet (PhoneRedesignA_FilesActions, _UserActions, _Notifications): what it's about (an icon,
+ * an avatar), its name and a line under it, and "✕" beside them; `large` for a sheet named like a page.
+ */
+export function SheetHeader({
+  leading,
+  title,
+  subtitle,
+  trailing,
+  onClose,
+  large = false,
+}: {
+  leading?: ReactNode;
+  title: ReactNode;
+  subtitle?: ReactNode;
+  /** Before "✕" (Notifications' "Mark all read"). */
+  trailing?: ReactNode;
+  onClose?: () => void;
+  large?: boolean;
+}) {
+  return (
+    <div className="hl-sheet-head" data-large={large || undefined}>
+      {leading ? <span className="hl-sheet-head-lead">{leading}</span> : null}
+      <div className="hl-sheet-head-text">
+        <RadixDialog.Title className="hl-sheet-head-title">{title}</RadixDialog.Title>
+        {subtitle ? <p className="hl-sheet-head-sub">{subtitle}</p> : null}
+      </div>
+      {trailing}
+      {onClose ? (
+        <span className="hl-sheet-close-inline-wrap">
+          <SheetClose onClose={onClose} />
+        </span>
+      ) : null}
+    </div>
+  );
+}

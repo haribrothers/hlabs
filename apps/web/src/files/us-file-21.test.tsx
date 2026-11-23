@@ -188,7 +188,7 @@ describe('US-FILE-21', () => {
     ).toEqual(
       expect.arrayContaining([
         'Open',
-        'Open with›',
+        'Open with',
         'Copy link',
         'Download',
         'Rename…',

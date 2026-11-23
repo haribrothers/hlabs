@@ -1,6 +1,20 @@
 // Settings › Users (US-ACCT-13): everyone who uses hlabs and the invites still waiting, with what an admin can do to
 // each. The dialogs behind the row actions arrive with their stories (US-ACCT-14…17, US-ACCT-21, US-ACCT-24).
-import { Mail, MoreHorizontal, Plus, RotateCw, iconDefaults } from '@hlabs/icons';
+import {
+  CirclePause,
+  CirclePlay,
+  KeyRound,
+  LayoutGrid,
+  Link2,
+  Mail,
+  MoreHorizontal,
+  Plus,
+  RotateCw,
+  Shield,
+  Trash2,
+  UserPlus,
+  iconDefaults,
+} from '@hlabs/icons';
 import type { PendingInvite, UserSummary } from '@hlabs/api';
 import {
   Avatar,
@@ -12,11 +26,16 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  BottomSheet,
+  InsetRow,
+  InsetRowButton,
   List,
   ListRow,
+  MoreButton,
+  SheetHeader,
 } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { peopleCopy as copy } from '../copy/people';
 import { daysAgo, timeAgo } from '../lib/relative-time';
 import { confirm } from '../lib/confirm';
@@ -55,7 +74,8 @@ export function inviteLine(i: PendingInvite, now: number): string {
   return copy.inviteLine(daysAgo(i.createdAt, now), daysLeft(i.expiresAt, now), copy.roles[i.role]);
 }
 
-function MoreOptions({ user, size, onDelete }: { user: UserSummary; size: 'sm' | 'md'; onDelete: () => void }) {
+/** Make admin or member, Disable and Enable for a person: each asks first (or says what happened). */
+function useUserActions(user: UserSummary) {
   const client = useTRPCClient();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -94,6 +114,12 @@ function MoreOptions({ user, size, onDelete }: { user: UserSummary; size: 'sm' |
       },
       () => showToast({ tone: 'danger', title: copy.actionFailed }),
     );
+  return { changeRole, disable, enable };
+}
+
+function MoreOptions({ user, size, onDelete }: { user: UserSummary; size: 'sm' | 'md'; onDelete: () => void }) {
+  const name = user.displayName;
+  const { changeRole, disable, enable } = useUserActions(user);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -188,11 +214,11 @@ function UserRow({
   );
 }
 
-function InviteRow({ invite, now, desktop }: { invite: PendingInvite; now: number; desktop: boolean }) {
+/** Copy a pending invite's link, or revoke it after asking. */
+function useInviteActions(invite: PendingInvite) {
   const client = useTRPCClient();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const size = desktop ? 'sm' : 'md';
   const copyLink = () => {
     if (!invite.url) return;
     navigator.clipboard.writeText(invite.url).then(
@@ -212,6 +238,12 @@ function InviteRow({ invite, now, desktop }: { invite: PendingInvite; now: numbe
         showToast({ tone: 'success', title: copy.revoked });
       },
     });
+  return { copyLink, revoke };
+}
+
+function InviteRow({ invite, now, desktop }: { invite: PendingInvite; now: number; desktop: boolean }) {
+  const size = desktop ? 'sm' : 'md';
+  const { copyLink, revoke } = useInviteActions(invite);
   const actions = (
     <RowActions>
       <Button variant="secondary" size={size} disabled={!invite.url} onClick={copyLink}>
@@ -249,9 +281,277 @@ function SkeletonRow() {
   );
 }
 
-/** The "Invite someone" button beside the section title. */
+/** A pending invite's mark: a dashed ring with a link in it. */
+function InviteMark({ size }: { size: 'sm' | 'md' }) {
+  return (
+    <span
+      aria-hidden
+      className={`grid shrink-0 place-items-center rounded-pill border border-dashed border-ink-faint text-ink-muted ${size === 'md' ? 'size-10' : 'size-11'}`}
+    >
+      <Link2 {...iconDefaults} size={18} />
+    </span>
+  );
+}
+
+/**
+ * A person's ••• sheet on a phone (PhoneRedesignA_UserActions): who they are, Apps access and Reset password… for a
+ * member, Make admin (or member) and Disable (or Enable), and Delete… apart in red. Each closes the sheet first.
+ */
+function PhoneUserSheet({
+  user,
+  onClose,
+  onAppsAccess,
+  onResetPassword,
+  onDelete,
+}: {
+  user: UserSummary;
+  onClose: () => void;
+  onAppsAccess: () => void;
+  onResetPassword: () => void;
+  onDelete: () => void;
+}) {
+  const { changeRole, disable, enable } = useUserActions(user);
+  const then = (run: () => void) => () => {
+    onClose();
+    run();
+  };
+  const member = user.role === 'member';
+  return (
+    <BottomSheet open onOpenChange={(open) => (open ? undefined : onClose())} titled closeButton={false}>
+      <SheetHeader
+        leading={<Avatar name={user.displayName} color={avatarColorFor(user.username, user.avatarColor)} size="md" />}
+        title={user.displayName}
+        subtitle={copy.sheetLine(user.username, copy.roles[user.role], member ? copy.apps(user.appCount) : null)}
+        onClose={onClose}
+      />
+      <div className="hl-sheet-scroll flex flex-col gap-4 pt-2 pb-6">
+        {member ? (
+          <div className="hl-p-group">
+            <InsetRowButton
+              icon={<LayoutGrid aria-hidden {...iconDefaults} />}
+              title={copy.appsAccess}
+              value={copy.apps(user.appCount)}
+              chevron
+              aria-haspopup="dialog"
+              onClick={then(onAppsAccess)}
+            />
+            <InsetRowButton
+              icon={<KeyRound aria-hidden {...iconDefaults} />}
+              title={`${copy.resetPassword}…`}
+              subtitle={copy.resetLinkNote}
+              chevron
+              aria-haspopup="dialog"
+              onClick={then(onResetPassword)}
+            />
+          </div>
+        ) : null}
+        <div className="hl-p-group">
+          <InsetRowButton
+            title={user.role === 'admin' ? copy.makeMember : copy.makeAdmin}
+            trailing={
+              <span aria-hidden className="hl-p-row-glyph">
+                <Shield {...iconDefaults} />
+              </span>
+            }
+            onClick={then(changeRole)}
+          />
+          <InsetRowButton
+            title={user.disabled ? copy.enable : copy.disable}
+            trailing={
+              <span aria-hidden className="hl-p-row-glyph">
+                {user.disabled ? <CirclePlay {...iconDefaults} /> : <CirclePause {...iconDefaults} />}
+              </span>
+            }
+            onClick={then(user.disabled ? enable : disable)}
+          />
+        </div>
+        <div className="hl-p-group">
+          <InsetRowButton
+            danger
+            title={copy.delete}
+            trailing={
+              <span aria-hidden className="hl-p-row-glyph">
+                <Trash2 {...iconDefaults} />
+              </span>
+            }
+            onClick={then(onDelete)}
+          />
+        </div>
+      </div>
+    </BottomSheet>
+  );
+}
+
+/** A pending invite's ••• sheet on a phone: Copy link, and Revoke apart in red. */
+function PhoneInviteSheet({ invite, now, onClose }: { invite: PendingInvite; now: number; onClose: () => void }) {
+  const { copyLink, revoke } = useInviteActions(invite);
+  return (
+    <BottomSheet open onOpenChange={(open) => (open ? undefined : onClose())} titled closeButton={false}>
+      <SheetHeader
+        leading={<InviteMark size="sm" />}
+        title={copy.invitePending}
+        subtitle={inviteLine(invite, now)}
+        onClose={onClose}
+      />
+      <div className="hl-sheet-scroll flex flex-col gap-4 pt-2 pb-6">
+        <div className="hl-p-group">
+          <InsetRowButton
+            title={copy.copyLink}
+            disabled={!invite.url}
+            trailing={
+              <span aria-hidden className="hl-p-row-glyph">
+                <Link2 {...iconDefaults} />
+              </span>
+            }
+            onClick={() => {
+              onClose();
+              copyLink();
+            }}
+          />
+        </div>
+        <div className="hl-p-group">
+          <InsetRowButton
+            danger
+            title={copy.revoke}
+            trailing={
+              <span aria-hidden className="hl-p-row-glyph">
+                <Trash2 {...iconDefaults} />
+              </span>
+            }
+            onClick={() => {
+              onClose();
+              revoke();
+            }}
+          />
+        </div>
+      </div>
+    </BottomSheet>
+  );
+}
+
+/**
+ * People on a phone (PhoneRedesignA_Users): one inset list of everyone, each with their role at the right and a •••
+ * that opens their sheet, the invites still waiting, and "Invite someone" at the end.
+ */
+function PhonePeople({
+  users,
+  pending,
+  meId,
+  now,
+  onAppsAccess,
+  onResetPassword,
+  onDelete,
+}: {
+  users: UserSummary[];
+  pending: PendingInvite[];
+  meId: string | undefined;
+  now: number;
+  onAppsAccess: (user: UserSummary) => void;
+  onResetPassword: (user: UserSummary) => void;
+  onDelete: (user: UserSummary) => void;
+}) {
+  const labelId = useId();
+  const [open, setOpen] = useState<{ kind: 'user'; id: string } | { kind: 'invite'; id: string } | null>(null);
+  const [inviting, setInviting] = useState(false);
+  const openUser = open?.kind === 'user' ? users.find((u) => u.id === open.id) : undefined;
+  const openInvite = open?.kind === 'invite' ? pending.find((i) => i.id === open.id) : undefined;
+  return (
+    <div role="group" aria-labelledby={labelId} className="hl-p-group-wrap">
+      <h2 id={labelId} className="hl-p-label">
+        {copy.people(users.length + pending.length)}
+      </h2>
+      <div className="hl-p-group">
+        {users.map((u) => {
+          const isMe = u.id === meId;
+          return (
+            <InsetRow
+              key={u.id}
+              // Disabled: the avatar fades and the name turns muted (the text keeps its contrast).
+              leading={
+                <span className={u.disabled ? 'flex opacity-50' : 'flex'}>
+                  <Avatar name={u.displayName} color={avatarColorFor(u.username, u.avatarColor)} size="md" />
+                </span>
+              }
+              title={
+                <>
+                  <span className={u.disabled ? 'text-ink-muted' : undefined}>{u.displayName}</span>
+                  {isMe ? <span className="text-ink-muted"> {copy.you}</span> : null}
+                </>
+              }
+              subtitle={userLine(u, isMe, now)}
+              trailing={
+                <span className="flex shrink-0 items-center gap-1">
+                  {u.disabled ? <Badge tone="warning">{copy.disabled}</Badge> : null}
+                  <Badge>{copy.roles[u.role]}</Badge>
+                  {isMe ? null : (
+                    <MoreButton
+                      name={u.displayName}
+                      label={copy.moreOptions(u.displayName)}
+                      onClick={() => setOpen({ kind: 'user', id: u.id })}
+                    />
+                  )}
+                </span>
+              }
+            />
+          );
+        })}
+        {pending.map((i) => (
+          <InsetRow
+            key={i.id}
+            leading={<InviteMark size="md" />}
+            title={copy.invitePending}
+            subtitle={inviteLine(i, now)}
+            trailing={
+              <MoreButton
+                name={copy.invitePending}
+                label={copy.inviteOptions}
+                onClick={() => setOpen({ kind: 'invite', id: i.id })}
+              />
+            }
+          />
+        ))}
+        <InsetRowButton
+          accent
+          icon={<UserPlus aria-hidden {...iconDefaults} />}
+          title={copy.invite}
+          aria-haspopup="dialog"
+          onClick={() => setInviting(true)}
+        />
+      </div>
+      {openUser ? (
+        <PhoneUserSheet
+          user={openUser}
+          onClose={() => setOpen(null)}
+          onAppsAccess={() => onAppsAccess(openUser)}
+          onResetPassword={() => onResetPassword(openUser)}
+          onDelete={() => onDelete(openUser)}
+        />
+      ) : null}
+      {openInvite ? <PhoneInviteSheet invite={openInvite} now={now} onClose={() => setOpen(null)} /> : null}
+      {inviting ? <InviteDialog onClose={() => setInviting(false)} /> : null}
+    </div>
+  );
+}
+
+/** The "Invite someone" button beside the section title; on a phone the person-plus at the right of the bar. */
 export function InviteButton() {
   const [open, setOpen] = useState(false);
+  const desktop = useIsDesktop();
+  if (!desktop)
+    return (
+      <>
+        <button
+          type="button"
+          className="hl-p-tbtn hl-focus"
+          aria-label={copy.invite}
+          aria-haspopup="dialog"
+          onClick={() => setOpen(true)}
+        >
+          <UserPlus aria-hidden {...iconDefaults} size={24} />
+        </button>
+        {open ? <InviteDialog onClose={() => setOpen(false)} /> : null}
+      </>
+    );
   return (
     <>
       <Button size="sm" onClick={() => setOpen(true)}>
@@ -305,6 +605,32 @@ export function UsersSection() {
   }
   const users = people.data.users;
   const pending = invites.data.invites;
+  const dialogs = (
+    <>
+      {accessFor ? <AppsAccessDialog userId={accessFor} onClose={() => setAccessFor(null)} /> : null}
+      {deleting ? <DeleteUserDialog user={deleting} onClose={() => setDeleting(null)} /> : null}
+      {resetting ? (
+        <ResetLinkDialog userId={resetting.id} name={resetting.displayName} onClose={() => setResetting(null)} />
+      ) : null}
+    </>
+  );
+  if (!desktop)
+    return (
+      <div className="flex flex-col gap-6">
+        <PhonePeople
+          users={users}
+          pending={pending}
+          meId={me?.id}
+          now={now}
+          onAppsAccess={(u) => setAccessFor(u.id)}
+          onResetPassword={setResetting}
+          onDelete={setDeleting}
+        />
+        <LoginScreenPolicy />
+        <MembersPolicy />
+        {dialogs}
+      </div>
+    );
   return (
     <div className="flex flex-col gap-6">
       <List label={copy.people(users.length + pending.length)}>
@@ -326,11 +652,7 @@ export function UsersSection() {
       </List>
       <LoginScreenPolicy />
       <MembersPolicy />
-      {accessFor ? <AppsAccessDialog userId={accessFor} onClose={() => setAccessFor(null)} /> : null}
-      {deleting ? <DeleteUserDialog user={deleting} onClose={() => setDeleting(null)} /> : null}
-      {resetting ? (
-        <ResetLinkDialog userId={resetting.id} name={resetting.displayName} onClose={() => setResetting(null)} />
-      ) : null}
+      {dialogs}
     </div>
   );
 }

@@ -7,7 +7,7 @@
 import type { StoreUpdates } from '@hlabs/api';
 import { AppLogo, appTileLook } from '@hlabs/icons';
 import { isFeatureEnabled, VISIBLE_PHASE } from '@hlabs/shared';
-import { Button, ModalDialog, Progress, tokens } from '@hlabs/ui';
+import { Button, InsetGroup, ModalDialog, PhoneHeader, PillButton, Progress, tokens } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { lazy, Suspense, useId, useState } from 'react';
@@ -17,7 +17,8 @@ import { daysAgo, timeAgo } from '../lib/relative-time';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useEventStream } from '../lib/use-event-stream';
 import { useNow } from '../lib/use-now';
-import { StoreView } from './store-layout';
+import { useIsDesktop } from '../lib/use-media';
+import { StoreView, useStoreBack } from './store-layout';
 
 const Readme = lazy(() => import('./readme'));
 /** The rows' logos, as the screen draws them (52 px). */
@@ -26,8 +27,11 @@ const LOGO = tokens.SIZE_DOCK_TILE - tokens.SPACE_1;
 type Pending = StoreUpdates['pending'][number];
 type Recent = StoreUpdates['recent'][number];
 
-function Logo({ name, icon }: { name: string; icon: Pending['icon'] }) {
-  const look = appTileLook(name, icon, LOGO);
+/** On a phone the rows' logos are 44 px (PhoneRedesignA_StoreUpdates). */
+const PHONE_LOGO = tokens.SIZE_CONTROL;
+
+function Logo({ name, icon, size = LOGO }: { name: string; icon: Pending['icon']; size?: number }) {
+  const look = appTileLook(name, icon, size);
   return (
     <AppLogo
       decorative
@@ -35,8 +39,8 @@ function Logo({ name, icon }: { name: string; icon: Pending['icon'] }) {
       src={icon.logoUrl}
       colors={look.colors}
       fallbackIcon={look.fallbackIcon}
-      size={LOGO}
-      style={{ boxShadow: 'var(--shadow-icon)' }}
+      size={size}
+      style={size === LOGO ? { boxShadow: 'var(--shadow-icon)' } : undefined}
     />
   );
 }
@@ -53,7 +57,9 @@ function UpdateRow({
   busy,
   onUpdate,
   onReview,
+  phone = false,
 }: {
+  phone?: boolean;
   app: Pending;
   now: number;
   progress: number | null;
@@ -65,6 +71,91 @@ function UpdateRow({
 }) {
   const [open, setOpen] = useState(false);
   const notesId = useId();
+  const notes = open ? (
+    <div
+      id={notesId}
+      role="region"
+      aria-label={copy.notesOf(app.name)}
+      className={
+        phone
+          ? 'hl-p-notes'
+          : 'md:ml-[calc(var(--size-dock-tile)-var(--space-1)+var(--space-4))] rounded-md bg-scrim px-4 py-3 text-body-sm'
+      }
+    >
+      {app.releaseNotes ? (
+        <Suspense fallback={null}>
+          <Readme markdown={app.releaseNotes} />
+        </Suspense>
+      ) : (
+        <p className="m-0 text-ink-muted">{copy.noNotes}</p>
+      )}
+    </div>
+  ) : null;
+  if (phone)
+    // PhoneRedesignA_StoreUpdates: the logo, the name, the versions with "What's new" under them, and an Update pill.
+    return (
+      <li className="hl-p-urow">
+        <div className="flex items-center gap-3">
+          <Logo name={app.name} icon={app.icon} size={PHONE_LOGO} />
+          <div className="hl-p-urow-text">
+            <span className="hl-p-urow-name">{app.name}</span>
+            <span className="hl-p-urow-sub">
+              {copy.versions(app.fromVersion, app.toVersion, daysAgo(app.releasedAt, now))}
+            </span>
+            {app.newAccess ? (
+              <span className="hl-p-urow-sub font-semibold text-warning">
+                {copy.needsApproval}{' '}
+                <button
+                  type="button"
+                  className="hl-p-urow-link hl-focus"
+                  aria-label={copy.reviewApp(app.name)}
+                  onClick={onReview}
+                >
+                  {copy.review}
+                </button>
+              </span>
+            ) : null}
+            <span className="flex flex-wrap items-center gap-x-3">
+              <button
+                type="button"
+                className="hl-p-urow-link hl-focus"
+                aria-expanded={open}
+                aria-controls={notesId}
+                onClick={() => setOpen((o) => !o)}
+              >
+                {open ? copy.hideNotes : copy.whatsNew}
+              </button>
+              {rolledBack ? (
+                <Link
+                  to="/store/app/$appId"
+                  params={{ appId: app.appId }}
+                  aria-label={copy.rolledBackLabel(app.name)}
+                  className="hl-p-urow-link hl-focus text-warning"
+                >
+                  {copy.rolledBack}
+                </Link>
+              ) : null}
+            </span>
+          </div>
+          {progress !== null ? (
+            <div className="flex w-24 min-w-0 flex-col gap-1.5" aria-live="polite">
+              <span className="text-footnote text-ink-muted">{copy.updating}</span>
+              <Progress value={progress} aria-label={copy.updatingApp(app.name)} />
+            </div>
+          ) : (
+            <PillButton
+              disabled={busy}
+              aria-busy={starting || undefined}
+              aria-label={copy.updateApp(app.name)}
+              onClick={onUpdate}
+            >
+              {copy.update}
+            </PillButton>
+          )}
+        </div>
+        {notes}
+      </li>
+    );
   return (
     <li className={row}>
       {/* The buttons go under the text when there isn't room beside it (a phone). */}
@@ -116,32 +207,30 @@ function UpdateRow({
           </div>
         )}
       </div>
-      {open ? (
-        <div
-          id={notesId}
-          role="region"
-          aria-label={copy.notesOf(app.name)}
-          className="md:ml-[calc(var(--size-dock-tile)-var(--space-1)+var(--space-4))] rounded-md bg-scrim px-4 py-3 text-body-sm"
-        >
-          {app.releaseNotes ? (
-            <Suspense fallback={null}>
-              <Readme markdown={app.releaseNotes} />
-            </Suspense>
-          ) : (
-            <p className="m-0 text-ink-muted">{copy.noNotes}</p>
-          )}
-        </div>
-      ) : null}
+      {notes}
     </li>
   );
 }
 
-function RecentRow({ app, now }: { app: Recent; now: number }) {
+function RecentRow({ app, now, phone = false }: { app: Recent; now: number; phone?: boolean }) {
   const parts = [
     copy.updatedWhen(daysAgo(app.at, now)),
     ...(app.automatic ? [copy.automatically] : []),
     ...(app.notBackedUp ? [copy.notBackedUp] : []),
   ];
+  if (phone)
+    return (
+      <li className="hl-p-urow">
+        <div className="flex items-center gap-3">
+          <Logo name={app.name} icon={app.icon} size={PHONE_LOGO} />
+          <div className="hl-p-urow-text">
+            <span className="hl-p-urow-name">{app.name}</span>
+            <span className="hl-p-urow-sub">{parts.join(' · ')}</span>
+          </div>
+          <span className="hl-p-row-value text-footnote">{app.version}</span>
+        </div>
+      </li>
+    );
   return (
     <li className={row}>
       <div className="flex items-center gap-4">
@@ -274,6 +363,106 @@ export function StoreUpdatesView({ shippedPhase = VISIBLE_PHASE }: { shippedPhas
     </Button>
   ) : null;
   const rolledBack = new Set(u?.rolledBack.map((r) => r.appId));
+  const desktop = useIsDesktop();
+  const back = useStoreBack();
+
+  if (!desktop)
+    // PhoneRedesignA_StoreUpdates (US-PHONE-27): "‹ App Store" with "Update all" in the bar, when hlabs last checked
+    // under the title, the updates and the recent ones as inset lists, and the footnote.
+    return (
+      <StoreView title={copy.title} phoneTitle={false} ownPhoneHeader>
+        <PhoneHeader
+          title={copy.title}
+          back={back}
+          barTrailing={
+            canUpdateAll ? (
+              <button
+                type="button"
+                className="hl-p-tbtn hl-p-tbtn-strong hl-focus"
+                aria-label={batch ? undefined : copy.updateAll(pending.length)}
+                aria-busy={startAll.isPending || undefined}
+                disabled={updating}
+                onClick={() => startAll.mutate()}
+              >
+                {batch
+                  ? copy.updatingOf(Math.min(batch.finished + 1, batch.jobIds.length), batch.jobIds.length)
+                  : copy.updateAllShort}
+              </button>
+            ) : undefined
+          }
+          subtitle={
+            u
+              ? `${u.lastCheckedAt ? copy.checked(timeAgo(u.lastCheckedAt, now)) : copy.neverChecked}${
+                  pending.length ? ` · ${copy.restartBriefly}` : ''
+                }`
+              : undefined
+          }
+        />
+        {u ? (
+          <div className="flex flex-col gap-5 pb-6">
+            {pending.length ? (
+              <ul aria-label={copy.title} className="hl-p-group">
+                {pending.map((app) => (
+                  <UpdateRow
+                    key={app.appId}
+                    app={app}
+                    now={now}
+                    progress={progressOf(app.appId)}
+                    rolledBack={rolledBack.has(app.appId)}
+                    starting={start.isPending && start.variables === app.appId}
+                    busy={start.isPending || updating}
+                    onUpdate={() => start.mutate(app.appId)}
+                    onReview={() => setReview(app)}
+                    phone
+                  />
+                ))}
+              </ul>
+            ) : (
+              <InsetGroup>
+                <div className="hl-p-row">
+                  <span className="hl-p-row-main">
+                    <span className="hl-p-row-text">
+                      <span className="hl-p-row-title font-semibold">{copy.upToDate}</span>
+                    </span>
+                    <PillButton
+                      aria-busy={check.isPending || undefined}
+                      disabled={check.isPending}
+                      onClick={() => check.mutate()}
+                    >
+                      {copy.checkNow}
+                    </PillButton>
+                  </span>
+                </div>
+              </InsetGroup>
+            )}
+            {u.recent.length ? (
+              <section aria-labelledby="recently-updated" className="hl-p-group-wrap">
+                <h2 id="recently-updated" className="hl-p-label">
+                  {copy.recent}
+                </h2>
+                <ul aria-labelledby="recently-updated" className="hl-p-group">
+                  {u.recent.map((app) => (
+                    <RecentRow key={app.appId} app={app} now={now} phone />
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+            <p className="hl-p-foot">
+              {copy.footer}
+              <Link
+                to="/settings/$section"
+                params={{ section: 'updates' }}
+                className="hl-focus rounded-xs font-semibold text-accent-link no-underline"
+              >
+                {copy.footerLink}
+              </Link>
+              .
+            </p>
+          </div>
+        ) : null}
+        <ReviewAccess app={review} onClose={() => setReview(null)} />
+      </StoreView>
+    );
 
   return (
     <StoreView title={copy.title} action={action}>

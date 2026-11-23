@@ -14,7 +14,7 @@ test('US-SYS-27 the log window shows hlabs lines with secrets masked, by source,
   await page.goto('/settings/advanced');
   const troubleshooting = page.getByRole('group', { name: 'Troubleshooting' });
   await expect(troubleshooting).toContainText('Background service, proxy and app installs');
-  await troubleshooting.getByRole('button', { name: 'View', exact: true }).click();
+  await troubleshooting.getByRole('button', { name: /^View( hlabs logs)?$/ }).click();
   const log = page.getByRole('log', { name: 'Background service' });
   await expect(log).toContainText(`${tag} DB_PASSWORD=••••`, { timeout: 10_000 });
   await expect(log).not.toContainText('hunter2e2e');
