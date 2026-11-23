@@ -96,8 +96,5 @@ describe('US-FILE-18', () => {
     ).toEqual(['/home/new.txt']);
   });
 
-  it('everyone’s Trash waits for US-SYS-14', async () => {
-    const f = await filesDaemon(closers);
-    expect(f.code(await f.d.mutate('files.emptyTrash', { allUsers: true }))).toBe('NOT_IMPLEMENTED');
-  });
+  // Everyone's Trash (allUsers) is US-SYS-14's (us-sys-14.test.ts).
 });

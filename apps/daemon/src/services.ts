@@ -54,6 +54,8 @@ import type { NetworkService } from './network/service';
 import type { TailscaleClient } from './tailscale/types';
 import type { AppLogs } from './apps/logs';
 import type { UpdateService } from './apps/update';
+import type { ImagePruner } from './storage/images';
+import type { StorageSizes } from './storage/sizes';
 
 export interface Services {
   config: DaemonConfig;
@@ -122,6 +124,10 @@ export interface Services {
   discovery: NetworkDiscovery;
   /** Connected network drives: checked every minute, mounted again, disconnected (US-FILE-11, US-FILE-12). */
   networkDrives: NetworkDrives;
+  /** Files, the backup cache and hlabs's own folders, counted every 10 minutes at most (US-SYS-11). */
+  storageSizes: StorageSizes;
+  /** Removes images hlabs pulled that nothing uses (US-SYS-13, D-168). */
+  imagePruner: ImagePruner;
   /** Files: virtual paths, listings, uploads and downloads (07-files). */
   files: FilesService;
   /** Move to (US-FILE-22). */

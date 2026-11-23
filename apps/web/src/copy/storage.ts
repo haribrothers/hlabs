@@ -1,0 +1,67 @@
+// Settings › Storage (US-SYS-11…14, 10-system-settings.md). Sentence case, plain words.
+export const storageCopy = {
+  thisComputer: 'This computer',
+  diskKind: {
+    internalSsd: 'internal SSD',
+    internalDisk: 'internal disk',
+    external: 'external drive',
+  },
+  /** "This computer · internal SSD" */
+  diskLabel: (kind: string | null) => (kind ? `This computer · ${kind}` : 'This computer'),
+  freeOf: (free: string, total: string) => `${free} free of ${total}`,
+  lowSpace: 'Low disk space',
+  chartLabel: 'What is using this disk',
+  apps: 'Apps',
+  files: 'Files',
+  backupCache: 'Backup cache',
+  hlabs: 'hlabs',
+  other: 'Other',
+  loading: 'Reading storage…',
+  loadFailed: "Couldn't read storage. Try again.",
+  tryAgain: 'Try again',
+
+  dataLocation: 'Data location',
+  rootNote: 'Home folders, Shared and media live here',
+  appData: 'App data',
+  appDataNote: 'Apps keep their data here',
+  moveData: 'Move data…',
+
+  drives: 'Drives',
+  noDrives: 'No drives connected',
+  connected: 'Connected',
+  offline: 'Offline',
+  connectedNote: 'connected',
+  offlineNote: 'offline',
+  disconnectedNote: 'disconnected',
+  usedBy: (names: string[]) => `used by ${names.join(', ')}`,
+  externalAway: 'External drive · not plugged in',
+  externalDrive: 'External drive',
+  disconnect: 'Disconnect',
+  disconnectTitle: (name: string) => `Disconnect ${name}?`,
+  /** "Jellyfin will stop until the drive is back." */
+  appsWillStop: (names: string[]) =>
+    `${names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`} will stop until the drive is back.`,
+  filesKept: 'Files on the drive are not deleted.',
+  disconnected: (name: string) => `${name} disconnected`,
+  connectDrive: '+ Connect a drive',
+
+  cleanUp: 'Clean up',
+  images: 'Unused app images',
+  imagesNote: 'Left over from updates and uninstalled apps',
+  free: (size: string) => `Free ${size}`,
+  nothingToClean: 'Nothing to clean up',
+  freeing: 'Freeing space…',
+  freed: (size: string) => `Freed ${size}`,
+  freeFailed: "Couldn't remove the unused images. Try again.",
+
+  trash: 'Trash',
+  trashNote: 'Emptied automatically after 30 days',
+  /** "Emptied automatically after 30 days · 1.2 GB in the trash" */
+  trashSize: (size: string) => `${size} in the trash`,
+  emptyNow: 'Empty now',
+  emptyTitle: 'Empty trash for everyone?',
+  emptyBody: (size: string) => `Everything in everyone's trash (${size}) is deleted for good. This can't be undone.`,
+  empty: 'Empty trash',
+  emptying: 'Emptying the trash…',
+  emptyFailed: "Couldn't empty the trash. Try again.",
+} as const;

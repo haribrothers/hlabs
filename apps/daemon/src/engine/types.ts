@@ -77,6 +77,13 @@ export interface ContainerEngine {
   removeImage(image: string): Promise<void>;
   /** An image's size on disk (`sha256:…` or a reference), or null when it isn't here. */
   imageSize(image: string): Promise<number | null>;
+  /** An image's id (`sha256:…`) and size, from a reference or an id; null when it isn't here (US-SYS-13). */
+  imageInfo(image: string): Promise<{ id: string; sizeBytes: number } | null>;
+  /**
+   * The image ids every container on the engine uses: all of them, running or stopped, whatever project or program
+   * made them (not only hlabs's). Freeing space never removes one of these (US-SYS-13, D-168).
+   */
+  containerImageIds(): Promise<Set<string>>;
   /**
    * Empties a folder on this computer from inside a throwaway container of `image`, run as root: for an app's data
    * that the app wrote as root or another user, which hlabs can't delete itself on Linux. Throws when the image can't

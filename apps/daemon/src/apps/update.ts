@@ -208,8 +208,11 @@ export class UpdateService {
         installer.storedMounts(appId),
       );
       const images = [...new Set(Object.values(entry.compose.services).map((s) => s.image!))];
-      await installer.pullAll(ctx, images, (within) =>
-        ctx.report(10 + Math.round(within * 50), 'Downloading the new version'),
+      await installer.pullAll(
+        ctx,
+        images,
+        (within) => ctx.report(10 + Math.round(within * 50), 'Downloading the new version'),
+        appId,
       );
       // A folder the new version mounts that the old one didn't, made by hlabs (not root-owned on Linux).
       installer.prepareAppData(appId, entry.compose);

@@ -201,6 +201,22 @@ export class DockerodeEngine implements ContainerEngine {
     }
   }
 
+  async imageInfo(image: string): Promise<{ id: string; sizeBytes: number } | null> {
+    try {
+      const inspect = await this.docker.getImage(image).inspect();
+      return { id: inspect.Id, sizeBytes: inspect.Size };
+    } catch (error) {
+      if ((error as { statusCode?: number }).statusCode === 404) return null;
+      throw error;
+    }
+  }
+
+  async containerImageIds(): Promise<Set<string>> {
+    // Every container, running or not, of any project: no filters.
+    const list = await this.docker.listContainers({ all: true });
+    return new Set(list.map((c) => c.ImageID).filter(Boolean));
+  }
+
   async projectContainers(project: string): Promise<ContainerState[]> {
     const list = await this.docker.listContainers({
       all: true,

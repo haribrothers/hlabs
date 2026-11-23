@@ -10,8 +10,8 @@ When the disk with your hlabs files and app data is full, apps can't save, insta
 
 ## What to try, in order
 
-1. See what uses the space in **Live usage** › Storage.
-2. Empty the Trash in **Files**: deleted files keep their space for 30 days until then. See [Get something back from the Trash](../../files/files/#get-something-back-from-the-trash).
+1. See what uses the space in **Settings › Storage** (or **Live usage** › Storage). See [Storage](../../get-started/storage/).
+2. In **Settings › Storage**, choose **Free** next to Unused app images, and **Empty now** next to Trash (everyone's deleted files keep their space for 30 days until then). Each person can also empty their own Trash in **Files**: see [Get something back from the Trash](../../files/files/#get-something-back-from-the-trash).
 3. Uninstall apps you don't use, choosing to delete their data if you don't need it. See [Uninstall an app](../../apps/manage-apps/#uninstall-an-app).
 4. Free up space outside hlabs on the same disk.
 

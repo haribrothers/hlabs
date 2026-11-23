@@ -33,6 +33,10 @@ export class FakeSystemProbe implements SystemProbe {
   engineStoragePath(kind: EngineKind) {
     return kind === 'docker-engine' ? '/var/lib/docker' : '/Users/hari';
   }
+  media = { internal: true as boolean | null, solidState: true as boolean | null };
+  async diskMedia() {
+    return this.media;
+  }
   async portInUse(port: number) {
     return this.portsInUse.has(port);
   }

@@ -196,12 +196,42 @@ export class FakeEngine implements ContainerEngine {
   async removeImage(image: string) {
     this.assertRunning();
     this.removedImages.push(image);
-    this.images.delete(image);
+    if (!image.startsWith('sha256:')) {
+      this.images.delete(image);
+      return;
+    }
+    // By id: as Docker, an image a container still uses is left as it is (409).
+    if ((await this.containerImageIds()).has(image)) return;
+    for (const ref of [...this.images]) if (this.idOf(ref) === image) this.images.delete(ref);
   }
 
   async imageSize(image: string) {
     this.assertRunning();
     return this.imageSizes.get(image) ?? null;
+  }
+
+  /** Reference → image id; by default the digest in the reference, else `sha256:local` (as FakeCompose names it). */
+  readonly imageIds = new Map<string, string>();
+  /** Image ids that containers of other programs use (not an hlabs project): running or stopped, they count too. */
+  readonly otherContainerImages = new Set<string>();
+
+  idOf(ref: string): string {
+    return this.imageIds.get(ref) ?? `sha256:${ref.split('@sha256:')[1] ?? 'local'}`;
+  }
+
+  async imageInfo(image: string) {
+    this.assertRunning();
+    const ref = [...this.images].find((r) => r === image || this.idOf(r) === image);
+    if (!ref) return null;
+    const id = this.idOf(ref);
+    return { id, sizeBytes: this.imageSizes.get(id) ?? this.imageSizes.get(ref) ?? 0 };
+  }
+
+  async containerImageIds() {
+    this.assertRunning();
+    const ids = new Set(this.otherContainerImages);
+    for (const list of this.containers.values()) for (const c of list) ids.add(c.imageId);
+    return ids;
   }
 
   /** Containers paused and unpaused, in order (US-BKP-05). */

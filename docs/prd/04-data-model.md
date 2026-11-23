@@ -27,12 +27,13 @@ Secrets never go in SQLite in plain text: passwords are Argon2id hashes, TOTP se
 | `app_env` | `app_id`, `key`, `value` or `secret_ref`, `is_secret` | User-provided env from manifest prompts / AppConfig. Keys that aren't a manifest prompt are variables someone added in AppConfig (set on the web service, D-165). A secret's `value` is null and `secret_ref` is `env`: its value is only in the app's 0600 `.env`. |
 | `app_mounts` | `id`, `app_id`, `target` (container path key from manifest, or `/mnt/hlabs/<name>` for a folder given in AppPermissions), `storage_location_id`, `subpath`, `mode` (`ro`\|`rw`) | Folder access chosen in InstallSheet / AppPermissions (US-APP-17). |
 | `app_access` | `app_id`, `user_id` | Members only; admins can open every app. |
+| `app_images` | `image_id` (`sha256:…`), `app_id`, `ref`, `pulled_at`; key (`image_id`, `app_id`) | Images hlabs pulled for an app that weren't on the engine before (US-SYS-13, D-168): the only images "Free space" may remove. No foreign key, so rows outlive an uninstalled app; a row goes when its image is removed or found gone. |
 | `home_layout` | `user_id`, `items_json`, `dock_json`, `hidden_json` | Ordered app ids + widgets per user (HomeEdit; at most 4 widgets, app widgets as `app:<appId>:<widgetId>`); `dock_json` = the person's pinned Dock apps, ordered, max 8 (D-054); `hidden_json` = apps they took off Home, still installed and not appended again as new (US-HOME-18). |
 
 ### Storage, files, network
 | Table | Columns | Notes |
 | --- | --- | --- |
-| `storage_locations` | `id`, `kind` (`local`\|`external`\|`smb`\|`nfs`), `name`, `path`, `mount_options`, `secret_ref`, `is_root` (bool), `status`, `last_seen_at` | Exactly one `is_root`. |
+| `storage_locations` | `id`, `kind` (`local`\|`external`\|`smb`\|`nfs`), `name`, `path`, `mount_options`, `secret_ref`, `is_root` (bool), `status` (`ok`\|`unreachable`\|`ejected`: disconnected from Settings › Storage, left offline until reconnected, US-SYS-12), `last_seen_at` | Exactly one `is_root`. |
 | `file_shares` | `id`, `path`, `protocol` (`smb`), `name`, `read_only`, `users_json` | FilesShare (P3). |
 | `trash_items` | `id`, `owner_user_id`, `original_path` (virtual), `trash_path` (`<location>/.trash/<userId>/<id>-<name>`, on the same storage location as the item), `deleted_at`, `size` | Auto-empty after 30 days (checked hourly). |
 | `upload_sessions` | `id`, `user_id`, `path` (the folder, virtual), `name`, `size`, `received`, `on_conflict` (`skip`\|`keepBoth`\|`replace`), `created_at`, `updated_at` (last chunk) | Resumable uploads (US-FILE-08…10); one per person, folder and name (unique). Removed with its partial file after 24 h without a chunk. |

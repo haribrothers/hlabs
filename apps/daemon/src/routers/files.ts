@@ -24,7 +24,12 @@ export const files: AppHandlers<DaemonContext>['files'] = {
   delete: ({ paths }, ctx) => ctx.services.filesTrash.remove(callerOf(ctx), paths),
   restoreFromTrash: ({ ids }, ctx) => ctx.services.filesTrash.restore(callerOf(ctx), ids),
   listTrash: (input, ctx) => ctx.services.filesTrash.list(callerOf(ctx), input),
-  emptyTrash: (input, ctx) => ctx.services.filesTrash.empty(callerOf(ctx), input ?? undefined),
+  emptyTrash: async (input, ctx) => {
+    const result = await ctx.services.filesTrash.empty(callerOf(ctx), input ?? undefined);
+    // Settings › Storage counts Files again (US-SYS-14).
+    ctx.services.storageSizes.forget();
+    return result;
+  },
   openWith: ({ path }, ctx) =>
     ctx.services.files.openWith(callerOf(ctx), path, (name) => ctx.services.routing.isPublished(name)),
   preview: (input, ctx) => ctx.services.files.preview(callerOf(ctx), input),

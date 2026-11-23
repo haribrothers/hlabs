@@ -203,8 +203,8 @@ export const files = {
     }),
   ),
   /**
-   * Deletes the caller's Trash for good (US-FILE-18), audited; over 1 GB it's an `empty_trash` job. `allUsers` (every
-   * person's, admins) comes with US-SYS-14.
+   * Deletes the caller's Trash for good (US-FILE-18), audited; over 1 GB it's an `empty_trash` job. `allUsers`
+   * deletes every person's Trash (US-SYS-14, admins only: a member gets ACCESS_DENIED).
    */
   emptyTrash: io(z.object({ allUsers: z.boolean().optional() }).optional(), z.union([ok, jobRefSchema])),
   shares: {

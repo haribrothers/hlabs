@@ -10,7 +10,16 @@ import { registerPause, resumeAfterQuit } from './apps/pause';
 import { UninstallService } from './uninstall/service';
 import { registerHomeFolderTrash } from './users/home-trash-job';
 import { watchEngine } from './engine/watch';
-import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting, users } from '@hlabs/db';
+import {
+  apps,
+  MigrationFailedError,
+  openDb,
+  SchemaTooNewError,
+  getSetting,
+  setSetting,
+  storageLocations,
+  users,
+} from '@hlabs/db';
 import { hlabsError } from '@hlabs/api';
 import { nextOrigins } from '@hlabs/shared';
 import { existsSync, mkdirSync, renameSync, rmSync } from 'node:fs';
@@ -81,6 +90,8 @@ import { BackupService } from './backups/runner';
 import { PENDING_DB, RestoreService } from './backups/restore';
 import { PlanSizes } from './backups/plan';
 import { NetworkDrives } from './storage/drives';
+import { ImagePruner } from './storage/images';
+import { StorageSizes } from './storage/sizes';
 import { FilesService } from './files/service';
 import { Trash } from './files/trash';
 import { FileMover } from './files/move';
@@ -585,7 +596,34 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   filesTrash.register();
   fileMover.register();
   const networkStorage = new NetworkStorage({ db, secrets, mounter, mountsDir });
-  const networkDrives = new NetworkDrives({ db, secrets, mounter, mountsDir, bus, logger });
+  const networkDrives = new NetworkDrives({
+    db,
+    secrets,
+    mounter,
+    mountsDir,
+    bus,
+    logger,
+    stopApp: (appId) => appService.stop(appId),
+  });
+  const storageSizes = new StorageSizes({
+    dataDir: config.paths.dataDir,
+    binDir: config.resources.binDir,
+    appDataDir: config.paths.appDataDir,
+    resticCacheDir: join(config.paths.dataDir, 'cache', 'restic'),
+    mountsDir,
+    storageRoot: () => {
+      const root = db.select().from(storageLocations).where(eq(storageLocations.isRoot, true)).get();
+      return root && (root.kind === 'local' || root.kind === 'external') ? root.path : null;
+    },
+  });
+  const imagePruner = new ImagePruner({
+    db,
+    engine,
+    jobs,
+    logger,
+    projectDir: (appId) => appService.project(appId).dir,
+  });
+  imagePruner.register();
   const drives = deps.drives ?? new NodeDriveProbe();
   const restic: Restic =
     deps.restic ??
@@ -667,6 +705,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     network: networkStorage,
     discovery,
     networkDrives,
+    storageSizes,
+    imagePruner,
     files,
     fileMover,
     filesTrash,

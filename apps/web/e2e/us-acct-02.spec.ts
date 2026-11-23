@@ -20,9 +20,10 @@ test.describe('US-ACCT-02 desktop', () => {
     expect(navBox.x).toBeLessThan((await heading.boundingBox())!.x);
 
     await account.focus();
-    // Account, Users, Appearance, Network & remote access, Engine & startup.
+    // Account, Users, Appearance, Network & remote access, Storage, Engine & startup.
     await page.keyboard.press('ArrowDown');
     await expect(nav.getByRole('link', { name: 'Users' })).toBeFocused();
+    await page.keyboard.press('ArrowDown');
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('ArrowDown');

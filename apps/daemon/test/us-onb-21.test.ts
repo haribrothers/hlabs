@@ -30,6 +30,9 @@ describe('US-ONB-21', () => {
         appsAllowed: true,
         usedBy: [],
         readOnly: false,
+        // US-SYS-12.
+        displayPath: d.config.paths.storageRootDefault,
+        address: null,
       },
     ]);
     expect((await d.query('auth.me')).result?.data).toMatchObject({

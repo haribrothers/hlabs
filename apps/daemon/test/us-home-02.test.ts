@@ -37,9 +37,13 @@ describe('US-HOME-02', () => {
       appsBytes: 0,
       filesBytes: 0,
       systemBytes: 114e9,
-      hlabsBytes: 0,
+      // hlabs's own data folder (its database), part of the system's share (US-SYS-11).
+      hlabsBytes: expect.any(Number),
       backupCacheBytes: 0,
       reclaimableImageBytes: 0,
+      diskKind: 'internalSsd',
+      trashBytes: 0,
+      trashCount: 0,
     });
   });
 });
@@ -100,6 +104,8 @@ describe('US-HOME-02 · storage by use', () => {
       appsBytes: 53.5 * GB,
       filesBytes: 0,
       systemBytes: 60.5 * GB,
+      hlabsBytes: 0,
+      backupCacheBytes: 0,
     });
   });
 

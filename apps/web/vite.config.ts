@@ -53,6 +53,8 @@ const toDaemon = {
   '/dev/rolled-back': DAEMON,
   '/dev/sync-store': DAEMON,
   '/dev/seed': DAEMON,
+  '/dev/fake-images': DAEMON,
+  '/dev/trash-item': DAEMON,
   '/dev/notify': DAEMON,
 };
 

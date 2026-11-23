@@ -143,3 +143,22 @@ export const homeLayout = sqliteTable('home_layout', {
   /** Apps taken off Home but still installed (US-HOME-18): not appended again as new. */
   hiddenJson: json<string[]>('hidden_json').notNull().default([]),
 });
+
+/**
+ * Images hlabs itself pulled for an app (US-SYS-13, D-168): the only images "Free space" may ever remove. A row is
+ * written when a pull brings in an image that wasn't on the engine before; one already there (the person's own, or
+ * another hlabs's on the same engine) is never recorded. Rows outlive the app (no foreign key): an uninstalled app's
+ * images are what's left over. A row goes when its image is removed or found gone.
+ */
+export const appImages = sqliteTable(
+  'app_images',
+  {
+    /** `sha256:…`, as the engine names the image. */
+    imageId: text('image_id').notNull(),
+    appId: text('app_id').notNull(),
+    /** The reference pulled, e.g. `jellyfin/jellyfin:10.10.3`. */
+    ref: text('ref').notNull(),
+    pulledAt: ms('pulled_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.imageId, t.appId] })],
+);

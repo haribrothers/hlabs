@@ -89,6 +89,7 @@ export default defineConfig({
                   items: [
                     { label: 'Settings', link: '/help/get-started/settings/' },
                     { label: 'Appearance', link: '/help/get-started/appearance/' },
+                    { label: 'Storage', link: '/help/get-started/storage/' },
                     { label: 'Engine and startup', link: '/help/get-started/engine/' },
                     { label: 'Update hlabs', link: '/help/get-started/updates/' },
                   ],

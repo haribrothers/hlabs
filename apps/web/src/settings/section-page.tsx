@@ -12,6 +12,7 @@ import { AppearanceSection } from './appearance-section';
 import { EngineSection, EngineStatus } from './engine-section';
 import { NetworkSection } from './network-section';
 import { sectionAccess, type SectionId } from './sections';
+import { StorageSection } from './storage-section';
 import { UpdatesSection } from './updates-section';
 import { InviteButton, UsersSection } from './users-section';
 
@@ -22,6 +23,7 @@ const CONTENT: Partial<
   users: UsersSection,
   appearance: AppearanceSection,
   network: NetworkSection,
+  storage: StorageSection,
   engine: EngineSection,
   updates: UpdatesSection,
   backups: BackupsSection,

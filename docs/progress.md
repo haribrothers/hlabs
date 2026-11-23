@@ -319,10 +319,10 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-ACCT-33 · Choose an accent colour
 - [x] US-ACCT-34 · Home screen options
 - [x] US-ACCT-35 · Reduce transparency and motion
-- [ ] US-SYS-11 · See what is using storage
-- [ ] US-SYS-12 · Manage data location and drives
-- [ ] US-SYS-13 · Free space from unused app images
-- [ ] US-SYS-14 · Empty everyone's trash
+- [x] US-SYS-11 · See what is using storage
+- [x] US-SYS-12 · Manage data location and drives
+- [x] US-SYS-13 · Free space from unused app images (D-168)
+- [x] US-SYS-14 · Empty everyone's trash
 - [ ] US-SYS-27 · View hlabs logs
 - [ ] US-SYS-28 · Download a diagnostics bundle
 - [ ] US-SYS-29 · See what hlabs connects to

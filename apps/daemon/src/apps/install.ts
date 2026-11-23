@@ -14,6 +14,7 @@ import {
 import {
   appAccess,
   appEnv,
+  appImages,
   appMounts,
   apps,
   auditLog,
@@ -440,9 +441,11 @@ export class InstallService {
       report('check', 1, { arch });
 
       // 2. Images, weighted by bytes; images already here count as done (a retry reuses them).
-      await this.pullAll(ctx, images, (within, detail, eta) => report('pull', within, detail, eta)).catch((error) => {
-        throw new StepFailure('pull', error instanceof StepFailure ? error.error : error);
-      });
+      await this.pullAll(ctx, images, (within, detail, eta) => report('pull', within, detail, eta), appId).catch(
+        (error) => {
+          throw new StepFailure('pull', error instanceof StepFailure ? error.error : error);
+        },
+      );
 
       // 3. Data folders: app data, and chosen folders that don't exist yet (a new Home › Photos).
       report('folders', 0);
@@ -519,10 +522,16 @@ export class InstallService {
   }
 
   /** Pulls what's missing; reports bytes across images, never going backwards, with an ETA after 5 s. */
+  /**
+   * Pulls the images that aren't here yet. Each one pulled is recorded for `appId` in `app_images`: only those may
+   * ever be removed to free space (US-SYS-13, D-168). An image already on the engine isn't recorded: hlabs can't tell
+   * it apart from the person's own.
+   */
   async pullAll(
     ctx: JobContext<unknown>,
     images: string[],
     report: (within: number, detail: InstallStepDetail, etaSeconds: number | null) => void,
+    appId: string,
   ): Promise<void> {
     const engine = this.deps.engine.client;
     if (!engine) throw hlabsError('ENGINE_UNAVAILABLE');
@@ -568,9 +577,21 @@ export class InstallService {
       } catch (error) {
         throw hlabsError(classifyPullError(error), (error as Error).message);
       }
+      await this.recordPull(appId, image);
       finished.add(image);
       emit();
     }
+  }
+
+  /** hlabs pulled `ref` for `appId` (D-168). A failed look-up only means the image can't be freed later. */
+  private async recordPull(appId: string, ref: string): Promise<void> {
+    const info = await this.deps.engine.client?.imageInfo(ref).catch(() => null);
+    if (!info) return;
+    this.deps.db
+      .insert(appImages)
+      .values({ imageId: info.id, appId, ref, pulledAt: Date.now() })
+      .onConflictDoUpdate({ target: [appImages.imageId, appImages.appId], set: { ref, pulledAt: Date.now() } })
+      .run();
   }
 
   writeProject(

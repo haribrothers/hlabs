@@ -35,6 +35,8 @@ export const SERIAL_JOB_KINDS = new Set<string>([
   'app_uninstall',
   'app_move_data',
   'app_deploy_custom',
+  /** Freeing image space waits for app jobs, and they for it, so an install never loses an image it just found (D-168). */
+  'prune_images',
 ]);
 
 export class JobRunner {

@@ -44,9 +44,10 @@ test('US-STATE-15 Retry runs the action; a failure updates the toast, success re
   await expect(toast).toBeHidden();
   expect(calls).toBe(2);
 
-  // Manage storage waits for Settings › Storage (phase 7).
+  // Manage storage opens Settings › Storage (built in phase 7's group 9, D-151).
   await page.getByRole('button', { name: 'Show warning toast' }).click();
   const warning = page.getByRole('status').filter({ hasText: 'Low disk space' });
   await expect(warning).toBeVisible();
-  await expect(warning.getByRole('link', { name: 'Manage storage' })).toHaveCount(0);
+  await warning.getByRole('link', { name: 'Manage storage' }).click();
+  await expect(page).toHaveURL(/\/settings\/storage$/);
 });

@@ -18,6 +18,7 @@ import {
 import { type OnboardingStep, ulid } from '@hlabs/shared';
 import { and, eq } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { generateSync } from 'otplib';
 import { hashPassword } from '../auth/passwords';
@@ -219,6 +220,51 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     // Offline shows at once; coming back is left to Try again (or the next minute's check).
     if (!online) await services.networkDrives.check();
     return { online };
+  });
+
+  // Unused app images as e2e sees them (US-SYS-13): a pretend list, so a spec never removes a real image from the
+  // engine it shares with a dev instance and other projects (D-168). `images: null` goes back to the engine's own.
+  const fakeImagesBody = z.object({
+    images: z.array(z.object({ id: z.string(), bytes: z.number().nonnegative() })).nullable(),
+  });
+  app.post('/dev/fake-images', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { images } = fakeImagesBody.parse(req.body);
+    services.imagePruner.fake = images;
+    return { images };
+  });
+
+  // Everyone's Trash as e2e sets it up (US-SYS-14): a file of `bytes` in a person's Trash (the first admin's when no
+  // username is given), on this instance's own storage root.
+  const fakeTrashBody = z.object({
+    username: z.string().optional(),
+    name: z.string().regex(/^[\w.-]{1,80}$/),
+    bytes: z.number().int().nonnegative().max(100_000_000),
+  });
+  app.post('/dev/trash-item', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { username, name, bytes } = fakeTrashBody.parse(req.body);
+    const person = services.db
+      .select()
+      .from(users)
+      .where(username ? eq(users.username, username) : eq(users.role, 'admin'))
+      .get();
+    if (!person) return reply.code(404).send({ reason: 'no such person' });
+    const root = services.db.select().from(storageLocations).where(eq(storageLocations.isRoot, true)).get();
+    if (!root) return reply.code(409).send({ reason: 'no storage root' });
+    const dir = join(root.path, 'users', person.username);
+    mkdirSync(dir, { recursive: true });
+    const real = join(dir, name);
+    writeFileSync(real, Buffer.alloc(bytes));
+    const { id } = await services.trash.move({
+      userId: person.id,
+      locationId: root.id,
+      real,
+      virtual: `/home/${name}`,
+    });
+    return { id };
   });
 
   // The pretend Tailscale (HLABS_DEV_FAKE_TAILSCALE): e2e sets what it reports (US-SYS-02…04, US-ONB-17).
