@@ -1095,6 +1095,8 @@ Shows: You don't have access to this · You don't have access to this · Ask an 
 
 ## Phone
 
+**Redrawn in Direction A, Native iOS-like (D-172):** the phone screens are now the frames on the canvas page "Phase 7 · Phone redesign · A Native iOS-like" (`PhoneRedesignA_*`). Where a Phone* image below disagrees with them, the A frames win; the images are replaced as they're redrawn.
+
 ### PhoneLogin — Log in
 
 **Priority:** P2 · **Phase:** 7 · **Stories:** US-PHONE-05, US-PHONE-06, US-PHONE-23, US-PHONE-24
