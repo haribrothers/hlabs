@@ -325,7 +325,7 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-SYS-14 · Empty everyone's trash
 - [x] US-SYS-27 · View hlabs logs (new lines every 2 s while open rather than on the event stream, D-169)
 - [x] US-SYS-28 · Download a diagnostics bundle
-- [x] US-SYS-29 · See what hlabs connects to (Funnel and Cloudflare join it with US-SYS-43)
+- [x] US-SYS-29 · See what hlabs connects to (Cloudflare joins it with US-SYS-43, D-171)
 - [x] US-SYS-30 · Opt in to beta updates
 - [x] US-SYS-31 · Restart hlabs (exit 75 for launchd/systemd, D-169; under `pnpm dev` hlabsd isn't started again; the real LaunchAgent and unit are checked by hand at phase end)
 - [x] US-SYS-37 · Confirm a factory reset (the story's hostname and password, not the screen's "Type RESET"; "stale session" read as D-170)

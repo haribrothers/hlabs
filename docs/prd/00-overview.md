@@ -19,7 +19,7 @@ Self-hosting is powerful but fiddly: Docker commands, compose files, port clashe
 ## Non-goals (v1)
 - Windows hosts, Raspberry Pi OS images, dedicated appliance OS images.
 - Multi-machine clusters, high availability, Kubernetes.
-- Exposing the hlabs dashboard to the public internet, port forwarding, UPnP and dynamic DNS. (Single apps can be made public through Tailscale Funnel or Cloudflare Tunnel, behind hlabs's controls: D-150.)
+- Exposing the hlabs dashboard to the public internet, port forwarding, UPnP and dynamic DNS. (Single apps can be made public through Cloudflare Tunnel under your own domain, behind hlabs's controls: D-150, D-171. Tailscale stays private.)
 - Email (no SMTP; no email-based password reset).
 - A native mobile app (the dashboard is a responsive PWA).
 - Building apps from source or Dockerfiles (custom apps are compose files only, P3).

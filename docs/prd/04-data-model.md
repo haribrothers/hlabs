@@ -82,9 +82,9 @@ These columns were introduced while writing the stories and are part of the sche
 | `restores` | `job_id`, `phase` (`checking`\|`stopping`\|`safety`\|`copying`\|`swap`\|`starting`\|`done`), `user_id`, `steps_json` | 08-usage-backups (US-BKP-20…22) |
 | `apps` | `state` value `reinstalling` (02 §2.5) | 06-apps (US-APP-25) |
 | `jobs` | `kind` value `app_reinstall` (an app job: serial per app, refused while an exclusive job runs) | 06-apps (US-APP-25) |
-| `app_public` (new table) | `app_id` (PK), `provider` (`funnel`\|`cloudflare`), `address`, `hostname` (Cloudflare) or `port` (Funnel), `access` (`hlabs`\|`ownLogin`), `enabled_by`, `enabled_at` | 06-apps (US-APP-27…29, D-150). A row means the app is public; removed when it's made private. |
+| `app_public` (new table) | `app_id` (PK), `address`, `hostname` (under the Cloudflare domain, D-171), `access` (`hlabs`\|`ownLogin`), `enabled_by`, `enabled_at` | 06-apps (US-APP-27…29, D-150). A row means the app is public; removed when it's made private. |
 | `jobs` | `kind` values `public_on`, `public_off` (app jobs) and `public_off_all` (exclusive) | 06-apps, 10-system-settings (US-APP-27, US-SYS-44) |
-| `settings` | key `public` `{ funnel: { enabled }, cloudflare: { domain, tunnelId, accountId } \| null }`; the Cloudflare token is keychain item `cloudflare-token`, never here | 10-system-settings (US-SYS-43) |
+| `settings` | key `public` `{ cloudflare: { domain, tunnelId, accountId } \| null }`; the Cloudflare token is keychain item `cloudflare-token`, never here | 10-system-settings (US-SYS-43) |
 | `app_sources` | `kind` `local` for a folder library under the storage root; `problem_count` (apps left out at the last sync) | 05-app-store (US-STORE-27, D-149) |
 | `jobs` | `kind` values `diagnostics` (the bundle, US-SYS-28) and `daemon_restart` (stops the apps, then hlabsd exits 75 to be started again; not exclusive, refused while an exclusive job runs, US-SYS-31) | 10-system-settings |
 | `settings` | key `connections`: last contact per outbound service, written as it happens (at most once a minute each): `updateCheck`, `engineDownload`, `tailscale`, `backup:<destinationId>`, `ntfy` (D-169) | 10-system-settings (US-SYS-29) |

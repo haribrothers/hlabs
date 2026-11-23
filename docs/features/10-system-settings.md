@@ -713,27 +713,26 @@ The system half of Settings: how hlabs is reached on the home network and over T
 
 ### US-SYS-43 · Set up a way to make apps public
 **Feature:** F-SYS-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** `SettingsNetworkPublicNone`, `PublicSetup`, `PublicRemove`
-**As** an admin, **I want** to choose how hlabs makes apps public, **so that** I can share apps without opening my router.
+**As** an admin, **I want** to connect hlabs to Cloudflare Tunnel, **so that** I can share apps without opening my router (D-171).
 
 **Acceptance criteria**
-- **Given** Settings › Network & remote access, **then** a "Public access" group says "Make single apps reachable from the internet. Your dashboard never is." and offers "Tailscale Funnel" and "Cloudflare Tunnel".
-- **Given** Tailscale Funnel, **when** remote access is connected (US-SYS-02), **then** "Use Funnel" checks that the tailnet's policy allows Funnel for this computer and either turns it on ("Apps you make public get addresses like https://hlabs.your-tailnet.ts.net:8443") or explains how to allow it in the Tailscale admin console, with a link; without remote access it says to connect it first.
-- **Given** Cloudflare Tunnel, **then** `PublicSetup` asks for a domain on my Cloudflare account and an API token, says what the token needs ("Zone · DNS · Edit and Account · Cloudflare Tunnel · Edit, for this domain only") and "Cloudflare will see the traffic to your public apps.", checks the token, creates the tunnel and starts its connector; the token goes to the keychain (07 §7.7).
-- **Given** a way is set up, **when** I remove it, **then** every app public through it is made private first (listed in the confirmation), and for Cloudflare the tunnel, its DNS records and the token are deleted.
-- **Given** "What hlabs connects to" (US-SYS-29), **then** it lists Funnel or Cloudflare while they're set up.
+- **Given** Settings › Network & remote access, **then** a "Public access" group says "Make single apps reachable from the internet. Your dashboard never is." and, until it's set up, "Public apps go through Cloudflare Tunnel, at names under a domain of yours. Your tailnet stays private." with "Set up Cloudflare Tunnel…".
+- **Given** "Set up Cloudflare Tunnel…", **then** `PublicSetup` asks for a domain on my Cloudflare account and an API token, says what the token needs ("Zone · DNS · Edit and Account · Cloudflare Tunnel · Edit, for this domain only") and "Cloudflare will see the traffic to your public apps.", checks the token, creates the tunnel and starts its connector; the token goes to the keychain (07 §7.7).
+- **Given** Cloudflare Tunnel is set up, **when** I remove it, **then** every public app is made private first (listed in the confirmation), then the tunnel, its DNS records and the token are deleted.
+- **Given** "What hlabs connects to" (US-SYS-29), **then** it lists Cloudflare while the tunnel is set up.
 
 **Implementation notes**
-- API: `public.status` (admin) → `{ funnel: { state, reason? }, cloudflare: { state, domain?, reason? }, apps: [...] }`; `public.setupFunnel`, `public.setupCloudflare { domain, token }`, `public.remove { provider }`; audited.
+- API: `public.status` (admin) → `{ cloudflare: { state, domain?, reason? }, apps: [...] }`; `public.setupCloudflare { domain, token }`, `public.remove`; audited.
 - The `cloudflared` connector is a bundled binary like Caddy (pinned, checksum-verified, 07 §7.9), run by the daemon, its credentials in the data dir (0600).
-- Data: `settings.public` (provider state), keychain `cloudflare-token`.
+- Data: `settings.public` (the tunnel's state), keychain `cloudflare-token`.
 
 ### US-SYS-44 · See and stop everything that's public
 **Feature:** F-SYS-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** `SettingsNetworkPublic`, `PublicTurnOffAll`, `TrayPublic`
 **As** an admin, **I want** one place that shows every public app and stops them all, **so that** I always know what strangers can reach.
 
 **Acceptance criteria**
-- **Given** the Public access group, **then** it lists each public app: name, address, provider, who can get in, since when and by whom, with "Visits" and "Make private".
-- **Given** "Turn off all public access", **when** confirmed, **then** every public app is made private in one job, providers stay set up, it's audited and other admins are notified.
+- **Given** the Public access group, **then** it lists each public app: name, address, who can get in, since when and by whom, with "Visits" and "Make private".
+- **Given** "Turn off all public access", **when** confirmed, **then** every public app is made private in one job, the tunnel stays set up, it's audited and other admins are notified.
 - **Given** the menu-bar app, **when** any app is public, **then** its menu shows "Public: 2 apps" with "Turn off public access", which does the same after the computer's own confirmation (Touch ID or your password, as for US-INST-18).
 - **Given** nothing is public, **then** the group reads "No apps are public."
 

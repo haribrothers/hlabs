@@ -484,7 +484,7 @@ Four tracks that don't wait for each other (D-151):
 - **A · The comfortable product:** notifications, empty Home, edit mode, widgets; store categories, search, updates list, sources; app configuration, permissions, usage detail; appearance, storage, advanced, factory reset; phone layouts and the PWA.
 - **B · A bigger built-in store (D-148):** first the tools (the porting helper, the update bot, CI per changed app), then Hari approves the list of 100 apps, then they're ported in waves of about 20, each merged when its matrix passes.
 - **C · Your own app library (D-149):** after sources (US-STORE-18, 19): the `hlabs library` commands, signing, the template repository and help guide, and "Copy to my library".
-- **D · Public apps (D-150):** first the threat model (07 §7.10) and a prototype with Tailscale Funnel and one or two apps (per-app addresses, phone apps behind the login, the hardening), reviewed with Hari; then the designs for `AppPublic` and `PublicSetup`; then the stories.
+- **D · Public apps (D-150, D-171):** first the threat model (07 §7.10) and a prototype with Cloudflare Tunnel on Hari's domain and one test app (its own name, hlabs's login with two-factor in front on that name, phone apps behind the login, the hardening), reviewed with Hari; then the public-access designs redrawn without Funnel; then the stories. Waits for Hari's domain on Cloudflare.
 
 **Work order** (Hari, 22 Nov 2026): the stories are built in groups, each finished without stopping except for a question. US-STORE-26 came first.
 
@@ -500,14 +500,14 @@ Four tracks that don't wait for each other (D-151):
 | 8 | Appearance | US-ACCT-32 to 35 | — |
 | 9 | Storage | US-SYS-11 to 14 | — |
 | 10 | System tools and reset | US-SYS-27 to 31, 37, 38 | — |
-| 11 | Public apps | prototype, then US-SYS-43, 44, US-APP-27 to 29 | Hari reviews the prototype (Q-19); live checks need a Cloudflare domain and a check from outside the home network |
+| 11 | Public apps | Cloudflare prototype, then US-SYS-43, 44, US-APP-27 to 29 | Hari reviews the prototype (D-171); waits for Hari's domain on Cloudflare; live checks from outside the home network |
 | 12 | Phone and PWA | US-PHONE-01 to 12, 23, 24 | Hari checks on iOS Safari and Android Chrome |
 | 13 | Docs screenshots | US-SITE-11 | — |
 
 **Done when**
 - [ ] All P2 stories pass; axe clean on every route; phone layouts verified on iOS Safari and Android Chrome.
 - [ ] The built-in store has the approved 100 apps and the nightly matrix installs ≥ 98 % of them.
-- [ ] Public apps: the prototype's findings are in D-150 and Q-19 is closed; a public app is checked by hand through Funnel and through Cloudflare from outside the home network (login in front, 404s, headers, rate limit, turning it off).
+- [ ] Public apps: the Cloudflare prototype's findings are in D-171; a public app is checked by hand through Cloudflare Tunnel from outside the home network (login in front, 404s, headers, rate limit, turning it off).
 - [ ] **1.0 release.**
 
 **Stories**

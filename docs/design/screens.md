@@ -1599,9 +1599,11 @@ On the Home Cloud Dashboard canvas, page "Phase 7 · Public apps and libraries" 
 
 ![SettingsNetworkPublicNone](screens/SettingsNetworkPublicNone.webp)
 
+**To redraw (D-171):** the image still shows Tailscale Funnel; public apps now go through Cloudflare Tunnel only, and the stories win.
+
 Links to: `PublicSetup`
 
-Shows: Network & remote access · Remote access · Tailscale · Connected · Public access · Make single apps reachable from the internet. Your dashboard never is. · Tailscale Funnel · Not allowed · Your tailnet's policy doesn't let this computer use Funnel… · Open the admin console · Check again · Cloudflare Tunnel · Set up… · Public apps · No apps are public.
+Shows: Network & remote access · Remote access · Tailscale · Connected · Public access · Make single apps reachable from the internet. Your dashboard never is. · Public apps go through Cloudflare Tunnel, at names under a domain of yours. Your tailnet stays private. · Set up Cloudflare Tunnel… · Public apps · No apps are public.
 
 ### PublicSetup — Set up Cloudflare Tunnel
 
@@ -1617,9 +1619,11 @@ Shows: Set up Cloudflare Tunnel · Domain · API token · Zone · DNS · Edit ·
 
 ![SettingsNetworkPublic](screens/SettingsNetworkPublic.webp)
 
+**To redraw (D-171):** the image still shows Tailscale Funnel; public apps now go through Cloudflare Tunnel only, and the stories win.
+
 Links to: `PublicRemove`, `AppPublicVisits`, `PublicTurnOffAll`
 
-Shows: Tailscale Funnel · On · 1 of 2 in use · Remove… · Cloudflare Tunnel · On · Remove… · Public apps · Immich · Public · https://photos.example.com · Cloudflare Tunnel · hlabs login with two-factor · since 3 Dec by Hari · Visits · Make private · Jellyfin · Tailscale Funnel · Jellyfin's own login · Turn off all public access… · Makes every app private. Funnel and Cloudflare Tunnel stay set up.
+Shows: Cloudflare Tunnel · example.com · On · Remove… · Public apps · Immich · Public · https://photos.example.com · hlabs login with two-factor · since 3 Dec by Hari · Visits · Make private · Jellyfin · https://jellyfin.example.com · Jellyfin's own login · Turn off all public access… · Makes every app private. Cloudflare Tunnel stays set up.
 
 ### PublicTurnOffAll — Turn off all public access?
 
@@ -1635,7 +1639,9 @@ Shows: Turn off all public access? · the public apps with their addresses · Th
 
 ![PublicRemove](screens/PublicRemove.webp)
 
-Shows: Remove Cloudflare Tunnel? · hlabs makes these apps private first, then deletes the tunnel, its DNS records and the token from this computer. · Apps public through Tailscale Funnel stay public. · Cancel · Make private and remove
+**To redraw (D-171):** the image still shows Tailscale Funnel; public apps now go through Cloudflare Tunnel only, and the stories win.
+
+Shows: Remove Cloudflare Tunnel? · hlabs makes these apps private first, then deletes the tunnel, its DNS records and the token from this computer. · Cancel · Make private and remove
 
 ### TrayPublic — Menu-bar app with public apps
 
@@ -1661,7 +1667,9 @@ Shows: Public on the internet · Not public. Only your home network and tailnet 
 
 ![AppPublic](screens/AppPublic.webp)
 
-Shows: Make Immich public · Way to the internet · Tailscale Funnel · Cloudflare Tunnel · Address · Who can get in · People with an hlabs account and access to Immich · They sign in to hlabs first, with two-factor. · Hari, Asha: Two-factor on · Ravi: Can't get in yet · Ravi hasn't turned on two-factor login yet, so can't get in until then. · Immich's own login only · Anyone on the internet can reach this address. hlabs asks for a login first. · Automatic updates stay on while Immich is public. · Cancel · Make public
+**To redraw (D-171):** the image still shows Tailscale Funnel; public apps now go through Cloudflare Tunnel only, and the stories win.
+
+Shows: Make Immich public · Address · photos .example.com · Who can get in · People with an hlabs account and access to Immich · They sign in to hlabs first, with two-factor. · Hari, Asha: Two-factor on · Ravi: Can't get in yet · Ravi hasn't turned on two-factor login yet, so can't get in until then. · Immich's own login only · Anyone on the internet can reach this address. hlabs asks for a login first. · Automatic updates stay on while Immich is public. · Cancel · Make public
 
 ### AppPublicOwnLogin — The app's own login only
 
@@ -1669,15 +1677,7 @@ Shows: Make Immich public · Way to the internet · Tailscale Funnel · Cloudfla
 
 ![AppPublicOwnLogin](screens/AppPublicOwnLogin.webp)
 
-Shows: Cloudflare Tunnel · photos .example.com · Immich's own login only · Anyone on the internet can reach Immich's sign-in page. Use a strong password for every Immich account. · I understand (Make public stays off until ticked)
-
-### AppPublicFunnelFull — Funnel already has two apps
-
-**Priority:** P2 · **Phase:** 7 · **Stories:** US-APP-27
-
-![AppPublicFunnelFull](screens/AppPublicFunnelFull.webp)
-
-Shows: Tailscale Funnel can make two apps public at once. Make another app private first, or use Cloudflare Tunnel. · Make public (off)
+Shows: photos .example.com · Immich's own login only · Anyone on the internet can reach Immich's sign-in page. Use a strong password for every Immich account. · I understand (Make public stays off until ticked)
 
 ### AppSettingsPublic — A public app's settings
 
@@ -1687,7 +1687,7 @@ Shows: Tailscale Funnel can make two apps public at once. Make another app priva
 
 Links to: `AppPublicVisits`, `AppPublic`
 
-Shows: Immich · Public · Public on the internet · https://photos.example.com · Cloudflare Tunnel · hlabs login with two-factor · since 3 Dec by Hari · Visits · Change… · Make private · Require hlabs login (locked on) · Update automatically · On while Immich is public (locked on)
+Shows: Immich · Public · Public on the internet · https://photos.example.com · hlabs login with two-factor · since 3 Dec by Hari · Visits · Change… · Make private · Require hlabs login (locked on) · Update automatically · On while Immich is public (locked on)
 
 ### AppPublicVisits — Visits to a public app
 
@@ -1702,6 +1702,8 @@ Shows: Visits to Immich · Requests to https://photos.example.com in the last 7 
 **Priority:** P2 · **Phase:** 7 · **Stories:** US-APP-27, US-APP-28
 
 ![PhoneAppPublic](screens/PhoneAppPublic.webp)
+
+**To redraw (D-171):** the image still shows Tailscale Funnel; public apps now go through Cloudflare Tunnel only, and the stories win.
 
 Shows: AppPublic as a sheet; the choices scroll and Cancel · Make public stay at the bottom.
 

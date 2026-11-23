@@ -3,7 +3,7 @@
 hlabs holds a household's photos, passwords and documents. Security rules here are requirements, not guidance.
 
 ## 7.1 Principles
-1. **Nothing leaves the house unless the user turns it on.** No telemetry, no analytics, no crash reporting by default. The only outbound calls are: store index sync, image pulls, hlabs update checks, Tailscale (if enabled), backup destinations (if configured), an ntfy server for push notifications (only if the admin configures one, D-033), the API of a Pi-hole on another device (only if chosen as the local DNS server, D-106), on macOS the container engine download when no engine is found (pinned and checksum-verified, D-057), app libraries an admin adds (D-149), and for apps an admin makes public, Tailscale Funnel or Cloudflare (its API and the tunnel, D-150). Each is listed in Settings › Advanced › "What hlabs connects to".
+1. **Nothing leaves the house unless the user turns it on.** No telemetry, no analytics, no crash reporting by default. The only outbound calls are: store index sync, image pulls, hlabs update checks, Tailscale (if enabled), backup destinations (if configured), an ntfy server for push notifications (only if the admin configures one, D-033), the API of a Pi-hole on another device (only if chosen as the local DNS server, D-106), on macOS the container engine download when no engine is found (pinned and checksum-verified, D-057), app libraries an admin adds (D-149), and for apps an admin makes public, Cloudflare (its API and the tunnel, D-150, D-171). Each is listed in Settings › Advanced › "What hlabs connects to".
 2. **The daemon is never directly exposed.** It binds to `127.0.0.1`; Caddy is the only listener on the network.
 3. **Least privilege.** The daemon runs as the logged-in user (macOS, Linux desktop) or a dedicated `hlabs` user (headless). Privileged operations (binding 80/443 on Linux, mounting SMB on Linux) go through a minimal helper with an allow-list of commands.
 4. **Only single apps go public, and only through hlabs** (D-150, §7.10). The dashboard and the daemon never do. No port forwarding, UPnP or dynamic DNS.
@@ -72,8 +72,8 @@ Uninstall with data deletion, restore, move all data, engine switch and factory 
 - Bundled binaries are downloaded at build time from pinned URLs with checksum verification and are code-signed with the app (macOS notarized).
 - Releases are signed (macOS Developer ID; the hlabs update key, a minisign key, for updates and for every Linux download and `install.sh`, D-141); checksums published. A GPG key comes only with an apt or dnf package repository.
 
-## 7.10 Public apps (D-150)
-An admin can make one app at a time reachable from the internet, through Tailscale Funnel or Cloudflare Tunnel. Everything here applies to both.
+## 7.10 Public apps (D-150, D-171)
+An admin can make an app reachable from the internet, one app at a time, through Cloudflare Tunnel at a name under a domain on their own Cloudflare account. Tailscale stays private: hlabs never turns on Funnel (D-007).
 
 **What we protect against**
 - Strangers finding the address and trying passwords, or exploiting a bug in the app (the address is public and scanned).
@@ -88,7 +88,7 @@ An admin can make one app at a time reachable from the internet, through Tailsca
 4. **Hardening at Caddy** for public addresses: HTTPS only (HTTP is refused, not redirected), HSTS, the headers of the dashboard, a rate limit on login paths (and hlabs's lockout, §7.2), a request size limit unless the app's manifest asks for more (uploads), and hlabs's own cookies never sent to the app.
 5. **Visible and easy to stop**: a "Public" badge on the app everywhere it appears; Settings › Network › Public access lists every public app with its provider, address, who can get in and its access log (time, address, path, status; kept 7 days, admins only); **Turn off all public access** there and in the menu-bar app.
 6. **Kept current**: automatic updates can't be turned off for a public app while it's public.
-7. **Secrets**: the Cloudflare API token (scoped to the one zone's tunnel and DNS) is in the keychain, never in SQLite or logs; removing the provider deletes it and the tunnel. Funnel needs nothing stored: it uses the Tailscale log-in hlabs already has, and the tailnet's policy must allow Funnel for the node.
+7. **Secrets**: the Cloudflare API token (scoped to the one zone's tunnel and DNS) is in the keychain, never in SQLite or logs; removing the provider deletes it and the tunnel.
 
-**Tests**: e2e makes an app public with fake providers and checks the login in front, two-factor, 403 for others, the 404s, the headers, the rate limit and turning it all off; the prototype (D-150) checks the real providers by hand before the stories are built.
+**Tests**: e2e makes an app public with fake providers and checks the login in front, two-factor, 403 for others, the 404s, the headers, the rate limit and turning it all off; the prototype (D-171) checks the real tunnel by hand, from outside the home network, before the stories are built.
 

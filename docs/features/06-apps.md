@@ -475,22 +475,22 @@ Everything that happens after an app is installed: opening it, checking that it 
 - No backup is taken first: the data isn't touched. Once backups ship (phase 5) this can be revisited.
 
 ### US-APP-27 · Make an app public
-**Feature:** F-APP-10 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppSettingsPrivate`, `AppPublic`, `AppPublicFunnelFull`, `AppSettingsPublic`, `PhoneAppPublic`
-**As** an admin, **I want** to make one app reachable from the internet, **so that** people outside my tailnet can use it, such as a friend opening a shared album.
+**Feature:** F-APP-10 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppSettingsPrivate`, `AppPublic`, `AppSettingsPublic`, `PhoneAppPublic`
+**As** an admin, **I want** to make one app reachable from the internet, **so that** people without access to my tailnet can use it, such as a friend opening a shared album.
 
 **Acceptance criteria**
 - **Given** an app's Access section, **when** a way to go public is set up (US-SYS-43), **then** it shows "Public on the internet" with a "Make public…" button; without one it reads "Set up public access in Settings › Network first" with a link there.
-- **Given** "Make public…", **then** `AppPublic` shows the address it will have (Funnel: `https://<node>.<tailnet>.ts.net:<port>`; Cloudflare: a name I type under my domain, e.g. `photos.example.com`), who can get in (US-APP-28), and "Anyone on the internet can reach this address. hlabs asks for a login first." with "Make public" and "Cancel".
+- **Given** "Make public…", **then** `AppPublic` shows the address it will have (a name I type under my Cloudflare domain, suggested from the app's name, e.g. `photos.example.com`; D-171), who can get in (US-APP-28), and "Anyone on the internet can reach this address. hlabs asks for a login first." with "Make public" and "Cancel".
 - **Given** I confirm, **then** a `public_on` job sets up the address, the app's Access section and its Home tile show a "Public" badge, `audit_log` records it, and every other admin gets a notification "<Name> made <App> public at <address>".
 - **Given** the manifest says `public.allowed: false`, **then** the button is replaced by "<App> can't be made public: it can control your other apps." (or the manifest's reason).
-- **Given** Funnel already has two public apps (D-150, Q-19), **then** the dialog says "Tailscale Funnel can make two apps public at once. Make another app private first, or use Cloudflare Tunnel."
+- **Given** the app is a media app (category `media`), **then** the dialog also says "Cloudflare's terms limit streaming large amounts of video through its network. Check them before sharing a media library." (D-171)
 - **Given** "Make private", **when** confirmed, **then** the address stops answering within seconds, the badge goes, and it's audited.
 - **Given** the app is public, **then** automatic updates for it are on and their switch reads "On while <App> is public" (07 §7.10).
 
 **Implementation notes**
-- API: `apps.setPublic` (admin): `{ appId, public: boolean, provider?: 'funnel' | 'cloudflare', hostname?, access?: 'hlabs' | 'ownLogin' }` → `{ jobId }`; `apps.get` gains `public { provider, address, access, since, by } | null`; event `app.publicChanged`.
+- API: `apps.setPublic` (admin): `{ appId, public: boolean, hostname?, access?: 'hlabs' | 'ownLogin' }` → `{ jobId }`; `apps.get` gains `public { address, access, since, by } | null`; event `app.publicChanged`.
 - Data: `app_public` (04).
-- hlabsCodes: `PUBLIC_NOT_SET_UP`, `PUBLIC_NOT_ALLOWED`, `FUNNEL_FULL`, `FUNNEL_NOT_PERMITTED` (the tailnet's policy doesn't allow Funnel for this node; says where to allow it), `CLOUDFLARE_FAILED`, `PUBLIC_HOSTNAME_TAKEN`.
+- hlabsCodes: `PUBLIC_NOT_SET_UP`, `PUBLIC_NOT_ALLOWED`, `CLOUDFLARE_FAILED`, `PUBLIC_HOSTNAME_TAKEN`.
 - Edge: uninstalling a public app makes it private first; stopping it leaves the address showing Caddy's "<App> isn't running" page.
 
 ### US-APP-28 · Choose who gets into a public app
