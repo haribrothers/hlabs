@@ -48,6 +48,8 @@ declare module '@tanstack/react-router' {
     from?: string;
     /** Logs opened from that app's settings, so their Back is a step back (US-APP-08, D-124). */
     fromSettings?: boolean;
+    /** App settings or Logs were opened over this page (D-166): closing them steps back. */
+    appOverlay?: boolean;
   }
 }
 

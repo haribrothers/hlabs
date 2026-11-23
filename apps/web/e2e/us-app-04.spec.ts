@@ -37,5 +37,5 @@ test('US-APP-04 App settings shows the status, the Overview tab and the actions;
   await expect(settings.getByRole('button', { name: 'Start', exact: true })).toBeEnabled();
   await expect(settings.getByRole('button', { name: 'Stop', exact: true })).toHaveCount(0);
   await settings.getByRole('button', { name: 'Logs', exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/apps/${ID}/logs$`));
+  await expect(page).toHaveURL(new RegExp(`[?&]logs=${ID}(&|$)`));
 });

@@ -1,10 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { AppSettings } from '../apps/app-settings';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
-function AppSettingsPage() {
-  const { appId } = Route.useParams();
-  return <AppSettings appId={appId} />;
-}
-
-// App settings (US-APP-04): outside the app window, so closing it goes back to where it was opened from.
-export const Route = createFileRoute('/apps_/$appId/settings')({ component: AppSettingsPage });
+// App settings open over the page they're opened from (D-166). This address (older links, bookmarks, the tray) opens
+// them over Home.
+export const Route = createFileRoute('/apps_/$appId/settings')({
+  beforeLoad: ({ params }) => {
+    throw redirect({ to: '/', search: { settings: params.appId } as never, replace: true });
+  },
+});

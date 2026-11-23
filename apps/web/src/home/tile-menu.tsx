@@ -22,13 +22,13 @@ import {
   DropdownMenuTrigger,
 } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
 import { useId, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { UninstallDialog } from '../apps/uninstall-dialog';
 import { ReinstallDialog } from '../apps/reinstall';
 import { homeCopy } from '../copy/home';
 import { useTRPC } from '../lib/trpc';
 import type { HomeApp } from './home-app';
+import { useAppOverlay } from '../apps/app-overlay';
 
 const copy = homeCopy.menu;
 /** How long a finger rests on a tile before its menu opens. */
@@ -71,7 +71,7 @@ export function TileMenu({
   onEditHome?: () => void;
   children: ReactNode;
 }) {
-  const navigate = useNavigate();
+  const overlay = useAppOverlay();
   const [open, setOpen] = useState(false);
   const [uninstalling, setUninstalling] = useState(false);
   const [reinstallOpen, setReinstallOpen] = useState(false);
@@ -121,27 +121,12 @@ export function TileMenu({
     );
   item('open', copy.open, ExternalLink, onOpen, { disabled: isAdmin && moving });
   if (isAdmin && moving) {
-    item(
-      'logs',
-      copy.logs,
-      TextAlignStart,
-      () => void navigate({ to: '/apps/$appId/logs', params: { appId: app.id } }),
-    );
+    item('logs', copy.logs, TextAlignStart, () => overlay.openLogs(app.id));
   } else if (isAdmin) {
     if (app.state !== 'install_failed') {
-      item(
-        'settings',
-        copy.settings,
-        SlidersHorizontal,
-        () => void navigate({ to: '/apps/$appId/settings', params: { appId: app.id }, state: { from: '/' } }),
-      );
+      item('settings', copy.settings, SlidersHorizontal, () => overlay.openSettings(app.id));
     }
-    item(
-      'logs',
-      copy.logs,
-      TextAlignStart,
-      () => void navigate({ to: '/apps/$appId/logs', params: { appId: app.id } }),
-    );
+    item('logs', copy.logs, TextAlignStart, () => overlay.openLogs(app.id));
     if (app.state === 'running' || app.state === 'error') {
       items.push(<DropdownMenuSeparator key="sep-commands" />);
       item('restart', copy.restart, RotateCw, () => onCommand('restart'));

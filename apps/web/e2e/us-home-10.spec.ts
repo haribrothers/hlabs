@@ -31,7 +31,7 @@ test('US-HOME-10 one search finds the app, its actions, store apps and settings,
   ]);
   await field.press('ArrowDown');
   await field.press('Enter');
-  await expect(page).toHaveURL(new RegExp(`/apps/${ID}/settings$`));
+  await expect(page).toHaveURL(new RegExp(`[?&]settings=${ID}$`));
 
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+k' : 'Control+k');
   await field.fill('vaultwarden');

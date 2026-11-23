@@ -8,6 +8,7 @@ import { useTRPC } from '../lib/trpc';
 import { useMedia } from '../lib/use-media';
 import type { HomeApp } from './home-app';
 import { appAddress } from '../lib/app-address';
+import { useAppOverlay } from '../apps/app-overlay';
 
 /** The app window opens on a desktop layout (US-APP-01); phones are covered by 12-phone.md. */
 export const APP_WINDOW_QUERY = '(min-width: 1024px)';
@@ -19,6 +20,7 @@ export function appUrl(app: HomeApp, location: Pick<Location, 'hostname'> = wind
 
 export function useOpenApp(isAdmin: boolean): (app: HomeApp) => void {
   const navigate = useNavigate();
+  const overlay = useAppOverlay();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const wide = useMedia(APP_WINDOW_QUERY);
@@ -62,7 +64,7 @@ export function useOpenApp(isAdmin: boolean): (app: HomeApp) => void {
         ],
       });
     } else {
-      void navigate({ to: '/apps/$appId/logs', params: { appId: app.id } });
+      overlay.openLogs(app.id);
     }
   };
   return openApp;

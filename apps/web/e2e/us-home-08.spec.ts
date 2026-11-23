@@ -35,6 +35,6 @@ test('US-HOME-08 a stopped tile offers Start; a broken one opens its logs with t
   await expect(page).toHaveURL(`${MAIN_URL}/`);
 
   await page.getByRole('button', { name: `Broken ${project}, error`, exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/apps/${broken}/logs$`));
+  await expect(page).toHaveURL(new RegExp(`[?&]logs=${broken}(&|$)`));
   await expect(page.getByRole('status').filter({ hasText: "isn't responding" })).toContainText('3001');
 });

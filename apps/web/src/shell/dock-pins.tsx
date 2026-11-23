@@ -14,7 +14,6 @@ import {
   type DockApp,
 } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useOpenWindows } from '../apps/open-windows';
 import { browser } from '../lib/browser';
@@ -24,6 +23,7 @@ import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
 import { appUrl, useOpenApp } from '../home/use-open-app';
 import type { HomeApp } from '../home/home-app';
+import { useAppOverlay } from '../apps/app-overlay';
 
 export const MAX_DOCK = 8;
 
@@ -36,7 +36,7 @@ export function useDockPins(signedIn: boolean, shippedPhase = VISIBLE_PHASE) {
   const trpc = useTRPC();
   const client = useTRPCClient();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const overlay = useAppOverlay();
   const isAdmin = useMe(signedIn).data?.role === 'admin';
   const openApp = useOpenApp(isAdmin);
   const open = useOpenWindows();
@@ -121,11 +121,7 @@ export function useDockPins(signedIn: boolean, shippedPhase = VISIBLE_PHASE) {
             <DropdownMenuItem onSelect={() => openApp(menuApp)}>{copy.open}</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => browser.open(appUrl(menuApp))}>{copy.openInNewTab}</DropdownMenuItem>
             {isAdmin ? (
-              <DropdownMenuItem
-                onSelect={() => void navigate({ to: '/apps/$appId/settings', params: { appId: menuApp.id } })}
-              >
-                {copy.appSettings}
-              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => overlay.openSettings(menuApp.id)}>{copy.appSettings}</DropdownMenuItem>
             ) : null}
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => unpin(menuApp.id)}>{copy.remove}</DropdownMenuItem>

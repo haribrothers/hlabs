@@ -6,7 +6,7 @@ import { Bell, Check, CircleX, Download, iconDefaults, Info, Lock, TriangleAlert
 import { isFeatureEnabled, VISIBLE_PHASE, type ToastMutation } from '@hlabs/shared';
 import { Button } from '@hlabs/ui';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { notificationsCopy as copy } from '../copy/notifications';
 import { toastCopy } from '../copy/toasts';
@@ -18,6 +18,7 @@ import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
 import { errorLine } from '../lib/error-copy';
 import { useEventStream } from '../lib/use-event-stream';
+import { useAppOverlay } from '../apps/app-overlay';
 
 const PAGE = 50;
 
@@ -57,7 +58,7 @@ function Panel({ shippedPhase }: { shippedPhase: number }) {
   const trpc = useTRPC();
   const client = useTRPCClient();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const overlay = useAppOverlay();
   const me = useMe();
   const isAdmin = me.data?.role === 'admin';
   const now = useNow().getTime();
@@ -172,7 +173,8 @@ function Panel({ shippedPhase }: { shippedPhase: number }) {
     }
     if (a.kind === 'navigate') {
       setOpen(false);
-      void navigate({ to: a.to });
+      // An app's settings or logs open over the page (D-166); anything else navigates.
+      overlay.follow(a.to);
     } else if (a.kind === 'mutation') {
       try {
         await runToastMutation(client, a.procedure as ToastMutation, a.input);

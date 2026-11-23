@@ -37,7 +37,7 @@ test('US-HOME-07 right-clicking a tile opens its menu; Esc returns to the tile; 
   await expect(tile).toBeFocused();
   await page.keyboard.press('Shift+F10');
   await page.getByRole('menuitem', { name: 'Settings' }).click();
-  await expect(page).toHaveURL(new RegExp(`/apps/${ID}/settings$`));
+  await expect(page).toHaveURL(new RegExp(`[?&]settings=${ID}$`));
 });
 
 test('US-HOME-07 a tile near the Dock opens its menu above the Dock, never under it', async ({

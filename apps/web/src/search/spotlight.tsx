@@ -16,7 +16,7 @@ import {
 } from '@hlabs/icons';
 import { CommandPanel } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocation, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { searchCopy } from '../copy/search';
 import { handledGlobally, showErrorToast } from '../lib/error-copy';
@@ -26,6 +26,7 @@ import { useMe } from '../lib/use-me';
 import type { HomeApp } from '../home/home-app';
 import { useOpenApp } from '../home/use-open-app';
 import { closeSearch, isMac, isSearchShortcut, openSearch, toggleSearch, useSearchOpen } from './search-state';
+import { useAppOverlay } from '../apps/app-overlay';
 
 const copy = searchCopy;
 /** Results wait for typing to pause this long (US-HOME-10). */
@@ -103,6 +104,7 @@ function SearchBody({ input }: { input: React.RefObject<HTMLInputElement | null>
   const mac = isMac();
 
   const navigate = useNavigate();
+  const overlay = useAppOverlay();
   const client = useTRPCClient();
   const restart = useMutation({
     mutationFn: (app: { id: string; name: string }) => client.apps.restart.mutate({ appId: app.id }),
@@ -130,7 +132,6 @@ function SearchBody({ input }: { input: React.RefObject<HTMLInputElement | null>
       if (!handledGlobally(err)) showErrorToast(err);
     },
   });
-  const from = useLocation({ select: (l) => l.pathname });
   const run = (item: SearchItem) => {
     closeSearch();
     item.run();
@@ -142,9 +143,9 @@ function SearchBody({ input }: { input: React.RefObject<HTMLInputElement | null>
       actionItem(
         a,
         {
-          settings: () => void navigate({ to: '/apps/$appId/settings', params: { appId: a.appId }, state: { from } }),
+          settings: () => overlay.openSettings(a.appId),
           restart: () => restart.mutate({ id: a.appId, name: a.appName }),
-          logs: () => void navigate({ to: '/apps/$appId/logs', params: { appId: a.appId } }),
+          logs: () => overlay.openLogs(a.appId),
           addToHome: () => addToHome.mutate({ id: a.appId, name: a.appName }),
         }[a.kind],
       ),

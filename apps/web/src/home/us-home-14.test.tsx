@@ -50,9 +50,10 @@ async function openPanel(handlers: Parameters<typeof bell>[0]) {
 
 describe('US-HOME-14', () => {
   it('"View logs" opens AppLogs for the app and marks the item read', async () => {
-    const { panel, calls } = await openPanel({});
+    const { panel, calls, router } = await openPanel({});
     fireEvent.click(within(panel).getByRole('button', { name: 'View logs' }));
-    expect(await screen.findByRole('heading', { name: 'AppLogs' })).toBeInTheDocument();
+    // Over the page it was opened from (D-166).
+    await waitFor(() => expect(router.state.location.href).toBe('/?logs=uptime-kuma'));
     expect(calls.find((c) => c.path === 'notifications.markRead')?.input).toEqual({ ids: ['n1'] });
   });
 

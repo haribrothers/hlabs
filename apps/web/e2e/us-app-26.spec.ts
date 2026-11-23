@@ -84,7 +84,7 @@ test('US-APP-26 an app whose container is stopped behind its back goes to error 
   await expect(toast).toBeVisible({ timeout: 70_000 });
   await expect(toast.getByText('It quit unexpectedly.')).toBeVisible();
   await expect(toast.getByRole('button', { name: 'Restart' })).toBeVisible();
-  await expect(toast.getByRole('link', { name: 'View logs' })).toBeVisible();
+  await expect(toast.getByRole('button', { name: 'View logs' })).toBeVisible();
   expect((await app(page))?.state).toBe('error');
   await expect(page.getByRole('button', { name: 'Crash demo, error', exact: true })).toBeVisible();
 

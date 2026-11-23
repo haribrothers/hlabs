@@ -28,6 +28,10 @@ export function ModalPanel({ label, onClose, children, className, scrim = 'light
         <RadixDialog.Content
           aria-describedby={undefined}
           className={cn('hl-modal-panel', className)}
+          // A toast over the dialog (`data-hl-toasts`) can be pressed without closing it.
+          onPointerDownOutside={(e) => {
+            if ((e.target as Element | null)?.closest?.('[data-hl-toasts]')) e.preventDefault();
+          }}
           onCloseAutoFocus={(e) => {
             const to = finalFocus?.();
             if (!to?.isConnected) return;

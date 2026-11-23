@@ -26,6 +26,7 @@ import {
   WidgetSkeleton,
   WidgetState,
 } from './widget-card';
+import { useAppOverlay } from '../apps/app-overlay';
 
 const copy = homeCopy;
 const w = copy.widget;
@@ -313,6 +314,7 @@ export function AppWidget({ id }: { id: string }) {
   const trpc = useTRPC();
   const isAdmin = useMe().data?.role === 'admin';
   const openApp = useOpenApp(isAdmin);
+  const overlay = useAppOverlay();
   const appId = id.split(':')[1] ?? '';
   const catalog = useQuery({ ...trpc.home.listWidgets.queryOptions(), retry: false });
   const appsList = useQuery({ ...trpc.apps.list.queryOptions(), retry: false });
@@ -354,7 +356,7 @@ export function AppWidget({ id }: { id: string }) {
   if (data.isPending) return <WidgetSkeleton title={title} />;
   if (d?.status === 'needs_key' && isAdmin) {
     return (
-      <WidgetCard title={title} target={{ to: '/apps/$appId/settings', params: { appId }, state: { from: '/' } }}>
+      <WidgetCard title={title} target={{ onClick: () => overlay.openSettings(appId) }}>
         <HeroLine size="md">{w.addKeyLine}</HeroLine>
         <GoOn>{w.addKey}</GoOn>
       </WidgetCard>

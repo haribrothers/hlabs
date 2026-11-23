@@ -33,7 +33,7 @@ test('US-STATE-15 Retry runs the action; a failure updates the toast, success re
   const retry = toast.getByRole('button', { name: 'Retry' });
   await expect(retry).toBeVisible();
   // View logs opens AppLogs (phase 2): the e2e dev server previews phase 2 (D-092), so it shows.
-  await expect(toast.getByRole('link', { name: 'View logs' })).toBeVisible();
+  await expect(toast.getByRole('button', { name: 'View logs' })).toBeVisible();
 
   await retry.click();
   await expect(toast).toContainText('hlabs is busy. Wait for what it’s doing to finish, then try again.');

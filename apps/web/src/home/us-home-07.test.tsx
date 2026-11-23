@@ -124,11 +124,12 @@ describe('US-HOME-07', () => {
     const { router } = home([app('vault', 'Vaultwarden', 'running')]);
     fireEvent.contextMenu(await tile('Open Vaultwarden'));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Settings' }));
-    await waitFor(() => expect(router.state.location.pathname).toBe('/apps/vault/settings'));
+    // Over the page it was opened from (D-166).
+    await waitFor(() => expect(router.state.location.href).toBe('/?settings=vault'));
     await act(() => router.navigate({ to: '/' as never }));
     fireEvent.contextMenu(await tile('Open Vaultwarden'));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'View logs' }));
-    await waitFor(() => expect(router.state.location.pathname).toBe('/apps/vault/logs'));
+    await waitFor(() => expect(router.state.location.href).toBe('/?logs=vault'));
   });
 
   it('Uninstall… opens the uninstall dialog for the app', async () => {

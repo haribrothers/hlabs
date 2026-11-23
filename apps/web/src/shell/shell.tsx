@@ -8,6 +8,7 @@ import { isFeatureEnabled } from '@hlabs/shared';
 import { EngineWatch } from '../lib/engine-state';
 import { openSearch } from '../search/search-state';
 import { Spotlight, useSearchShortcut } from '../search/spotlight';
+import { AppOverlay } from '../apps/app-overlay';
 import { useMe } from '../lib/use-me';
 import { useDockPins } from './dock-pins';
 import { usePendingUpdates } from './pending-updates';
@@ -56,6 +57,8 @@ export function Shell({ children }: { children: ReactNode }) {
         {children}
       </main>
       {search ? <Spotlight /> : null}
+      {/* App settings and Logs over the page (D-166). */}
+      {me ? <AppOverlay /> : null}
       {me ? <EngineWatch /> : null}
       <>
         <div className="hl-nav-desktop hidden md:flex" data-testid="dock-bar">

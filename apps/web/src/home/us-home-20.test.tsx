@@ -40,16 +40,12 @@ const figures = {
 };
 
 function widget(entry: () => unknown, role: 'admin' | 'member' = 'admin') {
-  return renderScreen(
-    () => <AppWidget id={ID} />,
-    {
-      'auth.me': fakeMe({ role }),
-      'home.listWidgets': catalog,
-      'apps.list': () => ({ apps: [tile('immich', 'Immich')] }),
-      'home.getWidgetData': () => ({ [ID]: entry() }),
-    },
-    { routes: { '/apps/$appId/settings': () => <h1>Immich settings</h1> } },
-  );
+  return renderScreen(() => <AppWidget id={ID} />, {
+    'auth.me': fakeMe({ role }),
+    'home.listWidgets': catalog,
+    'apps.list': () => ({ apps: [tile('immich', 'Immich')] }),
+    'home.getWidgetData': () => ({ [ID]: entry() }),
+  });
 }
 
 describe('US-HOME-20', () => {
@@ -84,10 +80,10 @@ describe('US-HOME-20', () => {
   });
 
   it('without its key an admin is sent to the app’s settings to add one; members never see such a widget', async () => {
-    widget(() => ({ status: 'needs_key', updatedAt: 1 }));
-    const link = await screen.findByRole('link', { name: /Add an API key/ });
-    fireEvent.click(link);
-    expect(await screen.findByRole('heading', { name: 'Immich settings' })).toBeInTheDocument();
+    const { router } = widget(() => ({ status: 'needs_key', updatedAt: 1 }));
+    fireEvent.click(await screen.findByRole('button', { name: /Add an API key/ }));
+    // App settings over Home (D-166).
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ settings: 'immich' }));
   });
 
   it('opens the app as its tile does (a new tab for an app that doesn’t embed)', async () => {

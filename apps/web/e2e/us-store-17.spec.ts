@@ -31,7 +31,7 @@ test("US-STORE-17 an update that didn't start shows on the app's page, with View
 
   // View log: the logs at the failed update's time, not following.
   await banner.getByRole('link', { name: 'View log' }).click();
-  await expect(page).toHaveURL(new RegExp(`/apps/${ID}/logs\\?at=\\d+`));
+  await expect(page).toHaveURL(new RegExp(`[?&]logs=${ID}&at=\\d+`));
   await expect(page.getByRole('heading', { name: 'Mealie logs' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Following' })).toHaveAttribute('aria-pressed', 'false');
 
