@@ -37,6 +37,12 @@ describe('US-STORE-23', () => {
     expect((await service(dir).getApp('sonarr')).packagedFrom).toEqual({ store: 'CasaOS', license: 'Apache-2.0' });
   });
 
+  it("an app that does what hlabs already does says so (the manifest's overlaps)", async () => {
+    const store = service(storeFixture({ apps: ['duplicati', 'sonarr'] }));
+    expect((await store.getApp('duplicati')).overlaps).toEqual(['backups']);
+    expect((await store.getApp('sonarr')).overlaps).toEqual([]);
+  });
+
   it('an app without an arm64 image is marked so on an arm64 computer', async () => {
     const store = service(storeFixture({ apps: ['sonarr'], amd64Only: ['sonarr'] }));
     expect((await store.getApp('sonarr')).app.arm64).toBe(false);

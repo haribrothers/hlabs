@@ -1,0 +1,36 @@
+schema: 1
+id: archivebox
+name: ArchiveBox
+version: '0.9.77'
+revision: 1
+tagline: Keep your own copies of web pages
+description: |
+  Add links and ArchiveBox saves each page as HTML, a PDF, a screenshot and more, so you keep it even if
+  the site disappears. Choose its admin username and password when you install it.
+category: productivity
+developer: { name: ArchiveBox, url: https://archivebox.io }
+source: https://github.com/ArchiveBox/ArchiveBox
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#4b5563', '#111827']
+  fallback: archive
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 2048 }
+web: { service: archivebox, port: 8000, embed: true }
+env:
+  - key: ADMIN_USERNAME
+    label: Admin username
+    default: admin
+    required: true
+  - key: ADMIN_PASSWORD
+    type: secret
+    label: Admin password
+    description: For signing in to ArchiveBox
+    required: true
+ownLogin: true
+backup:
+  pause: [archivebox]
+  exclude: [logs/]
+  beforeUpdate: true
+permissions: { network: internet }

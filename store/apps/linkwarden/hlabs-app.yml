@@ -1,0 +1,34 @@
+schema: 1
+id: linkwarden
+name: Linkwarden
+version: '2.17.0'
+revision: 1
+tagline: Save links and keep a copy of every page
+description: |
+  Save links into collections and Linkwarden keeps a screenshot, a PDF and a readable copy of each page,
+  so they last even when the site changes. Create your account on the first visit.
+category: productivity
+developer: { name: Linkwarden, url: https://linkwarden.app }
+source: https://github.com/linkwarden/linkwarden
+license: AGPL-3.0
+icon:
+  logo: logo.png
+  gradient: ['#0ea5e9', '#073b54']
+  fallback: bookmark
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 2048 }
+web: { service: linkwarden, port: 3000, embed: true }
+env:
+  - key: NEXTAUTH_SECRET
+    type: secret
+    generate: true
+    hidden: true
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [linkwarden, linkwarden-db]
+  beforeUpdate: true
+permissions: { network: internet }

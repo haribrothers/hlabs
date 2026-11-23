@@ -1,0 +1,42 @@
+services:
+  affine:
+    image: ghcr.io/toeverything/affine:0.27.4@sha256:b649f5ce2384ffdf13c23bccf81d759e15973d59d0b0058af65d895a84373099
+    command: [sh, -c, 'node ./scripts/self-host-predeploy.js && node ./dist/main.js']
+    environment:
+      REDIS_SERVER_HOST: affine-valkey
+      DATABASE_URL: postgresql://affine:${DB_PASSWORD}@affine-db:5432/affine
+      AFFINE_INDEXER_ENABLED: 'false'
+      AFFINE_SERVER_EXTERNAL_URL: ${HLABS_URL}
+      TELEMETRY_ENABLE: 'false'
+    volumes:
+      - ${HLABS_APP_DATA}/storage:/root/.affine/storage
+      - ${HLABS_APP_DATA}/config:/root/.affine/config
+    depends_on:
+      affine-db:
+        condition: service_healthy
+      affine-valkey:
+        condition: service_healthy
+  affine-db:
+    image: docker.io/pgvector/pgvector:0.8.7-pg16@sha256:484e838076e04939d27d3e176e91c86eea96236126023be8d3059761122e579f
+    environment:
+      POSTGRES_USER: affine
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: affine
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    volumes:
+      - ${HLABS_APP_DATA}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      # Over TCP, so it passes only once the real server is up (not during first-start setup).
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U affine -d affine']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  affine-valkey:
+    image: docker.io/valkey/valkey:9@sha256:70739f85ad2ee01a726a965584a0f94895f01b0c60b3cc8b0aeef11eaa6888cf
+    volumes:
+      - ${HLABS_APP_DATA}/valkey:/data
+    healthcheck:
+      test: [CMD, valkey-cli, ping]
+      interval: 5s
+      timeout: 5s
+      retries: 30

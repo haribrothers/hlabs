@@ -1,0 +1,25 @@
+schema: 1
+id: pairdrop
+name: PairDrop
+version: '1.11.2'
+revision: 1
+tagline: Send files between your devices, like AirDrop
+description: |
+  Open it on two devices and drop a file on the other one: photos, documents or text go straight across,
+  between phones and computers of any kind. Nothing is stored on your hlabs.
+category: files
+developer: { name: schlagmichdoch, url: https://pairdrop.net }
+source: https://github.com/schlagmichdoch/PairDrop
+license: GPL-3.0
+icon:
+  logo: logo.png
+  gradient: ['#3b82f6', '#172554']
+  fallback: send
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 128, disk: 128 }
+web: { service: pairdrop, port: 3000, embed: true }
+ownLogin: false
+backup:
+  pause: [pairdrop]
+  beforeUpdate: true
+permissions: { network: internet }

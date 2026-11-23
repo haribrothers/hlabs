@@ -1,0 +1,34 @@
+schema: 1
+id: copyparty
+name: copyparty
+version: '1.20.26'
+revision: 1
+tagline: Share and upload files from any browser, fast
+description: |
+  A file server in the browser: browse and play what's in a folder, and drop files on the page to upload
+  them, even very large ones, with resume. It also serves the folder over WebDAV. It has no login of its
+  own: the hlabs login protects it.
+category: files
+developer: { name: ed, url: https://github.com/9001/copyparty }
+source: https://github.com/9001/copyparty
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#3b82f6', '#1e3a8a']
+  fallback: upload
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 256 }
+web: { service: copyparty, port: 3923, embed: true }
+folders:
+  - key: files
+    label: Files
+    description: The folder it shares
+    target: /w
+    default: shared:Files
+    mode: rw
+    required: true
+ownLogin: false
+backup:
+  pause: [copyparty]
+  beforeUpdate: true
+permissions: { network: internet }

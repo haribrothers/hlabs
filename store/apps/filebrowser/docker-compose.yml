@@ -1,0 +1,16 @@
+services:
+  filebrowser:
+    image: docker.io/gtstef/filebrowser:2.0.2-stable@sha256:de2b4c4d18485ea202ab2cdada5bd25d8f0b8ed071712c8216a67194c31285ae
+    user: ${PUID}:${PGID}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        [ -f /home/filebrowser/data/config.yaml ] || printf '%s\n' 'http:' '  port: 80' 'server:' '  cacheDir: /home/filebrowser/data/tmp' '  sources:' '    - path: /srv' '      name: Files' 'auth:' '  methods:' '    noauth: true' > /home/filebrowser/data/config.yaml
+        cd /home/filebrowser && exec ./filebrowser
+    environment:
+      FILEBROWSER_CONFIG: /home/filebrowser/data/config.yaml
+      FILEBROWSER_DATABASE_PATH: /home/filebrowser/data/database.sqlite
+    volumes:
+      - ${HLABS_APP_DATA}/data:/home/filebrowser/data
+      - ${HLABS_FOLDER_FILES}:/srv

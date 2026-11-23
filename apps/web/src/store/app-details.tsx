@@ -9,6 +9,7 @@ import {
   Copy,
   ExternalLink,
   iconDefaults,
+  Info,
   MoreHorizontal,
 } from '@hlabs/icons';
 import { isFeatureEnabled } from '@hlabs/shared';
@@ -367,6 +368,16 @@ export function AppDetails({ appId, shippedPhase }: { appId: string; shippedPhas
               </span>
             </p>
           ) : null}
+          {d.overlaps.map((o) => (
+            <p
+              key={o}
+              role="note"
+              className="m-0 flex items-start gap-3 rounded-md border border-accent/40 bg-accent-wash px-4 py-3 text-body-sm text-ink"
+            >
+              <Info aria-hidden {...iconDefaults} className="mt-0.5 size-4 shrink-0 text-accent" />
+              <span>{copy.overlaps[o]}</span>
+            </p>
+          ))}
           <RequirementNotes d={d} />
           <Screenshots urls={d.screenshots} name={app.name} />
           <div className="grid gap-8 lg:grid-cols-[1fr_23rem]">

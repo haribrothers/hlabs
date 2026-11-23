@@ -1,0 +1,52 @@
+schema: 1
+id: duplicati
+name: Duplicati
+version: '2.4.1.0'
+revision: 1
+tagline: Encrypted backups of your folders to the cloud
+description: |
+  Back up a folder to cloud storage or another drive, encrypted and on a schedule, keeping old
+  versions. Choose the password for its page when you install it.
+category: files
+developer: { name: Duplicati, url: https://duplicati.com }
+source: https://github.com/duplicati/duplicati
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#2563eb', '#0f2557']
+  fallback: archive
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: duplicati, port: 8200, embed: true }
+folders:
+  - key: source
+    label: Folder to back up
+    description: What Duplicati backs up and restores into
+    target: /source
+    default: home:Documents
+    mode: rw
+    required: true
+  - key: backups
+    label: Backups
+    description: A folder to keep backups in, if you want one
+    target: /backups
+    default: shared:Backups
+    mode: rw
+    required: false
+env:
+  - key: UI_PASSWORD
+    type: secret
+    label: Password
+    description: For Duplicati's page
+    required: true
+  - key: SETTINGS_ENCRYPTION_KEY
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+overlaps: [backups]
+backup:
+  pause: [duplicati]
+  exclude: [Duplicati/updates/]
+  beforeUpdate: true
+permissions: { network: internet }

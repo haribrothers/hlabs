@@ -45,6 +45,31 @@ rank:
     tubearchivist,
     jackett,
     deluge,
+    photoprism,
+    memos,
+    vikunja,
+    grocy,
+    homebox,
+    pairdrop,
+    stirling-pdf,
+    seafile,
+    affine,
+    docmost,
+    trilium,
+    bookstack,
+    wikijs,
+    planka,
+    karakeep,
+    linkwarden,
+    freshrss,
+    searxng,
+    excalidraw,
+    filebrowser,
+    copyparty,
+    archivebox,
+    duplicati,
   ]
 # Apps the update bot (store-updates.yml) leaves alone, pinned on purpose: say why next to each.
-hold: []
+hold:
+  # Publishes only a latest tag: pinned by digest and bumped by hand.
+  - excalidraw

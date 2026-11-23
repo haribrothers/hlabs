@@ -1,0 +1,37 @@
+# From FileBrowser Quantum's own image; a first start writes its config (the chosen folder, no login of
+# its own: the hlabs login protects it). An existing file is left alone.
+schema: 1
+id: filebrowser
+name: FileBrowser Quantum
+version: '2.0.2'
+revision: 1
+tagline: A fast file manager in the browser
+description: |
+  Browse, search, preview, upload and share the files in a folder you choose, with quick search and
+  previews of photos, videos and documents. Its own login is turned off: the hlabs login protects it.
+  hlabs's own Files app does much of this too.
+category: files
+developer: { name: Graham Steffaniak, url: https://filebrowserquantum.com }
+source: https://github.com/gtsteffaniak/filebrowser
+license: Apache-2.0
+icon:
+  logo: logo.svg
+  gradient: ['#4a90d9', '#14335c']
+  fallback: folder
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: filebrowser, port: 80, embed: true }
+health: { service: filebrowser, http: /health, timeout: 120 }
+folders:
+  - key: files
+    label: Files
+    description: The folder it shows
+    target: /srv
+    default: home:Documents
+    mode: rw
+    required: true
+ownLogin: false
+backup:
+  pause: [filebrowser]
+  beforeUpdate: true
+permissions: { network: internet }

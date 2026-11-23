@@ -80,6 +80,13 @@ export const storeCopy = {
     macos: "There's no Apple Silicon version of this app yet.",
     linux: "There's no ARM64 version of this app yet.",
   },
+  /** AppDetailsOverlap: what hlabs already does that the app also does (US-STORE-23). */
+  overlaps: {
+    remoteAccess:
+      'hlabs already gives you remote access with Tailscale. Use this only if you need it for something else.',
+    backups: 'hlabs already backs up your apps and files.',
+    appManagement: 'hlabs already manages your apps; this one can control all of them.',
+  },
   /** After noArm64 in the AppDetailsX86 banner (US-STORE-23). */
   runsOnIntel: 'It runs on computers with an Intel or AMD chip.',
   runsOn: 'Runs on',

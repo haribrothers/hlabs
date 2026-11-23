@@ -1,0 +1,8 @@
+services:
+  memos:
+    image: docker.io/neosmemo/memos:26.11.2@sha256:3c7bd779510403350465ecabb7e6fbc0887206f9d55b8decf51a205613fa5616
+    environment:
+      MEMOS_MODE: prod
+      MEMOS_PORT: '5230'
+    volumes:
+      - ${HLABS_APP_DATA}/data:/var/opt/memos

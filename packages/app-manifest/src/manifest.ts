@@ -185,6 +185,8 @@ export const AppManifest = z
     // Optional fields added in schema 1 (D-019).
     releaseNotes: z.string().optional(),
     ownLogin: z.boolean().default(false),
+    /** What hlabs already does that this app also does; its page says so (D-148, US-STORE-23). */
+    overlaps: z.array(z.enum(['remoteAccess', 'backups', 'appManagement'])).default([]),
     widgets: z.array(widget).default([]),
   })
   .strict()

@@ -1,0 +1,35 @@
+schema: 1
+id: docmost
+name: Docmost
+version: '0.98.0'
+revision: 1
+tagline: A shared space for docs and notes, edited together
+description: |
+  Write documents with others at the same time, organise them in spaces and find them with search. Like
+  Notion or Confluence, on your hlabs. The first visit sets up your workspace and admin account.
+category: productivity
+developer: { name: Docmost, url: https://docmost.com }
+source: https://github.com/docmost/docmost
+license: AGPL-3.0
+icon:
+  logo: logo.png
+  gradient: ['#18181b', '#000000']
+  fallback: file-text
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 1024 }
+web: { service: docmost, port: 3000, embed: true }
+health: { service: docmost, http: /api/health, timeout: 300 }
+env:
+  - key: APP_SECRET
+    type: secret
+    generate: true
+    hidden: true
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [docmost, docmost-db]
+  beforeUpdate: true
+permissions: { network: internet }

@@ -40,7 +40,12 @@ test('US-STORE-02 categories with apps, in order; keyboard moves through them; "
   await expect(page).toHaveURL(/\/store\/category\/files$/);
   await expect(page.getByRole('heading', { name: 'Files & photos' })).toBeVisible();
   await expect(files).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByRole('list', { name: 'Files & photos' }).getByRole('listitem')).toHaveCount(3);
+  // As many apps as the category says it has (the store grows wave by wave, D-161).
+  const count = page.getByText(/^\d+ apps?\b/);
+  await expect(count).toBeVisible();
+  const n = Number((await count.textContent())!.match(/^(\d+)/)![1]);
+  expect(n).toBeGreaterThan(0);
+  await expect(page.getByRole('list', { name: 'Files & photos' }).getByRole('listitem')).toHaveCount(n);
 });
 
 test('US-STORE-02 on a phone, categories are chips above the content', async ({ page }, info) => {

@@ -163,6 +163,8 @@ export const storeAppDetailsSchema = z.object({
   readme: z.string().nullable(),
   /** Drafted from another app store's definition (its NOTICE file, D-148): credited under About (US-STORE-23). */
   packagedFrom: z.object({ store: z.enum(['Runtipi', 'CasaOS']), license: z.string() }).nullable(),
+  /** What hlabs already does that this app also does (the manifest's `overlaps`): a note on its page (US-STORE-23). */
+  overlaps: z.array(z.enum(['remoteAccess', 'backups', 'appManagement'])),
   releaseNotes: z.string().nullable(),
   /** Up to 5 screenshot URLs. */
   screenshots: z.array(z.string()),

@@ -135,4 +135,6 @@ On a Mac with Apple Silicon, apps that have a version for it are tagged **Apple 
 
 The hlabs team packages every app in the App Store and tests that it installs, opens, restarts and uninstalls. Some were packaged with help from other home-server app stores; their page says so under **About**, for example **Packaged with help from the Runtipi app store (GPL-3.0)**. Each app's logo and software belong to its own project.
 
+A few apps do something hlabs already does, such as backups or remote access. Their page says so, for example **hlabs already backs up your apps and files.**, so you can decide whether you need them.
+
 Choose **Back to Home** to close the App Store.

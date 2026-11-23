@@ -1,0 +1,55 @@
+# From Seafile 13's own seafile-server.yml, without SeaDoc and the notification server.
+schema: 1
+id: seafile
+name: Seafile
+version: '13.0.30'
+revision: 1
+tagline: Sync and share files with every device
+description: |
+  Seafile keeps libraries of files in sync across computers and phones with its own apps, with
+  versions, sharing links and fast, reliable syncing of large folders. Choose the admin email and
+  password when you install it. Seafile keeps its files in its own format inside the app.
+category: files
+developer: { name: Seafile, url: https://www.seafile.com }
+source: https://github.com/haiwen/seafile
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#f59e0b', '#7c3d03']
+  fallback: cloud
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 2048, disk: 4096 }
+web: { service: seafile, port: 80, embed: true }
+health: { service: seafile, http: /api2/ping/, timeout: 600 }
+env:
+  - key: ADMIN_EMAIL
+    label: Admin email
+    description: For signing in to Seafile; it sends no email
+    required: true
+  - key: ADMIN_PASSWORD
+    type: secret
+    label: Admin password
+    description: For signing in to Seafile
+    required: true
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+  - key: DB_ROOT_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+  - key: REDIS_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+  - key: JWT_PRIVATE_KEY
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [seafile, seafile-db]
+  exclude: [seafile/logs/]
+  beforeUpdate: true
+permissions: { network: internet }

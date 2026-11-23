@@ -1,0 +1,31 @@
+services:
+  vikunja:
+    image: docker.io/vikunja/vikunja:2.8.0@sha256:35d937baf3b5d5803bed6b9e11d007448b7b536df9e4346dc35551e1072636c3
+    user: ${PUID}:${PGID}
+    environment:
+      VIKUNJA_DATABASE_TYPE: postgres
+      VIKUNJA_DATABASE_HOST: vikunja-db
+      VIKUNJA_DATABASE_USER: vikunja
+      VIKUNJA_DATABASE_PASSWORD: ${DB_PASSWORD}
+      VIKUNJA_DATABASE_DATABASE: vikunja
+      VIKUNJA_SERVICE_JWTSECRET: ${JWT_SECRET}
+      VIKUNJA_SERVICE_PUBLICURL: ${HLABS_URL}/
+    volumes:
+      - ${HLABS_APP_DATA}/files:/app/vikunja/files
+    depends_on:
+      vikunja-db:
+        condition: service_healthy
+  vikunja-db:
+    image: docker.io/library/postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_USER: vikunja
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: vikunja
+    volumes:
+      - ${HLABS_APP_DATA}/postgres:/var/lib/postgresql
+    healthcheck:
+      # Over TCP, so it passes only once the real server is up (not during first-start setup).
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U vikunja -d vikunja']
+      interval: 5s
+      timeout: 5s
+      retries: 30

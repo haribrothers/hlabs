@@ -1,0 +1,31 @@
+schema: 1
+id: searxng
+name: SearXNG
+version: '2026.11.21'
+revision: 1
+tagline: Private web search with results from many engines
+description: |
+  Search the web with results gathered from dozens of search engines, without ads or tracking. Set it
+  as your browser's search engine. It has no login of its own: the hlabs login protects it.
+category: productivity
+developer: { name: SearXNG, url: https://docs.searxng.org }
+source: https://github.com/searxng/searxng
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#3050ff', '#0f1d66']
+  fallback: search
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 256 }
+web: { service: searxng, port: 8080, embed: true }
+health: { service: searxng, http: /healthz, timeout: 120 }
+env:
+  - key: SEARXNG_SECRET
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: false
+backup:
+  pause: [searxng]
+  beforeUpdate: true
+permissions: { network: internet }

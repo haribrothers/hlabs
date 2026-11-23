@@ -1,0 +1,50 @@
+schema: 1
+id: photoprism
+name: PhotoPrism
+version: '261029'
+revision: 1
+tagline: Browse, search and organise your photos
+description: |
+  PhotoPrism looks through the photos and videos in your Photos folder and makes them easy to find:
+  by place on a map, by the people and things in them, by colour or by date. Sign in as admin with the
+  password you choose when you install it.
+category: photos
+developer: { name: PhotoPrism, url: https://www.photoprism.app }
+source: https://github.com/photoprism/photoprism
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#7e57c2', '#2a1a4a']
+  fallback: image
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 3072, disk: 4096 }
+web: { service: photoprism, port: 2342, embed: true }
+health: { service: photoprism, http: /api/v1/status, timeout: 600 }
+folders:
+  - key: originals
+    label: Photos
+    description: The photos and videos it organises
+    target: /photoprism/originals
+    default: home:Photos
+    mode: rw
+    required: true
+env:
+  - key: ADMIN_PASSWORD
+    type: secret
+    label: Admin password
+    description: For signing in to PhotoPrism as admin; at least 8 characters
+    required: true
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+  - key: DB_ROOT_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [photoprism, photoprism-db]
+  exclude: [storage/cache/]
+  beforeUpdate: true
+permissions: { network: internet }

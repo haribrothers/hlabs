@@ -1,0 +1,50 @@
+schema: 1
+id: planka
+name: Planka
+version: '2.3.1'
+revision: 1
+tagline: Kanban boards for projects and to-do lists
+description: |
+  Plan projects on boards of cards, like Trello: lists, labels, due dates, checklists and attachments,
+  shared with your family or team. Choose your admin account when you install it.
+category: productivity
+developer: { name: Planka, url: https://planka.app }
+source: https://github.com/plankanban/planka
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#4b6bfb', '#1c2a6b']
+  fallback: kanban
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: planka, port: 1337, embed: true }
+env:
+  - key: ADMIN_EMAIL
+    label: Your email
+    description: For signing in to Planka; it sends no email unless you set that up
+    required: true
+  - key: ADMIN_NAME
+    label: Your name
+    required: true
+  - key: ADMIN_USERNAME
+    label: Username
+    default: admin
+    required: true
+  - key: ADMIN_PASSWORD
+    type: secret
+    label: Password
+    description: For signing in to Planka
+    required: true
+  - key: SECRET_KEY
+    type: secret
+    generate: true
+    hidden: true
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [planka, planka-db]
+  beforeUpdate: true
+permissions: { network: internet }

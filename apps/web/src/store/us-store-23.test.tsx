@@ -45,3 +45,21 @@ describe('US-STORE-23', () => {
     expect(screen.queryByText(/Packaged with help/)).toBeNull();
   });
 });
+
+describe('US-STORE-23 · AppDetailsOverlap', () => {
+  it('says what hlabs already does, for each overlap', async () => {
+    show(details({ overlaps: ['backups', 'remoteAccess', 'appManagement'] }));
+    const notes = await screen.findAllByRole('note');
+    expect(notes.map((n) => n.textContent)).toEqual([
+      'hlabs already backs up your apps and files.',
+      'hlabs already gives you remote access with Tailscale. Use this only if you need it for something else.',
+      'hlabs already manages your apps; this one can control all of them.',
+    ]);
+  });
+
+  it('an app with no overlaps has no note', async () => {
+    show(details());
+    await screen.findByRole('heading', { level: 1, name: 'Immich' });
+    expect(screen.queryByRole('note')).toBeNull();
+  });
+});
