@@ -92,6 +92,7 @@ export default defineConfig({
                     { label: 'Storage', link: '/help/get-started/storage/' },
                     { label: 'Engine and startup', link: '/help/get-started/engine/' },
                     { label: 'Update hlabs', link: '/help/get-started/updates/' },
+                    { label: 'Advanced', link: '/help/get-started/advanced/' },
                   ],
                 },
                 { label: 'Menu-bar app', items: [{ label: 'The menu-bar app', link: '/help/get-started/menu-bar/' }] },

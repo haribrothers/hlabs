@@ -323,13 +323,13 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-SYS-12 · Manage data location and drives
 - [x] US-SYS-13 · Free space from unused app images (D-168)
 - [x] US-SYS-14 · Empty everyone's trash
-- [ ] US-SYS-27 · View hlabs logs
-- [ ] US-SYS-28 · Download a diagnostics bundle
-- [ ] US-SYS-29 · See what hlabs connects to
-- [ ] US-SYS-30 · Opt in to beta updates
-- [ ] US-SYS-31 · Restart hlabs
-- [ ] US-SYS-37 · Confirm a factory reset
-- [ ] US-SYS-38 · Reset hlabs
+- [x] US-SYS-27 · View hlabs logs (new lines every 2 s while open rather than on the event stream, D-169)
+- [x] US-SYS-28 · Download a diagnostics bundle
+- [x] US-SYS-29 · See what hlabs connects to (Funnel and Cloudflare join it with US-SYS-43)
+- [x] US-SYS-30 · Opt in to beta updates
+- [x] US-SYS-31 · Restart hlabs (exit 75 for launchd/systemd, D-169; under `pnpm dev` hlabsd isn't started again; the real LaunchAgent and unit are checked by hand at phase end)
+- [x] US-SYS-37 · Confirm a factory reset (the story's hostname and password, not the screen's "Type RESET"; "stale session" read as D-170)
+- [x] US-SYS-38 · Reset hlabs (the database is deleted at the next start, D-170; MCP tokens join with phase 8)
 - [ ] US-SYS-43 · Set up a way to make apps public
 - [ ] US-SYS-44 · See and stop everything that's public
 - [ ] US-PHONE-01 · Switch to the phone layout with a bottom tab bar

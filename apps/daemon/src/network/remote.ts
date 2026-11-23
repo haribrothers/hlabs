@@ -8,6 +8,7 @@ import { ulid } from '@hlabs/shared';
 import type { AppRoute } from '../apps/service';
 import type { SessionService } from '../auth/sessions';
 import type { Logger } from '../logger';
+import { CONTACT, recordContact } from '../system/connections';
 import { TailscaleError, type ServeConfig, type TailscaleClient, type TailscaleState } from '../tailscale/types';
 import { tailnetDashboardUrl } from './domains';
 import { tailnetAppPort } from '@hlabs/shared';
@@ -231,7 +232,11 @@ export class RemoteService {
       if (saved.mode !== 'tailscale' || saved.state !== 'connected') return;
       try {
         const ts = await this.state();
-        if (ts.kind === 'running') await this.publish(ts, saved.dashboardPort);
+        if (ts.kind === 'running') {
+          await this.publish(ts, saved.dashboardPort);
+          // For Advanced › "What hlabs connects to" (US-SYS-29).
+          recordContact(this.deps.db, CONTACT.tailscale);
+        }
       } catch (err) {
         this.deps.logger.warn({ err }, "couldn't update the apps on the tailnet");
       }

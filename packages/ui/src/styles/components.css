@@ -648,6 +648,13 @@
     background: var(--surface-row);
     overflow: hidden;
   }
+  /* A "Danger zone" (SettingsAdvanced): the label in the danger colour, an edge around the rows. */
+  .hl-list-danger > .hl-list-label {
+    color: var(--danger);
+  }
+  .hl-list-danger > .hl-list-box {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 40%, var(--hairline));
+  }
 
   /* Settings › Appearance (SettingsAppearance): wallpaper thumbnails and accent swatches. */
   .hl-wallpicks {
@@ -1385,6 +1392,19 @@
     border-radius: var(--radius-window);
     color: var(--ink);
     font-family: var(--hl-font-sans);
+  }
+  .hl-dialog-icon {
+    display: flex;
+  }
+  /* A destructive dialog's warning (FactoryReset): the danger colour on a wash of it, in a circle. */
+  .hl-dialog-icon-danger {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-pill);
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger-fill) 30%, transparent);
   }
   .hl-dialog-title {
     margin: 0;

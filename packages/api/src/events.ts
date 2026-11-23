@@ -13,7 +13,7 @@ import {
 } from './schemas/common';
 
 export const eventSchemas = {
-  'system.status': z.object({ state: z.enum(['ready', 'updating']) }),
+  'system.status': z.object({ state: z.enum(['ready', 'updating', 'restarting', 'resetting']) }),
   'engine.status': z.object({
     running: z.boolean(),
     kind: engineKindSchema.nullable(),

@@ -9,6 +9,7 @@ import { loginCopy } from '../copy/login';
 import { setCsrfToken } from '../lib/csrf';
 import { NotificationFeed } from '../lib/notification-feed';
 import { useReconnectWhenVisible } from '../lib/stream-status';
+import { markResetting, markRestarting, resetUnderway } from '../health/restarting';
 import { markUpdating } from '../health/updating';
 import { dismissNotificationToasts, showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
@@ -64,7 +65,10 @@ export function SessionWatch() {
         },
         onData: (envelope) => {
           const event = envelope.data;
-          if (event.type === 'session.revoked') void signedOut();
+          // A factory reset ends every session: this page shows the reset instead (US-SYS-38).
+          if (event.type === 'session.revoked') {
+            if (!resetUnderway()) void signedOut();
+          }
           // An admin changed what I can open (US-ACCT-26): Home's tiles, the Dock and app pages refetch now.
           else if (event.type === 'access.changed') void queryClient.invalidateQueries();
           else if (event.type === 'notification.created') feed.onCreated(event);
@@ -72,6 +76,9 @@ export function SessionWatch() {
           else if (event.type === 'notification.read' || event.type === 'notification.dismissed') feed.onRead(event);
           // hlabs is about to stop for an update: every route gives way to "Updating hlabs" (US-STATE-01).
           else if (event.type === 'system.status' && event.data.state === 'updating') markUpdating();
+          // Restarting or being reset (US-SYS-31, US-SYS-38): "Restarting hlabs…" or "Resetting hlabs…".
+          else if (event.type === 'system.status' && event.data.state === 'restarting') markRestarting();
+          else if (event.type === 'system.status' && event.data.state === 'resetting') markResetting();
         },
       },
     ),

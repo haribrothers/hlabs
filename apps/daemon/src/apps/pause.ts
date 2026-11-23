@@ -30,16 +30,22 @@ export interface PausePayload {
   untilRestart?: boolean;
 }
 
-function audit(db: HlabsDb, action: 'system.pause' | 'system.resume' | 'system.quit', appIds: string[], via?: 'tray') {
+function audit(
+  db: HlabsDb,
+  action: 'system.pause' | 'system.resume' | 'system.quit' | 'system.restart',
+  appIds: string[],
+  via?: 'tray',
+  who?: { userId: string | null; ip: string | null },
+) {
   db.insert(auditLog)
     .values({
       id: ulid(),
       at: Date.now(),
-      userId: null,
+      userId: who?.userId ?? null,
       action,
       target: null,
       detailJson: { ...(via ? { via } : {}), appIds },
-      ip: null,
+      ip: who?.ip ?? null,
     })
     .run();
 }
@@ -56,34 +62,60 @@ export async function stopIfPaused(deps: Pick<PauseDeps, 'db' | 'apps'>, appId: 
   await deps.apps.stop(appId);
 }
 
-export function registerPause(deps: PauseDeps): void {
+/**
+ * Stops the apps that are up, after recording them in `settings.paused` (so a restart midway keeps them stopped and
+ * resume knows what to start). `untilRestart` (Quit, Restart hlabs) makes the next start resume them. Returns the apps
+ * it stopped. Audited as `action`.
+ */
+export async function stopRunningApps(
+  deps: PauseDeps,
+  opts: {
+    untilRestart: boolean;
+    action: 'system.pause' | 'system.quit' | 'system.restart';
+    via?: 'tray';
+    who?: { userId: string | null; ip: string | null };
+  },
+  report: (progress: number) => void,
+): Promise<string[]> {
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const up = deps.db
+    .select({ id: apps.id })
+    .from(apps)
+    .where(inArray(apps.state, [...UP]))
+    .all()
+    .map((a) => a.id);
+  const earlier = getSetting(deps.db, 'paused');
+  const appIds = [...new Set([...(earlier?.appIds ?? []), ...up])];
+  // Recorded first, so a restart midway keeps them stopped and resume knows what to start.
+  const untilRestart = opts.untilRestart && (!earlier || earlier.untilRestart);
+  setSetting(deps.db, 'paused', { at: earlier?.at ?? Date.now(), appIds, untilRestart });
+  audit(deps.db, opts.action, up, opts.via, opts.who);
+  for (const [i, appId] of up.entries()) {
+    const deadline = Date.now() + (deps.settleMs ?? SETTLE_MS);
+    // An app on its way up is let finish, then stopped.
+    while (['starting', 'restarting'].includes(deps.apps.get(appId)?.state ?? '') && Date.now() < deadline) {
+      await wait(deps.pollMs ?? 1_000);
+    }
+    if (deps.apps.get(appId)?.state === 'running') {
+      await deps.apps.stop(appId).catch((err: unknown) => deps.logger.warn({ err, appId }, 'pause: stop failed'));
+    }
+    report(Math.round(((i + 1) / up.length) * 100));
+  }
+  return up;
+}
 
+export function registerPause(deps: PauseDeps): void {
   deps.jobs.register<PausePayload>('pause_all', {
     async run({ payload, report }) {
-      const up = deps.db
-        .select({ id: apps.id })
-        .from(apps)
-        .where(inArray(apps.state, [...UP]))
-        .all()
-        .map((a) => a.id);
-      const earlier = getSetting(deps.db, 'paused');
-      const appIds = [...new Set([...(earlier?.appIds ?? []), ...up])];
-      // Recorded first, so a restart midway keeps them stopped and resume knows what to start.
-      const untilRestart = Boolean(payload.untilRestart) && (!earlier || earlier.untilRestart);
-      setSetting(deps.db, 'paused', { at: earlier?.at ?? Date.now(), appIds, untilRestart });
-      audit(deps.db, payload.untilRestart ? 'system.quit' : 'system.pause', up, payload.via);
-      for (const [i, appId] of up.entries()) {
-        const deadline = Date.now() + (deps.settleMs ?? SETTLE_MS);
-        // An app on its way up is let finish, then stopped.
-        while (['starting', 'restarting'].includes(deps.apps.get(appId)?.state ?? '') && Date.now() < deadline) {
-          await wait(deps.pollMs ?? 1_000);
-        }
-        if (deps.apps.get(appId)?.state === 'running') {
-          await deps.apps.stop(appId).catch((err: unknown) => deps.logger.warn({ err, appId }, 'pause: stop failed'));
-        }
-        report(Math.round(((i + 1) / up.length) * 100));
-      }
+      await stopRunningApps(
+        deps,
+        {
+          untilRestart: Boolean(payload.untilRestart),
+          action: payload.untilRestart ? 'system.quit' : 'system.pause',
+          via: payload.via,
+        },
+        report,
+      );
     },
   });
 

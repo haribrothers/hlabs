@@ -41,6 +41,7 @@ export const jobNames: Record<string, string> = {
   prune_images: 'the clean-up',
   files_move: 'the file move',
   diagnostics: 'the diagnostics bundle',
+  daemon_restart: 'the restart',
   hlabs_uninstall: 'the uninstall',
 };
 

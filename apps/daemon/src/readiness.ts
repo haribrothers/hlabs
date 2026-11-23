@@ -9,12 +9,19 @@ export const BOOT_STEPS = [
   'Starting the scheduler',
 ] as const;
 
+/** A factory reset's steps (US-SYS-38), reported while it runs; then hlabs starts again, empty. */
+export const RESET_STEPS = ['Stopping apps', 'Deleting data', 'Removing settings', 'Restarting hlabs'] as const;
+
 /** While a daemon starts after an update (US-STATE-01): step 1 is the tray replacing files, before it starts. */
 export const UPDATE_STEPS = ['Installing update', 'Restarting apps', 'Checking apps', 'Finishing up'] as const;
 
 type State =
   | { kind: 'starting'; step: number }
   | { kind: 'ready' }
+  /** "Restart hlabs" (US-SYS-31): the apps are stopping, then the daemon exits to be started again. */
+  | { kind: 'restarting' }
+  /** A factory reset (US-SYS-38) at a step of RESET_STEPS (0-based). */
+  | { kind: 'resetting'; step: number }
   | { kind: 'failed'; reason: Extract<HealthReason, 'migration_failed' | 'storage_unavailable'> };
 
 export class Readiness {
@@ -35,6 +42,16 @@ export class Readiness {
     this.state = { kind: 'ready' };
   }
 
+  /** Restarting (US-SYS-31): every API call answers DAEMON_STARTING and /healthz says `restarting` until it exits. */
+  restarting(): void {
+    this.state = { kind: 'restarting' };
+  }
+
+  /** Resetting (US-SYS-38) at a step of RESET_STEPS (0-based). */
+  resetting(step: number): void {
+    this.state = { kind: 'resetting', step };
+  }
+
   fail(reason: Extract<HealthReason, 'migration_failed' | 'storage_unavailable'>): void {
     this.state = { kind: 'failed', reason };
   }
@@ -50,6 +67,15 @@ export class Readiness {
         return null;
       case 'failed':
         return { reason: this.state.reason };
+      case 'restarting':
+        return { reason: 'restarting' };
+      case 'resetting':
+        return {
+          reason: 'resetting',
+          step: this.state.step + 1,
+          steps: RESET_STEPS.length,
+          stepLabel: RESET_STEPS[this.state.step] ?? RESET_STEPS[0],
+        };
       case 'starting':
         if (this.updateStep !== null) {
           return {

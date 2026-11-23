@@ -18,6 +18,7 @@ test.describe('US-ACCT-01', () => {
       'Engine & startup',
       'Backups',
       'Updates',
+      'Advanced',
     ]);
     await expect(nav.getByRole('link', { name: 'Account' })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeVisible();

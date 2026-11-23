@@ -4,13 +4,15 @@ import { cn } from '../lib/cn';
 export interface ListProps {
   label?: ReactNode;
   children: ReactNode;
+  /** 'danger' for a "Danger zone": its label in the danger colour and an edge around the rows. */
+  tone?: 'default' | 'danger';
 }
 
 /** A labelled group of rows, the way every settings page is built. */
-export function List({ label, children }: ListProps) {
+export function List({ label, children, tone = 'default' }: ListProps) {
   const labelId = useId();
   return (
-    <div className="hl-list">
+    <div className={cn('hl-list', tone === 'danger' && 'hl-list-danger')}>
       {label ? (
         <span id={labelId} className="hl-list-label">
           {label}

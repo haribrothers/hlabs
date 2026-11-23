@@ -79,6 +79,16 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     return { notificationId: services.notifications.create({ userId: null, ...n }) };
   });
 
+  // A warning in hlabs's own log (US-SYS-27 e2e): what the log viewer shows, with anything secret masked.
+  const logLineBody = z.object({ message: z.string().min(1).max(500) });
+  app.post('/dev/log-line', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { message } = logLineBody.parse(req.body);
+    services.logger.warn(message);
+    return { ok: true };
+  });
+
   // First-run gate in e2e (US-ONB-01): the setup URL the daemon printed, and a shortcut past onboarding
   // until the onboarding stories that complete it are built.
   app.get('/dev/setup-url', async (_req, reply) => {

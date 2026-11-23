@@ -9,6 +9,8 @@ export interface SecretStore {
   get(ref: string): Promise<string | null>;
   set(ref: string, value: string): Promise<void>;
   delete(ref: string): Promise<void>;
+  /** Every ref held, where the store can list only its own (the encrypted file, memory); the keychain can't. */
+  refs?(): Promise<string[]>;
 }
 
 export type SecretStoreKind = 'keychain' | 'file';
@@ -77,6 +79,10 @@ export class FileSecretStore implements SecretStore {
     this.write(all);
   }
 
+  async refs() {
+    return Object.keys(this.read());
+  }
+
   private key(): Buffer {
     if (!existsSync(this.keyPath)) {
       mkdirSync(dirname(this.keyPath), { recursive: true });
@@ -111,6 +117,9 @@ export class MemorySecretStore implements SecretStore {
   }
   async delete(ref: string) {
     this.values.delete(ref);
+  }
+  async refs() {
+    return [...this.values.keys()];
   }
 }
 

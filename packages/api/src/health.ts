@@ -6,6 +6,10 @@ export const HEALTH_REASONS = [
   'updating',
   'migration_failed',
   'storage_unavailable',
+  /** "Restart hlabs" (US-SYS-31): the apps are stopping and the daemon starts again. */
+  'restarting',
+  /** A factory reset (US-SYS-38) is deleting everything; `step` of `steps` says how far it is. */
+  'resetting',
   /** Produced by Caddy's error handler, never by the daemon. */
   'daemon_unreachable',
 ] as const;

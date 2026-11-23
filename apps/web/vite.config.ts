@@ -56,6 +56,7 @@ const toDaemon = {
   '/dev/fake-images': DAEMON,
   '/dev/trash-item': DAEMON,
   '/dev/notify': DAEMON,
+  '/dev/log-line': DAEMON,
 };
 
 export default defineConfig(({ command }) => ({

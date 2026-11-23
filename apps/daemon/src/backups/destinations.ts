@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { rootLocation } from '../apps/folders';
 import type { JobRunner } from '../jobs/runner';
 import type { Logger } from '../logger';
+import { CONTACT, recordContact } from '../system/connections';
 import type { DriveProbe } from '../platform/drives';
 import type { SecretStore } from '../platform/secrets';
 import type { NetworkDrives } from '../storage/drives';
@@ -156,6 +157,8 @@ export class Destinations {
   /** The repository to use, with its password and keys; BACKUP_DEST_UNREACHABLE when its drive isn't there. */
   async repo(row: Row): Promise<Repo> {
     const c = this.config(row);
+    // Whoever asks is about to reach it: for Advanced › "What hlabs connects to" (US-SYS-29).
+    recordContact(this.deps.db, CONTACT.backup(row.id));
     const password = await this.deps.secrets.get(row.repoPasswordRef);
     if (!password) throw hlabsError('AUTH_SECRET_UNAVAILABLE', 'The encryption password is missing');
     if (c.type === 'cloud') {

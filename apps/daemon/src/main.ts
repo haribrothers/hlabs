@@ -11,6 +11,7 @@ import { ServiceHolder } from './services';
 import { switchBackIfStale } from './updates/headless';
 import { updateUnderway } from './updates/install';
 import { hasUpdateMarker } from './updates/marker';
+import { plannedExitCode } from './system/lifecycle';
 
 if (process.argv.includes('--update-watchdog')) {
   const root = process.env.HLABS_INSTALL_ROOT ?? '/opt/hlabs';
@@ -53,7 +54,8 @@ async function stop(signal: string) {
   await Promise.race([app.close(), new Promise((resolve) => setTimeout(resolve, CLOSE_TIMEOUT_MS).unref())]);
   await shutdown(services);
   logger.info('stopped');
-  process.exit(0);
+  // 75 after "Restart hlabs" or a factory reset: launchd or systemd starts it again (D-133).
+  process.exit(plannedExitCode());
 }
 process.on('SIGINT', () => void stop('SIGINT'));
 process.on('SIGTERM', () => void stop('SIGTERM'));

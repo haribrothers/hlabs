@@ -7,6 +7,9 @@ import { eq } from 'drizzle-orm';
 import { registerEngineRestart } from './engine/restart-job';
 import { registerEngineStart } from './engine/start-job';
 import { registerPause, resumeAfterQuit } from './apps/pause';
+import { finishFactoryReset, RESET_INCOMPLETE_KIND, takeFactoryResetMarker } from './system/factory-reset';
+import { requestRestart } from './system/lifecycle';
+import { SystemService } from './system/service';
 import { UninstallService } from './uninstall/service';
 import { registerHomeFolderTrash } from './users/home-trash-job';
 import { watchEngine } from './engine/watch';
@@ -150,7 +153,8 @@ export interface BootDeps {
   mounter?: NetworkMounter;
   /** Finds SMB and NFS servers (US-FILE-11). */
   discovery?: NetworkDiscovery;
-  /** After a whole-system restore (US-BKP-18); tests pass a fake. */
+  /** Starts hlabsd again: after a whole-system restore (US-BKP-18), Restart hlabs (US-SYS-31) and a factory reset
+   * (US-SYS-38); tests pass a fake. */
   restartDaemon?: () => void;
   /** Run the backup schedule every minute and recover after a crash (off in most tests). */
   scheduleBackups?: boolean;
@@ -198,6 +202,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     readiness.fail('storage_unavailable');
     return null;
   }
+  // After a factory reset (US-SYS-38) the database goes before anything opens it: this start makes an empty one.
+  const resetMarker = takeFactoryResetMarker(config.paths.dataDir, logger);
   // A whole-system restore left the restored database (US-BKP-18): it goes in before anything opens the old one.
   const pendingDb = join(config.paths.dataDir, PENDING_DB);
   if (existsSync(pendingDb)) {
@@ -442,6 +448,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       },
     },
   });
+  // The onboarding after a factory reset reuses the setup token the browser that asked for it was given.
+  let resetLeft: { title: string; body: string } | null = null;
+  if (resetMarker) await finishFactoryReset(db, secrets, resetMarker, (n) => (resetLeft = n));
   const setupUrl = await onboarding.prepareSetupToken();
   if (setupUrl) {
     logger.info({ setupUrl }, 'hlabs is not set up yet: open the setup URL to start');
@@ -773,8 +782,38 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
           appendLog: async (line) => logger.info({ line }, 'uninstall: colima'),
         }),
     }),
+    // Made just below, from the services themselves.
+    advanced: undefined as unknown as SystemService,
   };
   services.uninstall.register();
+  services.advanced = new SystemService(services, {
+    restart: deps.restartDaemon ?? requestRestart,
+    // What shutdown stops on timers, so nothing brings an app back while a factory reset deletes.
+    quiesce: () => {
+      services.usage.stop();
+      services.usageHistory.stop();
+      services.appWatch.stop();
+      services.filesJanitor.stop();
+      services.networkDrives.stop();
+      services.destinations.stop();
+      services.backups.stop();
+      services.hlabsUpdates.stop();
+      services.autoUpdates.stop();
+      services.routing.stop();
+      services.login.stop();
+    },
+  });
+  services.advanced.register();
+  if (resetLeft) {
+    const n: { title: string; body: string } = resetLeft;
+    services.notifications.create({
+      userId: null,
+      kind: RESET_INCOMPLETE_KIND,
+      severity: 'warning',
+      title: n.title,
+      body: n.body,
+    });
+  }
   holder.set(services);
   // Keep awake follows the setting and whether any app runs.
   services.keepAwake.update();

@@ -56,6 +56,7 @@ import type { AppLogs } from './apps/logs';
 import type { UpdateService } from './apps/update';
 import type { ImagePruner } from './storage/images';
 import type { StorageSizes } from './storage/sizes';
+import type { SystemService } from './system/service';
 
 export interface Services {
   config: DaemonConfig;
@@ -154,6 +155,8 @@ export interface Services {
   restores: RestoreService;
   /** Uninstalling hlabs, the daemon's part (US-INST-21, US-INST-22, D-143). */
   uninstall: UninstallService;
+  /** Settings › Advanced: logs, diagnostics, connections, restart and factory reset (US-SYS-27…31, 37, 38). */
+  advanced: SystemService;
 }
 
 /** Holds services once boot has created them; requests before then get DAEMON_STARTING. */

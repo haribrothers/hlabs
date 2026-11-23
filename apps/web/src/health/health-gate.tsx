@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { checkHealth, DaemonDownController, POLL_MS, type HealthCheck } from './daemon-down';
 import { DaemonDownView } from './daemon-down-view';
 import { updatingCopy } from '../copy/health';
+import { browser } from '../lib/browser';
 import { showToast } from '../lib/toasts';
 import {
   clearUpdating,
@@ -21,6 +22,8 @@ import {
   useUpdating,
 } from './updating';
 import { UpdatingView } from './updating-view';
+import { clearRestarting, markResetting, markRestarting, useRestarting } from './restarting';
+import { RestartingView } from './restarting-view';
 
 /** How long /healthz may fail before the page says so. */
 export const DOWN_AFTER_MS = 10_000;
@@ -42,21 +45,25 @@ export function HealthGate({
   check = checkHealth,
   confirmVersion = systemVersion,
   reload = () => window.location.reload(),
+  go = (url: string) => browser.assign(url),
 }: {
   children: ReactNode;
   check?: () => Promise<HealthCheck>;
   /** The version system.health reports, or null when it doesn't answer (US-STATE-02). */
   confirmVersion?: () => Promise<string | null>;
   reload?: () => void;
+  /** Leaves for another page (onboarding, after a factory reset). */
+  go?: (url: string) => void;
 }) {
   const queryClient = useQueryClient();
   const updating = useUpdating();
+  const restarting = useRestarting();
   const [down, setDown] = useState<{ reason: string | null } | null>(null);
   const failingSince = useRef<number | null>(null);
 
   // Watch while things are fine; the down view runs its own loop.
   useEffect(() => {
-    if (down || updating) return;
+    if (down || updating || restarting) return;
     failingSince.current = null;
     let stopped = false;
     const tick = async () => {
@@ -69,6 +76,15 @@ export function HealthGate({
       if (stopped) return;
       if (result.reason === 'updating') {
         markUpdating();
+        return;
+      }
+      // Restarting or being reset from another page or device (US-SYS-31, US-SYS-38).
+      if (result.reason === 'restarting') {
+        markRestarting();
+        return;
+      }
+      if (result.reason === 'resetting') {
+        markResetting();
         return;
       }
       if (result.ok) {
@@ -84,7 +100,7 @@ export function HealthGate({
       stopped = true;
       clearInterval(timer);
     };
-  }, [down, updating, check]);
+  }, [down, updating, restarting, check]);
 
   // The version this page was loaded with, for after an update (US-STATE-02).
   useEffect(() => {
@@ -143,6 +159,23 @@ export function HealthGate({
     [down, check, queryClient],
   );
 
+  // Back from a restart, the page loads again; after a reset, onboarding opens with the setup token this browser was
+  // given (or at Home, which says where to finish setup).
+  const onRestartBack = useCallback(() => {
+    const token = restarting?.kind === 'resetting' ? restarting.setupToken : null;
+    const kind = restarting?.kind;
+    clearRestarting();
+    if (kind === 'resetting') go(token ? `/setup?token=${encodeURIComponent(token)}` : '/');
+    else reload();
+  }, [restarting, go, reload]);
+  const onRestartGiveUp = useCallback(() => {
+    clearRestarting();
+    setDown({ reason: null });
+  }, []);
+
   if (updating) return <UpdatingView check={check} onAnswer={onAnswer} />;
+  if (restarting && !down) {
+    return <RestartingView state={restarting} check={check} onBack={onRestartBack} onGiveUp={onRestartGiveUp} />;
+  }
   return controller ? <DaemonDownView controller={controller} /> : children;
 }

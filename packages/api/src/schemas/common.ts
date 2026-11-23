@@ -114,7 +114,10 @@ export const jobKindSchema = z.enum([
   'empty_trash',
   /** A deleted person's Home folder going to the trash (US-ACCT-16). */
   'home_folder_trash',
+  /** A diagnostics bundle being built (US-SYS-28). */
   'diagnostics',
+  /** "Restart hlabs" (US-SYS-31): stops the apps, then the daemon exits for launchd or systemd to start it again. */
+  'daemon_restart',
   /** Dev and test only. */
   'noop',
 ]);

@@ -22,14 +22,15 @@ if (process.env.TEST_WORKER_INDEX === undefined) {
 // Specs that need a known admin they create themselves (all onboarding and log-in stories, and a few later ones).
 // Signed-out browsers need them too: the main instance answers cookie-less requests as its development admin.
 const FIRST_RUN_SPECS =
-  /(d-098-server-name|us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-24-9]|2[0678]|3[2-5])|us-home-(1[1256]|22)|us-sys-(0[2-6]|1[89]|20|41))\.spec\.ts/;
+  /(d-098-server-name|us-(onb|auth)-\d+|us-acct-(0[3-9]|1[0-24-9]|2[0678]|3[2-5])|us-home-(1[1256]|22)|us-sys-(0[2-6]|1[89]|20|3[178]|41))\.spec\.ts/;
 // Specs that change the main instance for everyone, run after the desktop and phone specs, one at a time: those that
 // really install store apps (the D-071 smoke set, and uninstalling one) or leave failed installs, and those that report
 // the engine as stopped (US-STATE-08…10), those that take the pretend NAS offline (US-FILE-11, US-FILE-12, US-SYS-12),
 // the backup specs, which keep their repository on it (US-BKP-08, US-BKP-20), and those that change the instance's
-// unused images or empty everyone's trash (US-SYS-13, US-SYS-14).
+// unused images or empty everyone's trash (US-SYS-13, US-SYS-14), and Beta updates, which changes the update channel
+// (US-SYS-30). Restart hlabs and the factory reset (US-SYS-31, 37, 38) run on first-run instances only.
 const SERIAL_SPECS =
-  /(us-store-1[1-4]|us-store-17-rollback|us-app-(?:12|1[3-8]|24|26)|us-state-(0[89]|10)|us-file-1[12]|us-bkp-(08|20)|us-sys-1[234])\.spec\.ts/;
+  /(us-store-1[1-4]|us-store-17-rollback|us-app-(?:12|1[3-8]|24|26)|us-state-(0[89]|10)|us-file-1[12]|us-bkp-(08|20)|us-sys-(1[234]|30))\.spec\.ts/;
 // The installable dashboard's specs (US-INST-28, US-INST-29) run against a production build, where its manifest and
 // service worker exist.
 const PWA_SPECS = /us-inst-2[89]\.spec\.ts/;

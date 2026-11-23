@@ -8,6 +8,7 @@ import { useMe } from '../lib/use-me';
 import { AccessDenied } from '../shell/access-denied';
 import { BackupsActions, BackupsSection } from '../backups/backups-section';
 import { AccountSection } from './account-section';
+import { AdvancedSection } from './advanced-section';
 import { AppearanceSection } from './appearance-section';
 import { EngineSection, EngineStatus } from './engine-section';
 import { NetworkSection } from './network-section';
@@ -27,6 +28,7 @@ const CONTENT: Partial<
   engine: EngineSection,
   updates: UpdatesSection,
   backups: BackupsSection,
+  advanced: AdvancedSection,
 };
 
 /** Something shown next to a section's title, such as the engine's state. */

@@ -68,6 +68,24 @@ export const settings: AppHandlers<DaemonContext>['settings'] = {
     // US-SYS-24: what the last check found, and a check now (the update manifest and the store index).
     get: (_input, ctx) => ctx.services.hlabsUpdates.status(),
     check: (_input, ctx) => ctx.services.hlabsUpdates.check(),
+    // US-SYS-30: Beta updates on or off; a check on the new channel runs at once.
+    setChannel: ({ channel }, ctx) => {
+      const { db, hlabsUpdates } = ctx.services;
+      if (hlabsUpdates.setChannel(channel)) {
+        db.insert(auditLog)
+          .values({
+            id: ulid(),
+            at: Date.now(),
+            userId: ctx.identity.kind === 'user' ? ctx.identity.userId : null,
+            action: 'settings.updates.channel',
+            target: 'updates',
+            detailJson: { channel },
+            ip: ctx.request.ip,
+          })
+          .run();
+      }
+      return { ok: true as const };
+    },
     // US-SYS-26: the overnight switches (backing up first is phase 5's, but its value is kept).
     setAuto: (input, ctx) => {
       const { db } = ctx.services;

@@ -6,6 +6,8 @@ export const updatesCopy = {
   upToDate: 'hlabs is up to date',
   available: (version: string) => `hlabs ${version} is available`,
   versionLine: (version: string) => `Version ${version}`,
+  /** Next to the version on the beta channel (US-SYS-30). */
+  beta: 'Beta',
   youHave: (version: string) => `You have ${version}. Apps restart for about a minute.`,
   lastChecked: (when: string) => `Last checked ${when}`,
   neverChecked: 'Not checked yet',

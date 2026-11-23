@@ -5,7 +5,7 @@ import type { UpdateStatus } from '@hlabs/api';
 import { getSetting, setSetting, type HlabsDb } from '@hlabs/db';
 import type { EventBus } from '../events/bus';
 import type { Logger } from '../logger';
-import { noteBullets, type UpdateSource } from './source';
+import { noteBullets, type Channel, type UpdateSource } from './source';
 import { compareVersions } from './version';
 
 export const CHECK_EVERY_MS = 6 * 60 * 60_000;
@@ -43,6 +43,24 @@ export class HlabsUpdates {
       available: latest,
       blockedBy: this.deps.blocker?.() ?? null,
     };
+  }
+
+  /**
+   * Beta updates (US-SYS-30): the channel changes, what the last check found on the other channel is forgotten, and a
+   * check runs now in the background. Back on stable from a beta build, nothing older is offered: hlabs stays on the
+   * build it runs until a stable version newer than it is out (compareVersions puts 1.5.0 after 1.5.0-beta.2).
+   */
+  setChannel(channel: Channel): boolean {
+    const { db, logger } = this.deps;
+    const u = getSetting(db, 'updates');
+    if (u.channel === channel) return false;
+    setSetting(db, 'updates', { ...u, channel, latest: null });
+    // A check already running asked the old channel: this one follows it.
+    void (this.checking ?? Promise.resolve())
+      .catch(() => undefined)
+      .then(() => this.check())
+      .catch((err: unknown) => logger.warn({ err }, 'update check failed'));
+    return true;
   }
 
   /** One check at a time; a second ask while one runs gets the same answer. */

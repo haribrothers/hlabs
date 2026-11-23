@@ -49,6 +49,8 @@ export interface ModalDialogProps extends Omit<DialogProps, 'className'> {
   finalFocus?: () => HTMLElement | null;
   /** A fixed height whatever its content (a picker): its body grows to fill it; full height as a phone sheet. */
   tall?: boolean;
+  /** A symbol above the title, such as the warning of a factory reset (decorative: the title says it). */
+  icon?: ReactNode;
 }
 
 /**
@@ -74,6 +76,7 @@ export function ModalDialog({
   sheetOnPhone = false,
   finalFocus,
   tall = false,
+  icon,
 }: ModalDialogProps) {
   // Radix only restores focus to a Dialog.Trigger; remember whatever opened the dialog instead.
   const returnTo = useRef<HTMLElement | null>(null);
@@ -134,6 +137,11 @@ export function ModalDialog({
           onPointerDownOutside={block}
           onInteractOutside={block}
         >
+          {icon ? (
+            <span aria-hidden className="hl-dialog-icon">
+              {icon}
+            </span>
+          ) : null}
           <RadixDialog.Title className="hl-dialog-title">{title}</RadixDialog.Title>
           {description ? (
             <RadixDialog.Description className="hl-dialog-body">{description}</RadixDialog.Description>

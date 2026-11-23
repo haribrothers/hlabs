@@ -4,7 +4,7 @@
 // job has to finish first ("Wait for … to finish"); the page then shows that hlabs is updating (US-STATE-01).
 import { LogoMark } from '@hlabs/icons';
 import { isFeatureEnabled } from '@hlabs/shared';
-import { Button, List, ListRow, Switch } from '@hlabs/ui';
+import { Badge, Button, List, ListRow, Switch } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { updatesCopy as copy } from '../copy/updates';
 import { handledGlobally, pageQuery, showErrorToast } from '../lib/error-copy';
@@ -132,8 +132,10 @@ function HlabsUpdate() {
         <h2 id="hlabs-update-title" className="m-0 text-body font-bold">
           {available ? copy.available(available.version) : copy.upToDate}
         </h2>
-        <p className="m-0 text-body-sm text-ink-muted">
-          {available ? copy.youHave(s.version) : copy.versionLine(s.version)}
+        <p className="m-0 flex flex-wrap items-center gap-2 text-body-sm text-ink-muted">
+          <span>{available ? copy.youHave(s.version) : copy.versionLine(s.version)}</span>
+          {/* On the beta channel (US-SYS-30). */}
+          {s.channel === 'beta' ? <Badge tone="accent">{copy.beta}</Badge> : null}
         </p>
         {available && available.notes.length ? (
           <ul className="m-0 mt-1 flex list-disc flex-col gap-0.5 pl-5 text-body-sm">

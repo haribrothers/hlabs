@@ -318,7 +318,7 @@ function Cursor() {
 }
 
 /** The line with each match of the filter marked (case-insensitive). */
-function Highlighted({ text, query }: { text: string; query: string }) {
+export function Highlighted({ text, query }: { text: string; query: string }) {
   if (!query) return text;
   const lower = text.toLowerCase();
   const parts: ReactNode[] = [];

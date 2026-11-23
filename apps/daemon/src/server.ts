@@ -14,6 +14,7 @@ import { registerAuthVerify } from './http/verify';
 import { registerAppAssets } from './http/app-assets';
 import { registerAppearance } from './http/appearance';
 import { registerAppLogs } from './http/app-logs';
+import { registerDiagnostics } from './http/diagnostics';
 import { registerFiles } from './http/files';
 import type { Logger } from './logger';
 import type { Readiness } from './readiness';
@@ -48,8 +49,15 @@ async function identify(
   }
   const raw = readCookie(req.headers.cookie, SESSION_COOKIE);
   const services = holder.current;
-  if (raw && services?.readiness.isReady) {
-    const session = services.sessions.resolve(raw);
+  // While restarting or resetting (US-SYS-31, US-SYS-38) the session still counts, so calls answer DAEMON_STARTING
+  // rather than sending people to log in; once the database is closed for good there's no session to read.
+  if (raw && services) {
+    let session: ReturnType<typeof services.sessions.resolve> = null;
+    try {
+      session = services.sessions.resolve(raw);
+    } catch {
+      // The daemon is stopping.
+    }
     if (session) {
       return {
         kind: 'user',
@@ -86,6 +94,7 @@ export async function buildServer({
   registerAuthVerify(app, holder, config.resources.webFallbackDir);
   registerAppAssets(app, holder, config.devAnonymousAdmin);
   registerAppLogs(app, holder, config.devAnonymousAdmin);
+  registerDiagnostics(app, holder, config.devAnonymousAdmin);
   registerFiles(app, holder, config.devAnonymousAdmin, () =>
     dashboardOrigins(config.dashboardUrl, holder.current?.db ?? null),
   );

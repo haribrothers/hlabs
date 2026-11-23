@@ -51,3 +51,7 @@ hlabs checks for a newer version by itself every 6 hours. To check now, choose *
 If the check can't reach the internet, hlabs says **Couldn't check for updates** and the card keeps showing what the last check found. Check your internet connection and try again.
 
 When checking, hlabs only asks GitHub, where hlabs releases are published, which version is the newest. It sends nothing about you or your apps.
+
+## Beta versions
+
+If you turned on **Beta updates** in [Settings › Advanced](/help/get-started/advanced/#try-beta-versions), hlabs offers beta versions too, and the card says **Beta** next to your version.

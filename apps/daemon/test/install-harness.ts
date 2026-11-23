@@ -37,6 +37,8 @@ export async function installDaemon(
     engineControl?: EngineControl;
     /** The phase whose onboarding steps run (DaemonConfig.phase). */
     phase?: number;
+    /** Starting hlabsd again (US-SYS-31, US-SYS-38); a fake records it. */
+    restartDaemon?: () => void;
   } = {},
 ) {
   const engine = new FakeEngine();
@@ -60,6 +62,7 @@ export async function installDaemon(
       storeHost: opts.host ?? { os: 'linux', arm64: false },
       system: new FakeSystemProbe(opts.freeSpace),
       ...(opts.engineControl ? { engineControl: opts.engineControl } : {}),
+      ...(opts.restartDaemon ? { restartDaemon: opts.restartDaemon } : {}),
     },
     engine,
   );
