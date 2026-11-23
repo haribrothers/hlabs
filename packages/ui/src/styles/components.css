@@ -209,6 +209,9 @@
 
   /* Switch */
   .hl-switch {
+    /* A <button>: Safari on iPhone would draw its own button look under the track. */
+    -webkit-appearance: none;
+    appearance: none;
     width: 42px;
     height: 26px;
     flex-shrink: 0;
