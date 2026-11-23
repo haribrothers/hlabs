@@ -1,0 +1,8 @@
+services:
+  librespeed:
+    image: lscr.io/linuxserver/librespeed:5.5.1@sha256:110df57cd248672c98fd3e6758314ad36755c28620e231a04bddc7c835c19a09
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config

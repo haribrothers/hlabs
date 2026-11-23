@@ -1,0 +1,7 @@
+services:
+  beszel:
+    image: docker.io/henrygd/beszel:0.21.2@sha256:b0be90bd4aee2993fde763032a5098ce4386fba43cfe5031ec017b8d9e8c97a2
+    environment:
+      APP_URL: ${HLABS_URL}
+    volumes:
+      - ${HLABS_APP_DATA}/data:/beszel_data

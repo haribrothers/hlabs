@@ -1,0 +1,7 @@
+services:
+  esphome:
+    image: docker.io/esphome/esphome:2026.11.0@sha256:35a22f23ba41e58ed1fa63627317d86f4eaba585e526e44f1118ab082cc96041
+    environment:
+      ESPHOME_DASHBOARD_USE_PING: 'true'
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config

@@ -1,0 +1,32 @@
+# Without the host paths and extra capabilities of its usual setup (D-163): it reads the Docker socket
+# read only to name containers.
+schema: 1
+id: netdata
+name: Netdata
+version: '2.13.0'
+revision: 1
+tagline: Live charts of everything this computer is doing
+description: |
+  Second-by-second charts of processor, memory, disks, network and every container on this computer,
+  with alerts when something looks wrong. On a Mac it sees Docker's virtual machine, not macOS. It has
+  no login of its own: the hlabs login protects it.
+category: monitoring
+developer: { name: Netdata, url: https://www.netdata.cloud }
+source: https://github.com/netdata/netdata
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#00ab44', '#003d18']
+  fallback: activity
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: netdata, port: 19999, embed: true }
+health: { service: netdata, http: /api/v1/info, timeout: 180 }
+ownLogin: false
+backup:
+  pause: [netdata]
+  exclude: [cache/]
+  beforeUpdate: true
+permissions:
+  network: internet
+  dockerSocket: true

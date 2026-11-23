@@ -1,0 +1,41 @@
+schema: 1
+id: nzbget
+name: NZBGet
+version: '26.3.20261120'
+revision: 1
+tagline: A fast, light Usenet downloader
+description: |
+  Add an .nzb file and NZBGet downloads, checks, repairs and unpacks it into Shared/Downloads, using very
+  little memory. You need a Usenet provider. Sign in as nzbget with the password you choose when you
+  install it. Sonarr, Radarr and Lidarr can send it downloads at http://nzbget:6789.
+category: media
+developer: { name: NZBGet, url: https://nzbget.com }
+source: https://github.com/nzbgetcom/nzbget
+license: GPL-2.0
+icon:
+  logo: logo.svg
+  gradient: ['#37b24d', '#0f3a17']
+  fallback: download
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: nzbget, port: 6789, embed: true }
+folders:
+  - key: downloads
+    label: Downloads
+    description: Where downloads land; the same folder in every download app
+    target: /downloads
+    default: shared:Downloads
+    mode: rw
+    required: true
+env:
+  - key: UI_PASSWORD
+    type: secret
+    label: Password
+    description: For signing in to NZBGet as nzbget
+    required: true
+ownLogin: true
+backup:
+  pause: [nzbget]
+  exclude: [logs/]
+  beforeUpdate: true
+permissions: { network: internet }

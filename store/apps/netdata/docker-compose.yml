@@ -1,0 +1,12 @@
+services:
+  netdata:
+    image: docker.io/netdata/netdata:v2.13.0@sha256:2da5100232978bcae211f78e7fe33a7032d75333b5235412bfab743ed1e0c002
+    hostname: hlabs
+    environment:
+      # No usage reports.
+      DO_NOT_TRACK: '1'
+    volumes:
+      - ${HLABS_APP_DATA}/config:/etc/netdata
+      - ${HLABS_APP_DATA}/lib:/var/lib/netdata
+      - ${HLABS_APP_DATA}/cache:/var/cache/netdata
+      - /var/run/docker.sock:/var/run/docker.sock:ro

@@ -1,0 +1,9 @@
+services:
+  ddns-updater:
+    image: docker.io/qmcgaw/ddns-updater:v2.10.0@sha256:3e2aa558946b5a293def4d73008fa4651c072b2c12932cecd02126fb23979831
+    user: ${PUID}:${PGID}
+    environment:
+      CONFIG: '{"settings": []}'
+      PERIOD: 5m
+    volumes:
+      - ${HLABS_APP_DATA}/data:/updater/data

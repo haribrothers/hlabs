@@ -1,0 +1,19 @@
+services:
+  tailscale:
+    image: docker.io/tailscale/tailscale:v1.104.7@sha256:72c1e19e0aedca96b8533bbb0b4368564410ff20b17e53b804eb6c1f04a31be4
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        /usr/local/bin/containerboot &
+        sleep 3
+        exec tailscale --socket=/tmp/tailscaled.sock web --listen 0.0.0.0:5252
+    environment:
+      TS_USERSPACE: 'true'
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_HOSTNAME: ${DEVICE_NAME}
+      TS_ROUTES: ${ROUTES}
+      TS_AUTHKEY: ${AUTH_KEY}
+      TS_ACCEPT_DNS: 'false'
+    volumes:
+      - ${HLABS_APP_DATA}/state:/var/lib/tailscale

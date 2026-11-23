@@ -1,0 +1,27 @@
+schema: 1
+id: grafana
+name: Grafana
+version: '13.3.1'
+revision: 1
+tagline: Dashboards and graphs for any data
+description: |
+  Build dashboards of graphs, gauges and tables from Prometheus, InfluxDB, databases and dozens of other
+  sources. Sign in the first time as admin with the password admin; Grafana then asks for a new one.
+category: monitoring
+developer: { name: Grafana Labs, url: https://grafana.com }
+source: https://github.com/grafana/grafana
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#f46800', '#5c2700']
+  fallback: chart-line
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: grafana, port: 3000, embed: true }
+health: { service: grafana, http: /api/health, timeout: 180 }
+ownLogin: true
+backup:
+  pause: [grafana]
+  exclude: [plugins/]
+  beforeUpdate: true
+permissions: { network: internet }

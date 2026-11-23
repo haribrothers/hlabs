@@ -1,0 +1,38 @@
+schema: 1
+id: pi-hole
+name: Pi-hole
+version: '2026.11.0'
+revision: 1
+tagline: Block ads and trackers for every device at home
+description: |
+  Pi-hole answers your network's DNS and blocks ads, trackers and malware sites for every device that
+  uses it. Set your router's DNS to this computer's address to cover the whole home. It needs port 53,
+  so it can't run beside AdGuard Home. It has no login of its own: the hlabs login protects it.
+category: network
+developer: { name: Pi-hole, url: https://pi-hole.net }
+source: https://github.com/pi-hole/pi-hole
+license: EUPL-1.2
+icon:
+  logo: logo.svg
+  gradient: ['#96060c', '#3a0205']
+  fallback: shield
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: pi-hole, port: 80, embed: true }
+ports:
+  - service: pi-hole
+    container: 53
+    host: 53
+    protocol: tcp
+    label: DNS
+  - service: pi-hole
+    container: 53
+    host: 53
+    protocol: udp
+    label: DNS
+ownLogin: false
+backup:
+  pause: [pi-hole]
+  exclude: [pihole-FTL.db]
+  beforeUpdate: true
+permissions: { network: internet }

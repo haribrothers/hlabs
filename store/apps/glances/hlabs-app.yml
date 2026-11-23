@@ -1,0 +1,28 @@
+schema: 1
+id: glances
+name: Glances
+version: '4.5.9-full'
+revision: 1
+tagline: A quick look at how this computer is doing
+description: |
+  One page with processor, memory, disks, network, sensors and the containers that use the most. On a
+  Mac it sees Docker's virtual machine, not macOS. It has no login of its own: the hlabs login protects
+  it.
+category: monitoring
+developer: { name: Nicolas Hennion, url: https://nicolargo.github.io/glances }
+source: https://github.com/nicolargo/glances
+license: LGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#2d3748', '#0f141b']
+  fallback: gauge
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: glances, port: 61208, embed: true }
+ownLogin: false
+backup:
+  pause: [glances]
+  beforeUpdate: true
+permissions:
+  network: internet
+  dockerSocket: true

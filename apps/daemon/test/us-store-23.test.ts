@@ -4,8 +4,11 @@
 import { loadAppDir, listAppDirs } from '@hlabs/app-manifest/node';
 import { openDb } from '@hlabs/db';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { Readable } from 'node:stream';
 import { basename, join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { classifyPullError } from '../src/apps/install';
+import { DockerodeEngine } from '../src/engine/dockerode-engine';
 import { silentLogger } from '../src/logger';
 import { CatalogService } from '../src/store/catalog';
 import { StoreService } from '../src/store/service';
@@ -60,5 +63,22 @@ describe('US-STORE-23', () => {
       expect(app.issues, basename(dir)).toEqual([]);
       expect(approved.has(basename(dir)), `${basename(dir)} is in store/APPS.md`).toBe(true);
     }
+  });
+
+  it("a pull that fails partway fails the download step with Docker's reason, not later at start", async () => {
+    const engine = new DockerodeEngine('/nonexistent.sock');
+    const slow = (engine as unknown as { slow: { pull: unknown; modem: unknown } }).slow;
+    const lines = (...events: object[]) => Readable.from(events.map((e) => `${JSON.stringify(e)}\n`));
+    slow.pull = async () =>
+      lines(
+        { status: 'Pulling from linuxserver/librespeed', id: '5.5.1' },
+        { error: 'net/http: TLS handshake timeout', errorDetail: { message: 'net/http: TLS handshake timeout' } },
+      );
+    const failed = await engine.pullImage('lscr.io/linuxserver/librespeed:5.5.1', () => {}).catch((e: Error) => e);
+    expect(failed).toBeInstanceOf(Error);
+    expect((failed as Error).message).toBe('net/http: TLS handshake timeout');
+    expect(classifyPullError(failed)).toBe('APP_NETWORK_UNREACHABLE');
+    slow.pull = async () => lines({ status: 'Status: Image is up to date' });
+    await expect(engine.pullImage('lscr.io/linuxserver/librespeed:5.5.1', () => {})).resolves.toBeUndefined();
   });
 });

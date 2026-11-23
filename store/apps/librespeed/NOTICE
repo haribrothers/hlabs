@@ -1,0 +1,5 @@
+hlabs's files for LibreSpeed were drafted from the Runtipi app store's definition and changed to follow hlabs's app format
+and compose rules (images pinned by digest, data under ${HLABS_APP_DATA}, folders the person chooses).
+
+Source: https://github.com/runtipi/runtipi-appstore/tree/de46994842935e3bd3493bc946b8959fff9ae398/apps/librespeed
+Licence: GNU General Public License v3.0 (GPL-3.0).

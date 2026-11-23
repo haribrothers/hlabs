@@ -62,12 +62,18 @@ export class DockerodeEngine implements ContainerEngine {
   async pullImage(ref: string, onProgress: (progress: PullProgress) => void, signal?: AbortSignal): Promise<void> {
     const stream = (await this.slow.pull(ref, { abortSignal: signal })) as NodeJS.ReadableStream;
     const layers = new PullLayers();
+    // Docker reports a pull that fails partway (a registry hiccup) as an `error` event in the stream, which
+    // followProgress doesn't treat as a failure; without this the pull "succeeds" and compose finds no image.
+    let failure: string | null = null;
     await new Promise<void>((resolve, reject) => {
       this.slow.modem.followProgress(
         stream,
-        (error) => (error ? reject(error) : resolve()),
+        (error) => (error ? reject(error) : failure ? reject(new Error(failure)) : resolve()),
         (event: PullEvent) => {
-          if (event.error) return;
+          if (event.error) {
+            failure ??= event.errorDetail?.message ?? event.error;
+            return;
+          }
           if (layers.update(event)) onProgress(layers.progress());
         },
       );
@@ -259,6 +265,7 @@ interface PullEvent {
   id?: string;
   status?: string;
   error?: string;
+  errorDetail?: { message?: string };
   progressDetail?: { current?: number; total?: number };
 }
 

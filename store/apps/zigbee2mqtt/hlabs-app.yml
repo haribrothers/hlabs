@@ -1,0 +1,46 @@
+# Mosquitto runs inside it (D-161) with a password; a first start writes its config. A USB adapter is
+# passed in only when one is plugged in (D-163).
+schema: 1
+id: zigbee2mqtt
+name: Zigbee2MQTT
+version: '2.14.3'
+revision: 1
+tagline: Use Zigbee lights and sensors without their hubs
+description: |
+  Connect Zigbee bulbs, switches and sensors from any brand through one adapter, and use them in Home
+  Assistant and Node-RED. The first visit asks which adapter to use: a USB adapter plugged into this
+  computer (Linux only) or a network adapter. Home Assistant connects to its MQTT broker on port 1883
+  as user hlabs with the password you choose.
+category: home
+developer: { name: Koen Kanters, url: https://www.zigbee2mqtt.io }
+source: https://github.com/Koenkk/zigbee2mqtt
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#ffc135', '#5c4000']
+  fallback: radio
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 512 }
+web: { service: zigbee2mqtt, port: 8080, embed: true }
+ports:
+  - service: zigbee2mqtt-mosquitto
+    container: 1883
+    host: 1883
+    protocol: tcp
+    label: MQTT for Home Assistant
+env:
+  - key: MQTT_PASSWORD
+    type: secret
+    label: MQTT password
+    description: For Home Assistant and other apps to connect as user hlabs
+    required: true
+ownLogin: false
+backup:
+  pause: [zigbee2mqtt, zigbee2mqtt-mosquitto]
+  exclude: [log/]
+  beforeUpdate: true
+permissions:
+  network: internet
+  devices:
+    - { path: /dev/ttyUSB0, label: Zigbee USB adapter }
+    - { path: /dev/ttyACM0, label: Zigbee USB adapter (ACM) }

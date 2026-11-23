@@ -1,0 +1,36 @@
+schema: 1
+id: frigate
+name: Frigate
+version: '0.18.3'
+revision: 1
+tagline: Recordings and smart alerts from your security cameras
+description: |
+  Frigate records your IP cameras and spots people, cars and animals, so you get alerts and clips of what
+  matters. Add your cameras in its settings. Here it uses the processor to detect, which suits a few
+  cameras. It has no login of its own: the hlabs login protects it.
+category: home
+developer: { name: Frigate, url: https://frigate.video }
+source: https://github.com/blakeblackshear/frigate
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#1e40af', '#0b1a4a']
+  fallback: cctv
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 2048, disk: 4096 }
+web: { service: frigate, port: 5000, embed: true }
+health: { service: frigate, http: /api/version, timeout: 300 }
+folders:
+  - key: recordings
+    label: Recordings
+    description: Where camera recordings and clips are saved
+    target: /media/frigate
+    default: shared:Cameras
+    mode: rw
+    required: true
+ownLogin: false
+backup:
+  pause: [frigate]
+  exclude: [model_cache/]
+  beforeUpdate: true
+permissions: { network: internet }

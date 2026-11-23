@@ -1,0 +1,7 @@
+services:
+  glances:
+    image: docker.io/nicolargo/glances:4.5.9-full@sha256:0b309652e8a4f2e827b823609044b9976b309765517760c0383d2e4f73f756c5
+    environment:
+      GLANCES_OPT: -w
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
