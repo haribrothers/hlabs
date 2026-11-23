@@ -2,12 +2,18 @@
 // US-STORE-04). A category sorts by Popular, New or A–Z (remembered in this browser) and says how many apps it has
 // ("showing Apple Silicon compatible first" on arm64). Fifty at a time; the next page loads as the end comes near.
 import { isFeatureEnabled, VISIBLE_PHASE } from '@hlabs/shared';
-import { cn } from '@hlabs/ui';
+import { Search, iconDefaults } from '@hlabs/icons';
+import { cn, PhoneHeader } from '@hlabs/ui';
+import { useNavigate } from '@tanstack/react-router';
 import { useState, type ReactNode } from 'react';
+import { useIsDesktop } from '../lib/use-media';
+import { StoreChips } from './categories';
+import { PhoneAppList } from './phone-cards';
+import { SEARCH_FIELD_ID } from './search';
 import { storeCopy } from '../copy/store';
 import { MoreOnScroll, useAppPages, type ListInput } from './app-pages';
 import { AppCard } from './cards';
-import { StoreView } from './store-layout';
+import { StoreView, useStoreBack } from './store-layout';
 import { useInstalls } from './use-installs';
 
 const copy = storeCopy;
@@ -42,10 +48,25 @@ function useStoreSort(): [StoreSort, (s: StoreSort) => void] {
   ];
 }
 
-/** A pill per option, the chosen one white (StoreCategory); a radio group to assistive tech. */
-export function SortPills({ value, onChange }: { value: StoreSort; onChange: (s: StoreSort) => void }) {
+/**
+ * A pill per option, the chosen one white (StoreCategory); a radio group to assistive tech. On a phone the iOS
+ * segmented control, full width (PhoneRedesignA_StoreCategory).
+ */
+export function SortPills({
+  value,
+  onChange,
+  phone = false,
+}: {
+  value: StoreSort;
+  onChange: (s: StoreSort) => void;
+  phone?: boolean;
+}) {
   return (
-    <div role="radiogroup" aria-label={copy.sortLabel} className="flex flex-wrap gap-2">
+    <div
+      role="radiogroup"
+      aria-label={copy.sortLabel}
+      className={phone ? 'hl-p-seg hl-p-seg-wide' : 'flex flex-wrap gap-2'}
+    >
       {SORTS.map((s) => (
         <button
           key={s}
@@ -68,10 +89,14 @@ export function SortPills({ value, onChange }: { value: StoreSort; onChange: (s:
           }}
           data-sort={s}
           tabIndex={value === s ? 0 : -1}
-          className={cn(
-            'hl-focus inline-flex min-h-9 items-center rounded-pill px-4 text-body-sm',
-            value === s ? 'bg-fill-primary font-semibold text-ink-on-light' : 'bg-surface-row text-ink',
-          )}
+          className={
+            phone
+              ? 'hl-focus'
+              : cn(
+                  'hl-focus inline-flex min-h-9 items-center rounded-pill px-4 text-body-sm',
+                  value === s ? 'bg-fill-primary font-semibold text-ink-on-light' : 'bg-surface-row text-ink',
+                )
+          }
         >
           {copy.sorts[s]}
         </button>
@@ -100,6 +125,49 @@ export function AppListView({
   const { query, first, items } = useAppPages(sorting ? { ...input, sort } : input);
   const installs = useInstalls();
   const heading = title ?? (first?.title || copy.allApps);
+  const desktop = useIsDesktop();
+  const back = useStoreBack();
+  const navigate = useNavigate();
+  if (!desktop)
+    // A category or a "See all" list on a phone (US-PHONE-10, PhoneRedesignA_StoreCategory): "‹ App Store" and the
+    // search, the name as a large title with how many apps, a category's chips and order, then the apps as rows.
+    return (
+      <StoreView title={heading} phoneTitle={false} ownPhoneHeader>
+        <div className="flex flex-col gap-4 pb-2">
+          <PhoneHeader
+            title={heading}
+            back={back}
+            barTrailing={
+              <button
+                type="button"
+                className="hl-p-tbtn hl-focus"
+                aria-label={copy.searchLabel}
+                onClick={() =>
+                  void navigate({ to: '/store' }).then(() => document.getElementById(SEARCH_FIELD_ID)?.focus())
+                }
+              >
+                <Search aria-hidden {...iconDefaults} />
+              </button>
+            }
+            subtitle={
+              first && sorting
+                ? `${copy.appCount(first.counts.all)}${first.host.arm64 ? ` · ${copy.compatibleFirstShort[first.host.os]}` : ''}`
+                : undefined
+            }
+          />
+          {sortable ? <StoreChips /> : null}
+          {sorting ? <SortPills value={sort} onChange={setSort} phone /> : null}
+          {first ? (
+            items.length ? (
+              <PhoneAppList apps={items} installs={installs} label={heading} />
+            ) : (
+              <p className="m-0 text-body text-ink-muted">{empty ?? copy.empty}</p>
+            )
+          ) : null}
+          <MoreOnScroll query={query} />
+        </div>
+      </StoreView>
+    );
   return (
     <StoreView title={heading}>
       {first ? (

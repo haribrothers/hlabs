@@ -5,7 +5,19 @@
 import type { StoreAppDetails } from '@hlabs/api';
 import { AlertTriangle, iconDefaults } from '@hlabs/icons';
 import { HOSTNAME_PATTERN } from '@hlabs/shared';
-import { Button, List, ListRow, ModalDialog, Segmented, Switch, TextField, tokens } from '@hlabs/ui';
+import {
+  BottomSheet,
+  Button,
+  List,
+  ListRow,
+  ModalDialog,
+  Segmented,
+  SheetTitle,
+  Switch,
+  TextField,
+  tokens,
+  useIsPhone,
+} from '@hlabs/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useRef, useState } from 'react';
@@ -16,6 +28,7 @@ import { errorCode, errorData } from '../lib/error-copy';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { FolderPicker, type ChosenFolder } from '../files/folder-picker';
 import { StoreLogo } from './cards';
+import { watchInstall } from './install-watch';
 
 const copy = installCopy;
 const SHEET_LOGO = tokens.SIZE_DOCK_TILE - tokens.SPACE_1;
@@ -177,6 +190,11 @@ export function InstallSheet({
   const [accepted, setAccepted] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const fields = useRef<Record<string, HTMLInputElement | null>>({});
+  // On a phone a bottom sheet that, once something in it changed, only its buttons close (US-PHONE-03, US-PHONE-12).
+  const phone = useIsPhone();
+  const snapshot = JSON.stringify({ enabled, chosen, hostname, env, accepted });
+  const [initial] = useState(snapshot);
+  const changed = snapshot !== initial;
 
   const address = details.address.replace(/^[^.]+/, '');
   const hostnameError = addressError(hostname, install.takenHostnames);
@@ -216,7 +234,10 @@ export function InstallSheet({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: trpc.apps.list.queryKey() });
       onOpenChange(false);
-      void navigate({ to: '/store/install/$appId', params: { appId: app.id } });
+      // On a phone the sheet closes and the page stays: its button and the Home tile show the progress, and a
+      // failure comes back as a sheet (US-PHONE-12). Elsewhere the install's page opens (US-STORE-11).
+      if (phone) watchInstall(app.id);
+      else void navigate({ to: '/store/install/$appId', params: { appId: app.id } });
     },
     onError: (err) => {
       const data = errorData(err);
@@ -245,6 +266,247 @@ export function InstallSheet({
     start.mutate();
   };
 
+  const body = (
+    <div className="flex flex-col gap-5">
+      {details.folders.length ? (
+        <List label={copy.folders}>
+          {details.folders.map((f) => {
+            const choice = chosen[f.key];
+            const appData = !choice && f.default?.place.area === 'appdata';
+            const place = choice ? choice.label : f.default ? placeLabel(f.default.place) : f.label;
+            return (
+              <ListRow
+                key={f.key}
+                title={place}
+                subtitle={
+                  choice && !choice.available && enabled[f.key]
+                    ? copy.offline(place)
+                    : !choice && !appData && f.required
+                      ? copy.noDefault
+                      : folderLine(f)
+                }
+                trailing={
+                  <span className="flex shrink-0 items-center gap-3">
+                    <Button
+                      variant={phone ? 'link' : 'secondary'}
+                      size="sm"
+                      aria-label={copy.changeFor(f.label)}
+                      onClick={() => setPicking(f)}
+                    >
+                      {copy.change}
+                    </Button>
+                    {f.required ? null : (
+                      <Switch
+                        aria-label={copy.useFolder(f.label)}
+                        checked={!!enabled[f.key]}
+                        disabled={!choice && !appData}
+                        onChange={(on) => setEnabled((e) => ({ ...e, [f.key]: on }))}
+                      />
+                    )}
+                  </span>
+                }
+              />
+            );
+          })}
+        </List>
+      ) : null}
+
+      {details.services.length ? (
+        <List label={copy.includes}>
+          {details.services.map((s) => {
+            const row = includesRow(app.name, s);
+            return (
+              <ListRow
+                key={s.name}
+                title={row.title}
+                trailing={<span className="text-body-sm text-ink-muted">{row.role}</span>}
+              />
+            );
+          })}
+        </List>
+      ) : null}
+
+      {/* The address as one row, as the InstallSheet screen draws it: only the hostname part is editable. */}
+      <div className="flex flex-col gap-1.5">
+        <List label={copy.address}>
+          <ListRow
+            title={
+              <span className="flex min-w-0 flex-wrap items-center font-mono text-body-sm">
+                <span className="text-ink-muted">https://</span>
+                <input
+                  aria-label={copy.addressLabel}
+                  aria-invalid={hostnameError ? true : undefined}
+                  aria-describedby={hostnameError ? 'install-address-msg' : undefined}
+                  value={hostname}
+                  // Monospace, so as wide as what's typed.
+                  style={{ width: `${Math.max(hostname.length, 1)}ch` }}
+                  onChange={(e) => setHostname(e.target.value.trim().toLowerCase())}
+                  spellCheck={false}
+                  autoCapitalize="off"
+                  className="hl-focus shrink-0 rounded-xs border-0 bg-transparent p-0 font-mono text-body-sm text-ink underline decoration-dotted underline-offset-4"
+                />
+                <span className="text-ink-muted">{address}</span>
+              </span>
+            }
+            // "Login required" beside the address, as the screen draws it; an app's own login is noted under it.
+            subtitle={install.ownLogin ? copy.ownLoginToo : undefined}
+            trailing={
+              <span className="shrink-0 text-body-sm text-ink-muted">
+                {install.webAuth === 'hlabs' ? copy.loginRequired : copy.noLogin}
+              </span>
+            }
+          />
+        </List>
+        {hostnameError ? (
+          <p id="install-address-msg" aria-live="polite" className="m-0 text-body-sm text-danger">
+            {hostnameError}
+          </p>
+        ) : null}
+      </div>
+
+      {install.env.length ? (
+        <section aria-label={copy.settings} className="flex flex-col gap-3">
+          <h3 className="m-0 text-body-sm font-bold">{copy.settings}</h3>
+          {install.env.map((p) => (
+            <PromptField
+              key={p.key}
+              prompt={p}
+              value={env[p.key] ?? ''}
+              error={envErrors[p.key] ?? null}
+              onChange={(v) => {
+                setEnv((e) => ({ ...e, [p.key]: v }));
+                setEnvErrors((e) => ({ ...e, [p.key]: '' }));
+              }}
+              fieldRef={(el) => {
+                fields.current[p.key] = el;
+              }}
+            />
+          ))}
+        </section>
+      ) : null}
+
+      {install.risky ? (
+        <section
+          aria-label={copy.risks}
+          className="flex flex-col gap-3 rounded-lg border border-danger bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] p-4"
+        >
+          <p className="m-0 flex items-center gap-2 text-body font-bold text-danger">
+            <AlertTriangle aria-hidden {...iconDefaults} className="size-4" />
+            {copy.risks}
+          </p>
+          <ul className="m-0 flex flex-col gap-1 pl-5 text-body-sm">
+            {risks.map((r) => (
+              <li key={r}>{r}</li>
+            ))}
+          </ul>
+          <label className="flex min-h-11 items-center gap-3 text-body-sm font-semibold">
+            <input
+              type="checkbox"
+              className="hl-focus size-5 accent-[var(--danger)]"
+              checked={accepted}
+              onChange={(e) => setAccepted(e.target.checked)}
+            />
+            {copy.understand}
+          </label>
+        </section>
+      ) : null}
+
+      {offline ? <p className="m-0 text-body-sm text-danger">{copy.offline(chosen[offline.key]!.label)}</p> : null}
+      {failure ? (
+        <p role="alert" className="m-0 text-body-sm text-danger">
+          {failure}
+        </p>
+      ) : null}
+    </div>
+  );
+  const picker = picking ? (
+    <FolderPicker
+      appName={app.name}
+      folder={{ label: picking.label, mode: picking.mode }}
+      start={chosen[picking.key]?.path ?? defaultPath(picking.default)}
+      onClose={() => setPicking(null)}
+      onChoose={(c) => {
+        setChosen((all) => ({ ...all, [picking.key]: { ...c, available: true } }));
+        // "Change" on an optional folder turns it on.
+        setEnabled((e) => ({ ...e, [picking.key]: true }));
+        setPicking(null);
+      }}
+    />
+  ) : null;
+  const installButton = install.allowed ? (
+    phone ? (
+      <button
+        type="button"
+        className="hl-p-primary hl-focus"
+        disabled={blocked || start.isPending}
+        aria-busy={start.isPending || undefined}
+        title={engineDown ? engineCopy.startFirst : undefined}
+        onClick={submit}
+      >
+        {copy.install}
+      </button>
+    ) : (
+      <Button
+        disabled={blocked}
+        busy={start.isPending}
+        title={engineDown ? engineCopy.startFirst : undefined}
+        onClick={submit}
+      >
+        {copy.install}
+      </Button>
+    )
+  ) : (
+    <p className="m-0 self-center text-body-sm text-ink-muted">{copy.askAdmin}</p>
+  );
+
+  if (phone)
+    // PhoneRedesignA_InstallSheet: "Cancel" and the title in the sheet's bar, what it can access, and Install at the
+    // bottom. Changed, it can't be dragged away: Cancel is the way out (US-PHONE-12).
+    return (
+      <BottomSheet
+        open={open}
+        onOpenChange={onOpenChange}
+        titled
+        full
+        guarded={changed || start.isPending}
+        closeButton={false}
+        // Escape with the folder picker open closes only the picker.
+        onEscapeKeyDown={(e) => {
+          if (!picking) return;
+          // For an instant after the picker opens this sheet still hears Escape: it's the picker's.
+          e.preventDefault();
+          setPicking(null);
+        }}
+        // Focus starts on the sheet (named by its title), not on Cancel.
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          (e.currentTarget as HTMLElement | null)?.focus();
+        }}
+      >
+        <div className="hl-sheet-bar">
+          <span className="justify-self-start">
+            <button type="button" className="hl-p-tbtn hl-focus" onClick={() => onOpenChange(false)}>
+              {copy.cancel}
+            </button>
+          </span>
+          <SheetTitle className="hl-sheet-bar-title">{copy.title(app.name)}</SheetTitle>
+          <span />
+        </div>
+        <div className="hl-sheet-scroll flex flex-col gap-5 pt-2 pb-4">
+          <div className="flex items-center gap-3">
+            <StoreLogo app={app} size={SHEET_LOGO} />
+            <div className="flex min-w-0 flex-col">
+              <p className="m-0 text-row font-semibold">{copy.subtitle}</p>
+              <p className="m-0 text-footnote text-ink-muted">{copy.changeLater}</p>
+            </div>
+          </div>
+          {body}
+        </div>
+        <div className="hl-sheet-footer">{installButton}</div>
+        {picker}
+      </BottomSheet>
+    );
+
   return (
     <ModalDialog
       open={open}
@@ -265,186 +527,12 @@ export function InstallSheet({
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             {copy.cancel}
           </Button>
-          {install.allowed ? (
-            <Button
-              disabled={blocked}
-              busy={start.isPending}
-              title={engineDown ? engineCopy.startFirst : undefined}
-              onClick={submit}
-            >
-              {copy.install}
-            </Button>
-          ) : (
-            <p className="m-0 self-center text-body-sm text-ink-muted">{copy.askAdmin}</p>
-          )}
+          {installButton}
         </>
       }
     >
-      <div className="flex flex-col gap-5">
-        {details.folders.length ? (
-          <List label={copy.folders}>
-            {details.folders.map((f) => {
-              const choice = chosen[f.key];
-              const appData = !choice && f.default?.place.area === 'appdata';
-              const place = choice ? choice.label : f.default ? placeLabel(f.default.place) : f.label;
-              return (
-                <ListRow
-                  key={f.key}
-                  title={place}
-                  subtitle={
-                    choice && !choice.available && enabled[f.key]
-                      ? copy.offline(place)
-                      : !choice && !appData && f.required
-                        ? copy.noDefault
-                        : folderLine(f)
-                  }
-                  trailing={
-                    <span className="flex shrink-0 items-center gap-3">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        aria-label={copy.changeFor(f.label)}
-                        onClick={() => setPicking(f)}
-                      >
-                        {copy.change}
-                      </Button>
-                      {f.required ? null : (
-                        <Switch
-                          aria-label={copy.useFolder(f.label)}
-                          checked={!!enabled[f.key]}
-                          disabled={!choice && !appData}
-                          onChange={(on) => setEnabled((e) => ({ ...e, [f.key]: on }))}
-                        />
-                      )}
-                    </span>
-                  }
-                />
-              );
-            })}
-          </List>
-        ) : null}
-
-        {details.services.length ? (
-          <List label={copy.includes}>
-            {details.services.map((s) => {
-              const row = includesRow(app.name, s);
-              return (
-                <ListRow
-                  key={s.name}
-                  title={row.title}
-                  trailing={<span className="text-body-sm text-ink-muted">{row.role}</span>}
-                />
-              );
-            })}
-          </List>
-        ) : null}
-
-        {/* The address as one row, as the InstallSheet screen draws it: only the hostname part is editable. */}
-        <div className="flex flex-col gap-1.5">
-          <List label={copy.address}>
-            <ListRow
-              title={
-                <span className="flex min-w-0 flex-wrap items-center font-mono text-body-sm">
-                  <span className="text-ink-muted">https://</span>
-                  <input
-                    aria-label={copy.addressLabel}
-                    aria-invalid={hostnameError ? true : undefined}
-                    aria-describedby={hostnameError ? 'install-address-msg' : undefined}
-                    value={hostname}
-                    // Monospace, so as wide as what's typed.
-                    style={{ width: `${Math.max(hostname.length, 1)}ch` }}
-                    onChange={(e) => setHostname(e.target.value.trim().toLowerCase())}
-                    spellCheck={false}
-                    autoCapitalize="off"
-                    className="hl-focus shrink-0 rounded-xs border-0 bg-transparent p-0 font-mono text-body-sm text-ink underline decoration-dotted underline-offset-4"
-                  />
-                  <span className="text-ink-muted">{address}</span>
-                </span>
-              }
-              // "Login required" beside the address, as the screen draws it; an app's own login is noted under it.
-              subtitle={install.ownLogin ? copy.ownLoginToo : undefined}
-              trailing={
-                <span className="shrink-0 text-body-sm text-ink-muted">
-                  {install.webAuth === 'hlabs' ? copy.loginRequired : copy.noLogin}
-                </span>
-              }
-            />
-          </List>
-          {hostnameError ? (
-            <p id="install-address-msg" aria-live="polite" className="m-0 text-body-sm text-danger">
-              {hostnameError}
-            </p>
-          ) : null}
-        </div>
-
-        {install.env.length ? (
-          <section aria-label={copy.settings} className="flex flex-col gap-3">
-            <h3 className="m-0 text-body-sm font-bold">{copy.settings}</h3>
-            {install.env.map((p) => (
-              <PromptField
-                key={p.key}
-                prompt={p}
-                value={env[p.key] ?? ''}
-                error={envErrors[p.key] ?? null}
-                onChange={(v) => {
-                  setEnv((e) => ({ ...e, [p.key]: v }));
-                  setEnvErrors((e) => ({ ...e, [p.key]: '' }));
-                }}
-                fieldRef={(el) => {
-                  fields.current[p.key] = el;
-                }}
-              />
-            ))}
-          </section>
-        ) : null}
-
-        {install.risky ? (
-          <section
-            aria-label={copy.risks}
-            className="flex flex-col gap-3 rounded-lg border border-danger bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] p-4"
-          >
-            <p className="m-0 flex items-center gap-2 text-body font-bold text-danger">
-              <AlertTriangle aria-hidden {...iconDefaults} className="size-4" />
-              {copy.risks}
-            </p>
-            <ul className="m-0 flex flex-col gap-1 pl-5 text-body-sm">
-              {risks.map((r) => (
-                <li key={r}>{r}</li>
-              ))}
-            </ul>
-            <label className="flex min-h-11 items-center gap-3 text-body-sm font-semibold">
-              <input
-                type="checkbox"
-                className="hl-focus size-5 accent-[var(--danger)]"
-                checked={accepted}
-                onChange={(e) => setAccepted(e.target.checked)}
-              />
-              {copy.understand}
-            </label>
-          </section>
-        ) : null}
-
-        {offline ? <p className="m-0 text-body-sm text-danger">{copy.offline(chosen[offline.key]!.label)}</p> : null}
-        {failure ? (
-          <p role="alert" className="m-0 text-body-sm text-danger">
-            {failure}
-          </p>
-        ) : null}
-      </div>
-      {picking ? (
-        <FolderPicker
-          appName={app.name}
-          folder={{ label: picking.label, mode: picking.mode }}
-          start={chosen[picking.key]?.path ?? defaultPath(picking.default)}
-          onClose={() => setPicking(null)}
-          onChoose={(c) => {
-            setChosen((all) => ({ ...all, [picking.key]: { ...c, available: true } }));
-            // "Change" on an optional folder turns it on.
-            setEnabled((e) => ({ ...e, [picking.key]: true }));
-            setPicking(null);
-          }}
-        />
-      ) : null}
+      {body}
+      {picker}
     </ModalDialog>
   );
 }

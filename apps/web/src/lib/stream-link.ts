@@ -1,7 +1,8 @@
 // Reconnecting the event stream (US-STATE-18). The browser's own EventSource retry is turned off
 // (ClosingEventSource) so every drop reaches `streamLink`, which reconnects after 1, 2, 4, 8 and 16 s, then every
 // 30 s, each ±20%, starting over once connected. It resumes from the last event id; when the daemon can't
-// (`stream.reset`), every query is refetched instead. A visible tab again reconnects at once.
+// (`stream.reset`), every query is refetched instead. A visible tab again reconnects at once, even a stream that looks
+// connected (US-PHONE-04).
 import type { AppRouter, HlabsEvent } from '@hlabs/api';
 import type { TRPCLink } from '@trpc/client';
 import { observable, type Unsubscribable } from '@trpc/server/observable';
@@ -81,9 +82,12 @@ export function streamLink(opts: { onReset: () => void; random?: () => number })
           });
         };
 
-        const stopWaking = onReconnectNow(() => {
-          if (closed || !timer) return;
-          clearTimeout(timer);
+        const stopWaking = onReconnectNow((force) => {
+          if (closed) return;
+          if (timer) clearTimeout(timer);
+          else if (force) current?.unsubscribe();
+          else return;
+          timer = null;
           connect();
         });
         connect();

@@ -6,6 +6,7 @@ import {
   AppLogo,
   appTileLook,
   Folder,
+  LayoutGrid,
   iconDefaults,
   RotateCw,
   Search,
@@ -13,8 +14,9 @@ import {
   Settings,
   SlidersHorizontal,
   TextAlignStart,
+  X,
 } from '@hlabs/icons';
-import { CommandPanel } from '@hlabs/ui';
+import { CommandPanel, useIsPhone } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
@@ -27,6 +29,7 @@ import type { HomeApp } from '../home/home-app';
 import { useOpenApp } from '../home/use-open-app';
 import { closeSearch, isMac, isSearchShortcut, openSearch, toggleSearch, useSearchOpen } from './search-state';
 import { useAppOverlay } from '../apps/app-overlay';
+import { useHistoryLayer } from '../lib/history-layer';
 
 const copy = searchCopy;
 /** Results wait for typing to pause this long (US-HOME-10). */
@@ -60,20 +63,26 @@ export interface SearchItem {
   /** Shown on the right; the highlighted row also shows what ↵ does. */
   trailing?: ReactNode;
   enterHint?: string;
+  /** On a phone: the line under the label, and a pill at the right ("Open", "Install"). */
+  subtitle?: string;
+  pill?: string;
   run: () => void;
 }
 
 export function Spotlight() {
   const open = useSearchOpen();
   const input = useRef<HTMLInputElement>(null);
+  // On a phone it fills the screen with a Cancel button, and Back closes it (US-PHONE-09, US-PHONE-04).
+  const phone = useIsPhone();
+  const close = useHistoryLayer('search', open, closeSearch, phone);
   return (
     <CommandPanel
       open={open}
-      onOpenChange={(next) => (next ? openSearch() : closeSearch())}
+      onOpenChange={(next) => (next ? openSearch() : void close())}
       label={copy.label}
       initialFocus={input}
     >
-      {open ? <SearchBody input={input} /> : null}
+      {open ? <SearchBody input={input} phone={phone} close={close} /> : null}
     </CommandPanel>
   );
 }
@@ -87,7 +96,16 @@ function useDebounced<T>(value: T, ms: number): T {
   return settled;
 }
 
-function SearchBody({ input }: { input: React.RefObject<HTMLInputElement | null> }) {
+function SearchBody({
+  input,
+  phone,
+  close,
+}: {
+  input: React.RefObject<HTMLInputElement | null>;
+  phone: boolean;
+  /** Closes the panel; on a phone, once its history step is gone. */
+  close: () => Promise<void>;
+}) {
   const trpc = useTRPC();
   const isAdmin = useMe().data?.role === 'admin';
   const openApp = useOpenApp(isAdmin);
@@ -133,8 +151,13 @@ function SearchBody({ input }: { input: React.RefObject<HTMLInputElement | null>
     },
   });
   const run = (item: SearchItem) => {
-    closeSearch();
-    item.run();
+    if (!phone) {
+      closeSearch();
+      item.run();
+      return;
+    }
+    // Where the result goes starts from the page, not from the panel's history step.
+    void close().then(item.run);
   };
   const data = results.data;
   const items: SearchItem[] = [
@@ -185,43 +208,131 @@ function SearchBody({ input }: { input: React.RefObject<HTMLInputElement | null>
     }))
     .filter((g) => g.entries.length > 0);
 
+  const field = (
+    <input
+      ref={input}
+      type="text"
+      role="combobox"
+      aria-label={copy.label}
+      aria-expanded={items.length > 0}
+      aria-controls={listId}
+      aria-autocomplete="list"
+      aria-activedescendant={at >= 0 ? `${listId}-${at}` : undefined}
+      placeholder={copy.placeholder}
+      autoComplete="off"
+      spellCheck={false}
+      enterKeyHint="search"
+      value={query}
+      onChange={(e) => {
+        setQuery(e.target.value);
+        setActive(0);
+      }}
+      onKeyDown={onKeyDown}
+      className={
+        phone
+          ? 'min-w-0 flex-1'
+          : 'min-w-0 flex-1 border-0 bg-transparent text-title-3 text-ink outline-none placeholder:text-ink-muted'
+      }
+    />
+  );
+  const status = results.isError ? (
+    <p role="status" className="m-0 px-5 pt-4 text-body text-ink-muted">
+      {copy.unavailable}
+    </p>
+  ) : nothing ? (
+    <p role="status" className="m-0 px-5 pt-4 text-body text-ink-muted">
+      {copy.noResults(settled)}
+    </p>
+  ) : null;
+
+  if (phone)
+    // Search on a phone (US-PHONE-09, PhoneRedesignA_Search): the field with "✕" and Cancel, and each group of
+    // results as an inset grouped list; rows are at least 52px tall.
+    return (
+      <>
+        <div className="flex shrink-0 items-center gap-2 px-4 pt-4 pb-2">
+          <div className="hl-p-search flex-1">
+            <Search aria-hidden {...iconDefaults} className="hl-p-search-glyph" />
+            {field}
+            {query ? (
+              <button
+                type="button"
+                className="hl-p-search-clear hl-focus"
+                aria-label={copy.clear}
+                onClick={() => {
+                  setQuery('');
+                  input.current?.focus();
+                }}
+              >
+                <X aria-hidden {...iconDefaults} />
+              </button>
+            ) : null}
+          </div>
+          <button type="button" className="hl-p-tbtn hl-focus" onClick={() => void close()}>
+            {copy.cancel}
+          </button>
+        </div>
+        {status}
+        <div
+          id={listId}
+          role="listbox"
+          aria-label={copy.results}
+          className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-2 pb-6"
+        >
+          {groups.map(({ group, entries }) => (
+            <div key={group} role="group" aria-labelledby={`${listId}-${group}`} className="flex flex-col">
+              {entries.some((e) => e.item.id !== SEE_ALL) ? (
+                <div id={`${listId}-${group}`} className="hl-p-label mx-0">
+                  {copy.groups[group]}
+                </div>
+              ) : null}
+              <div className="hl-p-group">
+                {entries.map(({ item, index }) => (
+                  <div
+                    key={item.id}
+                    id={`${listId}-${index}`}
+                    role="option"
+                    aria-selected={index === at}
+                    onClick={() => run(item)}
+                    className={`hl-p-row min-h-13 cursor-pointer ${item.id === SEE_ALL ? 'hl-p-row-accent' : ''}`}
+                  >
+                    {item.id === SEE_ALL ? (
+                      <span aria-hidden className="hl-p-sq">
+                        <LayoutGrid {...iconDefaults} />
+                      </span>
+                    ) : (
+                      item.leading
+                    )}
+                    <span className="hl-p-row-main">
+                      <span className="hl-p-row-text">
+                        <span className="hl-p-row-title">{item.label}</span>
+                        {item.subtitle ? <span className="hl-p-row-sub">{item.subtitle}</span> : null}
+                      </span>
+                      {item.pill ? (
+                        <span aria-hidden className="hl-p-get">
+                          <span>{item.pill}</span>
+                        </span>
+                      ) : null}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </>
+    );
+
   return (
     <>
       <div className="flex items-center gap-3 border-b border-hairline px-5 py-4">
         <Search aria-hidden {...iconDefaults} className="size-5 shrink-0 text-ink-muted" />
-        <input
-          ref={input}
-          type="text"
-          role="combobox"
-          aria-label={copy.label}
-          aria-expanded={items.length > 0}
-          aria-controls={listId}
-          aria-autocomplete="list"
-          aria-activedescendant={at >= 0 ? `${listId}-${at}` : undefined}
-          placeholder={copy.placeholder}
-          autoComplete="off"
-          spellCheck={false}
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setActive(0);
-          }}
-          onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 border-0 bg-transparent text-title-3 text-ink outline-none placeholder:text-ink-muted"
-        />
+        {field}
         <kbd className="rounded-xs bg-surface-control px-1.5 py-0.5 font-sans text-caption text-ink-muted">
           {copy.esc}
         </kbd>
       </div>
-      {results.isError ? (
-        <p role="status" className="m-0 px-5 pt-4 text-body text-ink-muted">
-          {copy.unavailable}
-        </p>
-      ) : nothing ? (
-        <p role="status" className="m-0 px-5 pt-4 text-body text-ink-muted">
-          {copy.noResults(settled)}
-        </p>
-      ) : null}
+      {status}
       <div id={listId} role="listbox" aria-label={copy.results} className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
         {groups.map(({ group, entries }) => (
           <div key={group} role="group" aria-labelledby={`${listId}-${group}`} className="pb-1">
@@ -242,7 +353,7 @@ function SearchBody({ input }: { input: React.RefObject<HTMLInputElement | null>
                 aria-selected={index === at}
                 onMouseMove={() => setActive(index)}
                 onClick={() => run(item)}
-                className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-md px-3 py-2 ${
+                className={`flex min-h-13 cursor-pointer items-center gap-3 rounded-md px-3 py-2 md:min-h-12 ${
                   index === at ? 'bg-accent-wash' : ''
                 } ${item.id === SEE_ALL ? 'justify-center text-accent-link' : ''}`}
               >
@@ -300,6 +411,7 @@ function appItem(app: HomeApp, open: () => void): SearchItem {
       />
     ),
     enterHint: copy.open,
+    pill: copy.open,
     run: open,
   };
 }
@@ -347,6 +459,8 @@ function storeItem(app: StoreApp, run: () => void): SearchItem {
       />
     ),
     trailing: `${app.tagline} · ${copy.install}`,
+    subtitle: app.tagline,
+    pill: copy.install,
     run,
   };
 }
@@ -362,6 +476,7 @@ function fileItem(f: { path: string; name: string; breadcrumb: string[] }, run: 
     label: f.name,
     leading: <IconTile icon={Folder} />,
     trailing: f.breadcrumb.join(' › '),
+    subtitle: f.breadcrumb.join(' › '),
     run,
   };
 }

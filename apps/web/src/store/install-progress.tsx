@@ -5,7 +5,7 @@
 import type { AppDetail, InstallStep, InstallStepDetail } from '@hlabs/api';
 
 import { CheckCircle2, ChevronLeft, Circle, Loader2, XCircle, iconDefaults } from '@hlabs/icons';
-import { Badge, Button, GlassCard, ModalDialog, Progress, ScrollPane, TextField, tokens } from '@hlabs/ui';
+import { Badge, Button, GlassCard, ModalDialog, PhoneHeader, Progress, ScrollPane, TextField, tokens } from '@hlabs/ui';
 import { INSTALL_STEPS } from '@hlabs/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -23,6 +23,7 @@ import { useAppDetails } from './app-details';
 import { StoreLogo } from './cards';
 import { storeTags } from './store-app';
 import { storeReturnHref } from './store-return';
+import { useStoreBack } from './store-layout';
 import { useInstalls } from './use-installs';
 import { useEventStream } from '../lib/use-event-stream';
 
@@ -188,6 +189,7 @@ export function InstallProgressPage({ appId }: { appId: string }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const desktop = useIsDesktop();
+  const storeBack = useStoreBack();
   const details = useAppDetails(appId);
   const app = useQuery({ ...trpc.apps.get.queryOptions({ appId }), retry: false, ...pageQuery, refetchInterval: 2000 });
   const jobId = app.data?.installJobId ?? null;
@@ -369,12 +371,66 @@ export function InstallProgressPage({ appId }: { appId: string }) {
           </header>
         );
 
+        // PhoneRedesignA_InstallProgress: "‹ App Store", the app with its logo, a card with the progress, then the steps.
+        const status = ready ? (
+          <div className="flex flex-col gap-1.5">
+            <button
+              type="button"
+              className="hl-p-primary hl-focus"
+              onClick={() => {
+                const inst = installs.byId.get(appId);
+                if (inst) browser.open(inst.urls.local);
+              }}
+            >
+              {copy.open}
+            </button>
+            <span className="text-center text-footnote text-ink-muted">{copy.ready(name)}</span>
+          </div>
+        ) : failed ? (
+          <div className="flex flex-col gap-1.5 rounded-sm bg-solid-widget p-4">
+            <span className="flex items-center gap-2 text-row font-bold text-danger">
+              <XCircle aria-hidden {...iconDefaults} className="size-5" />
+              {copy.failed}
+            </span>
+            <span className="text-footnote text-ink-muted">{copy.nothingChanged}</span>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 rounded-sm bg-solid-widget p-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-title-2 font-bold">{queued ? copy.waiting : copy.installing(progress)}</span>
+              <span className="text-subhead text-ink-muted">{queued ? '' : etaLine(live?.eta ?? null)}</span>
+            </div>
+            <Progress value={queued ? 0 : progress} aria-label={copy.installing(progress)} />
+          </div>
+        );
+        const phoneHeader = (
+          <>
+            <PhoneHeader title={name} large={false} back={storeBack} />
+            <header className="flex items-center gap-4">
+              <StoreLogo app={d.app} size={LOGO} />
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <h1 className="m-0 text-title-1 font-bold">{name}</h1>
+                <p className="m-0 text-row text-ink-muted">{d.app.tagline}</p>
+                <p className="m-0 text-subhead text-ink-faint">
+                  {[categoryLabels[d.app.group], ...storeTags(d.app, d.host)].join(' · ')}
+                </p>
+              </div>
+            </header>
+            {status}
+          </>
+        );
+
         const steps = (
           <div className="flex flex-col gap-5">
-            {desktop ? null : appHeader}
+            {desktop ? null : phoneHeader}
+            {desktop ? null : (
+              <p aria-hidden className="m-0 -mb-4 px-4 text-label text-ink-muted">
+                {copy.steps}
+              </p>
+            )}
             <ol
               aria-label={copy.steps}
-              className="m-0 max-w-3xl list-none overflow-hidden rounded-xl bg-surface-row p-0"
+              className="m-0 max-w-3xl list-none overflow-hidden rounded-xl bg-surface-row p-0 max-md:rounded-sm max-md:bg-solid-widget"
             >
               {INSTALL_STEPS.map((s) => {
                 const st = states[s];
@@ -396,16 +452,30 @@ export function InstallProgressPage({ appId }: { appId: string }) {
                   <li
                     key={s}
                     aria-current={st === 'active' ? 'step' : undefined}
-                    className={`border-b border-hairline px-5 py-4 last:border-b-0 ${st === 'failed' ? 'bg-[color-mix(in_srgb,var(--danger)_12%,transparent)]' : ''}`}
+                    className={`border-b border-hairline px-5 py-4 last:border-b-0 max-md:px-4 max-md:py-2.5 ${st === 'failed' ? 'bg-[color-mix(in_srgb,var(--danger)_12%,transparent)]' : ''}`}
                   >
                     <div className="flex items-center gap-3">
                       <StepIcon state={st} />
-                      <span className={`flex-1 text-body ${st === 'todo' ? 'text-ink-muted' : 'text-ink'}`}>
-                        {text}
-                      </span>
-                      <span className={`text-body-sm ${st === 'failed' ? 'text-danger' : 'text-ink-muted'}`}>
-                        {side}
-                      </span>
+                      {desktop ? (
+                        <>
+                          <span className={`flex-1 text-body ${st === 'todo' ? 'text-ink-muted' : 'text-ink'}`}>
+                            {text}
+                          </span>
+                          <span className={`text-body-sm ${st === 'failed' ? 'text-danger' : 'text-ink-muted'}`}>
+                            {side}
+                          </span>
+                        </>
+                      ) : (
+                        // A phone: the step's detail under it (PhoneRedesignA_InstallProgress).
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className={`text-row ${st === 'todo' ? 'text-ink-muted' : 'text-ink'}`}>{text}</span>
+                          {side ? (
+                            <span className={`text-footnote ${st === 'failed' ? 'text-danger' : 'text-ink-muted'}`}>
+                              {side}
+                            </span>
+                          ) : null}
+                        </span>
+                      )}
                     </div>
                     {s === 'pull' && st === 'active' ? (
                       <Progress
@@ -424,7 +494,11 @@ export function InstallProgressPage({ appId }: { appId: string }) {
                 );
               })}
             </ol>
-            {!failed && !ready ? <p className="m-0 text-body-sm text-ink-muted">{copy.canLeave(name)}</p> : null}
+            {!failed && !ready ? (
+              <p className="m-0 text-body-sm text-ink-muted max-md:-mt-3 max-md:px-4 max-md:text-footnote max-md:text-ink-faint">
+                {copy.canLeave(name)}
+              </p>
+            ) : null}
             <p className="sr-only" aria-live="polite">
               {announce}
             </p>
@@ -432,6 +506,7 @@ export function InstallProgressPage({ appId }: { appId: string }) {
           </div>
         );
 
+        if (!desktop) return steps;
         return (
           <GlassCard level={2} className="mx-auto flex min-h-0 w-full max-w-window flex-1 flex-col overflow-hidden p-0">
             <ScrollPane

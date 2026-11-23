@@ -4,7 +4,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './app.css';
 import { captureSetupToken } from './lib/setup-token';
-import { listenForInstall } from './lib/install-app';
+import { listenForInstall, reloadOnNewShell } from './lib/install-app';
+import { watchPhoneViewport } from './lib/phone-viewport';
 import { queryClient, setAuthLostHandler, TRPCProvider, trpcClient } from './lib/trpc';
 import { onceToLogin } from './login/signed-out';
 import { routeTree } from './routeTree.gen';
@@ -14,15 +15,22 @@ import { RouteError, RouteNotFound } from './shell/route-fallbacks';
 captureSetupToken();
 // Before anything renders, so Chrome's install prompt isn't missed (US-INST-28).
 listenForInstall();
+// The visual viewport for sheets and the on-screen keyboard (US-PHONE-02, US-PHONE-03).
+watchPhoneViewport();
 // The saved shell for opening offline, in builds only (US-INST-28): a browser that refuses it (a certificate it
 // doesn't trust) leaves the dashboard as it was.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   void navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => undefined);
+  // A new hlabs took over the shell (US-PHONE-24): the page reloads once onto it.
+  reloadOnNewShell(navigator.serviceWorker);
 }
 
 const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
+  // Back (or the swipe-back gesture) shows the page where it was scrolled to: the window, and the page's own
+  // scroller (<main data-scroll-restoration-id="main">, US-PHONE-04).
+  scrollRestoration: true,
   defaultErrorComponent: RouteError,
   defaultNotFoundComponent: RouteNotFound,
 });

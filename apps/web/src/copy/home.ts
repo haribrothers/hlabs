@@ -1,6 +1,19 @@
 // Home (04-home.md). Sentence case, plain words.
 export const homeCopy = {
   title: 'hlabs — Home',
+  /** The one-time hint on an iPhone (US-PHONE-23, D-030). */
+  iosHint: 'Add hlabs to your Home Screen: tap Share, then Add to Home Screen.',
+  iosHintDismiss: 'Dismiss',
+  /** The hint as PhoneRedesignA_AddToHomeScreen draws it: a title, then the steps around the Share glyph. */
+  iosHintTitle: 'Add hlabs to your Home Screen',
+  iosHintBodyStart: 'Tap Share',
+  iosHintBodyEnd: ', then Add to Home Screen.',
+  /** PhoneHome (US-PHONE-07, D-172): its large title, the line under it and the account button. */
+  phoneTitle: 'Home',
+  allRunning: (n: number) => (n === 1 ? 'Your app is running.' : `All ${n} apps are running.`),
+  someRunning: (running: number, n: number) => `${running} of ${n} apps are running.`,
+  account: 'Your account',
+  search: 'Search',
   widgets: 'Widgets',
   apps: 'Apps',
   openApp: (name: string) => `Open ${name}`,
@@ -59,6 +72,16 @@ export const homeCopy = {
     restarted: (app: string) => `${app} restarted`,
     started: (app: string) => `${app} started`,
     stopped: (app: string) => `${app} stopped`,
+  },
+  /** A tile's menu on a phone (US-PHONE-08, PhoneRedesignA_TileMenu). */
+  phoneMenu: {
+    open: 'Open',
+    settings: 'Settings',
+    logs: 'Logs',
+    restart: 'Restart',
+    start: 'Start',
+    reinstall: 'Reinstall…',
+    uninstall: 'Uninstall…',
   },
   /** The widgets added with the picker (US-HOME-02, 19, 20). */
   remoteAccess: 'Remote access',

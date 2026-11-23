@@ -20,7 +20,7 @@ Select an app's name or card to see its page.
 
 ## Categories
 
-The list on the left starts with **Discover** (the store's front page) and has one entry for each kind of app the store has, such as **Files & photos**, **Security** or **Monitoring**. Choose one to see every app of that kind. On a phone the categories are a row you can swipe along above the apps.
+The list on the left starts with **Discover** (the store's front page) and has one entry for each kind of app the store has, such as **Files & photos**, **Security** or **Monitoring**. Choose one to see every app of that kind. On a phone the categories are a row you can swipe along under the search field; choosing one opens its page, with **‹ App Store** to go back.
 
 Above a category's apps, **Popular**, **New** and **A–Z** change the order. Popular is the order the hlabs store recommends (hlabs doesn't count who installs what); New puts the apps added to the store most recently first. Your choice is remembered in this browser. Beside it, the category says how many apps it has; on a Mac with Apple Silicon, apps that run on it come first. Long lists load more apps as you scroll.
 
@@ -119,7 +119,7 @@ If there's nothing hlabs can use at the address, it says **No hlabs apps found a
 
 ## Updates
 
-Admins see **Updates** at the bottom of the list on the left (on a phone, under **Manage apps**), with the number of apps that have a newer version. The App Store's icon in the Dock shows the same number.
+Admins see **Updates** at the bottom of the list on the left (on a phone, at the top of the App Store, and under **Manage apps**), with the number of apps that have a newer version. The App Store's icon in the Dock shows the same number.
 
 Each app shows the version you have, the new one and when it reached your App Store, for example **1.2 → 1.3 · released 2 days ago**. Choose **What's new** to read what changed and **Hide notes** to close it. **Update** installs it: the row shows how far it has got, and when it's done the app moves to **Recently updated**. **Update all** updates every app in the list, one after another; the button counts them, such as **Updating 1 of 3…**, and if one doesn't work the others still update.
 

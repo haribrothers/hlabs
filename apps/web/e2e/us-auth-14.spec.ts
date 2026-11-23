@@ -32,7 +32,9 @@ test('US-AUTH-14 remember me decides how long this device stays signed in', asyn
   await other.goto('/login/username');
   await other.getByLabel('Username').fill(ADMIN.username);
   await other.getByLabel('Password', { exact: true }).fill(ADMIN.password);
-  await other.getByRole('switch', { name: 'Remember me on this device' }).click();
+  // A phone says "Remember this phone" (US-PHONE-05).
+  const phone = test.info().project.name.includes('phone');
+  await other.getByRole('switch', { name: phone ? 'Remember this phone' : 'Remember me on this device' }).click();
   await other.getByRole('button', { name: 'Log in' }).click();
   await expect(other).toHaveURL(`${FIRST_RUN_URL}/`);
   const thirtyDays = Date.now() / 1000 + 30 * 24 * 3600;
@@ -41,7 +43,10 @@ test('US-AUTH-14 remember me decides how long this device stays signed in', asyn
   await context.clearCookies();
   await other.goto('/login');
   await expect(other.getByRole('heading', { level: 1, name: `Welcome back, ${ADMIN.name}` })).toBeVisible();
-  await expect(other.getByRole('switch')).toHaveCount(0);
+  // No switch on a computer; a phone shows it, set as this account last chose (US-PHONE-05).
+  if (phone)
+    await expect(other.getByRole('switch', { name: 'Remember this phone' })).toHaveAttribute('aria-checked', 'true');
+  else await expect(other.getByRole('switch')).toHaveCount(0);
   await other.getByPlaceholder('Password').fill(ADMIN.password);
   await other.getByRole('button', { name: 'Log in' }).click();
   await expect(other).toHaveURL(`${FIRST_RUN_URL}/`);

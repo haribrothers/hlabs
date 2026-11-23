@@ -80,13 +80,18 @@ export function SearchResults({ query, shippedPhase = VISIBLE_PHASE }: { query: 
   const { query: pages, first, items } = useAppPages({ query, installedOnly, arm64Only }, searching);
   const installs = useInstalls();
   const title = copy.resultsFor(query);
-  if (!searching || !first) return <StoreView title={title}>{null}</StoreView>;
+  if (!searching || !first)
+    return (
+      <StoreView title={title} phoneBack={false}>
+        {null}
+      </StoreView>
+    );
 
   const host: StoreHost = first.host;
   const { all, installed } = first.counts;
 
   return (
-    <StoreView title={title}>
+    <StoreView title={title} phoneBack={false}>
       <div className="flex flex-col gap-5 pb-6">
         {all || installedOnly || arm64Only ? (
           <div role="group" aria-label={copy.filters} className="flex flex-wrap gap-2">

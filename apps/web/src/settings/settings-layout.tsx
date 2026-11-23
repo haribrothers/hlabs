@@ -1,8 +1,9 @@
 // The Settings window (US-ACCT-01, US-ACCT-02): the sections this person can use on the left and the open section on
 // the right. On a phone the list comes first and a section opens as a sheet with a "Settings" back control. Escape
 // closes the window and puts focus back where it was on Home.
-import { ChevronLeft, ChevronRight, iconDefaults } from '@hlabs/icons';
+import { ChevronRight, iconDefaults } from '@hlabs/icons';
 import { GlassCard, ScrollPane } from '@hlabs/ui';
+import { PhoneSettingsList } from './phone-settings';
 import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { settingsCopy } from '../copy/settings';
@@ -69,29 +70,12 @@ export function SettingsLayout() {
     </nav>
   );
 
-  // On a phone: the list, or a sheet whose content scrolls under a fixed back link (above the tab bar).
+  // On a phone (PhoneSettings, D-172): the sections as inset grouped lists under a large title, or the open section
+  // as a page you went into, with "‹ Settings" (SectionPage).
   if (!desktop) {
     return (
-      <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
-        {atList ? (
-          <>
-            <h1 className="m-0 text-display">{copy.title}</h1>
-            <GlassCard className="p-2">{sidebar}</GlassCard>
-          </>
-        ) : (
-          <>
-            <Link
-              to="/settings"
-              className="hl-focus inline-flex items-center gap-1 self-start rounded-xs text-body text-ink no-underline"
-            >
-              <ChevronLeft aria-hidden {...iconDefaults} />
-              {copy.back}
-            </Link>
-            <GlassCard level={2} className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
-              <Outlet />
-            </GlassCard>
-          </>
-        )}
+      <div className="flex w-full flex-col gap-4">
+        {atList ? <PhoneSettingsList me={me} sections={sections} /> : <Outlet />}
       </div>
     );
   }

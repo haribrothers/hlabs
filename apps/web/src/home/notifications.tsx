@@ -4,7 +4,7 @@
 import type { Notification } from '@hlabs/api';
 import { Bell, Check, CircleX, Download, iconDefaults, Info, Lock, TriangleAlert, X } from '@hlabs/icons';
 import { isFeatureEnabled, VISIBLE_PHASE, type ToastMutation } from '@hlabs/shared';
-import { Button } from '@hlabs/ui';
+import { Button, ModalDialog, useIsPhone } from '@hlabs/ui';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
@@ -19,6 +19,7 @@ import { useNow } from '../lib/use-now';
 import { errorLine } from '../lib/error-copy';
 import { useEventStream } from '../lib/use-event-stream';
 import { useAppOverlay } from '../apps/app-overlay';
+import { useHistoryLayer } from '../lib/history-layer';
 
 const PAGE = 50;
 
@@ -48,13 +49,23 @@ function appOf(a: ToastAction): string | null {
   return null;
 }
 
-/** `shippedPhase`: the phase whose controls show (tests set it; D-036). */
-export function NotificationsBell({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: number }) {
+/**
+ * `shippedPhase`: the phase whose controls show (tests set it; D-036). `inline`: in PhoneHome's header beside the
+ * greeting, with a dot for what's new and the list as a bottom sheet (US-PHONE-07); otherwise in Home's top right
+ * corner with its panel under it.
+ */
+export function NotificationsBell({
+  shippedPhase = VISIBLE_PHASE,
+  inline = false,
+}: {
+  shippedPhase?: number;
+  inline?: boolean;
+}) {
   if (!isFeatureEnabled('notifications', shippedPhase)) return null;
-  return <Panel shippedPhase={shippedPhase} />;
+  return <Panel shippedPhase={shippedPhase} inline={inline} />;
 }
 
-function Panel({ shippedPhase }: { shippedPhase: number }) {
+function Panel({ shippedPhase, inline }: { shippedPhase: number; inline: boolean }) {
   const trpc = useTRPC();
   const client = useTRPCClient();
   const queryClient = useQueryClient();
@@ -63,6 +74,9 @@ function Panel({ shippedPhase }: { shippedPhase: number }) {
   const isAdmin = me.data?.role === 'admin';
   const now = useNow().getTime();
   const [open, setOpen] = useState(false);
+  // A bottom sheet on a phone, which Back closes (US-PHONE-03, US-PHONE-04).
+  const sheet = useIsPhone();
+  const closeSheet = useHistoryLayer('notifications', open && sheet, () => setOpen(false), sheet);
   const bellRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
@@ -90,9 +104,9 @@ function Panel({ shippedPhase }: { shippedPhase: number }) {
     refresh();
   });
 
-  // Escape or a click outside closes it, and focus goes back to the bell.
+  // Escape or a click outside closes it, and focus goes back to the bell. The sheet does that itself.
   useEffect(() => {
-    if (!open) return;
+    if (!open || sheet) return;
     const close = () => {
       setOpen(false);
       bellRef.current?.focus();
@@ -110,7 +124,7 @@ function Panel({ shippedPhase }: { shippedPhase: number }) {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onDown);
     };
-  }, [open]);
+  }, [open, sheet]);
 
   /** Optimistic: the dots and the badge change now, and come back if the daemon says no. */
   const markRead = async (ids: string[] | 'all') => {
@@ -172,7 +186,8 @@ function Panel({ shippedPhase }: { shippedPhase: number }) {
       }
     }
     if (a.kind === 'navigate') {
-      setOpen(false);
+      if (sheet) await closeSheet();
+      else setOpen(false);
       // An app's settings or logs open over the page (D-166); anything else navigates.
       overlay.follow(a.to);
     } else if (a.kind === 'mutation') {
@@ -211,25 +226,79 @@ function Panel({ shippedPhase }: { shippedPhase: number }) {
       </section>
     ) : null;
 
-  return (
-    <div className="fixed right-4 top-4 z-40 flex flex-col items-end sm:right-8 sm:top-7">
-      <button
-        ref={bellRef}
-        type="button"
-        aria-label={copy.bell(unread)}
-        aria-expanded={open}
-        aria-controls={open ? panelId : undefined}
-        aria-haspopup="dialog"
-        onClick={() => setOpen((o) => !o)}
-        className="hl-focus relative grid size-11 place-items-center rounded-pill border border-border-glass bg-fill-primary text-ink-on-light shadow-menu"
-      >
-        <Bell aria-hidden {...iconDefaults} className="size-5" />
-        {unread > 0 ? (
+  const markAll = (
+    <Button variant="link" disabled={unread === 0} onClick={() => void markRead('all')}>
+      {copy.markAllRead}
+    </Button>
+  );
+  const body = list.isError ? (
+    <p className="m-0 px-3 py-4 text-body-sm text-ink-muted">
+      {copy.couldntLoad}{' '}
+      <Button variant="link" onClick={() => void list.refetch()}>
+        {copy.retry}
+      </Button>
+    </p>
+  ) : list.isSuccess && items.length === 0 ? (
+    <p className="m-0 px-3 py-6 text-center text-body text-ink-muted">{copy.empty}</p>
+  ) : (
+    <>
+      {group(copy.today, today)}
+      {group(copy.earlier, earlier)}
+      {list.hasNextPage ? (
+        <Button variant="link" className="self-center" onClick={() => void list.fetchNextPage()}>
+          {copy.showMore}
+        </Button>
+      ) : null}
+    </>
+  );
+
+  const bell = (
+    <button
+      ref={bellRef}
+      type="button"
+      aria-label={copy.bell(unread)}
+      aria-expanded={open}
+      aria-controls={open && !sheet ? panelId : undefined}
+      aria-haspopup="dialog"
+      onClick={() => setOpen((o) => !o)}
+      className={
+        inline
+          ? 'hl-p-ibtn hl-focus'
+          : 'hl-focus relative grid size-11 place-items-center rounded-pill border border-border-glass bg-fill-primary text-ink-on-light shadow-menu'
+      }
+    >
+      <Bell aria-hidden {...iconDefaults} className="size-5" />
+      {unread > 0 ? (
+        inline ? (
+          // A dot on a phone, as PhoneHome draws it; the label says how many.
+          <span aria-hidden className="hl-p-dot" />
+        ) : (
           <span aria-hidden className="hl-count -right-1 -top-1">
             {unread > 99 ? '99+' : unread}
           </span>
-        ) : null}
-      </button>
+        )
+      ) : null}
+    </button>
+  );
+
+  if (sheet)
+    return (
+      <>
+        {bell}
+        <ModalDialog
+          open={open}
+          onOpenChange={(o) => (o ? setOpen(true) : void closeSheet())}
+          title={copy.title}
+          actions={markAll}
+        >
+          <div className="-mx-2 flex flex-col">{body}</div>
+        </ModalDialog>
+      </>
+    );
+
+  return (
+    <div className={inline ? 'flex' : 'fixed right-4 top-4 z-40 flex flex-col items-end sm:right-8 sm:top-7'}>
+      {bell}
       {open ? (
         <div
           ref={panelRef}
@@ -240,33 +309,10 @@ function Panel({ shippedPhase }: { shippedPhase: number }) {
         >
           <div className="flex items-center justify-between px-3 pb-1.5 pt-2">
             <h2 className="m-0 text-headline">{copy.title}</h2>
-            <Button variant="link" disabled={unread === 0} onClick={() => void markRead('all')}>
-              {copy.markAllRead}
-            </Button>
+            {markAll}
           </div>
           {/* Only the list scrolls, with a thin scrollbar inside the panel's rounded edge. */}
-          <div className="hl-scroll -mr-1 min-h-0 flex-1 overflow-y-auto pr-1">
-            {list.isError ? (
-              <p className="m-0 px-3 py-4 text-body-sm text-ink-muted">
-                {copy.couldntLoad}{' '}
-                <Button variant="link" onClick={() => void list.refetch()}>
-                  {copy.retry}
-                </Button>
-              </p>
-            ) : list.isSuccess && items.length === 0 ? (
-              <p className="m-0 px-3 py-6 text-center text-body text-ink-muted">{copy.empty}</p>
-            ) : (
-              <>
-                {group(copy.today, today)}
-                {group(copy.earlier, earlier)}
-                {list.hasNextPage ? (
-                  <Button variant="link" className="self-center" onClick={() => void list.fetchNextPage()}>
-                    {copy.showMore}
-                  </Button>
-                ) : null}
-              </>
-            )}
-          </div>
+          <div className="hl-scroll -mr-1 min-h-0 flex-1 overflow-y-auto pr-1">{body}</div>
         </div>
       ) : null}
     </div>
@@ -297,7 +343,7 @@ function Item({
       className={`group relative flex gap-3 rounded-md p-3 hover:bg-surface-row focus-within:bg-surface-row ${unread ? 'bg-accent-wash' : ''}`}
     >
       <SeverityIcon n={n} />
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-6">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-6 [@media(hover:none)]:pr-14">
         {itemLink && itemLink.kind === 'navigate' ? (
           <Link
             to={itemLink.to}
@@ -330,7 +376,7 @@ function Item({
         </span>
       </div>
       {unread ? (
-        <span className="absolute right-3 top-3.5 size-2 rounded-pill bg-accent group-hover:hidden group-focus-within:hidden">
+        <span className="absolute right-3 top-3.5 size-2 rounded-pill bg-accent group-hover:hidden group-focus-within:hidden [@media(hover:none)]:right-12 [@media(hover:none)]:block">
           <span className="sr-only">{copy.unread}</span>
         </span>
       ) : null}
@@ -338,7 +384,7 @@ function Item({
         type="button"
         aria-label={copy.dismiss(n.title)}
         onClick={() => onDismiss(n)}
-        className="hl-focus absolute right-2 top-2 grid size-7 place-items-center rounded-pill border-0 bg-transparent text-ink-muted opacity-0 hover:bg-surface-control focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100"
+        className="hl-focus hl-hover-reveal absolute right-0 top-0 grid size-11 place-items-center rounded-pill border-0 bg-transparent text-ink-muted opacity-0 hover:bg-surface-control focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 md:right-2 md:top-2 md:size-7"
       >
         <X aria-hidden {...iconDefaults} className="size-3.5" />
       </button>

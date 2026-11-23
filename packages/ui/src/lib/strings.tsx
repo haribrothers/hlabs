@@ -39,6 +39,10 @@ export interface UiStrings {
   of: (used: string, total: string) => string;
   shared: string;
   done: string;
+  /** A sheet's close button (US-PHONE-03). */
+  close: string;
+  /** A sheet's grabber, for screen readers it's decorative; the close button closes it. */
+  back: string;
 }
 
 export const defaultStrings: UiStrings = {
@@ -71,6 +75,8 @@ export const defaultStrings: UiStrings = {
   of: (used, total) => `${used} of ${total}`,
   shared: 'Shared',
   done: 'done',
+  close: 'Close',
+  back: 'Back',
 };
 
 const Context = createContext<UiStrings>(defaultStrings);

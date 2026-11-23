@@ -20,15 +20,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  useIsPhone,
 } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
-import { useId, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import { useId, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { UninstallDialog } from '../apps/uninstall-dialog';
 import { ReinstallDialog } from '../apps/reinstall';
 import { homeCopy } from '../copy/home';
 import { useTRPC } from '../lib/trpc';
 import type { HomeApp } from './home-app';
 import { useAppOverlay } from '../apps/app-overlay';
+import { PhoneTileMenu, phoneMenuItems } from './phone-tile-menu';
 
 const copy = homeCopy.menu;
 /** How long a finger rests on a tile before its menu opens. */
@@ -79,6 +81,8 @@ export function TileMenu({
   const labelId = useId();
   const press = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number } | null>(null);
   const pressed = useRef(false);
+  // On a phone the long press lifts the tile over a blurred Home with its menu (US-PHONE-08, D-172).
+  const phone = useIsPhone();
 
   const show = () => {
     pressed.current = false;
@@ -97,6 +101,7 @@ export function TileMenu({
       timer: setTimeout(() => {
         // The finger lifts after the menu opens: that tap mustn't open the app too.
         pressed.current = true;
+        if (phone) navigator.vibrate?.(10);
         setOpen(true);
       }, LONG_PRESS_MS),
     };
@@ -146,6 +151,53 @@ export function TileMenu({
   }
 
   if (disabled) return children;
+  const handlers = {
+    onKeyDown,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp: endPress,
+    onPointerCancel: endPress,
+    onClickCapture: (e: MouseEvent) => {
+      if (!pressed.current) return;
+      pressed.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+    },
+  };
+  if (phone) {
+    const items = phoneMenuItems(app, isAdmin, moving, {
+      open: onOpen,
+      settings: () => overlay.openSettings(app.id),
+      logs: () => overlay.openLogs(app.id),
+      command: onCommand,
+      reinstall: () => setReinstallOpen(true),
+      uninstall: () => setUninstalling(true),
+    });
+    return (
+      <div
+        ref={holder}
+        className="hl-no-callout relative w-full"
+        // The OS's own menu (and the long press's text selection) never shows on a tile; the timer opens ours.
+        onContextMenu={(e) => e.preventDefault()}
+        {...handlers}
+      >
+        {children}
+        <PhoneTileMenu
+          app={app}
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (!o) requestAnimationFrame(() => holder.current?.querySelector<HTMLElement>('.hl-app')?.focus());
+          }}
+          anchor={() => holder.current?.querySelector<HTMLElement>('.hl-app-icon') ?? null}
+          items={items}
+        >
+          {uninstalling ? <UninstallFor appId={app.id} onClose={() => setUninstalling(false)} /> : null}
+          {reinstallOpen ? <ReinstallFor appId={app.id} onClose={() => setReinstallOpen(false)} /> : null}
+        </PhoneTileMenu>
+      </div>
+    );
+  }
   return (
     <div
       ref={holder}

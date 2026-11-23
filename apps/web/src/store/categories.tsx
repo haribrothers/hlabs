@@ -119,8 +119,8 @@ function UpdatesBadge() {
   return count > 0 ? <Badge tone="accent">{count}</Badge> : null;
 }
 
-const chip =
-  'hl-focus inline-flex min-h-11 shrink-0 items-center rounded-pill bg-surface-row px-4 text-body-sm text-ink no-underline aria-[current=page]:bg-surface-control aria-[current=page]:font-semibold';
+/** A phone chip (D-172): the chosen one white, so it's marked by more than colour (aria-current too). */
+const chip = 'hl-p-chip';
 
 /** The phone's "Manage apps": a chip that opens Updates (with its count), App sources and Deploy your own app. */
 function ManageMenu({ items }: { items: ManageItem[] }) {
@@ -160,7 +160,10 @@ export function StoreChips() {
   const manage = manageItems(useMe().data?.role);
   return (
     <div className="flex items-center gap-2">
-      <nav aria-label={copy.categories} className="-ml-4 min-w-0 flex-1 overflow-x-auto pl-4">
+      <nav
+        aria-label={copy.categories}
+        className="-mx-4 min-w-0 flex-1 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         <ul className="m-0 flex w-max list-none gap-2 p-0">
           <li>
             <DiscoverLink className={chip}>{copy.discover}</DiscoverLink>

@@ -2,8 +2,8 @@
 // home: an admin's reset link, the menu-bar app on the computer running hlabs, or the command on a Linux server. There
 // is no recovery-code option: recovery codes replace two-factor only (D-009).
 import { Monitor, SquareTerminal, UserCheck, iconDefaults } from '@hlabs/icons';
-import { Button, GlassCard, List, ListRow } from '@hlabs/ui';
-import { useState } from 'react';
+import { Button, GlassCard, List, ListRow, useIsPhone } from '@hlabs/ui';
+import { useState, type ReactNode } from 'react';
 import { loginCopy as copy } from '../copy/login';
 import { LoginLayout } from './login-layout';
 import { withNext } from './search';
@@ -46,6 +46,55 @@ const icon = (Icon: typeof Monitor) => (
 
 export function ForgotView({ from, user, next }: { from?: ForgotFrom; user?: string; next?: string }) {
   const command = copy.resetCommand(user);
+  const phone = useIsPhone();
+  if (phone) {
+    // ForgotPassword on a phone (US-PHONE-06, PhoneRedesignA_ForgotPassword): a full-screen page with "‹ Log in",
+    // the same three ways as 03-sign-in.md, each in a card of its own. No recovery-code way: those replace two-factor
+    // only (D-009), so the frame's "Use a recovery code" row isn't here.
+    const card = (Icon: typeof Monitor, title: string, body: ReactNode, below?: ReactNode) => (
+      <li className="flex gap-3 rounded-sm bg-solid-widget p-4">
+        <span aria-hidden className="hl-p-sq">
+          <Icon {...iconDefaults} />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <h2 className="m-0 text-row font-semibold">{title}</h2>
+          <p className="m-0 text-row text-ink-muted">{body}</p>
+          {below}
+        </div>
+      </li>
+    );
+    return (
+      <LoginLayout back={{ ...backTo(from, user, next), label: copy.logIn }}>
+        <div className="flex flex-col gap-1">
+          <h1 className="hl-p-large">{copy.forgotTitle}</h1>
+          <p className="m-0 text-row text-ink-muted">{copy.forgotLead}</p>
+        </div>
+        <ul aria-label={copy.forgotWays} className="m-0 flex list-none flex-col gap-3 p-0">
+          {card(UserCheck, copy.askAdmin, copy.askAdminText)}
+          {card(
+            Monitor,
+            copy.desktopAdmin,
+            <>
+              {copy.desktopAdminBefore}
+              <b className="text-ink">{copy.desktopAdminItem}</b>
+              {copy.desktopAdminAfter}
+            </>,
+          )}
+          {card(
+            SquareTerminal,
+            copy.serverAdmin,
+            copy.serverAdminText,
+            <div className="mt-1 flex flex-col items-start gap-2">
+              <code className="block max-w-full overflow-x-auto rounded-xs bg-solid-input px-3 py-2 font-mono text-subhead text-ink">
+                {command}
+              </code>
+              <CopyCommand command={command} />
+            </div>,
+          )}
+        </ul>
+      </LoginLayout>
+    );
+  }
   return (
     <LoginLayout back={backTo(from, user, next)}>
       <h1 className="m-0 text-title-lg text-ink">{copy.forgotTitle}</h1>

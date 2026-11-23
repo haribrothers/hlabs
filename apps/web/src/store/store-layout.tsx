@@ -3,13 +3,13 @@
 // field and a chip row of categories over the view. The search field belongs to the window, not the view, so it keeps
 // focus while typing moves between Discover and the results.
 import { ChevronLeft, iconDefaults } from '@hlabs/icons';
-import { GlassCard, ScrollPane } from '@hlabs/ui';
-import { Link, Outlet, useRouterState } from '@tanstack/react-router';
+import { GlassCard, PhoneHeader, ScrollPane } from '@hlabs/ui';
+import { Link, Outlet, useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { storeCopy } from '../copy/store';
 import { useIsDesktop } from '../lib/use-media';
-import { StoreChips, StoreSidebar } from './categories';
+import { StoreSidebar } from './categories';
 import { StoreSearchField } from './search';
 import { useStoreScrollMemory } from './store-return';
 
@@ -42,11 +42,19 @@ export function StoreLayout() {
   }, []);
 
   if (!desktop) {
+    // PhoneStore (US-PHONE-10, D-172): "App Store" as a large title and the search field over Discover and the
+    // results (the field stays put while typing moves between them); a category, a "See all" list and Updates are
+    // screens you go into, with "‹ App Store" (StoreView).
+    const pushed = !/^\/store(\/search)?\/?$/.test(new URL(href, 'http://hlabs.invalid').pathname);
     return (
-      <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
-        <h1 className="m-0 text-display">{copy.title}</h1>
-        <StoreSearchField desktop={false} />
-        <StoreChips />
+      // As tall as its content: the page scrolls as a whole and its last row clears the tab bar.
+      <div className="flex w-full flex-col gap-4">
+        {pushed ? null : (
+          <div className="flex flex-col gap-2.5">
+            <PhoneHeader title={copy.title} />
+            <StoreSearchField desktop={false} />
+          </div>
+        )}
         <TitleContext.Provider value={setTitle}>
           <Outlet />
         </TitleContext.Provider>
@@ -111,20 +119,37 @@ export function StoreLayout() {
   );
 }
 
+/** "‹ App Store" on a phone: Back when there's somewhere to go back to, else the store (US-PHONE-04). */
+export function useStoreBack(parent: () => string = () => '/store') {
+  const router = useRouter();
+  const navigate = useNavigate();
+  return {
+    label: copy.title,
+    onBack: () => (router.history.canGoBack() ? router.history.back() : void navigate({ to: parent() })),
+  };
+}
+
 /** One store view: it names itself in the window's header (desktop) or above its content (phone). */
 export function StoreView({
   title,
   children,
   phoneTitle = true,
+  phoneBack = true,
+  ownPhoneHeader = false,
   action = null,
 }: {
   title: string;
   children: ReactNode;
   /** Off where the phone's "App Store" title already names the view (Discover). */
   phoneTitle?: boolean;
+  /** On a phone, a screen you went into: "‹ App Store" over a large title. Off for the search results. */
+  phoneBack?: boolean;
   /** A button for the header, in place of the search field on desktop; under the title on a phone. */
   action?: ReactNode;
+  /** On a phone the view draws its own PhoneHeader (a category, a "See all" list): no second heading here. */
+  ownPhoneHeader?: boolean;
 }) {
+  const back = useStoreBack();
   const desktop = useIsDesktop();
   const setTitle = useContext(TitleContext);
   const { inWindow, slot, setHasAction } = useContext(ActionContext);
@@ -142,10 +167,18 @@ export function StoreView({
         {children}
       </>
     );
+  if (!desktop && phoneTitle && phoneBack)
+    return (
+      <section className="flex flex-col gap-4">
+        <PhoneHeader title={title} back={back} />
+        {action}
+        {children}
+      </section>
+    );
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className={phoneTitle ? 'm-0 text-title-1' : 'sr-only'}>{title}</h2>
+        {ownPhoneHeader ? null : <h2 className={phoneTitle ? 'm-0 text-title-1' : 'sr-only'}>{title}</h2>}
         {action}
       </div>
       {children}

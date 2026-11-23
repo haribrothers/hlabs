@@ -31,7 +31,8 @@ test('US-STORE-18 the sources, adding a folder library, its problems, Copy to my
 
   try {
     await page.goto('/store/sources');
-    await expect(page.getByRole('heading', { level: 2, name: 'App sources' })).toBeVisible();
+    // The window's heading (a phone's large title, D-172).
+    await expect(page.getByRole('heading', { name: 'App sources' }).first()).toBeVisible();
     const builtin = page.getByRole('listitem').filter({ hasText: 'hlabs official' });
     await expect(builtin).toContainText(/Built in · \d+ apps · checked/);
     await expect(builtin.getByText("Can't be removed")).toBeVisible();

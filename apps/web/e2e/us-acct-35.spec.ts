@@ -35,8 +35,11 @@ test('US-ACCT-35 reduce transparency: the solid theme with no blur anywhere, sav
   await transparency.click();
   await expect(html).toHaveAttribute('data-theme', 'solid');
   expect(await blurred(page)).toEqual([]);
-  // The Settings window is a solid surface (MainSolid): surface-window's solid value.
-  await expect(page.locator('.hl-glass-2').first()).toHaveCSS('background-color', 'rgb(34, 27, 66)');
+  // The Settings window is a solid surface (MainSolid): surface-window's solid value. A phone has no window: its
+  // page is the solid base colour and its lists the solid colours in both themes (D-172).
+  if (info.project.name.includes('phone'))
+    await expect(page.locator('.hl-list-box').first()).toHaveCSS('background-color', 'rgb(43, 35, 80)');
+  else await expect(page.locator('.hl-glass-2').first()).toHaveCSS('background-color', 'rgb(34, 27, 66)');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   if (process.env.HLABS_SHOTS)
     await page.screenshot({ path: `${process.env.HLABS_SHOTS}/settings-appearance-solid-${info.project.name}.png` });

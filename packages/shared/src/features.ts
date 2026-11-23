@@ -114,6 +114,7 @@ export const BUILT_AHEAD: readonly Feature[] = [
   'storageSettings',
   'advancedSettings',
   'factoryReset',
+  'pwa',
 ];
 
 /** The dev server is previewing (never in a build or unit tests). */

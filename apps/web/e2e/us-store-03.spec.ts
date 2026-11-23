@@ -3,8 +3,11 @@ import { expect, test } from '@playwright/test';
 
 test('US-STORE-03 "Search N apps"; typing opens the results; clearing goes back to where you were', async ({
   page,
-}) => {
-  await page.goto('/store/category/security');
+}, info) => {
+  // On a phone a category is a page you go into, whose search button leads to the store's field (D-172).
+  const phone = info.project.name === 'phone';
+  const from = phone ? '/store' : '/store/category/security';
+  await page.goto(from);
   const search = page.getByRole('searchbox', { name: 'Search apps' });
   await expect(search).toHaveAttribute('placeholder', /^Search \d+ apps$/);
 
@@ -17,7 +20,7 @@ test('US-STORE-03 "Search N apps"; typing opens the results; clearing goes back 
   await expect(search).toBeFocused();
 
   await search.fill('');
-  await expect(page).toHaveURL(/\/store\/category\/security$/);
+  await expect(page).toHaveURL(phone ? /\/store$/ : /\/store\/category\/security$/);
 });
 
 test('US-STORE-03 Enter searches at once; Escape clears; nothing found says so', async ({ page }) => {

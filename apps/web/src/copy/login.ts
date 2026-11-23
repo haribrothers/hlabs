@@ -6,6 +6,8 @@ export const loginCopy = {
   usersFooter: 'Admins can hide this list in Settings › Users',
   otherUser: 'Other user',
   otherUserDetail: 'Enter username',
+  /** The same row on a phone (PhoneRedesignA_Login). */
+  otherUserDetailPhone: 'Enter a username',
   roles: { admin: 'Admin', member: 'Member' },
   userName: (displayName: string, role: string) => `${displayName}, ${role}`,
   allUsers: 'All users',
@@ -18,6 +20,8 @@ export const loginCopy = {
   usernamePlaceholder: 'e.g. hari',
   password: 'Password',
   remember: 'Remember me on this device',
+  /** The same switch on a phone (PhoneLogin, US-PHONE-05). */
+  rememberPhone: 'Remember this phone',
   logIn: 'Log in',
   forgot: 'Forgot password?',
   /** US-AUTH-20: ForgotPassword. No recovery-code option: those replace two-factor only (D-009, US-AUTH-21). */
@@ -59,6 +63,8 @@ export const loginCopy = {
   lockedLeadNoUser: 'For your security, logging in is paused for a while.',
   tryAgainIn: (time: string) => `Try again in ${time}`,
   tryAgain: 'Try again',
+  /** Over the countdown on a phone (PhoneRedesignA_LoginLocked). */
+  tryAgainInLabel: 'Try again in',
   timeLeft: 'Time left',
   useAnother: 'Use another account',
   loggedOutHere: 'You were logged out on this device.',
@@ -67,6 +73,8 @@ export const loginCopy = {
   codeTitle: 'Enter your code',
   codeLead: 'Open your authenticator app and type the 6-digit code for hlabs.',
   codeLabel: '6-digit code',
+  /** Under the boxes on a phone (PhoneRedesignA_Login2FA). */
+  codeAuto: 'We check it as soon as you type the sixth digit.',
   verify: 'Verify',
   back: 'Back',
   useRecovery: 'Use a recovery code',
@@ -80,4 +88,6 @@ export const loginCopy = {
   manageCodes: 'Make new codes',
   cantCheck: "hlabs can't check codes right now. Use a recovery code or ask your admin.",
   secure: (host: string) => `${host} · secured with HTTPS`,
+  /** PhoneLogin's footer on the tailnet name (US-PHONE-05). */
+  viaTailscale: (host: string) => `via Tailscale · ${host}`,
 } as const;

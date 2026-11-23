@@ -32,6 +32,9 @@ export interface AppIconProps {
   offline?: string;
   onClick?: (e: MouseEvent<HTMLElement>) => void;
   onContextMenu?: (e: MouseEvent<HTMLElement>) => void;
+  /** The tile's size and corner radius: 76px on Home on a computer, 60px with the 16px radius on a phone (D-172). */
+  size?: number;
+  radius?: number;
 }
 
 const RING_R = 19;
@@ -51,6 +54,8 @@ export function AppIcon({
   offline,
   onClick,
   onContextMenu,
+  size = SIZE_APP_ICON,
+  radius,
 }: AppIconProps) {
   const t = useUiStrings();
   const offlineId = useId();
@@ -81,13 +86,18 @@ export function AppIcon({
   const content = (
     <>
       {badge ? <span className={`hl-app-badge hl-app-badge-${state}`}>{badge}</span> : null}
-      <span className="hl-app-icon">
+      {/* One box: the tile, its radius and shadow, and the logo clipped to it. */}
+      <span
+        className="hl-app-icon"
+        style={size === SIZE_APP_ICON ? undefined : { width: size, height: size, borderRadius: radius }}
+      >
         <AppLogo
           name={name}
           src={src}
           colors={colors}
           fallbackIcon={icon}
-          size={SIZE_APP_ICON}
+          size={size}
+          radius={radius}
           // The tile already says the name.
           decorative
           className={cn((ring || state === 'busy') && 'hl-app-dim')}

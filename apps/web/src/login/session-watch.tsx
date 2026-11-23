@@ -9,6 +9,7 @@ import { loginCopy } from '../copy/login';
 import { setCsrfToken } from '../lib/csrf';
 import { NotificationFeed } from '../lib/notification-feed';
 import { useReconnectWhenVisible } from '../lib/stream-status';
+import { useRefreshOnResume } from '../lib/resume';
 import { markResetting, markRestarting, resetUnderway } from '../health/restarting';
 import { markUpdating } from '../health/updating';
 import { dismissNotificationToasts, showToast } from '../lib/toasts';
@@ -37,6 +38,8 @@ export function SessionWatch() {
   const signedOut = useSignedOutHere();
   const queryClient = useQueryClient();
   useReconnectWhenVisible();
+  // Back from sleep or another app: the stream and what's on screen are brought up to date (US-PHONE-04).
+  useRefreshOnResume();
   const [feed] = useState(
     () =>
       new NotificationFeed({

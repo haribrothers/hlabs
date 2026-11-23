@@ -7,7 +7,7 @@ import { expect, test } from '@playwright/test';
 // built (D-092): from phase 5, Home, App Store, Files, Usage, Backups and Settings, then Search in the Dock.
 const AREAS = ['Home', 'App Store', 'Files', 'Usage', 'Backups', 'Settings'];
 // The phone tab bar's shorter names (D-054); Backups isn't a tab (US-PHONE-01).
-const TABS = ['Home', 'Apps', 'Files', 'Usage', 'Settings'];
+const TABS = ['Home', 'App Store', 'Files', 'Usage', 'Settings'];
 
 test('GET /healthz returns 200 when the daemon is ready', async ({ request }) => {
   const res = await request.get('/healthz');

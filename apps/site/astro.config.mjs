@@ -39,6 +39,7 @@ export default defineConfig({
                     { label: 'Log in', link: '/help/get-started/log-in/' },
                     { label: 'Trust this device', link: '/help/get-started/trust-device/' },
                     { label: 'Use hlabs as an app', link: '/help/get-started/use-as-app/' },
+                    { label: 'Use hlabs on your phone', link: '/help/get-started/phone/' },
                     { label: 'Confirmations and notices', link: '/help/get-started/confirmations/' },
                   ],
                 },

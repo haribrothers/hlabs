@@ -23,7 +23,7 @@ Admins see a row of widgets under the greeting:
 - **Remote access**: your hlabs address on your tailnet, how many of your devices are online, and the DNS server and HTTPS it uses; or **Set up remote access** when it's off.
 - **Backups**: when the last backup worked, what goes where, and a bar for each recent backup. A failed one turns red and says why; **Choose where** appears until you have somewhere to back up to.
 
-Each widget names its state at the top right, such as **Connected**, **Failed** or **Needs you**, in colour and in words. If a widget can't load, it says so and has **Try again**; the others keep working. On a phone, two widgets sit side by side.
+Each widget names its state at the top right, such as **Connected**, **Failed** or **Needs you**, in colour and in words. If a widget can't load, it says so and has **Try again**; the others keep working. On a phone, the widgets are a row you swipe sideways, two at a time, with dots underneath showing where you are (see [Use hlabs on your phone](../phone/#home)).
 
 ## Your apps
 
@@ -108,7 +108,7 @@ Opening an app's address while the engine is stopped shows the same message, wit
 
 ## The Dock
 
-The Dock at the bottom of the screen takes you to each part of hlabs; a dot marks where you are. Point at a tile to see its name. With a keyboard, Tab to the Dock, use the left and right arrow keys (Home and End jump to the ends) and press Enter. On a phone, the tab bar does the same job.
+The Dock at the bottom of the screen takes you to each part of hlabs; a dot marks where you are. Point at a tile to see its name. With a keyboard, Tab to the Dock, use the left and right arrow keys (Home and End jump to the ends) and press Enter. On a phone, the tab bar docked to the bottom of the screen does the same job (see [Use hlabs on your phone](../phone/)).
 
 Parts of hlabs that haven't arrived yet aren't shown in the Dock. The App Store, Files, Usage and Backups appear as they're added.
 

@@ -2,7 +2,19 @@
 // (US-HOME-16…19): from a tile's menu, a right-click on the wallpaper, or a long press on an empty part of Home.
 import { iconDefaults, LOGO_SCALE, LogoMark, Plus, Search } from '@hlabs/icons';
 import { isFeatureEnabled, VISIBLE_PHASE } from '@hlabs/shared';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, GlassCard, tokens } from '@hlabs/ui';
+import {
+  Avatar,
+  avatarColorFor,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  GlassCard,
+  PhoneHeader,
+  PhoneSection,
+  tokens,
+  useIsPhone,
+} from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
@@ -17,7 +29,8 @@ import { useMe } from '../lib/use-me';
 import { useNow } from '../lib/use-now';
 import { AppGrid, orderApps } from './app-grid';
 import { greetingFor } from './greeting';
-import { WidgetsRow } from './widgets';
+import { PhoneWidgetsRow, WidgetsRow } from './widgets';
+import { IosInstallHint } from './ios-install-hint';
 import { EngineBanner, StartEngineButton } from './engine-banner';
 import { useEngineRunning } from '../lib/engine-state';
 import { NotificationsBell } from './notifications';
@@ -64,9 +77,12 @@ export function HomeView({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: numb
   const empty = apps.data?.apps.length === 0;
   const canInstall = me.data?.canInstallApps ?? false;
 
-  // Edit mode (US-HOME-16): a copy of Home being changed; "Done" saves it, Escape throws it away.
+  // Edit mode (US-HOME-16): a copy of Home being changed; "Done" saves it, Escape throws it away. Desktop only: a
+  // phone shows the layout saved there, and a long press on Home does nothing (US-PHONE-07).
   const client = useTRPCClient();
-  const editable = isFeatureEnabled('homeEdit', shippedPhase) && Boolean(layout.data && apps.data) && !engineDown;
+  const phone = useIsPhone();
+  const editable =
+    !phone && isFeatureEnabled('homeEdit', shippedPhase) && Boolean(layout.data && apps.data) && !engineDown;
   const [draft, setDraft] = useState<Draft | null>(null);
   const hidden = new Set(layout.data?.hidden ?? []);
   const shown = apps.data
@@ -110,6 +126,64 @@ export function HomeView({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: numb
     onLongPress: () => startEditRef.current(),
   });
 
+  const widgetIds = layout.data?.items.filter((i) => i.kind === 'widget').map((i) => i.id) ?? [];
+  const grid = apps.data ? (
+    <AppGrid
+      apps={shown}
+      isAdmin={me.data?.role === 'admin'}
+      canInstall={canInstall}
+      progress={progress}
+      offline={engineDown}
+      onEditHome={editable ? startEdit : undefined}
+      dockDrag={!phone && isFeatureEnabled('dockPins', shippedPhase)}
+    />
+  ) : null;
+
+  if (phone) {
+    // PhoneHome (US-PHONE-07, US-PHONE-08, D-172): "Home" with the greeting under it, notifications and the account,
+    // Search, the widgets as a row you swipe, then the apps four to a row. On the wallpaper.
+    const running = shown.filter((a) => a.state === 'running').length;
+    const appsLine = shown.length
+      ? running === shown.length
+        ? homeCopy.allRunning(shown.length)
+        : homeCopy.someRunning(running, shown.length)
+      : '';
+    const greeting =
+      name && !empty ? homeCopy.greeting[greetingFor(now)](name) : name ? homeCopy.empty.welcome(name) : '';
+    return (
+      <div className="flex w-full flex-col gap-4">
+        <div className="flex flex-col gap-3">
+          <PhoneHeader
+            title={homeCopy.phoneTitle}
+            trailing={
+              <>
+                <NotificationsBell shippedPhase={shippedPhase} inline />
+                {me.data ? <AccountButton name={name} username={me.data.username} color={me.data.avatarColor} /> : null}
+              </>
+            }
+            subtitle={
+              showGreeting && greeting ? `${greeting}.${appsLine ? ` ${appsLine}` : ''}` : appsLine || undefined
+            }
+          />
+          {isFeatureEnabled('search') ? <PhoneSearchButton /> : null}
+        </div>
+        <IosInstallHint shippedPhase={shippedPhase} />
+        {me.data?.appearance.showWidgets !== false && layout.data ? (
+          <PhoneWidgetsRow ids={widgetIds} shippedPhase={shippedPhase} />
+        ) : null}
+        <EngineBanner down={engineDown} actions={me.data?.role === 'admin' ? <StartEngineButton /> : null} />
+        {empty ? (
+          <EmptyHome canInstall={canInstall && isFeatureEnabled('appStore')} offline={engineDown} />
+        ) : grid ? (
+          <section aria-labelledby="phone-home-apps" className="flex flex-col gap-1.5">
+            <PhoneSection id="phone-home-apps" title={homeCopy.apps} />
+            {grid}
+          </section>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-window flex-col items-center gap-8">
       <header className="flex flex-col items-center gap-4 text-center">
@@ -143,24 +217,13 @@ export function HomeView({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: numb
         />
       ) : null}
       {!draft && me.data?.appearance.showWidgets !== false && layout.data ? (
-        <WidgetsRow
-          ids={layout.data.items.filter((i) => i.kind === 'widget').map((i) => i.id)}
-          shippedPhase={shippedPhase}
-        />
+        <WidgetsRow ids={widgetIds} shippedPhase={shippedPhase} />
       ) : null}
       {draft ? null : empty ? (
         <EmptyHome canInstall={canInstall && isFeatureEnabled('appStore')} offline={engineDown} />
-      ) : apps.data ? (
-        <AppGrid
-          apps={shown}
-          isAdmin={me.data?.role === 'admin'}
-          canInstall={canInstall}
-          progress={progress}
-          offline={engineDown}
-          onEditHome={editable ? startEdit : undefined}
-          dockDrag={isFeatureEnabled('dockPins', shippedPhase)}
-        />
-      ) : null}
+      ) : (
+        grid
+      )}
       <EngineBanner down={engineDown} actions={me.data?.role === 'admin' ? <StartEngineButton /> : null} />
       <NotificationsBell shippedPhase={shippedPhase} />
       {wallpaperMenu ? (
@@ -276,6 +339,30 @@ function EmptyHome({ canInstall, offline }: { canInstall: boolean; offline: bool
         </Link>
       ) : null}
     </section>
+  );
+}
+
+/** "Search" under PhoneHome's title: Spotlight, full screen (US-PHONE-09). */
+function PhoneSearchButton() {
+  return (
+    <button type="button" onClick={openSearch} className="hl-p-search hl-p-search-glass hl-focus">
+      <Search aria-hidden {...iconDefaults} className="hl-p-search-glyph" />
+      <span className="flex-1">{homeCopy.search}</span>
+    </button>
+  );
+}
+
+/** The person's initial beside the bell: their account (PhoneHome). */
+function AccountButton({ name, username, color }: { name: string; username: string; color: string | null }) {
+  return (
+    <Link
+      to="/settings/$section"
+      params={{ section: 'account' }}
+      aria-label={homeCopy.account}
+      className="hl-focus rounded-pill"
+    >
+      <Avatar name={name || username} color={avatarColorFor(username, color)} size="md" className="hl-p-avatar" />
+    </Link>
   );
 }
 

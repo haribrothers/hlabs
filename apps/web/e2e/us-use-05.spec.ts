@@ -32,3 +32,20 @@ test('US-USE-05 the main chart can be read with the keyboard alone, and in force
   await page.emulateMedia({ forcedColors: 'none' });
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
+
+test('US-USE-05 in forced colours a tile marked high stays readable (the system text colour, its word says "High")', async ({
+  page,
+}) => {
+  await page.goto('/usage');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  // As a busy computer draws a tile (usage/tiles.tsx), whatever this machine's load is now.
+  await page.evaluate(() => {
+    const div = document.createElement('div');
+    div.innerHTML =
+      '<span class="text-title-2 font-bold text-warning">84%</span> <span class="hl-badge hl-badge-warning">High</span>';
+    (document.querySelector('main') ?? document.body).prepend(div);
+  });
+  await page.emulateMedia({ forcedColors: 'active' });
+  expect((await new AxeBuilder({ page }).withRules(['color-contrast']).analyze()).violations).toEqual([]);
+  await page.emulateMedia({ forcedColors: 'none' });
+});

@@ -51,6 +51,8 @@ export const appsCopy = {
   // Reinstall (US-APP-24, US-APP-25)
   fixHint: "Restart it, or reinstall it if that doesn't help. Its data is kept either way.",
   reinstallEllipsis: 'Reinstall…',
+  /** The action tile in the phone's App settings sheet (US-PHONE-08). */
+  reinstallShort: 'Reinstall',
   reinstall: 'Reinstall',
   reinstallTitle: (app: string) => `Reinstall ${app}?`,
   reinstallBody: (app: string, version: string, size: string | null) =>

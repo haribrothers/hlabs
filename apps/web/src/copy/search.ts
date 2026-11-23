@@ -5,6 +5,9 @@ export const searchCopy = {
   pill: 'Search apps, files, settings',
   shortcut: (mac: boolean) => (mac ? '⌘K' : 'Ctrl K'),
   esc: 'esc',
+  /** Closes search on a phone (US-PHONE-09). */
+  cancel: 'Cancel',
+  clear: 'Clear search',
   results: 'Search results',
   groups: {
     installed: 'Installed',

@@ -14,7 +14,7 @@ To back out, choose **Cancel**, press Escape, or click outside the question. Not
 
 With a keyboard, Tab moves between the two buttons only. For something that can't be undone, **Cancel** is selected first, so pressing Enter by mistake is safe.
 
-On a phone, the question slides up from the bottom of the screen, with the action above **Cancel**.
+On a phone, the question slides up from the bottom of the screen as a sheet, with the action above **Cancel**. Drag it down, tap **✕** or tap the dimmed page behind it to close it without doing anything.
 
 ## Extra checks for the riskiest actions
 

@@ -42,6 +42,12 @@
   --danger: #ff9a9e;
   --danger-fill: #c4262b;
   --badge: #d92d20;
+  --solid-widget: #2b2350;
+  --solid-window: #221b42;
+  --solid-dialog: #241d46;
+  --solid-row: #332a5c;
+  --solid-control: #3d3468;
+  --solid-input: #2e2656;
   --chart-1: #8b6bff;
   --chart-2: #e5694a;
   --chart-3: #14a39a;
@@ -89,6 +95,16 @@
   --size-dock-tile: 56px;
   --size-widget: 156px;
   --size-widget-phone: 122px;
+  --size-tab-bar: 49px;
+  --size-home-indicator: 34px;
+  --size-tab-lens: 52px;
+  --size-nav-bar: 44px;
+  --size-row: 48px;
+  --size-icon-square: 30px;
+  --size-app-icon-phone: 60px;
+  --size-list-icon: 56px;
+  --size-button-phone: 50px;
+  --size-grabber: 36px;
 }
 
 [data-theme='solid'] {

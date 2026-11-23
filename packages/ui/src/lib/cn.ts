@@ -16,6 +16,11 @@ const TEXT_SIZES = [
   'label',
   'caption',
   'tab-label',
+  'large-title',
+  'row',
+  'subhead',
+  'footnote',
+  'tile-name',
 ];
 
 const merge = extendTailwindMerge({ extend: { classGroups: { 'font-size': [{ text: TEXT_SIZES }] } } });

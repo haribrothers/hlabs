@@ -2,7 +2,7 @@
 // retryAfter, then back to the password screen.
 import { isFeatureEnabled } from '@hlabs/shared';
 import { Lock, iconDefaults } from '@hlabs/icons';
-import { Button, GlassCard } from '@hlabs/ui';
+import { Button, GlassCard, useIsPhone } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
@@ -41,9 +41,75 @@ export function LockedView({ user, until, next }: { user?: string; until?: numbe
   const left = useTimeLeft(until);
   const time = formatCountdown(left);
   const heading = useRef<HTMLHeadingElement>(null);
+  const phone = useIsPhone();
   // Read out once on arrival, not on every tick.
   useEffect(() => heading.current?.focus(), []);
 
+  const retry = () =>
+    void navigate(
+      user ? { to: '/login/password', search: { user, ...withNext(next) } } : { to: '/login', search: withNext(next) },
+    );
+  if (phone)
+    // LoginLocked on a phone (US-PHONE-06, PhoneRedesignA_LoginLocked): "‹ Back", why, the 15-minute countdown in a
+    // card, then another account or a reset; "Try again" once the time is up.
+    return (
+      <LoginLayout
+        back={
+          user
+            ? { label: copy.back, to: '/login/password', search: { user, ...withNext(next) } }
+            : { label: copy.back, to: '/login', search: withNext(next) }
+        }
+      >
+        <div className="flex flex-col items-center gap-2 pt-6 text-center">
+          <span className="mb-2 grid size-18 place-items-center rounded-pill bg-solid-control text-warning">
+            <Lock aria-hidden {...iconDefaults} />
+          </span>
+          <h1 ref={heading} tabIndex={-1} className="m-0 text-title-1 font-bold outline-none">
+            {copy.lockedTitle}
+          </h1>
+          <p className="m-0 text-row text-ink-muted">
+            {user ? (
+              <>
+                {copy.lockedLead} <strong className="font-mono font-normal text-ink">@{user}</strong>{' '}
+                {copy.lockedLeadEnd}
+              </>
+            ) : (
+              copy.lockedLeadNoUser
+            )}
+          </p>
+        </div>
+        {left > 0 ? (
+          <div className="flex flex-col items-center gap-1 rounded-xl bg-solid-widget px-4 py-5">
+            <span className="text-subhead text-ink-muted">{copy.tryAgainInLabel}</span>
+            <p role="timer" aria-label={copy.timeLeft} className="m-0 font-mono text-display-xl font-bold tabular-nums">
+              {time}
+            </p>
+          </div>
+        ) : (
+          <button type="button" className="hl-p-primary hl-focus" onClick={retry}>
+            {copy.tryAgain}
+          </button>
+        )}
+        <Link
+          to={listShown ? '/login/users' : '/login/username'}
+          search={withNext(next)}
+          onClick={() => forgetRememberedUser()}
+          className="hl-p-secondary hl-focus"
+        >
+          {copy.useAnother}
+        </Link>
+        {isFeatureEnabled('forgotPassword') ? (
+          <Link
+            to="/login/forgot"
+            search={{ from: 'locked', ...(user ? { user } : {}), ...withNext(next) }}
+            className="hl-p-link hl-focus self-center"
+          >
+            {copy.forgot}
+          </Link>
+        ) : null}
+        <p className="m-0 text-center text-footnote text-ink-muted">{copy.adminNotified}</p>
+      </LoginLayout>
+    );
   return (
     <LoginLayout note={copy.adminNotified}>
       <GlassCard className="mb-2 grid size-18 place-items-center rounded-full p-0 text-warning">

@@ -29,6 +29,18 @@ test('US-HOME-08 a stopped tile offers Start; a broken one opens its logs with t
     },
   });
   await page.goto('/');
+  if (project === 'phone') {
+    // On a phone an admin's tap on an app that isn't running opens its settings instead (US-PHONE-08).
+    await page.getByRole('button', { name: `Sleepy ${project}, stopped`, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`[?&]settings=${stopped}(&|$)`));
+    await page
+      .getByRole('dialog', { name: `Sleepy ${project}` })
+      .getByRole('button', { name: 'Close' })
+      .click();
+    await page.getByRole('button', { name: `Broken ${project}, error`, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`[?&]settings=${broken}(&|$)`));
+    return;
+  }
   await page.getByRole('button', { name: `Sleepy ${project}, stopped`, exact: true }).click();
   await expect(page.getByText(`Sleepy ${project} is stopped`)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Start', exact: true })).toBeVisible();

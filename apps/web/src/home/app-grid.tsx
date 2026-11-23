@@ -3,7 +3,7 @@
 // phase 2 (D-036); members only while they're allowed to install (US-HOME-11, US-ACCT-20).
 import { appTileLook, Plus, iconDefaults } from '@hlabs/icons';
 import { isFeatureEnabled } from '@hlabs/shared';
-import { AppIcon, DOCK_DRAG_TYPE, type AppIconState } from '@hlabs/ui';
+import { AppIcon, DOCK_DRAG_TYPE, tokens, useIsPhone, type AppIconState } from '@hlabs/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useRef, type KeyboardEvent } from 'react';
@@ -89,16 +89,19 @@ export function AppGrid({
 }) {
   const openApp = useOpenApp(isAdmin);
   const command = useTileCommands(apps);
+  // A phone's tiles are 60px with the 16px radius (D-172): the tile, its shadow and the logo one box.
+  const phone = useIsPhone();
+  const tile = phone ? tokens.SIZE_APP_ICON_PHONE : tokens.SIZE_APP_ICON;
   const showInstall = canInstall && isFeatureEnabled('appStore');
   if (apps.length === 0 && !showInstall) return null;
   return (
     <ul
       aria-label={homeCopy.apps}
-      className="m-0 grid w-full list-none grid-cols-4 gap-x-4 gap-y-6 p-0 lg:grid-cols-5 xl:grid-cols-6"
+      className="m-0 grid w-full list-none grid-cols-4 gap-x-4 gap-y-6 p-0 max-md:gap-x-0 max-md:gap-y-5 lg:grid-cols-5 xl:grid-cols-6"
       onKeyDown={moveFocus}
     >
       {apps.map((app) => {
-        const look = appTileLook(app.name, app.icon);
+        const look = appTileLook(app.name, app.icon, tile);
         return (
           <li
             key={app.id}
@@ -131,6 +134,8 @@ export function AppGrid({
                 ariaLabel={app.state === 'running' && !offline ? homeCopy.openApp(app.name) : undefined}
                 offline={offline ? engineCopy.offline : undefined}
                 onClick={() => openApp(app)}
+                size={tile}
+                radius={phone ? tokens.RADIUS_MD : undefined}
               />
             </TileMenu>
           </li>
@@ -141,14 +146,14 @@ export function AppGrid({
           {offline ? (
             // Nothing can be installed without the engine (US-STATE-08).
             <span className="hl-app hl-app-offline" role="link" aria-disabled="true" title={engineCopy.startFirst}>
-              <span className="hl-app-icon grid place-items-center rounded-icon border border-dashed border-border-glass">
+              <span className="hl-app-icon grid place-items-center rounded-icon border border-dashed border-border-glass max-md:rounded-md">
                 <Plus aria-hidden {...iconDefaults} />
               </span>
               <span className="hl-app-name">{homeCopy.installApp}</span>
             </span>
           ) : (
             <Link to="/store" className="hl-app" aria-label={homeCopy.installApp}>
-              <span className="hl-app-icon grid place-items-center rounded-icon border border-dashed border-border-glass">
+              <span className="hl-app-icon grid place-items-center rounded-icon border border-dashed border-border-glass max-md:rounded-md">
                 <Plus aria-hidden {...iconDefaults} />
               </span>
               <span className="hl-app-name">{homeCopy.installApp}</span>

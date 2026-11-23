@@ -90,7 +90,6 @@
   [data-theme='solid'] .hl-glass-1,
   [data-theme='solid'] .hl-glass-2,
   [data-theme='solid'] .hl-glass-3,
-  [data-theme='solid'] .hl-tabbar-glass,
   [data-theme='solid'] .hl-scrim {
     backdrop-filter: none;
   }
@@ -109,6 +108,16 @@
   .hl-seg-opt:focus-visible,
   .hl-choice:focus-visible,
   .hl-tab:focus-visible,
+  .hl-p-row:focus-visible,
+  .hl-p-get:focus-visible,
+  .hl-p-seg > button:focus-visible,
+  .hl-p-primary:focus-visible,
+  .hl-p-secondary:focus-visible,
+  .hl-p-ibtn:focus-visible,
+  .hl-p-back:focus-visible,
+  .hl-p-tbtn:focus-visible,
+  .hl-p-link:focus-visible,
+  .hl-sheet-close:focus-visible,
   .hl-row-link:focus-visible,
   .hl-app:focus-visible,
   .hl-file:focus-visible,
@@ -917,83 +926,6 @@
     transform: translateY(-4px) scale(1.04);
   }
 
-  /* Tab bar (Liquid Glass, phone) */
-  .hl-tabbar {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .hl-tabbar-glass {
-    display: flex;
-    max-width: calc(100vw - 2 * var(--space-4));
-    gap: 2px;
-    padding: 5px;
-    border-radius: var(--radius-pill);
-    border: 1px solid rgba(255, 255, 255, 0.32);
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.24) 0%,
-      rgba(255, 255, 255, 0.1) 55%,
-      rgba(255, 255, 255, 0.14) 100%
-    );
-    backdrop-filter: blur(var(--blur-bar)) saturate(190%) brightness(1.08);
-    box-shadow: var(--shadow-tabbar);
-  }
-  [data-theme='solid'] .hl-tabbar-glass {
-    background: var(--surface-widget);
-  }
-  .hl-tab {
-    position: relative;
-    /* 82px, shrinking to fit narrow phones; never below the 44px touch target. */
-    flex: 0 1 var(--size-tab-item);
-    min-width: var(--size-control);
-    height: 54px;
-    border: 0;
-    border-radius: var(--radius-pill);
-    background: transparent;
-    color: var(--ink);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    font: 600 11px/13px var(--hl-font-sans);
-    cursor: pointer;
-    text-decoration: none;
-    transition: color var(--hl-dur-fast) ease;
-  }
-  .hl-tab:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-  .hl-tab[aria-current='page'] {
-    color: var(--accent-tab);
-  }
-  .hl-tab-lens {
-    position: absolute;
-    inset: 0;
-    border-radius: var(--radius-pill);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.16));
-    box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.75),
-      0 2px 8px rgba(0, 0, 0, 0.18);
-  }
-  .hl-tab-content {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-  }
-  .hl-tab .hl-count {
-    left: calc(50% + 6px);
-  }
-  .hl-tab-search {
-    flex: none;
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-  }
-
   /* Dock (desktop navigation, D-054) */
   .hl-dock {
     display: inline-flex;
@@ -1244,18 +1176,6 @@
     z-index: 40;
     justify-content: center;
   }
-  .hl-nav-phone {
-    position: fixed;
-    inset-inline: 0;
-    bottom: calc(22px + env(safe-area-inset-bottom));
-    z-index: 40;
-    justify-content: center;
-  }
-  /* A bar that takes the tab bar's place for a moment (Files' selection bar, PhoneFilesSelect). */
-  [data-tab-bar-hidden='true'] .hl-nav-phone {
-    display: none;
-  }
-
   /* Every scrollbar in hlabs (the page, windows, dialogs, lists): thin and translucent on a clear track, as the
      Notifications panel first had it, never the system's grey one. */
   /* Firefox: the standard properties. Elsewhere they'd override the styles below (and the track inset), so only
@@ -1418,29 +1338,6 @@
     display: flex;
     justify-content: flex-end;
     gap: 10px;
-  }
-
-  /* On a phone the modal is a bottom sheet: full width, buttons stacked full-width (US-STATE-11). */
-  @media (max-width: 767px) {
-    .hl-dialog-sheet {
-      top: auto;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      max-width: 100%;
-      transform: none;
-      border-bottom-left-radius: 0;
-      border-bottom-right-radius: 0;
-      padding-bottom: calc(var(--space-7) + env(safe-area-inset-bottom));
-    }
-    .hl-dialog-sheet.hl-dialog-tall {
-      height: calc(100dvh - var(--space-7));
-      max-height: none;
-    }
-    .hl-dialog-sheet .hl-dialog-actions {
-      flex-direction: column;
-      align-items: stretch;
-    }
   }
 
   /* Toast */
@@ -2214,11 +2111,6 @@
 .hl-anim-command {
   animation: hl-command-in var(--hl-dur) var(--hl-ease);
 }
-@media (max-width: 767px) {
-  .hl-anim-dialog.hl-dialog-sheet {
-    animation-name: hl-sheet-in;
-  }
-}
 .hl-anim-toast-in {
   animation: hl-toast-in var(--hl-dur) var(--hl-ease);
 }
@@ -2239,4 +2131,16 @@
 .hl-anim-panel {
   transform-origin: top right;
   animation: hl-panel-in var(--hl-dur) var(--hl-ease);
+}
+
+/* Forced colours: text the theme colours as a warning or a state (a usage tile's "High" value, its badge) takes the
+   system's text colour, so it stays readable on the system's background; the words carry the meaning there. Outside
+   the layers on purpose: Tailwind's text-* utilities would win over a rule in a layer. */
+@media (forced-colors: active) {
+  .text-warning,
+  .text-danger,
+  .text-success,
+  .hl-badge {
+    color: CanvasText;
+  }
 }

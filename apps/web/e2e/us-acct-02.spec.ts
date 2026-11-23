@@ -102,38 +102,49 @@ test.describe('US-ACCT-02 window', () => {
 test.describe('US-ACCT-02 phone', () => {
   test.skip(({ isMobile }) => !isMobile, 'phone layout');
 
-  test('a section sheet scrolls inside, under a fixed back link and title', async ({ page }) => {
+  // The phone layout of D-172: a section is a page you go into; it scrolls as a whole, and once its large title has
+  // scrolled away a compact bar keeps "‹ Settings" and the title at the top.
+  test('a section scrolls as a page, under a compact bar with "‹ Settings" and its title', async ({ page }) => {
     await page.goto('/settings/account');
-    const back = page.getByRole('link', { name: 'Settings' });
+    const back = page.getByRole('main').getByRole('button', { name: 'Settings' });
     await expect(back).toBeVisible();
-    await page.getByTestId('settings-scroll').evaluate((pane) => {
+    const main = page.locator('#main');
+    await main.evaluate((el) => {
       const tall = document.createElement('div');
       tall.style.height = '3000px';
-      pane.querySelector('.hl-scroll-pane-body')!.append(tall);
+      el.append(tall);
+      el.scrollTop = 2000;
     });
-    await page.getByTestId('settings-scroll').evaluate((el) => (el.scrollTop = 2000));
-    await expect(back).toBeInViewport();
-    await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeInViewport();
+    const bar = page.locator('.hl-p-bar');
+    await expect(bar).toHaveAttribute('data-collapsed', 'true');
+    await expect(bar.getByRole('button', { name: 'Settings' })).toBeInViewport();
+    await expect(bar.getByText('Account', { exact: true })).toBeInViewport();
     const scrolls = await page.evaluate(
       () => document.scrollingElement!.scrollHeight - document.scrollingElement!.clientHeight,
     );
     expect(scrolls).toBe(0);
   });
 
-  test('the list comes first; a section opens as a sheet with a "Settings" back control', async ({ page }) => {
+  test('the list comes first; a section opens as a page with a "‹ Settings" back control', async ({ page }) => {
     await page.goto('/settings');
     await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    // Values at the right of some rows (PhoneRedesignA_Settings), as they load.
+    const sections = page.getByRole('navigation', { name: 'Settings sections' });
+    await expect(sections.getByRole('link', { name: /^Users/ })).toHaveText(/^Users\s*\d+$/);
+    await expect(sections.getByRole('link', { name: /^Storage/ })).toHaveText(/free$/);
     await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Account' }).tap();
     await expect(page).toHaveURL(/\/settings\/account$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeVisible();
-    await page.getByRole('link', { name: 'Settings' }).tap();
+    await page.getByRole('main').getByRole('button', { name: 'Settings' }).tap();
     await expect(page).toHaveURL(/\/settings$/);
 
-    // A deep link opens straight to the section, with the back control.
+    // A deep link opens straight to the section, with the back control, which then goes to the list.
     await page.goto('/settings/account');
-    await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('main').getByRole('button', { name: 'Settings' })).toBeVisible();
     await expect(
       page.getByRole('navigation', { name: 'Tab bar' }).getByRole('button', { name: 'Settings' }),
     ).toHaveAttribute('aria-current', 'page');
+    await page.getByRole('main').getByRole('button', { name: 'Settings' }).tap();
+    await expect(page).toHaveURL(/\/settings$/);
   });
 });

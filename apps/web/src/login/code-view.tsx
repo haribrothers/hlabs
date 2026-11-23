@@ -1,7 +1,7 @@
 // Login2FA (US-AUTH-08, US-AUTH-09): the 6-digit code after a correct password, or one of the saved recovery codes
 // in its place.
 import { Smartphone, iconDefaults } from '@hlabs/icons';
-import { Button, CodeInput, GlassCard, TextField } from '@hlabs/ui';
+import { Button, CodeInput, GlassCard, TextField, useIsPhone } from '@hlabs/ui';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { TRPCClientError } from '@trpc/client';
@@ -102,6 +102,9 @@ export function CodeView({
     onError: failed,
   });
   const pending = verify.isPending || recover.isPending;
+  // Full screen on a phone (US-PHONE-06, PhoneRedesignA_Login2FA): "‹ Back" at the top, the code in six boxes that
+  // the phone's keyboard can fill from a text message or the authenticator.
+  const phone = useIsPhone();
 
   const submitCode = (value: string) => {
     if (value.length !== 6 || pending) return;
@@ -120,13 +123,18 @@ export function CodeView({
   };
 
   return (
-    <LoginLayout>
-      <GlassCard className="mb-2 grid size-18 place-items-center p-0">
+    <LoginLayout onBack={phone ? { label: copy.back, onBack: () => void backToPassword() } : undefined}>
+      <GlassCard className="mb-2 grid size-18 place-items-center p-0 max-md:mx-auto max-md:mt-6 max-md:rounded-pill max-md:border-0 max-md:bg-solid-control max-md:text-accent-link">
         <Smartphone aria-hidden {...iconDefaults} />
       </GlassCard>
-      <h1 className="m-0 text-display">{copy.codeTitle}</h1>
-      {mode === 'app' ? <p className="m-0 text-body text-ink-muted">{copy.codeLead}</p> : null}
-      <form className="mt-4 flex w-full max-w-sm flex-col items-center gap-3" onSubmit={submit}>
+      <h1 className="m-0 text-display max-md:text-center max-md:text-title-1 max-md:font-bold">{copy.codeTitle}</h1>
+      {mode === 'app' ? (
+        <p className="m-0 text-body text-ink-muted max-md:text-center max-md:text-row">{copy.codeLead}</p>
+      ) : null}
+      <form
+        className="mt-4 flex w-full max-w-sm flex-col items-center gap-3 max-md:max-w-none max-md:gap-4"
+        onSubmit={submit}
+      >
         {mode === 'app' ? (
           <CodeInput
             label={copy.codeLabel}
@@ -161,21 +169,36 @@ export function CodeView({
           <p role="alert" className="m-0 text-body-sm text-danger">
             {error}
           </p>
+        ) : phone && mode === 'app' ? (
+          <p className="m-0 text-center text-footnote text-ink-muted">{copy.codeAuto}</p>
         ) : null}
-        <Button
-          type="submit"
-          size="lg"
-          className="w-full"
-          disabled={mode === 'app' ? code.length !== 6 : !recovery.trim()}
-          busy={pending}
-        >
-          {copy.verify}
-        </Button>
+        {phone ? (
+          <button
+            type="submit"
+            className="hl-p-primary hl-focus"
+            disabled={(mode === 'app' ? code.length !== 6 : !recovery.trim()) || pending}
+            aria-busy={pending || undefined}
+          >
+            {copy.verify}
+          </button>
+        ) : (
+          <Button
+            type="submit"
+            size="lg"
+            className="w-full"
+            disabled={mode === 'app' ? code.length !== 6 : !recovery.trim()}
+            busy={pending}
+          >
+            {copy.verify}
+          </Button>
+        )}
       </form>
-      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-body-sm">
-        <Button variant="link" onClick={() => void backToPassword()}>
-          {copy.back}
-        </Button>
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-body-sm max-md:mt-0 max-md:text-row">
+        {phone ? null : (
+          <Button variant="link" onClick={() => void backToPassword()}>
+            {copy.back}
+          </Button>
+        )}
         <Button
           variant="link"
           onClick={() => {

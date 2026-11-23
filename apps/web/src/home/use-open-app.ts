@@ -6,6 +6,7 @@ import { browser } from '../lib/browser';
 import { showToast } from '../lib/toasts';
 import { useTRPC } from '../lib/trpc';
 import { useMedia } from '../lib/use-media';
+import { useIsPhone } from '@hlabs/ui';
 import type { HomeApp } from './home-app';
 import { appAddress } from '../lib/app-address';
 import { useAppOverlay } from '../apps/app-overlay';
@@ -24,6 +25,7 @@ export function useOpenApp(isAdmin: boolean): (app: HomeApp) => void {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const wide = useMedia(APP_WINDOW_QUERY);
+  const phone = useIsPhone();
   /**
    * An install that's running or failed opens its page (US-STORE-12, US-STORE-14). A running app opens in the app
    * window when it declares web.embed and the screen is wide enough, else in a new tab (US-APP-01, D-038); an app that
@@ -32,6 +34,8 @@ export function useOpenApp(isAdmin: boolean): (app: HomeApp) => void {
   const openApp = (app: HomeApp) => {
     if (app.state === 'installing' || app.state === 'install_failed')
       void navigate({ to: '/store/install/$appId', params: { appId: app.id } });
+    // On a phone an admin gets the app's settings, where it can be started or looked into (US-PHONE-08).
+    else if ((app.state === 'stopped' || app.state === 'error') && phone && isAdmin) overlay.openSettings(app.id);
     else if (app.state === 'stopped' || app.state === 'error') void recover(app);
     else if (app.state === 'running' && !(app.embed && wide)) browser.open(appUrl(app));
     else void navigate({ to: '/apps/$appId', params: { appId: app.id } });

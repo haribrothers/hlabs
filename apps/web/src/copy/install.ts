@@ -5,6 +5,8 @@ export const installCopy = {
   // Install sheet
   title: (app: string) => `Install ${app}`,
   subtitle: 'Review what it can access',
+  /** Under it on a phone (PhoneRedesignA_InstallSheet). */
+  changeLater: "You can change this later in the app's settings.",
   folders: 'Folder access',
   home: 'Home',
   shared: 'Shared',
@@ -70,6 +72,10 @@ export const installCopy = {
   ready: (app: string) => `${app} is ready`,
   open: 'Open',
   failed: 'Install failed',
+  /** InstallFailed as a phone sheet (US-PHONE-12). */
+  failedTitle: (name: string) => `${name} didn't install`,
+  seeDetails: 'See what went wrong',
+  close: 'Close',
   nothingChanged: 'Nothing else was changed',
   reason: {
     APP_PORT_IN_USE: (port: number | string) => `Port ${port} is already used by another program on this computer.`,

@@ -3,6 +3,12 @@ export const settingsCopy = {
   title: 'Settings',
   sections: 'Settings sections',
   back: 'Settings',
+  /** PhoneSettings (D-172): the person's own card and the Live usage row. */
+  accountLine: (role: string) => `${role} · password and devices`,
+  liveUsage: 'Live usage',
+  notSetUp: 'Not set up',
+  free: (size: string) => `${size} free`,
+  updatesWaiting: (n: number) => `${n} ${n === 1 ? 'update' : 'updates'}`,
   empty: 'Nothing here yet.',
   sectionTitle: (section: string) => `${section} · Settings · hlabs`,
   section: {

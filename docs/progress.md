@@ -332,20 +332,20 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-SYS-38 · Reset hlabs (the database is deleted at the next start, D-170; MCP tokens join with phase 8)
 - [ ] US-SYS-43 · Set up a way to make apps public
 - [ ] US-SYS-44 · See and stop everything that's public
-- [ ] US-PHONE-01 · Switch to the phone layout with a bottom tab bar
-- [ ] US-PHONE-02 · Touch targets, safe areas and phone-friendly inputs
-- [ ] US-PHONE-03 · Bottom sheets with soft spring and drag to dismiss
-- [ ] US-PHONE-04 · Back navigation and resuming after the phone sleeps
-- [ ] US-PHONE-05 · Log in on a phone
-- [ ] US-PHONE-06 · Two-factor, lockout and forgot password on phone
-- [ ] US-PHONE-07 · Phone Home header and widgets
-- [ ] US-PHONE-08 · App grid and opening apps on phone
-- [ ] US-PHONE-09 · Search from Home on phone
-- [ ] US-PHONE-10 · Browse the App Store on phone
-- [ ] US-PHONE-11 · App details on phone
-- [ ] US-PHONE-12 · Install an app from the phone
-- [ ] US-PHONE-23 · Add hlabs to the home screen
-- [ ] US-PHONE-24 · Run as a standalone web app
+- [x] US-PHONE-01 · Switch to the phone layout with a bottom tab bar (tab bar docked to the bottom with the soft highlight, "App Store" tab, D-172, D-173)
+- [x] US-PHONE-02 · Touch targets, safe areas and phone-friendly inputs (44px hit areas, safe areas, 17px fields, keyboard hides the tab bar)
+- [x] US-PHONE-03 · Bottom sheets with soft spring and drag to dismiss (BottomSheet in packages/ui; ModalDialog becomes one on phones)
+- [x] US-PHONE-04 · Back navigation and resuming after the phone sleeps (back buttons named after the parent; resume refetch and reconnect)
+- [x] US-PHONE-05 · Log in on a phone (PhoneLogin: the list with the password under it, "Remember this phone", "via Tailscale")
+- [x] US-PHONE-06 · Two-factor, lockout and forgot password on phone (Login2FA, LoginLocked and ForgotPassword full screen)
+- [x] US-PHONE-07 · Phone Home header and widgets (large title, greeting, widgets as a swipeable row with page dots)
+- [x] US-PHONE-08 · App grid and opening apps on phone (60px tiles, long-press tile menu, App settings as a full-height sheet (D-166))
+- [x] US-PHONE-09 · Search from Home on phone (full-screen Search with Cancel and inset grouped results)
+- [x] US-PHONE-10 · Browse the App Store on phone (PhoneStore: Updates row, chips, Featured cards, rows with one pill; StoreCategory page)
+- [x] US-PHONE-11 · App details on phone (PhoneAppDetails)
+- [x] US-PHONE-12 · Install an app from the phone (InstallSheet as a sheet that changed input keeps; failures come back as a sheet)
+- [x] US-PHONE-23 · Add hlabs to the home screen (apple-touch-icon, Apple meta tags, the one-time iOS hint)
+- [x] US-PHONE-24 · Run as a standalone web app (standalone detection, "Remember this phone" on, offline shell, one reload onto a new version)
 - [ ] US-SITE-11 · Keep screenshots in the docs current
 
 ## Phase 8 · Power features (P3)

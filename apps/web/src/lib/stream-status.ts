@@ -9,7 +9,7 @@ export const RECONNECTING_AFTER_MS = 5_000;
 const down = new Set<number>();
 let downSince: number | null = null;
 const listeners = new Set<() => void>();
-const wakers = new Set<() => void>();
+const wakers = new Set<(force: boolean) => void>();
 
 const notify = () => {
   for (const l of listeners) l();
@@ -35,12 +35,16 @@ export const forgetStream = (id: number) => markStreamUp(id);
 /** When the stream went down, or null while it's up. */
 export const streamDownSince = () => downSince;
 
-/** Reconnect every waiting subscription now instead of after its backoff (the tab became visible again). */
-export function reconnectNow() {
-  for (const wake of [...wakers]) wake();
+/**
+ * Reconnect every waiting subscription now instead of after its backoff (the tab became visible again). `force`:
+ * connected ones too, as one that looks connected after the phone slept may have died without saying so
+ * (US-PHONE-04).
+ */
+export function reconnectNow({ force = false }: { force?: boolean } = {}) {
+  for (const wake of [...wakers]) wake(force);
 }
 
-export function onReconnectNow(wake: () => void): () => void {
+export function onReconnectNow(wake: (force: boolean) => void): () => void {
   wakers.add(wake);
   return () => wakers.delete(wake);
 }

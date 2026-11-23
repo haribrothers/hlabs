@@ -1,5 +1,6 @@
 // The log-in pages: centred on the wallpaper, an optional back link top left, and the host you reached hlabs on.
 import { ChevronLeft, Lock, iconDefaults } from '@hlabs/icons';
+import { PhoneBackButton, useIsPhone } from '@hlabs/ui';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { loginCopy } from '../copy/login';
@@ -9,16 +10,51 @@ export function hostLine(location: Pick<Location, 'host' | 'protocol'>) {
   return location.protocol === 'https:' ? loginCopy.secure(location.host) : location.host;
 }
 
+/** PhoneLogin's footer (US-PHONE-05): "via Tailscale · <host>" on the tailnet name, else just the host. */
+export function phoneHostLine(location: Pick<Location, 'host' | 'hostname'>): string {
+  return /\.ts\.net$/i.test(location.hostname) ? loginCopy.viaTailscale(location.host) : location.host;
+}
+
 export function LoginLayout({
   back,
+  onBack,
   note,
   children,
 }: {
   back?: { label: string; to: string; search?: object };
+  /** On a phone: a back control that runs this instead of a link (the code step, US-PHONE-06). */
+  onBack?: { label: string; onBack: () => void };
   /** A line at the foot of the page, above the host. */
   note?: ReactNode;
   children: ReactNode;
 }) {
+  const phone = useIsPhone();
+  if (phone)
+    // The log-in screens on a phone (US-PHONE-05, US-PHONE-06, D-172): full screen in one column, "‹ Back" at the top
+    // clear of the notch, the content from the top, and the host at the foot.
+    return (
+      <div className="hl-wall hl-login-phone flex min-h-full flex-col">
+        {back || onBack ? (
+          <nav className="px-4 pt-[calc(var(--space-4)+env(safe-area-inset-top))]">
+            {back ? (
+              <Link to={back.to} search={back.search} className="hl-p-back hl-focus -ml-2">
+                <ChevronLeft aria-hidden {...iconDefaults} className="hl-p-back-chevron" />
+                {back.label}
+              </Link>
+            ) : (
+              <PhoneBackButton {...onBack!} className="-ml-2" />
+            )}
+          </nav>
+        ) : (
+          <div aria-hidden className="pt-[calc(var(--space-4)+env(safe-area-inset-top))]" />
+        )}
+        <main className="flex flex-1 flex-col gap-4 px-4 pt-2 pb-8">{children}</main>
+        <footer className="flex flex-col items-center gap-2 px-4 pb-[calc(var(--space-6)+env(safe-area-inset-bottom))] text-center text-footnote text-ink-muted">
+          {note ? <p className="m-0">{note}</p> : null}
+          <p className="m-0">{phoneHostLine(window.location)}</p>
+        </footer>
+      </div>
+    );
   return (
     <div className="hl-wall flex min-h-full flex-col">
       {back ? (

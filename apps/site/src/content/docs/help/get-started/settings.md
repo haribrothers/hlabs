@@ -16,7 +16,7 @@ Some sections arrive with later updates of hlabs and aren't listed until then.
 
 On a computer, Settings opens as a window: sections on the left, the one you chose on the right. With a keyboard, use the up and down arrow keys in the list of sections and press Enter to open one. Press Escape to close Settings and go back to Home.
 
-On a phone you see the list of sections first. Tap one to open it, and tap **Settings** at the top to go back to the list.
+On a phone you see the list of sections first, starting with your own account. Tap one to open it, and tap **‹ Settings** at the top (or use your browser's back button) to go back to the list.
 
 ## Appearance
 

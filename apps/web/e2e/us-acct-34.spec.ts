@@ -30,12 +30,19 @@ test('US-ACCT-34 turning off the widgets and the greeting takes them off Home', 
   await flip(greeting);
   await expect(greeting).not.toBeChecked();
 
+  // No greeting: the h1 is for screen readers only; on a phone "Home" stays and the line under it loses the greeting.
+  const noGreeting = async () => {
+    if (test.info().project.name.includes('phone')) {
+      await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
+      await expect(page.getByText(/^Good (morning|afternoon|evening),/)).toHaveCount(0);
+    } else await expect(page.getByRole('heading', { level: 1 })).toHaveClass(/sr-only/);
+  };
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveClass(/sr-only/);
+  await noGreeting();
   await expect(page.getByRole('region', { name: 'Widgets' })).toHaveCount(0);
   // Still there after a reload: it's saved.
   await page.reload();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveClass(/sr-only/);
+  await noGreeting();
   await expect(page.getByRole('region', { name: 'Widgets' })).toHaveCount(0);
 
   // On again.

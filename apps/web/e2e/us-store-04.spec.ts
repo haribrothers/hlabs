@@ -6,12 +6,17 @@ test('US-STORE-04 a category sorts by Popular, New or A–Z, remembered after a 
   await page.goto('/store/category/media');
   const sorts = page.getByRole('radiogroup', { name: 'Sort apps' });
   await expect(sorts.getByRole('radio', { name: 'Popular' })).toHaveAttribute('aria-checked', 'true');
-  await expect(page.getByText(/^\d+ apps?( · showing (Apple Silicon|ARM64) compatible first)?$/)).toBeVisible();
+  await expect(page.getByText(/^\d+ apps?( · (showing )?(Apple Silicon|ARM64) compatible first)?$/)).toBeVisible();
   if (process.env.HLABS_SHOTS)
     await page.screenshot({ path: `${process.env.HLABS_SHOTS}/store-category-${test.info().project.name}.png` });
 
   const list = page.getByRole('list', { name: 'Media' });
-  const names = () => list.getByRole('listitem').locator('a[href^="/store/app/"]:not(.hl-btn)').allTextContents();
+  // Each row's name link (on a phone the row also has its Install pill, and the link holds the tagline too).
+  const names = () =>
+    list
+      .getByRole('listitem')
+      .locator('a[href^="/store/app/"]:not(.hl-btn):not(.hl-p-get)')
+      .evaluateAll((els) => els.map((el) => el.getAttribute('aria-label') ?? el.textContent));
   // The daemon's A–Z (apps that run on this computer first on arm64).
   const input = encodeURIComponent(JSON.stringify({ category: 'media', sort: 'name' }));
   const reply = (await (await page.request.get(`/trpc/store.listApps?input=${input}`)).json()) as {

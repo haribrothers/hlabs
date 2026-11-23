@@ -19,6 +19,9 @@ test('US-AUTH-20 Forgot password? explains the resets and goes back', async ({ p
   await expect(other.getByText(/recovery code/i)).toHaveCount(0);
   expect((await new AxeBuilder({ page: other }).analyze()).violations).toEqual([]);
 
-  await other.getByRole('link', { name: 'Back to log in' }).click();
+  // "‹ Log in" on a phone (PhoneRedesignA_ForgotPassword).
+  await other
+    .getByRole('link', { name: test.info().project.name.includes('phone') ? 'Log in' : 'Back to log in' })
+    .click();
   await expect(other).toHaveURL(/\/login\/username\?next=%2Ffiles$/);
 });

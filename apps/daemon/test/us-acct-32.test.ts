@@ -2,6 +2,7 @@
 // POST /api/appearance/wallpaper keeps the person's own photo (checked by its bytes, at most 10 MB, at most 3840px),
 // served back only to them.
 import { existsSync, readdirSync } from 'node:fs';
+import { request } from 'node:http';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -27,6 +28,30 @@ const upload = (d: Daemon, body: Buffer | string, headers: Record<string, string
     method: 'POST',
     headers: { 'content-type': 'application/octet-stream', cookie: d.cookie, 'x-hlabs-csrf': d.csrf, ...headers },
     body,
+  });
+
+/**
+ * A POST that says it's `bytes` long but sends nothing: the daemon has to refuse it from the header alone. Sending an
+ * 11 MB body instead races the daemon, which answers 413 and closes while the client is still writing (EPIPE).
+ */
+const announceUpload = (d: Daemon, bytes: number) =>
+  new Promise<{ status: number; body: string }>((resolve, reject) => {
+    const req = request(`${d.url}/api/appearance/wallpaper`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/octet-stream',
+        'content-length': String(bytes),
+        cookie: d.cookie,
+        'x-hlabs-csrf': d.csrf,
+      },
+    });
+    req.on('response', (res) => {
+      let body = '';
+      res.on('data', (c: Buffer) => (body += c.toString()));
+      res.on('end', () => resolve({ status: res.statusCode ?? 0, body }));
+    });
+    req.on('error', reject);
+    req.flushHeaders();
   });
 
 const appearance = async (d: Daemon) =>
@@ -109,10 +134,9 @@ describe('US-ACCT-32', () => {
       expect(res.status).toBe(400);
       expect(await res.json()).toEqual({ hlabsCode: 'VALIDATION_FAILED', detail: null });
     }
-    const big = Buffer.concat([await photo(10, 10), Buffer.alloc(10 * 1024 * 1024)]);
-    const tooBig = await upload(d, big);
+    const tooBig = await announceUpload(d, 10 * 1024 * 1024 + 1);
     expect(tooBig.status).toBe(413);
-    expect(((await tooBig.json()) as { hlabsCode: string }).hlabsCode).toBe('VALIDATION_FAILED');
+    expect((JSON.parse(tooBig.body) as { hlabsCode: string }).hlabsCode).toBe('VALIDATION_FAILED');
     expect(await appearance(d)).toMatchObject({ wallpaper: 'dusk', customWallpaperUrl: null });
     expect(existsSync(join(d.config.paths.dataDir, 'wallpapers', `${d.userId}.png`))).toBe(false);
   });
