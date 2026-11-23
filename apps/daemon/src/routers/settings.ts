@@ -5,6 +5,7 @@ import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ulid } from '@hlabs/shared';
 import type { DaemonContext } from '../context';
+import { updateAppearance } from '../account/appearance';
 import { startSystemUpdate } from '../updates/install';
 import { engineDir } from '../engine/install-job';
 import { currentColima, engineOverview, resourceLimits, resourcesProblem } from '../engine/overview';
@@ -35,6 +36,14 @@ function startEngine(ctx: DaemonContext) {
 
 export const settings: AppHandlers<DaemonContext>['settings'] = {
   get: (_input, ctx) => ({ startup: getSetting(ctx.services.db, 'startup') }),
+  appearance: {
+    // The caller's own look (D-010, US-ACCT-32…35): any signed-in person, never anyone else's.
+    update: (input, ctx) => {
+      if (ctx.identity.kind !== 'user') throw hlabsError('AUTH_REQUIRED');
+      updateAppearance(ctx.services.db, ctx.identity.userId, input);
+      return { ok: true as const };
+    },
+  },
   startup: {
     /**
      * Startup behaviour (US-SYS-20). "Start at login" belongs to the tray (D-042): the daemon saves the choice and

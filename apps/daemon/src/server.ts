@@ -12,6 +12,7 @@ import { registerDevRoutes } from './http/dev';
 import { registerHealthz } from './http/healthz';
 import { registerAuthVerify } from './http/verify';
 import { registerAppAssets } from './http/app-assets';
+import { registerAppearance } from './http/appearance';
 import { registerAppLogs } from './http/app-logs';
 import { registerFiles } from './http/files';
 import type { Logger } from './logger';
@@ -88,6 +89,7 @@ export async function buildServer({
   registerFiles(app, holder, config.devAnonymousAdmin, () =>
     dashboardOrigins(config.dashboardUrl, holder.current?.db ?? null),
   );
+  registerAppearance(app, holder, () => dashboardOrigins(config.dashboardUrl, holder.current?.db ?? null));
   if (config.dev) registerDevRoutes(app, holder);
   registerDashboard(app, config.resources.webDir);
 

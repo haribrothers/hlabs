@@ -6,6 +6,10 @@ import type { HlabsDb } from './db';
 import { settings } from './schema/system';
 
 export const ACCENTS = ['violet', 'mint', 'amber', 'rose'] as const;
+/** Wallpapers (US-ACCT-32): the three drawn ones, and the person's own photo once uploaded. */
+export const WALLPAPERS = ['dusk', 'ocean', 'forest', 'custom'] as const;
+/** The formats a wallpaper photo is kept in, by extension. */
+export const WALLPAPER_EXTS = ['jpg', 'png', 'webp'] as const;
 export const ENGINE_KINDS = ['orbstack', 'docker-desktop', 'colima', 'docker-engine'] as const;
 
 const portSchema = z.number().int().min(1).max(65535);
@@ -186,20 +190,27 @@ export const settingsSchemas = {
 export const userSettingsSchemas = {
   appearance: z
     .object({
-      wallpaper: z.string().default('dusk'),
+      wallpaper: z.enum(WALLPAPERS).default('dusk'),
       accent: z.enum(ACCENTS).default('violet'),
       reduceTransparency: z.boolean().default(false),
-      reduceMotion: z.boolean().default(false),
+      /** null until the person sets it: the device's own reduce-motion setting decides (US-ACCT-35). */
+      reduceMotion: z.boolean().nullable().default(null),
       showWidgets: z.boolean().default(true),
       showGreeting: z.boolean().default(true),
+      /** Their uploaded photo at `<dataDir>/wallpapers/<userId>.<ext>`, and when (US-ACCT-32); null before one. */
+      customWallpaper: z
+        .object({ ext: z.enum(WALLPAPER_EXTS), uploadedAt: z.number().int() })
+        .nullable()
+        .default(null),
     })
     .default({
       wallpaper: 'dusk',
       accent: 'violet',
       reduceTransparency: false,
-      reduceMotion: false,
+      reduceMotion: null,
       showWidgets: true,
       showGreeting: true,
+      customWallpaper: null,
     }),
   /** Per-user in-app notification switches (D-043); missing keys mean "on". */
   notifications: z.record(z.string(), z.boolean()).default({}),

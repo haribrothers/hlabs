@@ -8,6 +8,7 @@ import { useMe } from '../lib/use-me';
 import { AccessDenied } from '../shell/access-denied';
 import { BackupsActions, BackupsSection } from '../backups/backups-section';
 import { AccountSection } from './account-section';
+import { AppearanceSection } from './appearance-section';
 import { EngineSection, EngineStatus } from './engine-section';
 import { NetworkSection } from './network-section';
 import { sectionAccess, type SectionId } from './sections';
@@ -19,6 +20,7 @@ const CONTENT: Partial<
 > = {
   account: AccountSection,
   users: UsersSection,
+  appearance: AppearanceSection,
   network: NetworkSection,
   engine: EngineSection,
   updates: UpdatesSection,

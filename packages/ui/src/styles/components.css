@@ -12,15 +12,17 @@
   --hl-ease-dock: cubic-bezier(0.3, 0.7, 0.4, 1);
   --hl-chart-ring: #221b42;
 }
+/* Reduce motion (US-ACCT-35, D-167): <html data-motion="reduced"> when it's on, "full" when the person turned it
+   off. Without the attribute (before the dashboard knows who's signed in) the system's setting decides. Every rule
+   that stops motion comes in this pair: the attribute, and the system setting unless the person chose full motion. */
 @media (prefers-reduced-motion: reduce) {
-  :root {
+  :root:not([data-motion='full']) {
     --hl-dur-fast: 0ms;
     --hl-dur: 0ms;
     --hl-dur-slow: 0ms;
   }
 }
-/* Settings › Appearance › Reduce motion (per user, D-010). */
-[data-reduce-motion='true'] {
+[data-motion='reduced'] {
   --hl-dur-fast: 0ms;
   --hl-dur: 0ms;
   --hl-dur-slow: 0ms;
@@ -45,6 +47,26 @@
       radial-gradient(60% 90% at 12% 8%, var(--wall-coral) 0%, transparent 62%),
       radial-gradient(70% 100% at 88% 18%, var(--wall-violet) 0%, transparent 62%),
       radial-gradient(80% 90% at 50% 105%, var(--wall-teal) 0%, transparent 66%), var(--wall-base);
+  }
+  /* The other wallpapers (US-ACCT-32): with .hl-wall, they change only the picture. */
+  .hl-wall-ocean {
+    background:
+      radial-gradient(60% 90% at 12% 8%, var(--wall-ocean-cyan) 0%, transparent 62%),
+      radial-gradient(70% 100% at 88% 18%, var(--wall-ocean-blue) 0%, transparent 62%),
+      radial-gradient(80% 90% at 50% 105%, var(--wall-ocean-violet) 0%, transparent 66%), var(--wall-ocean-base);
+  }
+  .hl-wall-forest {
+    background:
+      radial-gradient(60% 90% at 12% 8%, var(--wall-forest-gold) 0%, transparent 62%),
+      radial-gradient(70% 100% at 88% 18%, var(--wall-forest-green) 0%, transparent 62%),
+      radial-gradient(80% 90% at 50% 105%, var(--wall-forest-teal) 0%, transparent 66%), var(--wall-forest-base);
+  }
+  /* Your own photo (--hl-wall-image: url(…)), dimmed so white text over it stays readable. */
+  .hl-wall-custom {
+    background:
+      linear-gradient(var(--scrim), var(--scrim)),
+      var(--hl-wall-image) center / cover no-repeat,
+      var(--wall-base);
   }
 
   /* Glass levels: 1 widgets, 2 windows, 3 dialogs/menus/toasts. */
@@ -71,6 +93,14 @@
   [data-theme='solid'] .hl-tabbar-glass,
   [data-theme='solid'] .hl-scrim {
     backdrop-filter: none;
+  }
+  /* Reduce transparency (US-ACCT-35): no backdrop blur anywhere, whatever a component or utility asks for. Important
+     in this layer beats any later layer's, utilities included. */
+  [data-theme='solid'] *,
+  [data-theme='solid'] *::before,
+  [data-theme='solid'] *::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
 
   .hl-focus:focus-visible,
@@ -313,11 +343,11 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .hl-spin {
+    :root:not([data-motion='full']) .hl-spin {
       animation: none;
     }
   }
-  [data-reduce-motion='true'] .hl-spin {
+  [data-motion='reduced'] .hl-spin {
     animation: none;
   }
 
@@ -336,11 +366,11 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .hl-skeleton {
+    :root:not([data-motion='full']) .hl-skeleton {
       animation: none;
     }
   }
-  [data-reduce-motion='true'] .hl-skeleton {
+  [data-motion='reduced'] .hl-skeleton {
     animation: none;
   }
 
@@ -546,11 +576,11 @@
     animation: hl-pulse 1.2s ease-in-out infinite;
   }
   @media (prefers-reduced-motion: reduce) {
-    .hl-status-working .hl-status-dot {
+    :root:not([data-motion='full']) .hl-status-working .hl-status-dot {
       animation: none;
     }
   }
-  [data-reduce-motion='true'] .hl-status-working .hl-status-dot {
+  [data-motion='reduced'] .hl-status-working .hl-status-dot {
     animation: none;
   }
 
@@ -617,6 +647,92 @@
     border-radius: var(--radius-md);
     background: var(--surface-row);
     overflow: hidden;
+  }
+
+  /* Settings › Appearance (SettingsAppearance): wallpaper thumbnails and accent swatches. */
+  .hl-wallpicks {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+  @media (max-width: 767px) {
+    .hl-wallpicks {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .hl-wallpick {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink-muted);
+    font: 500 13px/18px var(--hl-font-sans);
+    cursor: pointer;
+  }
+  .hl-wallpick-thumb {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    aspect-ratio: 16 / 7;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-glass);
+    color: var(--ink);
+    font: 700 13px/18px var(--hl-font-sans);
+  }
+  .hl-wallpick-upload .hl-wallpick-thumb {
+    border-style: dashed;
+    border-color: var(--border-input);
+    background: none;
+  }
+  .hl-wallpick[aria-pressed='true'] .hl-wallpick-thumb {
+    border-color: transparent;
+    box-shadow: 0 0 0 3px var(--accent);
+  }
+  .hl-wallpick[aria-pressed='true'] {
+    color: var(--ink);
+  }
+  .hl-wallpick:focus-visible {
+    outline: none;
+  }
+  .hl-wallpick:focus-visible .hl-wallpick-thumb {
+    outline: 2px solid var(--accent);
+    outline-offset: 5px;
+  }
+  .hl-wallpick:disabled {
+    cursor: progress;
+  }
+  .hl-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+  .hl-swatch {
+    display: grid;
+    place-items: center;
+    width: var(--size-control);
+    height: var(--size-control);
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: none;
+    cursor: pointer;
+  }
+  .hl-swatch-dot {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-pill);
+    border: 2px solid transparent;
+    background: var(--accent);
+  }
+  .hl-swatch[aria-checked='true'] .hl-swatch-dot {
+    border-color: var(--ink);
+  }
+  .hl-swatch:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 0;
   }
   .hl-list-row {
     display: flex;
@@ -746,11 +862,11 @@
     animation: hl-spin 1.2s linear infinite;
   }
   @media (prefers-reduced-motion: reduce) {
-    .hl-app-ring-turning {
+    :root:not([data-motion='full']) .hl-app-ring-turning {
       animation: none;
     }
   }
-  [data-reduce-motion='true'] .hl-app-ring-turning {
+  [data-motion='reduced'] .hl-app-ring-turning {
     animation: none;
   }
   .hl-app-ring-track {
@@ -786,9 +902,12 @@
     transition: transform 250ms var(--hl-ease-spring);
   }
   @media (prefers-reduced-motion: no-preference) {
-    :root:not([data-reduce-motion='true']) .hl-app:hover .hl-app-icon {
+    :root:not([data-motion='reduced']) .hl-app:hover .hl-app-icon {
       transform: translateY(-4px) scale(1.04);
     }
+  }
+  :root[data-motion='full'] .hl-app:hover .hl-app-icon {
+    transform: translateY(-4px) scale(1.04);
   }
 
   /* Tab bar (Liquid Glass, phone) */
@@ -1052,20 +1171,34 @@
     background: var(--surface-control);
   }
   @media (prefers-reduced-motion: reduce) {
-    .hl-dock-item,
-    .hl-dock-tile {
+    :root:not([data-motion='full']) .hl-dock-item,
+    :root:not([data-motion='full']) .hl-dock-tile {
       transition: none;
     }
-    .hl-dock .hl-dock-item,
-    .hl-dock .hl-dock-item:hover {
+    :root:not([data-motion='full']) .hl-dock .hl-dock-item,
+    :root:not([data-motion='full']) .hl-dock .hl-dock-item:hover {
       margin: 0 3px;
     }
-    .hl-dock .hl-dock-tile {
+    :root:not([data-motion='full']) .hl-dock .hl-dock-tile {
       transform: none !important;
     }
-    .hl-dock-item:hover .hl-dock-tip {
+    :root:not([data-motion='full']) .hl-dock-item:hover .hl-dock-tip {
       bottom: calc(100% + 14px);
     }
+  }
+  [data-motion='reduced'] .hl-dock-item,
+  [data-motion='reduced'] .hl-dock-tile {
+    transition: none;
+  }
+  [data-motion='reduced'] .hl-dock .hl-dock-item,
+  [data-motion='reduced'] .hl-dock .hl-dock-item:hover {
+    margin: 0 3px;
+  }
+  [data-motion='reduced'] .hl-dock .hl-dock-tile {
+    transform: none !important;
+  }
+  [data-motion='reduced'] .hl-dock-item:hover .hl-dock-tip {
+    bottom: calc(100% + 14px);
   }
   @media (max-width: 1279px) {
     .hl-dock-item-app {

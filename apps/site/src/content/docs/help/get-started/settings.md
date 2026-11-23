@@ -18,6 +18,10 @@ On a computer, Settings opens as a window: sections on the left, the one you cho
 
 On a phone you see the list of sections first. Tap one to open it, and tap **Settings** at the top to go back to the list.
 
+## Appearance
+
+**Settings › Appearance** is your own look: wallpaper, accent colour, what Home shows, and solid backgrounds or less motion. See [Appearance](/help/get-started/appearance/).
+
 ## Your profile
 
 **Settings › Account** shows your name, username and whether you're an admin or a member. Family members have the same password, two-factor and device controls as admins. Choose **Edit profile** to change your display name (up to 40 characters) and your avatar colour. Your new name shows straight away, including in the Home greeting. Your username can't be changed. hlabs is in English for now.

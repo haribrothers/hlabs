@@ -15,9 +15,10 @@ export function fakeMe(overrides: Record<string, unknown> = {}) {
     remember: false,
     appearance: {
       wallpaper: 'dusk',
+      customWallpaperUrl: null,
       accent: 'violet',
       reduceTransparency: false,
-      reduceMotion: false,
+      reduceMotion: null,
       showWidgets: true,
       showGreeting: true,
     },

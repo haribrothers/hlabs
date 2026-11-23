@@ -195,7 +195,7 @@ function sendError(reply: FastifyReply, err: unknown, logger: Pick<Logger, 'warn
 }
 
 /** Mutations need the session's CSRF header, and a dashboard Origin when one is sent (07 §7.3), as in tRPC. */
-function csrfOk(req: FastifyRequest, raw: string | null, allowedOrigins: () => readonly string[]): boolean {
+export function csrfOk(req: FastifyRequest, raw: string | null, allowedOrigins: () => readonly string[]): boolean {
   if (raw === null) return true; // The development admin (no session).
   const origin = typeof req.headers.origin === 'string' ? req.headers.origin : null;
   if (origin !== null && !allowedOrigins().includes(origin)) return false;

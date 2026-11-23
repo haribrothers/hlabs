@@ -12,6 +12,7 @@ test.describe('US-ACCT-01', () => {
     await expect(nav.getByRole('link')).toHaveText([
       'Account',
       'Users',
+      'Appearance',
       'Network & remote access',
       'Engine & startup',
       'Backups',

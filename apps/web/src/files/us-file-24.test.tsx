@@ -75,8 +75,10 @@ describe('US-FILE-24', () => {
 
   it("skeletons don't shimmer when motion is reduced (the OS setting or hlabs's)", () => {
     const css = readFileSync('../../packages/ui/src/styles/components.css', 'utf8');
-    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.hl-skeleton \{\s*animation: none;/);
-    expect(css).toMatch(/\[data-reduce-motion='true'\] \.hl-skeleton \{\s*animation: none;/);
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\) \{\s*:root:not\(\[data-motion='full'\]\) \.hl-skeleton \{\s*animation: none;/,
+    );
+    expect(css).toMatch(/\[data-motion='reduced'\] \.hl-skeleton \{\s*animation: none;/);
   });
 
   it('a folder already loaded shows at once when you come back, and refreshes quietly', async () => {

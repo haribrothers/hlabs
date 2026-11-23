@@ -21,7 +21,7 @@ test('US-ACCT-27 a member sees their own sections, who manages the rest, and no 
   await expect(anu.getByText(`Apps, users and system settings are managed by ${ADMIN.name} (admin).`)).toBeVisible();
   if (!isMobile) {
     const nav = anu.getByRole('navigation', { name: 'Settings sections' });
-    await expect(nav.getByRole('link')).toHaveText(['Account']);
+    await expect(nav.getByRole('link')).toHaveText(['Account', 'Appearance']);
   }
   if (process.env.HLABS_SHOTS)
     await anu.screenshot({ path: `${process.env.HLABS_SHOTS}/member-settings-${info.project.name}.png` });

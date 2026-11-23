@@ -315,10 +315,10 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [ ] US-APP-27 · Make an app public
 - [ ] US-APP-28 · Choose who gets into a public app
 - [ ] US-APP-29 · See who visits a public app
-- [ ] US-ACCT-32 · Choose a wallpaper
-- [ ] US-ACCT-33 · Choose an accent colour
-- [ ] US-ACCT-34 · Home screen options
-- [ ] US-ACCT-35 · Reduce transparency and motion
+- [x] US-ACCT-32 · Choose a wallpaper
+- [x] US-ACCT-33 · Choose an accent colour
+- [x] US-ACCT-34 · Home screen options
+- [x] US-ACCT-35 · Reduce transparency and motion
 - [ ] US-SYS-11 · See what is using storage
 - [ ] US-SYS-12 · Manage data location and drives
 - [ ] US-SYS-13 · Free space from unused app images

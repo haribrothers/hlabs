@@ -1,8 +1,9 @@
 import type { AppHandlers } from '@hlabs/api';
 import { hlabsError } from '@hlabs/api';
-import { auditLog, getSetting, getUserSetting, sessions, users } from '@hlabs/db';
+import { auditLog, getSetting, sessions, users } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { asc, eq, isNull } from 'drizzle-orm';
+import { appearanceFor } from '../account/appearance';
 import { csrfTokenFor } from '../auth/sessions';
 import { clearSessionCookie, setSessionCookie } from './session-cookie';
 import type { DaemonContext } from '../context';
@@ -179,7 +180,7 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
       canSeeShared: admin || user.canSeeShared,
       // Whether this session was started with "Remember me", so this device can reuse the choice (US-AUTH-14).
       remember: id.session.remember,
-      appearance: getUserSetting(ctx.services.db, 'appearance', user.id),
+      appearance: appearanceFor(ctx.services.db, user.id),
       csrfToken: csrfTokenFor(id.session.raw),
     };
   },

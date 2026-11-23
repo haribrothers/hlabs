@@ -1,4 +1,4 @@
-import { UiStringsProvider } from '@hlabs/ui';
+import { MotionPreference, UiStringsProvider } from '@hlabs/ui';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { uiStrings } from '../copy/shell';
 import { ConfirmHost } from '../lib/confirm';
@@ -11,17 +11,20 @@ import { Toaster } from '../shell/toaster';
 export const Route = createRootRoute({
   component: () => (
     <UiStringsProvider strings={uiStrings}>
-      {/* Opened where hlabs can't be reached at all, from its saved shell (US-INST-29). */}
-      <OfflineGate>
-        <HealthGate>
-          <FirstRunGate>
-            <Outlet />
-          </FirstRunGate>
-          <ConnectionBanner />
-        </HealthGate>
-        <ConfirmHost />
-        <Toaster />
-      </OfflineGate>
+      {/* Reduce motion everywhere, dialogs and toasts too (US-ACCT-35). */}
+      <MotionPreference>
+        {/* Opened where hlabs can't be reached at all, from its saved shell (US-INST-29). */}
+        <OfflineGate>
+          <HealthGate>
+            <FirstRunGate>
+              <Outlet />
+            </FirstRunGate>
+            <ConnectionBanner />
+          </HealthGate>
+          <ConfirmHost />
+          <Toaster />
+        </OfflineGate>
+      </MotionPreference>
     </UiStringsProvider>
   ),
 });

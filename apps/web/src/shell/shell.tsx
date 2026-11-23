@@ -3,7 +3,7 @@ import { Dock, TabBar, type AreaId } from '@hlabs/ui';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { shellCopy } from '../copy/shell';
-import { useAppearance, wallpaperClass } from '../lib/appearance';
+import { useAppearance, wallpaperClass, wallpaperStyle } from '../lib/appearance';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { EngineWatch } from '../lib/engine-state';
 import { openSearch } from '../search/search-state';
@@ -23,7 +23,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const appPage = pathname.startsWith('/apps/');
   const go = (id: string) => void navigate({ to: AREA_PATHS[id as AreaId] });
   const me = useMe().data;
-  // The person's wallpaper and accent (US-HOME-01); signed out (development pages) it's the defaults.
+  // The person's wallpaper, accent, theme and motion (US-HOME-01, US-ACCT-32…35); signed out it's the defaults.
   const appearance = me?.appearance;
   useAppearance(appearance);
   // Members see fewer areas (US-HOME-05). The update count comes from the App Store updates list (phase 7, admins).
@@ -42,7 +42,12 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     // Exactly the viewport: pages scroll inside main, and windows (Settings) can fill it without the page scrolling.
     // .hl-window-fill (packages/ui components.css) undoes main's desktop padding to make a window app-window tall.
-    <div className={`${wallpaperClass(appearance?.wallpaper)} relative flex h-dvh flex-col`}>
+    <div
+      className={`${wallpaperClass(appearance)} relative flex h-dvh flex-col`}
+      style={wallpaperStyle(appearance)}
+      data-testid="wallpaper"
+      data-wallpaper={appearance?.wallpaper ?? 'dusk'}
+    >
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-pill focus:bg-fill-primary focus:px-4 focus:py-2 focus:text-ink-on-light"

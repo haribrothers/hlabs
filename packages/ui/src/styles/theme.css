@@ -79,6 +79,14 @@
   --color-wall-coral: var(--wall-coral);
   --color-wall-violet: var(--wall-violet);
   --color-wall-teal: var(--wall-teal);
+  --color-wall-ocean-base: var(--wall-ocean-base);
+  --color-wall-ocean-cyan: var(--wall-ocean-cyan);
+  --color-wall-ocean-blue: var(--wall-ocean-blue);
+  --color-wall-ocean-violet: var(--wall-ocean-violet);
+  --color-wall-forest-base: var(--wall-forest-base);
+  --color-wall-forest-gold: var(--wall-forest-gold);
+  --color-wall-forest-green: var(--wall-forest-green);
+  --color-wall-forest-teal: var(--wall-forest-teal);
   --color-logo-coral: var(--logo-coral);
   --color-logo-violet: var(--logo-violet);
   --color-logo-teal: var(--logo-teal);

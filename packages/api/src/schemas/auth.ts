@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { io } from '../trpc';
-import { accentSchema } from './settings';
+import { accentSchema, wallpaperSchema } from './settings';
 import {
   displayNameSchema,
   empty,
@@ -22,15 +22,19 @@ export const loginUserSchema = z.object({
   avatarColor: z.string().nullable(),
 });
 
-/** Per-user look (D-010): Settings › Appearance changes it (phase 7); Home applies it (US-HOME-01). */
+/** Per-user look (D-010): Settings › Appearance changes it (US-ACCT-32…35); the shell and Home apply it. */
 export const appearanceSchema = z.object({
-  wallpaper: z.string(),
+  wallpaper: wallpaperSchema,
+  /** The person's own photo (`GET /api/appearance/wallpaper?v=<uploadedAt>`); null until they upload one. */
+  customWallpaperUrl: z.string().nullable(),
   accent: accentSchema,
   reduceTransparency: z.boolean(),
-  reduceMotion: z.boolean(),
+  /** null: never set, so the device's own reduce-motion setting decides (US-ACCT-35). */
+  reduceMotion: z.boolean().nullable(),
   showWidgets: z.boolean(),
   showGreeting: z.boolean(),
 });
+export type Appearance = z.infer<typeof appearanceSchema>;
 
 export const meSchema = z.object({
   id: idSchema,

@@ -8,6 +8,18 @@
     <!-- The installable dashboard (US-INST-28); the manifest link is added by the build. -->
     <meta name="theme-color" content="%HLABS_THEME%" />
     <title>hlabs</title>
+    <!-- Before the first paint (US-ACCT-33, US-ACCT-35, D-167): the look last used on this device, as
+         src/lib/appearance.ts keeps it, so the accent, solid theme and motion don't flash. Plain script, no module. -->
+    <script>
+      try {
+        var look = JSON.parse(localStorage.getItem('hlabs.appearance') || 'null');
+        var root = document.documentElement;
+        if (look && /^(violet|mint|amber|rose)$/.test(look.accent)) root.setAttribute('data-accent', look.accent);
+        if (look && look.solid === true) root.setAttribute('data-theme', 'solid');
+        if (look && (look.motion === 'reduced' || look.motion === 'full'))
+          root.setAttribute('data-motion', look.motion);
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

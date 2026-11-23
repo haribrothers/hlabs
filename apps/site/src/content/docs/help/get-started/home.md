@@ -12,7 +12,7 @@ Home greets you by name: "Good morning" from 5:00 to 11:59, "Good afternoon" fro
 
 Until you have any apps, Home says "Welcome to hlabs" instead.
 
-Your wallpaper and accent colour are your own: other people on this hlabs keep theirs. Everyone starts with the Dusk wallpaper and the violet accent.
+Your wallpaper and accent colour are your own: other people on this hlabs keep theirs. Everyone starts with the Dusk wallpaper and the violet accent. Change them, or hide the widgets or the greeting, in [Settings › Appearance](/help/get-started/appearance/).
 
 ## Widgets
 
