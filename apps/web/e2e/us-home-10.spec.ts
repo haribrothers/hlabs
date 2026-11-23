@@ -33,11 +33,16 @@ test('US-HOME-10 one search finds the app, its actions, store apps and settings,
   await field.press('Enter');
   await expect(page).toHaveURL(new RegExp(`[?&]settings=${ID}$`));
 
+  // App settings opened over the page (D-166): closed again before the next search.
+  await expect(page.getByRole('dialog', { name: 'App settings' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page).not.toHaveURL(/[?&]settings=/);
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+k' : 'Control+k');
   await field.fill('vaultwarden');
-  await expect(panel.getByRole('group', { name: 'App Store' }).getByRole('option').first()).toContainText(
-    'Vaultwarden',
-  );
+  // Among the store's results (other specs add apps to this shared instance, so not always first).
+  await expect(
+    panel.getByRole('group', { name: 'App Store' }).getByRole('option').filter({ hasText: 'Vaultwarden' }).first(),
+  ).toBeVisible();
   await panel.getByRole('option', { name: 'See all App Store results' }).click();
   await expect(page).toHaveURL(/\/store\/search\?q=vaultwarden$/);
 
