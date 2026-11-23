@@ -350,6 +350,11 @@ export function PhoneMenuLayer({
           className="hl-p-menu-layer"
           onOpenAutoFocus={onOpenAutoFocus}
           onPointerDownOutside={() => onOpenChange(false)}
+          // The layer covers the screen, so a tap around the menu lands inside it, not outside: anything that isn't
+          // the menu closes it (iOS's own context menus close the same way).
+          onPointerDown={(e) => {
+            if (!(e.target as Element).closest('[role="menu"]')) onOpenChange(false);
+          }}
         >
           <RadixDialog.Title className="sr-only">{label}</RadixDialog.Title>
           {children}

@@ -129,7 +129,11 @@ export function PhoneTileMenu({
     e.preventDefault();
     const all = [...e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)')];
     const now = all.indexOf(document.activeElement as HTMLButtonElement);
-    const next = all[(now + (e.key === 'ArrowDown' ? 1 : -1) + all.length) % all.length];
+    // From the menu itself (as it opens), Down goes to the first item and Up to the last.
+    const next =
+      now < 0
+        ? all[e.key === 'ArrowDown' ? 0 : all.length - 1]
+        : all[(now + (e.key === 'ArrowDown' ? 1 : -1) + all.length) % all.length];
     next?.focus();
   };
   const plain = items.filter((i) => !i.danger);
@@ -160,8 +164,10 @@ export function PhoneTileMenu({
         onOpenChange={onOpenChange}
         label={app.name}
         onOpenAutoFocus={(e) => {
+          // Focus on the menu, not its first item: a long-press shouldn't leave a focus ring on Open; the arrow keys
+          // move into the items, and screen readers hear the menu's name.
           e.preventDefault();
-          menu.current?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')?.focus();
+          menu.current?.focus();
         }}
       >
         <span aria-hidden className="hl-p-menu-tile" ref={tile} style={{ visibility: 'hidden' }}>
@@ -178,7 +184,8 @@ export function PhoneTileMenu({
           ref={placeMenu}
           role="menu"
           aria-labelledby={labelId}
-          className="hl-p-menu hl-anim-menu"
+          tabIndex={-1}
+          className="hl-p-menu hl-anim-menu outline-none"
           style={{ visibility: 'hidden', width: MENU_WIDTH }}
           onKeyDown={onKeyDown}
         >

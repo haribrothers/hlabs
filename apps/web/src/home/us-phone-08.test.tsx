@@ -129,6 +129,22 @@ describe('US-PHONE-08', () => {
     expect(tile.closest('.hl-no-callout')).not.toBeNull();
   });
 
+  it('a tap around the menu closes it, and opening it leaves no focus ring on an item', async () => {
+    home([app('jellyfin', 'Jellyfin', 'running')]);
+    const tile = await screen.findByRole('button', { name: 'Open Jellyfin' });
+    fireEvent.pointerDown(tile, { pointerType: 'touch', clientX: 5, clientY: 5 });
+    await act(() => new Promise((r) => setTimeout(r, 550)));
+    fireEvent.pointerUp(tile, { pointerType: 'touch' });
+    const items = await screen.findByRole('menu', { name: /Jellyfin/ });
+    // Focus is on the menu, not on Open.
+    await waitFor(() => expect(document.activeElement).toBe(items));
+    // A tap inside the menu (its heading) keeps it; one on the dimmed Home around it closes it.
+    fireEvent.pointerDown(within(items).getByText(/Running/));
+    expect(screen.getByRole('menu', { name: /Jellyfin/ })).toBeInTheDocument();
+    fireEvent.pointerDown(document.querySelector('.hl-p-menu-layer')!);
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+  });
+
   it("a member's long press has Open only", async () => {
     home([app('jellyfin', 'Jellyfin', 'running')], 'member');
     const tile = await screen.findByRole('button', { name: 'Open Jellyfin' });
