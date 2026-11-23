@@ -1,0 +1,25 @@
+schema: 1
+id: privatebin
+name: PrivateBin
+version: '2.1.1'
+revision: 1
+tagline: Share text and files that only the link can open
+description: |
+  Paste text or a file and get a link; it is encrypted in your browser, so your hlabs never sees what's
+  in it. Links can expire or open only once. It has no login of its own: the hlabs login protects it.
+category: security
+developer: { name: PrivateBin, url: https://privatebin.info }
+source: https://github.com/PrivateBin/PrivateBin
+license: Zlib
+icon:
+  logo: logo.svg
+  gradient: ['#3f6fb1', '#14294a']
+  fallback: lock
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 128, disk: 512 }
+web: { service: privatebin, port: 8080, embed: true }
+ownLogin: false
+backup:
+  pause: [privatebin]
+  beforeUpdate: true
+permissions: { network: internet }

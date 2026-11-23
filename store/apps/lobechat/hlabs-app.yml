@@ -1,0 +1,26 @@
+schema: 1
+id: lobechat
+name: LobeChat
+version: '1.143.3'
+revision: 1
+tagline: A friendly chat app for AI models
+description: |
+  A polished chat app for OpenAI and other AI services with plugins, voice and image understanding.
+  Conversations stay in your browser. Add your API key in its settings, or use local models from Ollama
+  at http://ollama:11434. It has no login of its own: the hlabs login protects it.
+category: ai
+developer: { name: LobeHub, url: https://lobehub.com }
+source: https://github.com/lobehub/lobe-chat
+license: Apache-2.0
+icon:
+  logo: logo.svg
+  gradient: ['#111827', '#000000']
+  fallback: message-circle
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 512 }
+web: { service: lobechat, port: 3210, embed: true }
+ownLogin: false
+backup:
+  pause: [lobechat]
+  beforeUpdate: true
+permissions: { network: internet }

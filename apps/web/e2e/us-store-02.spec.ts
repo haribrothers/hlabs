@@ -17,8 +17,10 @@ test('US-STORE-02 categories with apps, in order; keyboard moves through them; "
     'Local AI',
     'Productivity',
     'Security',
+    'Finance',
     'Books',
     'Monitoring',
+    'Other',
   ]);
   await expect(nav.getByRole('link', { name: 'Discover' })).toHaveAttribute('aria-current', 'page');
   // Updates (phase 7, group 4) and App sources (group 5) are built; Deploy your own app isn't yet.

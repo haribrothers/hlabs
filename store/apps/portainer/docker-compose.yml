@@ -1,0 +1,7 @@
+services:
+  portainer:
+    image: docker.io/portainer/portainer-ce:2.45.4@sha256:18616fff2998f8ca0e8ebe7f028658ae1682859cf43f212f81a849c1093ad639
+    command: [--http-enabled, --no-analytics]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${HLABS_APP_DATA}/data:/data

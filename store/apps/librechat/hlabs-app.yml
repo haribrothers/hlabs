@@ -1,0 +1,42 @@
+# From LibreChat's own docker-compose.yml without the files search (RAG) services. Its credential keys
+# must be hex: a first start makes them and keeps them in the app's data.
+schema: 1
+id: librechat
+name: LibreChat
+version: '0.8.7'
+revision: 1
+tagline: One chat app for every AI model
+description: |
+  Chat with models from OpenAI, Anthropic, Google and others with your own API keys, with your
+  conversations, files and presets kept on your hlabs. Create your account on the first visit; each
+  person adds their own keys.
+category: ai
+developer: { name: LibreChat, url: https://www.librechat.ai }
+source: https://github.com/danny-avila/LibreChat
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#2563eb', '#0c1f4d']
+  fallback: messages-square
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1536, disk: 2048 }
+web: { service: librechat, port: 3080, embed: true }
+health: { service: librechat, http: /health, timeout: 300 }
+env:
+  - key: JWT_SECRET
+    type: secret
+    generate: true
+    hidden: true
+  - key: JWT_REFRESH_SECRET
+    type: secret
+    generate: true
+    hidden: true
+  - key: MEILI_MASTER_KEY
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [librechat, librechat-mongodb, librechat-meilisearch]
+  beforeUpdate: true
+permissions: { network: internet }

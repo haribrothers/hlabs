@@ -1,0 +1,25 @@
+services:
+  openclaw:
+    image: ghcr.io/openclaw/openclaw:2026.11.7@sha256:461cc655301409901f2df11d6ec9f029f9709e4607826e9780fd74f8e1d12a16
+    # A first start writes the gateway's starting config (local mode); OpenClaw fills in the rest.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        [ -f /home/node/.openclaw/openclaw.json ] || printf '%s\n' '{"gateway": {"mode": "local"}}' > /home/node/.openclaw/openclaw.json
+        exec tini -s -- node /app/docker-entrypoint.mjs node dist/index.js gateway --bind lan --port 18789
+    environment:
+      HOME: /home/node
+      OPENCLAW_HOME: /home/node
+      OPENCLAW_STATE_DIR: /home/node/.openclaw
+      OPENCLAW_CONFIG_PATH: /home/node/.openclaw/openclaw.json
+      OPENCLAW_WORKSPACE_DIR: /home/node/.openclaw/workspace
+      OPENCLAW_GATEWAY_PORT: '18789'
+      OPENCLAW_GATEWAY_TOKEN: ${GATEWAY_TOKEN}
+      OPENCLAW_DISABLE_BONJOUR: '1'
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      OLLAMA_HOST: http://ollama:11434
+    volumes:
+      - ${HLABS_APP_DATA}/state:/home/node/.openclaw

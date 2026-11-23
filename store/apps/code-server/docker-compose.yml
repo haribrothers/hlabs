@@ -1,0 +1,10 @@
+services:
+  code-server:
+    image: lscr.io/linuxserver/code-server:4.146.0@sha256:027b1da4cece4b7ae987aad0fbc50955d8c66f48583b55fe51e3385576be8cf1
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      DEFAULT_WORKSPACE: /config/workspace
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config
+      - ${HLABS_FOLDER_PROJECTS}:/config/workspace

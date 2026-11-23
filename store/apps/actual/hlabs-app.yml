@@ -1,0 +1,26 @@
+schema: 1
+id: actual
+name: Actual Budget
+version: '26.11.0'
+revision: 1
+tagline: Budget your money, envelope by envelope
+description: |
+  Give every pound a job: plan your budget by category, record spending and see where your money goes.
+  Syncs between devices; the first visit asks you to set a server password.
+category: finance
+developer: { name: Actual Budget, url: https://actualbudget.org }
+source: https://github.com/actualbudget/actual
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#8719e0', '#33075a']
+  fallback: wallet
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: actual, port: 5006, embed: true }
+health: { service: actual, http: /health, timeout: 120 }
+ownLogin: true
+backup:
+  pause: [actual]
+  beforeUpdate: true
+permissions: { network: internet }

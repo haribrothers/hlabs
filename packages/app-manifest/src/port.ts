@@ -699,7 +699,7 @@ export function withAttribution(existing: string | null, row: { id: string; from
 }
 
 /** A row of store/ATTRIBUTION.md's table, padded or not: id, where it was drafted from, licence. */
-export const ATTRIBUTION_ROW = /^\|\s*([a-z][a-z0-9-]*)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/;
+export const ATTRIBUTION_ROW = /^\|\s*([a-z0-9][a-z0-9-]*)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/;
 
 /** The app ids listed in store/ATTRIBUTION.md. */
 export function attributedApps(text: string): string[] {

@@ -1,0 +1,50 @@
+services:
+  firefly-iii:
+    image: docker.io/fireflyiii/core:version-6.7.9@sha256:1cb7e7bc050323e7b97a2cae2de1f48ac492d2b048fb092cdcc6f020417aea56
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        [ -f /keys/app-key ] || head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n' > /keys/app-key
+        [ -f /keys/cron-token ] || head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n' > /keys/cron-token
+        export APP_KEY="$$(cat /keys/app-key)" STATIC_CRON_TOKEN="$$(cat /keys/cron-token)"
+        exec docker-php-serversideup-entrypoint /init
+    environment:
+      APP_URL: ${HLABS_URL}
+      TRUSTED_PROXIES: '**'
+      DB_CONNECTION: pgsql
+      DB_HOST: firefly-iii-db
+      DB_PORT: '5432'
+      DB_DATABASE: firefly
+      DB_USERNAME: firefly
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ${HLABS_APP_DATA}/keys:/keys
+      - ${HLABS_APP_DATA}/upload:/var/www/html/storage/upload
+    depends_on:
+      firefly-iii-db:
+        condition: service_healthy
+  firefly-iii-db:
+    image: docker.io/library/postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_USER: firefly
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: firefly
+    volumes:
+      - ${HLABS_APP_DATA}/postgres:/var/lib/postgresql
+    healthcheck:
+      # Over TCP, so it passes only once the real server is up (not during first-start setup).
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U firefly -d firefly']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  firefly-iii-cron:
+    image: docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+    command:
+      [
+        sh,
+        -c,
+        'echo "0 3 * * * wget -qO- http://firefly-iii:8080/api/v1/cron/\$$(cat /keys/cron-token)" | crontab - && exec crond -f -L /dev/stdout',
+      ]
+    volumes:
+      - ${HLABS_APP_DATA}/keys:/keys:ro

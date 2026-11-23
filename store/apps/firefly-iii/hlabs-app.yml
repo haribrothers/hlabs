@@ -1,0 +1,32 @@
+# Firefly III needs a 32-character key and cron token: a first start makes them and keeps them in the
+# app's data. The cron service calls Firefly III's nightly job with that token.
+schema: 1
+id: firefly-iii
+name: Firefly III
+version: '6.7.9'
+revision: 1
+tagline: Keep track of your money and plan your budgets
+description: |
+  Record your income and spending across accounts, set budgets, split bills and see reports of where your
+  money goes. Recurring transactions run every night. Create your account on the first visit.
+category: finance
+developer: { name: James Cole, url: https://firefly-iii.org }
+source: https://github.com/firefly-iii/firefly-iii
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#cd5029', '#521e0e']
+  fallback: piggy-bank
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: firefly-iii, port: 8080, embed: true }
+env:
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [firefly-iii, firefly-iii-db]
+  beforeUpdate: true
+permissions: { network: internet }

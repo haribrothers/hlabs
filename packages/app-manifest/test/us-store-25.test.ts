@@ -300,6 +300,9 @@ describe('US-STORE-25', () => {
       expect(attributionIssues(store)).toEqual([]);
       const next = withAttribution(padded, { id: 'sonarr', from: 'Runtipi app store', license: 'GPL-3.0' });
       expect(attributedApps(next)).toEqual(['sonarr', 'vaultwarden']);
+      // App ids may start with a digit (2fauth).
+      const digit = withAttribution(next, { id: '2fauth', from: 'Runtipi app store', license: 'GPL-3.0' });
+      expect(attributedApps(digit)).toEqual(['2fauth', 'sonarr', 'vaultwarden']);
     });
 
     it('checks the NOTICE and ATTRIBUTION.md go together', () => {

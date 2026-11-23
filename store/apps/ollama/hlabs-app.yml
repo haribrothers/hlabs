@@ -1,0 +1,28 @@
+schema: 1
+id: ollama
+name: Ollama
+version: '0.40.17'
+revision: 1
+tagline: Run AI models on this computer
+description: |
+  Ollama downloads and runs open AI models such as Llama, Gemma and Mistral on this computer, for the
+  chat apps in the App Store: Open WebUI, LibreChat, LobeChat and AnythingLLM reach it at
+  http://ollama:11434. It has no page of its own. On a Mac it uses the processor, not the graphics chip,
+  so large models are slow.
+category: ai
+developer: { name: Ollama, url: https://ollama.com }
+source: https://github.com/ollama/ollama
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#e5e7eb', '#6b7280']
+  fallback: bot
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 4096, disk: 20480 }
+web: { service: ollama, port: 11434, embed: false }
+health: { service: ollama, http: /api/version, timeout: 120 }
+ownLogin: false
+backup:
+  pause: [ollama]
+  beforeUpdate: true
+permissions: { network: internet }

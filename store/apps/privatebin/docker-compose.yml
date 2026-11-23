@@ -1,0 +1,5 @@
+services:
+  privatebin:
+    image: docker.io/privatebin/nginx-fpm-alpine:2.1.1@sha256:023fe5d30c67aa1f015b4007a644d65474a300bf908725a10c8d0d64abe0086a
+    volumes:
+      - ${HLABS_APP_DATA}/data:/srv/data

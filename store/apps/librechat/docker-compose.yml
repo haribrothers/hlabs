@@ -1,0 +1,56 @@
+services:
+  librechat:
+    image: ghcr.io/danny-avila/librechat:v0.8.7@sha256:c5db3331b845e1f289f8d04c0c77936c4bbe372f76730a804abc1c37e44d23a9
+    command:
+      - sh
+      - -c
+      - |
+        [ -f /app/keys/creds.env ] || node -e "const c=require('crypto');console.log('CREDS_KEY='+c.randomBytes(32).toString('hex'));console.log('CREDS_IV='+c.randomBytes(16).toString('hex'))" > /app/keys/creds.env
+        set -a; . /app/keys/creds.env; set +a
+        exec npm run backend
+    environment:
+      HOST: 0.0.0.0
+      PORT: '3080'
+      DOMAIN_CLIENT: ${HLABS_URL}
+      DOMAIN_SERVER: ${HLABS_URL}
+      TRUST_PROXY: '1'
+      NO_INDEX: 'true'
+      MONGO_URI: mongodb://librechat-mongodb:27017/LibreChat
+      MEILI_HOST: http://librechat-meilisearch:7700
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      SEARCH: 'true'
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      ALLOW_EMAIL_LOGIN: 'true'
+      ALLOW_REGISTRATION: 'true'
+      ALLOW_SOCIAL_LOGIN: 'false'
+      ALLOW_PASSWORD_RESET: 'false'
+      ALLOW_UNVERIFIED_EMAIL_LOGIN: 'true'
+      OPENAI_API_KEY: user_provided
+      ANTHROPIC_API_KEY: user_provided
+      GOOGLE_KEY: user_provided
+    volumes:
+      - ${HLABS_APP_DATA}/keys:/app/keys
+      - ${HLABS_APP_DATA}/images:/app/client/public/images
+      - ${HLABS_APP_DATA}/uploads:/app/uploads
+      - ${HLABS_APP_DATA}/logs:/app/api/logs
+    depends_on:
+      librechat-mongodb:
+        condition: service_healthy
+  librechat-mongodb:
+    image: docker.io/library/mongo:8.0.38@sha256:479e85ced54ffb8a40dade1dcde2da2a9ae858515b9415e9cc54bfb8f0575d01
+    command: [mongod, --noauth]
+    volumes:
+      - ${HLABS_APP_DATA}/mongodb:/data/db
+    healthcheck:
+      test: [CMD, mongosh, --quiet, --eval, "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  librechat-meilisearch:
+    image: docker.io/getmeili/meilisearch:v1.55.0@sha256:ff546679970126f8822e15d1b6a06bfbff1f2ce2e43f810cfb5258012f92de5c
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_NO_ANALYTICS: 'true'
+    volumes:
+      - ${HLABS_APP_DATA}/meilisearch:/meili_data

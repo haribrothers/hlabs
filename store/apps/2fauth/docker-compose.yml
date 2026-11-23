@@ -1,0 +1,15 @@
+services:
+  2fauth:
+    image: docker.io/2fauth/2fauth:9.0.2@sha256:6774efa7c612e424eb17a54e2373524d9a04af6cad7e38d85d76fed87f6a48bd
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        [ -f /2fauth/app-key ] || head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n' > /2fauth/app-key
+        export APP_KEY="$$(cat /2fauth/app-key)"
+        exec /usr/local/bin/entrypoint.sh
+    environment:
+      APP_URL: ${HLABS_URL}
+      TRUSTED_PROXIES: '*'
+    volumes:
+      - ${HLABS_APP_DATA}/data:/2fauth

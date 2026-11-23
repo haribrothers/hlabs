@@ -1,0 +1,27 @@
+schema: 1
+id: anythingllm
+name: AnythingLLM
+version: '1.20.0'
+revision: 1
+tagline: Chat with your documents using AI
+description: |
+  Add PDFs, documents and web pages to workspaces and ask questions about them with the AI model of your
+  choice, from OpenAI, Anthropic or Ollama on this computer (http://ollama:11434). The first visit
+  sets it up; it has no login unless you turn one on.
+category: ai
+developer: { name: Mintplex Labs, url: https://anythingllm.com }
+source: https://github.com/Mintplex-Labs/anything-llm
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#0ea5e9', '#082f49']
+  fallback: file-search
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 2048, disk: 4096 }
+web: { service: anythingllm, port: 3001, embed: true }
+health: { service: anythingllm, http: /api/ping, timeout: 300 }
+ownLogin: false
+backup:
+  pause: [anythingllm]
+  beforeUpdate: true
+permissions: { network: internet }

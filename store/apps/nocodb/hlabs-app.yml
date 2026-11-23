@@ -1,0 +1,35 @@
+schema: 1
+id: nocodb
+name: NocoDB
+version: '2026.10.2'
+revision: 1
+tagline: Spreadsheets that work like a database
+description: |
+  Build tables of anything (contacts, projects, a collection) and view them as a grid, a kanban board, a
+  gallery or a form, like Airtable. The first visit sets up your admin account.
+category: developer
+developer: { name: NocoDB, url: https://nocodb.com }
+source: https://github.com/nocodb/nocodb
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#3366ff', '#0f1f66']
+  fallback: table
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 1024 }
+web: { service: nocodb, port: 8080, embed: true }
+health: { service: nocodb, http: /api/v1/health, timeout: 300 }
+env:
+  - key: JWT_SECRET
+    type: secret
+    generate: true
+    hidden: true
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [nocodb, nocodb-db]
+  beforeUpdate: true
+permissions: { network: internet }

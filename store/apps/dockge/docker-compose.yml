@@ -1,0 +1,10 @@
+# Dockge's stacks folder has the same path inside and outside the container, as its compose files need.
+services:
+  dockge:
+    image: docker.io/louislam/dockge:1.5.0@sha256:335c6368b880ecc203236ed89e6e5232e0d6578e8ef5920e4a502390451502bf
+    environment:
+      DOCKGE_STACKS_DIR: ${HLABS_APP_DATA}/stacks
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${HLABS_APP_DATA}/data:/app/data
+      - ${HLABS_APP_DATA}/stacks:${HLABS_APP_DATA}/stacks

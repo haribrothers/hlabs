@@ -1,0 +1,5 @@
+services:
+  lobechat:
+    image: docker.io/lobehub/lobe-chat:1.143.3@sha256:b2d2454525523d9f0a19c79661f83ec45f13363dbadd5c1180887e77af35d872
+    environment:
+      OLLAMA_PROXY_URL: http://ollama:11434

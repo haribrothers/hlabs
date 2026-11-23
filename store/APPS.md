@@ -81,29 +81,29 @@ Approved by Hari on 23 Nov 2026 (D-161, answering Q-20). The 14 apps of D-048 pl
 
 ## Wave 3: AI, developer, finance, security and other (21)
 
-| App                          | Group     | ARM64 | Needs                                                                   | hlabs already does | Public       | Drafted from |
-| ---------------------------- | --------- | ----- | ----------------------------------------------------------------------- | ------------------ | ------------ | ------------ |
-| Portainer (`portainer`)      | Developer | yes   | The Docker socket (controls every app): never public                    | app management     | never        | Runtipi      |
-| code-server (`code-server`)  | Developer | yes   | A shell in the browser: never public                                    | —                  | never        | Runtipi      |
-| NocoDB (`nocodb`)            | Developer | yes   | —                                                                       | —                  | check        | Runtipi      |
-| IT-Tools (`it-tools`)        | Developer | yes   | —                                                                       | —                  | no own login | Runtipi      |
-| Dockge (`dockge`)            | Developer | yes   | The Docker socket (controls every app): never public                    | app management     | never        | Runtipi      |
-| Forgejo (`forgejo`)          | Developer | yes   | —                                                                       | —                  | candidate    | Runtipi      |
-| Actual Budget (`actual`)     | Finance   | yes   | —                                                                       | —                  | check        | Runtipi      |
-| Firefly III (`firefly-iii`)  | Finance   | yes   | —                                                                       | —                  | check        | Runtipi      |
-| Ghostfolio (`ghostfolio`)    | Finance   | yes   | —                                                                       | —                  | check        | Runtipi      |
-| Wallos (`wallos`)            | Finance   | yes   | —                                                                       | —                  | check        | Runtipi      |
-| OpenClaw (`openclaw`)        | Local AI  | yes   | Acts for you (shell, browser, messages): risky access, never public     | —                  | never        | Runtipi      |
-| Ollama (`ollama`)            | Local AI  | yes   | GPU device optional; CPU only on a Mac (Docker can't use the Mac's GPU) | —                  | never        | Runtipi      |
-| Langflow (`langflow`)        | Local AI  | yes   | —                                                                       | —                  | check        | CasaOS       |
-| LobeChat (`lobechat`)        | Local AI  | yes   | —                                                                       | —                  | check        | Runtipi      |
-| AnythingLLM (`anythingllm`)  | Local AI  | yes   | —                                                                       | —                  | check        | CasaOS       |
-| LibreChat (`librechat`)      | Local AI  | yes   | —                                                                       | —                  | check        | CasaOS       |
-| ntfy (`ntfy`)                | Other     | yes   | —                                                                       | —                  | check        | Runtipi      |
-| Kiwix (`kiwix`)              | Other     | yes   | Large downloads (offline Wikipedia is ~100 GB)                          | —                  | no own login | Runtipi      |
-| Crafty Controller (`crafty`) | Other     | yes   | Raw port 25565 (Minecraft) and others per server                        | —                  | check        | Runtipi      |
-| PrivateBin (`privatebin`)    | Security  | yes   | —                                                                       | —                  | no own login | Runtipi      |
-| 2FAuth (`2fauth`)            | Security  | yes   | —                                                                       | —                  | check        | Runtipi      |
+| App                         | Group        | ARM64 | Needs                                                                   | hlabs already does | Public       | Drafted from |
+| --------------------------- | ------------ | ----- | ----------------------------------------------------------------------- | ------------------ | ------------ | ------------ |
+| Portainer (`portainer`)     | Developer    | yes   | The Docker socket (controls every app): never public                    | app management     | never        | Runtipi      |
+| code-server (`code-server`) | Developer    | yes   | A shell in the browser: never public                                    | —                  | never        | Runtipi      |
+| NocoDB (`nocodb`)           | Developer    | yes   | —                                                                       | —                  | check        | Runtipi      |
+| IT-Tools (`it-tools`)       | Developer    | yes   | —                                                                       | —                  | no own login | Runtipi      |
+| Dockge (`dockge`)           | Developer    | yes   | The Docker socket (controls every app): never public                    | app management     | never        | Runtipi      |
+| Forgejo (`forgejo`)         | Developer    | yes   | —                                                                       | —                  | candidate    | Runtipi      |
+| Actual Budget (`actual`)    | Finance      | yes   | —                                                                       | —                  | check        | Runtipi      |
+| Firefly III (`firefly-iii`) | Finance      | yes   | —                                                                       | —                  | check        | Runtipi      |
+| Ghostfolio (`ghostfolio`)   | Finance      | yes   | —                                                                       | —                  | check        | Runtipi      |
+| Wallos (`wallos`)           | Finance      | yes   | —                                                                       | —                  | check        | Runtipi      |
+| OpenClaw (`openclaw`)       | Local AI     | yes   | Acts for you (shell, browser, messages): risky access, never public     | —                  | never        | Runtipi      |
+| Ollama (`ollama`)           | Local AI     | yes   | GPU device optional; CPU only on a Mac (Docker can't use the Mac's GPU) | —                  | never        | Runtipi      |
+| Langflow (`langflow`)       | Local AI     | yes   | —                                                                       | —                  | check        | CasaOS       |
+| LobeChat (`lobechat`)       | Local AI     | yes   | —                                                                       | —                  | check        | Runtipi      |
+| AnythingLLM (`anythingllm`) | Local AI     | yes   | —                                                                       | —                  | check        | CasaOS       |
+| LibreChat (`librechat`)     | Local AI     | yes   | —                                                                       | —                  | check        | CasaOS       |
+| ntfy (`ntfy`)               | Other        | yes   | —                                                                       | —                  | check        | Runtipi      |
+| Kiwix (`kiwix`)             | Other        | yes   | Large downloads (offline Wikipedia is ~100 GB)                          | —                  | no own login | Runtipi      |
+| ConvertX (`convertx`)       | Productivity | yes   | — (replaces Crafty Controller, whose page is HTTPS-only)                | —                  | check        | Upstream     |
+| PrivateBin (`privatebin`)   | Security     | yes   | —                                                                       | —                  | no own login | Runtipi      |
+| 2FAuth (`2fauth`)           | Security     | yes   | —                                                                       | —                  | check        | Runtipi      |
 
 ## Wave 4: home automation, networking and monitoring (19)
 
@@ -131,4 +131,4 @@ Approved by Hari on 23 Nov 2026 (D-161, answering Q-20). The 14 apps of D-048 pl
 
 ## Left out
 
-Cloudflared (public apps use hlabs's own controls, D-150); Bitcoin and Lightning apps (D-148); Readarr (retired in 2025); Pingvin Share (archived); the original File Browser and Python Matter Server (archived; their successors are listed); Nginx Proxy Manager (needs ports 80 and 443, which Caddy holds); Homarr, Homepage and Heimdall (hlabs is the dashboard); MinIO (community edition cut back in 2025); Overseerr (merged into Seerr); Mosquitto and FlareSolverr on their own (no web page: inside Zigbee2MQTT and Prowlarr instead). Cut to make 100, and first in line to replace an app that can't be packaged: NZBGet, Autobrr, ownCloud Infinite Scale, Resilio Sync, ConvertX, Scrypted, WatchYourLAN, MySpeed, Gatus, CyberChef, Semaphore, LocalAI, Flowise.
+Cloudflared (public apps use hlabs's own controls, D-150); Bitcoin and Lightning apps (D-148); Readarr (retired in 2025); Pingvin Share (archived); the original File Browser and Python Matter Server (archived; their successors are listed); Nginx Proxy Manager (needs ports 80 and 443, which Caddy holds); Homarr, Homepage and Heimdall (hlabs is the dashboard); MinIO (community edition cut back in 2025); Overseerr (merged into Seerr); Mosquitto and FlareSolverr on their own (no web page: inside Zigbee2MQTT and Prowlarr instead). Crafty Controller (its page is served over HTTPS only, which hlabs's proxy can't reach; ConvertX takes its place). Cut to make 100, and first in line to replace an app that can't be packaged: NZBGet, Autobrr, ownCloud Infinite Scale, Resilio Sync, Scrypted, WatchYourLAN, MySpeed, Gatus, CyberChef, Semaphore, LocalAI, Flowise.

@@ -1,0 +1,31 @@
+schema: 1
+id: convertx
+name: ConvertX
+version: '0.20.0'
+revision: 1
+tagline: Convert files between hundreds of formats
+description: |
+  Drop files on the page and convert them: documents, images, audio, video, ebooks and 3D models, in
+  more than a thousand formats. Converted files stay on your hlabs. Create your account on the first
+  visit.
+category: productivity
+developer: { name: C4illin, url: https://github.com/C4illin/ConvertX }
+source: https://github.com/C4illin/ConvertX
+license: AGPL-3.0
+icon:
+  logo: logo.png
+  gradient: ['#22c55e', '#14532d']
+  fallback: repeat
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 2048 }
+web: { service: convertx, port: 3000, embed: true }
+env:
+  - key: JWT_SECRET
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [convertx]
+  beforeUpdate: true
+permissions: { network: internet }
