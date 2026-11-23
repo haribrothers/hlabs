@@ -27,6 +27,25 @@
           root.setAttribute('data-motion', look.motion);
       } catch (e) {}
     </script>
+    <!-- iOS 26 Home Screen app (WebKit 301108): the page is laid out short by about the status bar's height, leaving a
+         band under the tab bar. Measure the shortfall and let the bottom-pinned parts reach the screen's edge
+         (--hl-vgap in phone.css); 0 on every other device, and when the gap isn't between 20 and 80px. -->
+    <script>
+      (function () {
+        var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        var standalone = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+        if (!ios || !standalone) return;
+        function apply() {
+          var portrait = innerHeight >= innerWidth;
+          var expected = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+          var gap = Math.round(expected - innerHeight);
+          document.documentElement.style.setProperty('--hl-vgap', gap >= 20 && gap <= 80 ? gap + 'px' : '0px');
+        }
+        apply();
+        addEventListener('resize', apply);
+        addEventListener('orientationchange', function () { setTimeout(apply, 300); });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

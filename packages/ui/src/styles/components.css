@@ -255,6 +255,17 @@
     font: 600 13px/18px var(--hl-font-sans);
     color: var(--ink-muted);
   }
+  /* Safari on iPhone draws its own field (rounded, an inner shadow) under ours unless told not to; checkboxes, radios
+     and selects (their arrow) stay native, tinted with the accent. */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  textarea {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: var(--accent);
+  }
   .hl-input {
     height: var(--size-control);
     padding: 0 14px;

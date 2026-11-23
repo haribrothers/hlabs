@@ -77,21 +77,17 @@
     top: 3px;
     left: calc(50% + var(--space-2));
   }
-  /* The shell is exactly the viewport and pages scroll inside it. Added to the Home screen on an iPhone, iOS reports
-     the dynamic viewport too short until the first scroll (WebKit bug 237961, with viewport-fit=cover), which left a
-     band under the tab bar; there 100vh is the whole screen, so the standalone app uses it (D-172). */
+  /* The shell is exactly the viewport and pages scroll inside it. */
   .hl-shell {
     height: 100dvh;
   }
-  @media (display-mode: standalone) {
-    .hl-shell {
-      height: 100vh;
-    }
-  }
+  /* --hl-vgap: in a Home Screen app on iOS 26 the page is laid out short by about the status bar's height (WebKit
+     301108, viewport-fit=cover with the black-translucent status bar), so whatever sits at bottom: 0 floats above a
+     band of nothing. index.html measures the shortfall; it's 0 everywhere else (D-172). */
   .hl-nav-phone {
     position: fixed;
     inset-inline: 0;
-    bottom: 0;
+    bottom: calc(0px - var(--hl-vgap, 0px));
     z-index: 40;
   }
   /* A bar that takes the tab bar's place for a moment (Files' selection bar), or the on-screen keyboard. */
@@ -606,7 +602,7 @@
     position: fixed;
     z-index: 60;
     inset-inline: 0;
-    bottom: 0;
+    bottom: calc(0px - var(--hl-vgap, 0px));
     box-sizing: border-box;
     max-height: calc(var(--hl-visual-height, 100dvh) * 0.92);
     display: flex;
