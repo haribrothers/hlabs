@@ -27,9 +27,10 @@
           root.setAttribute('data-motion', look.motion);
       } catch (e) {}
     </script>
-    <!-- iOS 26 Home Screen app (WebKit 301108): the page is laid out short by about the status bar's height, leaving a
-         band under the tab bar. Measure the shortfall and let the bottom-pinned parts reach the screen's edge
-         (--hl-vgap in phone.css); 0 on every other device, and when the gap isn't between 20 and 80px. -->
+    <!-- iOS 26 Home Screen app (WebKit 301108): the app's drawing area ends about a status bar's height above the
+         screen's edge, and iOS fills the band with the page's background. Measure it (--hl-vgap, data-vgap) so
+         phone.css colours the band as the tab bar's lower part; nothing on other devices, or when the gap isn't
+         between 20 and 80px. -->
     <script>
       (function () {
         var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -39,7 +40,14 @@
           var portrait = innerHeight >= innerWidth;
           var expected = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
           var gap = Math.round(expected - innerHeight);
-          document.documentElement.style.setProperty('--hl-vgap', gap >= 20 && gap <= 80 ? gap + 'px' : '0px');
+          var root = document.documentElement;
+          if (gap >= 20 && gap <= 80) {
+            root.style.setProperty('--hl-vgap', gap + 'px');
+            root.setAttribute('data-vgap', '');
+          } else {
+            root.style.removeProperty('--hl-vgap');
+            root.removeAttribute('data-vgap');
+          }
         }
         apply();
         addEventListener('resize', apply);
