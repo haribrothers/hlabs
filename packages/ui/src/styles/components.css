@@ -1249,33 +1249,37 @@
     display: none;
   }
 
-  /* Scroll area inside a window: a thin, translucent scrollbar on a clear track, kept clear of the window's
-     rounded edges by the window's own padding. */
-  .hl-scroll {
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-  }
+  /* Every scrollbar in hlabs (the page, windows, dialogs, lists): thin and translucent on a clear track, as the
+     Notifications panel first had it, never the system's grey one. */
   /* Firefox: the standard properties. Elsewhere they'd override the styles below (and the track inset), so only
      browsers without ::-webkit-scrollbar get them. */
   @supports not selector(::-webkit-scrollbar) {
-    .hl-scroll {
+    * {
       scrollbar-width: thin;
       scrollbar-color: var(--border-glass) transparent;
     }
   }
-  .hl-scroll::-webkit-scrollbar {
+  ::-webkit-scrollbar {
     width: 8px;
+    height: 8px;
   }
-  .hl-scroll::-webkit-scrollbar-track {
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
     background: transparent;
   }
-  .hl-scroll::-webkit-scrollbar-thumb {
+  ::-webkit-scrollbar-thumb {
     border-radius: var(--radius-pill);
     background: var(--border-glass);
   }
-  .hl-scroll::-webkit-scrollbar-thumb:hover {
+  ::-webkit-scrollbar-thumb:hover {
     background: var(--border-input);
+  }
+
+  /* Scroll area inside a window, kept clear of the window's rounded edges by the window's own padding. */
+  .hl-scroll {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
 
   /* Scroll pane (macOS Settings style): a header over the scrolling content with no box. Content fades out as it

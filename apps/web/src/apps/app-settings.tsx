@@ -111,8 +111,9 @@ function AppSettingsView({ appId, onClose, onOpenLogs, onOpenContainerLogs }: Se
     label: copy.tabs[t.id],
   }));
   const card = (
-    <GlassCard level={2} className="flex w-full max-w-[600px] flex-col gap-6 p-7">
-      <header className="flex items-center gap-4">
+    // At most the window's height: the header and tabs stay, the tab's content scrolls inside the card.
+    <GlassCard level={2} className="flex max-h-full min-h-0 w-full max-w-[600px] flex-col gap-6 overflow-hidden p-7">
+      <header className="flex shrink-0 items-center gap-4">
         <AppLogo
           decorative
           name={app.name}
@@ -140,7 +141,12 @@ function AppSettingsView({ appId, onClose, onOpenLogs, onOpenContainerLogs }: Se
         active={tab}
         onSelect={(id) => id !== tab && discard.guard(() => setTab(id as Tab))}
       />
-      <div role="tabpanel" aria-label={copy.tabs[tab]} className="flex flex-col gap-6">
+      {/* Padded inside its scrolling box so focus rings at the edges aren't cut off. */}
+      <div
+        role="tabpanel"
+        aria-label={copy.tabs[tab]}
+        className="hl-scroll -mx-2 -mb-2 flex min-h-0 flex-col gap-6 px-2 pb-2"
+      >
         {/* One panel per tab, each in its own file; Overview is the rest of this window. */}
         {tab === 'configuration' ? (
           <AppConfigPanel app={app} onDirtyChange={discard.setDirty} />
@@ -186,7 +192,7 @@ function AppSettingsView({ appId, onClose, onOpenLogs, onOpenContainerLogs }: Se
   if (onClose) {
     return (
       <ModalPanel label={copy.appSettings} onClose={back}>
-        <section aria-label={copy.appSettings} className="flex w-full items-start justify-center p-3 md:p-12">
+        <section aria-label={copy.appSettings} className="flex h-full w-full items-start justify-center p-3 md:p-12">
           {card}
         </section>
       </ModalPanel>
