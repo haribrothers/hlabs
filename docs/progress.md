@@ -346,6 +346,16 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-PHONE-12 · Install an app from the phone (InstallSheet as a sheet that changed input keeps; failures come back as a sheet)
 - [x] US-PHONE-23 · Add hlabs to the home screen (apple-touch-icon, Apple meta tags, the one-time iOS hint)
 - [x] US-PHONE-24 · Run as a standalone web app (standalone detection, "Remember this phone" on, offline shell, one reload onto a new version)
+- [ ] US-PHONE-25 · Files on the phone in the new design (D-174)
+- [ ] US-PHONE-26 · Backups on the phone in the new design (D-174)
+- [ ] US-PHONE-27 · Live usage, notifications and updates on the phone in the new design (D-174)
+- [ ] US-PHONE-28 · Settings pages on the phone in the new design (D-174)
+- [ ] US-TAB-01 · Touch-sized controls on a tablet (D-175)
+- [ ] US-TAB-02 · Long-press for every right-click menu (D-175)
+- [ ] US-TAB-03 · Drag by touch (D-175)
+- [ ] US-TAB-04 · The Dock on a touch screen (D-175)
+- [ ] US-TAB-05 · iPad in portrait (D-175)
+- [ ] US-TAB-06 · The on-screen keyboard and the Home Screen app on a tablet (D-175)
 - [ ] US-SITE-11 · Keep screenshots in the docs current
 
 ## Phase 8 · Power features (P3)

@@ -502,7 +502,9 @@ Four tracks that don't wait for each other (D-151):
 | 10 | System tools and reset | US-SYS-27 to 31, 37, 38 | — |
 | 11 | Public apps | Cloudflare prototype, then US-SYS-43, 44, US-APP-27 to 29 | Hari reviews the prototype (D-171); waits for Hari's domain on Cloudflare; live checks from outside the home network |
 | 12 | Phone and PWA | US-PHONE-01 to 12, 23, 24 | Hari checks on iOS Safari and Android Chrome |
-| 13 | Docs screenshots | US-SITE-11 | — |
+| 13 | The rest of the phone app in Direction A | US-PHONE-25 to 28 (D-174) | Hari reviews the missing frames first, then checks on his iPhone |
+| 14 | Tablets: touch on the desktop layout | US-TAB-01 to 06 (D-175) | Hari reviews the tablet frames first, then checks on an iPad |
+| 15 | Docs screenshots | US-SITE-11 | after 13 and 14, so the screenshots show them |
 
 **Done when**
 - [ ] All P2 stories pass; axe clean on every route; phone layouts verified on iOS Safari and Android Chrome.

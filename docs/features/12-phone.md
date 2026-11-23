@@ -410,6 +410,46 @@ The phone layout of the hlabs dashboard: the same React SPA as the desktop, rend
 - UI: Button, Logo. Standalone detection via `matchMedia('(display-mode: standalone)')` and `navigator.standalone` (iOS).
 - Edge case: the session cookie must be set on the tailnet host as well as `.hlabs.local` (07-security.md §7.3), since an installed app keeps the host it was installed from.
 
+### US-PHONE-25 · Files on the phone in the new design
+**Feature:** F-PHONE-01 · **Priority:** P2 · **Phase:** 7 · **Screens:** `PhoneRedesignA_Files`, `PhoneRedesignA_FilesActions`, `PhoneRedesignA_FilesSelect`, `PhoneRedesignA_FilesMove`, `PhoneRedesignA_FilesRename`, `PhoneRedesignA_FilesTrash`, `PhoneRedesignA_FolderPicker`
+**As** anyone signed in on a phone, **I want** Files to look and work like the rest of the phone app, **so that** hlabs feels like one app.
+
+**Acceptance criteria**
+- **Given** Files on a phone, **then** it follows Direction A (D-172, D-174): a "Files" large title with "+" and "Select" in the bar, a search field, places as chips (Home, Photos, the drives, Trash), the breadcrumb, and the folder as an inset grouped list with a ••• button on every row.
+- **Given** •••, a selection, Move to, Rename, the Trash or the folder picker, **then** each is the frame's sheet or screen: the actions sheet with Open, Share, Download and the list of actions; the selection bar in the tab bar's place; Move to as a full-height sheet; Rename as a sheet with the name selected up to its extension; the Trash with "Restore all" and "Empty trash".
+- **Given** any of them, **then** what it does is unchanged (US-FILE-01…24): only the phone layout changes, and the desktop is untouched.
+
+**Implementation notes**
+- Layout only; phone-only new behaviour (upload from the phone's photo library, US-PHONE-17) stays in its phase.
+
+### US-PHONE-26 · Backups on the phone in the new design
+**Feature:** F-PHONE-01 · **Priority:** P2 · **Phase:** 7 · **Screens:** `PhoneRedesignA_Backups`, `PhoneRedesignA_BackupsEmpty`, `PhoneRedesignA_BackupAdd`, `PhoneRedesignA_RestoreProgress`
+**As** an admin on a phone, **I want** Backups in the phone app's design, **so that** I can check and start backups the same way as everything else.
+
+**Acceptance criteria**
+- **Given** Backups on a phone, **then** it follows Direction A: "‹ Settings" over a "Backups" large title, the last backup with its run bars and "Back up now", the destination, schedule and restore as inset rows, and the recent runs.
+- **Given** no destination, adding one, or a restore running, **then** they look like `BackupsEmpty`, `BackupAdd` (a sheet) and `RestoreProgress` (a sheet over Backups).
+- **Given** any of them, **then** what they do is unchanged (US-BKP-*); the desktop is untouched.
+
+### US-PHONE-27 · Live usage, notifications and updates on the phone in the new design
+**Feature:** F-PHONE-01 · **Priority:** P2 · **Phase:** 7 · **Screens:** `PhoneRedesignA_Usage`, `PhoneRedesignA_Notifications`, `PhoneRedesignA_StoreUpdates`, `PhoneRedesignA_Updates`
+**As** anyone signed in on a phone, **I want** Live usage, Notifications and Updates in the phone app's design, **so that** nothing looks out of place.
+
+**Acceptance criteria**
+- **Given** Usage on a phone, **then** it follows `PhoneRedesignA_Usage`: a "Live usage" large title, the range as a segmented control, the tiles two per row, the chart and "Apps by memory".
+- **Given** the bell, **then** Notifications open as a sheet (`PhoneRedesignA_Notifications`) with "Mark all read" and Today / Earlier groups.
+- **Given** App Store › Updates and Settings › Updates, **then** they follow `PhoneRedesignA_StoreUpdates` and `PhoneRedesignA_Updates`.
+- **Given** any of them, **then** what they do is unchanged; the desktop is untouched.
+
+### US-PHONE-28 · Settings pages on the phone in the new design
+**Feature:** F-PHONE-01 · **Priority:** P2 · **Phase:** 7 · **Screens:** `PhoneRedesignA_Account`, `PhoneRedesignA_Appearance`, `PhoneRedesignA_Users`, `PhoneRedesignA_Invite`, `PhoneRedesignA_Network`, `PhoneRedesignA_Storage`, `PhoneRedesignA_Engine`, `PhoneRedesignA_Advanced`
+**As** an admin on a phone, **I want** every Settings page in the phone app's design, **so that** settings read the same everywhere.
+
+**Acceptance criteria**
+- **Given** any Settings page on a phone, **then** it is a page you go into: "‹ Settings" over its large title, inset grouped lists, values on the right of rows, switches as in D-172, and its dialogs as sheets.
+- **Given** Account, Appearance, Users (with Invite), Network & remote access, Storage, Engine & startup, Updates and Advanced, **then** each follows its frame.
+- **Given** any of them, **then** what they do is unchanged; the desktop is untouched.
+
 ## API additions
 Merged into [05-api](../prd/05-api.md) under "Contract additions from the feature files".
 

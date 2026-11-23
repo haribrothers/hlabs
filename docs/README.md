@@ -28,8 +28,9 @@ hlabs is a home cloud OS for macOS and Linux: an App Store for self-hosted apps,
 | [09-account-people](features/09-account-people.md) | Settings · account & people | 35 |
 | [10-system-settings](features/10-system-settings.md) | Settings · system | 41 |
 | [11-system-states](features/11-system-states.md) | System states | 22 |
-| [12-phone](features/12-phone.md) | Phone | 24 |
+| [12-phone](features/12-phone.md) | Phone | 28 |
 | [13-site](features/13-site.md) | Website and help | 14 |
+| [14-tablet](features/14-tablet.md) | Tablets (touch on the desktop layout) | 6 |
 
 ## Design
 [design/](design/): brand book, motion, tokens, 25 component specs with a reference implementation, logos, and all 123 screens with images (8 added for the phase 4 follow-ups, rendered from `design/mockups/`) ([design/screens.md](design/screens.md)).
