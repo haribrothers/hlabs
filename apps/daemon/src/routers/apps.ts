@@ -76,6 +76,25 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
   retryInstall: (input, ctx) => ctx.services.installer.retry(installer(ctx), input.appId, input.portOverrides?.web),
   uninstall: (input, ctx) => ctx.services.installer.uninstall(installer(ctx), input.appId, input.keepData),
   reinstall: (input, ctx) => ctx.services.reinstalls.reinstall(installer(ctx), input.appId),
+  // App settings › Configuration and Permissions (US-APP-13…18), admins only (the router's access).
+  getConfig: (input, ctx) => ctx.services.appConfig.get(input.appId, installer(ctx)),
+  revealSecret: (input, ctx) => ctx.services.appConfig.revealSecret(installer(ctx), input.appId, input.key),
+  setConfig: (input, ctx) =>
+    ctx.services.appConfig.setConfig(installer(ctx), input.appId, {
+      env: input.env,
+      hostname: input.hostname,
+      hostPort: input.hostPort,
+    }),
+  setPermissions: (input, ctx) =>
+    ctx.services.appConfig.setPermissions(installer(ctx), input.appId, {
+      mounts: input.mounts.map((m) => ({ ...m, subpath: m.subpath ?? '', mode: m.mode ?? 'rw' })),
+      network: input.network,
+    }),
+  // "Require hlabs login" (US-APP-19): the route changes at once, audited.
+  setAuthMode: async (input, ctx) => {
+    await ctx.services.appConfig.setAuthMode(installer(ctx), input.appId, input.mode);
+    return { ok: true as const };
+  },
   /** Whether this app's Home widgets need a key, and whether one is set (US-HOME-20, D-157). */
   widgetKey: async ({ appId }, ctx) => {
     const app = appWidgetsOf(ctx.services.db, appId);

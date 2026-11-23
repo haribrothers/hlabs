@@ -29,6 +29,8 @@ export const jobNames: Record<string, string> = {
   app_uninstall: 'the uninstall',
   app_move_data: 'the app data move',
   app_deploy_custom: 'the app setup',
+  app_reinstall: 'the reinstall',
+  app_config: 'the app restart',
   starter_apps: 'the starter apps',
   backup: 'the backup',
   engine_install: 'the engine install',
@@ -185,6 +187,10 @@ export const errorCopy = {
       body: "Neither the new version nor the previous one started. Check the app's logs.",
     }),
     HOSTNAME_TAKEN: () => ({ title: 'That address is taken', body: 'Choose another name.' }),
+    APP_CONFIG_UNDONE: (d) => ({
+      title: `${str(d, 'app', 'The app')} didn't start with the new settings, so they were undone`,
+      body: "It's running with its previous settings. Check its logs, then try again.",
+    }),
     // App sources and libraries (US-STORE-18, 19, 27…29)
     SOURCE_ADDRESS_INVALID: () => ({
       title: "That isn't a source address",

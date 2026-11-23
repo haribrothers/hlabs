@@ -104,6 +104,42 @@ export const memoryByAppSchema = z.object({
 });
 export type MemoryByApp = z.infer<typeof memoryByAppSchema>;
 
+/** How a container of an app is doing (US-APP-21): "Stopped" when the app is stopped, "Exited" when it ended on its own. */
+export const containerStatusSchema = z.enum(['running', 'restarting', 'paused', 'stopped', 'exited']);
+export type ContainerStatus = z.infer<typeof containerStatusSchema>;
+
+/** One container of an app on its Usage tab (US-APP-21), from the last 5 s sample; values null when not running. */
+export const appContainerUsageSchema = z.object({
+  /** `<appId>-<service>`, as Docker names it without hlabs's prefix and replica number (`vaultwarden-server`). */
+  name: z.string(),
+  /** Its compose service, for opening the logs filtered to it. */
+  service: z.string(),
+  status: containerStatusSchema,
+  cpu: reading,
+  memBytes: reading,
+  /** Download rate now, bytes/s. */
+  netRx: reading,
+});
+export type AppContainerUsage = z.infer<typeof appContainerUsageSchema>;
+
+/** An app's Usage tab (US-APP-20, US-APP-21). */
+export const appUsageDetailSchema = z.object({
+  appId: z.string(),
+  /** For "Collecting data" during its first 10 minutes. */
+  installedAt: z.number(),
+  /** Its values in the latest sample; null when it isn't running or before the first sample. */
+  current: appSampleSchema.nullable(),
+  /** Its average CPU since midnight on this computer (0–100 of the host); null without data. */
+  cpuAvgToday: reading,
+  /** Its highest memory in the last 24 hours; null without data. */
+  memPeak24h: reading,
+  /** Its data folder and images (counted every 10 minutes); null while the first count is still going. */
+  disk: z.object({ dataBytes: z.number().int().nonnegative(), imageBytes: z.number().int().nonnegative() }).nullable(),
+  /** Each compose service's container, in file order. */
+  containers: z.array(appContainerUsageSchema),
+});
+export type AppUsageDetail = z.infer<typeof appUsageDetailSchema>;
+
 export const usage = {
   overview: io(empty, usageOverviewSchema),
   /** The latest sample; null before the first one. */
@@ -120,5 +156,5 @@ export const usage = {
   ),
   memoryByApp: io(z.object({ range: usageRangeSchema }), memoryByAppSchema),
   topApps: io(z.object({ limit: z.number().int().min(1).max(50).default(5) }).optional(), pending),
-  appDetail: io(appRefSchema, pending),
+  appDetail: io(appRefSchema, appUsageDetailSchema),
 };

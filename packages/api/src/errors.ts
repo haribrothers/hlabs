@@ -69,6 +69,8 @@ export const HLABS_ERRORS = {
   /** An update didn't start, and neither did the previous version (US-STORE-17). */
   APP_ROLLBACK_FAILED: 'INTERNAL_SERVER_ERROR',
   HOSTNAME_TAKEN: 'CONFLICT',
+  /** New settings didn't start the app in time, so the previous ones were put back (US-APP-16). */
+  APP_CONFIG_UNDONE: 'INTERNAL_SERVER_ERROR',
 
   // App sources and libraries (US-STORE-18, 19, 27…29)
   /** Not an https address or a folder path. */

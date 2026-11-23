@@ -96,6 +96,8 @@ export const jobKindSchema = z.enum([
   'app_uninstall',
   /** Rebuilds an app's containers and images, keeping its data and settings (US-APP-25). */
   'app_reinstall',
+  /** Saving an app's settings and restarting it, undone when it isn't healthy (US-APP-16, US-APP-18). */
+  'app_config',
   'app_move_data',
   'app_deploy_custom',
   'starter_apps',

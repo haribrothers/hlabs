@@ -16,10 +16,15 @@ import {
 } from './shared';
 
 export interface LineChartProps {
-  /** One to six series; one series gets an area wash and no legend. */
-  series: { name: string; values: number[] }[];
-  /** One x label per value. */
+  /**
+   * One to six series; one series gets an area wash and no legend. A null value is a gap: the line breaks there (the
+   * thing measured wasn't running), and its tooltip and table say "No data".
+   */
+  series: { name: string; values: Array<number | null> }[];
+  /** One x label per value (the tooltip's and table's time). */
   labels: string[];
+  /** The x axis's labels at these points instead of evenly spaced ones from `labels` (e.g. every 6 hours and "now"). */
+  xTicks?: Array<{ index: number; label: string }>;
   title?: string;
   /** A note beside the title, e.g. "Peak 46% at 16:32". */
   aside?: string;
@@ -50,22 +55,29 @@ export function LineChart({
   width = 560,
   height = 200,
   formatValue,
+  xTicks,
 }: LineChartProps) {
   const t = useUiStrings();
   const tableId = useId();
   const [idx, setIdx] = useState<number | null>(null);
   const keep = downsample(allLabels.length, allSeries);
   const labels = keep.map((i) => allLabels[i]!);
-  const series = allSeries.map((s) => ({ name: s.name, values: keep.map((i) => s.values[i] ?? 0) }));
+  const series = allSeries.map((s) => ({ name: s.name, values: keep.map((i) => s.values[i] ?? null) }));
   const n = labels.length;
   const fmt = formatValue ?? ((v: number) => formatNumber(v) + unit);
-  const hi = Math.max(0, ...series.flatMap((s) => s.values));
+  const fmtOrGap = (v: number | null | undefined) => (v === null || v === undefined ? t.chartNoData : fmt(v));
+  const hi = Math.max(0, ...series.flatMap((s) => s.values.filter((v): v is number => v !== null)));
   const top = max ?? niceMax(hi);
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => f * top);
   const step = (width - PAD.left - PAD.right) / Math.max(1, n - 1);
   const x = (i: number) => PAD.left + (n <= 1 ? 0 : i * step);
   const y = (v: number) => PAD.top + (height - PAD.top - PAD.bottom) * (1 - v / top);
   const every = Math.max(1, Math.ceil(n / 6));
+  // Given ticks land on the nearest point kept after downsampling.
+  const ticksAt = xTicks?.map((tick) => {
+    const at = keep.findIndex((k) => k >= tick.index);
+    return { i: at === -1 ? n - 1 : at, label: tick.label };
+  });
   const single = series.length === 1;
   const at = idx !== null && idx < n ? idx : null;
 
@@ -112,8 +124,8 @@ export function LineChart({
               </text>
             </g>
           ))}
-          {labels.map((l, i) =>
-            showLabel(i, n, every) ? (
+          {(ticksAt ?? labels.map((label, i) => ({ i, label })).filter(({ i }) => showLabel(i, n, every))).map(
+            ({ i, label: l }) => (
               <text
                 key={`x${i}`}
                 x={x(i)}
@@ -123,17 +135,22 @@ export function LineChart({
               >
                 {l}
               </text>
-            ) : null,
+            ),
           )}
           {series.map((s, si) => {
-            const d = s.values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+            const runs = segments(s.values);
+            // A lone point between gaps is a zero-length line, which the round cap draws as a dot.
+            const path = (run: number[]) =>
+              run.map((i, j) => `${j ? 'L' : 'M'}${x(i).toFixed(1)} ${y(s.values[i]!).toFixed(1)}`).join(' ') +
+              (run.length === 1 ? ` L${x(run[0]!).toFixed(1)} ${y(s.values[run[0]!]!).toFixed(1)}` : '');
+            const d = runs.map(path).join(' ');
             const color = seriesColor(si);
             return (
               <g key={s.name}>
                 {single && area ? (
                   <path
                     className="hl-chart-area"
-                    d={`${d} L${x(n - 1)} ${y(0)} L${x(0)} ${y(0)} Z`}
+                    d={runs.map((run) => `${path(run)} L${x(run.at(-1)!)} ${y(0)} L${x(run[0]!)} ${y(0)} Z`).join(' ')}
                     style={{ fill: color }}
                     opacity={0.12}
                   />
@@ -161,17 +178,19 @@ export function LineChart({
                 className="hl-chart-cross"
                 strokeWidth={1}
               />
-              {series.map((s, si) => (
-                <circle
-                  key={s.name}
-                  cx={x(at)}
-                  cy={y(s.values[at] ?? 0)}
-                  r={4.5}
-                  className="hl-chart-dot"
-                  style={{ fill: seriesColor(si), stroke: 'var(--hl-chart-ring)' }}
-                  strokeWidth={2}
-                />
-              ))}
+              {series.map((s, si) =>
+                s.values[at] === null ? null : (
+                  <circle
+                    key={s.name}
+                    cx={x(at)}
+                    cy={y(s.values[at] ?? 0)}
+                    r={4.5}
+                    className="hl-chart-dot"
+                    style={{ fill: seriesColor(si), stroke: 'var(--hl-chart-ring)' }}
+                    strokeWidth={2}
+                  />
+                ),
+              )}
             </g>
           ) : null}
         </svg>
@@ -189,7 +208,7 @@ export function LineChart({
               <div key={s.name} className="hl-chart-tip-row">
                 <Swatch index={si} line />
                 <span className="hl-chart-tip-name">{s.name}</span>
-                <b>{fmt(s.values[at] ?? 0)}</b>
+                <b>{fmtOrGap(s.values[at])}</b>
               </div>
             ))}
           </div>
@@ -201,7 +220,7 @@ export function LineChart({
             ? ''
             : pointText(
                 labels[at]!,
-                series.map((s) => ({ name: s.name, value: fmt(s.values[at] ?? 0) })),
+                series.map((s) => ({ name: s.name, value: fmtOrGap(s.values[at]) })),
               )
         }
       />
@@ -209,8 +228,22 @@ export function LineChart({
         id={tableId}
         caption={title ?? t.chartData}
         columns={[t.chartTime, ...series.map((s) => s.name)]}
-        rows={labels.map((l, i) => [l, ...series.map((s) => fmt(s.values[i] ?? 0))])}
+        rows={labels.map((l, i) => [l, ...series.map((s) => fmtOrGap(s.values[i]))])}
       />
     </figure>
   );
+}
+
+/** The runs of known values (their indices), split where a value is null. */
+export function segments(values: ReadonlyArray<number | null>): number[][] {
+  const runs: number[][] = [];
+  let run: number[] = [];
+  values.forEach((v, i) => {
+    if (v === null) {
+      if (run.length) runs.push(run);
+      run = [];
+    } else run.push(i);
+  });
+  if (run.length) runs.push(run);
+  return runs;
 }

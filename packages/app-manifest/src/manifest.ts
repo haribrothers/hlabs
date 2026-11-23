@@ -177,6 +177,8 @@ export const AppManifest = z
     permissions: z
       .object({
         network: z.enum(['none', 'lan', 'internet']).default('internet'),
+        /** Why it reaches the internet, beside "Reach the internet" in App settings (US-APP-18): "Needed for website icons". */
+        internetReason: z.string().min(1).max(80).optional(),
         gpu: z.boolean().default(false),
         dockerSocket: z.boolean().default(false),
         /**

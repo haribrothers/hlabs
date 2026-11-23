@@ -3,7 +3,7 @@
 // folder, `appdata:<dir>` a folder in the app's own data (always on this computer, D-011). Paths are jailed to their
 // location: `..` and absolute subpaths are refused, and a folder can't get more access than the manifest asks for.
 import { hlabsError } from '@hlabs/api';
-import { parseShortVolume, type AppManifest, type ComposeFile } from '@hlabs/app-manifest';
+import { EXTRA_MOUNT_ROOT, parseShortVolume, type AppManifest, type ComposeFile } from '@hlabs/app-manifest';
 import { storageLocations, type HlabsDb } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
 import { constants } from 'node:fs';
@@ -41,6 +41,13 @@ export interface MountRequest {
 export interface ResolvedMount extends MountRequest {
   /** Absolute path on this computer. */
   hostPath: string;
+}
+
+/** `/mnt/hlabs/<name>`: a folder given in App settings (US-APP-17); one name, no slashes or `..`. */
+export function isExtraTarget(target: string): boolean {
+  const name = target.startsWith(`${EXTRA_MOUNT_ROOT}/`) ? target.slice(EXTRA_MOUNT_ROOT.length + 1) : '';
+  // eslint-disable-next-line no-control-regex
+  return /^[^/\\:\x00-\x1f]{1,80}$/.test(name) && name !== '.' && name !== '..';
 }
 
 const clean = (subpath: string) => posix.normalize(subpath.replace(/\\/g, '/')).replace(/^\.\/?|\/$/g, '');
@@ -108,15 +115,23 @@ export async function resolveMounts(
   manifest: AppManifest,
   requested: MountRequest[],
   owner: MountOwner,
+  options: {
+    /** App settings may give folders of its own at `/mnt/hlabs/<name>` (US-APP-17). */
+    extraFolders?: boolean;
+    /** A mount it already has, kept as it is: not refused for a drive that is offline or read only now. */
+    unchanged?: (m: MountRequest) => boolean;
+  } = {},
 ): Promise<ResolvedMount[]> {
   const byKey = new Map(manifest.folders.map((f) => [f.key, f]));
   const seen = new Set<string>();
   const out: ResolvedMount[] = [];
   for (const m of requested) {
-    const folder = byKey.get(m.target);
+    const extra = options.extraFolders && isExtraTarget(m.target);
+    const folder = byKey.get(m.target) ?? (extra ? ({ mode: 'rw' } as const) : undefined);
     if (!folder || seen.has(m.target)) {
       throw hlabsError('VALIDATION_FAILED', `Unknown folder ${m.target}`, { folder: m.target });
     }
+    const kept = options.unchanged?.(m) ?? false;
     seen.add(m.target);
     const location = db.select().from(storageLocations).where(eq(storageLocations.id, m.storageLocationId)).get();
     if (!location || !location.appsAllowed) {
@@ -126,7 +141,7 @@ export async function resolveMounts(
     if (owner.role !== 'admin' && !memberMayUse(location, subpath, owner)) {
       throw hlabsError('FILES_ACCESS_DENIED', `Folder ${m.target} isn't yours to choose`, { folder: m.target });
     }
-    if (location.status !== 'ok') {
+    if (location.status !== 'ok' && !kept) {
       throw hlabsError('NAS_UNREACHABLE', `${location.name} is offline`, { folder: m.target, location: location.name });
     }
     const hostPath = normalize(join(location.path, subpath));
@@ -137,7 +152,7 @@ export async function resolveMounts(
     }
     // `ro` stays `ro` (US-STORE-08: the mode can't be raised above the manifest's).
     const mode = folder.mode === 'ro' ? 'ro' : m.mode;
-    if (mode === 'rw') {
+    if (mode === 'rw' && !kept) {
       const writable = await access(real, constants.W_OK).then(
         () => true,
         () => false,

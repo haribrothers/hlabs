@@ -24,8 +24,8 @@ Secrets never go in SQLite in plain text: passwords are Argon2id hashes, TOTP se
 | `app_sources` | `id`, `name`, `url` (git or https index), `kind` (`builtin`\|`git`\|`index`), `enabled`, `last_synced_at`, `last_error` | The built-in source can't be removed. |
 | `catalog_apps` | `source_id`, `app_id`, `version`, `manifest_json`, `updated_at` | Cache of the store index; rebuilt on sync. |
 | `apps` | `id` (= appId), `source_id`, `version`, `previous_version`, `state` (see 02 §2.5), `state_detail`, `hostname`, `port_fallback`, `autostart`, `auto_update`, `auth_mode` (`hlabs`\|`none`), `installed_at`, `updated_at`, `installed_by`, `custom` (bool, DeployCustom) | Desired state + last known state. |
-| `app_env` | `app_id`, `key`, `value` or `secret_ref`, `is_secret` | User-provided env from manifest prompts / AppConfig. |
-| `app_mounts` | `id`, `app_id`, `target` (container path key from manifest), `storage_location_id`, `subpath`, `mode` (`ro`\|`rw`) | Folder access chosen in InstallSheet / AppPermissions. |
+| `app_env` | `app_id`, `key`, `value` or `secret_ref`, `is_secret` | User-provided env from manifest prompts / AppConfig. Keys that aren't a manifest prompt are variables someone added in AppConfig (set on the web service, D-165). A secret's `value` is null and `secret_ref` is `env`: its value is only in the app's 0600 `.env`. |
+| `app_mounts` | `id`, `app_id`, `target` (container path key from manifest, or `/mnt/hlabs/<name>` for a folder given in AppPermissions), `storage_location_id`, `subpath`, `mode` (`ro`\|`rw`) | Folder access chosen in InstallSheet / AppPermissions (US-APP-17). |
 | `app_access` | `app_id`, `user_id` | Members only; admins can open every app. |
 | `home_layout` | `user_id`, `items_json`, `dock_json`, `hidden_json` | Ordered app ids + widgets per user (HomeEdit; at most 4 widgets, app widgets as `app:<appId>:<widgetId>`); `dock_json` = the person's pinned Dock apps, ordered, max 8 (D-054); `hidden_json` = apps they took off Home, still installed and not appended again as new (US-HOME-18). |
 
@@ -74,7 +74,7 @@ These columns were introduced while writing the stories and are part of the sche
 | `app_sources` | kind `local`; `public_key` (pinned ed25519 key) | 05-app-store |
 | `app_sources` | `problems_json` (apps left out at the last sync and why, `[{ appId, file, line?, message }]`, US-STORE-27; migration 0008); `last_error` holds an hlabs code; `public_key` is the pinned minisign public key text (D-160) | 05-app-store |
 | `catalog_apps` | `first_seen_at` (for the "New" sort); `version_seen_at` (when this version or revision first reached the catalogue: "released 2 days ago" in Updates, D-158; migration 0007) | 05-app-store |
-| `apps` | `net_internet` (bool), `net_apps` (bool), `data_location_id` | 06-apps |
+| `apps` | `net_internet` (bool), `net_apps` (bool), `data_location_id` | 06-apps. `net_*` are set at install from manifest `permissions.network` (`internet`: both on; `lan`: internet off; `none`: both off) and changed in AppPermissions (US-APP-18, D-165). |
 | `storage_locations` | `auto_mount` (default true), `apps_allowed` (default true) | 07-files |
 | `backup_plan` | `pause_apps` (default true) | 08-usage-backups |
 | `backup_runs` | `app_count`, `folder_count`, `retry` (the 30-minute retry of a scheduled run, D-046) | 08-usage-backups (US-BKP-03, US-BKP-07) |

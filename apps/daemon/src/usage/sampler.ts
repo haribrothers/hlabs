@@ -3,7 +3,8 @@
 // is a `usage.sample` event and what `usage.current` returns. Network and disk are rates between two samples: the first
 // sample after start has none, and a counter that went back (a restarted container) counts as 0. A container whose
 // stats are slow or fail leaves its app without values for that sample; the rest is still published. With the engine
-// stopped, only the host is sampled.
+// stopped, only the host is sampled. Each container's own reading from the last sample is kept too, for an app's Usage
+// tab (US-APP-21).
 import type { AppSample, UsageSample } from '@hlabs/api';
 import { apps, type HlabsDb } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
@@ -40,6 +41,14 @@ interface Reading {
   totals: Totals;
 }
 
+/** One container in the last sample (US-APP-21): CPU 0–100 of the host, memory, and its network rates (bytes/s). */
+export interface ContainerReading {
+  cpu: number;
+  memBytes: number;
+  netRx: number | null;
+  netTx: number | null;
+}
+
 /** Bytes per second between two totals; null without an earlier one, 0 when the counter went back. */
 export function rate(previous: Reading | undefined, at: number, total: number, key: keyof Totals): number | null {
   if (!previous || at <= previous.at) return null;
@@ -71,6 +80,8 @@ export class UsageSampler {
   private hostBefore: Reading | undefined;
   /** Container id → its last totals. */
   private readonly containersBefore = new Map<string, Reading>();
+  /** Container id → what it used in the last sample (running containers whose stats could be read). */
+  private readonly containersNow = new Map<string, ContainerReading>();
   private timer: NodeJS.Timeout | null = null;
   private running: Promise<UsageSample> | null = null;
 
@@ -91,6 +102,11 @@ export class UsageSampler {
   /** The newest sample, or null before the first. */
   latest(): UsageSample | null {
     return this.ring.at(-1) ?? null;
+  }
+
+  /** A container's reading in the last sample; null when it wasn't running or its stats couldn't be read. */
+  containerUsage(containerId: string): ContainerReading | null {
+    return this.containersNow.get(containerId) ?? null;
   }
 
   /** The last hour, oldest first. */
@@ -174,6 +190,7 @@ export class UsageSampler {
     });
     const seen = new Set(containers.map((c) => c.id));
     for (const id of this.containersBefore.keys()) if (!seen.has(id)) this.containersBefore.delete(id);
+    for (const id of this.containersNow.keys()) if (!seen.has(id) || !stats.get(id)) this.containersNow.delete(id);
 
     return running.map((appId) => {
       const mine = containers.filter((c) => c.appId === appId);
@@ -191,6 +208,12 @@ export class UsageSampler {
           rate(before, at, s[key], key),
         );
         if (rates.some((v) => v === null)) rated = false;
+        this.containersNow.set(c.id, {
+          cpu: Math.min(100, s.cpuPercent),
+          memBytes: s.memBytes,
+          netRx: rates[0] ?? null,
+          netTx: rates[1] ?? null,
+        });
         sum.netRx! += rates[0] ?? 0;
         sum.netTx! += rates[1] ?? 0;
         sum.diskRead! += rates[2] ?? 0;

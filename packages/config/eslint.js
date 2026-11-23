@@ -44,5 +44,26 @@ export default tseslint.config(
     plugins: { 'react-hooks': reactHooks },
     rules: reactHooks.configs.recommended.rules,
   },
+  {
+    // The dashboard and the menu-bar app run in a browser: every @hlabs/api module loads the server's tRPC builder
+    // (which refuses to run there), so they take only types from it; shared values live in @hlabs/shared.
+    files: ['apps/web/src/**/*.{ts,tsx}', 'apps/tray/src/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@hlabs/api', '@hlabs/api/*'],
+              allowTypeImports: true,
+              message:
+                'Only types from @hlabs/api in the browser (it loads server code); put shared values in @hlabs/shared.',
+            },
+          ],
+        },
+      ],
+    },
+  },
   prettier,
 );

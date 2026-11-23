@@ -4,7 +4,13 @@
 // it's healthy, then sets up its address and marks it running. The app stays `installing` until it is healthy, so any
 // failure is `install_failed` (D-081). A failure leaves nothing else changed and can be retried or removed.
 import { hlabsCodeOf, hlabsError, type HlabsCode, type InstallStep, type InstallStepDetail } from '@hlabs/api';
-import { hasRiskyPermissions, renderApp, type AppManifest, type ComposeFile } from '@hlabs/app-manifest';
+import {
+  EXTRA_MOUNT_ROOT,
+  hasRiskyPermissions,
+  renderApp,
+  type AppManifest,
+  type ComposeFile,
+} from '@hlabs/app-manifest';
 import {
   appAccess,
   appEnv,
@@ -220,6 +226,7 @@ export class InstallService {
       autostart: app.autostart,
       autoUpdate: app.autoUpdate,
       custom: app.custom,
+      authMode: app.authMode,
     };
   }
 
@@ -272,6 +279,10 @@ export class InstallService {
           hostname,
           portFallback: port,
           authMode: manifest.web.auth,
+          // Network access follows the manifest (US-APP-18), except that `lan` keeps the internet for now: Docker's
+          // internal networks would cut the home network too (Q-23, D-165), so only `none` starts without either.
+          netInternet: manifest.permissions.network !== 'none',
+          netApps: manifest.permissions.network !== 'none',
           installedAt: now,
           updatedAt: now,
           installedBy: user.userId,
@@ -572,12 +583,19 @@ export class InstallService {
   ) {
     const appData = join(this.deps.appDataDir, manifest.id);
     const domain = `${getSetting(this.deps.db, 'hostname')}.local`;
+    const settings = this.appSettings(manifest);
     const rendered = renderApp({
       manifest,
       compose,
       webPort: loopbackPort(port),
       appDataDir: appData,
       folders: folderPaths(manifest, mounts, appData),
+      extraEnv: Object.keys(settings.env),
+      extraMounts: settings.extraMounts,
+      folderModes: settings.folderModes,
+      network: settings.network,
+      // The sidecars that publish an app without the internet reach its containers by name (D-165).
+      projectName: this.deps.apps.project(manifest.id).name,
       hostname: `${hostname}.${domain}`,
       url: `https://${hostname}.${domain}`,
       // Its tailnet address, while remote access is on (D-012, D-102, D-110).
@@ -587,10 +605,55 @@ export class InstallService {
       tz: (this.deps.timeZone ?? hostTimeZone)(),
       puid: process.getuid?.() ?? 1000,
       pgid: process.getgid?.() ?? 1000,
-      env,
+      // Variables added in App settings, unless given here (US-APP-13).
+      env: { ...settings.env, ...env },
       presentDevices: manifest.permissions.devices.map((d) => d.path).filter((d) => existsSync(d)),
     });
-    this.deps.apps.writeProject(manifest.id, rendered, manifest);
+    this.deps.apps.writeProject(manifest.id, rendered, manifest, compose);
+  }
+
+  /**
+   * What App settings added to an app (US-APP-13…18), so every render keeps it (installing again, updating,
+   * reinstalling): variables that aren't the manifest's (secret ones from its .env), folders given at
+   * `/mnt/hlabs/<name>`, folders made read only, and its network access.
+   */
+  appSettings(manifest: AppManifest) {
+    const { db } = this.deps;
+    const appId = manifest.id;
+    const prompts = new Set(manifest.env.map((p) => p.key));
+    const custom = db
+      .select()
+      .from(appEnv)
+      .where(eq(appEnv.appId, appId))
+      .all()
+      .filter((r) => !prompts.has(r.key));
+    const kept = custom.some((r) => r.value === null) ? this.keptEnv(appId) : {};
+    const env = Object.fromEntries(custom.map((r) => [r.key, r.value ?? kept[r.key] ?? '']));
+    const mounts = db
+      .select({
+        target: appMounts.target,
+        subpath: appMounts.subpath,
+        mode: appMounts.mode,
+        path: storageLocations.path,
+      })
+      .from(appMounts)
+      .innerJoin(storageLocations, eq(storageLocations.id, appMounts.storageLocationId))
+      .where(eq(appMounts.appId, appId))
+      .all();
+    const keys = new Set(manifest.folders.map((f) => f.key));
+    const app = db
+      .select({ internet: apps.netInternet, apps: apps.netApps })
+      .from(apps)
+      .where(eq(apps.id, appId))
+      .get();
+    return {
+      env,
+      extraMounts: mounts
+        .filter((m) => m.target.startsWith(`${EXTRA_MOUNT_ROOT}/`))
+        .map((m) => ({ target: m.target, hostPath: join(m.path, m.subpath), mode: m.mode })),
+      folderModes: Object.fromEntries(mounts.filter((m) => keys.has(m.target)).map((m) => [m.target, m.mode])),
+      network: app ?? { internet: true, apps: true },
+    };
   }
 
   /** Values kept from an earlier install of this app (its .env stays with kept data, US-APP-12). */

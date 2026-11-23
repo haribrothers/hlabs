@@ -23,8 +23,12 @@ import { useNow } from '../lib/use-now';
 import { AdminOnly } from './admin-only';
 import { AppAccess } from './app-access';
 import { AppBehaviour } from './app-behaviour';
+import { AppConfigPanel } from './app-config';
+import { AppPermissionsPanel } from './app-permissions';
+import { useDiscardGuard } from './discard-changes';
 import { AppWidgetKey } from './app-widget-key';
 import { AppStorage, AppVersion } from './app-storage';
+import { AppUsage } from './app-usage';
 import { UpdateButton, useAppUpdate } from './app-update';
 import { statusDot } from './status-dot';
 import { appBaseUrl, useApp } from './use-app';
@@ -66,6 +70,8 @@ interface SettingsProps {
   /** Opened over the app window: a dialog, and Close and Logs stay in the window (phase 2 feedback, D-096). */
   onClose?: () => void;
   onOpenLogs?: () => void;
+  /** Logs filtered to one container, from the Usage tab (US-APP-21); over the app window, they stay in it. */
+  onOpenContainerLogs?: (service: string) => void;
 }
 
 export function AppSettings(props: SettingsProps) {
@@ -76,10 +82,22 @@ export function AppSettings(props: SettingsProps) {
   );
 }
 
-function AppSettingsView({ appId, onClose, onOpenLogs }: SettingsProps) {
+function AppSettingsView({ appId, onClose, onOpenLogs, onOpenContainerLogs }: SettingsProps) {
   const { data: app } = useApp(appId);
+  const navigate = useNavigate();
+  const openContainerLogs =
+    onOpenContainerLogs ??
+    ((service: string) =>
+      void navigate({
+        to: '/apps/$appId/logs',
+        params: { appId },
+        search: { service },
+        state: { fromSettings: true },
+      }));
   const goBack = useGoBack();
-  const back = onClose ?? goBack;
+  // Unsaved changes in Configuration or Permissions ask before the tab changes or the window closes (US-APP-16).
+  const discard = useDiscardGuard();
+  const back = () => discard.guard(onClose ?? goBack);
   const [tab, setTab] = useState<Tab>('overview');
   const [uninstalling, setUninstalling] = useState(false);
   const [reinstalling, setReinstalling] = useState(false);
@@ -116,41 +134,58 @@ function AppSettingsView({ appId, onClose, onOpenLogs }: SettingsProps) {
         </IconButton>
       </header>
       {app.state === 'reinstalling' ? <ReinstallProgress app={app} /> : null}
-      <SectionTabs aria-label={copy.sections} tabs={tabs} active={tab} onSelect={(id) => setTab(id as Tab)} />
+      <SectionTabs
+        aria-label={copy.sections}
+        tabs={tabs}
+        active={tab}
+        onSelect={(id) => id !== tab && discard.guard(() => setTab(id as Tab))}
+      />
       <div role="tabpanel" aria-label={copy.tabs[tab]} className="flex flex-col gap-6">
-        <Actions app={app} onOpenLogs={onOpenLogs} onReinstall={() => setReinstalling(true)} />
-        <AppAccess app={app} />
-        <AppBehaviour app={app} />
-        <AppWidgetKey app={app} />
-        <AppStorage app={app} />
-        <footer className="flex items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <AppVersion app={app} />
-            <UpdateButton app={app} />
-          </div>
-          <div className="flex items-center gap-5">
-            {/* A broken app has it among its actions (US-APP-24). */}
-            {app.state === 'error' ? null : (
-              <ReinstallButton app={app} variant="link" icon={false} onOpen={() => setReinstalling(true)} />
-            )}
-            <Button
-              variant="link"
-              className="text-danger"
-              disabled={app.state === 'reinstalling'}
-              onClick={() => setUninstalling(true)}
-            >
-              {copy.uninstallEllipsis}
-            </Button>
-          </div>
-        </footer>
-        <UninstallDialog app={app} open={uninstalling} onOpenChange={setUninstalling} />
-        <ReinstallDialog app={app} open={reinstalling} onOpenChange={setReinstalling} />
+        {/* One panel per tab, each in its own file; Overview is the rest of this window. */}
+        {tab === 'configuration' ? (
+          <AppConfigPanel app={app} onDirtyChange={discard.setDirty} />
+        ) : tab === 'permissions' ? (
+          <AppPermissionsPanel app={app} onDirtyChange={discard.setDirty} />
+        ) : tab === 'usage' ? (
+          <AppUsage app={app} onOpenLogs={openContainerLogs} />
+        ) : (
+          <>
+            <Actions app={app} onOpenLogs={onOpenLogs} onReinstall={() => setReinstalling(true)} />
+            <AppAccess app={app} />
+            <AppBehaviour app={app} />
+            <AppWidgetKey app={app} />
+            <AppStorage app={app} />
+            <footer className="flex items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <AppVersion app={app} />
+                <UpdateButton app={app} />
+              </div>
+              <div className="flex items-center gap-5">
+                {/* A broken app has it among its actions (US-APP-24). */}
+                {app.state === 'error' ? null : (
+                  <ReinstallButton app={app} variant="link" icon={false} onOpen={() => setReinstalling(true)} />
+                )}
+                <Button
+                  variant="link"
+                  className="text-danger"
+                  disabled={app.state === 'reinstalling'}
+                  onClick={() => setUninstalling(true)}
+                >
+                  {copy.uninstallEllipsis}
+                </Button>
+              </div>
+            </footer>
+            <UninstallDialog app={app} open={uninstalling} onOpenChange={setUninstalling} />
+            <ReinstallDialog app={app} open={reinstalling} onOpenChange={setReinstalling} />
+          </>
+        )}
       </div>
+      {discard.dialog}
     </GlassCard>
   );
   if (onClose) {
     return (
-      <ModalPanel label={copy.appSettings} onClose={onClose}>
+      <ModalPanel label={copy.appSettings} onClose={back}>
         <section aria-label={copy.appSettings} className="flex w-full items-start justify-center p-3 md:p-12">
           {card}
         </section>

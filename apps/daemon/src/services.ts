@@ -18,6 +18,7 @@ import type { UsageHistory } from './usage/history';
 import type { UsageSampler } from './usage/sampler';
 import type { AppWatch } from './apps/app-watch';
 import type { ReinstallService } from './apps/reinstall';
+import type { AppConfigService } from './apps/config';
 import type { SystemProbe } from './platform/system';
 import type { NotificationService } from './notifications/service';
 import type { AppWidgets } from './home/app-widgets';
@@ -77,6 +78,8 @@ export interface Services {
   updates: UpdateService;
   /** Reinstalling an app, keeping its data and settings (US-APP-25). */
   reinstalls: ReinstallService;
+  /** App settings › Configuration and Permissions, and "Require hlabs login" (US-APP-13…19). */
+  appConfig: AppConfigService;
   /** hlabs's own updates: the update manifest, checked now and every 6 h (US-SYS-24). */
   hlabsUpdates: HlabsUpdates;
   /** "Update now" (US-SYS-23): who applies it here and how. */

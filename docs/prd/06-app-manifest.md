@@ -79,7 +79,9 @@ backup:
   beforeUpdate: true
 dependsOn: []                    # other hlabs apps (ids) that must be installed
 permissions:                     # shown to the user; enforced where possible
-  network: lan                   # none | lan | internet (default internet)
+  network: lan                   # none | lan | internet (default internet): App settings' network switches start
+                                 # from it (US-APP-18): internet → both on, lan → internet off, none → both off
+  internetReason: Needed for website icons   # optional, max 80: shown under "Reach the internet" (US-APP-18)
   gpu: false
   dockerSocket: false            # true requires an admin warning at install
   devices:                       # optional (D-163): passed in only when present on the computer (never on a Mac)
@@ -126,6 +128,7 @@ The index may also carry optional `featured: [appId]`, `collections: [{ title, a
 - hlabs injects: a loopback port mapping `127.0.0.1:<port + 1000>:<web.port>` for the web service (D-049, D-086: the app's port is 12000–12999, its loopback port 13000–13999), network `hlabs` (external), labels `dev.hlabs.app=<id>`, `restart: unless-stopped`, log options (json-file, 10 MB × 3), and `TZ`.
 - Named and anonymous volumes are not allowed: everything an app keeps goes under `${HLABS_APP_DATA}` or a declared folder, so backups include it. `build`, `container_name` and `env_file` are not allowed either (hlabs names the project `hlabs-<id>` and writes the variables to the project's `.env`).
 - Only the web service joins the external `hlabs` network (with the project's `default` network); databases and workers stay on the project network. Every service gets the labels `dev.hlabs.app=<id>` and `dev.hlabs.service=<service>`.
+- App settings add to the render (US-APP-13…18, D-165): variables someone added are set on the web service (`KEY: ${KEY}`); folders given in AppPermissions are bind-mounted on the web service at `/mnt/hlabs/<folder-name>`; a manifest folder made read only is mounted `:ro`; an optional folder the app wasn't given is left out. With "Reach the internet" off, the app's own networks are `internal: true`, the web service doesn't join `hlabs`, and a forwarding sidecar `hlabs-forward` (`alpine/socat`, pinned by multi-arch digest) on the normal bridge `hlabs-edge` publishes the loopback web port (raw ports get `hlabs-forward-<protocol>-<port>`); while "Talk to other apps" is on the sidecar joins `hlabs` under the web service's name. With "Talk to other apps" off the web service leaves `hlabs`. The service names `hlabs-forward*`, the network `hlabs-edge` and container paths under `/mnt/hlabs/` are reserved for hlabs. A project keeps the compose file it was rendered from as `hlabs-source.yml`.
 - Validator issue codes (used by `pnpm store:lint` and install errors): `COMPOSE_INVALID`, `SERVICE_BUILD`, `IMAGE_NOT_PINNED`, `PRIVILEGED`, `HOST_NETWORK`, `HOST_PID`, `HOST_IPC`, `CONTAINER_NAME`, `ENV_FILE`, `PORT_NOT_DECLARED`, `BIND_MOUNT_NOT_ALLOWED`, `DOCKER_SOCKET`, `NAMED_VOLUME`, `UNKNOWN_FOLDER`, `MANIFEST_SERVICE_MISSING`.
 
 ## Variables available to compose

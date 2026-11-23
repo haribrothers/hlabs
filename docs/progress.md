@@ -303,15 +303,15 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-STORE-27 · Start my own app library (`hlabs library init/add/check/index`; Mac admins and the CLI: Q-22)
 - [x] US-STORE-28 · Sign my library (`hlabs library keygen/sign`, the key in hlabs's keychain)
 - [x] US-STORE-29 · Copy a built-in app into my library (a git library's copy downloads as a zip)
-- [ ] US-APP-13 · Edit environment variables
-- [ ] US-APP-14 · Secrets are hidden and can be revealed by an admin
-- [ ] US-APP-15 · Change web address and port
-- [ ] US-APP-16 · Save configuration and restart
-- [ ] US-APP-17 · Folder access
-- [ ] US-APP-18 · Network access
-- [ ] US-APP-19 · Require hlabs login in front of an app
-- [ ] US-APP-20 · Resource use tiles and 24-hour chart
-- [ ] US-APP-21 · Per-container usage
+- [x] US-APP-13 · Edit environment variables
+- [x] US-APP-14 · Secrets are hidden and can be revealed by an admin
+- [x] US-APP-15 · Change web address and port
+- [x] US-APP-16 · Save configuration and restart
+- [x] US-APP-17 · Folder access
+- [x] US-APP-18 · Network access
+- [x] US-APP-19 · Require hlabs login in front of an app
+- [x] US-APP-20 · Resource use tiles and 24-hour chart
+- [x] US-APP-21 · Per-container usage
 - [ ] US-APP-27 · Make an app public
 - [ ] US-APP-28 · Choose who gets into a public app
 - [ ] US-APP-29 · See who visits a public app

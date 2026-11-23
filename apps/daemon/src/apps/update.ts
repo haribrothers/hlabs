@@ -22,12 +22,12 @@ import { resolveEnv } from './env';
 import { waitHealthy, type HealthProbes } from './health';
 import type { InstallService } from './install';
 import { loopbackPort } from './ports';
-import { MANIFEST_COPY, type AppService } from './service';
+import { MANIFEST_COPY, SOURCE_COPY, type AppService } from './service';
 import { canTransition, stateDetail } from './state-machine';
 
 /** The previous version's files, kept beside the project while it updates. */
 export const SNAPSHOT_DIR = '.previous';
-const SNAPSHOT_FILES = [COMPOSE_FILE, ENV_FILE, MANIFEST_COPY];
+const SNAPSHOT_FILES = [COMPOSE_FILE, ENV_FILE, MANIFEST_COPY, SOURCE_COPY];
 export const ROLLED_BACK_KIND = 'app.update_rolled_back';
 export const RESTORE_FAILED_KIND = 'app.update_restore_failed';
 

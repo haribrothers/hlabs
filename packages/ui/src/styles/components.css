@@ -668,6 +668,13 @@
   .hl-row-link:hover {
     background: rgba(255, 255, 255, 0.04);
   }
+  .hl-row-button {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: start;
+    cursor: pointer;
+  }
 
   /* App icon */
   .hl-app {

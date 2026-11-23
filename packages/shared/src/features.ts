@@ -107,6 +107,9 @@ export const BUILT_AHEAD: readonly Feature[] = [
   'appUpdates',
   'updateAll',
   'storeSources',
+  'appUsage',
+  'appConfig',
+  'appPermissions',
 ];
 
 /** The dev server is previewing (never in a build or unit tests). */

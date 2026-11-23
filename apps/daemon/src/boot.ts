@@ -92,6 +92,7 @@ import { UsageHistory } from './usage/history';
 import { UsageSampler } from './usage/sampler';
 import { AppWatch } from './apps/app-watch';
 import { ReinstallService } from './apps/reinstall';
+import { AppConfigService } from './apps/config';
 import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
 import { AppWidgets } from './home/app-widgets';
@@ -505,6 +506,19 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     probes: deps.healthProbes,
   });
   reinstalls.register();
+  const appConfig = new AppConfigService({
+    db,
+    logger,
+    jobs,
+    catalog,
+    apps: appService,
+    installer,
+    engine,
+    network,
+    probes: deps.healthProbes,
+    isPortFree: deps.isPortFree,
+  });
+  appConfig.register();
   const updateSource = deps.updateSource ?? new HttpUpdateSource();
   const hlabsUpdates = new HlabsUpdates({
     db,
@@ -623,6 +637,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     appDisk: disk,
     updates,
     reinstalls,
+    appConfig,
     hlabsUpdates,
     systemUpdate,
     autoUpdates,

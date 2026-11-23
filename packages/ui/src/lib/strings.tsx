@@ -29,6 +29,8 @@ export interface UiStrings {
   chartData: string;
   /** The first column of a chart's hidden table. */
   chartTime: string;
+  /** A line chart's gap (the thing measured wasn't running then): its tooltip and table. */
+  chartNoData: string;
   value: string;
   free: string;
   failed: string;
@@ -60,6 +62,7 @@ export const defaultStrings: UiStrings = {
   chartPart: 'Part',
   chartData: 'Chart data',
   chartTime: 'Time',
+  chartNoData: 'No data',
   value: 'Value',
   free: 'Free',
   failed: 'Failed',

@@ -12,6 +12,12 @@
     "body": "Wait for it to finish what it’s doing, then try again."
   },
   {
+    "code": "APP_CONFIG_UNDONE",
+    "slug": "app-config-undone",
+    "title": "The app didn't start with the new settings, so they were undone",
+    "body": "It's running with its previous settings. Check its logs, then try again."
+  },
+  {
     "code": "APP_DISK_FULL",
     "slug": "app-disk-full",
     "title": "There’s no space for this app",

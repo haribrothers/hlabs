@@ -2,13 +2,20 @@
 // through `transition`, which checks the edge and emits app.stateChanged. The install, update and uninstall jobs
 // (US-STORE-11, US-STORE-17, US-APP-12) build on the pieces here.
 import { hlabsCodeOf, hlabsError } from '@hlabs/api';
-import { HLABS_NETWORK, type AppManifest, type RenderedApp } from '@hlabs/app-manifest';
+import {
+  FORWARD_IMAGE,
+  FORWARD_SERVICE,
+  HLABS_NETWORK,
+  type AppManifest,
+  type ComposeFile,
+  type RenderedApp,
+} from '@hlabs/app-manifest';
 import { apps, auditLog, getSetting, type AppState, type HlabsDb } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { eq } from 'drizzle-orm';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parse as parseYaml } from 'yaml';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type { EngineService } from '../engine/service';
 import type { EventBus } from '../events/bus';
 import type { Logger } from '../logger';
@@ -27,6 +34,11 @@ import { canTransition, stateDetail } from './state-machine';
 
 /** The copy of the manifest kept with the project, so an app runs from what it was installed with. */
 export const MANIFEST_COPY = 'hlabs-app.json';
+/**
+ * The compose file it was rendered from, kept with the project, so App settings can render it again after its store
+ * has moved on to another version (US-APP-16).
+ */
+export const SOURCE_COPY = 'hlabs-source.yml';
 
 /** States that have a Caddy route and an mDNS name (not while installing, failed or uninstalling). */
 const ROUTED: ReadonlySet<AppState> = new Set([
@@ -131,14 +143,33 @@ export class AppService {
     return { name: `${this.deps.projectPrefix ?? 'hlabs'}-${appId}`, dir: join(this.deps.projectsDir, appId) };
   }
 
-  /** Writes the rendered compose file, the .env (owner-only: it holds generated secrets) and the manifest copy. */
-  writeProject(appId: string, rendered: RenderedApp, manifest: AppManifest): ComposeProject {
+  /**
+   * Writes the rendered compose file, the .env (owner-only: it holds generated secrets), the manifest copy and, when
+   * given, the compose file it was rendered from.
+   */
+  writeProject(appId: string, rendered: RenderedApp, manifest: AppManifest, source?: ComposeFile): ComposeProject {
     const project = this.project(appId);
     mkdirSync(project.dir, { recursive: true, mode: 0o700 });
     writeFileSync(join(project.dir, COMPOSE_FILE), rendered.composeYaml);
     writeFileSync(join(project.dir, ENV_FILE), rendered.envFile, { mode: 0o600 });
     writeFileSync(join(project.dir, MANIFEST_COPY), JSON.stringify(manifest, null, 2));
+    if (source) writeFileSync(join(project.dir, SOURCE_COPY), stringifyYaml(source));
     return project;
+  }
+
+  /**
+   * The compose file to render the app from again (US-APP-16): the one it was rendered from, else its own project's
+   * (rendering is idempotent); null without a project.
+   */
+  sourceCompose(appId: string): ComposeFile | null {
+    for (const file of [SOURCE_COPY, COMPOSE_FILE]) {
+      try {
+        return parseYaml(readFileSync(join(this.project(appId).dir, file), 'utf8')) as ComposeFile;
+      } catch {
+        // Not there: the next one.
+      }
+    }
+    return null;
   }
 
   /** The manifest the app was installed with. */
@@ -152,7 +183,10 @@ export class AppService {
       const compose = parseYaml(readFileSync(join(this.project(appId).dir, COMPOSE_FILE), 'utf8')) as {
         services?: Record<string, unknown>;
       };
-      return Object.keys(compose.services ?? {});
+      // Not the forwarding sidecars hlabs adds (D-165): they aren't part of the app.
+      return Object.keys(compose.services ?? {}).filter(
+        (s) => s !== FORWARD_SERVICE && !s.startsWith(`${FORWARD_SERVICE}-`),
+      );
     } catch {
       return [];
     }
@@ -204,11 +238,29 @@ export class AppService {
 
   /** `compose up` for an app, a taken port reported as APP_PORT_IN_USE. */
   async composeUp(appId: string): Promise<void> {
+    await this.pullForwarder(appId);
     try {
       await this.deps.compose.up(this.project(appId));
     } catch (error) {
       throw this.appError(error, appId);
     }
+  }
+
+  /**
+   * The forwarding sidecar's image, when the project uses it and it isn't here (D-165): compose runs with
+   * `--pull never`, and the install and update jobs pull only the app's own images.
+   */
+  private async pullForwarder(appId: string): Promise<void> {
+    const engine = this.deps.engine.client;
+    if (!engine) return;
+    let text: string;
+    try {
+      text = readFileSync(join(this.project(appId).dir, COMPOSE_FILE), 'utf8');
+    } catch {
+      return;
+    }
+    if (!text.includes(FORWARD_IMAGE) || (await engine.hasImage(FORWARD_IMAGE))) return;
+    await engine.pullImage(FORWARD_IMAGE, () => undefined);
   }
 
   async composeDown(appId: string, options?: DownOptions): Promise<void> {
@@ -331,6 +383,7 @@ export class AppService {
     const project = this.project(appId);
     this.moveToLoopbackRange(app);
     try {
+      if (op === 'up') await this.pullForwarder(appId);
       await (op === 'up' ? this.deps.compose.up(project) : this.deps.compose.restart(project));
     } catch (error) {
       const failure = this.appError(error, appId);
