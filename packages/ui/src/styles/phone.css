@@ -84,14 +84,14 @@
   /* iOS 26 Home Screen app (WebKit 301108, viewport-fit=cover with the black-translucent status bar): the app's
      drawing area ends about a status bar's height above the screen's edge, and iOS fills that band with the page's
      background colour; nothing the page draws reaches it. index.html measures it and sets data-vgap; then the page's
-     background is the tab bar's colour and the bar is opaque in it, so the band reads as the bar's lower part, and the
-     bar gives up as much of its home-indicator room as the band already gives (D-172). */
+     background is the tab bar's colour and the bar is opaque in it, so the band reads as the bar's lower part. The bar
+     keeps its own home-indicator room: iOS can put the drawing area right again (after a scroll) without telling the
+     page, and labels without it would sit on the screen's edge (D-172). */
   :root[data-vgap],
   :root[data-vgap] body {
     background-color: var(--solid-dialog);
   }
   :root[data-vgap] .hl-tabbar {
-    --hl-tab-inset: max(calc(env(safe-area-inset-bottom) - var(--hl-vgap)), 0px);
     background: var(--solid-dialog);
   }
   .hl-nav-phone {
