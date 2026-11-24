@@ -17,7 +17,8 @@ test.describe('US-SITE-01', () => {
     page,
   }) => {
     await page.goto('/');
-    await expect(page.getByRole('img', { name: /hlabs Home on the Dusk wallpaper/ })).toBeVisible();
+    // The product's own Home, from the docs screenshots (US-SITE-11).
+    await expect(page.getByRole('img', { name: /^hlabs Home: Good morning, Hari/ })).toBeVisible();
 
     // The row of apps (its looping copy is hidden from screen readers and Tab).
     const row = page.locator('.marquee-list:not(.marquee-dup) a');

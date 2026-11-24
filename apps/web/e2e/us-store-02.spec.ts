@@ -57,8 +57,10 @@ test('US-STORE-02 on a phone, categories are chips above the content', async ({ 
   await chips.getByRole('link', { name: 'Security' }).click();
   await expect(page).toHaveURL(/\/store\/category\/security$/);
   await expect(chips.getByRole('link', { name: 'Security' })).toHaveAttribute('aria-current', 'page');
-  const box = await chips.getByRole('link', { name: 'Security' }).boundingBox();
-  expect(box!.height).toBeGreaterThanOrEqual(44);
+  // Measured once it holds still: the row can draw again as the category opens.
+  await expect
+    .poll(async () => (await chips.getByRole('link', { name: 'Security' }).boundingBox())?.height ?? 0)
+    .toBeGreaterThanOrEqual(44);
 });
 
 test('US-STORE-02 an unknown category is "Page not found"', async ({ page }) => {

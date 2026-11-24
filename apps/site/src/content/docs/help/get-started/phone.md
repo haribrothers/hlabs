@@ -6,6 +6,8 @@ features: [F-PHONE-01, F-PHONE-02, F-PHONE-03, F-PHONE-04, F-PHONE-09]
 
 For everyone who uses hlabs.
 
+![Home on a phone: the greeting under the Home title, the search field, widgets you swipe through, the apps and the tab bar.](../../../../assets/shots/home-phone.webp)
+
 Open hlabs in your phone's browser, at home on `https://hlabs.local` or anywhere on your tailnet address (see [Remote access](../../remote-access/tailscale/)). On a screen narrower than a tablet, hlabs looks and works like an app made for the phone.
 
 ## Move around
@@ -34,11 +36,15 @@ Arranging Home and adding widgets is done on a computer; your phone shows the sa
 
 ## The App Store
 
+![The App Store on a phone: the search field, Updates, the categories row, Featured and Popular with families.](../../../../assets/shots/app-store-phone.webp)
+
 The App Store has a search field, the categories as a row you can swipe along, **Featured** apps you can swipe through, and lists of apps, each with one button: **Install**, **Open**, or what it's doing, such as **Installing… 42%**. Admins see **Updates** with a count at the top when apps have newer versions.
 
 Tap **Install** to see what the app can access, then **Install** at the bottom of the sheet. The sheet closes and the app's button, and its tile on Home, show how far the install has got. If it fails, a sheet says why, with **Try again**.
 
 ## Files
+
+![Files on a phone: + and Select at the top, the places as buttons, and the Home folder as a list.](../../../../assets/shots/files-phone.webp)
 
 **Files** has the same places as on a computer, as a row of buttons under the search field; **Trash** is the last one. A folder is a list: tap a row to open it, or tap **•••** at its end to open, download, rename, move or delete it. **+** at the top makes a new folder or uploads files from your phone. Tap **Select** to tick several items; the buttons along the bottom, where the tab bar was, move, share, download or delete them, and **Done** stops selecting. In **Trash**, tap the round arrow on a row to put it back, or **Restore all**. See [Files](../../files/files/).
 
@@ -47,6 +53,8 @@ Tap **Install** to see what the app can access, then **Install** at the bottom o
 **Usage** shows the time range across the screen and the tiles two to a row, with the chart and your apps under them. The bell on Home opens your notifications in a sheet, grouped into **Today** and **Earlier**, with **Mark all read** at the top.
 
 ## Settings
+
+![Settings on a phone: your account at the top, then the sections as rows with their values, such as Backups 6 hours ago.](../../../../assets/shots/settings-phone.webp)
 
 **Settings** lists its sections as rows; tap one to go into it, and **‹ Settings** to come back. Each section shows its settings as rows, with the current value at the right and an arrow on the rows you can tap. Things you'd change in a dialog on a computer open as a sheet.
 

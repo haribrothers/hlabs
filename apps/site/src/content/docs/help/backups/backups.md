@@ -6,6 +6,8 @@ features: [F-BKP-01, F-BKP-02, F-BKP-03, F-BKP-06]
 
 For admins.
 
+![Settings › Backups: the last backup 6 hours ago, a NAS destination, the schedule and the recent runs.](../../../../assets/shots/backups.webp)
+
 hlabs copies your apps' data and your Home folders to a place you choose, every night at 03:00. Every copy is encrypted before it leaves this computer. Backups is for admins: choose **Backups** in the Dock, or **Settings › Backups**.
 
 On a phone, Backups opens from **Settings**: a box at the top says when the last backup ran and when the next one is, shows the last ten as bars (a failed one is short and red, under a ✕) and has **Back up now**. Your destinations, **What's included**, the schedule and **Restore…** are the rows under it, and **Recent** lists the latest runs with how each went.

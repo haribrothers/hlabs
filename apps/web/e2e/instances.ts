@@ -1,6 +1,6 @@
 // The e2e instances (see playwright.config.ts).
 import { resolve } from 'node:path';
-import { expect, type APIRequestContext } from '@playwright/test';
+import { devices, expect, type APIRequestContext } from '@playwright/test';
 
 /**
  * The main instance has ports of its own, never `pnpm dev`'s (7474 and 5173): specs add and remove apps, so they must
@@ -44,3 +44,42 @@ export async function resetOnboarding(request: APIRequestContext, step: Step = '
  * to it (the US-STORE-17 rollback) without touching store/ or other instances.
  */
 export const E2E_STORE_DIR = resolve(process.env.HLABS_E2E_DATA_DIR ?? '../../.e2e-data', 'store');
+
+/**
+ * The docs screenshots' instance (US-SITE-11, D-177): its own daemon and Vite, started only for the docs-shots project
+ * (`--project=docs-shots`), with a fresh data dir under a pretend home, the demo computer and engine (HLABS_DEV_DEMO)
+ * and a clock that starts on the same morning every run (HLABS_DEV_CLOCK). Never a dev or e2e instance's data.
+ */
+export const DOCS_PORTS = { daemon: 7674, web: 5473 } as const;
+export const DOCS_URL = `http://127.0.0.1:${DOCS_PORTS.web}`;
+export const DOCS_DAEMON_URL = `http://127.0.0.1:${DOCS_PORTS.daemon}`;
+/** The pretend home the docs instance runs in (`~/hlabs` is its data), removed when Playwright starts it. */
+export const DOCS_HOME = resolve(import.meta.dirname, '../../../.e2e-data-docs/home');
+/** Wednesday 14 October 2026, 09:41 UTC: "Good morning", and last night's backup at 03:00. */
+export const DOCS_CLOCK = '2026-10-14T09:41:00Z';
+/** The docs instance's signed-in browser state (Hari), written by e2e/docs-shots/demo.setup.ts. */
+export const DOCS_STORAGE_STATE = 'e2e/.auth/docs.json';
+
+/**
+ * The browser each docs layout is shot in (D-177): a Mac's Chrome at 1440 × 900, a phone at 390 × 844 and an iPad by
+ * touch at 1180 × 820 (D-175), one CSS pixel per pixel. A fixed user agent, so "Signed-in devices" reads the same on CI.
+ */
+export const DOCS_DEVICES = {
+  desktop: {
+    viewport: { width: 1440, height: 900 },
+    userAgent:
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+  },
+  phone: {
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    userAgent: devices['Pixel 7'].userAgent,
+  },
+  tablet: {
+    viewport: { width: 1180, height: 820 },
+    isMobile: true,
+    hasTouch: true,
+    userAgent: devices['iPad Pro 11 landscape'].userAgent,
+  },
+} as const;

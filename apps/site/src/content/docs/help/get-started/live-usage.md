@@ -6,6 +6,8 @@ features: [F-USE-01, F-USE-02, F-USE-03, F-USE-04]
 
 For admins, and for family members their admin lets see it.
 
+![Live usage: the CPU, Memory, Storage and Network tiles, the CPU over the last hour, and each app's use below.](../../../../assets/shots/live-usage.webp)
+
 Choose **Usage** in the Dock to see how busy the computer running hlabs is. Under the title, hlabs says which container engine runs your apps and how much of the computer it may use, for example **Container VM (Colima) · 4 CPUs · 8 GB allocated**.
 
 Four tiles sum it up:

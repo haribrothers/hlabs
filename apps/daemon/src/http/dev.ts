@@ -30,6 +30,8 @@ import { FakeNas } from '../platform/fake-nas';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { ServiceHolder } from '../services';
+import { DEMO_PEOPLE } from '../demo/figures';
+import { seedDemo } from '../demo/seed';
 
 /** Development-only routes. Never registered in production. */
 /**
@@ -458,6 +460,41 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     await services.installer.removeFailed({ userId: admin?.id ?? 'dev', role: 'admin' }, id);
     return { removed: id };
   });
+
+  // The docs screenshots' demo data set in one call (US-SITE-11, D-177), on the docs instance only (HLABS_DEV_DEMO):
+  // Hari as the admin with two-factor on, data on this computer, then the family, apps, backups, usage and files of
+  // src/demo/seed.ts. A finished setup is refused: it's for a fresh instance.
+  app.post('/dev/demo', async (_req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { db, totp, onboarding, config } = services;
+    if (!config.devDemo) return reply.code(409).send({ reason: 'HLABS_DEV_DEMO is off' });
+    if (onboarding.completed) return reply.code(409).send({ reason: 'already set up' });
+    asFreshInstall(db, 'account');
+    const admin = DEMO_PEOPLE[0];
+    const userId = await createAdmin(db, {
+      username: admin.username,
+      displayName: admin.displayName,
+      password: 'demo-hari-password',
+      ip: null,
+      phase: config.phase,
+    });
+    const { secret } = totp.begin(userId);
+    await totp.confirm(userId, generateSync({ secret }), { ip: null });
+    onboarding.setStep('storage');
+    await setStorageRoot(db, {
+      userId,
+      kind: 'local',
+      name: 'This computer',
+      path: config.paths.storageRootDefault,
+      phase: config.phase,
+    });
+    await onboarding.complete({ userId, ip: null });
+    return { userId, ...(await seedDemo(services, userId)) };
+  });
+
+  // hlabsd's clock (HLABS_DEV_CLOCK moves it), so a browser can be set to the same time (US-SITE-11).
+  app.get('/dev/clock', async () => ({ now: Date.now() }));
 
   // A finished first run in one call, for e2e specs that aren't about onboarding: the admin (optionally with
   // two-factor on, as if during setup), data on this computer, onboarding complete. Returns the two-factor key and

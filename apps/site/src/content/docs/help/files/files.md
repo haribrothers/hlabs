@@ -6,6 +6,8 @@ features: [F-FILE-01, F-FILE-02, F-FILE-03, F-FILE-04, F-FILE-07, F-FILE-08, F-F
 
 For everyone.
 
+![Files: places, locations and Trash on the left, and the Photos folder with its pictures.](../../../../assets/shots/files.webp)
+
 Choose **Files** in the Dock (or the tab bar on a phone) to see the files you keep on hlabs. Everyone with an hlabs account has a private **Home** folder that only they can open.
 
 ## Your places

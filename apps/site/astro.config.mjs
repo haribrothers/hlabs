@@ -135,6 +135,7 @@ export default defineConfig({
                 { label: 'Releasing', link: '/developers/releasing/' },
                 { label: 'The built-in store', link: '/developers/built-in-store/' },
                 { label: 'Publishing the website', link: '/developers/publishing-the-website/' },
+                { label: 'Docs screenshots', link: '/developers/docs-screenshots/' },
                 { label: 'Troubleshooting', link: '/developers/troubleshooting/' },
               ],
             },

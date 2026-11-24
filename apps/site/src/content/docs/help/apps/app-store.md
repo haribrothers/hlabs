@@ -6,6 +6,8 @@ features: [F-STORE-01, F-STORE-02, F-STORE-03, F-STORE-04, F-STORE-10, F-STORE-0
 
 For admins, and for members when an admin has turned on **Members can install apps**.
 
+![The App Store: categories on the left, two featured apps and the Popular with families row.](../../../../assets/shots/app-store.webp)
+
 ## Browse
 
 Open **App Store** to see featured apps at the top and rows of apps picked for you below them. Choose **See all** next to a row to see every app in it.
@@ -31,6 +33,8 @@ You can move through the list with the Tab key and open an entry with Enter.
 The search field at the top says how many apps you can search. Start typing: after a moment the results appear, matching app names first and then what the apps do. Type at least two letters. The search looks at app names, what they do, their tags and descriptions, and doesn't mind capital letters or accents. The chips above the results say how many apps matched and how many of those you've installed; choose **Installed** to see only those or, on a Mac with Apple Silicon, **Apple Silicon only** for apps that have a version for it. Press Enter to search straight away, and Escape (or clear the field) to go back to where you were. On a computer, press **/** anywhere in the App Store to jump to the search field.
 
 ## An app's page
+
+![Audiobookshelf's page in the App Store: Install, its screenshots, About, What it can access, its version and where it opens.](../../../../assets/shots/app-details.webp)
 
 Every app has a page with its screenshots (select one to see it large, then use the arrow keys to move between them), what it does, what's new in this version, and a few facts:
 

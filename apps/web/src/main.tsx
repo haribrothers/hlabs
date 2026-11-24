@@ -37,6 +37,9 @@ const router = createRouter({
   // Back (or the swipe-back gesture) shows the page where it was scrolled to: the window, and the page's own
   // scroller (<main data-scroll-restoration-id="main">, US-PHONE-04).
   scrollRestoration: true,
+  // A page you go into starts at the top of the page's scroller too, not only the window: without this it could keep
+  // the page before's place, half scrolled with its compact bar showing (US-PHONE-04).
+  scrollToTopSelectors: ['window', '#main'],
   defaultErrorComponent: RouteError,
   defaultNotFoundComponent: RouteNotFound,
 });

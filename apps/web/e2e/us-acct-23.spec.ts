@@ -16,7 +16,8 @@ test('US-ACCT-23 the preview opens in a new tab, disabled, and the invite still 
     context.waitForEvent('page'),
     dialog.getByRole('link', { name: /Preview what they see/ }).click(),
   ]);
-  await expect(preview).toHaveURL(/\/invite\/[A-Za-z0-9_-]{43}\?preview=1$/);
+  // The link says preview=1; the router writes it as preview=true once the page loads.
+  await expect(preview).toHaveURL(/\/invite\/[A-Za-z0-9_-]{43}\?preview=(1|true)$/);
   await expect(preview.getByRole('status')).toHaveText("Preview. This won't use up the invite.");
   await expect(preview.getByRole('heading', { name: 'Create your account' })).toBeVisible();
   await expect(preview.getByLabel('Username')).toBeDisabled();

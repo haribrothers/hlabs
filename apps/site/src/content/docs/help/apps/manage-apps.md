@@ -6,6 +6,8 @@ features: [F-APP-02, F-APP-01, F-APP-03, F-APP-04, F-APP-05, F-APP-06, F-APP-07,
 
 For admins. Members can open the apps an admin shared with them, but not change them.
 
+![Jellyfin's App settings: the Overview, Configuration, Permissions and Usage tabs, Open, Restart, Stop and Logs, the app's address, its behaviour and where its data is.](../../../../assets/shots/app-settings.webp)
+
 ## Open App settings
 
 Open an app and choose **App settings** at the top of its window; the settings open over the window, which stays as it was. The settings show the app's name, whether it's running and how long it has been up, such as "Running · up 6 days". Choose **Close** to go back to where you were.

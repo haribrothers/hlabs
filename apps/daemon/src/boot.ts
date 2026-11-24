@@ -110,6 +110,7 @@ import { AppConfigService } from './apps/config';
 import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
 import { AppWidgets } from './home/app-widgets';
+import { demoBootDeps } from './demo/fakes';
 import type { Readiness } from './readiness';
 import type { ServiceHolder, Services } from './services';
 
@@ -133,6 +134,8 @@ export interface BootDeps {
   secrets?: SecretStore;
   system?: SystemProbe;
   host?: HostStats;
+  /** The computer's memory, for the usage samples (the docs screenshots' pretend Mac, D-177). */
+  totalMemory?: () => number;
   /** Tests that drive the sampler themselves turn the 5 s timer off. */
   sampleUsage?: boolean;
   /** Tests that drive the app watch themselves turn its 10 s timer off (US-APP-26). */
@@ -185,8 +188,15 @@ export interface BootDeps {
 export const UPDATE_HEALTH_WAIT_MS = 120_000;
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms).unref());
 
-export async function boot(deps: BootDeps): Promise<Services | null> {
-  const { config, logger, readiness, holder } = deps;
+export async function boot(bootDeps: BootDeps): Promise<Services | null> {
+  const { config, logger, readiness, holder } = bootDeps;
+  // The docs screenshots' instance (US-SITE-11, D-177): a pretend Mac, engine and apps, whatever this computer has.
+  const deps: BootDeps = config.devDemo
+    ? {
+        ...demoBootDeps({ dataDir: config.paths.dataDir, composePrefix: config.composePrefix }),
+        ...(Object.fromEntries(Object.entries(bootDeps).filter(([, v]) => v !== undefined)) as BootDeps),
+      }
+    : bootDeps;
 
   // 1. Config, database, migrations.
   readiness.step(0);
@@ -393,7 +403,15 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   // First run: keep the setup token ready and print the setup URL (US-ONB-01, D-041).
   const probe = deps.system ?? new NodeSystemProbe();
   const host = deps.host ?? new SystemHostStats();
-  const sampler = new UsageSampler({ db, bus, engine, host, logger, composePrefix: config.composePrefix });
+  const sampler = new UsageSampler({
+    db,
+    bus,
+    engine,
+    host,
+    logger,
+    composePrefix: config.composePrefix,
+    ...(deps.totalMemory ? { totalMemory: deps.totalMemory } : {}),
+  });
   registerEngineInstall({
     jobs,
     engine,

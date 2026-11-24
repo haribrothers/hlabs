@@ -6,6 +6,8 @@ features: [F-TAB-01]
 
 For everyone who uses hlabs.
 
+![hlabs on an iPad in landscape: Home with its widgets and apps, the Dock, and the bell and Edit Home buttons at the top right.](../../../../assets/shots/home-tablet.webp)
+
 On an iPad or another tablet, hlabs looks the way it does on a computer, with the **Dock** at the bottom and areas such as **Files** and **Settings** in windows, and it works by touch. Buttons, rows, switches and tabs are big enough for a finger, and nothing needs a mouse. If you connect a mouse or trackpad, hlabs switches to the computer's layout straight away, without reloading. On a phone, hlabs has a layout of its own (see [Use hlabs on your phone](../phone/)).
 
 ## Touch and hold
@@ -23,6 +25,8 @@ Tap anywhere outside a menu to close it. That tap only closes the menu; it doesn
 Holding the empty part of Home starts **Edit Home**, and on a tablet there's also an **Edit Home** button next to the bell at the top right.
 
 ## Drag with your finger
+
+![Files on an iPad: the places on the left and the Photos folder, sized for a finger.](../../../../assets/shots/files-tablet.webp)
 
 Touch and hold, then move your finger without lifting it:
 

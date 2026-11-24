@@ -6,6 +6,8 @@ features: [F-ACCT-01, F-ACCT-02, F-ACCT-03, F-ACCT-04, F-ACCT-09]
 
 For everyone who uses hlabs.
 
+![Settings › Account: your profile, using hlabs as an app, password and two-factor login, and signed-in devices.](../../../../assets/shots/settings.webp)
+
 Open **Settings** from the Dock (or the tab bar on a phone). It opens on **Account**, your own profile and security.
 
 Admins see the sections for the whole of hlabs; family members see only the ones about their own account: Account, Appearance, Notifications and About. At the top of a member's Account page, hlabs says who manages apps, users and system settings, so you know whom to ask. If someone opens a link to a section they can't use, hlabs says "You don't have access to this" and offers a way back to Home.

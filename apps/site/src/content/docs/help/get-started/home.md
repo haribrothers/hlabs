@@ -6,6 +6,8 @@ features: [F-HOME-01, F-HOME-02, F-HOME-03, F-HOME-04, F-HOME-05, F-HOME-06, F-H
 
 For everyone who uses hlabs.
 
+![Home on a computer: "Good morning, Hari", the search field, four widgets (Live usage, Storage, Remote access and Backups), the apps and the Dock.](../../../../assets/shots/home.webp)
+
 ## Greeting and wallpaper
 
 Home greets you by name: "Good morning" from 5:00 to 11:59, "Good afternoon" from 12:00 to 17:59 and "Good evening" from 18:00, using your device's clock. It changes on its own if you leave Home open. If you haven't set a display name, it uses your username.

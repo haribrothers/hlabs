@@ -356,7 +356,7 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-TAB-04 · The Dock on a touch screen (D-175)
 - [x] US-TAB-05 · iPad in portrait (D-175)
 - [x] US-TAB-06 · The on-screen keyboard and the Home Screen app on a tablet (D-175)
-- [ ] US-SITE-11 · Keep screenshots in the docs current
+- [x] US-SITE-11 · Keep screenshots in the docs current
 
 ## Phase 8 · Power features (P3)
 

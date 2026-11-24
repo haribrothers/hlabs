@@ -12,6 +12,7 @@ import { switchBackIfStale } from './updates/headless';
 import { updateUnderway } from './updates/install';
 import { hasUpdateMarker } from './updates/marker';
 import { plannedExitCode } from './system/lifecycle';
+import { startClockAt } from './platform/dev-clock';
 
 if (process.argv.includes('--update-watchdog')) {
   const root = process.env.HLABS_INSTALL_ROOT ?? '/opt/hlabs';
@@ -28,6 +29,8 @@ if (setPortsAt >= 0) {
 }
 
 const config = loadConfig();
+// The docs screenshots' instance starts on a fixed day (HLABS_DEV_CLOCK, development only, US-SITE-11).
+if (config.devClock !== null) startClockAt(config.devClock);
 const logger = createLogger(config);
 if (config.devAnonymousAdmin)
   logger.warn('HLABS_DEV_ANONYMOUS_ADMIN is on: every request is treated as an admin (dev only)');

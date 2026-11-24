@@ -6,6 +6,8 @@ features: [F-ACCT-05, F-ACCT-07, F-ACCT-08, F-ACCT-06]
 
 For admins only.
 
+![Settings › Users: Hari, the admin, and two family members with Apps access and Reset password, then the log-in screen and what members can do.](../../../../assets/shots/people.webp)
+
 Open **Settings › Users** to see everyone who uses hlabs. The heading shows how many people there are, counting invites that haven't been used yet.
 
 Each person shows:

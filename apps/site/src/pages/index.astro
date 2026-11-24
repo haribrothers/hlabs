@@ -7,7 +7,7 @@ import Page from '../layouts/Page.astro';
 import { siteReleases } from '../lib/releases';
 import { installCommand } from '../../../../scripts/site-releases-lib.ts';
 import { storeApps } from '../lib/store';
-import dockHome from '../assets/screens/DockHome.webp';
+import dockHome from '../assets/shots/home.webp';
 
 const apps = storeApps();
 const releases = siteReleases();
@@ -96,7 +96,7 @@ const featureApps = ['jellyfin', 'vaultwarden', 'mealie', 'adguard-home'].map(ap
           </div>
           <Image
             src={dockHome}
-            alt="hlabs Home on the Dusk wallpaper: app icons, the clock and usage widgets, and the Dock"
+            alt="hlabs Home: Good morning, Hari, with the Live usage, Storage, Remote access and Backups widgets, the apps and the Dock"
             widths={[720, 1040, 1440]}
             sizes="(max-width: 1120px) 92vw, 1040px"
             loading="eager"

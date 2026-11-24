@@ -113,10 +113,14 @@ test.describe('US-ACCT-02 phone', () => {
       const tall = document.createElement('div');
       tall.style.height = '3000px';
       el.append(tall);
-      el.scrollTop = 2000;
     });
     const bar = page.locator('.hl-p-bar');
-    await expect(bar).toHaveAttribute('data-collapsed', 'true');
+    // Scrolled again until it holds: a page you go into starts at the top, and the router can put it there just after
+    // the page appears.
+    await expect(async () => {
+      await main.evaluate((el) => (el.scrollTop = 2000));
+      await expect(bar).toHaveAttribute('data-collapsed', 'true', { timeout: 500 });
+    }).toPass();
     await expect(bar.getByRole('button', { name: 'Settings' })).toBeInViewport();
     await expect(bar.getByText('Account', { exact: true })).toBeInViewport();
     const scrolls = await page.evaluate(

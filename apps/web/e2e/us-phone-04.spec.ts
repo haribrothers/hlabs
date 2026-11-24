@@ -42,14 +42,21 @@ test('US-PHONE-04 Back from details shows the store where it was; "App Store" do
   await main.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
   await expect.poll(() => main.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
   const scrolled = await main.evaluate((el) => el.scrollTop);
-  await row.click();
+  // Tapped where it is: Playwright's click would first scroll the row out from under the tab bar, so the page would leave
+  // from another place than the one measured.
+  const tap = () => row.evaluate((el) => (el as HTMLElement).click());
+  const details = () => page.getByRole('main').getByRole('button', { name: 'App Store' });
+  await tap();
   await expect(page).toHaveURL(/\/store\/app\//);
+  // Back once the details are on screen, as a person would: the address changes before the page has drawn.
+  await expect(details()).toBeVisible();
   await page.goBack();
   await expect(page).toHaveURL(`${MAIN_URL}/store`);
   await expect.poll(() => main.evaluate((el) => el.scrollTop)).toBe(scrolled);
 
-  await row.click();
+  await tap();
   await expect(page).toHaveURL(/\/store\/app\//);
+  await expect(details()).toBeVisible();
   await page.getByRole('main').getByRole('button', { name: 'App Store' }).click();
   await expect(page).toHaveURL(`${MAIN_URL}/store`);
   await expect.poll(() => main.evaluate((el) => el.scrollTop)).toBe(scrolled);

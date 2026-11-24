@@ -1,6 +1,23 @@
-import { defineConfig, devices } from '@playwright/test';
-import { cpSync, rmSync } from 'node:fs';
-import { E2E_STORE_DIR, MAIN_PORTS, MAIN_STORAGE_STATE, MAIN_URL, PWA_PORT, PWA_URL } from './e2e/instances';
+import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/test';
+
+type WebServer = Extract<NonNullable<PlaywrightTestConfig['webServer']>, readonly unknown[]>[number];
+import { cpSync, mkdirSync, rmSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import {
+  DOCS_CLOCK,
+  DOCS_DAEMON_URL,
+  DOCS_DEVICES,
+  DOCS_HOME,
+  DOCS_PORTS,
+  DOCS_STORAGE_STATE,
+  DOCS_URL,
+  E2E_STORE_DIR,
+  MAIN_PORTS,
+  MAIN_STORAGE_STATE,
+  MAIN_URL,
+  PWA_PORT,
+  PWA_URL,
+} from './e2e/instances';
 
 // E2E specs are named by user story id (us-<code>-<nn>.spec.ts); phase checks by phase.
 // Playwright starts the daemons and Vite itself, on ports of their own, so a running `pnpm dev` (and its data) is
@@ -43,6 +60,28 @@ const IPAD = { ...ipad, viewport: { width: 1180, height: 820 }, browserName: 'ch
 /** That build takes a while: made only when the pwa project runs, or every project does (no --project given). */
 const ARGV = process.argv.join(' ');
 const PWA_RUN = !/--project[= ]/.test(ARGV) || /--project[= ]pwa\b/.test(ARGV);
+// The docs screenshots (US-SITE-11, D-177): e2e/docs-shots, on an instance of their own with the demo data set, only
+// when asked for (`--project=docs-shots`, on its own): a plain run never takes them or starts that instance.
+const DOCS_SPECS = /docs-shots\//;
+// Workers don't get the command line: the main process tells them through the environment.
+const DOCS_RUN = process.env.HLABS_DOCS_SHOTS === '1' || /--project[= ]docs-shots\b/.test(ARGV);
+if (DOCS_RUN) process.env.HLABS_DOCS_SHOTS = '1';
+if (DOCS_RUN && process.env.TEST_WORKER_INDEX === undefined) {
+  // A fresh docs instance every run (its clock starts on the same morning). Only ever this folder.
+  if (!DOCS_HOME.endsWith('/.e2e-data-docs/home')) throw new Error(`unexpected docs data dir ${DOCS_HOME}`);
+  rmSync(dirname(DOCS_HOME), { recursive: true, force: true });
+  mkdirSync(DOCS_HOME, { recursive: true });
+}
+/** What every docs screenshot is taken with: the same language, time zone and pixels on any machine. */
+const DOCS_USE = {
+  browserName: 'chromium' as const,
+  locale: 'en-GB',
+  timezoneId: 'UTC',
+  colorScheme: 'light' as const,
+  reducedMotion: 'reduce' as const,
+  deviceScaleFactor: 1,
+  baseURL: DOCS_URL,
+};
 // CI runs each project in a job of its own (HLABS_E2E_SPLIT, .github/workflows/ci.yml): the serial specs then have a
 // main instance to themselves and needn't wait for the desktop and phone specs.
 const SPLIT = !!process.env.HLABS_E2E_SPLIT;
@@ -69,7 +108,8 @@ export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,
   workers: WORKERS,
-  globalSetup: './e2e/first-run-servers.ts',
+  // The docs screenshots need none of the first-run instances.
+  globalSetup: DOCS_RUN ? undefined : './e2e/first-run-servers.ts',
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
@@ -90,13 +130,13 @@ export default defineConfig({
     },
     {
       name: 'desktop',
-      testIgnore: [FIRST_RUN_SPECS, SERIAL_SPECS, PWA_SPECS, TABLET_SPECS],
+      testIgnore: [FIRST_RUN_SPECS, SERIAL_SPECS, PWA_SPECS, TABLET_SPECS, DOCS_SPECS],
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, storageState: MAIN_STORAGE_STATE },
       dependencies: ['setup'],
     },
     {
       name: 'phone',
-      testIgnore: [FIRST_RUN_SPECS, SERIAL_SPECS, PWA_SPECS, TABLET_SPECS],
+      testIgnore: [FIRST_RUN_SPECS, SERIAL_SPECS, PWA_SPECS, TABLET_SPECS, DOCS_SPECS],
       use: { ...devices['Pixel 7'], storageState: MAIN_STORAGE_STATE },
       dependencies: ['setup'],
     },
@@ -127,8 +167,68 @@ export default defineConfig({
       testMatch: FIRST_RUN_SPECS,
       use: { ...devices['Pixel 7'] },
     },
+    // The docs screenshots (US-SITE-11): the setup shoots onboarding, seeds the demo data set and signs Hari in; each
+    // spec then sets its layout (e2e/docs-shots/*.spec.ts).
+    ...(DOCS_RUN
+      ? [
+          {
+            name: 'docs-setup',
+            testMatch: /docs-shots\/demo\.setup\.ts/,
+            // It shoots a fresh instance's setup screens and seeds it: a second try would find it set up.
+            retries: 0,
+            use: { ...DOCS_USE, ...DOCS_DEVICES.desktop },
+          },
+          {
+            name: 'docs-shots',
+            testMatch: /docs-shots\/.*\.spec\.ts/,
+            // The live charts keep a page busy: a screenshot may take a while.
+            timeout: 90_000,
+            // One at a time: they share the demo instance and some change it (and put it back).
+            workers: 1,
+            fullyParallel: false,
+            use: { ...DOCS_USE, storageState: DOCS_STORAGE_STATE },
+            dependencies: ['docs-setup'],
+          },
+        ]
+      : []),
   ],
-  webServer: [
+  webServer: DOCS_RUN ? docsServers() : mainServers(),
+});
+
+/** The docs instance (US-SITE-11, D-177): the demo computer in a pretend home, on its fixed clock. */
+function docsServers(): WebServer[] {
+  return [
+    {
+      // tsx itself (not through pnpm), in the pretend home: ~/hlabs is .e2e-data-docs/home/hlabs.
+      command: `${resolve(import.meta.dirname, '../daemon/node_modules/.bin/tsx')} src/main.ts`,
+      cwd: resolve(import.meta.dirname, '../daemon'),
+      url: `${DOCS_DAEMON_URL}/healthz`,
+      reuseExistingServer: false,
+      env: {
+        ...daemonEnv,
+        HOME: DOCS_HOME,
+        TZ: 'UTC',
+        HLABS_DEV_DEMO: '1',
+        HLABS_DEV_CLOCK: DOCS_CLOCK,
+        HLABS_PORT: String(DOCS_PORTS.daemon),
+        HLABS_DATA_DIR: `${DOCS_HOME}/hlabs`,
+        HLABS_DASHBOARD_URL: DOCS_URL,
+        HLABS_COMPOSE_PREFIX: 'hlabs-docs',
+      },
+      timeout: 120_000,
+    },
+    {
+      command: `pnpm exec vite --port ${DOCS_PORTS.web} --strictPort`,
+      url: DOCS_URL,
+      reuseExistingServer: false,
+      env: { HLABS_DAEMON_URL: DOCS_DAEMON_URL },
+      timeout: 120_000,
+    },
+  ];
+}
+
+function mainServers(): WebServer[] {
+  return [
     {
       command: `pnpm --filter @hlabs/daemon exec tsx src/main.ts`,
       url: `http://127.0.0.1:${MAIN_PORTS.daemon}/healthz`,
@@ -161,5 +261,5 @@ export default defineConfig({
           },
         ]
       : []),
-  ],
-});
+  ];
+}

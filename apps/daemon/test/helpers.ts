@@ -57,6 +57,8 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
     // Never the real Tailscale on the machine running the tests.
     devFakeTailscale: true,
     devFakeNas: false,
+    devDemo: false,
+    devClock: null,
     ...overrides,
   };
 }
