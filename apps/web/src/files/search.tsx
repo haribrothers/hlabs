@@ -6,7 +6,7 @@ import { iconDefaults, Search } from '@hlabs/icons';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState, type KeyboardEvent } from 'react';
-import { PhoneSearchField } from '@hlabs/ui';
+import { PhoneSearchField, useIsTouch } from '@hlabs/ui';
 import { filesCopy as copy } from '../copy/files';
 import { useIsDesktop } from '../lib/use-media';
 import { useTRPC } from '../lib/trpc';
@@ -49,6 +49,9 @@ export function SearchField({
   place: string;
 }) {
   const desktop = useIsDesktop();
+  // A tablet: a round search button that opens into the field, so the folder's name keeps its room (TabletFiles).
+  const touch = useIsTouch();
+  const [opened, setOpened] = useState(false);
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape' && value) {
       // Back to the folder (and Escape doesn't close the window).
@@ -72,6 +75,17 @@ export function SearchField({
         />
       </div>
     );
+  if (touch && !opened && !value)
+    return (
+      <button
+        type="button"
+        className="hl-p-ibtn hl-focus"
+        aria-label={copy.searchIn(place)}
+        onClick={() => setOpened(true)}
+      >
+        <Search aria-hidden {...iconDefaults} />
+      </button>
+    );
   return (
     <div role="search" className="relative w-full md:w-56">
       <Search
@@ -91,6 +105,11 @@ export function SearchField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
+        // Opened from the button: typing starts at once; left empty, it's a button again.
+        ref={(el) => {
+          if (el && touch && opened && !value && document.activeElement !== el) el.focus();
+        }}
+        onBlur={() => (value ? undefined : setOpened(false))}
       />
     </div>
   );

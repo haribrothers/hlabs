@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { guardTapsOutsideMenus, watchInputMode } from '@hlabs/ui';
 import './app.css';
 import { captureSetupToken } from './lib/setup-token';
 import { listenForInstall, reloadOnNewShell } from './lib/install-app';
@@ -17,6 +18,11 @@ captureSetupToken();
 listenForInstall();
 // The visual viewport for sheets and the on-screen keyboard (US-PHONE-02, US-PHONE-03).
 watchPhoneViewport();
+// A tablet by touch (D-175, US-TAB-01): <html data-input="touch"> follows the input, so plugging in a mouse switches
+// back to the mouse layout without a reload.
+watchInputMode();
+// …where a tap outside an open menu closes it and opens nothing under the finger (US-TAB-02).
+guardTapsOutsideMenus();
 // The saved shell for opening offline, in builds only (US-INST-28): a browser that refuses it (a certificate it
 // doesn't trust) leaves the dashboard as it was.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {

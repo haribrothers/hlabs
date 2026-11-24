@@ -1,6 +1,7 @@
 import { useId, useState, type KeyboardEvent } from 'react';
 import { useUiStrings } from '../lib/strings';
 import { Announce, formatNumber, seriesColor, SrTable, stepKey, Swatch } from './shared';
+import { useHoldTooltip } from './hold-tooltip';
 
 export interface StackedBarProps {
   /** Used parts in chart order (apps, files, system); the rest of total shows as Free. */
@@ -31,8 +32,10 @@ export function StackedBar({ segments, total, title, label, unit, formatValue, i
   const current = idx === null ? null : parts[idx];
   const described = parts.map((s) => `${s.label} ${fmt(s.value)}`).join(', ');
   const name = title ?? label;
+  // A finger held on the chart shows its tooltip (US-TAB-01).
+  const hold = useHoldTooltip();
   return (
-    <figure className="hl-chart">
+    <figure className="hl-chart" {...hold}>
       {title ? (
         <figcaption className="hl-chart-title">
           {title}

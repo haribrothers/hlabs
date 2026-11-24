@@ -59,6 +59,8 @@ export const filesCopy = {
   moveOne: (name: string) => `Move “${name}” to…`,
   moveMany: (n: number) => `Move ${n} items to…`,
   moveToFolder: (folder: string) => `Move to ${folder}`,
+  /** Dragging with a finger on a tablet (TabletFiles, US-TAB-03). */
+  touchDragHint: 'Lift your finger on a folder to move it there',
   folders: 'Folders',
   current: 'current',
   /** The folder they're in, at the right of its row on a phone (PhoneRedesignA_FilesMove). */

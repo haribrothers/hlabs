@@ -1,7 +1,7 @@
 // The Files window (FilesBrowser, 07-files): places on the left, the open folder (or Recents) on the right. On a
 // phone the places are chips above the folder. Escape closes the window, as Settings does.
 import type { FileEntry } from '@hlabs/api';
-import { GlassCard } from '@hlabs/ui';
+import { GlassCard, TabletBack, useIsTouchPortrait } from '@hlabs/ui';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { filesCopy as copy } from '../copy/files';
@@ -16,7 +16,7 @@ import { NewFolderDialog } from './new-folder-dialog';
 import { OpenWith } from './open-with';
 import { useFileUploads } from './use-file-uploads';
 import { SearchField, useDebouncedQuery } from './search';
-import { FilesChips, FilesSidebar, useDrives } from './sidebar';
+import { FilesChips, FilesPlacesList, FilesSidebar, useDrives } from './sidebar';
 import { FilesPhoneHeader } from './phone-header';
 import { ConnectDriveDialog } from './connect-drive-dialog';
 import { DisconnectDriveDialog } from './disconnect-drive-dialog';
@@ -31,6 +31,8 @@ import { isFeatureEnabled } from '@hlabs/shared';
 
 export interface FilesPageProps {
   at: FilesLocation;
+  /** No place in the address (`/files`): an iPad in portrait shows the places to go into (US-TAB-05). */
+  atRoot?: boolean;
 }
 
 /** Where Files is, from `/files?path=…` or `/files?view=recents` (US-FILE-02: back and forward move between folders). */
@@ -52,13 +54,15 @@ export function placeName(path: string): string {
 /** The page, at the location in the URL. */
 export function FilesScreen() {
   const search = useSearch({ strict: false }) as Record<string, unknown>;
-  return <FilesPage at={locationOf(search)} />;
+  return <FilesPage at={locationOf(search)} atRoot={search.path === undefined && search.view === undefined} />;
 }
 
-export function FilesPage({ at }: FilesPageProps) {
+export function FilesPage({ at, atRoot = false }: FilesPageProps) {
   const me = useMe();
   const navigate = useNavigate();
   const desktop = useIsDesktop();
+  // An iPad in portrait: the sidebar becomes a list of places you go into (US-TAB-05).
+  const portrait = useIsTouchPortrait();
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const drives = useDrives(me.data?.role === 'admin');
@@ -266,6 +270,24 @@ export function FilesPage({ at }: FilesPageProps) {
         {main}
         {dialogs}
       </div>
+    );
+  }
+
+  if (portrait) {
+    return (
+      <GlassCard level={2} className="hl-window-fill flex min-h-0 w-full flex-1 flex-col overflow-hidden p-0">
+        {atRoot ? (
+          <FilesPlacesList me={filesMe} onConnect={() => setConnecting(true)} />
+        ) : (
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+            <div className="px-5 pt-4">
+              <TabletBack label={copy.title} onBack={() => void navigate({ to: '/files' })} />
+            </div>
+            {main}
+          </div>
+        )}
+        {dialogs}
+      </GlassCard>
     );
   }
 

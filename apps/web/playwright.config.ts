@@ -34,6 +34,12 @@ const SERIAL_SPECS =
 // The installable dashboard's specs (US-INST-28, US-INST-29, and US-PHONE-23 and 24's) run against a production build,
 // where its manifest and service worker exist.
 const PWA_SPECS = /(us-inst-2[89]|us-phone-2[34]-pwa)\.spec\.ts/;
+// Tablets (14-tablet.md, D-175): the desktop layout by touch, on an iPad's screen, in the tablet project only.
+const TABLET_SPECS = /us-tab-\d+\.spec\.ts/;
+/** An iPad Pro 11" in landscape (1180 × 820) with a touch screen and no mouse: `(hover: none) and (pointer: coarse)`. */
+// Chromium, like the other projects (Playwright's iPad is WebKit's): it emulates touch and the media queries the same.
+const { defaultBrowserType: _webkit, ...ipad } = devices['iPad Pro 11 landscape'];
+const IPAD = { ...ipad, viewport: { width: 1180, height: 820 }, browserName: 'chromium' as const };
 /** That build takes a while: made only when the pwa project runs, or every project does (no --project given). */
 const ARGV = process.argv.join(' ');
 const PWA_RUN = !/--project[= ]/.test(ARGV) || /--project[= ]pwa\b/.test(ARGV);
@@ -84,14 +90,21 @@ export default defineConfig({
     },
     {
       name: 'desktop',
-      testIgnore: [FIRST_RUN_SPECS, SERIAL_SPECS, PWA_SPECS],
+      testIgnore: [FIRST_RUN_SPECS, SERIAL_SPECS, PWA_SPECS, TABLET_SPECS],
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, storageState: MAIN_STORAGE_STATE },
       dependencies: ['setup'],
     },
     {
       name: 'phone',
-      testIgnore: [FIRST_RUN_SPECS, SERIAL_SPECS, PWA_SPECS],
+      testIgnore: [FIRST_RUN_SPECS, SERIAL_SPECS, PWA_SPECS, TABLET_SPECS],
       use: { ...devices['Pixel 7'], storageState: MAIN_STORAGE_STATE },
+      dependencies: ['setup'],
+    },
+    // An iPad by touch, landscape; its specs turn it upright (820 × 1180) where they test portrait (US-TAB-05).
+    {
+      name: 'tablet',
+      testMatch: TABLET_SPECS,
+      use: { ...IPAD, storageState: MAIN_STORAGE_STATE },
       dependencies: ['setup'],
     },
     {
@@ -101,7 +114,7 @@ export default defineConfig({
       workers: 1,
       fullyParallel: false,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, storageState: MAIN_STORAGE_STATE },
-      dependencies: SPLIT ? ['setup'] : ['desktop', 'phone'],
+      dependencies: SPLIT ? ['setup'] : ['desktop', 'phone', 'tablet'],
     },
     // Each worker resets its own first-run instance, so these run in parallel.
     {

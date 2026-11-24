@@ -97,7 +97,7 @@ export function AppGrid({
   return (
     <ul
       aria-label={homeCopy.apps}
-      className="m-0 grid w-full list-none grid-cols-4 gap-x-4 gap-y-6 p-0 max-md:gap-x-0 max-md:gap-y-5 lg:grid-cols-5 xl:grid-cols-6"
+      className="hl-home-grid m-0 grid w-full list-none grid-cols-4 gap-x-4 gap-y-6 p-0 max-md:gap-x-0 max-md:gap-y-5 lg:grid-cols-5 xl:grid-cols-6"
       onKeyDown={moveFocus}
     >
       {apps.map((app) => {

@@ -1,6 +1,6 @@
 // One Settings section (US-ACCT-01): the section, "You don't have access to this" for a member at an admin-only URL
 // (no redirect, no admin data asked for), or "Page not found". Opening a section moves focus to its heading.
-import { PhoneHeader, ScrollPane } from '@hlabs/ui';
+import { PhoneHeader, ScrollPane, TabletBack, useIsTouchPortrait } from '@hlabs/ui';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, type ComponentType } from 'react';
 import { settingsCopy } from '../copy/settings';
@@ -69,6 +69,8 @@ export function SectionPage({
 }) {
   const me = useMe().data;
   const desktop = useIsDesktop();
+  // An iPad in portrait: "‹ Settings" above the title, back to the list (TabletSettingsPortraitPage, US-TAB-05).
+  const portrait = useIsTouchPortrait();
   const heading = useRef<HTMLHeadingElement>(null);
   const router = useRouter();
   const navigate = useNavigate();
@@ -90,6 +92,7 @@ export function SectionPage({
   ) : (
     <p className="m-0 text-body text-ink-muted">{settingsCopy.empty}</p>
   );
+  const back = () => (router.history.canGoBack() ? router.history.back() : void navigate({ to: '/settings' }));
   if (!desktop)
     // A section on a phone (D-172): "‹ Settings" (Back, or the list after a deep link, US-PHONE-04), the section's
     // name as a large title, then its content on the page, which scrolls as a whole.
@@ -101,7 +104,7 @@ export function SectionPage({
           titleRef={heading}
           back={{
             label: settingsCopy.back,
-            onBack: () => (router.history.canGoBack() ? router.history.back() : void navigate({ to: '/settings' })),
+            onBack: back,
           }}
           barTrailing={PhoneBar ? <PhoneBar /> : undefined}
           trailing={Aside && !PHONE_NO_ASIDE.has(access.section.id) ? <Aside /> : undefined}
@@ -120,11 +123,16 @@ export function SectionPage({
         bodyClassName={desktop ? 'pl-7 pr-3 pt-2' : 'pl-5 pr-3 pt-2'}
         data-testid="settings-scroll"
         header={
-          <div className="flex items-center justify-between gap-4">
-            <h1 id="settings-section-heading" ref={heading} tabIndex={-1} className="m-0 text-title-1 outline-none">
-              {access.section.label}
-            </h1>
-            {Aside ? <Aside /> : null}
+          <div className="flex flex-col">
+            {portrait ? (
+              <TabletBack label={settingsCopy.back} onBack={() => void navigate({ to: '/settings' })} />
+            ) : null}
+            <div className="flex items-center justify-between gap-4">
+              <h1 id="settings-section-heading" ref={heading} tabIndex={-1} className="m-0 text-title-1 outline-none">
+                {access.section.label}
+              </h1>
+              {Aside ? <Aside /> : null}
+            </div>
           </div>
         }
       >

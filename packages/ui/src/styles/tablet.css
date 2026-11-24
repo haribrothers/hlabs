@@ -1,0 +1,337 @@
+/* Tablets (D-175, 14-tablet.md): the desktop layout by touch. Everything here is under <html data-input="touch">,
+   which src/lib/media.ts sets at 768px and wider when there's a touch screen and no mouse, so a computer with a mouse
+   and a phone (D-172) are unchanged. Every value comes from tokens.css. */
+@layer components {
+  /* ---------- US-TAB-01: every control a finger can hit, nothing that needs hover ---------- */
+  [data-input='touch'] .hl-btn-sm,
+  [data-input='touch'] .hl-btn-md {
+    height: var(--size-control);
+    padding: 0 var(--space-5);
+    font-size: 15px;
+  }
+  [data-input='touch'] .hl-btn-link {
+    min-height: var(--size-control);
+  }
+  [data-input='touch'] .hl-iconbtn {
+    width: var(--size-control);
+    height: var(--size-control);
+  }
+  /* A 44px target with the 32px track drawn inside it (TabletWindow), as on a phone. */
+  [data-input='touch'] .hl-switch,
+  [data-input='touch'] .hl-switch[aria-checked='true'] {
+    position: relative;
+    width: calc(var(--size-control) + var(--space-2));
+    height: var(--size-control);
+    border: 0;
+    padding: 0 2px;
+    align-items: center;
+    background: transparent;
+  }
+  [data-input='touch'] .hl-switch::before {
+    content: '';
+    position: absolute;
+    inset: 6px 0;
+    border-radius: var(--radius-pill);
+    background: var(--surface-control);
+    transition: background var(--hl-dur) ease;
+  }
+  [data-input='touch'] .hl-switch[aria-checked='true']::before {
+    background: var(--accent-strong);
+  }
+  [data-input='touch'] .hl-switch .hl-switch-knob {
+    position: relative;
+    width: calc(var(--size-control) - var(--space-4));
+    height: calc(var(--size-control) - var(--space-4));
+  }
+  [data-input='touch'] .hl-switch-label {
+    min-height: var(--size-control);
+  }
+  /* Tabs and segmented controls (an app's Overview, Configuration…): 44px, 15px labels. */
+  [data-input='touch'] .hl-seg-opt {
+    height: var(--size-control);
+    padding: 0 var(--space-5);
+    font-size: 15px;
+  }
+  /* Rows: 56px at least (TabletWindow), 16px text. */
+  [data-input='touch'] .hl-list-row {
+    min-height: calc(var(--size-row) + var(--space-2));
+    box-sizing: border-box;
+    font-size: 16px;
+  }
+  /* Menus (TabletMenu): rows a finger can pick, the row text of a phone. */
+  [data-input='touch'] .hl-menu-item {
+    min-height: var(--size-row);
+    padding: 0 var(--space-4);
+    font: 400 17px/22px var(--hl-font-sans);
+  }
+  /* 16px at least in a field, so iOS doesn't zoom into it when it's focused. */
+  [data-input='touch'] .hl-input,
+  [data-input='touch'] input,
+  [data-input='touch'] textarea,
+  [data-input='touch'] select {
+    font-size: max(var(--size-field-text-touch), 1em);
+  }
+  /* Home edit's "–" on a tile's corner: a 44px target around the small round button. */
+  [data-input='touch'] .hl-edit-remove::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--space-2) * -1);
+  }
+  /* Nothing that only shows on hover: it's there all the time. */
+  [data-input='touch'] .hl-hover-reveal {
+    opacity: 1 !important;
+    min-width: var(--size-control);
+    min-height: var(--size-control);
+  }
+  /* A tap leaves no hover lift on a Home tile. */
+  [data-input='touch'] .hl-app:hover .hl-app-icon {
+    transform: none;
+  }
+  /* No OS callout or text selection under a long press: it opens hlabs's own menu (US-TAB-02). */
+  [data-input='touch'] .hl-app,
+  [data-input='touch'] .hl-dock-item,
+  [data-input='touch'] [data-path] {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* ---------- US-TAB-04: the Dock by tapping ---------- */
+  /* Where it floats: above the home indicator, never under it. */
+  [data-input='touch'] {
+    --hl-dock-edge: max(var(--size-dock-edge-touch), calc(var(--space-4) + env(safe-area-inset-bottom)));
+    /* The page's top (Home's greeting) and a window's: below the Home Screen app's status bar. */
+    --hl-page-top: calc(var(--space-10) + env(safe-area-inset-top));
+    --hl-window-top: calc(var(--space-2) + max(var(--space-6), env(safe-area-inset-top)));
+  }
+  [data-input='touch'] .hl-nav-desktop {
+    bottom: var(--hl-dock-edge);
+  }
+  /* No magnification: a finger has no hover, and a tap would leave a tile swollen. */
+  [data-input='touch'] .hl-dock .hl-dock-item,
+  [data-input='touch'] .hl-dock .hl-dock-item:hover {
+    margin: 0 3px;
+  }
+  [data-input='touch'] .hl-dock .hl-dock-tile {
+    transform: none !important;
+  }
+  /* Names under a long press instead of on hover (a tap's left-over hover shows none). */
+  [data-input='touch'] .hl-dock-item:hover .hl-dock-tip {
+    opacity: 0;
+    bottom: calc(100% + 14px);
+  }
+  [data-input='touch'] .hl-dock-item[data-held] .hl-dock-tip {
+    opacity: 1;
+  }
+  /* A pinned app being moved along the Dock by a finger (US-TAB-03): it leaves its slot and follows the finger. */
+  [data-input='touch'] .hl-dock {
+    position: relative;
+  }
+  [data-input='touch'] .hl-dock-item[data-dragging] {
+    z-index: 1;
+    opacity: 0.85;
+    transition: none;
+  }
+
+  /* Windows end above the Dock wherever it sits, and start below the status bar of the Home Screen app. */
+  [data-input='touch'] .hl-window-layer {
+    padding: var(--hl-window-top) var(--space-6) calc(105px - 14px + var(--hl-dock-edge));
+  }
+  [data-input='touch'] .hl-window-fill {
+    margin-top: calc(var(--hl-window-top) - var(--hl-page-top));
+    margin-bottom: calc(105px - 14px + var(--hl-dock-edge) - 10rem);
+  }
+
+  /* ---------- US-TAB-06: the on-screen keyboard ---------- */
+  /* While it's up (src/lib/phone-viewport.ts sets data-keyboard), a dialog sits in what's left of the screen,
+     scrolling inside if it must, so its field and its buttons stay in reach; the Dock steps aside (below). */
+  [data-input='touch'][data-keyboard='open'] .hl-dialog-modal,
+  [data-input='touch'][data-keyboard='open'] .hl-command {
+    top: calc(var(--hl-visual-height, 100dvh) / 2);
+    max-height: calc(var(--hl-visual-height, 100dvh) - 2 * var(--space-4));
+    overflow-y: auto;
+  }
+  [data-input='touch'][data-keyboard='open'] .hl-command {
+    top: var(--space-4);
+  }
+
+  /* ---------- Home (TabletHome) ---------- */
+  /* Names on one line (TabletHome). */
+  [data-input='touch'] .hl-home-grid .hl-app {
+    width: 100%;
+  }
+  [data-input='touch'] .hl-home-grid .hl-app-name {
+    max-width: 100%;
+    font: 600 14px/18px var(--hl-font-sans);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  }
+
+  /* ---------- A tile's menu beside the lifted tile (TabletMenu, US-TAB-02) ---------- */
+  .hl-t-menu-tile {
+    position: fixed;
+    width: calc(var(--size-app-icon) + var(--space-1));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .hl-t-menu-logo {
+    display: flex;
+    border-radius: var(--radius-icon);
+    box-shadow: var(--shadow-menu);
+    overflow: hidden;
+  }
+  .hl-t-menu-name {
+    font: 600 14px/18px var(--hl-font-sans);
+    color: var(--ink);
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  }
+
+  /* ---------- An iPad in portrait: a list you go into (TabletSettingsPortrait, US-TAB-05) ---------- */
+  .hl-t-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-radius: var(--radius-md);
+    background: var(--surface-row);
+    overflow: hidden;
+  }
+  .hl-t-list > li + li {
+    border-top: 1px solid var(--hairline);
+  }
+  .hl-t-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: var(--size-row-touch);
+    padding: 6px 18px;
+    box-sizing: border-box;
+    color: var(--ink);
+    text-decoration: none;
+    font: 400 17px/22px var(--hl-font-sans);
+  }
+  .hl-t-row[aria-current='page'] {
+    background: var(--accent-wash);
+  }
+  .hl-t-icon {
+    width: var(--size-icon-square-touch);
+    height: var(--size-icon-square-touch);
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--surface-control);
+  }
+  .hl-t-title {
+    flex: 1;
+    min-width: 0;
+  }
+  .hl-t-value {
+    font: 400 16px/22px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+  .hl-t-badge {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 var(--space-2);
+    box-sizing: border-box;
+    border-radius: var(--radius-pill);
+    background: var(--badge);
+    display: grid;
+    place-items: center;
+    font: 700 13px/1 var(--hl-font-sans);
+  }
+  .hl-t-chevron {
+    flex-shrink: 0;
+    color: var(--ink-faint);
+  }
+  .hl-t-back {
+    align-self: flex-start;
+    min-height: var(--size-control);
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-link);
+    font: 400 17px/22px var(--hl-font-sans);
+    cursor: pointer;
+  }
+
+  /* ---------- Files: dragging by touch (TabletFiles, US-TAB-03) ---------- */
+  .hl-touch-ghost {
+    position: fixed;
+    z-index: 70;
+    pointer-events: none;
+    transform: translate(-50%, -50%) rotate(-4deg) scale(1.12);
+    filter: drop-shadow(var(--shadow-menu));
+  }
+  .hl-touch-chip {
+    position: fixed;
+    z-index: 70;
+    pointer-events: none;
+    height: 36px;
+    padding: 0 var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--surface-dialog);
+    border: 1px solid var(--border-glass);
+    box-shadow: var(--shadow-menu);
+    font: 600 15px/1 var(--hl-font-sans);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .hl-touch-hint {
+    position: fixed;
+    z-index: 70;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(105px - 14px + var(--hl-dock-edge, 14px) + var(--space-6));
+    min-height: var(--size-control);
+    padding: 0 var(--space-5);
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-pill);
+    background: var(--surface-dialog);
+    border: 1px solid var(--border-glass);
+    font: 400 15px/20px var(--hl-font-sans);
+    color: var(--ink-muted);
+    pointer-events: none;
+  }
+}
+
+/* Outside the layer: these override Tailwind utilities on the same elements (the page's padding, the grid's columns). */
+/* The page's margins are the frames' 24px, clear of the Home Screen app's sides. */
+[data-input='touch'] .hl-page {
+  padding-top: var(--hl-page-top);
+  padding-left: calc(var(--space-6) + env(safe-area-inset-left));
+  padding-right: calc(var(--space-6) + env(safe-area-inset-right));
+}
+/* Home's apps six to a row in landscape (TabletHome), four upright (TabletHomePortrait). */
+@media (min-width: 1024px) {
+  [data-input='touch'] .hl-home-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* The Dock steps aside while the on-screen keyboard is up (US-TAB-06): under the keyboard it can't be used. */
+[data-input='touch'][data-keyboard='open'] .hl-nav-desktop {
+  display: none;
+}
+
+/* ---------- US-TAB-06: the Home Screen app ---------- */
+/* iOS 26's band under the drawing area (index.html's data-vgap, D-172) takes the wallpaper's base colour at 768px and
+   wider, where the Dock floats over the wallpaper; a phone's tab-bar colour stays in phone.css. */
+@media (min-width: 768px) {
+  :root[data-vgap],
+  :root[data-vgap] body {
+    background-color: var(--wall-base);
+  }
+}

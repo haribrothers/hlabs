@@ -4,7 +4,7 @@
 import type { Notification } from '@hlabs/api';
 import { Bell, Check, CircleX, Download, iconDefaults, Info, Lock, TriangleAlert, X } from '@hlabs/icons';
 import { isFeatureEnabled, VISIBLE_PHASE, type ToastMutation } from '@hlabs/shared';
-import { BottomSheet, Button, SheetHeader, useIsPhone } from '@hlabs/ui';
+import { BottomSheet, Button, SheetHeader, useIsPhone, useIsTouch } from '@hlabs/ui';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
@@ -61,15 +61,19 @@ function appOf(a: ToastAction): string | null {
 export function NotificationsBell({
   shippedPhase = VISIBLE_PHASE,
   inline = false,
+  trailing,
 }: {
   shippedPhase?: number;
   inline?: boolean;
+  /** Beside the bell in the corner: Edit Home on a tablet (TabletHome, US-TAB-01). */
+  trailing?: ReactNode;
 }) {
-  if (!isFeatureEnabled('notifications', shippedPhase)) return null;
-  return <Panel shippedPhase={shippedPhase} inline={inline} />;
+  if (!isFeatureEnabled('notifications', shippedPhase))
+    return trailing ? <div className="fixed right-4 top-4 z-40 flex sm:right-8 sm:top-7">{trailing}</div> : null;
+  return <Panel shippedPhase={shippedPhase} inline={inline} trailing={trailing} />;
 }
 
-function Panel({ shippedPhase, inline }: { shippedPhase: number; inline: boolean }) {
+function Panel({ shippedPhase, inline, trailing }: { shippedPhase: number; inline: boolean; trailing?: ReactNode }) {
   const trpc = useTRPC();
   const client = useTRPCClient();
   const queryClient = useQueryClient();
@@ -80,6 +84,9 @@ function Panel({ shippedPhase, inline }: { shippedPhase: number; inline: boolean
   const [open, setOpen] = useState(false);
   // A bottom sheet on a phone, which Back closes (US-PHONE-03, US-PHONE-04).
   const sheet = useIsPhone();
+  // On a tablet the bell is a glass circle with a dot, as on a phone (TabletHome).
+  const touch = useIsTouch();
+  const round = inline || touch;
   const closeSheet = useHistoryLayer('notifications', open && sheet, () => setOpen(false), sheet);
   const bellRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -285,14 +292,14 @@ function Panel({ shippedPhase, inline }: { shippedPhase: number; inline: boolean
       aria-haspopup="dialog"
       onClick={() => setOpen((o) => !o)}
       className={
-        inline
+        round
           ? 'hl-p-ibtn hl-focus'
           : 'hl-focus relative grid size-11 place-items-center rounded-pill border border-border-glass bg-fill-primary text-ink-on-light shadow-menu'
       }
     >
       <Bell aria-hidden {...iconDefaults} className="size-5" />
       {unread > 0 ? (
-        inline ? (
+        round ? (
           // A dot on a phone, as PhoneHome draws it; the label says how many.
           <span aria-hidden className="hl-p-dot" />
         ) : (
@@ -339,7 +346,14 @@ function Panel({ shippedPhase, inline }: { shippedPhase: number; inline: boolean
 
   return (
     <div className={inline ? 'flex' : 'fixed right-4 top-4 z-40 flex flex-col items-end sm:right-8 sm:top-7'}>
-      {bell}
+      {trailing ? (
+        <div className="flex gap-2.5">
+          {bell}
+          {trailing}
+        </div>
+      ) : (
+        bell
+      )}
       {open ? (
         <div
           ref={panelRef}

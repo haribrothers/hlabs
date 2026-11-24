@@ -3,13 +3,13 @@
 // field and a chip row of categories over the view. The search field belongs to the window, not the view, so it keeps
 // focus while typing moves between Discover and the results.
 import { ChevronLeft, iconDefaults } from '@hlabs/icons';
-import { GlassCard, PhoneHeader, ScrollPane } from '@hlabs/ui';
+import { GlassCard, PhoneHeader, ScrollPane, TabletBack, useIsTouchPortrait } from '@hlabs/ui';
 import { Link, Outlet, useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { storeCopy } from '../copy/store';
 import { useIsDesktop } from '../lib/use-media';
-import { StoreSidebar } from './categories';
+import { StoreChips, StoreSidebar } from './categories';
 import { StoreSearchField } from './search';
 import { useStoreScrollMemory } from './store-return';
 
@@ -31,6 +31,10 @@ const ActionContext = createContext<{
 
 export function StoreLayout() {
   const desktop = useIsDesktop();
+  // An iPad in portrait (US-TAB-05): one column; the sidebar's places are chips over Discover, and a category, a list,
+  // Updates or App sources is a page you go into with "‹ App Store".
+  const portrait = useIsTouchPortrait();
+  const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   const [hasAction, setHasAction] = useState(false);
@@ -59,6 +63,38 @@ export function StoreLayout() {
           <Outlet />
         </TitleContext.Provider>
       </div>
+    );
+  }
+
+  if (portrait) {
+    const pushed = !/^\/store(\/search)?\/?$/.test(new URL(href, 'http://hlabs.invalid').pathname);
+    return (
+      <GlassCard level={2} className="hl-window-fill flex min-h-0 w-full flex-1 flex-col overflow-hidden p-0">
+        <ScrollPane
+          scrollRef={scroller}
+          className="flex-1"
+          headerClassName="pl-8 pr-12 pt-5 pb-4"
+          scrollClassName="mr-2 mb-5"
+          bodyClassName="px-8 pb-2"
+          header={
+            <div className="flex flex-col gap-3">
+              {pushed ? <TabletBack label={copy.title} onBack={() => void navigate({ to: '/store' })} /> : null}
+              <div className="flex items-center justify-between gap-6">
+                <h2 className="m-0 min-w-0 truncate text-title-1 font-bold">{pushed ? title : copy.title}</h2>
+                <div ref={setSlot} className={hasAction ? 'contents' : 'hidden'} />
+                {hasAction ? null : <StoreSearchField desktop />}
+              </div>
+              {pushed ? null : <StoreChips />}
+            </div>
+          }
+        >
+          <TitleContext.Provider value={setTitle}>
+            <ActionContext.Provider value={{ inWindow: true, slot, setHasAction }}>
+              <Outlet />
+            </ActionContext.Provider>
+          </TitleContext.Provider>
+        </ScrollPane>
+      </GlassCard>
     );
   }
 

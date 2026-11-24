@@ -1,7 +1,8 @@
 // A tile's menu on a phone (US-PHONE-08, D-172; PhoneRedesignA_TileMenu): after a 500 ms long press the tile lifts
 // over a blurred, dimmed Home with its menu beside it: the app and its state, then Open, Settings, Logs, Restart (Start
 // when stopped) and, apart, Uninstall…. Members get Open. Up and Down move between the items, Escape or a tap outside
-// closes it and focus goes back to the tile.
+// closes it and focus goes back to the tile. On a tablet (TabletMenu, US-TAB-02) the same layer holds the desktop's
+// items, with the menu at the tile's side and the tile's name under it.
 import {
   AppLogo,
   appTileLook,
@@ -21,8 +22,9 @@ import { homeCopy } from '../copy/home';
 import type { HomeApp } from './home-app';
 
 const copy = homeCopy.phoneMenu;
-/** The lifted tile: a little larger than the 60px tile it came from. */
+/** The lifted tile: a little larger than the tile it came from (60px on a phone, 76px on a tablet). */
 const LIFTED = tokens.SIZE_APP_ICON_PHONE + tokens.SPACE_1;
+const LIFTED_TOUCH = tokens.SIZE_APP_ICON + tokens.SPACE_1;
 /** The menu's width and its distance from the screen's edges and from the tile. */
 const MENU_WIDTH = tokens.SIZE_APP_ICON * 3 + tokens.SPACE_7;
 const EDGE = tokens.SPACE_4;
@@ -35,6 +37,8 @@ export interface PhoneMenuItem {
   onSelect: () => void;
   disabled?: boolean;
   danger?: boolean;
+  /** In a group of its own at the end, after a gap (Edit Home on a tablet). */
+  apart?: boolean;
 }
 
 /** The items for an app in a state, for an admin or a member (the story's list: Open, Settings, Logs, Restart, Uninstall…). */
@@ -85,14 +89,32 @@ function place(icon: DOMRect, menuHeight: number): Place {
   return { tile, menu: { left, bottom: vh - tile.top + GAP } };
 }
 
+/** On a tablet: the menu at the tile's right (its left when there's no room), level with it, inside the screen. */
+function placeBeside(icon: DOMRect, menuWidth: number, menuHeight: number): Place {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const tile = {
+    left: icon.left + (icon.width - LIFTED_TOUCH) / 2,
+    top: icon.top + (icon.height - LIFTED_TOUCH) / 2,
+  };
+  const right = tile.left + LIFTED_TOUCH + GAP;
+  const left = right + menuWidth <= vw - EDGE ? right : Math.max(EDGE, tile.left - GAP - menuWidth);
+  const middle = tile.top + LIFTED_TOUCH / 2 - menuHeight / 2;
+  const top = Math.max(EDGE, Math.min(middle, vh - EDGE - menuHeight));
+  return { tile, menu: { left, top } };
+}
+
 export function PhoneTileMenu({
   app,
   open,
   onOpenChange,
   anchor,
   items,
+  beside = false,
   children,
 }: {
+  /** A tablet's menu (TabletMenu): wider, at the tile's side, with the tile's name under the lifted tile. */
+  beside?: boolean;
   app: HomeApp;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -114,7 +136,9 @@ export function PhoneTileMenu({
     menu.current = node;
     const icon = anchorRef.current();
     if (!node || !icon || !tile.current) return;
-    const at = place(icon.getBoundingClientRect(), node.offsetHeight);
+    const at = beside
+      ? placeBeside(icon.getBoundingClientRect(), node.offsetWidth, node.offsetHeight)
+      : place(icon.getBoundingClientRect(), node.offsetHeight);
     Object.assign(tile.current.style, { left: `${at.tile.left}px`, top: `${at.tile.top}px`, visibility: 'visible' });
     Object.assign(node.style, {
       left: `${at.menu.left}px`,
@@ -123,7 +147,8 @@ export function PhoneTileMenu({
       visibility: 'visible',
     });
   };
-  const look = appTileLook(app.name, app.icon, LIFTED);
+  const lifted = beside ? LIFTED_TOUCH : LIFTED;
+  const look = appTileLook(app.name, app.icon, lifted);
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
     e.preventDefault();
@@ -136,8 +161,19 @@ export function PhoneTileMenu({
         : all[(now + (e.key === 'ArrowDown' ? 1 : -1) + all.length) % all.length];
     next?.focus();
   };
-  const plain = items.filter((i) => !i.danger);
+  const logo = (
+    <AppLogo
+      decorative
+      name={app.name}
+      src={app.icon.logoUrl}
+      colors={look.colors}
+      fallbackIcon={look.fallbackIcon}
+      size={lifted}
+    />
+  );
+  const plain = items.filter((i) => !i.danger && !i.apart);
   const danger = items.filter((i) => i.danger);
+  const apart = items.filter((i) => i.apart && !i.danger);
   const row = (item: PhoneMenuItem) => {
     const Glyph = item.glyph;
     return (
@@ -170,23 +206,23 @@ export function PhoneTileMenu({
           menu.current?.focus();
         }}
       >
-        <span aria-hidden className="hl-p-menu-tile" ref={tile} style={{ visibility: 'hidden' }}>
-          <AppLogo
-            decorative
-            name={app.name}
-            src={app.icon.logoUrl}
-            colors={look.colors}
-            fallbackIcon={look.fallbackIcon}
-            size={LIFTED}
-          />
-        </span>
+        {beside ? (
+          <span aria-hidden className="hl-t-menu-tile" ref={tile} style={{ visibility: 'hidden' }}>
+            <span className="hl-t-menu-logo">{logo}</span>
+            <span className="hl-t-menu-name">{app.name}</span>
+          </span>
+        ) : (
+          <span aria-hidden className="hl-p-menu-tile" ref={tile} style={{ visibility: 'hidden' }}>
+            {logo}
+          </span>
+        )}
         <div
           ref={placeMenu}
           role="menu"
           aria-labelledby={labelId}
           tabIndex={-1}
           className="hl-p-menu hl-anim-menu outline-none"
-          style={{ visibility: 'hidden', width: MENU_WIDTH }}
+          style={{ visibility: 'hidden', width: beside ? tokens.SIZE_MENU_TOUCH : MENU_WIDTH }}
           onKeyDown={onKeyDown}
         >
           <p id={labelId} className="hl-p-menu-head">
@@ -208,6 +244,12 @@ export function PhoneTileMenu({
             <>
               <span aria-hidden className="hl-p-menu-gap" />
               {danger.map(row)}
+            </>
+          ) : null}
+          {apart.length ? (
+            <>
+              <span aria-hidden className="hl-p-menu-gap" />
+              {apart.map(row)}
             </>
           ) : null}
         </div>

@@ -2,8 +2,9 @@
 // the right. On a phone the list comes first and a section opens as a sheet with a "Settings" back control. Escape
 // closes the window and puts focus back where it was on Home.
 import { ChevronRight, iconDefaults } from '@hlabs/icons';
-import { GlassCard, ScrollPane } from '@hlabs/ui';
+import { GlassCard, ScrollPane, useIsTouchPortrait } from '@hlabs/ui';
 import { PhoneSettingsList } from './phone-settings';
+import { TabletSettingsList } from './tablet-settings';
 import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { settingsCopy } from '../copy/settings';
@@ -30,6 +31,8 @@ export function SettingsLayout() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const desktop = useIsDesktop();
+  // An iPad in portrait: the sidebar becomes a list you go into (US-TAB-05).
+  const portrait = useIsTouchPortrait();
   const atList = pathname === '/settings' || pathname === '/settings/';
   // Where focus was before Settings opened (the Dock tile, usually), to give it back on Escape.
   const returnTo = useRef<HTMLElement | null>(null);
@@ -77,6 +80,15 @@ export function SettingsLayout() {
       <div className="flex w-full flex-col gap-4">
         {atList ? <PhoneSettingsList me={me} sections={sections} /> : <Outlet />}
       </div>
+    );
+  }
+
+  if (portrait) {
+    return (
+      // TabletSettingsPortrait: the window fills the width; the list, or the section you went into from it.
+      <GlassCard level={2} className="hl-window-fill flex min-h-0 w-full flex-1 flex-col overflow-hidden p-0">
+        {atList ? <TabletSettingsList me={me} sections={sections} /> : <Outlet />}
+      </GlassCard>
     );
   }
 

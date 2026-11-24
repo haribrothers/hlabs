@@ -105,7 +105,7 @@ function Sortable({
           type="button"
           aria-label={removeLabel}
           onClick={onRemove}
-          className="hl-focus absolute -left-2 -top-2 z-10 grid size-7 place-items-center rounded-pill border-0 bg-fill-primary text-ink-on-light shadow-menu"
+          className="hl-focus hl-edit-remove absolute -left-2 -top-2 z-10 grid size-7 place-items-center rounded-pill border-0 bg-fill-primary text-ink-on-light shadow-menu"
         >
           <Minus aria-hidden {...iconDefaults} className="size-4" />
         </button>
@@ -240,7 +240,7 @@ export function EditHome({
         <SortableContext items={appIds} strategy={rectSortingStrategy}>
           <ul
             aria-label={copy.apps}
-            className="m-0 grid w-full list-none grid-cols-4 gap-x-4 gap-y-6 p-0 lg:grid-cols-5 xl:grid-cols-6"
+            className="hl-home-grid m-0 grid w-full list-none grid-cols-4 gap-x-4 gap-y-6 p-0 lg:grid-cols-5 xl:grid-cols-6"
           >
             {appIds.map((id) => {
               const app = apps.get(id)!;

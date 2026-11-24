@@ -152,6 +152,8 @@ export function useDockPins(signedIn: boolean, shippedPhase = VISIBLE_PHASE) {
           onAdd: (tile: HTMLElement) => setAdding({ rect: tile.getBoundingClientRect(), tile }),
           onAppMenu: (id: string, tile: HTMLElement) => setMenu({ id, rect: tile.getBoundingClientRect(), tile }),
           onMoveApp: move,
+          // A finger that held a pinned app moves it: its menu goes (US-TAB-03).
+          onAppMenuClose: () => setMenu(null),
           onDropApp: (id: string, at: number) => pin(id, at),
         }
       : {}),

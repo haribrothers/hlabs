@@ -40,6 +40,7 @@ export default defineConfig({
                     { label: 'Trust this device', link: '/help/get-started/trust-device/' },
                     { label: 'Use hlabs as an app', link: '/help/get-started/use-as-app/' },
                     { label: 'Use hlabs on your phone', link: '/help/get-started/phone/' },
+                    { label: 'Use hlabs on an iPad or tablet', link: '/help/get-started/tablet/' },
                     { label: 'Confirmations and notices', link: '/help/get-started/confirmations/' },
                   ],
                 },

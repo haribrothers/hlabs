@@ -105,6 +105,11 @@
   --size-list-icon: 56px;
   --size-button-phone: 50px;
   --size-grabber: 36px;
+  --size-dock-edge-touch: 28px;
+  --size-row-touch: 60px;
+  --size-icon-square-touch: 36px;
+  --size-menu-touch: 272px;
+  --size-field-text-touch: 16px;
 }
 
 [data-theme='solid'] {

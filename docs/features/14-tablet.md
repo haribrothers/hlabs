@@ -62,3 +62,4 @@ iPads and other tablets (768px and wider, a touch screen and no mouse) keep the 
 ## Implementation notes
 - Touch is a mode of the desktop layout (`data-input="touch"` and `@media (hover: none) and (pointer: coarse)`), not a third layout; the phone layout stays below 768px.
 - Tests run in Playwright with an iPad viewport (1180 × 820 landscape, 820 × 1180 portrait), `hasTouch` and `isMobile`, in a `tablet` project.
+- As built: D-176 (long press on a Files item opens its menu, a tap outside a menu closes it on its click, the portrait lists, the Dock's first-run specs).

@@ -74,7 +74,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [desktop, phone, first-run, first-run-phone, serial, pwa]
+        project: [desktop, phone, tablet, first-run, first-run-phone, serial, pwa]
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4

@@ -108,7 +108,7 @@ Opening an app's address while the engine is stopped shows the same message, wit
 
 ## The Dock
 
-The Dock at the bottom of the screen takes you to each part of hlabs; a dot marks where you are. Point at a tile to see its name. With a keyboard, Tab to the Dock, use the left and right arrow keys (Home and End jump to the ends) and press Enter. On a phone, the tab bar docked to the bottom of the screen does the same job (see [Use hlabs on your phone](../phone/)).
+The Dock at the bottom of the screen takes you to each part of hlabs; a dot marks where you are. Point at a tile to see its name. With a keyboard, Tab to the Dock, use the left and right arrow keys (Home and End jump to the ends) and press Enter. On a phone, the tab bar docked to the bottom of the screen does the same job (see [Use hlabs on your phone](../phone/)). On an iPad or another tablet, touch and hold a tile to see its name (see [Use hlabs on an iPad or tablet](../tablet/)).
 
 Parts of hlabs that haven't arrived yet aren't shown in the Dock. The App Store, Files, Usage and Backups appear as they're added.
 

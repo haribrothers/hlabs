@@ -13,6 +13,11 @@ export function startDrag(e: DragEvent, entries: FileEntry[], from: string) {
   e.dataTransfer.effectAllowed = 'move';
 }
 
+/** A finger's drag (US-TAB-03): the same items, without the browser's drag. */
+export function startTouchDrag(entries: FileEntry[], from: string) {
+  current = { entries, from };
+}
+
 export const endDrag = () => {
   current = null;
 };
@@ -29,6 +34,8 @@ export interface DragProps {
   from: string;
   /** Items dropped on a folder in this view. */
   onDrop: (folder: FileEntry, entries: FileEntry[], from: string) => void;
+  /** A finger that held an item (its menu open) starts moving it: close the menu (US-TAB-03). */
+  onTouchDragStart?: () => void;
 }
 
 /** A folder takes a drop unless it's being dragged itself, or is inside one being dragged. */

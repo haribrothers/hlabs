@@ -98,6 +98,11 @@
   --spacing-list-icon: 56px;
   --spacing-button-phone: 50px;
   --spacing-grabber: 36px;
+  --spacing-dock-edge-touch: 28px;
+  --spacing-row-touch: 60px;
+  --spacing-icon-square-touch: 36px;
+  --spacing-menu-touch: 272px;
+  --spacing-field-text-touch: 16px;
 }
 
 @theme inline {

@@ -1,4 +1,5 @@
 import {
+  ChevronRight,
   Clock,
   Download,
   Folder,
@@ -18,7 +19,16 @@ import {
 import type { FileEntry } from '@hlabs/api';
 import { dragged, endDrag, isItemDrag } from './drag';
 import { formatBytes } from '@hlabs/shared';
-import { cn, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, StatusDot } from '@hlabs/ui';
+import {
+  cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  StatusDot,
+  useIsTouch,
+  useLongPress,
+} from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react';
@@ -91,6 +101,8 @@ export function DriveEvents() {
 /** A drive's row: right-click (or the context-menu key, or a long press) opens its menu with Disconnect (US-FILE-12). */
 function DriveRow({ row, current, onDisconnect }: { row: SidebarRow; current: boolean; onDisconnect: () => void }) {
   const [open, setOpen] = useState(false);
+  // A tablet: the long press is the right-click (US-TAB-02).
+  const press = useLongPress({ enabled: useIsTouch(), onLongPress: () => setOpen(true) });
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
@@ -98,10 +110,13 @@ function DriveRow({ row, current, onDisconnect }: { row: SidebarRow; current: bo
           className="block"
           aria-label={copy.driveMenu(row.label)}
           // A click follows the link; only the context menu opens the menu.
-          onPointerDown={(e) => e.preventDefault()}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            press.onPointerDown(e);
+          }}
           onContextMenu={(e) => {
             e.preventDefault();
-            setOpen(true);
+            if (!press.onContextMenu(e)) setOpen(true);
           }}
         >
           <RowLink row={row} current={current} />
@@ -280,5 +295,70 @@ export function FilesChips({ me, at }: { me: { role: 'admin' | 'member'; canSeeS
         ))}
       </ul>
     </nav>
+  );
+}
+
+/**
+ * An iPad in portrait (US-TAB-05): the places as a list you go into, grouped as in the sidebar, with "Connect a
+ * drive" for admins; a place then fills the window with "‹ Files" above it.
+ */
+export function FilesPlacesList({
+  me,
+  onConnect,
+}: {
+  me: { role: 'admin' | 'member'; canSeeShared: boolean };
+  onConnect: () => void;
+}) {
+  const admin = me.role === 'admin';
+  const groups = sidebarGroups(me, useDrives(admin));
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 pt-7 pb-5">
+      <h1 className="m-0 text-title-1">{copy.title}</h1>
+      <nav aria-label={copy.places} className="mt-5 flex flex-col gap-5">
+        {groups.map((g) => (
+          <section key={g.key} aria-label={g.label} className="flex flex-col gap-2">
+            {g.key === 'files' ? null : <h2 className="m-0 px-1 text-label text-ink-muted">{g.label}</h2>}
+            <ul className="hl-t-list">
+              {g.rows.map((r) => (
+                <li key={r.key}>
+                  <Link
+                    to="/files"
+                    search={r.path === null ? { view: r.view ?? 'recents' } : { path: r.path }}
+                    className="hl-t-row hl-focus"
+                  >
+                    <span className="hl-t-icon" aria-hidden>
+                      {placeIcon(r)}
+                    </span>
+                    <span className="hl-t-title">
+                      {r.label}
+                      {r.offline ? <span className="sr-only"> · {copy.offline}</span> : null}
+                    </span>
+                    {r.offline ? <span className="hl-t-value">{copy.offline}</span> : null}
+                    <ChevronRight aria-hidden {...iconDefaults} className="hl-t-chevron" />
+                  </Link>
+                </li>
+              ))}
+              {g.connect ? (
+                <li>
+                  <button
+                    type="button"
+                    className="hl-t-row hl-focus w-full border-0 bg-transparent"
+                    onClick={onConnect}
+                  >
+                    <span className="hl-t-icon" aria-hidden>
+                      <Plus {...iconDefaults} />
+                    </span>
+                    <span className="hl-t-title text-left text-accent-link">
+                      {copy.connectDrive.replace(/^\+ /, '')}
+                    </span>
+                  </button>
+                </li>
+              ) : null}
+            </ul>
+          </section>
+        ))}
+      </nav>
+      {admin ? <DriveEvents /> : null}
+    </div>
   );
 }

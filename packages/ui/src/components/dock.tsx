@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from 'react';
 import { cn } from '../lib/cn';
+import { useLongPress, type Point } from '../lib/long-press';
+import { useIsTouch } from '../lib/media';
 import { useReduceMotion } from '../lib/motion';
 import { useUiStrings } from '../lib/strings';
 import { badgeText, type AreaItem } from './areas';
@@ -47,6 +49,8 @@ export interface DockProps {
   onAdd?: (anchor: HTMLElement) => void;
   /** A pinned app moved to `index` among the pinned apps (dragged sideways, or Alt+Left/Right). */
   onMoveApp?: (id: string, index: number) => void;
+  /** A finger that held a pinned app (its menu open) starts moving it: close the menu (US-TAB-03). */
+  onAppMenuClose?: () => void;
   /** An app dragged from Home dropped at `index` among the pinned apps. */
   onDropApp?: (id: string, index: number) => void;
   /** False when the Dock is full: a drag from Home opens no gap and drops nothing. Default true. */
@@ -81,6 +85,15 @@ interface ItemProps {
   onDragEnd?: () => void;
   dataApp?: string;
   pinned?: boolean;
+  /** A tablet (US-TAB-04): a long press shows the name (or opens the menu); no hover. */
+  touch?: boolean;
+  /** Moving a pinned app by touch (US-TAB-03): where the finger has it, while it does. */
+  touchDrag?: {
+    start: (at: Point, tile: HTMLElement) => void;
+    move: (at: Point) => void;
+    end: (at: Point, dropped: boolean) => void;
+  };
+  dragStyle?: React.CSSProperties;
   children: ReactNode;
 }
 
@@ -102,15 +115,38 @@ function DockItem({
   onDragEnd,
   dataApp,
   pinned,
+  touch = false,
+  touchDrag,
+  dragStyle,
   children,
 }: ItemProps) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fired = useRef(false);
+  // On a tablet: a long press opens the menu, or shows the name while the finger rests (US-TAB-04); held and moved,
+  // a pinned app moves along the Dock (US-TAB-03).
+  const [held, setHeld] = useState(false);
+  const press = useLongPress({
+    enabled: touch,
+    onLongPress: (_at, tile) => {
+      if (onLongPress) onLongPress(tile as HTMLButtonElement);
+      else setHeld(true);
+    },
+    onRelease: () => setHeld(false),
+    onDragStart: touchDrag
+      ? (at, tile) => {
+          setHeld(false);
+          touchDrag.start(at, tile);
+        }
+      : undefined,
+    onDragMove: touchDrag?.move,
+    onDragEnd: touchDrag?.end,
+  });
   const clear = () => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
   };
   const onPointerDown = (e: PointerEvent<HTMLButtonElement>) => {
+    if (touch) return press.onPointerDown(e);
     if (!onLongPress || e.pointerType === 'mouse') return;
     fired.current = false;
     // The event's target is gone by the time the timer fires: keep the tile.
@@ -126,7 +162,11 @@ function DockItem({
       data-dock=""
       data-dock-app={dataApp}
       data-pinned={pinned ? '' : undefined}
-      draggable={draggable}
+      data-held={held ? '' : undefined}
+      data-dragging={dragStyle ? '' : undefined}
+      style={dragStyle}
+      // A finger can't use the browser's drag (iPadOS lifts it into its own); it moves pinned apps itself.
+      draggable={touch ? false : draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onKeyDown={onKeyDown}
@@ -140,7 +180,12 @@ function DockItem({
         }
         onClick?.(e);
       }}
-      onContextMenu={onContextMenu}
+      onContextMenu={(e) => {
+        // A finger's long press: ours, never the OS's menu.
+        if (touch && press.onContextMenu(e)) return;
+        if (touch) return e.preventDefault();
+        onContextMenu?.(e);
+      }}
       onPointerDown={onPointerDown}
       onPointerUp={clear}
       onPointerLeave={clear}
@@ -173,6 +218,7 @@ export function Dock({
   onAppMenu,
   onAdd,
   onMoveApp,
+  onAppMenuClose,
   onDropApp,
   canDrop = true,
   onSearch,
@@ -181,6 +227,11 @@ export function Dock({
 }: DockProps) {
   const t = useUiStrings();
   const reduce = useReduceMotion();
+  // A tablet (US-TAB-04): no magnification, names on a long press, pinned apps moved by a finger (US-TAB-03).
+  const touch = useIsTouch();
+  const navRef = useRef<HTMLElement>(null);
+  /** The pinned app a finger is moving and where it is in the Dock (its slot gives way to the gap). */
+  const [fingerDrag, setFingerDrag] = useState<{ id: string; left: number; top: number; offset: number } | null>(null);
   const SearchGlyph = tabGlyphs.search;
   const pinned = apps.filter((a) => a.pinned);
   const unpinned = apps.filter((a) => !a.pinned);
@@ -220,6 +271,42 @@ export function Dock({
   };
   const gapTile = <span key="gap" className="hl-dock-gap" aria-hidden="true" />;
 
+  // A finger's tile has left its slot: past it, the gap goes one further along the list it's drawn from.
+  const from = fingerDrag ? pinned.findIndex((p) => p.id === fingerDrag.id) : -1;
+  const gapAt = gap !== null && from >= 0 && gap >= from ? gap + 1 : gap;
+
+  /** Moving a pinned app along the Dock by touch: the tile follows the finger and drops where it lifts. */
+  const fingerDragFor = (id: string): ItemProps['touchDrag'] =>
+    onMoveApp
+      ? {
+          start: (at, tile) => {
+            const nav = navRef.current;
+            if (!nav) return;
+            onAppMenuClose?.();
+            dragging.current = id;
+            const n = nav.getBoundingClientRect();
+            const r = tile.getBoundingClientRect();
+            setFingerDrag({ id, left: r.left - n.left, top: r.top - n.top, offset: at.x - r.left });
+            setGap(indexAt(nav, at.x));
+          },
+          move: (at) => {
+            const nav = navRef.current;
+            if (!nav) return;
+            const n = nav.getBoundingClientRect();
+            setFingerDrag((d) => (d ? { ...d, left: at.x - n.left - d.offset } : d));
+            setGap(indexAt(nav, at.x));
+          },
+          end: (at, dropped) => {
+            const nav = navRef.current;
+            const index = nav ? indexAt(nav, at.x) : null;
+            dragging.current = null;
+            setFingerDrag(null);
+            setGap(null);
+            if (dropped && index !== null) onMoveApp(id, index);
+          },
+        }
+      : undefined;
+
   const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
     if (!NAV_KEYS.has(e.key)) return;
     const items = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[data-dock]'));
@@ -232,8 +319,9 @@ export function Dock({
 
   return (
     <nav
+      ref={navRef}
       aria-label={t.dock}
-      className={cn('hl-dock', (!magnify || reduce) && 'hl-dock-still')}
+      className={cn('hl-dock', (!magnify || reduce || touch) && 'hl-dock-still')}
       onKeyDown={onKeyDown}
       onDragOver={onDragOver}
       onDragLeave={(e) => {
@@ -254,6 +342,7 @@ export function Dock({
             current={area.id === active}
             dot={area.id === active}
             badge={badge}
+            touch={touch}
             onClick={() => onSelect?.(area.id)}
           >
             {area.id === 'home' ? (
@@ -266,7 +355,7 @@ export function Dock({
       })}
       {apps.length > 0 || onAdd ? <span className="hl-dock-sep" aria-hidden="true" /> : null}
       {[...pinned, ...unpinned].flatMap((app, i) => [
-        ...(gap !== null && i === gap ? [gapTile] : []),
+        ...(gapAt !== null && i === gapAt ? [gapTile] : []),
         <DockItem
           key={`app-${app.id}`}
           dataApp={app.id}
@@ -281,6 +370,13 @@ export function Dock({
           }}
           dot={app.open}
           badge={app.badge}
+          touch={touch}
+          touchDrag={app.pinned ? fingerDragFor(app.id) : undefined}
+          dragStyle={
+            fingerDrag?.id === app.id
+              ? { position: 'absolute', left: fingerDrag.left, top: fingerDrag.top, margin: 0 }
+              : undefined
+          }
           onClick={() => onOpenApp?.(app.id)}
           onContextMenu={
             onAppMenu && app.pinned
@@ -328,16 +424,16 @@ export function Dock({
           )}
         </DockItem>,
       ])}
-      {gap !== null && gap >= pinned.length && unpinned.length === 0 ? gapTile : null}
+      {gapAt !== null && gapAt >= pinned.length && unpinned.length === 0 ? gapTile : null}
       {onAdd ? (
-        <DockItem label={t.addToDock} className="hl-dock-add" onClick={(e) => onAdd(e.currentTarget)}>
+        <DockItem label={t.addToDock} className="hl-dock-add" touch={touch} onClick={(e) => onAdd(e.currentTarget)}>
           <Plus size={22} strokeWidth={2} aria-hidden="true" />
         </DockItem>
       ) : null}
       {search ? (
         <>
           <span className="hl-dock-sep" aria-hidden="true" />
-          <DockItem label={t.search} className="hl-dock-glassitem" onClick={onSearch}>
+          <DockItem label={t.search} className="hl-dock-glassitem" touch={touch} onClick={onSearch}>
             <SearchGlyph size={26} />
           </DockItem>
         </>

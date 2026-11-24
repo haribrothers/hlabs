@@ -1,6 +1,6 @@
 // Main (US-HOME-01…05): the greeting over the wallpaper, the widgets row and the app grid; and its edit mode
 // (US-HOME-16…19): from a tile's menu, a right-click on the wallpaper, or a long press on an empty part of Home.
-import { iconDefaults, LOGO_SCALE, LogoMark, Plus, Search } from '@hlabs/icons';
+import { iconDefaults, LayoutGrid, LOGO_SCALE, LogoMark, Plus, Search } from '@hlabs/icons';
 import { isFeatureEnabled, VISIBLE_PHASE } from '@hlabs/shared';
 import {
   Avatar,
@@ -14,6 +14,7 @@ import {
   PhoneSection,
   tokens,
   useIsPhone,
+  useIsTouch,
 } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
@@ -35,6 +36,9 @@ import { EngineBanner, StartEngineButton } from './engine-banner';
 import { useEngineRunning } from '../lib/engine-state';
 import { NotificationsBell } from './notifications';
 import { useEventStream } from '../lib/use-event-stream';
+
+/** Home's mark on a tablet: a control's height and a little more (TabletHome). */
+const TOUCH_MARK = tokens.SIZE_CONTROL + tokens.SPACE_2;
 
 /** `shippedPhase`: the phase whose controls show (tests set it; D-036). */
 export function HomeView({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: number } = {}) {
@@ -81,6 +85,7 @@ export function HomeView({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: numb
   // phone shows the layout saved there, and a long press on Home does nothing (US-PHONE-07).
   const client = useTRPCClient();
   const phone = useIsPhone();
+  const touch = useIsTouch();
   const editable =
     !phone && isFeatureEnabled('homeEdit', shippedPhase) && Boolean(layout.data && apps.data) && !engineDown;
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -135,7 +140,8 @@ export function HomeView({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: numb
       progress={progress}
       offline={engineDown}
       onEditHome={editable ? startEdit : undefined}
-      dockDrag={!phone && isFeatureEnabled('dockPins', shippedPhase)}
+      // The browser's drag needs a mouse; a tablet pins apps with the Dock's "+".
+      dockDrag={!phone && !touch && isFeatureEnabled('dockPins', shippedPhase)}
     />
   ) : null;
 
@@ -189,12 +195,15 @@ export function HomeView({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: numb
       <header className="flex flex-col items-center gap-4 text-center">
         {/* The size of a Home app icon, with the mark inset as app logos are. */}
         <GlassCard
-          className="grid size-(--size-app-icon) place-items-center rounded-(--radius-icon) p-0"
+          className={`grid place-items-center p-0 ${
+            touch ? 'size-13 rounded-(--radius-dock-tile)' : 'size-(--size-app-icon) rounded-(--radius-icon)'
+          }`}
           aria-hidden="true"
         >
-          <LogoMark size={Math.round(tokens.SIZE_APP_ICON * LOGO_SCALE)} title="" />
+          {/* Smaller on a tablet, so Home fits above the Dock (TabletHome). */}
+          <LogoMark size={Math.round((touch ? TOUCH_MARK : tokens.SIZE_APP_ICON) * LOGO_SCALE)} title="" />
         </GlassCard>
-        <h1 className={showGreeting && name ? 'm-0 text-display-xl' : 'sr-only'}>
+        <h1 className={showGreeting && name ? `m-0 ${touch ? 'text-display' : 'text-display-xl'}` : 'sr-only'}>
           {draft
             ? editCopy.dragToRearrange
             : name
@@ -225,7 +234,17 @@ export function HomeView({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: numb
         grid
       )}
       <EngineBanner down={engineDown} actions={me.data?.role === 'admin' ? <StartEngineButton /> : null} />
-      <NotificationsBell shippedPhase={shippedPhase} />
+      <NotificationsBell
+        shippedPhase={shippedPhase}
+        trailing={
+          // A tablet has no right-click: Edit Home is a button beside the bell (TabletHome, US-TAB-01).
+          touch && editable && !draft ? (
+            <button type="button" className="hl-p-ibtn hl-focus" aria-label={homeCopy.editHome} onClick={startEdit}>
+              <LayoutGrid aria-hidden {...iconDefaults} />
+            </button>
+          ) : undefined
+        }
+      />
       {wallpaperMenu ? (
         <DropdownMenu
           open
@@ -366,19 +385,24 @@ function AccountButton({ name, username, color }: { name: string; username: stri
   );
 }
 
-/** "Search apps, files, settings" under the greeting, with the shortcut (US-HOME-09). */
+/** "Search apps, files, settings" under the greeting, with the shortcut (US-HOME-09); a tablet has no keys to show. */
 export function SearchPill() {
+  const touch = useIsTouch();
   return (
     <button
       type="button"
       onClick={openSearch}
-      className="hl-focus hl-glass hl-glass-1 flex min-h-11 w-full max-w-sm items-center gap-3 rounded-pill px-5 py-2.5 text-body text-ink-muted"
+      className={`hl-focus hl-glass hl-glass-1 flex w-full items-center gap-3 rounded-pill px-5 text-ink-muted ${
+        touch ? 'min-h-13 max-w-105 text-headline font-normal' : 'min-h-11 max-w-sm py-2.5 text-body'
+      }`}
     >
-      <Search aria-hidden {...iconDefaults} className="size-4 shrink-0" />
+      <Search aria-hidden {...iconDefaults} className={touch ? 'size-5 shrink-0' : 'size-4 shrink-0'} />
       <span className="flex-1 text-left">{searchCopy.pill}</span>
-      <kbd aria-hidden className="rounded-xs bg-surface-control px-1.5 py-0.5 font-sans text-caption">
-        {searchCopy.shortcut(isMac())}
-      </kbd>
+      {touch ? null : (
+        <kbd aria-hidden className="rounded-xs bg-surface-control px-1.5 py-0.5 font-sans text-caption">
+          {searchCopy.shortcut(isMac())}
+        </kbd>
+      )}
     </button>
   );
 }

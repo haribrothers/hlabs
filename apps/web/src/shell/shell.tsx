@@ -104,6 +104,7 @@ export function Shell({ children }: { children: ReactNode }) {
             onAdd={dock.onAdd}
             onAppMenu={dock.onAppMenu}
             onMoveApp={dock.onMoveApp}
+            onAppMenuClose={dock.onAppMenuClose}
             onDropApp={dock.onDropApp}
             canDrop={dock.canDrop}
           />

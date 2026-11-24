@@ -350,12 +350,12 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-PHONE-26 · Backups on the phone in the new design (D-174: the last-backup card with run bars, inset rows, the empty state, Add destination and a running restore as sheets)
 - [x] US-PHONE-27 · Live usage, notifications and updates on the phone in the new design (D-174: the range as a segmented control and tiles two to a row, Notifications as a sheet, the App Store's and Settings' Updates)
 - [x] US-PHONE-28 · Settings pages on the phone in the new design (D-174: Account with Edit in the bar, Appearance, Users with a ••• sheet and Invite as a sheet, Network, Storage, Engine's state card, Advanced)
-- [ ] US-TAB-01 · Touch-sized controls on a tablet (D-175)
-- [ ] US-TAB-02 · Long-press for every right-click menu (D-175)
-- [ ] US-TAB-03 · Drag by touch (D-175)
-- [ ] US-TAB-04 · The Dock on a touch screen (D-175)
-- [ ] US-TAB-05 · iPad in portrait (D-175)
-- [ ] US-TAB-06 · The on-screen keyboard and the Home Screen app on a tablet (D-175)
+- [x] US-TAB-01 · Touch-sized controls on a tablet (D-175)
+- [x] US-TAB-02 · Long-press for every right-click menu (D-175)
+- [x] US-TAB-03 · Drag by touch (D-175)
+- [x] US-TAB-04 · The Dock on a touch screen (D-175)
+- [x] US-TAB-05 · iPad in portrait (D-175)
+- [x] US-TAB-06 · The on-screen keyboard and the Home Screen app on a tablet (D-175)
 - [ ] US-SITE-11 · Keep screenshots in the docs current
 
 ## Phase 8 · Power features (P3)

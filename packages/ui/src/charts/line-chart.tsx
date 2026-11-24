@@ -1,5 +1,6 @@
 import { useId, useState, type MouseEvent } from 'react';
 import { useUiStrings } from '../lib/strings';
+import { useHoldTooltip } from './hold-tooltip';
 import {
   Announce,
   downsample,
@@ -87,8 +88,10 @@ export function LineChart({
     setIdx(Math.max(0, Math.min(n - 1, Math.round((px - PAD.left) / step))));
   };
 
+  // A finger held on the chart shows its tooltip (US-TAB-01).
+  const hold = useHoldTooltip();
   return (
-    <figure className="hl-chart">
+    <figure className="hl-chart" {...hold}>
       {title ? (
         <figcaption className="hl-chart-title">
           {title}

@@ -57,7 +57,7 @@ const GROUPS: SectionId[][] = [
  * (or "Not set up"), the free space, and the App Store's update count as a badge. Each loads on its own and shows
  * nothing while it loads or if it fails; the list never waits for them.
  */
-function useRowValues(me: Me, open: Set<SectionId>, shippedPhase?: number) {
+export function useRowValues(me: Me, open: Set<SectionId>, shippedPhase?: number) {
   const trpc = useTRPC();
   const admin = me.role === 'admin';
   const users = useQuery({ ...trpc.users.list.queryOptions(), enabled: admin && open.has('users'), retry: false });

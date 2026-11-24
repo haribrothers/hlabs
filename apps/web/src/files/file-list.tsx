@@ -3,7 +3,7 @@
 // says its order to screen readers. Rows take one Tab stop; the arrow keys move, Enter or a double-click opens.
 import type { FileEntry } from '@hlabs/api';
 import { ArrowDown, ArrowUp, iconDefaults, MoreHorizontal } from '@hlabs/icons';
-import { IconButton } from '@hlabs/ui';
+import { IconButton, useIsTouch } from '@hlabs/ui';
 import { FileIcon, fileKindOf } from '@hlabs/icons/files';
 import { formatBytes } from '@hlabs/shared';
 import type { FileAccent } from '@hlabs/ui/files';
@@ -13,6 +13,7 @@ import { labelOf, modsOf, SelectBox, type SelectProps } from './file-grid';
 import { modifiedLabel } from './format';
 import { itemDragProps, type DragProps } from './drag';
 import { consumeLongPress, longPressProps } from './long-press';
+import { useFilesTouch } from './touch-press';
 import type { FilesSort, SortBy } from './view-prefs';
 
 const COLUMNS = 'grid-cols-[28px_minmax(0,1fr)_160px_110px] max-md:grid-cols-[28px_minmax(0,1fr)_88px]';
@@ -94,6 +95,9 @@ export function FileList({
   const ref = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState<string | null>(null);
   const [over, setOver] = useState<string | null>(null);
+  // A tablet: a long press opens the menu and a held row moves by finger (US-TAB-02, US-TAB-03).
+  const touch = useIsTouch() && !openOnClick;
+  const finger = useFilesTouch({ root: ref, enabled: touch, items, onMenu, drag, setOver });
   const tabStop = items.some((e) => e.path === current) ? current : (items[0]?.path ?? null);
 
   // Focus moves to `focusPath` once, when it shows up: a later reload of the list (an upload, an Undo) mustn't pull it
@@ -168,7 +172,14 @@ export function FileList({
   };
 
   return (
-    <div ref={ref} role="grid" aria-label={label} className="overflow-hidden rounded-lg bg-surface-row text-body">
+    <div
+      ref={ref}
+      role="grid"
+      aria-label={label}
+      className="overflow-hidden rounded-lg bg-surface-row text-body"
+      onPointerDown={finger.containerProps.onPointerDown}
+      onContextMenu={finger.containerProps.onContextMenu}
+    >
       <div role="row" className={`grid ${COLUMNS} items-center gap-3 border-b border-hairline px-4 py-2.5`}>
         <span />
         <Header by="name" label={copy.columns.name} sort={sort} onSort={onSort} />
@@ -188,9 +199,11 @@ export function FileList({
             tabIndex={e.path === tabStop ? 0 : -1}
             className={`hl-focus grid ${COLUMNS} min-h-11 cursor-default items-center gap-3 px-4 py-2 outline-offset-[-2px] ${
               checked || over === e.path ? 'bg-accent-wash' : 'hover:bg-surface-row'
-            } ${over === e.path ? 'ring-2 ring-accent ring-inset' : ''}`}
-            {...itemDragProps(e, drag, setOver)}
-            {...longPressProps(select?.onLongPress && !select.selecting ? () => select.onLongPress!(e) : undefined)}
+            } ${over === e.path ? 'ring-2 ring-accent ring-inset' : ''} ${finger.dragged.has(e.path) ? 'opacity-35' : ''}`}
+            {...itemDragProps(e, touch ? undefined : drag, setOver)}
+            {...longPressProps(
+              select?.onLongPress && !select.selecting && !touch ? () => select.onLongPress!(e) : undefined,
+            )}
             onFocus={() => setCurrent(e.path)}
             // A click opens (D-137); while selecting it ticks.
             onClick={(ev) => {
@@ -240,6 +253,7 @@ export function FileList({
           </div>
         );
       })}
+      {finger.overlay}
     </div>
   );
 }

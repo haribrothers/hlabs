@@ -3,7 +3,7 @@
 import type { FileEntry } from '@hlabs/api';
 import { formatBytes, isFeatureEnabled } from '@hlabs/shared';
 import { iconDefaults, Plus } from '@hlabs/icons';
-import { Button, ScrollPane } from '@hlabs/ui';
+import { Button, ScrollPane, useIsTouch } from '@hlabs/ui';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState, type DragEvent, type ReactNode } from 'react';
@@ -189,6 +189,7 @@ export function FolderView({
 }) {
   const navigate = useNavigate();
   const desktop = useIsDesktop();
+  const touch = useIsTouch();
   const { query, listing, items } = useFolder(path, sort);
   const queryClient = useQueryClient();
   const trpc = useTRPC();
@@ -264,6 +265,8 @@ export function FolderView({
           carry: (e) => (select.selected.has(e.path) ? chosen : [e]),
           from: path,
           onDrop: (folder, entries, from) => onDropItems(entries, from, folder),
+          // A finger that held an item opened its menu; moving on drags it instead (US-TAB-03).
+          onTouchDragStart: () => setMenu(null),
         }
       : undefined;
   /** The menu is for the item; on a ticked one while selecting, for every ticked item. Nothing gets selected (D-137). */
@@ -493,7 +496,8 @@ export function FolderView({
 
   const header = (
     <div className="flex flex-wrap items-center gap-3">
-      <div className="min-w-0 flex-1">
+      {/* On a tablet the toolbar goes under the folder's name rather than squeezing it (iPad portrait, US-TAB-05). */}
+      <div className={touch ? 'min-w-0 flex-1 basis-64' : 'min-w-0 flex-1'}>
         <Breadcrumb crumbs={crumbs} />
       </div>
       <div className="flex flex-wrap items-center gap-2 max-md:w-full">
