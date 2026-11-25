@@ -64,7 +64,7 @@ export function signInLinkIn(text: string): string | null {
 interface ApiReply<T> {
   success: boolean;
   result: T;
-  errors?: Array<{ code: number; message: string }>;
+  errors?: Array<{ code: number; message?: string }>;
 }
 
 export class CloudflareApi implements CloudflareClient {
@@ -98,7 +98,12 @@ export class CloudflareApi implements CloudflareClient {
     const { status, reply } = await this.call<T>(step, token, method, path, body);
     if (status >= 200 && status < 300 && reply?.success) return reply.result;
     const codes = (reply?.errors ?? []).map((e) => e.code);
-    const message = (reply?.errors ?? []).map((e) => `${e.code} ${e.message}`).join('; ') || `HTTP ${status}`;
+    // What Cloudflare said, as it said it (an error can come without a message), with the status and the call: enough
+    // to tell a missing permission from Cloudflare refusing; never the token.
+    const said = (reply?.errors ?? [])
+      .map((e) => (e.message ? `${e.code} ${e.message}` : JSON.stringify(e)))
+      .join('; ');
+    const message = `${said || 'no error given'} (HTTP ${status}, ${method} ${path.split('?')[0]})`;
     // 1013: a tunnel with that name exists; 81053/81057: a record with that name exists.
     const conflict = status === 409 || codes.some((c) => c === 1013 || c === 81053 || c === 81057);
     const denied = status === 401 || status === 403;
@@ -245,15 +250,33 @@ export class CloudflareApi implements CloudflareClient {
   // ── Cloudflare Access in front of the public dashboard (US-SYS-48) ─────────────────────────────────────────────
   // Zero Trust Access for the account: an application for the dashboard's name, Cloudflare's one-time code by email
   // as its only way in, and one policy allowing the admin's email addresses. A sign-in's zone-scoped token can't do
-  // this; an API token with "Account · Access: Apps and Policies · Edit" (`accessToken`) can.
+  // this; an API token with "Account · Access: Apps and Policies · Edit" and "Account · Access: Organizations, Identity
+  // Providers, and Groups · Edit" (`accessToken`) can.
 
   private accessBase(cred: CloudflareCredential) {
     return { token: cred.accessToken ?? cred.token, base: `/accounts/${cred.accountId}/access` };
   }
 
+  /**
+   * Whether the credential can manage Access before anything is made: its applications and policies, and its login
+   * methods (the one-time PIN by email). Both are needed; Cloudflare answers either with an error (status 4xx, sometimes
+   * code 1010 and no message, Q-25) when the token lacks that permission, which asks for the token instead.
+   */
   async checkAccess(cred: CloudflareCredential) {
     const { token, base } = this.accessBase(cred);
-    await this.ok<unknown[]>('access', token, 'GET', `${base}/apps?per_page=1`);
+    for (const path of [`${base}/apps?per_page=1`, `${base}/identity_providers`]) {
+      const { status, reply } = await this.call<unknown>('access', token, 'GET', path);
+      if (status >= 200 && status < 300 && reply?.success) continue;
+      const said = (reply?.errors ?? [])
+        .map((e) => (e.message ? `${e.code} ${e.message}` : JSON.stringify(e)))
+        .join('; ');
+      throw new CloudflareError(
+        'access',
+        `${said || 'no error given'} (HTTP ${status}, GET ${path.split('?')[0]})`,
+        false,
+        status >= 400 && status < 500,
+      );
+    }
   }
 
   /** The account's one-time PIN login method, made when it has none (it's free and only sends codes by email). */

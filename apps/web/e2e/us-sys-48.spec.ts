@@ -122,7 +122,7 @@ test('US-SYS-48 a Cloudflare sign-in that can’t manage Access asks for an API 
   await addEmails(dialog, ['hari@example.com']);
   await dialog.getByRole('button', { name: "Add Cloudflare's sign-in" }).click();
   await expect(dialog.getByRole('alert').first()).toContainText(
-    "Your Cloudflare sign-in can't manage Cloudflare Access. Add an API token with Account · Access: Apps and Policies · Edit.",
+    "Your Cloudflare sign-in can't manage Cloudflare Access. Add an API token with these two permissions.",
   );
   await expect(dialog).toContainText("Kept in this computer's keychain with your other Cloudflare sign-in.");
   expect((await cloudflareState(request)).accessApps).toEqual([]);

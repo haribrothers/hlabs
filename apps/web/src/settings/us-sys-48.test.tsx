@@ -81,10 +81,11 @@ describe('US-SYS-48', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: "Add Cloudflare's sign-in" }));
     expect(
       await within(dialog).findByText(
-        "Your Cloudflare sign-in can't manage Cloudflare Access. Add an API token with Account · Access: Apps and Policies · Edit.",
+        "Your Cloudflare sign-in can't manage Cloudflare Access. Add an API token with these two permissions.",
       ),
     ).toBeInTheDocument();
     expect(dialog).toHaveTextContent('Account · Access: Apps and Policies · Edit');
+    expect(dialog).toHaveTextContent('Account · Access: Organizations, Identity Providers, and Groups · Edit');
     expect(dialog).toHaveTextContent("Kept in this computer's keychain with your other Cloudflare sign-in.");
     fireEvent.change(within(dialog).getByLabelText('API token'), { target: { value: 'tok-0123456789abcdefghij' } });
     fireEvent.click(within(dialog).getByRole('button', { name: "Add Cloudflare's sign-in" }));

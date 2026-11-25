@@ -12,7 +12,7 @@ export interface CloudflareCredential {
   /** The zone's name: `example.com`. */
   domain: string;
   /**
-   * An API token with "Account · Access: Apps and Policies · Edit" (US-SYS-48), given when `token` can't manage
+   * An API token with "Account · Access: Apps and Policies · Edit" and "Account · Access: Organizations, Identity Providers, and Groups · Edit" (US-SYS-48), given when `token` can't manage
    * Cloudflare Access; used for Access calls only.
    */
   accessToken?: string;

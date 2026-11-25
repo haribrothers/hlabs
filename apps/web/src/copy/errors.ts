@@ -351,7 +351,7 @@ export const errorCopy = {
       if (step === 'access')
         return {
           title: "Your Cloudflare sign-in can't manage Cloudflare Access",
-          body: 'Add an API token with Account · Access: Apps and Policies · Edit, then try again.',
+          body: 'Add an API token with Account · Access: Apps and Policies · Edit and Account · Access: Organizations, Identity Providers, and Groups · Edit, then try again.',
         };
       if (step === 'signIn')
         return {

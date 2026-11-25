@@ -43,7 +43,12 @@ Cloudflare can check who someone is before they even see hlabs's sign-in: it sen
 - hlabs makes this in **Cloudflare Zero Trust** for the dashboard's name, and removes it when the dashboard is private. It never changes Cloudflare sign-ins it didn't make.
 - Only admins see the list. It's kept in hlabs's settings, never in logs or diagnostics.
 
-If your Cloudflare sign-in can't manage this, hlabs asks for an **API token**: in Cloudflare, under **My Profile › API Tokens**, make one with **Account · Access: Apps and Policies · Edit** and paste it. It's kept in this computer's keychain with your other Cloudflare sign-in.
+If your Cloudflare sign-in can't manage this, hlabs asks for an **API token**: in Cloudflare, under **My Profile › API Tokens**, make one with these two permissions and paste it:
+
+- **Account · Access: Apps and Policies · Edit**
+- **Account · Access: Organizations, Identity Providers, and Groups · Edit** (so hlabs can use Cloudflare's one-time code by email)
+
+If you haven't used Cloudflare Zero Trust before, open **Zero Trust** in Cloudflare once first and choose a team name and the Free plan. It's kept in this computer's keychain with your other Cloudflare sign-in.
 
 ## Sign in from the internet
 

@@ -218,6 +218,26 @@ describe('US-SYS-48 · the real Cloudflare API (fetch faked)', () => {
     expect(err).toMatchObject({ step: 'access', denied: true });
   });
 
+  it('checks the login methods too: a token that can manage applications but not login methods is asked for again (D-186)', async () => {
+    // What Hari's account answered (Q-25): the applications were fine, the login methods refused with code 1010 and
+    // no message.
+    const { client } = api([
+      { match: /^GET .*\/access\/apps\?per_page=1$/, body: { success: true, result: [] } },
+      {
+        match: /^GET .*\/access\/identity_providers$/,
+        status: 403,
+        body: { success: false, errors: [{ code: 1010 }] },
+      },
+    ]);
+    const err = await client.checkAccess(cred).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(CloudflareError);
+    expect(err).toMatchObject({ step: 'access', denied: true });
+    // Cloudflare's answer as it gave it, with the status and the call; never "undefined", never the token.
+    const message = (err as Error).message;
+    expect(message).toBe('{"code":1010} (HTTP 403, GET /accounts/acc1/access/identity_providers)');
+    expect(message).not.toContain('zone-token');
+  });
+
   it('changes the policy in place, and deleting an application already gone is fine', async () => {
     const { client, calls } = api([
       { match: /^PUT .*\/access\/apps\/app1\/policies\/pol1$/, body: { success: true, result: { id: 'pol1' } } },

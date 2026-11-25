@@ -807,7 +807,7 @@ The system half of Settings: how hlabs is reached on the home network and over T
 **Acceptance criteria**
 - **Given** the dashboard is public, or I'm making it public, **then** "Add Cloudflare's sign-in in front (recommended)" explains it ("Cloudflare asks for a code sent to an email address on your list before showing hlabs's sign-in. It's free for up to 50 people.") with a field for the email addresses allowed.
 - **Given** I add it, **then** hlabs creates a Cloudflare Access application for the dashboard's name with a policy allowing those email addresses (one-time code by email), and the row reads "Cloudflare's sign-in in front · 3 email addresses" with "Change…" and "Remove".
-- **Given** the Cloudflare credential can't manage Access, **then** it says so and asks for an API token with "Account · Access: Apps and Policies · Edit" added, kept in the keychain with the other credential.
+- **Given** the Cloudflare credential can't manage Access, **then** it says so and asks for an API token with "Account · Access: Apps and Policies · Edit" and "Account · Access: Organizations, Identity Providers, and Groups · Edit" (the one-time PIN login method, D-186) added, kept in the keychain with the other credential.
 - **Given** the dashboard is made private or Cloudflare Tunnel is removed, **then** the Access application hlabs made is deleted too; hlabs never changes Access applications it didn't make.
 - **Given** the email addresses, **then** they're kept in `settings.public.dashboard.access` (admins only), never in logs or diagnostics.
 

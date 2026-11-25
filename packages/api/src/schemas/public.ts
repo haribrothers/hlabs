@@ -181,7 +181,7 @@ export const publicAccess = {
     z.union([
       z.object({
         emails: z.array(accessEmailSchema).min(1).max(50),
-        /** An API token with "Account · Access: Apps and Policies · Edit", when the credential can't manage Access. */
+        /** An API token with "Account · Access: Apps and Policies · Edit" and "… Organizations, Identity Providers, and Groups · Edit", when the credential can't manage Access. */
         token: z.string().trim().min(20).max(400).optional(),
       }),
       z.object({ off: z.literal(true) }),

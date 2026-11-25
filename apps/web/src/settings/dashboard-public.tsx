@@ -331,9 +331,14 @@ function AccessToken({
         hint={
           <span className="flex flex-col items-start gap-1.5">
             <span>{copy.tokenHint}</span>
-            <code className="rounded-xs bg-surface-control px-2 py-0.5 font-mono text-caption text-ink">
-              {copy.tokenPermission}
-            </code>
+            {copy.tokenPermissions.map((permission) => (
+              <code
+                key={permission}
+                className="rounded-xs bg-surface-control px-2 py-0.5 font-mono text-caption text-ink"
+              >
+                {permission}
+              </code>
+            ))}
             <span>{copy.tokenKept}</span>
           </span>
         }
