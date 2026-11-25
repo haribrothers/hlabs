@@ -1,7 +1,7 @@
 // `pnpm build:linux`: the Linux server download (D-140) for this computer's architecture, run on Linux (the daemon's
 // npm modules are built for the machine that bundles them):
 //
-//   dist/linux/hlabs-<v>-linux-<x86_64|aarch64>.tar.gz   hlabsd and its bundle, Node, caddy, restic, compose, the
+//   dist/linux/hlabs-<v>-linux-<x86_64|aarch64>.tar.gz   hlabsd and its bundle, Node, caddy, restic, compose, cloudflared, the
 //                                                        `hlabs` command, hlabs-priv, hlabsd.service and `version`
 //   dist/linux/SHA256SUMS                                its checksum
 //   dist/linux/install.sh                                the installer, with the public key written in (also in
@@ -50,7 +50,16 @@ for (const [from, to] of [
 }
 copyFileSync(join(root, 'scripts/linux/hlabsd.service'), join(stage, 'hlabsd.service'));
 writeFileSync(join(stage, 'version'), `${version}\n`);
-for (const required of ['node', 'hlabsd.mjs', 'cli.mjs', 'bin/caddy', 'bin/restic', 'bin/hlabs', 'bin/hlabs-priv']) {
+for (const required of [
+  'node',
+  'hlabsd.mjs',
+  'cli.mjs',
+  'bin/caddy',
+  'bin/restic',
+  'bin/cloudflared',
+  'bin/hlabs',
+  'bin/hlabs-priv',
+]) {
   if (!existsSync(join(stage, required))) throw new Error(`The download is missing ${required}`);
 }
 

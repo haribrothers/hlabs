@@ -51,6 +51,10 @@ const EXPECTED: Row[] = [
   ['apps.setAutostart', 'm', 'admin'], ['apps.setAutoUpdate', 'm', 'admin'], ['apps.setAuthMode', 'm', 'admin'],
   ['apps.logs', 'q', 'admin'], ['apps.watchLogs', 's', 'admin'], ['apps.moveData', 'm', 'admin'],
   ['apps.deployCustom', 'm', 'admin'], ['apps.widgetKey', 'q', 'admin'], ['apps.setWidgetKey', 'm', 'admin'],
+  ['apps.setPublic', 'm', 'admin'], ['apps.publicOptions', 'q', 'admin'], ['apps.publicVisits', 'q', 'admin'],
+
+  ['public.status', 'q', 'admin'], ['public.cloudflareSignIn', 'm', 'admin'], ['public.cancelSignIn', 'm', 'admin'],
+  ['public.setupCloudflare', 'm', 'admin'], ['public.remove', 'm', 'admin'], ['public.turnOffAll', 'm', 'admin'],
 
   ['home.getLayout', 'q', 'authed'], ['home.saveLayout', 'm', 'authed'], ['home.saveDock', 'm', 'authed'],
   ['home.listWidgets', 'q', 'authed'], ['home.getWidgetData', 'q', 'authed'], ['home.searchEverything', 'q', 'authed'],
@@ -105,7 +109,7 @@ const EXPECTED: Row[] = [
   ['tray.resetPassword', 'm', 'tray'], ['tray.quit', 'm', 'tray'], ['tray.useOtherPort', 'm', 'tray'], ['tray.setStartAtLogin', 'm', 'tray'], ['tray.appLogs', 'q', 'tray'],
   ['tray.startEngine', 'm', 'tray'], ['tray.diagnostics', 'q', 'tray'], ['tray.uninstallInfo', 'q', 'tray'],
   ['tray.uninstall', 'm', 'tray'], ['tray.setupUrl', 'q', 'tray'], ['tray.job', 'q', 'tray'],
-  ['tray.libraryKeygen', 'm', 'tray'], ['tray.librarySign', 'm', 'tray'],
+  ['tray.libraryKeygen', 'm', 'tray'], ['tray.librarySign', 'm', 'tray'], ['tray.publicOff', 'm', 'tray'],
 
   ['events.stream', 's', 'authed|tray'],
 ];

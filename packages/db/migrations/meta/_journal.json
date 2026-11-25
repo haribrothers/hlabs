@@ -71,6 +71,13 @@
       "when": 1795448288959,
       "tag": "0009_app_images",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1795613828862,
+      "tag": "0010_app_public",
+      "breakpoints": true
     }
   ]
 }

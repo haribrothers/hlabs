@@ -11,6 +11,7 @@ import {
   ok,
 } from './common';
 import { ENV_NAME_PATTERN, isReservedEnvName } from '@hlabs/shared';
+import { appPublicSchema, appsPublic } from './public';
 
 const envSchema = z.record(z.string(), z.string());
 const mountSchema = z.object({
@@ -59,6 +60,11 @@ export const homeAppSchema = z.object({
      */
     port: z.number().int().nullable(),
   }),
+  /**
+   * Its public address while it's public on the internet (the "Public" badge, US-APP-27); null while private. Always
+   * sent by the daemon (optional only for older test fixtures).
+   */
+  public: appPublicSchema.nullable().optional(),
 });
 
 /** One installed app (US-STORE-12…14, AppWindow US-APP-01…03): its tile, state, why, where it opens, its install job. */
@@ -299,8 +305,11 @@ export const apps = {
     jobRefSchema,
   ),
   setAutostart: io(appRefSchema.extend({ enabled: z.boolean() }), ok),
+  /** `APP_IS_PUBLIC` when turning it off while the app is public (07 §7.10). */
   setAutoUpdate: io(appRefSchema.extend({ enabled: z.boolean() }), ok),
+  /** `APP_IS_PUBLIC` when turning it off while the app is public with the hlabs login (AppSettingsPublic). */
   setAuthMode: io(appRefSchema.extend({ mode: z.enum(['hlabs', 'none']) }), ok),
+  ...appsPublic,
   logs: io(
     appRefSchema.extend({
       service: z.string().optional(),

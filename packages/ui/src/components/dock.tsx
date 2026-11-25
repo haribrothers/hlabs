@@ -28,6 +28,8 @@ export interface DockApp {
   badge?: number;
   /** Pinned by the person (US-HOME-22): can be moved and has a menu. Open-only apps come after the pinned ones. */
   pinned?: boolean;
+  /** Set while the app is reachable from the internet (US-APP-27): "Public" joins its tooltip and name. */
+  publicLabel?: string;
 }
 
 /** What a drag from Home carries: the app's id (US-HOME-22). */
@@ -360,8 +362,10 @@ export function Dock({
           key={`app-${app.id}`}
           dataApp={app.id}
           pinned={app.pinned}
-          label={app.name}
-          ariaLabel={app.name + (app.open ? `, ${t.open}` : '')}
+          label={app.publicLabel ? `${app.name} · ${app.publicLabel}` : app.name}
+          ariaLabel={
+            app.name + (app.publicLabel ? `, ${app.publicLabel.toLowerCase()}` : '') + (app.open ? `, ${t.open}` : '')
+          }
           className="hl-dock-item-app"
           tileClass="hl-dock-tile-app"
           tileStyle={{

@@ -162,3 +162,21 @@ export const appImages = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.imageId, t.appId] })],
 );
+
+/**
+ * A public app (US-APP-27…29, D-150, D-171): a row means the app is reachable from the internet through Cloudflare
+ * Tunnel at `hostname` (a name under the Cloudflare domain); removed when it's made private. `access` is who gets in:
+ * hlabs's login with two-factor, or the app's own login only (`public.ownLoginSafe`, US-APP-28).
+ */
+export const appPublic = sqliteTable('app_public', {
+  appId: text('app_id')
+    .primaryKey()
+    .references(() => apps.id, { onDelete: 'cascade' }),
+  /** `https://photos.example.com` */
+  address: text('address').notNull(),
+  /** `photos.example.com`, lowercase. */
+  hostname: text('hostname').notNull().unique(),
+  access: text('access', { enum: ['hlabs', 'ownLogin'] }).notNull(),
+  enabledBy: text('enabled_by').references(() => users.id, { onDelete: 'set null' }),
+  enabledAt: ms('enabled_at').notNull(),
+});

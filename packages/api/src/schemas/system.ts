@@ -37,6 +37,8 @@ export const CONNECTION_KINDS = [
   'ntfy',
   'pihole',
   'engineDownload',
+  /** Cloudflare Tunnel, while it's set up for public apps (US-SYS-43, D-171). */
+  'cloudflare',
 ] as const;
 export const connectionSchema = z.object({
   /** Stable for the list (`store:<sourceId>`, `registry:docker.io`, `backup:<destinationId>`…). */

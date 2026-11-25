@@ -17,13 +17,13 @@
       "dependsOn": ["^build"],
       "cache": false,
       "persistent": true,
-      "passThroughEnv": ["HLABS_DEV_FAKE_TAILSCALE"]
+      "passThroughEnv": ["HLABS_DEV_FAKE_TAILSCALE", "HLABS_DEV_FAKE_CLOUDFLARE"]
     },
     "dev:full": {
       "dependsOn": ["^build"],
       "cache": false,
       "persistent": true,
-      "passThroughEnv": ["HLABS_DEV_FAKE_TAILSCALE"]
+      "passThroughEnv": ["HLABS_DEV_FAKE_TAILSCALE", "HLABS_DEV_FAKE_CLOUDFLARE"]
     }
   }
 }

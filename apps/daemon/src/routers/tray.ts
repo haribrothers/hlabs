@@ -30,12 +30,16 @@ export const tray: AppHandlers<DaemonContext>['tray'] = {
     jobId: ctx.services.uninstall.start({ keepData, removeColima, via: via ?? 'tray' }),
   }),
 
-  // Following the uninstall job (the tray token may call tray.* only, D-035).
+  // Following the uninstall job, or turning off public access (the tray token may call tray.* only, D-035).
   job: ({ jobId }, ctx) => {
     const job = ctx.services.jobs.get(jobId);
-    if (!job || job.kind !== 'hlabs_uninstall') throw hlabsError('NOT_FOUND');
+    if (!job || (job.kind !== 'hlabs_uninstall' && job.kind !== 'public_off_all')) throw hlabsError('NOT_FOUND');
     return job;
   },
+
+  // US-SYS-44: "Turn off public access" after the computer's own confirmation (Touch ID or the password, done by the
+  // tray before it calls this). Audited as the menu-bar app's; the admins are told.
+  publicOff: (_input, ctx) => ctx.services.publicApps.turnOffAll({ userId: null, ip: null }, 'tray'),
 
   // US-INST-25: one app's container logs for `hlabs logs --app` (the tray token calls tray.* only, D-035).
   appLogs: (input, ctx) => trayAppLogs(ctx.services, input),

@@ -18,6 +18,11 @@ export interface TrayMenuProps {
   stats?: { label: string; value: string; spoken?: string }[];
   /** A short explanation under the header (Paused, Error and Update states). */
   note?: { title?: string; body: ReactNode };
+  /**
+   * Something to keep in mind while running, on an amber card with an icon: "Public: 2 apps · Immich, Jellyfin"
+   * (TrayPublic, US-SYS-44).
+   */
+  notice?: { icon: ReactNode; title: string; body?: string };
   /** Determinate progress under the header, 0–1 (Starting: apps running of those that should run). */
   progress?: { value: number; label: string };
   /** The state's one primary button ("Resume apps", "Start engine", "Try again"…). */
@@ -36,6 +41,7 @@ export function TrayMenu({
   tone = 'default',
   stats,
   note,
+  notice,
   progress,
   action,
   items,
@@ -90,6 +96,19 @@ export function TrayMenu({
           aria-label={progress.label}
           className={cn('hl-tray-progress', status === 'working' && 'hl-tray-progress-working')}
         />
+      ) : null}
+      {notice ? (
+        <div className="hl-tray-body">
+          <div className="hl-tray-note hl-tray-notice">
+            <span aria-hidden className="hl-tray-notice-icon">
+              {notice.icon}
+            </span>
+            <span className="hl-tray-notice-text">
+              <b>{notice.title}</b>
+              {notice.body ? <span>{notice.body}</span> : null}
+            </span>
+          </div>
+        </div>
       ) : null}
       {note || action ? (
         <div className="hl-tray-body">

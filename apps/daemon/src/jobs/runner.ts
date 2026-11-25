@@ -28,6 +28,11 @@ export interface JobDefinition<P = unknown> {
 
 const ACTIVE = ['queued', 'running'] as const;
 const EXCLUSIVE = new Set<string>(EXCLUSIVE_JOB_KINDS);
+/**
+ * Jobs that make public apps private (US-APP-27, US-SYS-44): stopping what strangers can reach never waits for, or is
+ * refused by, an exclusive job (D-179).
+ */
+export const UNBLOCKED_JOB_KINDS = new Set<string>(['public_off', 'public_off_all']);
 /** App jobs run one at a time; the rest wait in `queued` (US-STORE-11: "Waiting for another app to finish…"). */
 export const SERIAL_JOB_KINDS = new Set<string>([
   'app_install',
@@ -86,6 +91,7 @@ export class JobRunner {
       .where(inArray(jobs.state, [...ACTIVE]))
       .all();
     const exclusiveActive = active.find((j) => EXCLUSIVE.has(j.kind));
+    if (UNBLOCKED_JOB_KINDS.has(kind)) return null;
     if (exclusiveActive || (EXCLUSIVE.has(kind) && active.length > 0)) return (exclusiveActive ?? active[0]!).kind;
     return null;
   }
@@ -110,7 +116,7 @@ export class JobRunner {
         .where(inArray(jobs.state, [...ACTIVE]))
         .all();
       const exclusiveActive = active.find((j) => EXCLUSIVE.has(j.kind));
-      if (exclusiveActive || (EXCLUSIVE.has(kind) && active.length > 0)) {
+      if (!UNBLOCKED_JOB_KINDS.has(kind) && (exclusiveActive || (EXCLUSIVE.has(kind) && active.length > 0))) {
         // Name what's in the way, so people know what to wait for (US-STATE-20).
         const runningKind = (exclusiveActive ?? active[0]!).kind;
         throw hlabsError('JOB_EXCLUSIVE_RUNNING', undefined, { runningKind });

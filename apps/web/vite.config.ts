@@ -57,6 +57,8 @@ const toDaemon = {
   '/dev/trash-item': DAEMON,
   '/dev/notify': DAEMON,
   '/dev/log-line': DAEMON,
+  '/dev/cloudflare': DAEMON,
+  '/dev/public-visit': DAEMON,
 };
 
 export default defineConfig(({ command }) => ({

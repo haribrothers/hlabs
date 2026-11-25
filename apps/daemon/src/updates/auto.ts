@@ -5,7 +5,7 @@
 // that can't share the time (D-020) is waited for, still within the window, else it's the next night. Each runs once
 // a night (kept in settings, so a restart or a rollback doesn't try again), and a notification says what was updated
 // or rolled back.
-import { apps, getSetting, setSetting, type HlabsDb } from '@hlabs/db';
+import { appPublic, apps, getSetting, setSetting, type HlabsDb } from '@hlabs/db';
 import { and, eq } from 'drizzle-orm';
 import type { EventBus } from '../events/bus';
 import type { JobRunner } from '../jobs/runner';
@@ -89,12 +89,20 @@ export class AutoUpdates {
         this.deps.hlabs.install();
         return;
       }
-      if (u.autoApps && u.autoNight.apps !== night) {
+      // Public apps update by themselves whatever the setting for the others (07 §7.10 control 6).
+      const publicIds = new Set(
+        db
+          .select({ appId: appPublic.appId })
+          .from(appPublic)
+          .all()
+          .map((r) => r.appId),
+      );
+      if ((u.autoApps || publicIds.size > 0) && u.autoNight.apps !== night) {
         // hlabs first: its update has to finish (it restarts the daemon) before the apps'.
         if (backupRunning || jobs.listActive().some((j) => j.kind === 'system_update')) return;
         // After that night's backups (US-STORE-16).
         if (this.deps.backupsDue?.(windowEnd(now))) return;
-        const due = this.dueApps();
+        const due = this.dueApps().filter((a) => u.autoApps || publicIds.has(a.id));
         if (due.length === 0) return;
         if (jobs.blocker('app_update')) return;
         setSetting(db, 'updates', { ...getSetting(db, 'updates'), autoNight: { ...u.autoNight, apps: night } });

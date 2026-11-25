@@ -5,6 +5,9 @@
 /// Why the OS asks: macOS shows "hlabs is trying to reset an hlabs password."
 pub const REASON: &str = "reset an hlabs password";
 
+/// "Turn off public access" (US-SYS-44): macOS shows "hlabs is trying to turn off public access for every app."
+pub const PUBLIC_OFF_REASON: &str = "turn off public access for every app";
+
 pub trait OsConfirm: Send + Sync {
     /// Asks the OS and waits; `Ok(false)` when the person cancelled or it didn't confirm them.
     fn confirm(&self, reason: &str) -> Result<bool, String>;

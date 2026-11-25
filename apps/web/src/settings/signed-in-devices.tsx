@@ -75,7 +75,11 @@ export function SignedInDevices() {
               key={s.id}
               icon={<Icon aria-hidden {...iconDefaults} />}
               title={copy.deviceLine(device, browser)}
-              subtitle={copy.seenLine(copy.networks[networkOf(s.ip)], lastSeen(s.lastSeenAt, now))}
+              subtitle={
+                s.publicHost
+                  ? copy.publicSeenLine(s.publicHost, lastSeen(s.lastSeenAt, now))
+                  : copy.seenLine(copy.networks[networkOf(s.ip)], lastSeen(s.lastSeenAt, now))
+              }
               value={s.current ? copy.thisDevice : undefined}
               trailing={s.current ? undefined : <SignOut sessionId={s.id} device={device} phone />}
             />
@@ -93,7 +97,11 @@ export function SignedInDevices() {
             key={s.id}
             leading={<Icon aria-hidden {...iconDefaults} />}
             title={copy.deviceLine(device, browser)}
-            subtitle={copy.seenLine(copy.networks[networkOf(s.ip)], lastSeen(s.lastSeenAt, now))}
+            subtitle={
+              s.publicHost
+                ? copy.publicSeenLine(s.publicHost, lastSeen(s.lastSeenAt, now))
+                : copy.seenLine(copy.networks[networkOf(s.ip)], lastSeen(s.lastSeenAt, now))
+            }
             trailing={s.current ? <Badge>{copy.thisDevice}</Badge> : <SignOut sessionId={s.id} device={device} />}
           />
         );

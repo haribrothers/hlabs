@@ -118,6 +118,16 @@ export const jobKindSchema = z.enum([
   'diagnostics',
   /** "Restart hlabs" (US-SYS-31): stops the apps, then the daemon exits for launchd or systemd to start it again. */
   'daemon_restart',
+  /** Making an app public, or changing its public address or who gets in (US-APP-27, US-APP-28). */
+  'public_on',
+  /** Making an app private (US-APP-27). */
+  'public_off',
+  /** "Turn off all public access" (US-SYS-44): every public app made private; the tunnel stays. */
+  'public_off_all',
+  /** Setting up Cloudflare Tunnel once hlabs has a credential (US-SYS-43): the tunnel, its connector. */
+  'public_setup',
+  /** "Remove Cloudflare Tunnel" (US-SYS-43): every app private, then the tunnel, its DNS records and the credential. */
+  'public_remove',
   /** Dev and test only. */
   'noop',
 ]);

@@ -3,14 +3,17 @@ import { cn } from '../lib/cn';
 
 export interface ListProps {
   label?: ReactNode;
+  /** A line under the label that says what the group is for ("Make single apps reachable from the internet…"). */
+  hint?: ReactNode;
   children: ReactNode;
   /** 'danger' for a "Danger zone": its label in the danger colour and an edge around the rows. */
   tone?: 'default' | 'danger';
 }
 
 /** A labelled group of rows, the way every settings page is built. */
-export function List({ label, children, tone = 'default' }: ListProps) {
+export function List({ label, hint, children, tone = 'default' }: ListProps) {
   const labelId = useId();
+  const hintId = useId();
   return (
     <div className={cn('hl-list', tone === 'danger' && 'hl-list-danger')}>
       {label ? (
@@ -18,7 +21,17 @@ export function List({ label, children, tone = 'default' }: ListProps) {
           {label}
         </span>
       ) : null}
-      <div className="hl-list-box" role="group" aria-labelledby={label ? labelId : undefined}>
+      {hint ? (
+        <span id={hintId} className="hl-list-hint">
+          {hint}
+        </span>
+      ) : null}
+      <div
+        className="hl-list-box"
+        role="group"
+        aria-labelledby={label ? labelId : undefined}
+        aria-describedby={hint ? hintId : undefined}
+      >
         {children}
       </div>
     </div>

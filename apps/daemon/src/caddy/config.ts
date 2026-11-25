@@ -8,6 +8,8 @@ import type { AppRoute } from '../apps/service';
 import { appHosts, homeDomains } from '../network/domains';
 import { fallbackErrorRoutes } from './fallback';
 import type { ProxyState } from './index';
+import { IDENTITY_HEADERS, PUBLIC_HOST_HEADER } from './headers';
+import { PUBLIC_ACCESS_LOGGER, publicAccessLog, publicServer } from './public';
 
 export interface CaddyPaths {
   /** Caddy's storage: the local CA, certificates, locks. */
@@ -18,8 +20,7 @@ export interface CaddyPaths {
   webFallbackDir: string;
 }
 
-/** Headers only forward auth may set; anything a browser sends under these names is dropped. */
-export const IDENTITY_HEADERS = ['X-Hlabs-User', 'X-Hlabs-Role'];
+export { IDENTITY_HEADERS } from './headers';
 
 /** Where Caddy's local CA keeps the root certificate that CertGuide offers (`GET /ca.crt`). */
 export function caRootDir(storageDir: string): string {
@@ -85,7 +86,7 @@ function appRoute(app: AppRoute, hostname: string, daemon: string, ancestors: st
   return {
     match: [{ host: appHosts(app.hostname, hostname) }],
     handle: [
-      { handler: 'headers', request: { delete: IDENTITY_HEADERS } },
+      { handler: 'headers', request: { delete: [...IDENTITY_HEADERS, PUBLIC_HOST_HEADER] } },
       ...(app.auth === 'hlabs' ? [forwardAuth(daemon)] : []),
       app.embed ? { ...proxy, ...framedBy(ancestors) } : proxy,
     ],
@@ -147,7 +148,10 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
 
   const dashboard = {
     match: [{ host: dashboardHosts }],
-    handle: [{ handler: 'headers', request: { delete: IDENTITY_HEADERS } }, proxyTo(state.dashboardUpstream)],
+    handle: [
+      { handler: 'headers', request: { delete: [...IDENTITY_HEADERS, PUBLIC_HOST_HEADER] } },
+      proxyTo(state.dashboardUpstream),
+    ],
     terminal: true,
   };
   const caCert = {
@@ -192,7 +196,10 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
         default: {
           writer: { output: 'file', filename: paths.logFile, roll_size_mb: 10, roll_keep: 3 },
           level: 'WARN',
+          // Visits to public apps go to their own log only (US-APP-29): never the proxy log or diagnostics.
+          exclude: [`http.log.access.${PUBLIC_ACCESS_LOGGER}`],
         },
+        ...(state.public ? { [PUBLIC_ACCESS_LOGGER]: publicAccessLog(state.public) } : {}),
       },
     },
     apps: {
@@ -229,6 +236,8 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
             routes: httpRoutes,
             automatic_https: { disable: true },
           },
+          // Public apps (D-178): only while Cloudflare Tunnel is set up.
+          ...(state.public ? { public: publicServer(state.public, state.daemon) } : {}),
           ...(opts.appPorts === false
             ? {}
             : Object.fromEntries(

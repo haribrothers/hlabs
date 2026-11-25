@@ -7,6 +7,7 @@ import { ulid } from '@hlabs/shared';
 import { widgetKeyRef } from '../home/app-widgets';
 import { appWidgetsOf, visibleAppIds } from '../home/layout';
 import type { DaemonContext } from '../context';
+import { actor } from './public';
 
 /** The signed-in person, as an installer. */
 function installer(ctx: DaemonContext) {
@@ -128,6 +129,10 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
       .run();
     return { ok: true as const };
   },
+  // Public apps (US-APP-27…29): admins only (the router's access, and PublicService again).
+  setPublic: (input, ctx) => ctx.services.publicApps.setPublic(actor(ctx), input),
+  publicOptions: ({ appId }, ctx) => ctx.services.publicApps.options(appId, actor(ctx)),
+  publicVisits: (input, ctx) => ctx.services.publicApps.visits(actor(ctx), input),
   /** Only the apps this person can open, enforced here, not in the UI (07 §7.4). */
   list: (_input, ctx) => {
     const id = ctx.identity;

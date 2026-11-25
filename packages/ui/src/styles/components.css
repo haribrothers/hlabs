@@ -433,6 +433,13 @@
     flex-direction: column;
     gap: var(--space-3);
   }
+  /* What an option lets in, or a warning to accept, right under it (AppPublic). */
+  .hl-choice-below {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-left: var(--space-10);
+  }
   .hl-choice {
     display: flex;
     align-items: center;
@@ -664,6 +671,11 @@
   }
   .hl-list-label {
     font: 600 13px/18px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+  .hl-list-hint {
+    margin-top: calc(var(--space-1) * -1);
+    font: 400 13px/18px var(--hl-font-sans);
     color: var(--ink-muted);
   }
   .hl-list-box {
@@ -922,6 +934,30 @@
   .hl-app-badge-error {
     background: var(--danger);
     color: var(--ink-on-light);
+  }
+  /* A public app (US-APP-27): a globe and "Public" at the tile's top-left, on a solid ground so it reads on any wallpaper. */
+  .hl-app-public {
+    position: absolute;
+    top: -6px;
+    left: 4px;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: var(--radius-pill);
+    font: 600 11px/16px var(--hl-font-sans);
+    color: var(--warning);
+    background: color-mix(in srgb, var(--warning) 18%, var(--solid-dialog));
+    border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent);
+  }
+  @media (max-width: 767px) {
+    .hl-app-public {
+      padding: 3px;
+    }
+    .hl-app-public-text {
+      display: none;
+    }
   }
   .hl-app-badge-stopped {
     background: var(--surface-dialog);
@@ -1844,6 +1880,28 @@
   }
   .hl-tray-note-update {
     background: var(--accent-wash);
+  }
+  /* TrayPublic (US-SYS-44): what's public, on an amber card. */
+  .hl-tray-notice {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--space-3);
+    border: 1px solid color-mix(in srgb, var(--warning) 45%, transparent);
+    background: color-mix(in srgb, var(--warning) 12%, transparent);
+  }
+  .hl-tray-notice-icon {
+    display: flex;
+    color: var(--warning);
+  }
+  .hl-tray-notice-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  .hl-tray-notice-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
   }
   .hl-tray-note-update .hl-tray-action {
     margin-top: var(--space-2);

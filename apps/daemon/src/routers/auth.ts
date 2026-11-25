@@ -116,6 +116,8 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
       userAgent,
     });
     if (result.kind === 'totp') return { status: 'totp_required' as const, challengeId: result.challengeId };
+    // Only a public address's sign-in asks for two-factor before a session (D-178); never this one.
+    if (result.kind !== 'ok') throw hlabsError('INTERNAL');
     setSessionCookie(ctx, result.session);
     return { status: 'ok' as const, redirectTo: result.redirectTo };
   },

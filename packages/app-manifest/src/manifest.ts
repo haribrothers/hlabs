@@ -206,6 +206,20 @@ export const AppManifest = z
     /** What hlabs already does that this app also does; its page says so (D-148, US-STORE-23). */
     overlaps: z.array(z.enum(['remoteAccess', 'backups', 'appManagement'])).default([]),
     widgets: z.array(widget).default([]),
+    /**
+     * Making the app public (D-150, D-171, 07 §7.10). `allowed: false` never lets it be (admin tools; an app with the
+     * Docker socket never is either), with `reason` saying why; `ownLoginSafe` offers "<App>'s own login only" so its
+     * phone and desktop apps connect; `maxBodyMb` is the largest request through its public address.
+     */
+    public: z
+      .object({
+        allowed: z.boolean().default(true),
+        reason: z.string().min(1).max(120).optional(),
+        ownLoginSafe: z.boolean().default(false),
+        maxBodyMb: z.number().int().min(1).max(10_240).default(10),
+      })
+      .strict()
+      .default({ allowed: true, ownLoginSafe: false, maxBodyMb: 10 }),
   })
   .strict()
   .superRefine((m, ctx) => {

@@ -6,6 +6,11 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { EventBus } from '../events/bus';
 
 export const SESSION_COOKIE = 'hlabs_session';
+/**
+ * The session cookie on a public app's address (D-178): host-only (`__Host-`: Secure, Path=/, no Domain), for a session
+ * that belongs to that address only.
+ */
+export const PUBLIC_SESSION_COOKIE = '__Host-hlabs_pub';
 export const IDLE_MS = 12 * 60 * 60 * 1000;
 export const REMEMBER_MS = 30 * 24 * 60 * 60 * 1000;
 /** lastSeenAt is written at most this often. */
@@ -57,6 +62,7 @@ export class SessionService {
       ip: r.ip,
       createdAt: r.createdAt,
       lastSeenAt: r.lastSeenAt,
+      publicHost: r.publicHost,
     }));
   }
 
@@ -90,7 +96,15 @@ export class SessionService {
     return live.flatMap((s) => this.revoke({ sessionId: s.id }, now));
   }
 
-  create(opts: { userId: string; remember?: boolean; ip?: string | null; userAgent?: string | null; now?: number }) {
+  create(opts: {
+    userId: string;
+    remember?: boolean;
+    ip?: string | null;
+    userAgent?: string | null;
+    now?: number;
+    /** A sign-in on a public app's address (D-178): the session is valid on that host only. */
+    publicHost?: string | null;
+  }) {
     const now = opts.now ?? Date.now();
     const raw = randomBytes(32).toString('base64url');
     const remember = opts.remember ?? false;
@@ -106,14 +120,22 @@ export class SessionService {
         remember,
         userAgent: opts.userAgent ?? null,
         ip: opts.ip ?? null,
+        publicHost: opts.publicHost?.toLowerCase() ?? null,
       })
       .run();
     // `issuedAt`: the cookie's Max-Age counts from here, so it's exactly 30 days however long the request takes.
     return { raw, expiresAt, remember, issuedAt: now };
   }
 
-  /** The signed-in user for a cookie, sliding the expiry; null when unknown, revoked, expired or disabled. */
-  resolve(raw: string | null | undefined, now = Date.now()): ResolvedSession | null {
+  /**
+   * The signed-in user for a cookie, sliding the expiry; null when unknown, revoked, expired or disabled. A session
+   * signed in on a public app's address counts only on that host (`publicHost`), and a dashboard session never there.
+   */
+  resolve(
+    raw: string | null | undefined,
+    now = Date.now(),
+    opts: { publicHost?: string } = {},
+  ): ResolvedSession | null {
     if (!raw) return null;
     const row = this.db
       .select({ session: sessions, role: users.role, disabledAt: users.disabledAt })
@@ -122,6 +144,7 @@ export class SessionService {
       .where(and(eq(sessions.id, sha256(raw)), isNull(sessions.revokedAt)))
       .get();
     if (!row || row.disabledAt !== null || row.session.expiresAt <= now) return null;
+    if ((row.session.publicHost ?? null) !== (opts.publicHost?.toLowerCase() ?? null)) return null;
     let expiresAt = row.session.expiresAt;
     if (now - row.session.lastSeenAt >= TOUCH_MS) {
       expiresAt = now + (row.session.remember ? REMEMBER_MS : IDLE_MS);
@@ -175,4 +198,13 @@ export function readCookie(header: string | undefined, name: string): string | n
     if (key === name) return decodeURIComponent(rest.join('='));
   }
   return null;
+}
+
+/** `__Host-hlabs_pub` for a public app's address: host-only, HttpOnly, Secure, SameSite=Lax, ends with the browser. */
+export function publicSessionCookie(raw: string): string {
+  return `${PUBLIC_SESSION_COOKIE}=${raw}; Path=/; HttpOnly; Secure; SameSite=Lax`;
+}
+
+export function clearedPublicSessionCookie(): string {
+  return `${PUBLIC_SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }

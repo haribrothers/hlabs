@@ -10,7 +10,7 @@ import {
   type ComposeFile,
   type RenderedApp,
 } from '@hlabs/app-manifest';
-import { apps, auditLog, getSetting, type AppState, type HlabsDb } from '@hlabs/db';
+import { appPublic, apps, auditLog, getSetting, type AppState, type HlabsDb } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { eq } from 'drizzle-orm';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -103,6 +103,10 @@ export class AppService {
     if (setting === 'autoUpdate' && enabled && app.custom) {
       throw hlabsError('VALIDATION_FAILED', 'Custom apps never update automatically', { appId });
     }
+    // A public app stays current: its automatic updates can't be turned off while it's public (07 §7.10).
+    if (setting === 'autoUpdate' && !enabled && this.isPublic(appId)) {
+      throw hlabsError('APP_IS_PUBLIC', 'Automatic updates stay on while the app is public', { appId });
+    }
     const from = app[setting];
     if (from === enabled) return;
     const at = Date.now();
@@ -123,6 +127,18 @@ export class AppService {
         })
         .run();
     });
+  }
+
+  /** Whether the app is public on the internet now, and with which login (US-APP-27). */
+  publicAccess(appId: string): 'hlabs' | 'ownLogin' | null {
+    return (
+      this.deps.db.select({ access: appPublic.access }).from(appPublic).where(eq(appPublic.appId, appId)).get()
+        ?.access ?? null
+    );
+  }
+
+  isPublic(appId: string): boolean {
+    return this.publicAccess(appId) !== null;
   }
 
   /** Moves an app along an edge of the state machine; refuses with APP_BUSY otherwise. */

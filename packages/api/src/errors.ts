@@ -131,6 +131,22 @@ export const HLABS_ERRORS = {
   /** Pi-hole refused the app password (US-SYS-06). */
   DNS_SERVER_AUTH_FAILED: 'BAD_REQUEST',
 
+  // Public apps (US-APP-27…29, US-SYS-43, 44; D-171)
+  /** Making an app public before Cloudflare Tunnel is set up (Settings › Network › Public access). */
+  PUBLIC_NOT_SET_UP: 'PRECONDITION_FAILED',
+  /** Cloudflare Tunnel is set up already: remove it first to use another domain. */
+  PUBLIC_ALREADY_SET_UP: 'CONFLICT',
+  /** The manifest says `public.allowed: false`, or the app can control other apps: `detail.reason` (or null). */
+  PUBLIC_NOT_ALLOWED: 'PRECONDITION_FAILED',
+  /** Cloudflare refused or didn't answer: `detail.step` says at which step (`signIn`, `token`, `tunnel`, `dns`…). */
+  CLOUDFLARE_FAILED: 'BAD_GATEWAY',
+  /** The name is already in the domain's DNS (a record hlabs didn't make, or another public app's). */
+  PUBLIC_HOSTNAME_TAKEN: 'CONFLICT',
+  /** Nobody allowed into the app has two-factor on, so nobody could get in: `detail.users` names who to ask. */
+  TWO_FACTOR_REQUIRED_FOR_PUBLIC: 'PRECONDITION_FAILED',
+  /** Not while the app is public: automatic updates stay on, and so does the hlabs login with it (07 §7.10). */
+  APP_IS_PUBLIC: 'PRECONDITION_FAILED',
+
   // Backups and restore
   BACKUP_DEST_UNREACHABLE: 'BAD_GATEWAY',
   BACKUP_DEST_AUTH_FAILED: 'BAD_REQUEST',

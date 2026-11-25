@@ -208,6 +208,10 @@ export class AppConfigService {
   async setAuthMode(user: Installer, appId: string, mode: 'hlabs' | 'none'): Promise<void> {
     const app = this.app(appId);
     if (app.authMode === mode) return;
+    // Public with hlabs's login: the home address keeps it too while it's public (AppSettingsPublic).
+    if (mode === 'none' && this.deps.apps.publicAccess(appId) === 'hlabs') {
+      throw hlabsError('APP_IS_PUBLIC', 'The hlabs login stays on while the app is public with it', { appId });
+    }
     const at = (this.deps.now ?? Date.now)();
     this.deps.db.transaction((tx) => {
       tx.update(apps).set({ authMode: mode, updatedAt: at }).where(eq(apps.id, appId)).run();

@@ -1,13 +1,16 @@
 // App settings › Access (US-APP-05): the app's address as a link with Copy, and its tailnet address once remote access
 // ships (D-036) and is on. The address is the app's name, or `https://hlabs.local:<port>` while its name can't be
 // published (the daemon decides, D-086). "Require hlabs login" (US-APP-19) puts the hlabs sign-in in front of the app or
-// takes it away (asking first), at once, with "Uses its own login too" for an app that has accounts of its own.
+// takes it away (asking first), at once, with "Uses its own login too" for an app that has accounts of its own. While the
+// app is public with the hlabs login it stays on (AppSettingsPublic). "Public on the internet" is in app-public.tsx.
 import type { AppDetail } from '@hlabs/api';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { Button, List, ListRow, ModalDialog, Switch } from '@hlabs/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { appsCopy } from '../copy/apps';
+import { publicCopy } from '../copy/public';
+import { PublicRow } from './app-public';
 import { handledGlobally, showErrorToast } from '../lib/error-copy';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { showToast } from '../lib/toasts';
@@ -27,7 +30,19 @@ export function CopyAddress({ url }: { url: string }) {
   );
 }
 
-export function AppAccess({ app, shippedPhase }: { app: AppDetail; shippedPhase?: number }) {
+export function AppAccess({
+  app,
+  shippedPhase,
+  onOpenVisits = () => undefined,
+  onOpenPermissions,
+}: {
+  app: AppDetail;
+  shippedPhase?: number;
+  /** A public app's Visits (US-APP-29). */
+  onOpenVisits?: () => void;
+  /** "Who has access" in the Make public dialog: the Permissions tab. */
+  onOpenPermissions?: () => void;
+}) {
   const tailnet = isFeatureEnabled('remoteAccess', shippedPhase) ? app.urls.tailnet : null;
   return (
     <List label={copy.access}>
@@ -50,6 +65,10 @@ export function AppAccess({ app, shippedPhase }: { app: AppDetail; shippedPhase?
           subtitle={<span className="font-mono">{tailnet}</span>}
           trailing={<CopyAddress url={tailnet} />}
         />
+      ) : null}
+      {/* Public on the internet (US-APP-27), phase 7 (D-036). */}
+      {isFeatureEnabled('publicApps', shippedPhase) ? (
+        <PublicRow app={app} onOpenVisits={onOpenVisits} onOpenPermissions={onOpenPermissions} />
       ) : null}
       {isFeatureEnabled('appPermissions', shippedPhase) ? <RequireLogin app={app} /> : null}
     </List>
@@ -81,7 +100,13 @@ function RequireLogin({ app }: { app: AppDetail }) {
       void queryClient.invalidateQueries({ queryKey: trpc.apps.getConfig.queryKey({ appId: app.id }) });
     },
   });
-  const hint = app.ownLogin ? `${copy.requireLoginHint} · ${copy.ownLoginToo}` : copy.requireLoginHint;
+  // Public with the hlabs login: on, and stays on until it's private (AppSettingsPublic, D-179).
+  const locked = app.public?.access === 'hlabs' && app.authMode === 'hlabs';
+  const hint = locked
+    ? publicCopy.requireLoginWhilePublic(app.name)
+    : app.ownLogin
+      ? `${copy.requireLoginHint} · ${copy.ownLoginToo}`
+      : copy.requireLoginHint;
   return (
     <>
       <ListRow
@@ -91,7 +116,7 @@ function RequireLogin({ app }: { app: AppDetail }) {
           <Switch
             aria-label={copy.requireLogin}
             checked={app.authMode === 'hlabs'}
-            disabled={save.isPending}
+            disabled={save.isPending || locked}
             onChange={(on) => (on ? save.mutate('hlabs') : setAsking(true))}
           />
         }

@@ -26,6 +26,8 @@ import { createAdmin } from '../onboarding/create-admin';
 import { prepareStorageRoot, setStorageRoot } from '../onboarding/storage';
 import { cookieDomain, sessionCookie } from '../auth/sessions';
 import { FakeTailscale } from '../tailscale/fake';
+import { FAKE_CLOUDFLARE_TOKEN, FakeCloudflare } from '../cloudflare/fake';
+import { appendAccessLine } from '../public/visits';
 import { FakeNas } from '../platform/fake-nas';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -318,6 +320,108 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
       : {};
     // A fresh start for remote access too.
     setSetting(services.db, 'remote', settingsSchemas.remote.parse(undefined));
+    return { ok: true };
+  });
+
+  // The pretend Cloudflare (HLABS_DEV_FAKE_CLOUDFLARE): e2e sets how it behaves and can set public access up at once
+  // (US-SYS-43, US-SYS-44, US-APP-27…29). Its zone is example.com, with example.com, www and mail taken already.
+  const cloudflareBody = z.object({
+    /** Nothing public and no tunnel, as on a fresh install (also clears the Visits log and refused addresses). */
+    reset: z.boolean().default(false),
+    /** Sign-ins are approved this long after they start, as if the person approved in Cloudflare's tab; null waits. */
+    autoApprove: z.number().int().min(0).nullable().optional(),
+    /** Approve the sign-in that's waiting now. */
+    approve: z.boolean().default(false),
+    /** The link "Sign in to Cloudflare" gives (never a real Cloudflare page in e2e). */
+    signInUrl: z.string().optional(),
+    /** Steps that fail: signIn, token, zone, tunnel, dns, connector, remove. */
+    failing: z.array(z.enum(['signIn', 'token', 'zone', 'tunnel', 'dns', 'connector', 'remove'])).optional(),
+    /** More names already in the zone's DNS (records hlabs didn't make), e.g. `blog.example.com`. */
+    takenNames: z.array(z.string()).optional(),
+    /** Set up Cloudflare Tunnel straight away (as with an API token), by the first admin; waits for it. */
+    setUp: z.boolean().default(false),
+  });
+  const cloudflareState = (fake: FakeCloudflare) => ({
+    domain: fake.domain,
+    signingIn: fake.signingIn,
+    records: [...fake.records.values()].map((r) => ({ name: r.name, byHlabs: r.byHlabs })),
+    tunnels: [...fake.tunnels.values()],
+    connector: fake.state(),
+    calls: fake.calls,
+  });
+  app.get('/dev/cloudflare', async (_req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    if (!(services.cloudflare instanceof FakeCloudflare))
+      return reply.code(409).send({ reason: 'not the fake Cloudflare' });
+    return cloudflareState(services.cloudflare);
+  });
+  app.post('/dev/cloudflare', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const fake = services.cloudflare;
+    if (!(fake instanceof FakeCloudflare)) return reply.code(409).send({ reason: 'not the fake Cloudflare' });
+    const b = cloudflareBody.parse(req.body ?? {});
+    if (b.reset) {
+      await services.publicApps.resetForDev();
+      fake.reset();
+      fake.autoApprove = null;
+    }
+    if (b.autoApprove !== undefined) fake.autoApprove = b.autoApprove;
+    if (b.signInUrl !== undefined) fake.signInUrl = b.signInUrl;
+    if (b.failing) fake.failing = new Set(b.failing);
+    for (const name of b.takenNames ?? []) {
+      const id = randomBytes(8).toString('hex');
+      fake.records.set(id, { id, name, content: '192.0.2.10', byHlabs: false });
+    }
+    if (b.approve) fake.finishSignIn();
+    if (b.setUp) {
+      const admin = services.db.select().from(users).where(eq(users.role, 'admin')).get();
+      const { jobId } = await services.publicApps.setupWithToken(
+        { userId: admin?.id ?? null, role: 'admin', ip: null },
+        fake.domain,
+        FAKE_CLOUDFLARE_TOKEN,
+      );
+      await services.jobs.settled(jobId);
+    }
+    return cloudflareState(fake);
+  });
+
+  // A line in the public listener's access log, as Caddy writes it (Visits, US-APP-29): development and e2e have no
+  // Caddy in front.
+  const visitBody = z.object({
+    host: z.string(),
+    path: z.string().default('/'),
+    method: z.string().default('GET'),
+    status: z.number().int().default(200),
+    ip: z.string().default('203.0.113.24'),
+    country: z.string().nullable().default('NL'),
+    /** When (ms); now by default. */
+    at: z.number().optional(),
+    /** Where a redirect went (`/.hlabs/sign-in?next=/`). */
+    location: z.string().optional(),
+    /** The same line this many times, a second apart going back from `at`. */
+    count: z.number().int().min(1).max(500).default(1),
+  });
+  app.post('/dev/public-visit', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const b = visitBody.parse(req.body ?? {});
+    const at = b.at ?? Date.now();
+    for (let i = b.count - 1; i >= 0; i--) {
+      appendAccessLine(services.publicApps.logDir, {
+        ts: (at - i * 1000) / 1000,
+        status: b.status,
+        request: {
+          host: b.host,
+          method: b.method,
+          uri: b.path,
+          client_ip: b.ip,
+          headers: b.country ? { 'Cf-Ipcountry': [b.country] } : {},
+        },
+        resp_headers: b.location ? { Location: [b.location] } : {},
+      });
+    }
     return { ok: true };
   });
 

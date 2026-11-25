@@ -92,6 +92,11 @@ export interface InstallDeps {
   timeZone?: () => string;
   /** How much disk each app uses (US-APP-07). */
   disk?: AppDiskUsage;
+  /**
+   * Makes a public app private before it's uninstalled (US-APP-27): its DNS record goes and it's audited. Boot sets it
+   * once PublicService exists.
+   */
+  makePrivate?: (appId: string, by: { userId: string | null; ip?: string | null }) => Promise<void>;
 }
 
 /** The share of the bar each step fills: pulls take 0–80%, the rest share 80–100% (US-STORE-12). */
@@ -139,6 +144,8 @@ export class InstallService {
     this.deps.jobs.register<{ appId: string; user: Installer; keepData?: boolean }>('app_uninstall', {
       run: async ({ payload, report }) => {
         report(10);
+        // A public app is made private first (its address already stopped answering when it went to uninstalling).
+        await this.deps.makePrivate?.(payload.appId, { userId: payload.user.userId, ip: payload.user.ip ?? null });
         if (payload.keepData === undefined) await this.removeFailed(payload.user, payload.appId);
         else await this.removeApp(payload.user, payload.appId, payload.keepData, report);
       },

@@ -1,11 +1,14 @@
 // App settings › Behaviour (US-APP-06): "Start automatically", and "Update automatically" once app updates ship in
-// phase 7 (D-036); "Include in backups" waits for backups in phase 5. A switch saves at once and flips back, with
+// phase 7 (D-036), on and locked "On while <App> is public" for a public app (US-APP-27); "Include in backups" waits for backups in phase 5. A switch saves at once and flips back, with
 // the reason in a toast, when saving fails.
 import type { AppDetail } from '@hlabs/api';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { List, ListRow, Switch } from '@hlabs/ui';
+import { Lock, iconDefaults } from '@hlabs/icons';
+import type { ReactNode } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { appsCopy } from '../copy/apps';
+import { publicCopy } from '../copy/public';
 import { handledGlobally, showErrorToast } from '../lib/error-copy';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 
@@ -37,7 +40,7 @@ export function AppBehaviour({ app, shippedPhase }: { app: AppDetail; shippedPha
     onSettled: () => void queryClient.invalidateQueries({ queryKey: key }),
   });
 
-  const row = (setting: Setting, title: string, opts: { disabled?: boolean; note?: string } = {}) => (
+  const row = (setting: Setting, title: string, opts: { disabled?: boolean; note?: ReactNode } = {}) => (
     <ListRow
       title={title}
       subtitle={opts.note}
@@ -56,8 +59,16 @@ export function AppBehaviour({ app, shippedPhase }: { app: AppDetail; shippedPha
       {row('autostart', copy.startAutomatically)}
       {isFeatureEnabled('appUpdates', shippedPhase)
         ? row('autoUpdate', copy.updateAutomatically, {
-            disabled: app.custom,
-            note: app.custom ? copy.customNeverUpdates : undefined,
+            // A public app stays current: on, and can't be turned off while it's public (07 §7.10).
+            disabled: app.custom || Boolean(app.public),
+            note: app.custom ? (
+              copy.customNeverUpdates
+            ) : app.public ? (
+              <span className="inline-flex items-center gap-1">
+                <Lock aria-hidden {...iconDefaults} size={12} />
+                {publicCopy.autoUpdateWhilePublic(app.name)}
+              </span>
+            ) : undefined,
           })
         : null}
     </List>

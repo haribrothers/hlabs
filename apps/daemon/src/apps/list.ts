@@ -8,6 +8,7 @@ import { catalogRow } from './catalog-row';
 export { catalogRow };
 import { tailnetHost } from '../network/domains';
 import { tailnetAppPort } from '@hlabs/shared';
+import { appPublicOf } from '../public/rows';
 
 /** The few manifest fields Home needs; the full schema lives in @hlabs/app-manifest. */
 const manifestBits = z.object({
@@ -72,6 +73,8 @@ export function appSummary(
       tailnet: tailnet && app.portFallback !== null ? `https://${tailnet}:${tailnetAppPort(app.portFallback)}` : null,
       port: app.portFallback,
     },
+    /** Its public address while it's public (the "Public" badge, US-APP-27). */
+    public: appPublicOf(db, app.id),
   };
 }
 

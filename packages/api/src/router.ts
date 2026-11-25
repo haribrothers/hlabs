@@ -125,6 +125,10 @@ export const appRouter = router({
     setAutostart: m(p.admin, s.apps.setAutostart),
     setAutoUpdate: m(p.admin, s.apps.setAutoUpdate),
     setAuthMode: m(p.admin, s.apps.setAuthMode),
+    // Public apps (US-APP-27…29): admins only, enforced again in PublicService.
+    setPublic: m(p.admin, s.apps.setPublic),
+    publicOptions: q(p.admin, s.apps.publicOptions),
+    publicVisits: q(p.admin, s.apps.publicVisits),
     logs: q(p.admin, s.apps.logs),
     watchLogs: subscription<LogLine, typeof s.apps.watchLogsInput>(p.admin, s.apps.watchLogsInput),
     moveData: m(p.admin, s.apps.moveData),
@@ -230,6 +234,16 @@ export const appRouter = router({
     testDnsServer: m(p.admin, s.network.testDnsServer),
   }),
 
+  // Public apps through Cloudflare Tunnel (US-SYS-43, 44; D-171).
+  public: router({
+    status: q(p.admin, s.publicAccess.status),
+    cloudflareSignIn: m(p.admin, s.publicAccess.cloudflareSignIn),
+    cancelSignIn: m(p.admin, s.publicAccess.cancelSignIn),
+    setupCloudflare: m(p.admin, s.publicAccess.setupCloudflare),
+    remove: m(p.admin, s.publicAccess.remove),
+    turnOffAll: m(p.admin, s.publicAccess.turnOffAll),
+  }),
+
   settings: router({
     get: q(p.authed, s.settings.get),
     appearance: router({
@@ -303,6 +317,7 @@ export const appRouter = router({
     librarySign: m(p.tray, s.tray.librarySign),
     setupUrl: q(p.tray, s.tray.setupUrl),
     job: q(p.tray, s.tray.job),
+    publicOff: m(p.tray, s.tray.publicOff),
   }),
 
   events: router({

@@ -110,10 +110,13 @@ widgets:                         # Home widgets the app can provide
       header: x-api-key          # App settings and hlabs keeps it in the keychain. Such widgets are admins' only.
       prefix: ''                 # before the key, e.g. "Token " or "Bearer "
       help: Make a key in Immich under Account settings › API keys.
-public:                          # making the app public (D-150, 07 §7.10); defaults shown
-  allowed: true                  # false: never public (admin tools such as Portainer)
+public:                          # making the app public (D-150, D-171, 07 §7.10); defaults shown
+  allowed: true                  # false: never public (admin tools such as Portainer); an app with
+                                 # permissions.dockerSocket is never public whatever this says (D-179)
+  reason: It can see every password in your home.   # optional, ≤ 120 chars: why not, shown instead of
+                                 # "<App> can't be made public: it can control your other apps."
   ownLoginSafe: false            # true: an admin may choose "<App>'s own login only" so its phone apps connect
-  maxBodyMb: 10                  # largest request through the public address (raise for upload apps)
+  maxBodyMb: 10                  # largest request through the public address, 1–10240 (raise for upload apps)
 overlaps: [remoteAccess]         # hlabs already does this: remoteAccess | backups | appManagement (D-148);
                                  # the app's page says so ("hlabs already gives you remote access")
 ```

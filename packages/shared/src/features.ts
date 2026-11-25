@@ -90,6 +90,9 @@ export const FEATURE_PHASE = {
   advancedSettings: 7,
   about: 8,
   notificationPrefs: 9,
+  /** Public apps through Cloudflare Tunnel (F-APP-10, F-SYS-13, D-171): Settings › Network › Public access, an app's
+   * "Make public…", Visits and the menu bar's "Turn off public access". */
+  publicApps: 7,
 } as const satisfies Record<string, number>;
 
 export type Feature = keyof typeof FEATURE_PHASE;
@@ -115,6 +118,7 @@ export const BUILT_AHEAD: readonly Feature[] = [
   'advancedSettings',
   'factoryReset',
   'pwa',
+  'publicApps',
 ];
 
 /** The dev server is previewing (never in a build or unit tests). */

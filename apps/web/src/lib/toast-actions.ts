@@ -24,9 +24,23 @@ const DESTINATIONS: ReadonlyArray<{
   { path: /^\/store\/updates$/, action: { label: copy.review, admin: true, feature: 'appUpdates' } },
   // Settings › Account, where sessions are: repeated failed logins, a used recovery code (US-HOME-14).
   { path: /^\/settings\/account$/, action: { label: copy.seeSessions, item: true } },
+  // A public app's Visits (US-APP-29): the attack warning's "See visits".
+  {
+    path: /^\/apps\/[^/]+\/settings\?view=visits$/,
+    action: { label: copy.seeVisits, admin: true, feature: 'publicApps' },
+  },
+  // A public app's settings (US-APP-27): "<Name> made <App> public…".
+  { path: /^\/apps\/[^/]+\/settings$/, action: { label: copy.appSettings, admin: true } },
   // SettingsStorage (phase 7).
   { path: /^\/settings\/storage$/, action: { label: copy.manageStorage, admin: true, feature: 'storageSettings' } },
 ];
+
+/** A navigate action's `params` as the address's search (`/apps/immich/settings?view=visits`): strings only. */
+function withParams(to: string, params: Record<string, unknown> | undefined): string {
+  const entries = Object.entries(params ?? {}).filter((e): e is [string, string] => typeof e[1] === 'string');
+  if (!entries.length) return to;
+  return `${to}${to.includes('?') ? '&' : '?'}${new URLSearchParams(entries).toString()}`;
+}
 
 /** A notification's buttons as toast actions; anything not on the allow-list is dropped. */
 export function actionsFromNotification(actions: readonly NotificationAction[] | null): ToastAction[] {
@@ -35,8 +49,9 @@ export function actionsFromNotification(actions: readonly NotificationAction[] |
       if (!(TOAST_MUTATIONS as readonly string[]).includes(a.procedure)) return [];
       return [{ kind: 'mutation', label: a.label, procedure: a.procedure, input: a.input }];
     }
-    const known = DESTINATIONS.find((d) => d.path.test(a.to));
-    return [{ kind: 'navigate', to: a.to, ...(known?.action ?? { label: copy.open }) }];
+    const to = withParams(a.to, a.params);
+    const known = DESTINATIONS.find((d) => d.path.test(to));
+    return [{ kind: 'navigate', to, ...(known?.action ?? { label: copy.open }) }];
   });
 }
 
@@ -73,5 +88,8 @@ export function runToastMutation(
       return client.backups.runNow.mutate(input as Parameters<typeof client.backups.runNow.mutate>[0]);
     case 'settings.updates.check':
       return client.settings.updates.check.mutate();
+    case 'apps.setPublic':
+      // From a toast only ever "Make private" (US-APP-29): never makes anything public.
+      return client.apps.setPublic.mutate({ appId: String(input.appId), public: false });
   }
 }

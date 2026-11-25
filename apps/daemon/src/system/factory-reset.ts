@@ -10,6 +10,7 @@
 // A step that fails is noted and the job carries on. Last it leaves the next onboarding's setup token in the secret
 // store and a marker, and hlabsd starts again (exit 75): the start sees the marker, deletes the database before
 // opening it, and so begins with an empty one, in onboarding (`completeFactoryReset`).
+import { CLOUDFLARE_CREDENTIAL } from '../public/service';
 import { hlabsError } from '@hlabs/api';
 import {
   apps,
@@ -255,7 +256,7 @@ export class FactoryReset {
   /** Every secret-store item hlabs made, from the database (and the encrypted file's own list), never the tray's. */
   private async secretRefs(appIds: string[]): Promise<string[]> {
     const { db } = this.deps;
-    const refs = new Set<string>([PIHOLE_SECRET_REF, LIBRARY_KEY_REF, SETUP_TOKEN_REF]);
+    const refs = new Set<string>([PIHOLE_SECRET_REF, LIBRARY_KEY_REF, SETUP_TOKEN_REF, CLOUDFLARE_CREDENTIAL]);
     for (const appId of appIds) refs.add(widgetKeyRef(appId));
     for (const t of db.select({ ref: userTotp.secretRef }).from(userTotp).all()) refs.add(t.ref);
     for (const i of db.select({ ref: invites.tokenRef }).from(invites).all()) if (i.ref) refs.add(i.ref);

@@ -312,9 +312,9 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-APP-19 · Require hlabs login in front of an app
 - [x] US-APP-20 · Resource use tiles and 24-hour chart
 - [x] US-APP-21 · Per-container usage
-- [ ] US-APP-27 · Make an app public
-- [ ] US-APP-28 · Choose who gets into a public app
-- [ ] US-APP-29 · See who visits a public app
+- [x] US-APP-27 · Make an app public (D-179, D-180; the real tunnel and a name in a real zone are Q-24's hand checks)
+- [x] US-APP-28 · Choose who gets into a public app (sign-in on the public address, D-178; e2e stands in for Caddy's public listener, its routing is the daemon's tests)
+- [x] US-APP-29 · See who visits a public app (Visits in App settings, `?view=visits`, D-180)
 - [x] US-ACCT-32 · Choose a wallpaper
 - [x] US-ACCT-33 · Choose an accent colour
 - [x] US-ACCT-34 · Home screen options
@@ -330,8 +330,8 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-SYS-31 · Restart hlabs (exit 75 for launchd/systemd, D-169; under `pnpm dev` hlabsd isn't started again; the real LaunchAgent and unit are checked by hand at phase end)
 - [x] US-SYS-37 · Confirm a factory reset (the story's hostname and password, not the screen's "Type RESET"; "stale session" read as D-170)
 - [x] US-SYS-38 · Reset hlabs (the database is deleted at the next start, D-170; MCP tokens join with phase 8)
-- [ ] US-SYS-43 · Set up a way to make apps public
-- [ ] US-SYS-44 · See and stop everything that's public
+- [x] US-SYS-43 · Set up a way to make apps public (the pretend Cloudflare in e2e; Sign in to Cloudflare with a real domain is Q-24)
+- [x] US-SYS-44 · See and stop everything that's public (the menu-bar app's "Turn off public access" after Touch ID or the password, as US-INST-18)
 - [x] US-PHONE-01 · Switch to the phone layout with a bottom tab bar (tab bar docked to the bottom with the soft highlight, "App Store" tab, D-172, D-173)
 - [x] US-PHONE-02 · Touch targets, safe areas and phone-friendly inputs (44px hit areas, safe areas, 17px fields, keyboard hides the tab bar)
 - [x] US-PHONE-03 · Bottom sheets with soft spring and drag to dismiss (BottomSheet in packages/ui; ModalDialog becomes one on phones)

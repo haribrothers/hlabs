@@ -42,6 +42,12 @@
     "body": "Check its logs, then try again."
   },
   {
+    "code": "APP_IS_PUBLIC",
+    "slug": "app-is-public",
+    "title": "Not while this app is public",
+    "body": "Make it private first, in its Access section."
+  },
+  {
     "code": "APP_NETWORK_UNREACHABLE",
     "slug": "app-network-unreachable",
     "title": "The app couldn't be downloaded",
@@ -178,6 +184,12 @@
     "slug": "backup-repo-password-wrong",
     "title": "That backup password isn't right",
     "body": "Use the password from when these backups were made."
+  },
+  {
+    "code": "CLOUDFLARE_FAILED",
+    "slug": "cloudflare-failed",
+    "title": "Cloudflare didn't answer",
+    "body": "Nothing was left half done. Check your internet connection and try again."
   },
   {
     "code": "CSRF_REJECTED",
@@ -420,6 +432,30 @@
     "body": "Choose a new one."
   },
   {
+    "code": "PUBLIC_ALREADY_SET_UP",
+    "slug": "public-already-set-up",
+    "title": "Cloudflare Tunnel is already set up",
+    "body": "To use another domain, remove it in Settings › Network & remote access first."
+  },
+  {
+    "code": "PUBLIC_HOSTNAME_TAKEN",
+    "slug": "public-hostname-taken",
+    "title": "That name is already in use",
+    "body": "Something else on your domain uses it. Choose another name."
+  },
+  {
+    "code": "PUBLIC_NOT_ALLOWED",
+    "slug": "public-not-allowed",
+    "title": "This app can't be made public",
+    "body": "It can control your other apps."
+  },
+  {
+    "code": "PUBLIC_NOT_SET_UP",
+    "slug": "public-not-set-up",
+    "title": "Public access isn't set up",
+    "body": "Set up Cloudflare Tunnel in Settings › Network & remote access first."
+  },
+  {
     "code": "RESTORE_NOT_CANCELLABLE",
     "slug": "restore-not-cancellable",
     "title": "The restore can't be stopped now",
@@ -538,6 +574,12 @@
     "slug": "tray-token-rejected",
     "title": "The menu bar app isn't connected",
     "body": "Quit it and open it again."
+  },
+  {
+    "code": "TWO_FACTOR_REQUIRED_FOR_PUBLIC",
+    "slug": "two-factor-required-for-public",
+    "title": "Nobody could get in yet",
+    "body": "Everyone with access needs two-factor login on first. Ask them to turn it on in Settings › Account, then try again."
   },
   {
     "code": "UPDATE_CHECK_FAILED",

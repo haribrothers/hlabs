@@ -11,6 +11,10 @@ export const toastCopy = {
   review: 'Review',
   /** Settings › Account, where sessions are: a lock or a used recovery code (US-HOME-14). */
   seeSessions: 'See sessions',
+  /** A public app's Visits (US-APP-29). */
+  seeVisits: 'See visits',
+  /** A public app's settings (US-APP-27). */
+  appSettings: 'App settings',
   /** An error's help page on the website (US-SITE-10), in a new tab. */
   learnMore: 'Learn more',
   newTab: '(opens in a new tab)',
@@ -22,5 +26,6 @@ export const toastCopy = {
     'apps.reinstall': 'Reinstalling the app',
     'backups.runNow': 'Backup started',
     'settings.updates.check': 'Checked for updates',
+    'apps.setPublic': 'Making the app private',
   } satisfies Record<ToastMutation, string>,
 };

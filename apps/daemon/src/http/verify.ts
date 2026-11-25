@@ -14,6 +14,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { readCookie, SESSION_COOKIE } from '../auth/sessions';
 import type { ServiceHolder, Services } from '../services';
 import { StaticPages, type NoAccessPage } from './static-page';
+import { isPublicRequest, publicUnavailable } from './public';
 import { appHostnameIn, homeDomainOf, tailnetDashboardUrl, tailnetHost } from '../network/domains';
 import { TAILNET_PORT_OFFSET } from '@hlabs/shared';
 
@@ -216,6 +217,8 @@ export function registerAuthVerify(app: FastifyInstance, holder: ServiceHolder, 
     const services = holder.current;
     reply.header('cache-control', 'no-store');
     if (!services) return reply.code(503).send();
+    // A public app that doesn't answer: "<App> isn't running", nothing about this computer (US-APP-27).
+    if (isPublicRequest(req)) return publicUnavailable(services, req, reply, pages);
     const navigation = (header(req, 'accept') ?? '').includes('text/html');
     if (services.engine.client !== null || !navigation) return reply.code(502).send();
     const homeUrl = `${dashboardOrigin(services.db, header(req, 'x-forwarded-host') ?? '')}/`;

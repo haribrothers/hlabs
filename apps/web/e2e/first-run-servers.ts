@@ -58,6 +58,8 @@ export default async function firstRunServers(config: FullConfig) {
           HLABS_DEV_NO_ENGINE_CONTROL: '1',
           // A pretend Tailscale: e2e never touches the real one (CI has none).
           HLABS_DEV_FAKE_TAILSCALE: '1',
+          // A pretend Cloudflare: public apps never reach Cloudflare.
+          HLABS_DEV_FAKE_CLOUDFLARE: '1',
           HLABS_DEV_ANONYMOUS_ADMIN: '1',
           HLABS_LOG_LEVEL: 'warn',
           HLABS_COMPOSE_PREFIX: 'hlabs-e2e',

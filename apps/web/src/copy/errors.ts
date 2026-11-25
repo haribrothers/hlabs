@@ -43,6 +43,11 @@ export const jobNames: Record<string, string> = {
   diagnostics: 'the diagnostics bundle',
   daemon_restart: 'the restart',
   hlabs_uninstall: 'the uninstall',
+  public_on: 'making the app public',
+  public_off: 'making the app private',
+  public_off_all: 'turning off public access',
+  public_setup: 'the Cloudflare Tunnel setup',
+  public_remove: 'removing Cloudflare Tunnel',
 };
 
 const tryAgain = 'Try again. If it keeps happening, check the logs in Settings › Advanced.';
@@ -302,6 +307,62 @@ export const errorCopy = {
     TAILSCALE_HTTPS_DISABLED: () => ({
       title: 'HTTPS is off in Tailscale',
       body: 'Turn on HTTPS certificates in your Tailscale admin console.',
+    }),
+    // Public apps (US-APP-27…29, US-SYS-43, 44)
+    PUBLIC_NOT_SET_UP: () => ({
+      title: "Public access isn't set up",
+      body: 'Set up Cloudflare Tunnel in Settings › Network & remote access first.',
+    }),
+    PUBLIC_ALREADY_SET_UP: () => ({
+      title: 'Cloudflare Tunnel is already set up',
+      body: 'To use another domain, remove it in Settings › Network & remote access first.',
+    }),
+    PUBLIC_NOT_ALLOWED: (d) =>
+      d?.access === 'ownLogin'
+        ? {
+            title: "This app's own login isn't safe on the internet",
+            body: 'Choose people with an hlabs account instead.',
+          }
+        : {
+            title: "This app can't be made public",
+            body: typeof d?.reason === 'string' && d.reason ? d.reason : 'It can control your other apps.',
+          },
+    CLOUDFLARE_FAILED: (d) => {
+      const step = str(d ?? {}, 'step', '');
+      if (step === 'token')
+        return {
+          title: "Cloudflare didn't accept that token",
+          body: 'Check it has Zone · DNS · Edit and Account · Cloudflare Tunnel · Edit, then paste it again.',
+        };
+      if (step === 'zone')
+        return {
+          title: "That token doesn't cover this domain",
+          body: 'Check the domain is in your Cloudflare account and the token is for it, then try again.',
+        };
+      if (step === 'signIn')
+        return {
+          title: "Signing in to Cloudflare didn't finish",
+          body: 'Sign in to Cloudflare again and approve hlabs for your domain.',
+        };
+      return {
+        title: "Cloudflare didn't answer",
+        body: 'Nothing was left half done. Check your internet connection and try again.',
+      };
+    },
+    PUBLIC_HOSTNAME_TAKEN: (d) => ({
+      title: `${str(d ?? {}, 'hostname', 'That name')} is already in use`,
+      body: 'Something else on your domain uses it. Choose another name.',
+    }),
+    TWO_FACTOR_REQUIRED_FOR_PUBLIC: (d) => {
+      const users = Array.isArray(d?.users) ? (d.users as string[]) : [];
+      return {
+        title: 'Nobody could get in yet',
+        body: `${users.length ? users.join(', ') : 'Everyone with access'} needs two-factor login on first. Ask them to turn it on in Settings › Account, then try again.`,
+      };
+    },
+    APP_IS_PUBLIC: () => ({
+      title: 'Not while this app is public',
+      body: 'Make it private first, in its Access section.',
     }),
     // Backups and restore
     BACKUP_DEST_UNREACHABLE: () => ({

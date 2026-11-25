@@ -11,6 +11,7 @@ import { registerDashboard } from './http/dashboard';
 import { registerDevRoutes } from './http/dev';
 import { registerHealthz } from './http/healthz';
 import { registerAuthVerify } from './http/verify';
+import { registerPublicPages } from './http/public';
 import { registerAppAssets } from './http/app-assets';
 import { registerAppearance } from './http/appearance';
 import { registerAppLogs } from './http/app-logs';
@@ -92,6 +93,7 @@ export async function buildServer({
 
   registerHealthz(app, readiness, config.version);
   registerAuthVerify(app, holder, config.resources.webFallbackDir);
+  registerPublicPages(app, holder, config.resources.webFallbackDir);
   registerAppAssets(app, holder, config.devAnonymousAdmin);
   registerAppLogs(app, holder, config.devAnonymousAdmin);
   registerDiagnostics(app, holder, config.devAnonymousAdmin);

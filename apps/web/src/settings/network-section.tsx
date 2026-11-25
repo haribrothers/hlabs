@@ -1,5 +1,5 @@
 // Settings › Network & remote access, Home network (US-SYS-01): the local address (and its home.arpa name, D-105),
-// HTTPS, web ports, the local DNS server (US-SYS-06) and every app's address. Follows app and system changes without
+// HTTPS, web ports, the local DNS server (US-SYS-06), Public access (US-SYS-43, 44) and every app's address. Follows app and system changes without
 // polling.
 import { AppLogo, appTileLook, House, Lock, Network } from '@hlabs/icons';
 import type { NetworkStatus } from '@hlabs/api';
@@ -18,6 +18,8 @@ import { DnsServerRows } from './dns-server';
 import { TailscaleRow, useRemoteStatus } from './remote-access';
 import { SubnetRouterOption, SubnetRouterRows } from './subnet-router';
 import { WebPortsDialog } from './web-ports-dialog';
+import { PublicAccess } from './public-access';
+import { PublicBadge } from '../public/public-badge';
 import { useEventStream } from '../lib/use-event-stream';
 
 const LOGO = tokens.SPACE_7;
@@ -169,7 +171,16 @@ function AppAddresses({ apps }: { apps: readonly HomeApp[] }) {
                     radius={tokens.SPACE_2}
                   />
                 }
-                title={app.name}
+                title={
+                  app.public ? (
+                    <span className="flex flex-wrap items-center gap-2">
+                      {app.name}
+                      <PublicBadge />
+                    </span>
+                  ) : (
+                    app.name
+                  )
+                }
                 // As drawn: the address on the right; under the name on a phone.
                 subtitle={desktop ? undefined : <AddressLink url={app.urls.local} />}
                 trailing={
@@ -278,6 +289,8 @@ export function NetworkSection({ shippedPhase }: { shippedPhase?: number }) {
           </>
         )}
       </List>
+      {/* Public apps through Cloudflare Tunnel (US-SYS-43, 44), phase 7 (D-036). */}
+      {isFeatureEnabled('publicApps', shippedPhase) ? <PublicAccess /> : null}
       {apps.data ? <AppAddresses apps={apps.data.apps} /> : null}
       {changing ? <WebPortsDialog onClose={() => setChanging(false)} /> : null}
     </div>

@@ -66,6 +66,7 @@ export const advancedCopy = {
     ntfy: 'Sends push notifications to your phone',
     pihole: 'Keeps app names in your Pi-hole',
     engineDownload: 'Downloaded the container engine when none was found',
+    cloudflare: 'Carries the apps you make public, through Cloudflare Tunnel',
   } as Record<string, string>,
   kindName: {
     store: 'App library',
@@ -76,6 +77,7 @@ export const advancedCopy = {
     ntfy: 'ntfy',
     pihole: 'Pi-hole',
     engineDownload: 'Container engine download',
+    cloudflare: 'Cloudflare Tunnel',
   } as Record<string, string>,
 
   // The factory reset (US-SYS-37, US-SYS-38).

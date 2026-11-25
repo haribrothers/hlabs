@@ -9,6 +9,7 @@ import { Link } from '@tanstack/react-router';
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { appsCopy } from '../copy/apps';
 import { engineCopy } from '../copy/engine';
+import { publicCopy } from '../copy/public';
 import { homeCopy } from '../copy/home';
 import { handledGlobally, showErrorToast } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
@@ -136,6 +137,7 @@ export function AppGrid({
                 onClick={() => openApp(app)}
                 size={tile}
                 radius={phone ? tokens.RADIUS_MD : undefined}
+                publicLabel={app.public ? publicCopy.publicBadge : undefined}
               />
             </TileMenu>
           </li>

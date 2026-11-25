@@ -39,6 +39,10 @@ If the menu says **Container engine stopped**, the program that runs your apps (
 
 Choose **Open Dashboard** (or press ⌘D while the menu is open) to open hlabs in your browser. **Copy dashboard address** copies the address so you can paste it into a message to someone at home; the item says **Copied** for a moment. Both always use hlabs's current address, so they keep working after you rename this computer in hlabs. If setup isn't finished yet, the address opens setup.
 
+## Turn off public access
+
+When any app is public on the internet, the menu shows **Public: 2 apps** with their names. Choose **Turn off public access…** to make them all private at once: the Mac asks for Touch ID or your password first. Cloudflare Tunnel stays set up. See [Make an app public](/help/remote-access/make-an-app-public/).
+
 ## Back up now
 
 Before you change something big, choose **Back up now** to back up your apps and files straight away, to every backup destination. Next to it, the menu says when the last backup finished, for example **Last: 2h ago**, or **Last: never** before the first one. While the backup runs, the item says how far it got, for example **Backing up… 34%**, and you can close the menu: the backup carries on. When it's done, the item says **Last: just now**.

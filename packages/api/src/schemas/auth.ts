@@ -99,6 +99,11 @@ export const auth = {
           ip: z.string().nullable(),
           createdAt: timestampSchema,
           lastSeenAt: timestampSchema,
+          /**
+           * A sign-in on a public app's address (`photos.example.com`, D-178), valid there only; null for the
+           * dashboard. Always sent (optional only for older test fixtures).
+           */
+          publicHost: z.string().nullable().optional(),
         }),
       ),
     }),

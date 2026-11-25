@@ -37,6 +37,8 @@ import { browser } from '../lib/browser';
 import { useNow } from '../lib/use-now';
 import { AdminOnly } from './admin-only';
 import { AppAccess } from './app-access';
+import { AppPublicVisits } from './app-public-visits';
+import { PublicBadge } from '../public/public-badge';
 import { AppBehaviour } from './app-behaviour';
 import { AppConfigPanel } from './app-config';
 import { AppPermissionsPanel } from './app-permissions';
@@ -88,6 +90,8 @@ interface SettingsProps {
   onOpenLogs?: () => void;
   /** Logs filtered to one container, from the Usage tab (US-APP-21); over the app window, they stay in it. */
   onOpenContainerLogs?: (service: string) => void;
+  /** Open at a public app's Visits (US-APP-29): from Settings › Network or the attack notification. */
+  initialView?: 'visits';
 }
 
 export function AppSettings(props: SettingsProps) {
@@ -98,7 +102,7 @@ export function AppSettings(props: SettingsProps) {
   );
 }
 
-function AppSettingsView({ appId, onClose, onOpenLogs, onOpenContainerLogs }: SettingsProps) {
+function AppSettingsView({ appId, onClose, onOpenLogs, onOpenContainerLogs, initialView }: SettingsProps) {
   const { data: app } = useApp(appId);
   const navigate = useNavigate();
   const openContainerLogs =
@@ -117,6 +121,8 @@ function AppSettingsView({ appId, onClose, onOpenLogs, onOpenContainerLogs }: Se
   // On a phone: a full-height sheet over the page it was opened from (US-PHONE-08, D-166, D-172).
   const phone = useIsPhone() && Boolean(onClose);
   const [tab, setTab] = useState<Tab>('overview');
+  // Visits takes the window's place, with Back to the app's settings (AppPublicVisits).
+  const [view, setView] = useState<'settings' | 'visits'>(initialView ?? 'settings');
   const [uninstalling, setUninstalling] = useState(false);
   const [reinstalling, setReinstalling] = useState(false);
   useEffect(() => {
@@ -141,7 +147,10 @@ function AppSettingsView({ appId, onClose, onOpenLogs, onOpenContainerLogs }: Se
         size={logoSize}
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1 max-md:gap-0">
-        <Title className="m-0 truncate text-title-2 font-bold">{app.name}</Title>
+        <span className="flex min-w-0 items-center gap-2">
+          <Title className="m-0 truncate text-title-2 font-bold">{app.name}</Title>
+          {app.public ? <PublicBadge className="shrink-0" /> : null}
+        </span>
         <span className="text-body-sm max-md:text-subhead">
           <StatusDot status={statusDot(app.state)}>
             <StatusLine app={app} />
@@ -192,7 +201,13 @@ function AppSettingsView({ appId, onClose, onOpenLogs, onOpenContainerLogs }: Se
       ) : (
         <>
           <Actions app={app} onOpenLogs={onOpenLogs} onReinstall={() => setReinstalling(true)} phone={phone} />
-          <AppAccess app={app} />
+          <AppAccess
+            app={app}
+            onOpenVisits={() => setView('visits')}
+            onOpenPermissions={
+              isFeatureEnabled('appPermissions') ? () => discard.guard(() => setTab('permissions')) : undefined
+            }
+          />
           <AppBehaviour app={app} />
           <AppWidgetKey app={app} />
           <AppStorage app={app} />
@@ -230,6 +245,7 @@ function AppSettingsView({ appId, onClose, onOpenLogs, onOpenContainerLogs }: Se
       )}
     </div>
   );
+  const visits = view === 'visits' ? <AppPublicVisits app={app} onBack={() => setView('settings')} /> : null;
   if (phone) {
     return (
       <BottomSheet
@@ -246,22 +262,37 @@ function AppSettingsView({ appId, onClose, onOpenLogs, onOpenContainerLogs }: Se
           (e.currentTarget as HTMLElement | null)?.focus();
         }}
       >
-        {header}
-        {app.state === 'reinstalling' ? <ReinstallProgress app={app} /> : null}
-        {tabsBar}
-        {panel}
+        {visits ? (
+          <div className="hl-sheet-scroll flex flex-col pt-1 pb-6">{visits}</div>
+        ) : (
+          <>
+            {header}
+            {app.state === 'reinstalling' ? <ReinstallProgress app={app} /> : null}
+            {tabsBar}
+            {panel}
+          </>
+        )}
         {discard.dialog}
       </BottomSheet>
     );
   }
   const card = (
     // At most the window's height: the header and tabs stay, the tab's content scrolls inside the card.
-    <GlassCard level={2} className="flex max-h-full min-h-0 w-full max-w-[600px] flex-col gap-6 overflow-hidden p-7">
-      {header}
-      {app.state === 'reinstalling' ? <ReinstallProgress app={app} /> : null}
-      {tabsBar}
-      {/* Padded inside its scrolling box so focus rings at the edges aren't cut off. */}
-      {panel}
+    <GlassCard
+      level={2}
+      className={`flex max-h-full min-h-0 w-full flex-col gap-6 overflow-hidden p-7 ${visits ? 'max-w-[920px]' : 'max-w-[600px]'}`}
+    >
+      {visits ? (
+        <div className="hl-scroll -mx-2 -mb-2 flex min-h-0 flex-col px-2 pb-2">{visits}</div>
+      ) : (
+        <>
+          {header}
+          {app.state === 'reinstalling' ? <ReinstallProgress app={app} /> : null}
+          {tabsBar}
+          {/* Padded inside its scrolling box so focus rings at the edges aren't cut off. */}
+          {panel}
+        </>
+      )}
       {discard.dialog}
     </GlassCard>
   );

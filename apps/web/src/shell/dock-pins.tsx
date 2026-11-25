@@ -24,6 +24,7 @@ import { useMe } from '../lib/use-me';
 import { appUrl, useOpenApp } from '../home/use-open-app';
 import type { HomeApp } from '../home/home-app';
 import { useAppOverlay } from '../apps/app-overlay';
+import { publicCopy } from '../copy/public';
 
 export const MAX_DOCK = 8;
 
@@ -63,6 +64,7 @@ export function useDockPins(signedIn: boolean, shippedPhase = VISIBLE_PHASE) {
       icon: look.fallbackIcon,
       open: open.includes(app.id),
       pinned: isPinned,
+      publicLabel: app.public ? publicCopy.publicBadge : undefined,
     };
   };
   // Pinned apps first, then apps whose window is open (US-HOME-23).

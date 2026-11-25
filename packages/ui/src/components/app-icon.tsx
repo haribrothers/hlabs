@@ -1,4 +1,4 @@
-import { AppLogo } from '@hlabs/icons';
+import { AppLogo, Globe } from '@hlabs/icons';
 import { useId, type MouseEvent, type ReactNode } from 'react';
 import { cn } from '../lib/cn';
 import { useUiStrings } from '../lib/strings';
@@ -35,6 +35,11 @@ export interface AppIconProps {
   /** The tile's size and corner radius: 76px on Home on a computer, 60px with the 16px radius on a phone (D-172). */
   size?: number;
   radius?: number;
+  /**
+   * Set while the app is reachable from the internet (US-APP-27): the word on a globe badge at the tile's top-left
+   * ("Public"), added to its accessible name. The globe alone on a phone's smaller tile.
+   */
+  publicLabel?: string;
 }
 
 const RING_R = 19;
@@ -56,6 +61,7 @@ export function AppIcon({
   onContextMenu,
   size = SIZE_APP_ICON,
   radius,
+  publicLabel,
 }: AppIconProps) {
   const t = useUiStrings();
   const offlineId = useId();
@@ -82,10 +88,17 @@ export function AppIcon({
         : state === 'running'
           ? null
           : said(label);
-  const ariaLabel = ariaLabelOverride ?? (stateWords ? `${name}, ${stateWords}` : name);
+  const named = ariaLabelOverride ?? (stateWords ? `${name}, ${stateWords}` : name);
+  const ariaLabel = publicLabel ? `${named}, ${publicLabel.toLowerCase()}` : named;
   const content = (
     <>
       {badge ? <span className={`hl-app-badge hl-app-badge-${state}`}>{badge}</span> : null}
+      {publicLabel ? (
+        <span className="hl-app-public" aria-hidden="true">
+          <Globe size={11} strokeWidth={2.4} />
+          <span className="hl-app-public-text">{publicLabel}</span>
+        </span>
+      ) : null}
       {/* One box: the tile, its radius and shadow, and the logo clipped to it. */}
       <span
         className="hl-app-icon"

@@ -100,6 +100,12 @@ export const trayStatusSchema = z.object({
   onboardingComplete: z.boolean(),
   /** The first admin's "Reduce transparency" (Settings › Appearance). */
   reduceTransparency: z.boolean(),
+  /**
+   * How many apps are public on the internet, and their names ("Public: 2 apps · Immich, Jellyfin", US-SYS-44): the
+   * menu offers "Turn off public access" while any is. Always sent (optional only for older fixtures).
+   */
+  publicApps: z.number().int().nonnegative().optional(),
+  publicAppNames: z.array(z.string()).optional(),
 });
 export type TrayStatus = z.infer<typeof trayStatusSchema>;
 
@@ -181,7 +187,12 @@ export const tray = {
     z.object({ keepData: z.boolean(), removeColima: z.boolean(), via: z.enum(['tray', 'cli']).optional() }),
     jobRefSchema,
   ),
-  /** A job, for following `hlabs_uninstall` (the tray token may call tray.* only). */
+  /**
+   * "Turn off public access" (US-SYS-44), after the computer's own confirmation (Touch ID or the login password, as
+   * for US-INST-18): the same `public_off_all` job as Settings; the one already running when there is one.
+   */
+  publicOff: io(empty, jobRefSchema),
+  /** A job, for following `hlabs_uninstall` or `public_off_all` (the tray token may call tray.* only). */
   job: io(jobRefSchema, jobSchema),
   /** The setup URL, and with Caddy the same at each LAN address and at the published `.local` name (US-INST-24). */
   setupUrl: io(

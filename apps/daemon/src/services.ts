@@ -52,6 +52,8 @@ import type { DnsService } from './network/dns';
 import type { RemoteService } from './network/remote';
 import type { NetworkService } from './network/service';
 import type { TailscaleClient } from './tailscale/types';
+import type { CloudflareClient, TunnelConnector } from './cloudflare/types';
+import type { PublicService } from './public/service';
 import type { AppLogs } from './apps/logs';
 import type { UpdateService } from './apps/update';
 import type { ImagePruner } from './storage/images';
@@ -99,6 +101,12 @@ export interface Services {
   /** The local DNS server hlabs keeps its names in (US-SYS-06). */
   dns: DnsService;
   tailscale: TailscaleClient;
+  /** Cloudflare for public apps (US-SYS-43): the real one, or a fake in tests, development and e2e. */
+  cloudflare: CloudflareClient;
+  /** The cloudflared connector (a fake with the fake Cloudflare). */
+  connector: TunnelConnector;
+  /** Public apps through Cloudflare Tunnel (US-APP-27…29, US-SYS-43, 44). */
+  publicApps: PublicService;
   /** Settles when the start-up reconcile has finished (tests). */
   reconciled: Promise<void>;
   /** Apps are being brought up (at start, or after the engine came back) (US-INST-11). */

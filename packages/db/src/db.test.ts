@@ -41,6 +41,7 @@ describe('openDb', () => {
         'app_access',
         'app_env',
         'app_images',
+        'app_public',
         'app_mounts',
         'app_sources',
         'apps',

@@ -76,6 +76,10 @@ export const eventSchemas = {
     apps: z.array(z.object({ appId: z.string(), name: z.string(), toVersion: z.string() })),
   }),
   'session.revoked': z.object({ sessionId: z.string() }),
+  /** An app was made public or private, or its public address or login changed (US-APP-27, 28); admins only. */
+  'app.publicChanged': z.object({ appId: z.string(), public: z.boolean() }),
+  /** Cloudflare Tunnel's state changed: signed in, set up, removed, failed (US-SYS-43); admins only. */
+  'public.statusChanged': z.object({ state: z.enum(['off', 'signingIn', 'settingUp', 'on', 'error']) }),
   /** Sent by `events.stream` itself (not the bus) when it can't resume from the client's lastEventId, such as after
    * a daemon restart or a gap longer than the buffer: the client refetches everything (US-STATE-18). */
   'stream.reset': z.object({}),

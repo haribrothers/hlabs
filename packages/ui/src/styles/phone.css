@@ -960,7 +960,8 @@
     .hl-list {
       gap: 6px;
     }
-    .hl-list-label {
+    .hl-list-label,
+    .hl-list-hint {
       margin: 0 var(--space-4);
     }
     .hl-list-box {

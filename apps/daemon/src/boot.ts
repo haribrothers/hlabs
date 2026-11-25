@@ -54,6 +54,12 @@ import { createMdnsPublisher, lanAddress, lanAddresses } from './mdns/publisher'
 import { DNS_RETRY_MS, DnsService } from './network/dns';
 import { RemoteService } from './network/remote';
 import { FakeTailscale } from './tailscale/fake';
+import { CloudflareApi } from './cloudflare/api';
+import { CloudflaredConnector } from './cloudflare/connector';
+import { FakeCloudflare } from './cloudflare/fake';
+import type { CloudflareClient, TunnelConnector } from './cloudflare/types';
+import { PublicService } from './public/service';
+import { CONTACT, recordContact } from './system/connections';
 import { LocalApiTailscale } from './tailscale/localapi';
 import type { TailscaleClient } from './tailscale/types';
 import { AppDiskUsage } from './apps/disk';
@@ -131,6 +137,9 @@ export interface BootDeps {
   mdns?: MdnsPublisher;
   /** The Tailscale on this computer (a fake in tests, and with HLABS_DEV_FAKE_TAILSCALE). */
   tailscale?: TailscaleClient;
+  /** Cloudflare and the cloudflared connector (a fake in tests, and with HLABS_DEV_FAKE_CLOUDFLARE). */
+  cloudflare?: CloudflareClient;
+  connector?: TunnelConnector;
   secrets?: SecretStore;
   system?: SystemProbe;
   host?: HostStats;
@@ -317,6 +326,8 @@ export async function boot(bootDeps: BootDeps): Promise<Services | null> {
     (config.mdns
       ? createMdnsPublisher(logger, () => getSetting(db, 'network').ports.https, children)
       : new NoopMdnsPublisher());
+  // Public apps (US-SYS-43): their listener comes from PublicService, made once notifications and sign-in exist.
+  let publicApps: PublicService | null = null;
   // A port another program holds (US-SYS-42): told to admins once notifications exist (below).
   let onPortProblem: (problem: PortProblem | null) => void = () => {};
   const network = new NetworkService({
@@ -325,6 +336,7 @@ export async function boot(bootDeps: BootDeps): Promise<Services | null> {
     mdns,
     logger,
     routes: () => appService.routes(),
+    publicListener: () => publicApps?.listener() ?? null,
     dashboardUpstream: config.dashboardUpstream,
     daemon: `127.0.0.1:${config.port}`,
     heldBy: (port) => tailscaleServeHolds(port, { db, tailscale }),
@@ -512,6 +524,8 @@ export async function boot(bootDeps: BootDeps): Promise<Services | null> {
     appDataFreeBytes: () => probe.freeBytes(config.paths.appDataDir),
     isPortFree: deps.isPortFree,
     probes: deps.healthProbes,
+    // Uninstalling a public app makes it private first (US-APP-27).
+    makePrivate: (appId, by) => services.publicApps.makePrivateFor(appId, by),
   });
   installer.register();
   const updates = new UpdateService({
@@ -683,6 +697,42 @@ export async function boot(bootDeps: BootDeps): Promise<Services | null> {
       await login.confirmPassword({ user, password, action, ip });
     },
   });
+  // Public apps through Cloudflare Tunnel (US-APP-27…29, US-SYS-43, 44): never the real Cloudflare in development or e2e.
+  const fakeCloudflare = config.devFakeCloudflare ? new FakeCloudflare() : null;
+  const cloudflareDir = join(config.paths.dataDir, 'cloudflare');
+  const cloudflare: CloudflareClient =
+    deps.cloudflare ??
+    fakeCloudflare ??
+    new CloudflareApi({
+      binary: join(config.resources.binDir, 'cloudflared'),
+      dir: cloudflareDir,
+      onContact: () => recordContact(db, CONTACT.cloudflare),
+    });
+  const connector: TunnelConnector =
+    deps.connector ??
+    fakeCloudflare ??
+    new CloudflaredConnector({
+      binary: join(config.resources.binDir, 'cloudflared'),
+      dir: cloudflareDir,
+      logger,
+      children,
+    });
+  publicApps = new PublicService({
+    db,
+    bus,
+    jobs,
+    logger,
+    secrets,
+    network,
+    apps: appService,
+    sessions,
+    totp,
+    cloudflare,
+    connector,
+    dataDir: config.paths.dataDir,
+    publicPort: config.publicPort,
+  });
+  publicApps.register();
   const services: Services = {
     appWidgets: new AppWidgets({ db, secrets }),
     config,
@@ -710,6 +760,9 @@ export async function boot(bootDeps: BootDeps): Promise<Services | null> {
     routing: network,
     remote,
     tailscale,
+    cloudflare,
+    connector,
+    publicApps,
     dns,
     apps: appService,
     reconciled,
@@ -819,6 +872,8 @@ export async function boot(bootDeps: BootDeps): Promise<Services | null> {
       services.autoUpdates.stop();
       services.routing.stop();
       services.login.stop();
+      // Nothing public while everything is deleted: the connector stops.
+      void services.publicApps.stop();
     },
   });
   services.advanced.register();
@@ -839,6 +894,11 @@ export async function boot(bootDeps: BootDeps): Promise<Services | null> {
     if (entry.event.type === 'app.stateChanged') services.keepAwake.update();
   });
   services.login.startPruning();
+  // A tunnel set up before: its connector runs again, and the public listener comes back (US-SYS-43).
+  void services.publicApps
+    .start()
+    .then(() => network.sync())
+    .catch((err: unknown) => logger.error({ err }, 'public apps could not start'));
 
   // 6. Ready; usage sampling starts (US-USE-08).
   readiness.ready();
@@ -922,6 +982,7 @@ export async function shutdown(services: Services | null): Promise<void> {
   services.login.stop();
   services.keepAwake.stop();
   await services.jobs.shutdown();
+  await services.publicApps.stop().catch(() => {});
   await services.mdns.unpublishAll();
   await services.proxy.stop();
   services.db.$client.close();

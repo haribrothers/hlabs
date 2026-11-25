@@ -182,6 +182,31 @@ export const settingsSchemas = {
     })
     // All three on after onboarding (US-SYS-20).
     .default({ startAtLogin: true, autostartApps: true, keepAwake: true }),
+  /**
+   * Public apps through Cloudflare Tunnel (US-SYS-43, D-171): the tunnel and the DNS records hlabs made (the only ones
+   * it ever changes or deletes). The credential is keychain item `cloudflare-credential`, never here; the tunnel's
+   * credentials file is `<dataDir>/cloudflare/tunnel.json` (0600).
+   */
+  public: z
+    .object({
+      cloudflare: z
+        .object({
+          /** The zone apps get names under: `example.com`. */
+          domain: z.string(),
+          zoneId: z.string(),
+          accountId: z.string(),
+          tunnelId: z.string(),
+          /** How hlabs got its credential: "Sign in to Cloudflare" or an API token. */
+          credential: z.enum(['signIn', 'token']),
+          /** The DNS records hlabs made: `{ id, name }` (the record's id at Cloudflare, `photos.example.com`). */
+          records: z.array(z.object({ id: z.string(), name: z.string() })).default([]),
+          setUpAt: z.number().int(),
+          setUpBy: z.string().nullable(),
+        })
+        .nullable()
+        .default(null),
+    })
+    .default({ cloudflare: null }),
   /** Last-contacted time per outbound service (Advanced › What hlabs connects to). */
   connections: z.record(z.string(), z.object({ lastContactAt: z.number().int() })).default({}),
 } as const;

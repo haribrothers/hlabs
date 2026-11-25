@@ -20,12 +20,14 @@ If hlabs can't announce the app's name on your network, the address is the hlabs
 
 **Require hlabs login** puts your hlabs sign-in in front of the app, so only people you've shared it with get in. It's on for most apps. Apps that have their own accounts say "Uses its own login too": people sign in to the app as well. If you turn the switch off, hlabs asks first, because anyone who can reach the app's address then sees the app's own sign-in page, and members you haven't shared it with are no longer kept out. The change applies at once; the app doesn't restart.
 
+**Public on the internet** lets people who aren't on your tailnet open the app at a name under your own domain, such as `https://photos.example.com`. Once Cloudflare Tunnel is set up in Settings › Network & remote access, choose **Make public…**; until then, the row says to set it up first. A public app shows a **Public** badge, with its address, **Visits**, **Change…** and **Make private**. See [Make an app public](/help/remote-access/make-an-app-public/).
+
 ## Choose how an app behaves
 
 Under **Behaviour**:
 
 - **Start automatically**: the app starts when hlabs starts, for example after this computer restarts. Turn it off for apps you only use now and then; they stay stopped until you start them.
-- **Update automatically**: hlabs installs the app's new versions overnight, between 3 and 5 am, when **Update apps automatically** is on in Settings › Updates. A version that asks for new access waits for you in the App Store's Updates. Apps you deployed yourself never update by themselves.
+- **Update automatically**: hlabs installs the app's new versions overnight, between 3 and 5 am, when **Update apps automatically** is on in Settings › Updates. A version that asks for new access waits for you in the App Store's Updates. Apps you deployed yourself never update by themselves. While an app is public, this stays on and reads "On while *app* is public".
 
 Each switch saves as soon as you change it. If it can't be saved, it moves back and hlabs tells you why.
 

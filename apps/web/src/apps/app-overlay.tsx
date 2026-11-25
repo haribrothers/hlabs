@@ -8,6 +8,8 @@ import { PanelBoundary } from './panel-boundary';
 
 export interface AppOverlaySearch {
   settings?: string;
+  /** App settings opened at a public app's Visits (US-APP-29): from Settings › Network or the attack notification. */
+  view?: 'visits';
   logs?: string;
   /** Logs opened from App settings: their Back goes back to them. */
   from?: 'settings';
@@ -17,7 +19,7 @@ export interface AppOverlaySearch {
   service?: string;
 }
 
-const OVERLAY_KEYS = ['settings', 'logs', 'from', 'at', 'service'] as const;
+const OVERLAY_KEYS = ['settings', 'view', 'logs', 'from', 'at', 'service'] as const;
 const APP_ID = /^[a-z0-9][a-z0-9-]*$/;
 
 /** The dialog in an address's search, if any. */
@@ -30,6 +32,7 @@ export function appOverlay(search: Record<string, unknown>): AppOverlaySearch {
     typeof search.at === 'number' ? search.at : /^\d+$/.test(String(search.at ?? '')) ? Number(search.at) : undefined;
   return {
     ...(settings ? { settings } : {}),
+    ...(settings && search.view === 'visits' ? { view: 'visits' as const } : {}),
     ...(logs ? { logs } : {}),
     ...(logs && search.from === 'settings' ? { from: 'settings' as const } : {}),
     ...(logs && at !== undefined ? { at } : {}),
@@ -46,7 +49,7 @@ export function overlayForPath(href: string): AppOverlaySearch | null {
   const m = /^\/apps\/([a-z0-9][a-z0-9-]*)\/(settings|logs)\/?$/.exec(url.pathname);
   if (!m) return null;
   const search = Object.fromEntries(url.searchParams);
-  return appOverlay(m[2] === 'settings' ? { settings: m[1] } : { ...search, logs: m[1] });
+  return appOverlay(m[2] === 'settings' ? { settings: m[1], view: search.view } : { ...search, logs: m[1] });
 }
 
 /** The search without the dialog's keys. */
@@ -69,7 +72,8 @@ export function useAppOverlay() {
       replace,
     });
   return {
-    openSettings: (appId: string) => go({ settings: appId }),
+    openSettings: (appId: string, opts: { view?: 'visits' } = {}) =>
+      go({ settings: appId, ...(opts.view ? { view: opts.view } : {}) }),
     /** Logs' Back: App settings take their place, so their Close returns to the page, never to Logs (D-124). */
     backToSettings: (appId: string) => go({ settings: appId }, true),
     openLogs: (appId: string, opts: { at?: number; service?: string; fromSettings?: boolean } = {}) =>
@@ -109,6 +113,7 @@ export function AppOverlay() {
       {overlay.settings ? (
         <AppSettings
           appId={appId}
+          initialView={overlay.view}
           onClose={close}
           onOpenLogs={() => openLogs(appId, { fromSettings: true })}
           onOpenContainerLogs={(service) => openLogs(appId, { fromSettings: true, service })}

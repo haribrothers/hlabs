@@ -38,8 +38,10 @@ if (process.env.TEST_WORKER_INDEX === undefined) {
 }
 // Specs that need a known admin they create themselves (all onboarding and log-in stories, and a few later ones).
 // Signed-out browsers need them too: the main instance answers cookie-less requests as its development admin.
+// Public apps (US-SYS-43, 44, US-APP-27…29) too: each sets up the pretend Cloudflare for its own instance and needs an
+// admin with two-factor on.
 const FIRST_RUN_SPECS =
-  /(d-098-server-name|us-(onb|auth)-\d+|us-phone-0[56]|us-acct-(0[3-9]|1[0-24-9]|2[0678]|3[2-5])|us-home-(1[1256]|22)|us-sys-(0[2-6]|1[89]|20|3[178]|41))\.spec\.ts/;
+  /(d-098-server-name|us-(onb|auth)-\d+|us-phone-0[56]|us-acct-(0[3-9]|1[0-24-9]|2[0678]|3[2-5])|us-home-(1[1256]|22)|us-sys-(0[2-6]|1[89]|20|3[178]|41|4[34])|us-app-2[789])\.spec\.ts/;
 // Specs that change the main instance for everyone, run after the desktop and phone specs, one at a time: those that
 // really install store apps (the D-071 smoke set, and uninstalling one) or leave failed installs, and those that report
 // the engine as stopped (US-STATE-08…10), those that take the pretend NAS offline (US-FILE-11, US-FILE-12, US-SYS-12),
@@ -94,6 +96,8 @@ const daemonEnv = {
   HLABS_DEV_NO_ENGINE_CONTROL: '1',
   // A pretend Tailscale: e2e never touches the real one (CI has none).
   HLABS_DEV_FAKE_TAILSCALE: '1',
+  // A pretend Cloudflare: public apps (US-SYS-43…) never reach Cloudflare; set up through POST /dev/cloudflare.
+  HLABS_DEV_FAKE_CLOUDFLARE: '1',
   // A pretend NAS (nas.local): e2e connects network drives without one (US-FILE-11, US-FILE-12).
   HLABS_DEV_FAKE_NAS: '1',
   // Update checks go to a closed local port, never GitHub: "Check now" answers "Couldn't check for updates".

@@ -43,6 +43,18 @@ HLABS_DEV_FAKE_TAILSCALE=0 pnpm dev:full
 
 It then adds Tailscale Serve entries to your real Tailscale. Remove them when you're done (`tailscale serve reset`), or they'll get in the way of an installed hlabs later.
 
+### Public apps (Cloudflare) in development
+
+`pnpm dev` (and `pnpm dev:full`) uses a pretend Cloudflare, so making an app public never reaches Cloudflare or changes a real domain's DNS. Its domain is `example.com`, which already has `example.com`, `www` and `mail` in its DNS; "Sign in to Cloudflare" waits until you approve it with `curl -X POST http://127.0.0.1:7474/dev/cloudflare -H 'content-type: application/json' -d '{"approve":true}'`, and the API token it takes is `fake-cloudflare-token-0123456789`. The same route sets how it behaves (`autoApprove`, `failing`, `takenNames`, `setUp`, `reset`), and `POST /dev/public-visit` adds a line to the Visits log, since there's no Caddy in front under `pnpm dev`. The e2e tests always use it.
+
+To try the real Cloudflare (`pnpm fetch-binaries` puts cloudflared in `.bin/`), with a domain of yours on Cloudflare:
+
+```sh
+HLABS_DEV_FAKE_CLOUDFLARE=0 pnpm dev:full
+```
+
+Public addresses reach Caddy's public listener on `127.0.0.1:7475` (`HLABS_PUBLIC_PORT`). Remove Cloudflare Tunnel in Settings › Network when you're done, so the tunnel and the DNS records hlabs made are deleted.
+
 ### Network drives in development
 
 Files' **+ Connect a drive** uses the drives on your real network. To try it without a NAS, start with a pretend one:

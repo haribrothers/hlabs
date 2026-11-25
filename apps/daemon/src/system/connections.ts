@@ -14,6 +14,7 @@ export const CONTACT = {
   engineDownload: 'engineDownload',
   tailscale: 'tailscale',
   ntfy: 'ntfy',
+  cloudflare: 'cloudflare',
   backup: (destinationId: string) => `backup:${destinationId}`,
 } as const;
 
@@ -154,6 +155,19 @@ export function listConnections(deps: ConnectionsDeps): Connection[] {
       host: hostOf(dns.address),
       state: 'on',
       lastContactAt: dns.lastSyncAt,
+    });
+  }
+
+  // Cloudflare, while Cloudflare Tunnel is set up for public apps (US-SYS-43, D-171).
+  const cloudflare = getSetting(db, 'public').cloudflare;
+  if (cloudflare) {
+    out.push({
+      id: 'cloudflare',
+      kind: 'cloudflare',
+      name: cloudflare.domain,
+      host: 'api.cloudflare.com',
+      state: 'on',
+      lastContactAt: contact(CONTACT.cloudflare),
     });
   }
 
