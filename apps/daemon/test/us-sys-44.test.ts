@@ -30,6 +30,9 @@ async function asTray(t: Awaited<ReturnType<typeof publicFixture>>, path: string
       origin: null,
       host: null,
       allowedOrigins: [],
+      via: 'home',
+      publicHost: null,
+      country: null,
       setCookie: () => {},
     },
   );
@@ -79,7 +82,10 @@ describe('US-SYS-44', () => {
     ).toBe('on');
     expect(t.fake.state()).toBe('running');
     expect(t.audits('public.turnedOffAll')).toEqual([
-      expect.objectContaining({ userId: t.d.userId, detailJson: { apps: ['vaultwarden'], via: 'dashboard' } }),
+      expect.objectContaining({
+        userId: t.d.userId,
+        detailJson: { apps: ['vaultwarden'], dashboard: false, via: 'dashboard' },
+      }),
     ]);
     expect(t.notes('public.turned_off')).toEqual([
       expect.objectContaining({ userId: asha.userId, title: 'Hari turned off all public access' }),
@@ -95,7 +101,7 @@ describe('US-SYS-44', () => {
     expect(await asTray(t, 'tray.status')).toMatchObject({ publicApps: 0 });
     expect(t.publicRow()).toBeUndefined();
     expect(t.audits('public.turnedOffAll')).toEqual([
-      expect.objectContaining({ userId: null, detailJson: { apps: ['vaultwarden'], via: 'tray' } }),
+      expect.objectContaining({ userId: null, detailJson: { apps: ['vaultwarden'], dashboard: false, via: 'tray' } }),
     ]);
     expect(t.notes('public.turned_off')).toEqual([
       expect.objectContaining({ userId: t.d.userId, title: 'Public access was turned off from the menu bar' }),

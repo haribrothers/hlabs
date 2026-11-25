@@ -17,13 +17,15 @@ export function useFinishLogin() {
   return async (redirectTo: string) => {
     const me = await client.auth.me.query();
     setCsrfToken(me.csrfToken);
-    writeRememberedUser({
-      username: me.username,
-      displayName: me.displayName,
-      role: me.role,
-      avatarColor: me.avatarColor,
-      remember: me.remember,
-    });
+    // Never remembered on the public address: the sign-in there never shows who uses hlabs (US-SYS-46).
+    if (me.via !== 'public')
+      writeRememberedUser({
+        username: me.username,
+        displayName: me.displayName,
+        role: me.role,
+        avatarColor: me.avatarColor,
+        remember: me.remember,
+      });
     await queryClient.invalidateQueries();
     // The server has already checked `next` (US-AUTH-18): an app's https address loads that app; a path stays here.
     if (/^https:\/\//.test(redirectTo)) browser.assign(redirectTo);

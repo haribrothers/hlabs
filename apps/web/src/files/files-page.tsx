@@ -28,6 +28,7 @@ import { useMoveFlow } from './move-flow';
 import { useTrashFlow } from './trash-flow';
 import type { MoveRoot } from './move-dialog';
 import { isFeatureEnabled } from '@hlabs/shared';
+import { InternetBanner } from '../public/home-only';
 
 export interface FilesPageProps {
   at: FilesLocation;
@@ -276,6 +277,7 @@ export function FilesPage({ at, atRoot = false }: FilesPageProps) {
   if (portrait) {
     return (
       <GlassCard level={2} className="hl-window-fill flex min-h-0 w-full flex-1 flex-col overflow-hidden p-0">
+        <InternetBanner variant="window" />
         {atRoot ? (
           <FilesPlacesList me={filesMe} onConnect={() => setConnecting(true)} />
         ) : (
@@ -296,6 +298,7 @@ export function FilesPage({ at, atRoot = false }: FilesPageProps) {
       level={2}
       className="hl-window-fill mx-auto grid min-h-0 w-full max-w-window flex-1 grid-cols-[240px_1fr] overflow-hidden p-0"
     >
+      <InternetBanner variant="window" />
       <div className="flex min-h-0 flex-col border-r border-hairline px-3 pt-6 pb-5">
         <p className="m-0 mb-3 px-3 text-title-2 font-bold" aria-hidden="true">
           {copy.title}

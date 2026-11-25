@@ -8,7 +8,7 @@ For admins only.
 
 Remote access with Tailscale is for you and your devices, and it stays private. To let other people open one app, such as a friend opening a shared album, you can make that app **public**: it gets an address on the internet, such as `https://photos.example.com`, through **Cloudflare Tunnel**.
 
-Your dashboard, your files and your other apps are never public. Nothing changes on your router: no ports are opened.
+Your files and your other apps stay private. The dashboard itself is only public if an admin chooses to make it so, with extra guards: see [Make the dashboard public](/help/remote-access/make-the-dashboard-public/). Nothing changes on your router: no ports are opened.
 
 ## What you need first
 
@@ -84,10 +84,10 @@ Choose **Make private** in its **Access** section, in **Visits**, or in **Settin
 
 ## Turn off all public access
 
-In **Settings › Network & remote access**, choose **Turn off all public access…** under the list of public apps. Every app becomes private at once; Cloudflare Tunnel stays set up, so you can make apps public again later.
+In **Settings › Network & remote access**, choose **Turn off all public access…** under the list of public apps. Every app becomes private at once, and the dashboard too if it's public; Cloudflare Tunnel stays set up, so you can make them public again later.
 
-On a Mac or Linux desktop you can do the same from the menu-bar app: when any app is public, its menu shows **Public: 2 apps** with **Turn off public access…**, which asks for Touch ID or your password first.
+On a Mac or Linux desktop you can do the same from the menu-bar app: when anything is public, its menu shows **Public: 2 apps** (or **Public: the dashboard and 2 apps**) with **Turn off public access…**, which asks for Touch ID or your password first.
 
 ## Remove Cloudflare Tunnel
 
-Choose **Remove…** on the Cloudflare Tunnel row. hlabs makes every public app private first, then deletes the tunnel, the DNS records it made and its Cloudflare sign-in from this computer. Your domain's other DNS records aren't touched.
+Choose **Remove…** on the Cloudflare Tunnel row. hlabs makes every public app and the dashboard private first, then deletes the tunnel, the DNS records it made and its Cloudflare sign-in from this computer. Your domain's other DNS records aren't touched.

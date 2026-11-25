@@ -785,10 +785,11 @@ The system half of Settings: how hlabs is reached on the home network and over T
 - **Given** the public address, **then** these answer "Do this at home or on your tailnet" (`HomeOnlyAction`) instead of doing it, for everyone, admins too:
   - factory reset;
   - Cloudflare Tunnel set up or removed, making an app or the dashboard public or changing how, and every other Network & remote access change (Tailscale, ports, DNS, the server's name);
-  - adding or removing app sources and libraries, deploying your own apps, and changing an app's permissions or showing its secrets;
+  - adding or removing app sources and libraries, deploying your own apps, changing an app's configuration, permissions or "Require hlabs login", and showing its secrets;
+  - creating AI access tokens;
   - inviting people, changing someone's role, deleting a person, making reset links, and requiring two-factor for everyone;
   - changing my own password, turning two-factor off or on, and new recovery codes;
-  - restoring a backup, removing a backup destination, and showing a backup password;
+  - restoring a backup, adding, changing or removing a backup destination, and showing a backup password;
   - moving where data lives, and switching the container engine.
   Making things private, "Turn off all public access" and signing out everywhere still work there: stopping exposure is never home-only.
 - **Given** a control for one of these on the public address, **then** it shows, with a house icon and "At home only", instead of being hidden, and choosing it explains why.

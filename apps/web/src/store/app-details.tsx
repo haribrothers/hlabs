@@ -70,6 +70,8 @@ import { InstallSheet } from './install-sheet';
 import { useStoreBack } from './store-layout';
 import { useInstalls } from './use-installs';
 import { DetailsRolledBack } from '../apps/app-update';
+import { explainHomeOnly, HomeOnlyPill, useHomeOnly } from '../public/home-only';
+import { publicDashboardCopy as dashCopy } from '../copy/public-dashboard';
 
 const copy = storeCopy;
 const Readme = lazy(() => import('./readme'));
@@ -285,6 +287,8 @@ function MoreMenu({
   /** In the phone's bar: a plain button in the link colour. */
   phone?: boolean;
 }) {
+  // From the internet, copying to a library is at home only (US-SYS-47): the item says so and explains.
+  const away = useHomeOnly('store.copyToLibrary');
   if (!onCopy && !d.website) return null;
   return (
     <DropdownMenu>
@@ -301,9 +305,10 @@ function MoreMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-56">
         {onCopy ? (
-          <DropdownMenuItem onSelect={onCopy}>
+          <DropdownMenuItem onSelect={away ? () => explainHomeOnly('store.copyToLibrary') : onCopy}>
             <Copy aria-hidden {...iconDefaults} className="size-4" />
             {sourcesCopy.copyToLibrary}
+            {away ? <HomeOnlyPill label={dashCopy.atHomeOnly} className="ml-auto" /> : null}
           </DropdownMenuItem>
         ) : null}
         {d.website ? (

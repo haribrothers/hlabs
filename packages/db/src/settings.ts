@@ -205,8 +205,28 @@ export const settingsSchemas = {
         })
         .nullable()
         .default(null),
+      /**
+       * The dashboard on a public address of its own (US-SYS-45, D-182); null while private, the default on every
+       * install. `recordId`: its DNS record (also in `cloudflare.records`). `access`: Cloudflare's sign-in in front
+       * (US-SYS-48): the Access application and policy hlabs made, and the email addresses allowed (admins only, never
+       * in logs, job payloads or diagnostics).
+       */
+      dashboard: z
+        .object({
+          /** `hlabs.example.com` */
+          hostname: z.string(),
+          recordId: z.string().nullable(),
+          since: z.number().int(),
+          by: z.string().nullable(),
+          access: z
+            .object({ appId: z.string(), policyId: z.string(), emails: z.array(z.string()) })
+            .nullable()
+            .default(null),
+        })
+        .nullable()
+        .default(null),
     })
-    .default({ cloudflare: null }),
+    .default({ cloudflare: null, dashboard: null }),
   /** Last-contacted time per outbound service (Advanced › What hlabs connects to). */
   connections: z.record(z.string(), z.object({ lastContactAt: z.number().int() })).default({}),
 } as const;

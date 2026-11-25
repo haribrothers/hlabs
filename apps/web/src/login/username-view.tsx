@@ -13,6 +13,7 @@ import { OnboardingLogo } from '../onboarding/onboarding-layout';
 import { LoginLayout } from './login-layout';
 import { withNext } from './search';
 import { lockedSearch, loginFailure, useLogin } from './use-login';
+import { PublicLoginView } from './public-login';
 
 const copy = loginCopy;
 
@@ -20,7 +21,14 @@ export function UsernameView({ next, reason }: { next?: string; reason?: 'timeou
   const trpc = useTRPC();
   // "All users" only when the list is shown (US-AUTH-02).
   const list = useQuery({ ...trpc.auth.listLoginUsers.queryOptions(), retry: false });
-  const listShown = (list.data?.users.length ?? 0) > 0;
+  // On the dashboard's public address: LoginPublic (US-SYS-46). Nothing until it's known, so "Remember me" never shows
+  // there for a moment.
+  if (list.isPending) return <LoginLayout>{null}</LoginLayout>;
+  if (list.data?.via === 'public') return <PublicLoginView next={next} />;
+  return <HomeUsernameView next={next} reason={reason} listShown={(list.data?.users.length ?? 0) > 0} />;
+}
+
+function HomeUsernameView({ next, reason, listShown }: { next?: string; reason?: 'timeout'; listShown: boolean }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   // On by default in the installed app only: it has its own cookies and is this person's own (US-INST-29).

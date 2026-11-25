@@ -27,5 +27,6 @@ export const toastCopy = {
     'backups.runNow': 'Backup started',
     'settings.updates.check': 'Checked for updates',
     'apps.setPublic': 'Making the app private',
+    'auth.revokeOtherSessions': 'Signed out everywhere else',
   } satisfies Record<ToastMutation, string>,
 };

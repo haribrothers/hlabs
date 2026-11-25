@@ -15,3 +15,4 @@ export * from './people';
 export * from './ports';
 export * from './diceware';
 export * from './env';
+export * from './home-only';

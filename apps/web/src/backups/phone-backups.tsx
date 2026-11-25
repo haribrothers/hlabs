@@ -22,6 +22,8 @@ import type { inferRouterOutputs } from '@trpc/server';
 import { backupsCopy as copy } from '../copy/backups';
 import { timeAgo } from '../lib/relative-time';
 import { dayTime, destinationLine, retentionWords, runLine, scheduleWords, whenNext } from './format';
+import { explainHomeOnly, HomeOnly, HomeOnlyPill, useOnPublic } from '../public/home-only';
+import { publicDashboardCopy as dashCopy } from '../copy/public-dashboard';
 
 type Overview = inferRouterOutputs<AppRouter>['backups']['overview'];
 type Run = inferRouterOutputs<AppRouter>['backups']['listRuns']['runs'][number];
@@ -92,6 +94,9 @@ export function PhoneBackups({
   const last = o.lastRun;
   const failed = last?.status === 'failed';
   const blocked = o.blockedBy !== null;
+  // From the internet (US-SYS-47): destinations and restoring are at home only; each row says so.
+  const away = useOnPublic();
+  const pill = away ? <HomeOnlyPill label={dashCopy.atHomeOnly} /> : null;
   const title = failed
     ? copy.lastFailed(dayTime(last.startedAt, now))
     : o.lastSuccessAt
@@ -109,9 +114,15 @@ export function PhoneBackups({
         {copy.noBackups}
       </h2>
       <p className="hl-p-empty-body">{copy.noBackupsBody}</p>
-      <button type="button" className="hl-p-primary hl-focus" onClick={onAdd}>
-        {copy.addDestinationPhone}
-      </button>
+      {away ? (
+        <HomeOnly procedure="backups.destinations.add" label={copy.addDestinationPhone} size="md">
+          {null}
+        </HomeOnly>
+      ) : (
+        <button type="button" className="hl-p-primary hl-focus" onClick={onAdd}>
+          {copy.addDestinationPhone}
+        </button>
+      )}
     </PhoneCard>
   ) : (
     <PhoneCard className="flex flex-col gap-3.5" role="region" aria-label={failed ? title : copy.lastBackup(title)}>
@@ -170,17 +181,20 @@ export function PhoneBackups({
               </>
             }
             trailing={
-              <span
-                className={cn(
-                  'hl-p-status hl-p-status-lg',
-                  d.status === 'ok' ? 'text-success' : d.status === 'unreachable' ? 'text-danger' : 'text-warning',
-                )}
-              >
-                {copy.status[d.status]}
+              <span className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    'hl-p-status hl-p-status-lg',
+                    d.status === 'ok' ? 'text-success' : d.status === 'unreachable' ? 'text-danger' : 'text-warning',
+                  )}
+                >
+                  {copy.status[d.status]}
+                </span>
+                {pill}
               </span>
             }
-            chevron
-            onClick={() => onEdit(d.id)}
+            chevron={!away}
+            onClick={away ? () => explainHomeOnly('backups.destinations.update') : () => onEdit(d.id)}
           />
         ))}
         {none ? null : (
@@ -189,7 +203,8 @@ export function PhoneBackups({
             title={copy.addDestinationPhone}
             subtitle={o.destinations.some((d) => d.offsite) ? undefined : copy.offsiteHint}
             accent
-            onClick={onAdd}
+            trailing={pill ?? undefined}
+            onClick={away ? () => explainHomeOnly('backups.destinations.add') : onAdd}
           />
         )}
         {none ? null : (
@@ -209,9 +224,10 @@ export function PhoneBackups({
         <InsetRowButton
           icon={<RotateCcw aria-hidden {...iconDefaults} />}
           title={copy.restore}
-          chevron={!none}
+          trailing={none ? undefined : (pill ?? undefined)}
+          chevron={!none && !away}
           disabled={none || blocked}
-          onClick={onRestore}
+          onClick={away ? () => explainHomeOnly('backups.restore') : onRestore}
         />
       </InsetGroup>
       {runs.length ? (

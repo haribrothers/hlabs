@@ -146,15 +146,22 @@ export async function trayStatus(deps: TrayStatusDeps): Promise<TrayStatus> {
   };
 }
 
-/** "Public: 2 apps · Immich, Jellyfin" (US-SYS-44), oldest first as they were made public. */
-function publicApps(db: HlabsDb): Pick<TrayStatus, 'publicApps' | 'publicAppNames'> {
+/**
+ * "Public: 2 apps · Immich, Jellyfin" (US-SYS-44), oldest first as they were made public, and whether the dashboard is
+ * public ("Public: the dashboard and 2 apps", US-SYS-45).
+ */
+function publicApps(db: HlabsDb): Pick<TrayStatus, 'publicApps' | 'publicAppNames' | 'publicDashboard'> {
   const rows = db
     .select({ app: apps })
     .from(appPublic)
     .innerJoin(apps, eq(apps.id, appPublic.appId))
     .orderBy(asc(appPublic.enabledAt))
     .all();
-  return { publicApps: rows.length, publicAppNames: rows.map(({ app }) => appSummary(db, app).name) };
+  return {
+    publicApps: rows.length,
+    publicAppNames: rows.map(({ app }) => appSummary(db, app).name),
+    publicDashboard: getSetting(db, 'public').dashboard !== null,
+  };
 }
 
 const EXCLUSIVE = new Set<string>(EXCLUSIVE_JOB_KINDS);

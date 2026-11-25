@@ -26,6 +26,7 @@ const EXPECTED: Row[] = [
   ['auth.listLoginUsers', 'q', 'public'], ['auth.login', 'm', 'public'], ['auth.verifyTotp', 'm', 'public'],
   ['auth.useRecoveryCode', 'm', 'public'], ['auth.resetPassword', 'm', 'public'], ['auth.logout', 'm', 'authed'], ['auth.continue', 'm', 'authed'],
   ['auth.me', 'q', 'authed'], ['auth.listSessions', 'q', 'authed'], ['auth.revokeSession', 'm', 'authed'],
+  ['auth.revokeOtherSessions', 'm', 'authed'],
 
   ['account.get', 'q', 'authed'], ['account.update', 'm', 'authed'], ['account.changePassword', 'm', 'authed'],
   ['account.totp.begin', 'm', 'authed'], ['account.totp.confirm', 'm', 'authed'], ['account.totp.disable', 'm', 'authed'],
@@ -55,6 +56,7 @@ const EXPECTED: Row[] = [
 
   ['public.status', 'q', 'admin'], ['public.cloudflareSignIn', 'm', 'admin'], ['public.cancelSignIn', 'm', 'admin'],
   ['public.setupCloudflare', 'm', 'admin'], ['public.remove', 'm', 'admin'], ['public.turnOffAll', 'm', 'admin'],
+  ['public.setDashboard', 'm', 'admin'], ['public.setDashboardAccess', 'm', 'admin'],
 
   ['home.getLayout', 'q', 'authed'], ['home.saveLayout', 'm', 'authed'], ['home.saveDock', 'm', 'authed'],
   ['home.listWidgets', 'q', 'authed'], ['home.getWidgetData', 'q', 'authed'], ['home.searchEverything', 'q', 'authed'],

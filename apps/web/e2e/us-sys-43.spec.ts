@@ -27,7 +27,7 @@ test('US-SYS-43 Sign in to Cloudflare: the link in a new tab, waiting, the steps
 }) => {
   await page.goto('/settings/network');
   const group = page.getByRole('group', { name: 'Public access' });
-  await expect(page.getByText('Make single apps reachable from the internet. Your dashboard never is.')).toBeVisible();
+  await expect(page.getByText('Make single apps, or the dashboard itself, reachable from the internet.')).toBeVisible();
   await expect(
     group.getByText(
       'Public apps go through Cloudflare Tunnel, at names under a domain of yours. Your tailnet stays private.',

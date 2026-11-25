@@ -1,12 +1,15 @@
 // Settings › Network & remote access › Public access (US-SYS-43, US-SYS-44; D-171): Cloudflare Tunnel's row (set up,
 // waiting, connected, not working, Remove…), every public app with its address, who can get in, since when and by
-// whom, Visits and Make private, and "Turn off all public access…". Admins only (the section is).
-import type { CloudflareStatus, PublicAppRow } from '@hlabs/api';
+// whom, Visits and Make private, and "Turn off all public access…"; the dashboard's own row (US-SYS-45). Admins only
+// (the section is). On the public address, setting up and removing Cloudflare Tunnel are "At home only" (US-SYS-47).
+import type { CloudflareStatus, DashboardPublic, PublicAppRow } from '@hlabs/api';
+import { isFeatureEnabled } from '@hlabs/shared';
 import { AppLogo, appTileLook, Ban, Cloud, iconDefaults } from '@hlabs/icons';
 import { Button, List, ListRow, ModalDialog, StatusDot, tokens } from '@hlabs/ui';
 import { useState, type ReactNode } from 'react';
 import { useAppOverlay } from '../apps/app-overlay';
 import { publicCopy as copy } from '../copy/public';
+import { publicDashboardCopy as dashCopy } from '../copy/public-dashboard';
 import { codeLine, codeText, errorLine } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
 import { useTRPCClient } from '../lib/trpc';
@@ -15,6 +18,8 @@ import { followJob, usePublicRefresh } from '../public/jobs';
 import { useMakePrivate } from '../public/make-private';
 import { usePublicStatus } from '../public/status';
 import { PublicBadge } from '../public/public-badge';
+import { HomeOnly } from '../public/home-only';
+import { DashboardRow, DashboardToChange } from './dashboard-public';
 import { PublicSetupDialog } from './public-setup';
 
 const LOGO = tokens.SPACE_7;
@@ -45,12 +50,24 @@ export function AppTile({ name, icon }: { name: string; icon: PublicAppRow['icon
   );
 }
 
-function CloudflareRow({ cf, apps, onSetUp }: { cf: CloudflareStatus; apps: PublicAppRow[]; onSetUp: () => void }) {
+function CloudflareRow({
+  cf,
+  apps,
+  dashboard,
+  onSetUp,
+}: {
+  cf: CloudflareStatus;
+  apps: PublicAppRow[];
+  dashboard: DashboardPublic | null;
+  onSetUp: () => void;
+}) {
   const [removing, setRemoving] = useState(false);
   const setUpButton = (
-    <Button variant="secondary" size="sm" onClick={onSetUp}>
-      {copy.setUp}
-    </Button>
+    <HomeOnly procedure="public.cloudflareSignIn" label={copy.setUp}>
+      <Button variant="secondary" size="sm" onClick={onSetUp}>
+        {copy.setUp}
+      </Button>
+    </HomeOnly>
   );
   let subtitle: ReactNode = copy.notSetUpHint;
   let trailing: ReactNode = setUpButton;
@@ -78,9 +95,11 @@ function CloudflareRow({ cf, apps, onSetUp }: { cf: CloudflareStatus; apps: Publ
         ) : (
           <StatusDot status="running">{copy.connected}</StatusDot>
         )}
-        <Button variant="secondary" size="sm" onClick={() => setRemoving(true)}>
-          {copy.remove}
-        </Button>
+        <HomeOnly procedure="public.remove" label={copy.remove}>
+          <Button variant="secondary" size="sm" onClick={() => setRemoving(true)}>
+            {copy.remove}
+          </Button>
+        </HomeOnly>
       </span>
     );
   } else if (cf.state === 'error' && cf.reason) {
@@ -90,15 +109,16 @@ function CloudflareRow({ cf, apps, onSetUp }: { cf: CloudflareStatus; apps: Publ
   return (
     <>
       <ListRow leading={<CloudIcon />} title={copy.cloudflareTunnel} subtitle={subtitle} trailing={trailing} />
-      {removing ? <RemoveDialog apps={apps} onClose={() => setRemoving(false)} /> : null}
+      {removing ? <RemoveDialog apps={apps} dashboard={dashboard} onClose={() => setRemoving(false)} /> : null}
     </>
   );
 }
 
-/** The apps a confirmation is about, each with its address. */
-export function AppsToChange({ apps }: { apps: PublicAppRow[] }) {
+/** The apps a confirmation is about, each with its address; the dashboard first when it's public (US-SYS-45). */
+export function AppsToChange({ apps, dashboard = null }: { apps: PublicAppRow[]; dashboard?: DashboardPublic | null }) {
   return (
     <List>
+      {dashboard ? <DashboardToChange dashboard={dashboard} /> : null}
       {apps.map((a) => (
         <ListRow
           key={a.appId}
@@ -112,7 +132,15 @@ export function AppsToChange({ apps }: { apps: PublicAppRow[] }) {
 }
 
 /** PublicRemove: every public app private first, then the tunnel, its DNS records and the credential. */
-function RemoveDialog({ apps, onClose }: { apps: PublicAppRow[]; onClose: () => void }) {
+function RemoveDialog({
+  apps,
+  dashboard,
+  onClose,
+}: {
+  apps: PublicAppRow[];
+  dashboard: DashboardPublic | null;
+  onClose: () => void;
+}) {
   const client = useTRPCClient();
   const refresh = usePublicRefresh();
   const [busy, setBusy] = useState(false);
@@ -144,20 +172,28 @@ function RemoveDialog({ apps, onClose }: { apps: PublicAppRow[]; onClose: () => 
       onOpenChange={(open) => (open || busy ? null : onClose())}
       role="alertdialog"
       title={copy.removeTitle}
-      description={apps.length ? copy.removeBody : copy.removeBodyNone}
+      description={
+        dashboard
+          ? apps.length
+            ? dashCopy.removeBody
+            : dashCopy.removeBodyDashboardOnly
+          : apps.length
+            ? copy.removeBody
+            : copy.removeBodyNone
+      }
       actions={
         <>
           <Button variant="secondary" disabled={busy} onClick={onClose}>
             {copy.cancel}
           </Button>
           <Button busy={busy} onClick={() => void remove()}>
-            {apps.length ? copy.removeConfirm : copy.removeConfirmNone}
+            {apps.length || dashboard ? copy.removeConfirm : copy.removeConfirmNone}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-3">
-        {apps.length ? <AppsToChange apps={apps} /> : null}
+        {apps.length || dashboard ? <AppsToChange apps={apps} dashboard={dashboard} /> : null}
         <p className="m-0 text-body-sm text-ink-muted">{copy.removeKeeps}</p>
         {error ? (
           <p role="alert" className="m-0 text-body-sm text-danger">
@@ -170,7 +206,15 @@ function RemoveDialog({ apps, onClose }: { apps: PublicAppRow[]; onClose: () => 
 }
 
 /** PublicTurnOffAll: every public app private in one job; the tunnel stays set up. */
-function TurnOffAllDialog({ apps, onClose }: { apps: PublicAppRow[]; onClose: () => void }) {
+function TurnOffAllDialog({
+  apps,
+  dashboard,
+  onClose,
+}: {
+  apps: PublicAppRow[];
+  dashboard: DashboardPublic | null;
+  onClose: () => void;
+}) {
   const client = useTRPCClient();
   const refresh = usePublicRefresh();
   const [busy, setBusy] = useState(false);
@@ -184,7 +228,11 @@ function TurnOffAllDialog({ apps, onClose }: { apps: PublicAppRow[]; onClose: ()
       void followJob(client, jobId).then((job) => {
         refresh();
         if (job?.state === 'succeeded')
-          showToast({ tone: 'success', title: copy.turnedOffAll, body: copy.turnedOffAllBody });
+          showToast({
+            tone: 'success',
+            title: copy.turnedOffAll,
+            body: dashboard ? dashCopy.turnedOffAllBody : copy.turnedOffAllBody,
+          });
         else if (job?.state === 'failed')
           showToast({
             tone: 'danger',
@@ -203,7 +251,7 @@ function TurnOffAllDialog({ apps, onClose }: { apps: PublicAppRow[]; onClose: ()
       onOpenChange={(open) => (open || busy ? null : onClose())}
       role="alertdialog"
       title={copy.turnOffAllTitle}
-      description={copy.turnOffAllBody}
+      description={dashboard ? dashCopy.turnOffAllBody : copy.turnOffAllBody}
       actions={
         <>
           <Button variant="secondary" disabled={busy} onClick={onClose}>
@@ -216,7 +264,7 @@ function TurnOffAllDialog({ apps, onClose }: { apps: PublicAppRow[]; onClose: ()
       }
     >
       <div className="flex flex-col gap-3">
-        <AppsToChange apps={apps} />
+        <AppsToChange apps={apps} dashboard={dashboard} />
         <p className="m-0 text-body-sm text-ink-muted">{copy.turnOffAllNotice}</p>
         {error ? (
           <p role="alert" className="m-0 text-body-sm text-danger">
@@ -228,7 +276,7 @@ function TurnOffAllDialog({ apps, onClose }: { apps: PublicAppRow[]; onClose: ()
   );
 }
 
-function PublicApps({ apps }: { apps: PublicAppRow[] }) {
+function PublicApps({ apps, dashboard }: { apps: PublicAppRow[]; dashboard: DashboardPublic | null }) {
   const desktop = useIsDesktop();
   const { openSettings } = useAppOverlay();
   const makePrivate = useMakePrivate();
@@ -285,28 +333,33 @@ function PublicApps({ apps }: { apps: PublicAppRow[] }) {
           })
         )}
       </List>
-      {apps.length ? (
+      {apps.length || dashboard ? (
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="secondary" size="sm" className="text-danger" onClick={() => setTurningOff(true)}>
             <Ban aria-hidden {...iconDefaults} className="size-4" />
             {copy.turnOffAll}
           </Button>
-          <span className="text-body-sm text-ink-muted">{copy.turnOffAllHint}</span>
+          <span className="text-body-sm text-ink-muted">
+            {dashboard ? dashCopy.turnOffAllHint : copy.turnOffAllHint}
+          </span>
         </div>
       ) : null}
-      {turningOff ? <TurnOffAllDialog apps={apps} onClose={() => setTurningOff(false)} /> : null}
+      {turningOff ? <TurnOffAllDialog apps={apps} dashboard={dashboard} onClose={() => setTurningOff(false)} /> : null}
     </div>
   );
 }
 
 /** The whole group, under Remote access. */
-export function PublicAccess() {
+export function PublicAccess({ shippedPhase }: { shippedPhase?: number } = {}) {
   const status = usePublicStatus();
+  // The dashboard's row ships with the public dashboard (D-036).
+  const withDashboard = isFeatureEnabled('publicDashboard', shippedPhase);
+  const hint = withDashboard ? dashCopy.publicAccessHint : copy.publicAccessHint;
   usePublicRefresh();
   const [settingUp, setSettingUp] = useState(false);
   if (status.isError) {
     return (
-      <List label={copy.publicAccess} hint={copy.publicAccessHint}>
+      <List label={copy.publicAccess} hint={hint}>
         <ListRow
           title={copy.loadFailed}
           trailing={
@@ -320,12 +373,21 @@ export function PublicAccess() {
   }
   if (!status.data) return null;
   const { cloudflare, apps } = status.data;
+  const dashboard = withDashboard ? (status.data.dashboard ?? null) : null;
   return (
     <>
-      <List label={copy.publicAccess} hint={copy.publicAccessHint}>
-        <CloudflareRow cf={cloudflare} apps={apps} onSetUp={() => setSettingUp(true)} />
+      <List label={copy.publicAccess} hint={hint}>
+        <CloudflareRow cf={cloudflare} apps={apps} dashboard={dashboard} onSetUp={() => setSettingUp(true)} />
+        {withDashboard ? (
+          <DashboardRow
+            cf={cloudflare}
+            dashboard={dashboard}
+            blockedBy={status.data.dashboardBlockedBy ?? []}
+            apps={apps}
+          />
+        ) : null}
       </List>
-      <PublicApps apps={apps} />
+      <PublicApps apps={apps} dashboard={dashboard} />
       {settingUp ? <PublicSetupDialog status={cloudflare} onClose={() => setSettingUp(false)} /> : null}
     </>
   );

@@ -7,6 +7,7 @@ import { lstat, mkdir, open, readdir, realpath, rename, stat } from 'node:fs/pro
 import { join } from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { csrfMatches, readCookie, SESSION_COOKIE } from '../auth/sessions';
+import { anonymousAdmin, dashboardSession } from './via';
 import type { Readable } from 'node:stream';
 import { z } from 'zod';
 import { CHUNK_MAX } from '../files/uploads';
@@ -33,8 +34,8 @@ export function whoIs(
     void reply.code(503).send();
     return null;
   }
-  const session = services.sessions.resolve(readCookie(req.headers.cookie, SESSION_COOKIE));
-  if (!session && !devAnonymousAdmin) {
+  const session = dashboardSession(services, req.headers);
+  if (!session && !anonymousAdmin(devAnonymousAdmin, req.headers)) {
     void reply.code(401).send();
     return null;
   }
@@ -224,7 +225,7 @@ export function registerFiles(
     const who = whoIs(req, reply, holder, devAnonymousAdmin);
     if (!who) return null;
     const raw = readCookie(req.headers.cookie, SESSION_COOKIE) ?? null;
-    if (!csrfOk(req, who.services.sessions.resolve(raw) ? raw : null, allowedOrigins)) {
+    if (!csrfOk(req, dashboardSession(who.services, req.headers, raw) ? raw : null, allowedOrigins)) {
       void reply.code(403).send({ hlabsCode: 'CSRF_REJECTED', detail: null });
       return null;
     }

@@ -733,6 +733,11 @@ export async function boot(bootDeps: BootDeps): Promise<Services | null> {
     connector,
     dataDir: config.paths.dataDir,
     publicPort: config.publicPort,
+    confirmPassword: async (userId, password, action, ip) => {
+      const user = db.select().from(users).where(eq(users.id, userId)).get();
+      if (!user) throw hlabsError('AUTH_REQUIRED');
+      await login.confirmPassword({ user, password, action, ip });
+    },
   });
   publicApps.register();
   const services: Services = {

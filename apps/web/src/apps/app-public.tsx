@@ -16,6 +16,7 @@ import { Callout } from '../public/callout';
 import { followJob, usePublicRefresh } from '../public/jobs';
 import { useMakePrivate } from '../public/make-private';
 import { PublicBadge } from '../public/public-badge';
+import { HomeOnly } from '../public/home-only';
 
 const LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 const DIALOG_LOGO = 48;
@@ -72,9 +73,11 @@ export function PublicRow({
               {copy.visits}
             </Button>
             {o ? (
-              <Button variant="secondary" size="sm" onClick={() => setDialog('change')}>
-                {copy.change}
-              </Button>
+              <HomeOnly procedure="apps.setPublic" input={{ public: true }} label={copy.change}>
+                <Button variant="secondary" size="sm" onClick={() => setDialog('change')}>
+                  {copy.change}
+                </Button>
+              </HomeOnly>
             ) : null}
             <Button
               variant="secondary"
@@ -117,9 +120,11 @@ export function PublicRow({
         title={copy.publicOnInternet}
         subtitle={copy.notPublic(app.name)}
         trailing={
-          <Button variant="secondary" size="sm" onClick={() => setDialog('make')}>
-            {copy.makePublicEllipsis}
-          </Button>
+          <HomeOnly procedure="apps.setPublic" input={{ public: true }} label={copy.makePublicEllipsis}>
+            <Button variant="secondary" size="sm" onClick={() => setDialog('make')}>
+              {copy.makePublicEllipsis}
+            </Button>
+          </HomeOnly>
         }
       />
     );

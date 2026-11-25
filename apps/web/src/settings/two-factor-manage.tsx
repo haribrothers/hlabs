@@ -13,6 +13,7 @@ import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { TRPCClientError } from '@trpc/client';
 import { ConfirmWithPassword, passwordStepError } from './confirm-with-password';
 import { codeError, TotpSetup } from './totp-setup';
+import { HomeOnly } from '../public/home-only';
 
 const copy = accountCopy;
 
@@ -248,9 +249,11 @@ export function TwoFactorManage({
               </span>
             </span>
           ) : (
-            <Button variant="link" className="text-danger" onClick={() => setView('turnOff')}>
-              {copy.turnOff}
-            </Button>
+            <HomeOnly procedure="account.totp.disable" label={copy.turnOff}>
+              <Button variant="link" className="text-danger" onClick={() => setView('turnOff')}>
+                {copy.turnOff}
+              </Button>
+            </HomeOnly>
           )}
           <Button onClick={onClose}>{copy.done}</Button>
         </div>
@@ -264,9 +267,11 @@ export function TwoFactorManage({
               <span>{copy.authenticatorApp}</span>
               <span className="hl-list-sub">{added}</span>
             </span>
-            <Button variant="secondary" size="sm" onClick={() => setView('move')}>
-              {copy.moveToNewPhone}
-            </Button>
+            <HomeOnly procedure="account.totp.begin" label={copy.moveToNewPhone}>
+              <Button variant="secondary" size="sm" onClick={() => setView('move')}>
+                {copy.moveToNewPhone}
+              </Button>
+            </HomeOnly>
           </div>
         </div>
         <CodesBlock account={account} codes={fresh} />
@@ -305,9 +310,11 @@ export function TwoFactorManage({
               {copy.print}
             </Button>
           </span>
-          <Button variant="secondary" size="sm" onClick={() => setView('newCodes')}>
-            {copy.makeNewCodes}
-          </Button>
+          <HomeOnly procedure="account.recoveryCodes.regenerate" label={copy.makeNewCodes}>
+            <Button variant="secondary" size="sm" onClick={() => setView('newCodes')}>
+              {copy.makeNewCodes}
+            </Button>
+          </HomeOnly>
         </div>
       </div>
     </ModalDialog>

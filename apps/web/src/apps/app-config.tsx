@@ -15,6 +15,8 @@ import { codeLine, errorData, errorLine } from '../lib/error-copy';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { showToast } from '../lib/toasts';
 import { useSettingsSave } from './use-settings-save';
+import { explainHomeOnly, HomeOnly, useHomeOnly } from '../public/home-only';
+import { publicDashboardCopy as dashCopy } from '../copy/public-dashboard';
 
 const copy = appConfigCopy;
 type Entry = AppConfig['env'][number];
@@ -350,9 +352,11 @@ function ConfigForm({
         <Button type="button" variant="secondary" disabled={!dirty || saving.busy} onClick={cancel}>
           {copy.cancel}
         </Button>
-        <Button type="submit" disabled={!dirty || !valid || saving.busy} busy={saving.busy}>
-          {saving.busy ? copy.saving : copy.save}
-        </Button>
+        <HomeOnly procedure="apps.setConfig" label={copy.save} size="md">
+          <Button type="submit" disabled={!dirty || !valid || saving.busy} busy={saving.busy}>
+            {saving.busy ? copy.saving : copy.save}
+          </Button>
+        </HomeOnly>
       </footer>
     </form>
   );
@@ -372,7 +376,9 @@ function EnvRow({
   onRemove: () => void;
   reveal: (key: string) => Promise<{ value: string }>;
 }) {
-  // A revealed value shows until hidden or the tab closes (the form goes).
+  // A revealed value shows until hidden or the tab closes (the form goes). Showing a secret is at home only from
+  // the internet (US-SYS-47): the eye says so and explains.
+  const revealAway = useHomeOnly('apps.revealSecret');
   const revealed = row.revealed;
   const revealing = useMutation({
     mutationFn: () => reveal(row.savedKey ?? row.key),
@@ -465,10 +471,18 @@ function EnvRow({
             <span className="flex items-center gap-1">
               <IconButton
                 type="button"
-                label={revealed === null ? copy.reveal(row.key) : copy.hide(row.key)}
+                label={
+                  revealed === null
+                    ? revealAway
+                      ? dashCopy.atHomeOnlyLabel(copy.reveal(row.key))
+                      : copy.reveal(row.key)
+                    : copy.hide(row.key)
+                }
                 className="size-8"
                 disabled={revealing.isPending}
-                onClick={() => (revealed === null ? revealing.mutate() : hide())}
+                onClick={() =>
+                  revealed !== null ? hide() : revealAway ? explainHomeOnly('apps.revealSecret') : revealing.mutate()
+                }
               >
                 {revealed === null ? (
                   <Eye aria-hidden {...iconDefaults} className="size-4" />
@@ -479,9 +493,11 @@ function EnvRow({
               {row.generated ? (
                 <IconButton
                   type="button"
-                  label={copy.copyValue(row.key)}
+                  label={revealAway ? dashCopy.atHomeOnlyLabel(copy.copyValue(row.key)) : copy.copyValue(row.key)}
                   className="size-8"
-                  onClick={() => void copyIt()}
+                  onClick={() =>
+                    revealAway && revealed === null ? explainHomeOnly('apps.revealSecret') : void copyIt()
+                  }
                 >
                   <Copy aria-hidden {...iconDefaults} className="size-4" />
                 </IconButton>

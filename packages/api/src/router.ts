@@ -48,6 +48,7 @@ export const appRouter = router({
     me: q(p.authed, s.auth.me),
     listSessions: q(p.authed, s.auth.listSessions),
     revokeSession: m(p.authed, s.auth.revokeSession),
+    revokeOtherSessions: m(p.authed, s.auth.revokeOtherSessions),
   }),
 
   account: router({
@@ -234,7 +235,7 @@ export const appRouter = router({
     testDnsServer: m(p.admin, s.network.testDnsServer),
   }),
 
-  // Public apps through Cloudflare Tunnel (US-SYS-43, 44; D-171).
+  // Public apps and the public dashboard through Cloudflare Tunnel (US-SYS-43…48; D-171, D-182).
   public: router({
     status: q(p.admin, s.publicAccess.status),
     cloudflareSignIn: m(p.admin, s.publicAccess.cloudflareSignIn),
@@ -242,6 +243,8 @@ export const appRouter = router({
     setupCloudflare: m(p.admin, s.publicAccess.setupCloudflare),
     remove: m(p.admin, s.publicAccess.remove),
     turnOffAll: m(p.admin, s.publicAccess.turnOffAll),
+    setDashboard: m(p.admin, s.publicAccess.setDashboard),
+    setDashboardAccess: m(p.admin, s.publicAccess.setDashboardAccess),
   }),
 
   settings: router({

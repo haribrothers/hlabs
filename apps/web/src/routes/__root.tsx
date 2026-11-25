@@ -7,6 +7,7 @@ import { OfflineGate } from '../health/app-offline';
 import { FirstRunGate } from '../onboarding/first-run-gate';
 import { ConnectionBanner } from '../shell/connection-banner';
 import { Toaster } from '../shell/toaster';
+import { AwayHost, HomeOnlyHost } from '../public/home-only';
 
 export const Route = createRootRoute({
   component: () => (
@@ -22,6 +23,8 @@ export const Route = createRootRoute({
             <ConnectionBanner />
           </HealthGate>
           <ConfirmHost />
+          <HomeOnlyHost />
+          <AwayHost />
           <Toaster />
         </OfflineGate>
       </MotionPreference>

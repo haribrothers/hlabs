@@ -17,6 +17,7 @@ import { useIsDesktop } from '../lib/use-media';
 import { RowIcon } from './phone-rows';
 import { ConnectDriveDialog } from '../files/connect-drive-dialog';
 import { DriveEvents } from '../files/sidebar';
+import { HomeOnly } from '../public/home-only';
 
 type Outputs = inferRouterOutputs<AppRouter>;
 type Summary = Outputs['storage']['summary'];
@@ -112,9 +113,11 @@ function DataLocation({
           trailing={
             // Moving all data ships in phase 9 (D-036).
             isFeatureEnabled('moveAllData', shippedPhase) ? (
-              <Button variant="secondary" size="sm">
-                {copy.moveData}
-              </Button>
+              <HomeOnly procedure="storage.moveAll" label={copy.moveData}>
+                <Button variant="secondary" size="sm">
+                  {copy.moveData}
+                </Button>
+              </HomeOnly>
             ) : null
           }
         />

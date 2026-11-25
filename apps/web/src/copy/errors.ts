@@ -48,6 +48,9 @@ export const jobNames: Record<string, string> = {
   public_off_all: 'turning off public access',
   public_setup: 'the Cloudflare Tunnel setup',
   public_remove: 'removing Cloudflare Tunnel',
+  dashboard_public_on: 'making the dashboard public',
+  dashboard_public_off: 'making the dashboard private',
+  dashboard_access: "the change to Cloudflare's sign-in",
 };
 
 const tryAgain = 'Try again. If it keeps happening, check the logs in Settings › Advanced.';
@@ -80,6 +83,12 @@ export const errorCopy = {
     AUTH_INVALID_CREDENTIALS: () => ({ title: "That didn't match", body: 'Check your username and password.' }),
     AUTH_INVALID_PASSWORD: () => ({ title: "That password isn't right", body: 'Check it and try again.' }),
     AUTH_LOCKED: (d) => {
+      // The public sign-in's limit per address (US-SYS-46): that address is refused for an hour.
+      if (d?.address === true)
+        return {
+          title: 'Too many tries from this network',
+          body: 'hlabs refuses sign-ins from it for about an hour. Try again then.',
+        };
       const seconds =
         num(d, 'retryAfterSeconds') ?? (num(d, 'until') !== null ? (num(d, 'until')! - Date.now()) / 1000 : 900);
       return { title: 'Too many tries', body: `Wait ${minutes(seconds)}, then try again.` };
@@ -339,6 +348,11 @@ export const errorCopy = {
           title: "That token doesn't cover this domain",
           body: 'Check the domain is in your Cloudflare account and the token is for it, then try again.',
         };
+      if (step === 'access')
+        return {
+          title: "Your Cloudflare sign-in can't manage Cloudflare Access",
+          body: 'Add an API token with Account · Access: Apps and Policies · Edit, then try again.',
+        };
       if (step === 'signIn')
         return {
           title: "Signing in to Cloudflare didn't finish",
@@ -363,6 +377,32 @@ export const errorCopy = {
     APP_IS_PUBLIC: () => ({
       title: 'Not while this app is public',
       body: 'Make it private first, in its Access section.',
+    }),
+    // The public dashboard (US-SYS-45…48)
+    HOME_ONLY: () => ({
+      title: 'Do this at home or on your tailnet',
+      body: "This only works from hlabs at home or on your tailnet, so someone with your password and code can't do it from the internet.",
+    }),
+    TWO_FACTOR_REQUIRED_FOR_DASHBOARD: (d) => {
+      const admins = Array.isArray(d?.admins) ? (d.admins as string[]) : [];
+      const who =
+        admins.length === 0
+          ? "An admin hasn't"
+          : admins.length === 1
+            ? `${admins[0]} hasn't`
+            : `${admins.slice(0, -1).join(', ')} and ${admins.at(-1)} haven't`;
+      return {
+        title: 'Every admin needs two-factor login first',
+        body: `${who} turned on two-factor login yet. Every admin needs it before the dashboard can be public.`,
+      };
+    },
+    AUTH_TWO_FACTOR_REQUIRED: () => ({
+      title: 'Turn on two-factor login first',
+      body: 'Signing in from the internet needs it. Turn it on in hlabs at home, under Settings › Account.',
+    }),
+    DASHBOARD_NOT_PUBLIC: () => ({
+      title: "The dashboard isn't public",
+      body: "Make it public first, then add Cloudflare's sign-in in front.",
     }),
     // Backups and restore
     BACKUP_DEST_UNREACHABLE: () => ({

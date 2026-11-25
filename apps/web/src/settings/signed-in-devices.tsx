@@ -58,6 +58,17 @@ function SignOut({ sessionId, device, phone }: { sessionId: string; device: stri
   );
 }
 
+/** "Home network · Active now", "Public app at photos.example.com · …", "Public dashboard at hlabs.example.com · …". */
+function whereSeen(
+  s: { ip: string | null; lastSeenAt: number; publicHost?: string | null; publicDashboard?: boolean },
+  now: number,
+) {
+  const seen = lastSeen(s.lastSeenAt, now);
+  if (s.publicHost && s.publicDashboard) return copy.publicDashboardSeenLine(s.publicHost, seen);
+  if (s.publicHost) return copy.publicSeenLine(s.publicHost, seen);
+  return copy.seenLine(copy.networks[networkOf(s.ip)], seen);
+}
+
 export function SignedInDevices() {
   const trpc = useTRPC();
   const now = useNow().getTime();
@@ -75,11 +86,7 @@ export function SignedInDevices() {
               key={s.id}
               icon={<Icon aria-hidden {...iconDefaults} />}
               title={copy.deviceLine(device, browser)}
-              subtitle={
-                s.publicHost
-                  ? copy.publicSeenLine(s.publicHost, lastSeen(s.lastSeenAt, now))
-                  : copy.seenLine(copy.networks[networkOf(s.ip)], lastSeen(s.lastSeenAt, now))
-              }
+              subtitle={whereSeen(s, now)}
               value={s.current ? copy.thisDevice : undefined}
               trailing={s.current ? undefined : <SignOut sessionId={s.id} device={device} phone />}
             />
@@ -97,11 +104,7 @@ export function SignedInDevices() {
             key={s.id}
             leading={<Icon aria-hidden {...iconDefaults} />}
             title={copy.deviceLine(device, browser)}
-            subtitle={
-              s.publicHost
-                ? copy.publicSeenLine(s.publicHost, lastSeen(s.lastSeenAt, now))
-                : copy.seenLine(copy.networks[networkOf(s.ip)], lastSeen(s.lastSeenAt, now))
-            }
+            subtitle={whereSeen(s, now)}
             trailing={s.current ? <Badge>{copy.thisDevice}</Badge> : <SignOut sessionId={s.id} device={device} />}
           />
         );

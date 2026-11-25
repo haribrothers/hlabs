@@ -14,6 +14,7 @@ import { PublicRow } from './app-public';
 import { handledGlobally, showErrorToast } from '../lib/error-copy';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { showToast } from '../lib/toasts';
+import { HomeOnlyControl } from '../public/home-only';
 
 const copy = appsCopy;
 
@@ -113,12 +114,14 @@ function RequireLogin({ app }: { app: AppDetail }) {
         title={copy.requireLogin}
         subtitle={hint}
         trailing={
-          <Switch
-            aria-label={copy.requireLogin}
-            checked={app.authMode === 'hlabs'}
-            disabled={save.isPending || locked}
-            onChange={(on) => (on ? save.mutate('hlabs') : setAsking(true))}
-          />
+          <HomeOnlyControl procedure="apps.setAuthMode" label={copy.requireLogin}>
+            <Switch
+              aria-label={copy.requireLogin}
+              checked={app.authMode === 'hlabs'}
+              disabled={save.isPending || locked}
+              onChange={(on) => (on ? save.mutate('hlabs') : setAsking(true))}
+            />
+          </HomeOnlyControl>
         }
       />
       <ModalDialog

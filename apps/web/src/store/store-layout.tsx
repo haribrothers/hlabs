@@ -12,6 +12,7 @@ import { useIsDesktop } from '../lib/use-media';
 import { StoreChips, StoreSidebar } from './categories';
 import { StoreSearchField } from './search';
 import { useStoreScrollMemory } from './store-return';
+import { InternetBanner } from '../public/home-only';
 
 const copy = storeCopy;
 
@@ -70,6 +71,7 @@ export function StoreLayout() {
     const pushed = !/^\/store(\/search)?\/?$/.test(new URL(href, 'http://hlabs.invalid').pathname);
     return (
       <GlassCard level={2} className="hl-window-fill flex min-h-0 w-full flex-1 flex-col overflow-hidden p-0">
+        <InternetBanner variant="window" />
         <ScrollPane
           scrollRef={scroller}
           className="flex-1"
@@ -103,6 +105,7 @@ export function StoreLayout() {
       level={2}
       className="hl-window-fill mx-auto grid min-h-0 w-full max-w-window flex-1 grid-cols-[240px_1fr] overflow-hidden p-0"
     >
+      <InternetBanner variant="window" />
       <div className="flex min-h-0 flex-col border-r border-hairline">
         <ScrollPane
           className="flex-1"

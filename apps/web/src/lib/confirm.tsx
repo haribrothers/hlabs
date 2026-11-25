@@ -7,6 +7,7 @@ import { Button, ModalDialog, TextField } from '@hlabs/ui';
 import { useId, useRef, useState, useSyncExternalStore } from 'react';
 import { confirmCopy } from '../copy/confirm';
 import { errorCode, errorLine } from './error-copy';
+import { explainIfHomeOnly } from '../public/explain';
 import { showToast } from './toasts';
 import { useIsDesktop } from './use-media';
 
@@ -117,6 +118,11 @@ function ConfirmDialog({ request }: { request: Request }) {
       settle(request, true);
     } catch (err) {
       clearTimeout(handOff);
+      // Only at home or on the tailnet (US-SYS-47): this closes and the explanation says why.
+      if (explainIfHomeOnly(err)) {
+        settle(request, false);
+        return;
+      }
       if (handedOff) {
         showToast({ tone: 'danger', title: errorLine(err) });
         settle(request, false);

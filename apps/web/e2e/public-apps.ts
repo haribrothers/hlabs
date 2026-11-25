@@ -32,6 +32,10 @@ export async function cloudflare(request: APIRequestContext, body: Record<string
     records: Array<{ name: string; byHlabs: boolean }>;
     tunnels: string[];
     connector: string;
+    /** The dashboard's public name, or null while it's private (US-SYS-45). */
+    dashboard: string | null;
+    /** Cloudflare's sign-in in front of it (US-SYS-48). */
+    accessApps: Array<{ hostname: string; emails: string[] }>;
   };
 }
 
@@ -39,7 +43,12 @@ export async function cloudflare(request: APIRequestContext, body: Record<string
 export async function cloudflareState(request: APIRequestContext) {
   const res = await request.get(`${FIRST_RUN_URL}/dev/cloudflare`);
   expect(res.ok()).toBe(true);
-  return (await res.json()) as { records: Array<{ name: string; byHlabs: boolean }>; tunnels: string[] };
+  return (await res.json()) as {
+    records: Array<{ name: string; byHlabs: boolean }>;
+    tunnels: string[];
+    /** Cloudflare's sign-in in front of the dashboard (US-SYS-48). */
+    accessApps: Array<{ hostname: string; emails: string[] }>;
+  };
 }
 
 /** A stand-in installed app with a web port (so it has a route), running. */
@@ -87,7 +96,7 @@ export const listenerHeaders = (host: string, ip = '198.51.100.7') => ({
  * answered with a page that goes on to the same address on the public name at once (keeping any cookie it sets), as
  * Caddy's redirect would; everything else as it came.
  */
-function passOn(route: Route, response: APIResponse, host: string) {
+export function passOn(route: Route, response: APIResponse, host: string) {
   const location = response.headers().location;
   if (!location) return route.fulfill({ response });
   const to = new URL(location, `https://${host}`).toString();

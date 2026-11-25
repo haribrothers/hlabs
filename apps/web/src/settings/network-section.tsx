@@ -21,6 +21,8 @@ import { WebPortsDialog } from './web-ports-dialog';
 import { PublicAccess } from './public-access';
 import { PublicBadge } from '../public/public-badge';
 import { useEventStream } from '../lib/use-event-stream';
+import { explainHomeOnly, HomeOnly, HomeOnlyPill, useHomeOnly } from '../public/home-only';
+import { publicDashboardCopy as dashCopy } from '../copy/public-dashboard';
 
 const LOGO = tokens.SPACE_7;
 /** Fallback ports (D-016): when hlabs is on one of these, the usual one was taken. */
@@ -63,6 +65,8 @@ function HomeNetwork({
   const { home, ports } = status;
   // A phone (PhoneRedesignA_Network): icon squares, the address as the row's value, Web ports a row you tap.
   const phone = !useIsDesktop();
+  // From the internet, changing the ports is at home only (US-SYS-47).
+  const portsAway = useHomeOnly('network.setPorts');
   return (
     <List label={copy.homeNetwork}>
       <ListRow
@@ -94,9 +98,11 @@ function HomeNetwork({
             {home.published ? null : <Badge tone="warning">{copy.notPublished}</Badge>}
             {/* Renaming the server ships in phase 9 (D-036). */}
             {isFeatureEnabled('renameServer', shippedPhase) ? (
-              <Button variant="secondary" size="sm">
-                {copy.rename}
-              </Button>
+              <HomeOnly procedure="network.setHostname" label={copy.rename}>
+                <Button variant="secondary" size="sm">
+                  {copy.rename}
+                </Button>
+              </HomeOnly>
             ) : null}
           </span>
         }
@@ -119,18 +125,28 @@ function HomeNetwork({
           leading={<RowIcon icon={Network} />}
           title={copy.webPorts}
           subtitle={portsLine(ports)}
-          trailing={<RowEnd chevron />}
-          label={`${copy.change} ${copy.webPorts.toLowerCase()}`}
-          onPress={onChangePorts}
+          trailing={portsAway ? <HomeOnlyPill label={dashCopy.atHomeOnly} /> : <RowEnd chevron />}
+          label={
+            portsAway
+              ? dashCopy.atHomeOnlyLabel(`${copy.change} ${copy.webPorts.toLowerCase()}`)
+              : `${copy.change} ${copy.webPorts.toLowerCase()}`
+          }
+          onPress={portsAway ? () => explainHomeOnly('network.setPorts') : onChangePorts}
         />
       ) : (
         <ListRow
           title={copy.webPorts}
           subtitle={portsLine(ports)}
           trailing={
-            <Button variant="secondary" size="sm" onClick={onChangePorts}>
-              {copy.change}
-            </Button>
+            <HomeOnly
+              procedure="network.setPorts"
+              label={copy.change}
+              name={`${copy.change} ${copy.webPorts.toLowerCase()}`}
+            >
+              <Button variant="secondary" size="sm" onClick={onChangePorts}>
+                {copy.change}
+              </Button>
+            </HomeOnly>
           }
         />
       )}
@@ -290,7 +306,7 @@ export function NetworkSection({ shippedPhase }: { shippedPhase?: number }) {
         )}
       </List>
       {/* Public apps through Cloudflare Tunnel (US-SYS-43, 44), phase 7 (D-036). */}
-      {isFeatureEnabled('publicApps', shippedPhase) ? <PublicAccess /> : null}
+      {isFeatureEnabled('publicApps', shippedPhase) ? <PublicAccess shippedPhase={shippedPhase} /> : null}
       {apps.data ? <AppAddresses apps={apps.data.apps} /> : null}
       {changing ? <WebPortsDialog onClose={() => setChanging(false)} /> : null}
     </div>

@@ -13,6 +13,7 @@ import { AppOverlay } from '../apps/app-overlay';
 import { PhoneInstallFailed } from '../store/phone-install-failed';
 import { useMe } from '../lib/use-me';
 import { useDockPins } from './dock-pins';
+import { InternetBanner } from '../public/home-only';
 import { usePendingUpdates } from './pending-updates';
 import { AREA_PATHS, areaForPath, navigationAreas, phoneAreas, storeBadge, type NavAccess } from './areas';
 
@@ -82,6 +83,8 @@ export function Shell({ children }: { children: ReactNode }) {
         className="hl-page flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-10 pb-36 md:px-10 md:pt-14 md:pb-40"
         data-scroll-restoration-id="main"
       >
+        {/* From the internet (US-SYS-47): on a phone a strip at the top of every page; Home and windows draw their own. */}
+        {phone && me ? <InternetBanner variant="window" className="mb-4" /> : null}
         {children}
       </main>
       {search ? <Spotlight /> : null}
@@ -100,7 +103,7 @@ export function Shell({ children }: { children: ReactNode }) {
             search={search}
             onSearch={openSearch}
             apps={dock.apps}
-            onOpenApp={(appId) => void navigate({ to: '/apps/$appId', params: { appId } })}
+            onOpenApp={dock.onOpen ?? ((appId) => void navigate({ to: '/apps/$appId', params: { appId } }))}
             onAdd={dock.onAdd}
             onAppMenu={dock.onAppMenu}
             onMoveApp={dock.onMoveApp}

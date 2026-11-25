@@ -8,7 +8,7 @@ import { eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
-import { readCookie, SESSION_COOKIE } from '../auth/sessions';
+import { anonymousAdmin, dashboardSession } from './via';
 import type { ServiceHolder } from '../services';
 import { ASSET_TYPES, BUILTIN_SOURCE_ID } from '../store/catalog';
 
@@ -18,7 +18,7 @@ export function registerAppAssets(app: FastifyInstance, holder: ServiceHolder, d
   const serve = async (req: FastifyRequest<{ Params: Params }>, reply: FastifyReply) => {
     const services = holder.current;
     if (!services) return reply.code(503).send();
-    const signedIn = devAnonymousAdmin || services.sessions.resolve(readCookie(req.headers.cookie, SESSION_COOKIE));
+    const signedIn = anonymousAdmin(devAnonymousAdmin, req.headers) || dashboardSession(services, req.headers);
     if (!signedIn) return reply.code(401).send();
     const { appId } = req.params;
     const sourceId =
@@ -43,8 +43,8 @@ export function registerAppAssets(app: FastifyInstance, holder: ServiceHolder, d
   app.get<{ Params: { file: string } }>('/api/store/copy/:file', async (req, reply) => {
     const services = holder.current;
     if (!services) return reply.code(503).send();
-    const session = services.sessions.resolve(readCookie(req.headers.cookie, SESSION_COOKIE));
-    if (!devAnonymousAdmin && session?.role !== 'admin') return reply.code(404).send();
+    const session = dashboardSession(services, req.headers);
+    if (!anonymousAdmin(devAnonymousAdmin, req.headers) && session?.role !== 'admin') return reply.code(404).send();
     const token = req.params.file.replace(/\.zip$/, '');
     const zip = services.sources.takeZip(token);
     if (!zip) return reply.code(404).send();

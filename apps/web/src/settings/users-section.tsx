@@ -49,6 +49,9 @@ import { DeleteUserDialog } from './delete-user-dialog';
 import { InviteDialog } from './invite-dialog';
 import { LoginScreenPolicy, MembersPolicy } from './people-policy';
 import { ResetLinkDialog } from './reset-link-dialog';
+import { explainHomeOnly, HomeOnly, HomeOnlyPill, useHomeOnly, useOnPublic } from '../public/home-only';
+import { publicDashboardCopy as dashCopy } from '../copy/public-dashboard';
+import type { HomeOnlyProcedure } from '@hlabs/shared';
 
 const DAY = 86_400_000;
 
@@ -120,6 +123,10 @@ function useUserActions(user: UserSummary) {
 function MoreOptions({ user, size, onDelete }: { user: UserSummary; size: 'sm' | 'md'; onDelete: () => void }) {
   const name = user.displayName;
   const { changeRole, disable, enable } = useUserActions(user);
+  // From the internet (US-SYS-47): roles, turning an account back on and deleting are at home only; turning one off
+  // isn't (it only takes access away).
+  const away = useOnPublic();
+  const pill = away ? <HomeOnlyPill label={dashCopy.atHomeOnly} className="ml-auto" /> : null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -128,15 +135,18 @@ function MoreOptions({ user, size, onDelete }: { user: UserSummary; size: 'sm' |
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-48">
-        <DropdownMenuItem onSelect={changeRole}>
+        <DropdownMenuItem onSelect={away ? () => explainHomeOnly('users.updateRole') : changeRole}>
           {user.role === 'admin' ? copy.makeMember : copy.makeAdmin}
+          {pill}
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={user.disabled ? enable : disable}>
+        <DropdownMenuItem onSelect={user.disabled ? (away ? () => explainHomeOnly('users.enable') : enable) : disable}>
           {user.disabled ? copy.enable : copy.disable}
+          {user.disabled ? pill : null}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem danger onSelect={onDelete}>
+        <DropdownMenuItem danger onSelect={away ? () => explainHomeOnly('users.delete') : onDelete}>
           {copy.delete}
+          {pill}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -172,12 +182,16 @@ function UserRow({
     <>
       {user.role === 'member' ? (
         <>
-          <Button variant="secondary" size={size} onClick={onAppsAccess}>
-            {copy.appsAccess}
-          </Button>
-          <Button variant="secondary" size={size} onClick={onResetPassword}>
-            {copy.resetPassword}
-          </Button>
+          <HomeOnly procedure="users.setAppAccess" label={copy.appsAccess} size={size}>
+            <Button variant="secondary" size={size} onClick={onAppsAccess}>
+              {copy.appsAccess}
+            </Button>
+          </HomeOnly>
+          <HomeOnly procedure="users.resetPasswordLink" label={copy.resetPassword} size={size}>
+            <Button variant="secondary" size={size} onClick={onResetPassword}>
+              {copy.resetPassword}
+            </Button>
+          </HomeOnly>
         </>
       ) : null}
       <MoreOptions user={user} size={size} onDelete={onDelete} />
@@ -315,6 +329,11 @@ function PhoneUserSheet({
     onClose();
     run();
   };
+  // From the internet (US-SYS-47): each home-only row says so and explains instead.
+  const away = useOnPublic();
+  const pill = away ? <HomeOnlyPill label={dashCopy.atHomeOnly} /> : null;
+  const homeOnly = (procedure: HomeOnlyProcedure, run: () => void) =>
+    away ? then(() => explainHomeOnly(procedure)) : then(run);
   const member = user.role === 'member';
   return (
     <BottomSheet open onOpenChange={(open) => (open ? undefined : onClose())} titled closeButton={false}>
@@ -330,18 +349,20 @@ function PhoneUserSheet({
             <InsetRowButton
               icon={<LayoutGrid aria-hidden {...iconDefaults} />}
               title={copy.appsAccess}
-              value={copy.apps(user.appCount)}
-              chevron
+              value={away ? undefined : copy.apps(user.appCount)}
+              trailing={pill ?? undefined}
+              chevron={!away}
               aria-haspopup="dialog"
-              onClick={then(onAppsAccess)}
+              onClick={homeOnly('users.setAppAccess', onAppsAccess)}
             />
             <InsetRowButton
               icon={<KeyRound aria-hidden {...iconDefaults} />}
               title={`${copy.resetPassword}…`}
               subtitle={copy.resetLinkNote}
-              chevron
+              trailing={pill ?? undefined}
+              chevron={!away}
               aria-haspopup="dialog"
-              onClick={then(onResetPassword)}
+              onClick={homeOnly('users.resetPasswordLink', onResetPassword)}
             />
           </div>
         ) : null}
@@ -349,20 +370,24 @@ function PhoneUserSheet({
           <InsetRowButton
             title={user.role === 'admin' ? copy.makeMember : copy.makeAdmin}
             trailing={
-              <span aria-hidden className="hl-p-row-glyph">
-                <Shield {...iconDefaults} />
-              </span>
+              pill ?? (
+                <span aria-hidden className="hl-p-row-glyph">
+                  <Shield {...iconDefaults} />
+                </span>
+              )
             }
-            onClick={then(changeRole)}
+            onClick={homeOnly('users.updateRole', changeRole)}
           />
           <InsetRowButton
             title={user.disabled ? copy.enable : copy.disable}
             trailing={
-              <span aria-hidden className="hl-p-row-glyph">
-                {user.disabled ? <CirclePlay {...iconDefaults} /> : <CirclePause {...iconDefaults} />}
-              </span>
+              (user.disabled ? pill : null) ?? (
+                <span aria-hidden className="hl-p-row-glyph">
+                  {user.disabled ? <CirclePlay {...iconDefaults} /> : <CirclePause {...iconDefaults} />}
+                </span>
+              )
             }
-            onClick={then(user.disabled ? enable : disable)}
+            onClick={user.disabled ? homeOnly('users.enable', enable) : then(disable)}
           />
         </div>
         <div className="hl-p-group">
@@ -370,11 +395,13 @@ function PhoneUserSheet({
             danger
             title={copy.delete}
             trailing={
-              <span aria-hidden className="hl-p-row-glyph">
-                <Trash2 {...iconDefaults} />
-              </span>
+              pill ?? (
+                <span aria-hidden className="hl-p-row-glyph">
+                  <Trash2 {...iconDefaults} />
+                </span>
+              )
             }
-            onClick={then(onDelete)}
+            onClick={homeOnly('users.delete', onDelete)}
           />
         </div>
       </div>
@@ -453,6 +480,7 @@ function PhonePeople({
   const labelId = useId();
   const [open, setOpen] = useState<{ kind: 'user'; id: string } | { kind: 'invite'; id: string } | null>(null);
   const [inviting, setInviting] = useState(false);
+  const inviteAway = useHomeOnly('invites.create');
   const openUser = open?.kind === 'user' ? users.find((u) => u.id === open.id) : undefined;
   const openInvite = open?.kind === 'invite' ? pending.find((i) => i.id === open.id) : undefined;
   return (
@@ -514,8 +542,9 @@ function PhonePeople({
           accent
           icon={<UserPlus aria-hidden {...iconDefaults} />}
           title={copy.invite}
+          trailing={inviteAway ? <HomeOnlyPill label={dashCopy.atHomeOnly} /> : undefined}
           aria-haspopup="dialog"
-          onClick={() => setInviting(true)}
+          onClick={inviteAway ? () => explainHomeOnly('invites.create') : () => setInviting(true)}
         />
       </div>
       {openUser ? (
@@ -537,6 +566,26 @@ function PhonePeople({
 export function InviteButton() {
   const [open, setOpen] = useState(false);
   const desktop = useIsDesktop();
+  // From the internet inviting is at home only (US-SYS-47): the control stays, saying so.
+  const away = useHomeOnly('invites.create');
+  if (away && !desktop)
+    return (
+      <button
+        type="button"
+        className="hl-p-tbtn hl-focus"
+        aria-label={dashCopy.atHomeOnlyLabel(copy.invite)}
+        aria-haspopup="dialog"
+        onClick={() => explainHomeOnly('invites.create')}
+      >
+        <UserPlus aria-hidden {...iconDefaults} size={24} />
+      </button>
+    );
+  if (away)
+    return (
+      <HomeOnly procedure="invites.create" label={copy.invite}>
+        {null}
+      </HomeOnly>
+    );
   if (!desktop)
     return (
       <>

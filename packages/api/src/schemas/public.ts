@@ -120,6 +120,23 @@ export const publicOptionsSchema = z.object({
 });
 export type PublicOptions = z.infer<typeof publicOptionsSchema>;
 
+/** The dashboard's public address (US-SYS-45, D-182), as `public.status` gives it; null while it's private. */
+export const dashboardPublicSchema = z.object({
+  /** `https://hlabs.example.com` */
+  address: z.string(),
+  /** `hlabs.example.com` */
+  hostname: z.string(),
+  /** When it was made public (ms), and by whom (display name; null once that account is gone). */
+  since: timestampSchema,
+  by: z.string().nullable(),
+  /** Cloudflare's sign-in in front (US-SYS-48): the email addresses allowed (admins only), or null when it's off. */
+  cloudflareAccess: z.object({ emails: z.array(z.string()) }).nullable(),
+});
+export type DashboardPublic = z.infer<typeof dashboardPublicSchema>;
+
+/** An email address on Cloudflare's allow list (US-SYS-48): trimmed, lowercased. */
+export const accessEmailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
+
 export const publicAccess = {
   status: io(
     empty,
@@ -127,7 +144,49 @@ export const publicAccess = {
       cloudflare: cloudflareStatusSchema,
       /** Every public app, newest first. */
       apps: z.array(publicAppRowSchema),
+      /** The dashboard's public address (US-SYS-45), or null while it's private (the default on every install). */
+      dashboard: dashboardPublicSchema.nullable(),
+      /**
+       * Enabled admins without two-factor, by display name: while any, the dashboard can't be made public
+       * ("Asha hasn't turned on two-factor login yet…", TWO_FACTOR_REQUIRED_FOR_DASHBOARD).
+       */
+      dashboardBlockedBy: z.array(z.string()),
     }),
+  ),
+  /**
+   * Makes the dashboard public at `<hostname>.<domain>` (a `dashboard_public_on` job), or private (`public: false`, a
+   * `dashboard_public_off` job, which ends every session signed in there). Making it public needs the admin's
+   * password (AUTH_INVALID_PASSWORD, the log-in lockout), Cloudflare Tunnel `on` (PUBLIC_NOT_SET_UP), every admin with
+   * two-factor (TWO_FACTOR_REQUIRED_FOR_DASHBOARD { admins }) and a free name (PUBLIC_HOSTNAME_TAKEN { hostname });
+   * it's home-only (HOME_ONLY), and a different name while public is refused (make it private first). Making it
+   * private needs neither and works from the public address too.
+   */
+  setDashboard: io(
+    z.object({
+      public: z.boolean(),
+      /** One label under the domain; `hlabs` when left out. */
+      hostname: publicLabelSchema.optional(),
+      password: z.string().min(1).max(1024).optional(),
+    }),
+    jobRefSchema,
+  ),
+  /**
+   * Cloudflare's sign-in in front of the public dashboard (US-SYS-48), a `dashboard_access` job: an Access application
+   * for its name with a policy allowing `emails` (one-time code by email), changed in place, or deleted (`off`).
+   * Checked first: DASHBOARD_NOT_PUBLIC; CLOUDFLARE_FAILED { step: 'access', needsToken: true } when the credential
+   * (or the `token` given) can't manage Access. A `token` that can is kept in the keychain with the credential.
+   * Home-only. The addresses are kept in `settings.public.dashboard.access` only, never in logs or job payloads.
+   */
+  setDashboardAccess: io(
+    z.union([
+      z.object({
+        emails: z.array(accessEmailSchema).min(1).max(50),
+        /** An API token with "Account · Access: Apps and Policies · Edit", when the credential can't manage Access. */
+        token: z.string().trim().min(20).max(400).optional(),
+      }),
+      z.object({ off: z.literal(true) }),
+    ]),
+    jobRefSchema,
   ),
   /**
    * "Sign in to Cloudflare" (D-171): starts `cloudflared tunnel login` and answers with Cloudflare's sign-in link,
@@ -155,7 +214,7 @@ export const publicAccess = {
   /** "Remove Cloudflare Tunnel" (`public_remove`): every public app private first, then the tunnel, its DNS records and
    * the credential. */
   remove: io(empty, jobRefSchema),
-  /** "Turn off all public access" (`public_off_all`): every public app private; the tunnel stays set up. */
+  /** "Turn off all public access" (`public_off_all`): every public app and the dashboard private; the tunnel stays. */
   turnOffAll: io(empty, jobRefSchema),
 };
 

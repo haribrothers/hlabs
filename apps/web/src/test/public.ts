@@ -1,6 +1,6 @@
 // Public apps in tests (US-SYS-43, 44, US-APP-27…29): `public.status`, `apps.publicOptions` and jobs as the daemon
 // answers them.
-import type { AppPublic, CloudflareStatus, Job, PublicAppRow, PublicOptions } from '@hlabs/api';
+import type { AppPublic, CloudflareStatus, DashboardPublic, Job, PublicAppRow, PublicOptions } from '@hlabs/api';
 
 export const DAY = 86_400_000;
 /** 3 Dec 2026, 12:00 local. */
@@ -49,7 +49,22 @@ export const jellyfinRow = () =>
     since: SINCE - 2 * DAY,
   });
 
-export const status = (cf: CloudflareStatus = cloudflare(), apps: PublicAppRow[] = []) => ({ cloudflare: cf, apps });
+export const status = (
+  cf: CloudflareStatus = cloudflare(),
+  apps: PublicAppRow[] = [],
+  dashboard: DashboardPublic | null = null,
+  dashboardBlockedBy: string[] = [],
+) => ({ cloudflare: cf, apps, dashboard, dashboardBlockedBy });
+
+/** The dashboard public at hlabs.example.com (US-SYS-45), with Cloudflare's sign-in in front or not (US-SYS-48). */
+export const dashboardPublic = (over: Partial<DashboardPublic> = {}): DashboardPublic => ({
+  address: 'https://hlabs.example.com',
+  hostname: 'hlabs.example.com',
+  since: SINCE,
+  by: 'Hari',
+  cloudflareAccess: null,
+  ...over,
+});
 
 export const person = (id: string, displayName: string, totpEnabled: boolean, role: 'admin' | 'member' = 'admin') => ({
   id,

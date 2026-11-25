@@ -14,6 +14,7 @@ import { FolderPicker, type ChosenFolder } from '../files/folder-picker';
 import { codeLine, errorLine } from '../lib/error-copy';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useSettingsSave } from './use-settings-save';
+import { HomeOnly } from '../public/home-only';
 
 const copy = appConfigCopy;
 const EXTRA_ROOT = '/mnt/hlabs';
@@ -358,9 +359,11 @@ function PermissionsForm({
         >
           {copy.cancel}
         </Button>
-        <Button type="submit" disabled={!dirty || saving.busy} busy={saving.busy}>
-          {saving.busy ? copy.saving : copy.save}
-        </Button>
+        <HomeOnly procedure="apps.setPermissions" label={copy.save} size="md">
+          <Button type="submit" disabled={!dirty || saving.busy} busy={saving.busy}>
+            {saving.busy ? copy.saving : copy.save}
+          </Button>
+        </HomeOnly>
       </footer>
 
       {picking ? (

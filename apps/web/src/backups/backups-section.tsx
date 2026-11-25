@@ -20,6 +20,7 @@ import { dayTime, destinationLine, includedWords, nextLine, retentionWords, runL
 import { IncludedDialog } from './included-dialog';
 import { PhoneBackups } from './phone-backups';
 import { RestoreFlow } from './restore-flow';
+import { HomeOnly, useHomeOnly } from '../public/home-only';
 
 const ICON = 'size-12';
 
@@ -90,15 +91,17 @@ export function BackupsActions() {
     <>
       {desktop ? (
         <div className="flex shrink-0 items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={none || blocked}
-            title={blocked ? copy.waitForTask : undefined}
-            onClick={() => setRestoring(true)}
-          >
-            {copy.restore}
-          </Button>
+          <HomeOnly procedure="backups.restore" label={copy.restore}>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={none || blocked}
+              title={blocked ? copy.waitForTask : undefined}
+              onClick={() => setRestoring(true)}
+            >
+              {copy.restore}
+            </Button>
+          </HomeOnly>
           <Button
             variant={none ? 'secondary' : 'primary'}
             size="sm"
@@ -157,6 +160,8 @@ export function BackupsSection() {
   const [editing, setEditing] = useState<string | null>(null);
   const [including, setIncluding] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  // From the internet (US-SYS-47): restoring and adding or changing a destination are at home only.
+  const addAway = useHomeOnly('backups.destinations.add');
   const o = query.data;
   if (!o) return null;
 
@@ -258,7 +263,9 @@ export function BackupsSection() {
           ) : null}
         </div>
         {none ? (
-          <Button onClick={() => setAdding(true)}>{copy.addDestination}</Button>
+          <HomeOnly procedure="backups.destinations.add" label={copy.addDestination} size="md">
+            <Button onClick={() => setAdding(true)}>{copy.addDestination}</Button>
+          </HomeOnly>
         ) : bars.length ? (
           <div className="w-full md:w-44">
             <BarChart
@@ -290,27 +297,35 @@ export function BackupsSection() {
                   <Badge tone={d.status === 'ok' ? 'success' : d.status === 'unreachable' ? 'danger' : 'warning'}>
                     {copy.status[d.status]}
                   </Badge>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    aria-label={copy.editFor(d.name)}
-                    onClick={() => setEditing(d.id)}
-                  >
-                    {copy.edit}
-                  </Button>
+                  <HomeOnly procedure="backups.destinations.update" label={copy.edit} name={copy.editFor(d.name)}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      aria-label={copy.editFor(d.name)}
+                      onClick={() => setEditing(d.id)}
+                    >
+                      {copy.edit}
+                    </Button>
+                  </HomeOnly>
                 </span>
               }
             />
           ))}
           <ListRow
             title={
-              <button
-                type="button"
-                onClick={() => setAdding(true)}
-                className="hl-focus cursor-pointer rounded-xs border-0 bg-transparent p-0 font-sans text-body font-semibold text-accent-link"
-              >
-                {copy.addDestination}
-              </button>
+              addAway ? (
+                <HomeOnly procedure="backups.destinations.add" label={copy.addDestination}>
+                  {null}
+                </HomeOnly>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAdding(true)}
+                  className="hl-focus cursor-pointer rounded-xs border-0 bg-transparent p-0 font-sans text-body font-semibold text-accent-link"
+                >
+                  {copy.addDestination}
+                </button>
+              )
             }
             subtitle={o.destinations.some((d) => d.offsite) ? undefined : copy.offsiteHint}
           />

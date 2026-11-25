@@ -6,7 +6,7 @@ import { isFeatureEnabled } from '@hlabs/shared';
 import { AppIcon, DOCK_DRAG_TYPE, tokens, useIsPhone, type AppIconState } from '@hlabs/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { useEffect, useRef, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { appsCopy } from '../copy/apps';
 import { engineCopy } from '../copy/engine';
 import { publicCopy } from '../copy/public';
@@ -17,6 +17,10 @@ import { useTRPC, useTRPCClient } from '../lib/trpc';
 import type { HomeApp } from './home-app';
 import { TileMenu, type TileCommand } from './tile-menu';
 import { useOpenApp } from './use-open-app';
+import { AwayPopover } from './away-popover';
+import { publicDashboardCopy } from '../copy/public-dashboard';
+import { PublicBadge } from '../public/public-badge';
+import { HomeOnlyPill, useOnPublic } from '../public/home-only';
 
 export { APP_WINDOW_QUERY, appUrl } from './use-open-app';
 export type { HomeApp };
@@ -88,12 +92,20 @@ export function AppGrid({
   /** Tiles can be dragged onto the Dock to pin them (US-HOME-22). */
   dockDrag?: boolean;
 }) {
-  const openApp = useOpenApp(isAdmin);
+  const openOnHome = useOpenApp(isAdmin);
   const command = useTileCommands(apps);
+  // On the public dashboard (HomePublicAddress): public apps open at their public address, the others say they open
+  // at home only, in a popover under the tile on a computer (a sheet on a phone, from useOpenApp).
+  const onPublic = useOnPublic();
+  const [awayOpen, setAway] = useState<string | null>(null);
   // A phone's tiles are 60px with the 16px radius (D-172): the tile, its shadow and the logo one box.
   const phone = useIsPhone();
   const tile = phone ? tokens.SIZE_APP_ICON_PHONE : tokens.SIZE_APP_ICON;
   const showInstall = canInstall && isFeatureEnabled('appStore');
+  const openApp = (app: HomeApp) => {
+    if (onPublic && !app.public && !phone) setAway((id) => (id === app.id ? null : app.id));
+    else openOnHome(app);
+  };
   if (apps.length === 0 && !showInstall) return null;
   return (
     <ul
@@ -103,10 +115,13 @@ export function AppGrid({
     >
       {apps.map((app) => {
         const look = appTileLook(app.name, app.icon, tile);
+        const host = app.public?.hostname ?? null;
+        const away = onPublic && !app.public;
+        const awayId = awayOpen;
         return (
           <li
             key={app.id}
-            className="flex justify-center"
+            className="relative flex justify-center"
             data-app={app.id}
             draggable={dockDrag && !offline}
             onDragStart={(e) => {
@@ -132,14 +147,45 @@ export function AppGrid({
                 progress={
                   progress?.get(app.id) ?? (app.state === 'installing' || app.state === 'reinstalling' ? 0 : undefined)
                 }
-                ariaLabel={app.state === 'running' && !offline ? homeCopy.openApp(app.name) : undefined}
+                ariaLabel={
+                  onPublic
+                    ? host
+                      ? publicDashboardCopy.tilePublic(app.name, host)
+                      : publicDashboardCopy.tileAway(app.name)
+                    : app.state === 'running' && !offline
+                      ? homeCopy.openApp(app.name)
+                      : undefined
+                }
                 offline={offline ? engineCopy.offline : undefined}
                 onClick={() => openApp(app)}
                 size={tile}
                 radius={phone ? tokens.RADIUS_MD : undefined}
-                publicLabel={app.public ? publicCopy.publicBadge : undefined}
+                publicLabel={app.public && !onPublic ? publicCopy.publicBadge : undefined}
+                below={
+                  onPublic ? (
+                    host ? (
+                      <>
+                        <PublicBadge />
+                        <span className="font-mono text-caption whitespace-nowrap text-ink">{host}</span>
+                      </>
+                    ) : (
+                      <HomeOnlyPill label={publicDashboardCopy.atHomeOnly} />
+                    )
+                  ) : undefined
+                }
               />
             </TileMenu>
+            {away && awayId === app.id ? (
+              <AwayPopover
+                name={app.name}
+                isAdmin={isAdmin}
+                onClose={(focus) => {
+                  setAway(null);
+                  if (focus)
+                    document.querySelector<HTMLElement>(`li[data-app="${CSS.escape(app.id)}"] .hl-app`)?.focus();
+                }}
+              />
+            ) : null}
           </li>
         );
       })}

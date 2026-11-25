@@ -114,6 +114,8 @@ export const accountCopy = {
   seenLine: (network: string, seen: string) => `${network} · ${seen}`,
   /** A sign-in on a public app's address, valid there only (D-178). */
   publicSeenLine: (host: string, seen: string) => `Public app at ${host} · ${seen}`,
+  /** A session on the dashboard's public address (US-SYS-46). */
+  publicDashboardSeenLine: (host: string, seen: string) => `Public dashboard at ${host} · ${seen}`,
   activeNow: 'active now',
   unknownDevice: 'Unknown device',
   unknownBrowser: 'Browser',

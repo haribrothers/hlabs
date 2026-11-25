@@ -29,10 +29,10 @@ export interface JobDefinition<P = unknown> {
 const ACTIVE = ['queued', 'running'] as const;
 const EXCLUSIVE = new Set<string>(EXCLUSIVE_JOB_KINDS);
 /**
- * Jobs that make public apps private (US-APP-27, US-SYS-44): stopping what strangers can reach never waits for, or is
- * refused by, an exclusive job (D-179).
+ * Jobs that make public apps or the dashboard private (US-APP-27, US-SYS-44, US-SYS-45): stopping what strangers can
+ * reach never waits for, or is refused by, an exclusive job (D-179).
  */
-export const UNBLOCKED_JOB_KINDS = new Set<string>(['public_off', 'public_off_all']);
+export const UNBLOCKED_JOB_KINDS = new Set<string>(['public_off', 'public_off_all', 'dashboard_public_off']);
 /** App jobs run one at a time; the rest wait in `queued` (US-STORE-11: "Waiting for another app to finish…"). */
 export const SERIAL_JOB_KINDS = new Set<string>([
   'app_install',

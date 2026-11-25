@@ -15,8 +15,8 @@ export function lanDashboardOrigin(db: HlabsDb): string {
 
 /**
  * `configured` (HLABS_DASHBOARD_URL: the tray's loopback address, or Vite in development), hlabs's own name over HTTPS,
- * over plain HTTP while setup runs (D-013), the tailnet address once remote access is on, and this computer's LAN
- * addresses.
+ * over plain HTTP while setup runs (D-013), the tailnet address once remote access is on, this computer's LAN
+ * addresses, and the public dashboard's address while it's public.
  */
 export function dashboardOrigins(configured: string, db: HlabsDb | null, lan: () => string[] = lanAddresses): string[] {
   const origins = [new URL(configured).origin];
@@ -31,5 +31,8 @@ export function dashboardOrigins(configured: string, db: HlabsDb | null, lan: ()
   if (tailnet) origins.push(tailnet);
   // This computer's address on the network (the fallback address, US-SYS-01; through a subnet router, US-SYS-41).
   for (const ip of lan()) origins.push(withPort('https', ip, getSetting(db, 'network').ports.https));
+  // The dashboard's public address while an admin has made it public (US-SYS-45, D-182).
+  const publicDashboard = getSetting(db, 'public').dashboard;
+  if (publicDashboard) origins.push(`https://${publicDashboard.hostname}`);
   return [...new Set(origins)];
 }

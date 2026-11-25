@@ -10,6 +10,8 @@ import { useIsPhone } from '@hlabs/ui';
 import type { HomeApp } from './home-app';
 import { appAddress } from '../lib/app-address';
 import { useAppOverlay } from '../apps/app-overlay';
+import { explainAway } from '../public/explain';
+import { useOnPublic } from '../public/home-only';
 
 /** The app window opens on a desktop layout (US-APP-01); phones are covered by 12-phone.md. */
 export const APP_WINDOW_QUERY = '(min-width: 1024px)';
@@ -26,12 +28,20 @@ export function useOpenApp(isAdmin: boolean): (app: HomeApp) => void {
   const queryClient = useQueryClient();
   const wide = useMedia(APP_WINDOW_QUERY);
   const phone = useIsPhone();
+  const onPublic = useOnPublic();
   /**
    * An install that's running or failed opens its page (US-STORE-12, US-STORE-14). A running app opens in the app
    * window when it declares web.embed and the screen is wide enough, else in a new tab (US-APP-01, D-038); an app that
    * isn't running opens the window, which says why it can't be shown (US-APP-03).
    */
   const openApp = (app: HomeApp) => {
+    // On the public dashboard (US-SYS-47, HomePublicAddress): a public app opens at its public address; any other
+    // app opens at home or on the tailnet only, which is what it says.
+    if (onPublic) {
+      if (app.public) browser.open(app.public.address);
+      else explainAway({ appId: app.id, name: app.name });
+      return;
+    }
     if (app.state === 'installing' || app.state === 'install_failed')
       void navigate({ to: '/store/install/$appId', params: { appId: app.id } });
     // On a phone an admin gets the app's settings, where it can be started or looked into (US-PHONE-08).

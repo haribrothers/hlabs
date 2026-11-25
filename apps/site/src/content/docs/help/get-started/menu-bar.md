@@ -41,7 +41,7 @@ Choose **Open Dashboard** (or press ⌘D while the menu is open) to open hlabs i
 
 ## Turn off public access
 
-When any app is public on the internet, the menu shows **Public: 2 apps** with their names. Choose **Turn off public access…** to make them all private at once: the Mac asks for Touch ID or your password first. Cloudflare Tunnel stays set up. See [Make an app public](/help/remote-access/make-an-app-public/).
+When any app is public on the internet, the menu shows **Public: 2 apps** with their names; when the dashboard is too, **Public: the dashboard and 2 apps**. Choose **Turn off public access…** to make them all private at once: the Mac asks for Touch ID or your password first. Cloudflare Tunnel stays set up. See [Make an app public](/help/remote-access/make-an-app-public/) and [Make the dashboard public](/help/remote-access/make-the-dashboard-public/).
 
 ## Back up now
 

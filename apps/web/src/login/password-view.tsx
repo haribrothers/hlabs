@@ -41,6 +41,8 @@ export function PasswordView({ username, next, reason }: { username: string; nex
   const [error, setError] = useState<string | null>(reason === 'timeout' ? copy.timedOut : null);
   useEffect(() => field.current?.focus(), [user]);
 
+  // On the public address only the typed sign-in (LoginPublic, US-SYS-46), whoever this device remembers.
+  if (list.data?.via === 'public') return <Navigate to="/login/username" search={withNext(next)} replace />;
   if (!user && (list.isError || list.data)) return <Navigate to="/login/username" search={withNext(next)} replace />;
   if (!user) return <LoginLayout>{null}</LoginLayout>;
 

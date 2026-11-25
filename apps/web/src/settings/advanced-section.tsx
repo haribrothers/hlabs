@@ -20,6 +20,7 @@ import { ConnectionsDialog } from './connections-dialog';
 import { FactoryResetDialog } from './factory-reset-dialog';
 import { HlabsLogs } from './hlabs-logs';
 import { RowEnd, RowIcon } from './phone-rows';
+import { HomeOnly } from '../public/home-only';
 
 /** How often a diagnostics job is asked about while it's built. */
 const JOB_POLL_MS = 1_000;
@@ -224,9 +225,11 @@ function DangerZone({ withReset, shippedPhase }: { withReset: boolean; shippedPh
           title={copy.reset}
           subtitle={copy.resetNote}
           trailing={
-            <Button variant="destructive" size="sm" disabled={!info.data} onClick={() => setResetting(true)}>
-              {copy.resetButton}
-            </Button>
+            <HomeOnly procedure="system.factoryReset" label={copy.resetButton}>
+              <Button variant="destructive" size="sm" disabled={!info.data} onClick={() => setResetting(true)}>
+                {copy.resetButton}
+              </Button>
+            </HomeOnly>
           }
         />
       ) : null}

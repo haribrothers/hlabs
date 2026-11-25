@@ -11,10 +11,15 @@ export interface CloudflareCredential {
   accountId: string;
   /** The zone's name: `example.com`. */
   domain: string;
+  /**
+   * An API token with "Account · Access: Apps and Policies · Edit" (US-SYS-48), given when `token` can't manage
+   * Cloudflare Access; used for Access calls only.
+   */
+  accessToken?: string;
 }
 
 /** Where a Cloudflare step failed, for `CLOUDFLARE_FAILED { step }`. */
-export type CloudflareStep = 'signIn' | 'token' | 'zone' | 'tunnel' | 'dns' | 'connector' | 'remove';
+export type CloudflareStep = 'signIn' | 'token' | 'zone' | 'tunnel' | 'dns' | 'connector' | 'remove' | 'access';
 
 export class CloudflareError extends Error {
   override readonly name = 'CloudflareError';
@@ -23,6 +28,8 @@ export class CloudflareError extends Error {
     message: string,
     /** Cloudflare said the thing is already there (a tunnel's name, a DNS record). */
     readonly conflict = false,
+    /** Cloudflare refused the credential for this (401, 403): for Access, a token with that permission is needed. */
+    readonly denied = false,
   ) {
     super(message);
   }
@@ -56,6 +63,26 @@ export interface CloudflareClient {
   addRecord(cred: CloudflareCredential, name: string, tunnelId: string): Promise<{ id: string }>;
   /** Deletes a record hlabs made; one that's already gone is fine. */
   deleteRecord(cred: CloudflareCredential, recordId: string): Promise<void>;
+  /**
+   * Whether the credential (its `accessToken` when there is one) can manage Cloudflare Access for the account
+   * (US-SYS-48): resolves when it can; a CloudflareError at `access` with `denied` when Cloudflare refuses it.
+   */
+  checkAccess(cred: CloudflareCredential): Promise<void>;
+  /**
+   * An Access application for `hostname` (self-hosted, Cloudflare's one-time code by email) with a policy allowing
+   * `emails`; the only Access applications hlabs ever changes or deletes.
+   */
+  createAccessApp(cred: CloudflareCredential, opts: { hostname: string; emails: string[] }): Promise<AccessApp>;
+  /** The allow list of an Access application hlabs made. */
+  updateAccessPolicy(cred: CloudflareCredential, app: AccessApp, emails: string[]): Promise<void>;
+  /** Deletes an Access application hlabs made; one that's already gone is fine. */
+  deleteAccessApp(cred: CloudflareCredential, appId: string): Promise<void>;
+}
+
+/** An Access application hlabs made, and its policy. */
+export interface AccessApp {
+  appId: string;
+  policyId: string;
 }
 
 export type ConnectorState = 'stopped' | 'starting' | 'running' | 'failed';

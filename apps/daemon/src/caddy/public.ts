@@ -1,6 +1,7 @@
 // Caddy's public listener (US-APP-27, 28; D-178; 07 §7.10 controls 1, 3 and 4). cloudflared sends every public name
 // here, on 127.0.0.1 only. It routes by name: each public app's own web service and hlabs's sign-in pages on its
-// address, and a 404 for any other name, so the dashboard, the daemon's API and private apps are never reachable from
+// address, the dashboard on its own name only while an admin has made it public (US-SYS-45, D-182, 07 §7.11), and a
+// 404 for any other name, so the dashboard, the daemon's API and private apps are otherwise never reachable from
 // the internet. HTTPS on every leg (D-181): cloudflared reaches this listener over TLS with a certificate from hlabs's
 // local CA (one internal name, PUBLIC_ORIGIN_NAME, never a public one), and a visit Cloudflare marks as plain HTTP is
 // sent to its https:// address when it's a page (GET or HEAD) and refused otherwise, so a form or a sign-in never goes
@@ -8,7 +9,7 @@
 // visitor's address from `CF-Connecting-IP` with cloudflared as the only trusted proxy, identity headers only from
 // forward auth, and hlabs's cookies taken out before the app sees the request.
 import { loopbackPort } from '../apps/ports';
-import { IDENTITY_HEADERS, PUBLIC_HOST_HEADER } from './headers';
+import { IDENTITY_HEADERS, PUBLIC_HOST_HEADER, VIA_HEADER } from './headers';
 import type { PublicListener, PublicRoute } from './index';
 
 /**
@@ -25,8 +26,20 @@ export const PUBLIC_ACCESS_LOG = 'access.log';
 /** hlabs's cookies, never passed to a public app (D-178): the public sign-in's and the dashboard's. */
 export const STRIPPED_COOKIES = ['__Host-hlabs_pub', 'hlabs_session'];
 
-export { PUBLIC_HOST_HEADER };
-const DAEMON_HEADERS = [PUBLIC_HOST_HEADER];
+export { PUBLIC_HOST_HEADER, VIA_HEADER };
+const DAEMON_HEADERS = [PUBLIC_HOST_HEADER, VIA_HEADER];
+
+/**
+ * The largest request the public dashboard takes (07 §7.11 control 8): an upload chunk (16 MB, US-FILE-08) and a
+ * little more; a wallpaper photo is 10 MB at most.
+ */
+export const DASHBOARD_MAX_BODY_MB = 20;
+
+/**
+ * Paths the public dashboard never passes on (D-182): forward auth and its pages (`/auth/*`), the public apps' sign-in
+ * (`/.hlabs/*`), the development routes and the CA certificate. Everything else is the dashboard as at home.
+ */
+export const DASHBOARD_REFUSED_PATHS = ['/auth/*', '/.hlabs/*', '/dev/*', '/ca.crt'];
 
 /** Every public response (07 §7.10 control 4). Not X-Frame-Options or a CSP: those are the app's to choose. */
 export const PUBLIC_RESPONSE_HEADERS: Record<string, string[]> = {
@@ -194,8 +207,59 @@ function publicAppRoute(app: PublicRoute, daemon: string) {
   };
 }
 
+/**
+ * The dashboard on its public name (US-SYS-45, D-182; 07 §7.11): the dashboard's pages and the daemon's `/trpc`, `/api`
+ * and file routes as on the home server (to the dashboard's upstream), with the public hardening, and
+ * `X-Hlabs-Via: public` and `X-Hlabs-Public-Host` set on every request it passes on: the daemon's only sign that a
+ * request came from the internet (every other server deletes them).
+ */
+function publicDashboardRoute(hostname: string, upstream: string) {
+  return {
+    match: [{ host: [hostname] }],
+    handle: [
+      {
+        handler: 'subroute',
+        routes: [
+          {
+            handle: [
+              {
+                handler: 'headers',
+                request: { delete: [...IDENTITY_HEADERS, ...DAEMON_HEADERS] },
+                response: { set: PUBLIC_RESPONSE_HEADERS, deferred: true },
+              },
+              { handler: 'request_body', max_size: DASHBOARD_MAX_BODY_MB * 1024 * 1024 },
+            ],
+          },
+          { match: [{ path: DASHBOARD_REFUSED_PATHS }], handle: [page(404, 'Page not found')], terminal: true },
+          {
+            handle: [
+              {
+                handler: 'reverse_proxy',
+                upstreams: [{ dial: upstream }],
+                headers: {
+                  request: {
+                    set: {
+                      ...VISITOR,
+                      [VIA_HEADER]: ['public'],
+                      [PUBLIC_HOST_HEADER]: ['{http.request.host}'],
+                      // The upstream's own address as Host: the dashboard's dev server (Vite) refuses names it doesn't
+                      // know, and the daemon reads the public name from X-Forwarded-Host (set above), never Host.
+                      Host: ['{http.reverse_proxy.upstream.hostport}'],
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    terminal: true,
+  };
+}
+
 /** The public listener's server (`servers.public` in Caddy's config). */
-export function publicServer(listener: PublicListener, daemon: string) {
+export function publicServer(listener: PublicListener, daemon: string, dashboardUpstream: string = daemon) {
   const hosts = listener.apps.map((a) => a.hostname);
   return {
     listen: [`127.0.0.1:${listener.port}`],
@@ -211,6 +275,7 @@ export function publicServer(listener: PublicListener, daemon: string) {
         terminal: true,
       })),
       { match: PLAIN_HTTP, handle: [page(403, 'HTTPS only')], terminal: true },
+      ...(listener.dashboard ? [publicDashboardRoute(listener.dashboard.hostname, dashboardUpstream)] : []),
       ...listener.apps.map((a) => publicAppRoute(a, daemon)),
       // A name hlabs doesn't know (or an app made private a moment ago).
       { handle: [page(404, 'Page not found')], terminal: true },
@@ -226,7 +291,12 @@ export function publicServer(listener: PublicListener, daemon: string) {
                   handler: 'reverse_proxy',
                   upstreams: [{ dial: daemon }],
                   rewrite: { method: 'GET', uri: '/auth/unavailable' },
-                  headers: { request: { set: { ...VISITOR, 'X-Hlabs-Public-Host': ['{http.request.host}'] } } },
+                  headers: {
+                    request: {
+                      set: { ...VISITOR, 'X-Hlabs-Public-Host': ['{http.request.host}'] },
+                      delete: [VIA_HEADER],
+                    },
+                  },
                 },
               ],
               terminal: true,

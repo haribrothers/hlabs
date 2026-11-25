@@ -5,6 +5,7 @@
 import { randomBytes } from 'node:crypto';
 import {
   CloudflareError,
+  type AccessApp,
   type CloudflareClient,
   type CloudflareCredential,
   type CloudflareSignIn,
@@ -16,6 +17,16 @@ import {
 
 /** The token the fake accepts (any other is refused as Cloudflare would). Not a secret. */
 export const FAKE_CLOUDFLARE_TOKEN = 'fake-cloudflare-token-0123456789';
+/** The extra token that can manage Access while `accessDenied` is on (US-SYS-48). Not a secret. */
+export const FAKE_CLOUDFLARE_ACCESS_TOKEN = 'fake-cloudflare-access-token-0123456789';
+
+/** An Access application in the fake account (US-SYS-48). */
+export interface FakeAccessApp extends AccessApp {
+  hostname: string;
+  emails: string[];
+  /** Made by hlabs (createAccessApp), not one of the account's own. */
+  byHlabs: boolean;
+}
 
 export interface FakeRecord {
   id: string;
@@ -43,6 +54,13 @@ export class FakeCloudflare implements CloudflareClient, TunnelConnector {
   /** The zone's DNS, with records hlabs didn't make (a website, email). */
   records = new Map<string, FakeRecord>();
   tunnels = new Map<string, string>();
+  /** The account's Access applications (US-SYS-48), by id. */
+  accessApps = new Map<string, FakeAccessApp>();
+  /**
+   * The credential can't manage Access (as a sign-in's zone-scoped token can't): only an `accessToken` of
+   * FAKE_CLOUDFLARE_ACCESS_TOKEN can. Off by default.
+   */
+  accessDenied = false;
   /** Every call, for tests: `signIn`, `checkToken`, `createTunnel:<name>`, `addRecord:<name>`… */
   calls: string[] = [];
   private connector: ConnectorState = 'stopped';
@@ -63,6 +81,8 @@ export class FakeCloudflare implements CloudflareClient, TunnelConnector {
       this.records.set(id, { id, name, content: '192.0.2.10', byHlabs: false });
     }
     this.tunnels = new Map();
+    this.accessApps = new Map();
+    this.accessDenied = false;
     this.failing = new Set();
     this.calls = [];
     this.connector = 'stopped';
@@ -162,6 +182,45 @@ export class FakeCloudflare implements CloudflareClient, TunnelConnector {
     this.calls.push(`deleteRecord:${name}`);
     this.check('dns');
     this.records.delete(recordId);
+  }
+
+  private checkAccessAllowed(cred: CloudflareCredential) {
+    this.check('access');
+    if (this.accessDenied && cred.accessToken !== FAKE_CLOUDFLARE_ACCESS_TOKEN)
+      throw new CloudflareError('access', "The credential can't manage Access", false, true);
+  }
+
+  async checkAccess(cred: CloudflareCredential) {
+    this.calls.push('checkAccess');
+    this.checkAccessAllowed(cred);
+  }
+
+  async createAccessApp(cred: CloudflareCredential, opts: { hostname: string; emails: string[] }) {
+    this.calls.push(`createAccessApp:${opts.hostname}`);
+    this.checkAccessAllowed(cred);
+    const app = {
+      appId: `access-${randomBytes(4).toString('hex')}`,
+      policyId: `policy-${randomBytes(4).toString('hex')}`,
+      hostname: opts.hostname,
+      emails: [...opts.emails],
+      byHlabs: true,
+    };
+    this.accessApps.set(app.appId, app);
+    return { appId: app.appId, policyId: app.policyId };
+  }
+
+  async updateAccessPolicy(cred: CloudflareCredential, app: AccessApp, emails: string[]) {
+    this.calls.push(`updateAccessPolicy:${app.appId}`);
+    this.checkAccessAllowed(cred);
+    const found = this.accessApps.get(app.appId);
+    if (!found || found.policyId !== app.policyId) throw new CloudflareError('access', 'No such Access application');
+    found.emails = [...emails];
+  }
+
+  async deleteAccessApp(cred: CloudflareCredential, appId: string) {
+    this.calls.push(`deleteAccessApp:${appId}`);
+    this.checkAccessAllowed(cred);
+    this.accessApps.delete(appId);
   }
 
   /** The records hlabs made, by name (tests). */

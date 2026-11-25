@@ -157,6 +157,10 @@ export const trayCopy = {
   otherPortTaken: (port: number) => `Port ${port} is in use too. Choose another in Settings › Network.`,
   /** US-SYS-44 (TrayPublic): what's public on the internet, and turning it all off after the OS confirms it's you. */
   publicApps: (n: number) => `Public: ${n} ${n === 1 ? 'app' : 'apps'}`,
+  /** US-SYS-45 (TrayPublicDashboard): the dashboard too, first. */
+  publicDashboard: (apps: number) =>
+    apps > 0 ? `Public: the dashboard and ${apps} ${apps === 1 ? 'app' : 'apps'}` : 'Public: the dashboard',
+  dashboardName: 'hlabs dashboard',
   turnOffPublic: 'Turn off public access…',
   asksForTouchId: 'Asks for Touch ID',
   asksForPassword: 'Asks for your password',
@@ -164,6 +168,7 @@ export const trayCopy = {
   publicOffFailed: "Couldn't turn off public access",
   publicOffTitle: 'Public access is off',
   publicOffBody: 'Your apps are private again. Cloudflare Tunnel stays set up.',
+  publicOffBodyDashboard: 'The dashboard and your apps are private again. Cloudflare Tunnel stays set up.',
   /** US-INST-16: the keychain refused access to the tray token. */
   keychainStatus: 'Needs Keychain access',
   keychainNote: 'hlabs needs Keychain access to work.',

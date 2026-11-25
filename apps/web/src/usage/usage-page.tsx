@@ -16,6 +16,7 @@ import { MainChart } from './main-chart';
 import { RANGES, useUsageRange, type UsageRange } from './range';
 import { UsageTiles, type TileId } from './tiles';
 import { useLiveUsage } from './use-live-usage';
+import { InternetBanner } from '../public/home-only';
 
 /** "Container VM (Colima) · 4 CPUs · 8 GB allocated", "Docker Engine · uses the whole computer". */
 export function engineLine(engine: UsageOverview['engine']): string {
@@ -123,6 +124,7 @@ export function UsagePage() {
       level={2}
       className="hl-window-fill mx-auto flex min-h-0 w-full max-w-window flex-1 flex-col overflow-hidden p-0"
     >
+      <InternetBanner variant="window" />
       <ScrollPane
         className="flex-1"
         // The body sits inside the scroller's right margin (mr-2) and its scrollbar gutter (8px), so the header's right

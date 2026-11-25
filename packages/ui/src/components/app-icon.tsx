@@ -40,6 +40,11 @@ export interface AppIconProps {
    * ("Public"), added to its accessible name. The globe alone on a phone's smaller tile.
    */
   publicLabel?: string;
+  /**
+   * Under the name, inside the tile's control: on the public dashboard a public app's "Public" pill and address, or
+   * "At home only" (US-SYS-47, HomePublicAddress). Say it in `ariaLabel` too; this is drawn only.
+   */
+  below?: ReactNode;
 }
 
 const RING_R = 19;
@@ -62,6 +67,7 @@ export function AppIcon({
   size = SIZE_APP_ICON,
   radius,
   publicLabel,
+  below,
 }: AppIconProps) {
   const t = useUiStrings();
   const offlineId = useId();
@@ -149,6 +155,11 @@ export function AppIcon({
         </span>
       ) : null}
       <span className={cn('hl-app-name', label !== name && 'hl-app-status')}>{label}</span>
+      {below ? (
+        <span className="hl-app-below" aria-hidden="true">
+          {below}
+        </span>
+      ) : null}
     </>
   );
   const className = cn('hl-app', state === 'stopped' && 'hl-app-stopped', offline && 'hl-app-offline');

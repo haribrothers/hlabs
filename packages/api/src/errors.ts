@@ -147,6 +147,16 @@ export const HLABS_ERRORS = {
   /** Not while the app is public: automatic updates stay on, and so does the hlabs login with it (07 §7.10). */
   APP_IS_PUBLIC: 'PRECONDITION_FAILED',
 
+  // The public dashboard (US-SYS-45…48; D-182, 07 §7.11)
+  /** Only at home or on the tailnet (US-SYS-47): the request came through the public dashboard; `detail.procedure`. */
+  HOME_ONLY: 'FORBIDDEN',
+  /** Every admin needs two-factor before the dashboard can be public: `detail.admins` names who hasn't turned it on. */
+  TWO_FACTOR_REQUIRED_FOR_DASHBOARD: 'PRECONDITION_FAILED',
+  /** Signing in on the public dashboard needs two-factor, and this account has none: no session (US-SYS-46). */
+  AUTH_TWO_FACTOR_REQUIRED: 'FORBIDDEN',
+  /** Cloudflare's sign-in in front needs the dashboard to be public first (US-SYS-48). */
+  DASHBOARD_NOT_PUBLIC: 'PRECONDITION_FAILED',
+
   // Backups and restore
   BACKUP_DEST_UNREACHABLE: 'BAD_GATEWAY',
   BACKUP_DEST_AUTH_FAILED: 'BAD_REQUEST',

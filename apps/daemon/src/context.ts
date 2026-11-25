@@ -1,5 +1,7 @@
 // The tRPC request context: who is calling, and how procedures reach their handlers.
 import { hlabsError, listProcedures, type Access, type ApiContext } from '@hlabs/api';
+import { auditLog } from '@hlabs/db';
+import { homeOnlyRule, isHomeOnly, ulid, type Via } from '@hlabs/shared';
 import { csrfMatches } from './auth/sessions';
 import type { Listener } from './events/bus';
 import { memberSeesUsage } from './home/layout';
@@ -29,6 +31,12 @@ export interface RequestInfo {
   host: string | null;
   /** Origins the dashboard is served from. */
   allowedOrigins: readonly string[];
+  /** Where the request came from (http/via.ts): `public` only through the public listener's dashboard route. */
+  via: Via;
+  /** From the public dashboard: its public name, while that is the dashboard's name (else null). */
+  publicHost: string | null;
+  /** From the public dashboard: Cloudflare's two-letter country for the visitor (`CF-IPCountry`), or null. */
+  country: string | null;
   /** Adds a Set-Cookie header to the response. */
   setCookie(cookie: string): void;
 }
@@ -78,6 +86,9 @@ export class DaemonContext implements ApiContext {
   authorize(access: readonly Access[], path: string): void {
     const id = this.identity;
     if (id.kind === 'trayRejected') throw hlabsError('TRAY_TOKEN_REJECTED');
+    // First-run setup, invites and reset links are never served on the public dashboard (US-SYS-46), whatever state
+    // setup is in.
+    if (homeOnlyRule(path) === 'neverServed') this.refuseHomeOnly(path, undefined);
     // The tray token works on tray procedures only, public ones included (US-INST-15).
     if (id.kind === 'tray') {
       if (access.includes('tray')) return;
@@ -122,13 +133,39 @@ export class DaemonContext implements ApiContext {
     if (!csrfMatches(id.session.raw, csrfToken)) throw hlabsError('CSRF_REJECTED');
   }
 
+  /**
+   * Home-only changes (US-SYS-47, D-182): from the public dashboard, a procedure on HOME_ONLY_PROCEDURES is refused with
+   * HOME_ONLY for everyone, admins too, and the attempt is recorded. Runs on the validated input, after access, for
+   * every procedure (the one place they all pass), so making something private still works there.
+   */
+  private refuseHomeOnly(path: string, input: unknown): void {
+    if (this.request.via !== 'public' || !isHomeOnly(path, input)) return;
+    const services = this.holder.current;
+    const id = this.identity;
+    services?.db
+      .insert(auditLog)
+      .values({
+        id: ulid(),
+        at: Date.now(),
+        userId: id.kind === 'user' && id.userId !== 'dev' ? id.userId : null,
+        action: 'homeOnly.refused',
+        target: null,
+        detailJson: { procedure: path, publicHost: this.request.publicHost },
+        ip: this.request.ip,
+      })
+      .run();
+    throw hlabsError('HOME_ONLY', `${path} only works at home or on the tailnet`, { procedure: path });
+  }
+
   async handle(path: string, input: unknown, signal: AbortSignal | undefined): Promise<unknown> {
+    this.refuseHomeOnly(path, input);
     const handler = this.dispatcher.handlerFor(path);
     if (!handler) throw hlabsError('NOT_IMPLEMENTED', `${path} is not implemented yet`);
     return handler(input, this, signal);
   }
 
   subscribe(path: string, input: unknown, signal: AbortSignal | undefined): AsyncIterable<unknown> {
+    this.refuseHomeOnly(path, input);
     const handler = this.dispatcher.subscriptionFor(path);
     if (!handler) throw hlabsError('NOT_IMPLEMENTED', `${path} is not implemented yet`);
     return handler(input, this, signal);

@@ -36,6 +36,7 @@ import { EngineBanner, StartEngineButton } from './engine-banner';
 import { useEngineRunning } from '../lib/engine-state';
 import { NotificationsBell } from './notifications';
 import { useEventStream } from '../lib/use-event-stream';
+import { InternetBanner } from '../public/home-only';
 
 /** Home's mark on a tablet: a control's height and a little more (TabletHome). */
 const TOUCH_MARK = tokens.SIZE_CONTROL + tokens.SPACE_2;
@@ -192,6 +193,8 @@ export function HomeView({ shippedPhase = VISIBLE_PHASE }: { shippedPhase?: numb
 
   return (
     <div className="mx-auto flex w-full max-w-window flex-col items-center gap-8">
+      {/* From the internet (HomePublicAddress): the pill at the top of Home. */}
+      <InternetBanner variant="home" className="-mt-6" />
       <header className="flex flex-col items-center gap-4 text-center">
         {/* The size of a Home app icon, with the mark inset as app logos are. */}
         <GlassCard

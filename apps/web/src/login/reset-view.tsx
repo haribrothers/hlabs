@@ -12,6 +12,8 @@ import { errorCode } from '../lib/error-copy';
 import { useTRPCClient } from '../lib/trpc';
 import { PasswordReveal } from '../shell/password-reveal';
 import { LoginLayout } from './login-layout';
+import { NotOnPublicAddress } from './not-here';
+import { useSignedOutVia } from '../public/home-only';
 import { useFinishLogin } from './use-login';
 
 const LOGO = 36;
@@ -25,6 +27,9 @@ export function ResetView({ token }: { token: string }) {
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [expired, setExpired] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const [away, setAway] = useState(false);
+  // Never on the dashboard's public address (US-SYS-46).
+  const via = useSignedOutVia();
 
   const reset = useMutation({
     mutationFn: () => client.auth.resetPassword.mutate({ token, newPassword: password }),
@@ -34,6 +39,7 @@ export function ResetView({ token }: { token: string }) {
     onError: (err) => {
       const code = errorCode(err);
       if (code === 'AUTH_RESET_EXPIRED') return setExpired(true);
+      if (code === 'HOME_ONLY') return setAway(true);
       if (code === 'PASSWORD_TOO_SHORT') return setFieldError(copy.resetTooShort);
       if (code === 'PASSWORD_TOO_COMMON') return setFieldError(copy.resetTooCommon);
       setFailure(copy.resetFailed);
@@ -53,6 +59,7 @@ export function ResetView({ token }: { token: string }) {
     reset.mutate();
   };
 
+  if (via === 'public' || away) return <NotOnPublicAddress />;
   if (expired) {
     return (
       <LoginLayout back={{ label: copy.backToLogIn, to: '/login' }}>

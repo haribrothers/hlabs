@@ -36,10 +36,11 @@ const setupDialog = async () => {
 
 describe('US-SYS-43', () => {
   it('the Public access group says what it is for and, until set up, how public apps go out', async () => {
-    open();
+    // With the public dashboard (D-182, phase 7) it says the dashboard can be made public too.
+    renderScreen(() => <PublicAccess shippedPhase={7} />, { 'public.status': () => status(), 'events.stream': never });
     const group = await screen.findByRole('group', { name: 'Public access' });
     expect(
-      screen.getByText('Make single apps reachable from the internet. Your dashboard never is.'),
+      screen.getByText('Make single apps, or the dashboard itself, reachable from the internet.'),
     ).toBeInTheDocument();
     expect(within(group).getByText('Cloudflare Tunnel')).toBeInTheDocument();
     expect(

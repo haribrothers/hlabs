@@ -11,6 +11,7 @@ import { settingsCopy } from '../copy/settings';
 import { useIsDesktop } from '../lib/use-media';
 import { useMe } from '../lib/use-me';
 import { sectionPath, visibleSections } from './sections';
+import { InternetBanner } from '../public/home-only';
 
 const copy = settingsCopy;
 
@@ -87,6 +88,7 @@ export function SettingsLayout() {
     return (
       // TabletSettingsPortrait: the window fills the width; the list, or the section you went into from it.
       <GlassCard level={2} className="hl-window-fill flex min-h-0 w-full flex-1 flex-col overflow-hidden p-0">
+        <InternetBanner variant="window" />
         {atList ? <TabletSettingsList me={me} sections={sections} /> : <Outlet />}
       </GlassCard>
     );
@@ -99,6 +101,7 @@ export function SettingsLayout() {
       level={2}
       className="hl-window-fill mx-auto grid min-h-0 w-full max-w-window flex-1 grid-cols-[240px_1fr] overflow-hidden p-0"
     >
+      <InternetBanner variant="window" />
       <div className="flex min-h-0 flex-col border-r border-hairline">
         <ScrollPane
           className="flex-1"

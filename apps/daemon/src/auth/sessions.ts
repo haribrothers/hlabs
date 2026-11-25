@@ -12,6 +12,8 @@ export const SESSION_COOKIE = 'hlabs_session';
  */
 export const PUBLIC_SESSION_COOKIE = '__Host-hlabs_pub';
 export const IDLE_MS = 12 * 60 * 60 * 1000;
+/** A session on the public dashboard ends this long after it began, however active it is (US-SYS-46, D-182). */
+export const PUBLIC_DASHBOARD_SESSION_MS = 12 * 60 * 60 * 1000;
 export const REMEMBER_MS = 30 * 24 * 60 * 60 * 1000;
 /** lastSeenAt is written at most this often. */
 const TOUCH_MS = 60 * 1000;
@@ -104,11 +106,13 @@ export class SessionService {
     now?: number;
     /** A sign-in on a public app's address (D-178): the session is valid on that host only. */
     publicHost?: string | null;
+    /** How long until it ends (the public dashboard's 12 hours); else the idle timeout or "Remember me". */
+    lifetimeMs?: number;
   }) {
     const now = opts.now ?? Date.now();
     const raw = randomBytes(32).toString('base64url');
     const remember = opts.remember ?? false;
-    const expiresAt = now + (remember ? REMEMBER_MS : IDLE_MS);
+    const expiresAt = now + (opts.lifetimeMs ?? (remember ? REMEMBER_MS : IDLE_MS));
     this.db
       .insert(sessions)
       .values({
@@ -129,12 +133,13 @@ export class SessionService {
 
   /**
    * The signed-in user for a cookie, sliding the expiry; null when unknown, revoked, expired or disabled. A session
-   * signed in on a public app's address counts only on that host (`publicHost`), and a dashboard session never there.
+   * signed in on a public app's address (or the public dashboard's) counts only on that host (`publicHost`), and a
+   * dashboard session never there. `absolute`: the expiry doesn't slide (the public dashboard, US-SYS-46).
    */
   resolve(
     raw: string | null | undefined,
     now = Date.now(),
-    opts: { publicHost?: string } = {},
+    opts: { publicHost?: string; absolute?: boolean } = {},
   ): ResolvedSession | null {
     if (!raw) return null;
     const row = this.db
@@ -147,7 +152,7 @@ export class SessionService {
     if ((row.session.publicHost ?? null) !== (opts.publicHost?.toLowerCase() ?? null)) return null;
     let expiresAt = row.session.expiresAt;
     if (now - row.session.lastSeenAt >= TOUCH_MS) {
-      expiresAt = now + (row.session.remember ? REMEMBER_MS : IDLE_MS);
+      if (!opts.absolute) expiresAt = now + (row.session.remember ? REMEMBER_MS : IDLE_MS);
       this.db.update(sessions).set({ lastSeenAt: now, expiresAt }).where(eq(sessions.id, row.session.id)).run();
     }
     return {

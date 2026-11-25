@@ -47,6 +47,11 @@ export interface PublicListener {
   /** Where its access log goes (Visits, US-APP-29): `<dataDir>/logs/public`, kept 7 days. */
   logDir: string;
   apps: PublicRoute[];
+  /**
+   * The dashboard's public name while it's public (US-SYS-45, D-182): served there as on the home server, with the
+   * public hardening and `X-Hlabs-Via: public` on every request it passes on. Null (or absent) while it's private.
+   */
+  dashboard?: { hostname: string } | null;
 }
 
 /** Caddy couldn't start because another program holds one of hlabs's web ports (US-SYS-42). */

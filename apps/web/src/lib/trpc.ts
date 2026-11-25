@@ -5,6 +5,7 @@ import { createTRPCClient, TRPCClientError, httpBatchLink, httpSubscriptionLink,
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import { csrfHeaders } from './csrf';
 import { mutationErrorNotice } from './error-copy';
+import { explainIfHomeOnly } from '../public/explain';
 import { offlineLink } from './offline-link';
 import { closingEventSource, streamLink } from './stream-link';
 import { setupHeaders } from './setup-token';
@@ -28,6 +29,8 @@ export const queryClient = new QueryClient({
   mutationCache: new MutationCache({
     onError: (err, _variables, _context, mutation) => {
       authLost(err);
+      // Only at home or on the tailnet (US-SYS-47): the same explanation as an "At home only" control.
+      if (explainIfHomeOnly(err)) return;
       mutationErrorNotice(err, mutation.meta);
     },
   }),

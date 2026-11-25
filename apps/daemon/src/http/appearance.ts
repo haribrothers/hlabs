@@ -4,6 +4,7 @@ import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { readCookie, SESSION_COOKIE } from '../auth/sessions';
+import { dashboardSession } from './via';
 import { customWallpaperFile, saveWallpaper, WALLPAPER_MAX_BYTES } from '../account/appearance';
 import type { ServiceHolder, Services } from '../services';
 import { csrfOk } from './files';
@@ -16,7 +17,7 @@ function signedIn(req: FastifyRequest, reply: FastifyReply, holder: ServiceHolde
     return null;
   }
   const raw = readCookie(req.headers.cookie, SESSION_COOKIE) ?? null;
-  const session = raw ? services.sessions.resolve(raw) : null;
+  const session = raw ? dashboardSession(services, req.headers, raw) : null;
   if (!raw || !session) {
     void reply.code(401).send({ hlabsCode: 'AUTH_REQUIRED', detail: null });
     return null;

@@ -106,6 +106,11 @@ export const trayStatusSchema = z.object({
    */
   publicApps: z.number().int().nonnegative().optional(),
   publicAppNames: z.array(z.string()).optional(),
+  /**
+   * The dashboard is public (US-SYS-45): "Public: the dashboard and 2 apps", and "Turn off public access" makes it
+   * private too. Always sent (optional only for older fixtures).
+   */
+  publicDashboard: z.boolean().optional(),
 });
 export type TrayStatus = z.infer<typeof trayStatusSchema>;
 

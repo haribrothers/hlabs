@@ -128,6 +128,12 @@ export const jobKindSchema = z.enum([
   'public_setup',
   /** "Remove Cloudflare Tunnel" (US-SYS-43): every app private, then the tunnel, its DNS records and the credential. */
   'public_remove',
+  /** Making the dashboard public at its own name (US-SYS-45): its DNS record, then Caddy's public listener. */
+  'dashboard_public_on',
+  /** Making the dashboard private (US-SYS-45): the route goes, its sessions end, then its record and Access app. */
+  'dashboard_public_off',
+  /** Adding, changing or removing Cloudflare's sign-in in front of the dashboard (US-SYS-48). */
+  'dashboard_access',
   /** Dev and test only. */
   'noop',
 ]);

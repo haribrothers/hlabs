@@ -17,6 +17,7 @@ import { registerAppearance } from './http/appearance';
 import { registerAppLogs } from './http/app-logs';
 import { registerDiagnostics } from './http/diagnostics';
 import { registerFiles } from './http/files';
+import { anonymousAdmin, countryOf, dashboardSession, publicHostFor, viaOf } from './http/via';
 import type { Logger } from './logger';
 import type { Readiness } from './readiness';
 import { dispatcher } from './routers/index';
@@ -33,7 +34,8 @@ export interface ServerDeps {
 
 /**
  * The tray token (from loopback, never through Caddy) or the session cookie decides who is calling; without either,
- * the development-only anonymous admin or nobody.
+ * the development-only anonymous admin (never from the public dashboard) or nobody. From the public dashboard only a
+ * session made there counts, and from anywhere else never one (US-SYS-46, http/via.ts).
  */
 async function identify(
   config: DaemonConfig,
@@ -55,7 +57,7 @@ async function identify(
   if (raw && services) {
     let session: ReturnType<typeof services.sessions.resolve> = null;
     try {
-      session = services.sessions.resolve(raw);
+      session = dashboardSession(services, req.headers, raw);
     } catch {
       // The daemon is stopping.
     }
@@ -68,7 +70,7 @@ async function identify(
       };
     }
   }
-  if (config.devAnonymousAdmin) return { kind: 'user', userId: 'dev', role: 'admin' };
+  if (anonymousAdmin(config.devAnonymousAdmin, req.headers)) return { kind: 'user', userId: 'dev', role: 'admin' };
   return { kind: 'anonymous' };
 }
 
@@ -110,17 +112,23 @@ export async function buildServer({
     logLevel: config.dev ? 'info' : 'warn',
     trpcOptions: {
       router: appRouter,
-      createContext: async ({ req, res }) =>
-        new DaemonContext(holder, dispatcher, await identify(config, holder, trayTokens, req), {
+      createContext: async ({ req, res }) => {
+        const db = holder.current?.db ?? null;
+        const via = viaOf(req.headers, db);
+        return new DaemonContext(holder, dispatcher, await identify(config, holder, trayTokens, req), {
           ip: req.ip,
           userAgent: req.headers['user-agent'] ?? null,
           setupToken: headerValue(req.headers['x-hlabs-setup']),
           csrfToken: headerValue(req.headers['x-hlabs-csrf']),
           origin: headerValue(req.headers.origin),
           host: headerValue(req.headers['x-forwarded-host']) ?? headerValue(req.headers.host),
-          allowedOrigins: dashboardOrigins(config.dashboardUrl, holder.current?.db ?? null),
+          allowedOrigins: dashboardOrigins(config.dashboardUrl, db),
+          via,
+          publicHost: publicHostFor(req.headers, db),
+          country: via === 'public' ? countryOf(req.headers) : null,
           setCookie: (cookie) => void res.header('set-cookie', cookie),
-        }),
+        });
+      },
       onError: ({ path, error }) => {
         if (error.code === 'INTERNAL_SERVER_ERROR') logger.error({ err: error, path }, 'procedure failed');
       },

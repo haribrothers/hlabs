@@ -93,6 +93,9 @@ export const FEATURE_PHASE = {
   /** Public apps through Cloudflare Tunnel (F-APP-10, F-SYS-13, D-171): Settings › Network › Public access, an app's
    * "Make public…", Visits and the menu bar's "Turn off public access". */
   publicApps: 7,
+  /** The dashboard on a public address of its own (F-SYS-14, D-182): its row in Public access, "At home only" on the
+   * public address, the public sign-in and Cloudflare's sign-in in front (US-SYS-45…48). */
+  publicDashboard: 7,
 } as const satisfies Record<string, number>;
 
 export type Feature = keyof typeof FEATURE_PHASE;
@@ -119,6 +122,7 @@ export const BUILT_AHEAD: readonly Feature[] = [
   'factoryReset',
   'pwa',
   'publicApps',
+  'publicDashboard',
 ];
 
 /** The dev server is previewing (never in a build or unit tests). */

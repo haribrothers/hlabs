@@ -11,6 +11,8 @@ import { useIsDesktop } from '../lib/use-media';
 import { ChangePassword } from './change-password';
 import { TurnOnTwoFactor } from './turn-on-two-factor';
 import { TwoFactorManage } from './two-factor-manage';
+import { explainHomeOnly, HomeOnly, HomeOnlyPill, useOnPublic } from '../public/home-only';
+import { publicDashboardCopy as dashCopy } from '../copy/public-dashboard';
 
 const copy = accountCopy;
 
@@ -26,6 +28,8 @@ export function Security({
 }) {
   const trpc = useTRPC();
   const desktop = useIsDesktop();
+  // From the internet (US-SYS-47): the password and turning two-factor on or off are at home only.
+  const away = useOnPublic();
   const account = useQuery({ ...trpc.account.get.queryOptions(), retry: false });
   const [changing, setChanging] = useState(false);
   // Which two-factor dialog is open: from Manage, View or Turn on, or straight from /settings/account/two-factor
@@ -62,19 +66,31 @@ export function Security({
           icon={<KeyRound aria-hidden {...iconDefaults} />}
           title={copy.password}
           subtitle={passwordLine}
-          value={copy.change}
-          chevron
-          aria-label={`${copy.change} ${copy.password.toLowerCase()}`}
-          onClick={() => setChanging(true)}
+          value={away ? undefined : copy.change}
+          trailing={away ? <HomeOnlyPill label={dashCopy.atHomeOnly} /> : undefined}
+          chevron={!away}
+          aria-label={
+            away
+              ? dashCopy.atHomeOnlyLabel(`${copy.change} ${copy.password.toLowerCase()}`)
+              : `${copy.change} ${copy.password.toLowerCase()}`
+          }
+          onClick={away ? () => explainHomeOnly('account.changePassword') : () => setChanging(true)}
         />
         <InsetRowButton
           icon={<Smartphone aria-hidden {...iconDefaults} />}
           title={copy.twoFactor}
           subtitle={on ? copy.authenticatorApp : undefined}
-          value={on ? <span className="text-success">{copy.on}</span> : copy.twoFactorOff}
+          value={on ? <span className="text-success">{copy.on}</span> : away ? undefined : copy.twoFactorOff}
+          trailing={!on && away ? <HomeOnlyPill label={dashCopy.atHomeOnly} /> : undefined}
           chevron
           aria-label={on ? copy.manageTwoFactor : copy.turnOnTwoFactor}
-          onClick={() => setDialog(on ? 'manage' : 'turnOn')}
+          onClick={
+            on
+              ? () => setDialog('manage')
+              : away
+                ? () => explainHomeOnly('account.totp.begin')
+                : () => setDialog('turnOn')
+          }
         />
         {on ? (
           <InsetRowButton
@@ -98,14 +114,20 @@ export function Security({
         title={copy.password}
         subtitle={passwordLine}
         trailing={
-          <Button
-            variant="secondary"
-            size="sm"
-            aria-label={`${copy.change} ${copy.password.toLowerCase()}`}
-            onClick={() => setChanging(true)}
+          <HomeOnly
+            procedure="account.changePassword"
+            label={copy.change}
+            name={`${copy.change} ${copy.password.toLowerCase()}`}
           >
-            {copy.change}
-          </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-label={`${copy.change} ${copy.password.toLowerCase()}`}
+              onClick={() => setChanging(true)}
+            >
+              {copy.change}
+            </Button>
+          </HomeOnly>
         }
       />
       <ListRow
@@ -117,9 +139,16 @@ export function Security({
               {copy.manage}
             </Button>
           ) : (
-            <Button variant="secondary" size="sm" aria-label={copy.turnOnTwoFactor} onClick={() => setDialog('turnOn')}>
-              {copy.turnOn}
-            </Button>
+            <HomeOnly procedure="account.totp.begin" label={copy.turnOn} name={copy.turnOnTwoFactor}>
+              <Button
+                variant="secondary"
+                size="sm"
+                aria-label={copy.turnOnTwoFactor}
+                onClick={() => setDialog('turnOn')}
+              >
+                {copy.turnOn}
+              </Button>
+            </HomeOnly>
           )
         }
       />

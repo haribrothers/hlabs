@@ -9,6 +9,7 @@ import { peopleCopy as copy } from '../copy/people';
 import { errorCode } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { HomeOnlyControl } from '../public/home-only';
 
 type Key = keyof PeoplePolicy;
 
@@ -56,17 +57,20 @@ export function PolicySwitch({
       subtitle={hint}
       below={below}
       trailing={
-        <Switch
-          aria-label={title}
-          checked={on}
-          disabled={!policy.data}
-          onChange={(next) =>
-            update.mutate(
-              { [name]: next },
-              { onError: (err) => void (onFailed?.(err) || showToast({ tone: 'danger', title: copy.policyFailed })) },
-            )
-          }
-        />
+        // From the internet what members can do is at home only (US-SYS-47): the switch shows, turned off for changes.
+        <HomeOnlyControl procedure="users.updatePolicy" label={title}>
+          <Switch
+            aria-label={title}
+            checked={on}
+            disabled={!policy.data}
+            onChange={(next) =>
+              update.mutate(
+                { [name]: next },
+                { onError: (err) => void (onFailed?.(err) || showToast({ tone: 'danger', title: copy.policyFailed })) },
+              )
+            }
+          />
+        </HomeOnlyControl>
       }
     />
   );

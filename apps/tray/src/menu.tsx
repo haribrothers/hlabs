@@ -81,13 +81,16 @@ export interface RunningActions {
   checkUpdates?: { feedback: CheckFeedback; run: () => void };
   /** "Back up now" as the backup's state has it (US-INST-07); shown once backups ship (D-036). */
   backup?: MenuItem;
-  /** "Turn off public access…" while any app is public (US-SYS-44): how many, their names, and the action. */
-  publicOff?: { count: number; names: readonly string[]; phase: PublicOffPhase; run: () => void };
+  /**
+   * "Turn off public access…" while any app or the dashboard is public (US-SYS-44, US-SYS-45): how many apps, their
+   * names, whether the dashboard is, and the action.
+   */
+  publicOff?: { count: number; names: readonly string[]; dashboard?: boolean; phase: PublicOffPhase; run: () => void };
 }
 
-/** "Public: 2 apps" and the item that turns it all off; nothing while no app is public. */
+/** "Public: 2 apps" and the item that turns it all off; nothing while neither an app nor the dashboard is public. */
 function publicItems(p: RunningActions['publicOff']): MenuItem[] {
-  if (!p || p.count <= 0) return [];
+  if (!p || (p.count <= 0 && !p.dashboard)) return [];
   const item: MenuItem =
     p.phase === 'busy'
       ? { label: t.turningOffPublic, disabled: true }
@@ -97,14 +100,24 @@ function publicItems(p: RunningActions['publicOff']): MenuItem[] {
   return [
     { separator: true },
     // The Mac menu shows these on the card above (TrayPublic); a Linux desktop's native menu has no card (D-145).
-    ...(isLinux() ? [{ label: publicLine(p.count, p.names), disabled: true }] : []),
+    ...(isLinux() ? [{ label: publicLine(p.count, p.names, p.dashboard ?? false), disabled: true }] : []),
     item,
   ];
 }
 
+/** "Public: 2 apps", or "Public: the dashboard and 2 apps" while the dashboard is public too (US-SYS-45). */
+export const publicTitle = (count: number, dashboard: boolean) =>
+  dashboard ? t.publicDashboard(count) : t.publicApps(count);
+
+/** "hlabs dashboard, Immich, Jellyfin": what's public, by name. */
+export const publicNamesLine = (names: readonly string[], dashboard: boolean) =>
+  (dashboard ? [t.dashboardName, ...names] : names).join(', ');
+
 /** "Public: 2 apps · Immich, Jellyfin". */
-const publicLine = (count: number, names: readonly string[]) =>
-  names.length ? `${t.publicApps(count)} · ${names.join(', ')}` : t.publicApps(count);
+const publicLine = (count: number, names: readonly string[], dashboard: boolean) => {
+  const named = publicNamesLine(names, dashboard);
+  return named ? `${publicTitle(count, dashboard)} · ${named}` : publicTitle(count, dashboard);
+};
 
 const CHECK_LABEL: Record<Exclude<CheckFeedback, null>, string> = {
   checking: t.checking,
@@ -393,9 +406,11 @@ export function RunningMenu({
   const pause = useQuickAction('pauseAll', onChanged);
   const openDashboard = dashboard.open;
   const backUpNow = useBackUpNow(status?.backup, openDashboard, onChanged);
-  const publicOff = usePublicOff(onChanged);
+  const publicDashboard = status?.publicDashboard ?? false;
+  const publicOff = usePublicOff(onChanged, undefined, publicDashboard);
   const publicCount = status?.publicApps ?? 0;
   const publicNames = status?.publicAppNames ?? [];
+  const publicNamed = publicNamesLine(publicNames, publicDashboard);
   const cpu = formatCpu(status?.cpuPercent);
   const memory = formatMemory(status?.memoryUsedBytes);
   const free = formatFree(status?.freeBytes);
@@ -411,11 +426,11 @@ export function RunningMenu({
         { label: t.free, value: free, spoken: t.freeSpoken(free) },
       ]}
       notice={
-        publicCount > 0
+        publicCount > 0 || publicDashboard
           ? {
               icon: <Globe {...iconDefaults} />,
-              title: t.publicApps(publicCount),
-              body: publicNames.length ? publicNames.join(', ') : undefined,
+              title: publicTitle(publicCount, publicDashboard),
+              body: publicNamed || undefined,
             }
           : undefined
       }
@@ -428,7 +443,13 @@ export function RunningMenu({
           startAtLogin,
           checkUpdates,
           backup: backupItem(status?.backup, backUpNow),
-          publicOff: { count: publicCount, names: publicNames, phase: publicOff.phase, run: publicOff.run },
+          publicOff: {
+            count: publicCount,
+            names: publicNames,
+            dashboard: publicDashboard,
+            phase: publicOff.phase,
+            run: publicOff.run,
+          },
         },
         phase,
       )}

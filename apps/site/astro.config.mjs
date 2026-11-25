@@ -80,6 +80,7 @@ export default defineConfig({
                     { label: 'Reach hlabs from anywhere', link: '/help/remote-access/tailscale/' },
                     { label: 'Reach hlabs through a subnet router', link: '/help/remote-access/subnet-router/' },
                     { label: 'Make an app public', link: '/help/remote-access/make-an-app-public/' },
+                    { label: 'Make the dashboard public', link: '/help/remote-access/make-the-dashboard-public/' },
                     { label: 'Add family to your tailnet', link: '/help/remote-access/family/' },
                   ],
                 },

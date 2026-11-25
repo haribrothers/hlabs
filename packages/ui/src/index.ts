@@ -19,6 +19,7 @@ export * from './components/modal-panel';
 export * from './components/motion-preference';
 export * from './components/dock';
 export * from './components/glass-card';
+export * from './components/home-only';
 export * from './components/icon-button';
 export * from './components/list';
 export * from './components/menu';

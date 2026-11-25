@@ -10,6 +10,7 @@ import {
   invites,
   jobs,
   loginAttempts,
+  sessions,
   setSetting,
   settingsSchemas,
   storageLocations,
@@ -188,6 +189,34 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     return { revoked: services.sessions.revoke({ userId: user.id }).length };
   });
 
+  // Moves a person's sessions back in time, as if they began `ms` ago (US-SYS-46 e2e: the public dashboard's session
+  // ends 12 hours after it began, however active it is). `publicOnly`: only those bound to a public address.
+  const ageBody = z.object({
+    username: z.string(),
+    ms: z.number().int().min(0),
+    publicOnly: z.boolean().default(false),
+  });
+  app.post('/dev/age-sessions', async (req, reply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) return reply.code(503).send({ reason: 'starting' });
+    const { username, ms, publicOnly } = ageBody.parse(req.body);
+    const user = services.db.select().from(users).where(eq(users.username, username)).get();
+    if (!user) return reply.code(404).send({ reason: 'no such user' });
+    const rows = services.db
+      .select()
+      .from(sessions)
+      .where(eq(sessions.userId, user.id))
+      .all()
+      .filter((r) => !publicOnly || r.publicHost !== null);
+    for (const r of rows)
+      services.db
+        .update(sessions)
+        .set({ createdAt: r.createdAt - ms, lastSeenAt: r.lastSeenAt - ms, expiresAt: r.expiresAt - ms })
+        .where(eq(sessions.id, r.id))
+        .run();
+    return { aged: rows.length };
+  });
+
   // Adds or removes a stand-in installed app and announces it, as AppService will (US-HOME-03 e2e, before phase 2).
   const fakeApp = z.object({
     id: z.string().regex(/^[a-z0-9-]{2,39}$/),
@@ -334,12 +363,26 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     approve: z.boolean().default(false),
     /** The link "Sign in to Cloudflare" gives (never a real Cloudflare page in e2e). */
     signInUrl: z.string().optional(),
-    /** Steps that fail: signIn, token, zone, tunnel, dns, connector, remove. */
-    failing: z.array(z.enum(['signIn', 'token', 'zone', 'tunnel', 'dns', 'connector', 'remove'])).optional(),
+    /** Steps that fail: signIn, token, zone, tunnel, dns, connector, remove, access. */
+    failing: z.array(z.enum(['signIn', 'token', 'zone', 'tunnel', 'dns', 'connector', 'remove', 'access'])).optional(),
+    /**
+     * The credential can't manage Cloudflare Access (US-SYS-48): "Add Cloudflare's sign-in in front" then asks for a
+     * token, which only FAKE_CLOUDFLARE_ACCESS_TOKEN (`fake-cloudflare-access-token-0123456789`) satisfies.
+     */
+    accessDenied: z.boolean().optional(),
     /** More names already in the zone's DNS (records hlabs didn't make), e.g. `blog.example.com`. */
     takenNames: z.array(z.string()).optional(),
     /** Set up Cloudflare Tunnel straight away (as with an API token), by the first admin; waits for it. */
     setUp: z.boolean().default(false),
+    /**
+     * The dashboard public at `<hostname>.example.com` straight away (US-SYS-45), by the first admin without asking
+     * for the password, waiting for the job (Cloudflare Tunnel must be set up, and every admin have two-factor); `null`
+     * makes it private.
+     */
+    dashboard: z
+      .object({ hostname: z.string().default('hlabs') })
+      .nullable()
+      .optional(),
   });
   const cloudflareState = (fake: FakeCloudflare) => ({
     domain: fake.domain,
@@ -348,6 +391,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     tunnels: [...fake.tunnels.values()],
     connector: fake.state(),
     calls: fake.calls,
+    accessApps: [...fake.accessApps.values()].map((a) => ({ hostname: a.hostname, emails: a.emails })),
   });
   app.get('/dev/cloudflare', async (_req, reply) => {
     const services = holder.current;
@@ -370,6 +414,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     if (b.autoApprove !== undefined) fake.autoApprove = b.autoApprove;
     if (b.signInUrl !== undefined) fake.signInUrl = b.signInUrl;
     if (b.failing) fake.failing = new Set(b.failing);
+    if (b.accessDenied !== undefined) fake.accessDenied = b.accessDenied;
     for (const name of b.takenNames ?? []) {
       const id = randomBytes(8).toString('hex');
       fake.records.set(id, { id, name, content: '192.0.2.10', byHlabs: false });
@@ -384,7 +429,16 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
       );
       await services.jobs.settled(jobId);
     }
-    return cloudflareState(fake);
+    if (b.dashboard !== undefined) {
+      const admin = services.db.select().from(users).where(eq(users.role, 'admin')).get();
+      const { jobId } = await services.publicApps.setDashboardForDev(
+        { userId: admin?.id ?? null, role: 'admin', ip: null },
+        b.dashboard?.hostname ?? null,
+      );
+      const job = await services.jobs.settled(jobId);
+      if (job?.state !== 'succeeded') return reply.code(409).send({ reason: job?.hlabsCode ?? job?.state ?? 'gone' });
+    }
+    return { ...cloudflareState(fake), dashboard: getSetting(services.db, 'public').dashboard?.hostname ?? null };
   });
 
   // The pretend Cloudflare's sign-in page (US-SYS-43 in development; its form posts as text/plain, a body the daemon

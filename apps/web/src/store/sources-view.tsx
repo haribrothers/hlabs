@@ -17,6 +17,7 @@ import { timeAgo } from '../lib/relative-time';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { StoreView } from './store-layout';
+import { HomeOnly } from '../public/home-only';
 
 const TILE = tokens.SIZE_DOCK_TILE - tokens.SPACE_1;
 
@@ -157,15 +158,17 @@ function SourceRow({ source: s, onChanged }: { source: AppSource; onChanged: () 
             </Button>
           ) : null}
           {s.removable ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              className="text-danger"
-              aria-label={copy.removeFor(s.name)}
-              onClick={() => void askRemove()}
-            >
-              {copy.remove}
-            </Button>
+            <HomeOnly procedure="store.sources.remove" label={copy.remove} name={copy.removeFor(s.name)}>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="text-danger"
+                aria-label={copy.removeFor(s.name)}
+                onClick={() => void askRemove()}
+              >
+                {copy.remove}
+              </Button>
+            </HomeOnly>
           ) : null}
         </div>
       </div>
@@ -275,9 +278,11 @@ function AddSource({ focus, onAdded }: { focus: boolean; onAdded: () => void }) 
             error={fieldError ?? undefined}
           />
         </div>
-        <Button type="submit" busy={inspect.isPending} disabled={!url.trim()}>
-          {copy.addButton}
-        </Button>
+        <HomeOnly procedure="store.sources.add" label={copy.addButton} size="md">
+          <Button type="submit" busy={inspect.isPending} disabled={!url.trim()}>
+            {copy.addButton}
+          </Button>
+        </HomeOnly>
       </form>
       <p className="m-0 flex items-start gap-2 text-body-sm text-ink-muted">
         <AlertTriangle aria-hidden {...iconDefaults} className="mt-0.5 size-4 shrink-0 text-warning" />

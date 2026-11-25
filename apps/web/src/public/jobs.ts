@@ -1,4 +1,5 @@
-// Public access changes are jobs (`public_on`, `public_off`, `public_off_all`, `public_setup`, `public_remove`): the
+// Public access changes are jobs (`public_on`, `public_off`, `public_off_all`, `public_setup`, `public_remove`, and the
+// dashboard's `dashboard_public_on`, `dashboard_public_off`, `dashboard_access`): the
 // dashboard follows the one it started until it ends, and keeps every list current from `app.publicChanged` and
 // `public.statusChanged` (US-SYS-43, 44, US-APP-27).
 import type { AppRouter, Job } from '@hlabs/api';
@@ -38,7 +39,11 @@ export function usePublicRefresh() {
   };
   useEventStream((event) => {
     if (event.type === 'app.publicChanged' || event.type === 'public.statusChanged') refresh();
-    else if (event.type === 'job.finished' && event.data.kind.startsWith('public_')) refresh();
+    else if (
+      event.type === 'job.finished' &&
+      (event.data.kind.startsWith('public_') || event.data.kind.startsWith('dashboard_'))
+    )
+      refresh();
   });
   return refresh;
 }

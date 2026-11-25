@@ -11,6 +11,7 @@ import { networkCopy as copy } from '../copy/network';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useIsDesktop } from '../lib/use-media';
+import { HomeOnly } from '../public/home-only';
 
 /** The dashboard's addresses from the tailnet: `https://<LAN IP>[:port]`, and `https://<host>.home.arpa[:port]`. */
 export function subnetAddresses(status: Pick<NetworkStatus, 'home' | 'ports' | 'dns'>): string[] {
@@ -47,14 +48,16 @@ export function SubnetRouterOption() {
   const setMode = useSetMode();
   const desktop = useIsDesktop();
   const button = (
-    <Button
-      variant="secondary"
-      size={desktop ? 'sm' : 'md'}
-      busy={setMode.isPending}
-      onClick={() => setMode.mutate('subnetRouter')}
-    >
-      {copy.useSubnetRouter}
-    </Button>
+    <HomeOnly procedure="network.setRemoteMode" label={copy.useSubnetRouter} size={desktop ? 'sm' : 'md'}>
+      <Button
+        variant="secondary"
+        size={desktop ? 'sm' : 'md'}
+        busy={setMode.isPending}
+        onClick={() => setMode.mutate('subnetRouter')}
+      >
+        {copy.useSubnetRouter}
+      </Button>
+    </HomeOnly>
   );
   return (
     <ListRow
@@ -73,14 +76,16 @@ export function SubnetRouterRows({ status }: { status: NetworkStatus }) {
   const desktop = useIsDesktop();
   const addresses = subnetAddresses(status);
   const back = (
-    <Button
-      variant="secondary"
-      size={desktop ? 'sm' : 'md'}
-      busy={setMode.isPending}
-      onClick={() => setMode.mutate('off')}
-    >
-      {copy.useTailscaleHere}
-    </Button>
+    <HomeOnly procedure="network.setRemoteMode" label={copy.useTailscaleHere} size={desktop ? 'sm' : 'md'}>
+      <Button
+        variant="secondary"
+        size={desktop ? 'sm' : 'md'}
+        busy={setMode.isPending}
+        onClick={() => setMode.mutate('off')}
+      >
+        {copy.useTailscaleHere}
+      </Button>
+    </HomeOnly>
   );
   return (
     <>

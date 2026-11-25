@@ -1,6 +1,7 @@
 // "Turn off public access…" (US-SYS-44, TrayPublic): the OS confirms the person at the computer first (Touch ID or the
 // login password on a Mac, polkit on Linux, as US-INST-18 does), then `tray.publicOff` makes every public app private
-// in the same `public_off_all` job as Settings, followed with `tray.job` until it ends. Cancelling changes nothing.
+// in the same `public_off_all` job as Settings (the dashboard too, US-SYS-45), followed with `tray.job` until it ends.
+// Cancelling changes nothing.
 import { invoke } from '@tauri-apps/api/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { trayCopy as t } from './copy';
@@ -15,7 +16,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export type PublicOffPhase = 'idle' | 'busy' | 'failed';
 
-export function usePublicOff(onDone?: () => void, pollMs = PUBLIC_JOB_POLL_MS) {
+export function usePublicOff(onDone?: () => void, pollMs = PUBLIC_JOB_POLL_MS, dashboard = false) {
   const [phase, setPhase] = useState<PublicOffPhase>('idle');
   const running = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -53,7 +54,8 @@ export function usePublicOff(onDone?: () => void, pollMs = PUBLIC_JOB_POLL_MS) {
           return;
         }
         setPhase('idle');
-        void invoke('notify', { title: t.publicOffTitle, body: t.publicOffBody }).catch(() => {});
+        const body = dashboard ? t.publicOffBodyDashboard : t.publicOffBody;
+        void invoke('notify', { title: t.publicOffTitle, body }).catch(() => {});
       } catch {
         fail();
       }
@@ -61,7 +63,7 @@ export function usePublicOff(onDone?: () => void, pollMs = PUBLIC_JOB_POLL_MS) {
       running.current = false;
       onDone?.();
     }
-  }, [fail, onDone, pollMs]);
+  }, [fail, onDone, pollMs, dashboard]);
 
   return { run: () => void run(), phase };
 }

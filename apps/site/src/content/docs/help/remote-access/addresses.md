@@ -22,7 +22,7 @@ To pick other ports, choose **Change**. Use 443 and 80, or numbers from 1024 to 
 
 ## Public access
 
-**Public access** lets you make single apps reachable from the internet at names under your own domain, through Cloudflare Tunnel. Your dashboard never is. It lists every public app with its address, who can get in, and since when; see [Make an app public](/help/remote-access/make-an-app-public/).
+**Public access** lets you make single apps, or the dashboard itself, reachable from the internet at names under your own domain, through Cloudflare Tunnel. It lists the dashboard and every public app with its address, who can get in, and since when; see [Make an app public](/help/remote-access/make-an-app-public/) and [Make the dashboard public](/help/remote-access/make-the-dashboard-public/).
 
 ## App addresses
 

@@ -9,6 +9,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   CloudflareError,
+  type AccessApp,
   type CloudflareClient,
   type CloudflareCredential,
   type CloudflareSignIn,
@@ -100,11 +101,8 @@ export class CloudflareApi implements CloudflareClient {
     const message = (reply?.errors ?? []).map((e) => `${e.code} ${e.message}`).join('; ') || `HTTP ${status}`;
     // 1013: a tunnel with that name exists; 81053/81057: a record with that name exists.
     const conflict = status === 409 || codes.some((c) => c === 1013 || c === 81053 || c === 81057);
-    throw new CloudflareError(
-      status === 401 || status === 403 ? (step === 'zone' ? 'token' : step) : step,
-      message,
-      conflict,
-    );
+    const denied = status === 401 || status === 403;
+    throw new CloudflareError(denied ? (step === 'zone' ? 'token' : step) : step, message, conflict, denied);
   }
 
   async signIn(): Promise<CloudflareSignIn> {
@@ -242,6 +240,95 @@ export class CloudflareApi implements CloudflareClient {
       comment: 'Made by hlabs for a public app; hlabs deletes it when the app is private.',
     });
     return { id: record.id };
+  }
+
+  // ── Cloudflare Access in front of the public dashboard (US-SYS-48) ─────────────────────────────────────────────
+  // Zero Trust Access for the account: an application for the dashboard's name, Cloudflare's one-time code by email
+  // as its only way in, and one policy allowing the admin's email addresses. A sign-in's zone-scoped token can't do
+  // this; an API token with "Account · Access: Apps and Policies · Edit" (`accessToken`) can.
+
+  private accessBase(cred: CloudflareCredential) {
+    return { token: cred.accessToken ?? cred.token, base: `/accounts/${cred.accountId}/access` };
+  }
+
+  async checkAccess(cred: CloudflareCredential) {
+    const { token, base } = this.accessBase(cred);
+    await this.ok<unknown[]>('access', token, 'GET', `${base}/apps?per_page=1`);
+  }
+
+  /** The account's one-time PIN login method, made when it has none (it's free and only sends codes by email). */
+  private async oneTimePin(cred: CloudflareCredential): Promise<string> {
+    const { token, base } = this.accessBase(cred);
+    const idps = await this.ok<Array<{ id: string; type: string }>>(
+      'access',
+      token,
+      'GET',
+      `${base}/identity_providers`,
+    );
+    const found = idps.find((i) => i.type === 'onetimepin');
+    if (found) return found.id;
+    const made = await this.ok<{ id: string }>('access', token, 'POST', `${base}/identity_providers`, {
+      name: 'One-time PIN',
+      type: 'onetimepin',
+      config: {},
+    });
+    return made.id;
+  }
+
+  private policyBody(emails: string[]) {
+    return {
+      name: 'hlabs: allowed email addresses',
+      decision: 'allow',
+      include: emails.map((email) => ({ email: { email } })),
+      precedence: 1,
+    };
+  }
+
+  async createAccessApp(cred: CloudflareCredential, opts: { hostname: string; emails: string[] }): Promise<AccessApp> {
+    const { token, base } = this.accessBase(cred);
+    const idp = await this.oneTimePin(cred);
+    const app = await this.ok<{ id: string }>('access', token, 'POST', `${base}/apps`, {
+      name: `hlabs dashboard (${opts.hostname})`,
+      domain: opts.hostname,
+      type: 'self_hosted',
+      session_duration: '24h',
+      allowed_idps: [idp],
+      auto_redirect_to_identity: true,
+      app_launcher_visible: false,
+    });
+    try {
+      const policy = await this.ok<{ id: string }>(
+        'access',
+        token,
+        'POST',
+        `${base}/apps/${app.id}/policies`,
+        this.policyBody(opts.emails),
+      );
+      return { appId: app.id, policyId: policy.id };
+    } catch (err) {
+      // An application without its policy would let nobody in: it goes again.
+      await this.deleteAccessApp(cred, app.id).catch(() => {});
+      throw err;
+    }
+  }
+
+  async updateAccessPolicy(cred: CloudflareCredential, app: AccessApp, emails: string[]) {
+    const { token, base } = this.accessBase(cred);
+    await this.ok(
+      'access',
+      token,
+      'PUT',
+      `${base}/apps/${app.appId}/policies/${app.policyId}`,
+      this.policyBody(emails),
+    );
+  }
+
+  async deleteAccessApp(cred: CloudflareCredential, appId: string) {
+    const { token, base } = this.accessBase(cred);
+    const { status, reply } = await this.call('access', token, 'DELETE', `${base}/apps/${appId}`);
+    if (status === 404 || (status < 300 && reply?.success)) return;
+    const message = (reply?.errors ?? []).map((e) => e.message).join('; ') || `HTTP ${status}`;
+    throw new CloudflareError('access', message, false, status === 401 || status === 403);
   }
 
   async deleteRecord(cred: CloudflareCredential, recordId: string) {

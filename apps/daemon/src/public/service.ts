@@ -1,8 +1,9 @@
-// PublicService (US-APP-27…29, US-SYS-43, 44; D-150, D-171, D-178; 07 §7.10): making single apps reachable from the
-// internet through Cloudflare Tunnel, and stopping it. It keeps the tunnel (`settings.public`), the DNS records hlabs
-// made (the only ones it ever changes), the public apps (`app_public`), the connector, and the public listener's routes
-// (through NetworkService and Caddy). Every change is an admin's, a job, audited, and told to the other admins; members
-// can do none of it and never see Visits.
+// PublicService (US-APP-27…29, US-SYS-43…48; D-150, D-171, D-178, D-182; 07 §7.10, §7.11): making single apps, and
+// the dashboard itself, reachable from the internet through Cloudflare Tunnel, and stopping it. It keeps the tunnel
+// (`settings.public`), the DNS records hlabs made (the only ones it ever changes), the public apps (`app_public`), the
+// public dashboard and Cloudflare's sign-in in front of it (`settings.public.dashboard`), the connector, and the public
+// listener's routes (through NetworkService and Caddy). Every change is an admin's, a job, audited, and told to the
+// other admins; members can do none of it and never see Visits.
 import { hlabsError, type NotificationAction, type PublicAccess, type VisitResult } from '@hlabs/api';
 import { appAccess, appPublic, apps, auditLog, getSetting, setSetting, users, type HlabsDb } from '@hlabs/db';
 import { TOAST_MUTATIONS, ulid } from '@hlabs/shared';
@@ -40,6 +41,10 @@ export const CLOUDFLARE_CREDENTIAL = 'cloudflare-credential';
 export const TUNNEL_NAME = 'hlabs';
 /** How long the setup waits for the connector to say it's connected. */
 const CONNECT_WAIT_MS = 15_000;
+/** The dashboard's suggested name under the domain (`hlabs.example.com`, US-SYS-45). */
+export const DASHBOARD_LABEL = 'hlabs';
+/** The limiter's and the notifications' target for the public dashboard (a public app's is its id). */
+export const DASHBOARD_TARGET = 'dashboard';
 
 /** Who changed something: an admin (with where from), or the menu-bar app (null). */
 export interface Actor {
@@ -66,6 +71,8 @@ export interface PublicServiceDeps {
   now?: () => number;
   /** How long the setup waits for the connector (tests make it short). */
   connectWaitMs?: number;
+  /** Checks a signed-in admin's password with the log-in lockout (LoginService.confirmPassword). */
+  confirmPassword: (userId: string, password: string, action: string, ip: string) => Promise<void>;
 }
 
 /** The manifest's `public` block (06) and what decides whether an app may be public. */
@@ -104,12 +111,20 @@ interface OffPayload {
   by: Actor;
 }
 
+/** Why the dashboard went private (audited). */
+type DashboardOffWhy = 'private' | 'all' | 'remove';
+
+/** What `dashboard_access` does; the email addresses wait in memory, never in the job's payload (US-SYS-48). */
+type AccessChange = { emails: string[] } | { off: true };
+
 export class PublicService {
   private signIn: { url: string; handle: CloudflareSignIn; by: Actor } | null = null;
   /** The last setup that failed, or the removal that couldn't finish at Cloudflare. */
   private failure: { step: string; jobId: string | null } | null = null;
   private setupJobId: string | null = null;
   private credentialMissing = false;
+  /** The email addresses for the `dashboard_access` job that's about to run, by job id (never in SQLite). */
+  private readonly accessChanges = new Map<string, AccessChange>();
   /** Public jobs run one at a time (making apps public and private, setup, removal). */
   private queue: Promise<unknown> = Promise.resolve();
   readonly limiter = new SignInLimiter();
@@ -169,6 +184,19 @@ export class PublicService {
     });
     jobs.register<{ by: Actor }>('public_remove', {
       run: (ctx) => this.serial(() => this.runRemove(ctx.jobId, ctx.payload.by, ctx.report)),
+    });
+    jobs.register<{ label: string; by: Actor }>('dashboard_public_on', {
+      run: (ctx) => this.serial(() => this.runDashboardOn(ctx.payload.label, ctx.payload.by, ctx.report)),
+    });
+    jobs.register<{ by: Actor }>('dashboard_public_off', {
+      run: (ctx) =>
+        this.serial(async () => {
+          ctx.report(10);
+          await this.makeDashboardPrivateNow(ctx.payload.by, 'private');
+        }),
+    });
+    jobs.register<{ by: Actor }>('dashboard_access', {
+      run: (ctx) => this.serial(() => this.runAccess(ctx.jobId, ctx.payload.by, ctx.report)),
     });
   }
 
@@ -253,7 +281,38 @@ export class PublicService {
         setUpBy,
       },
       apps: this.rows(),
+      dashboard: this.dashboardRow(),
+      dashboardBlockedBy: this.adminsWithoutTwoFactor(),
     };
+  }
+
+  /** The public dashboard's row in Public access (US-SYS-45), or null while it's private. */
+  dashboardRow() {
+    const { db } = this.deps;
+    const d = getSetting(db, 'public').dashboard;
+    if (!d) return null;
+    const by = d.by
+      ? (db.select({ name: users.displayName }).from(users).where(eq(users.id, d.by)).get()?.name ?? null)
+      : null;
+    return {
+      address: `https://${d.hostname}`,
+      hostname: d.hostname,
+      since: d.since,
+      by,
+      cloudflareAccess: d.access ? { emails: [...d.access.emails] } : null,
+    };
+  }
+
+  /** Enabled admins without two-factor, by display name: while any, the dashboard can't be made public (D-182). */
+  adminsWithoutTwoFactor(): string[] {
+    return this.deps.db
+      .select({ id: users.id, name: users.displayName })
+      .from(users)
+      .where(and(eq(users.role, 'admin'), isNull(users.disabledAt)))
+      .orderBy(users.displayName)
+      .all()
+      .filter((u) => !this.deps.totp.isEnabled(u.id))
+      .map((u) => u.name);
   }
 
   /** Every public app, newest first, with its name and icon (US-SYS-44). */
@@ -295,7 +354,13 @@ export class PublicService {
           },
         ];
       });
-    return { port: this.deps.publicPort, logDir: this.logDir, apps: routes };
+    const dashboard = getSetting(db, 'public').dashboard;
+    return {
+      port: this.deps.publicPort,
+      logDir: this.logDir,
+      apps: routes,
+      dashboard: dashboard ? { hostname: dashboard.hostname } : null,
+    };
   }
 
   // ── Policy and options ──────────────────────────────────────────────────────────────────────────────────────
@@ -372,7 +437,9 @@ export class PublicService {
       .filter((r) => r.appId !== appId);
     const label = (host: string) =>
       cf && host.endsWith(`.${cf.domain}`) ? host.slice(0, -cf.domain.length - 1) : host;
-    const taken = others.map((r) => label(r.hostname));
+    const dashboard = getSetting(db, 'public').dashboard;
+    // The dashboard's public name is taken too, while it's public.
+    const taken = [...others.map((r) => r.hostname), ...(dashboard ? [dashboard.hostname] : [])].map(label);
     const policy = this.policy(appId);
     return {
       domain: cf?.domain ?? null,
@@ -477,6 +544,7 @@ export class PublicService {
       mkdirSync(this.dir, { recursive: true, mode: 0o700 });
       writeFileSync(this.tunnelFile, JSON.stringify(tunnel.credentials), { mode: 0o600 });
       setSetting(db, 'public', {
+        ...getSetting(db, 'public'),
         cloudflare: {
           domain: cred.domain,
           zoneId: cred.zoneId,
@@ -524,7 +592,8 @@ export class PublicService {
     const { db } = this.deps;
     const cf = getSetting(db, 'public').cloudflare;
     if (!cf) return;
-    // Every public app private first (listed in the confirmation, US-SYS-43).
+    // The dashboard and every public app private first (listed in the confirmation, US-SYS-43, US-SYS-45).
+    await this.makeDashboardPrivateNow(by, 'remove');
     const rows = db.select().from(appPublic).all();
     for (const [i, row] of rows.entries()) {
       await this.makePrivateNow(row.appId, by, 'remove');
@@ -552,7 +621,7 @@ export class PublicService {
     rmSync(this.tunnelFile, { force: true });
     rmSync(join(this.dir, 'cloudflared.yml'), { force: true });
     await this.deps.secrets.delete(CLOUDFLARE_CREDENTIAL).catch(() => {});
-    setSetting(db, 'public', { cloudflare: null });
+    setSetting(db, 'public', { cloudflare: null, dashboard: null });
     this.failure = null;
     this.credentialMissing = false;
     await this.deps.network.sync();
@@ -595,6 +664,8 @@ export class PublicService {
     const name = `${label}.${cf.domain}`;
     const other = db.select().from(appPublic).where(eq(appPublic.hostname, name)).get();
     if (other && other.appId !== app.id) throw hlabsError('PUBLIC_HOSTNAME_TAKEN', undefined, { hostname: name });
+    if (getSetting(db, 'public').dashboard?.hostname === name)
+      throw hlabsError('PUBLIC_HOSTNAME_TAKEN', undefined, { hostname: name });
     // Someone else's record (a website, email): never touched, so the name can't be used (D-171).
     if (name !== current?.hostname && !cf.records.some((r) => r.name === name)) {
       const cred = await this.requireCredential();
@@ -738,6 +809,7 @@ export class PublicService {
     const settings = getSetting(this.deps.db, 'public');
     if (!settings.cloudflare) return;
     setSetting(this.deps.db, 'public', {
+      ...settings,
       cloudflare: { ...settings.cloudflare, records: [...settings.cloudflare.records, record] },
     });
   }
@@ -746,7 +818,241 @@ export class PublicService {
     const settings = getSetting(this.deps.db, 'public');
     if (!settings.cloudflare) return;
     setSetting(this.deps.db, 'public', {
+      ...settings,
       cloudflare: { ...settings.cloudflare, records: settings.cloudflare.records.filter((r) => r.id !== id) },
+    });
+  }
+
+  // ── The public dashboard (US-SYS-45, US-SYS-48; D-182, 07 §7.11) ─────────────────────────────────────────────
+
+  /**
+   * `public.setDashboard`: checked now (so the dialog can say what's wrong), done as a `dashboard_public_on` /
+   * `dashboard_public_off` job. Making it public needs the admin's password, the tunnel on, every admin with two-factor
+   * and a free name; making it private needs none of that.
+   */
+  async setDashboard(
+    by: Actor,
+    input: { public: boolean; hostname?: string; password?: string },
+  ): Promise<{ jobId: string }> {
+    this.requireAdmin(by);
+    const { db } = this.deps;
+    const settings = getSetting(db, 'public');
+    if (!input.public) {
+      const running = this.deps.jobs.listActive().find((j) => j.kind === 'dashboard_public_off');
+      if (running) return { jobId: running.id };
+      return { jobId: this.deps.jobs.start('dashboard_public_off', { payload: { by } }) };
+    }
+    if (by.userId === null) throw hlabsError('ACCESS_DENIED');
+    if (!input.password) throw hlabsError('VALIDATION_FAILED', 'The password is needed', { field: 'password' });
+    await this.deps.confirmPassword(by.userId, input.password, 'public.setDashboard', by.ip ?? 'unknown');
+    const cf = settings.cloudflare;
+    if (!cf || this.status().cloudflare.state !== 'on') throw hlabsError('PUBLIC_NOT_SET_UP');
+    const label = input.hostname ?? DASHBOARD_LABEL;
+    const name = `${label}.${cf.domain}`;
+    if (settings.dashboard) {
+      // A new name while it's public would leave sessions and Cloudflare's sign-in on the old one: private first.
+      if (settings.dashboard.hostname !== name)
+        throw hlabsError('VALIDATION_FAILED', 'Make the dashboard private first to change its name', {
+          field: 'hostname',
+        });
+      return { jobId: this.deps.jobs.start('dashboard_public_on', { payload: { label, by } }) };
+    }
+    const blockedBy = this.adminsWithoutTwoFactor();
+    if (blockedBy.length) throw hlabsError('TWO_FACTOR_REQUIRED_FOR_DASHBOARD', undefined, { admins: blockedBy });
+    if (db.select().from(appPublic).where(eq(appPublic.hostname, name)).get())
+      throw hlabsError('PUBLIC_HOSTNAME_TAKEN', undefined, { hostname: name });
+    // Someone else's record (a website, email): never touched, so the name can't be used (D-171).
+    if (!cf.records.some((r) => r.name === name)) {
+      const cred = await this.requireCredential();
+      let taken: boolean;
+      try {
+        taken = await this.deps.cloudflare.nameTaken(cred, name);
+      } catch (err) {
+        throw cloudflareFailed(err);
+      }
+      if (taken) throw hlabsError('PUBLIC_HOSTNAME_TAKEN', undefined, { hostname: name });
+    }
+    return { jobId: this.deps.jobs.start('dashboard_public_on', { payload: { label, by } }) };
+  }
+
+  private async runDashboardOn(label: string, by: Actor, report: (progress: number, message?: string) => void) {
+    const { db } = this.deps;
+    const settings = getSetting(db, 'public');
+    const cf = settings.cloudflare;
+    if (!cf) throw hlabsError('PUBLIC_NOT_SET_UP');
+    const name = `${label}.${cf.domain}`;
+    const address = `https://${name}`;
+    if (settings.dashboard?.hostname === name) return;
+    // Checked again: an admin may have turned two-factor off while the job waited.
+    const blockedBy = this.adminsWithoutTwoFactor();
+    if (blockedBy.length) throw hlabsError('TWO_FACTOR_REQUIRED_FOR_DASHBOARD', undefined, { admins: blockedBy });
+    const cred = await this.requireCredential();
+    report(20, 'dns');
+    let recordId = cf.records.find((r) => r.name === name)?.id ?? null;
+    if (!recordId) {
+      try {
+        recordId = (await this.deps.cloudflare.addRecord(cred, name, cf.tunnelId)).id;
+        this.keepRecord({ id: recordId, name });
+      } catch (err) {
+        if (err instanceof CloudflareError && err.conflict)
+          throw hlabsError('PUBLIC_HOSTNAME_TAKEN', undefined, { hostname: name });
+        throw cloudflareFailed(err);
+      }
+    }
+    report(60, 'route');
+    setSetting(db, 'public', {
+      ...getSetting(db, 'public'),
+      dashboard: { hostname: name, recordId, since: this.now(), by: by.userId, access: null },
+    });
+    await this.deps.network.sync();
+    report(80, 'route');
+    this.audit(by, 'dashboard.public.on', null, { address });
+    this.notifyOtherAdmins(by, {
+      kind: 'dashboard.public_on',
+      target: null,
+      title: `${this.actorName(by)} made the dashboard public at ${address}`,
+      body: 'Anyone on the internet can reach its sign-in page. Everyone signs in with two-factor there.',
+      actions: [{ kind: 'navigate', to: '/settings/network' }],
+    });
+    this.emitStatus();
+  }
+
+  /**
+   * The dashboard's public address stops answering at once (Caddy's route goes), every session signed in there ends,
+   * then Cloudflare's sign-in in front and the DNS record are deleted. Nothing to do when it's private already.
+   */
+  private async makeDashboardPrivateNow(by: Actor, why: DashboardOffWhy): Promise<boolean> {
+    const { db } = this.deps;
+    const dashboard = getSetting(db, 'public').dashboard;
+    if (!dashboard) return false;
+    setSetting(db, 'public', { ...getSetting(db, 'public'), dashboard: null });
+    await this.deps.network.sync();
+    this.endSessions(dashboard.hostname);
+    if (dashboard.access) {
+      const cred = await this.credential();
+      try {
+        if (cred) await this.deps.cloudflare.deleteAccessApp(cred, dashboard.access.appId);
+        this.audit(by, 'dashboard.access.off', null, { why });
+      } catch (err) {
+        this.deps.logger.warn({ err: (err as Error).message }, "couldn't delete Cloudflare's sign-in in front yet");
+      }
+    }
+    await this.retire(dashboard.hostname);
+    const address = `https://${dashboard.hostname}`;
+    this.audit(by, 'dashboard.public.off', null, { address, why });
+    if (why === 'private') {
+      this.notifyOtherAdmins(by, {
+        kind: 'dashboard.public_off',
+        target: null,
+        title: `${this.actorName(by)} made the dashboard private`,
+        body: `${address} doesn't answer any more, and everyone signed in there is signed out.`,
+        actions: [{ kind: 'navigate', to: '/settings/network' }],
+      });
+    }
+    this.emitStatus();
+    return true;
+  }
+
+  /**
+   * Development and e2e (`POST /dev/cloudflare { dashboard }`): the dashboard public at `<label>.<domain>` (or private
+   * with null) at once, without asking for the password; the job still checks two-factor and the name.
+   */
+  async setDashboardForDev(by: Actor, label: string | null): Promise<{ jobId: string }> {
+    if (label === null) return { jobId: this.deps.jobs.start('dashboard_public_off', { payload: { by } }) };
+    return { jobId: this.deps.jobs.start('dashboard_public_on', { payload: { label, by } }) };
+  }
+
+  /**
+   * `public.setDashboardAccess` (US-SYS-48): checked now (the dashboard is public; the credential, or the token given,
+   * can manage Access), then a `dashboard_access` job. A token that can is kept in the keychain with the credential.
+   */
+  async setDashboardAccess(
+    by: Actor,
+    input: { emails: string[]; token?: string } | { off: true },
+  ): Promise<{ jobId: string }> {
+    this.requireAdmin(by);
+    if (by.userId === null) throw hlabsError('ACCESS_DENIED');
+    const dashboard = getSetting(this.deps.db, 'public').dashboard;
+    if (!dashboard) throw hlabsError('DASHBOARD_NOT_PUBLIC');
+    const change: AccessChange = 'off' in input ? { off: true } : { emails: [...new Set(input.emails)] };
+    if (!('off' in change) || dashboard.access) {
+      const cred = await this.requireCredential();
+      const token = 'off' in input ? undefined : input.token;
+      const trying = token ? { ...cred, accessToken: token } : cred;
+      try {
+        await this.deps.cloudflare.checkAccess(trying);
+      } catch (err) {
+        if (err instanceof CloudflareError && err.denied)
+          throw hlabsError('CLOUDFLARE_FAILED', err.message, { step: 'access', needsToken: true });
+        throw cloudflareFailed(err);
+      }
+      if (token) await this.deps.secrets.set(CLOUDFLARE_CREDENTIAL, JSON.stringify(trying));
+    }
+    const jobId = this.deps.jobs.start('dashboard_access', { payload: { by } });
+    this.accessChanges.set(jobId, change);
+    return { jobId };
+  }
+
+  private async runAccess(jobId: string, by: Actor, report: (progress: number, message?: string) => void) {
+    // The job starts on the next tick, after setDashboardAccess has put its change here.
+    await Promise.resolve();
+    const change = this.accessChanges.get(jobId);
+    this.accessChanges.delete(jobId);
+    if (!change) throw hlabsError('INTERNAL', 'Nothing to change');
+    const { db } = this.deps;
+    const dashboard = getSetting(db, 'public').dashboard;
+    if (!dashboard) throw hlabsError('DASHBOARD_NOT_PUBLIC');
+    const cred = await this.requireCredential();
+    report(20, 'access');
+    const keep = (access: { appId: string; policyId: string; emails: string[] } | null) => {
+      const now = getSetting(db, 'public');
+      if (now.dashboard) setSetting(db, 'public', { ...now, dashboard: { ...now.dashboard, access } });
+    };
+    try {
+      if ('off' in change) {
+        if (dashboard.access) await this.deps.cloudflare.deleteAccessApp(cred, dashboard.access.appId);
+        keep(null);
+        this.audit(by, 'dashboard.access.off', null, { why: 'removed' });
+      } else if (dashboard.access) {
+        await this.deps.cloudflare.updateAccessPolicy(cred, dashboard.access, change.emails);
+        keep({ ...dashboard.access, emails: change.emails });
+        // How many, never who: the addresses stay in settings (07 §7.11 control 7).
+        this.audit(by, 'dashboard.access.changed', null, { emails: change.emails.length });
+      } else {
+        const app = await this.deps.cloudflare.createAccessApp(cred, {
+          hostname: dashboard.hostname,
+          emails: change.emails,
+        });
+        keep({ ...app, emails: change.emails });
+        this.audit(by, 'dashboard.access.on', null, { emails: change.emails.length });
+      }
+    } catch (err) {
+      if (err instanceof CloudflareError && err.denied)
+        throw hlabsError('CLOUDFLARE_FAILED', err.message, { step: 'access', needsToken: true });
+      throw cloudflareFailed(err);
+    }
+    report(90, 'access');
+    this.emitStatus();
+  }
+
+  /**
+   * A failed sign-in on the public dashboard: counted per visitor address with the public apps' (US-SYS-46); the one
+   * over the limit refuses the address for an hour and warns every admin.
+   */
+  dashboardSignInFailed(ip: string): void {
+    const now = this.now();
+    const { refused } = this.limiter.fail(ip, DASHBOARD_TARGET, now);
+    if (!refused) return;
+    this.audit({ userId: null, ip }, 'public.signIn.refused', DASHBOARD_TARGET, { ip, failures: refused.failures });
+    createNotification(this.deps.db, this.deps.bus, {
+      userId: null,
+      kind: 'dashboard.public_attack',
+      target: DASHBOARD_TARGET,
+      severity: 'warning',
+      title: 'Someone keeps trying to sign in to the hlabs dashboard',
+      body: `${refused.failures} failed sign-ins from ${ip} in 10 minutes. That address is refused for an hour.`,
+      actions: [{ kind: 'navigate', to: '/settings/network' }],
+      now,
     });
   }
 
@@ -763,12 +1069,16 @@ export class PublicService {
   private async runOffAll(by: Actor, via: 'dashboard' | 'tray', report: (p: number, m?: string) => void) {
     const { db } = this.deps;
     const rows = db.select({ appId: appPublic.appId, address: appPublic.address }).from(appPublic).all();
+    // The dashboard first: it's the one that reaches everything (US-SYS-45).
+    const dashboard = getSetting(db, 'public').dashboard;
+    const dashboardOff = await this.makeDashboardPrivateNow(by, 'all');
     for (const [i, row] of rows.entries()) {
       await this.makePrivateNow(row.appId, by, 'all');
       report((100 * (i + 1)) / Math.max(rows.length, 1));
     }
-    this.audit(by, 'public.turnedOffAll', null, { apps: rows.map((r) => r.appId), via });
-    if (rows.length) {
+    this.audit(by, 'public.turnedOffAll', null, { apps: rows.map((r) => r.appId), dashboard: dashboardOff, via });
+    const madePrivate = [...(dashboard ? [`https://${dashboard.hostname}`] : []), ...rows.map((r) => r.address)];
+    if (madePrivate.length) {
       this.notifyOtherAdmins(by, {
         kind: 'public.turned_off',
         target: null,
@@ -777,9 +1087,11 @@ export class PublicService {
             ? 'Public access was turned off from the menu bar'
             : `${this.actorName(by)} turned off all public access`,
         body:
-          rows.length === 1
-            ? `${rows[0]!.address} is private now. Cloudflare Tunnel stays set up.`
-            : `${rows.length} apps are private now. Cloudflare Tunnel stays set up.`,
+          madePrivate.length === 1
+            ? `${madePrivate[0]!} is private now. Cloudflare Tunnel stays set up.`
+            : dashboardOff
+              ? `The dashboard and ${rows.length} ${rows.length === 1 ? 'app are' : 'apps are'} private now. Cloudflare Tunnel stays set up.`
+              : `${rows.length} apps are private now. Cloudflare Tunnel stays set up.`,
         actions: [{ kind: 'navigate', to: '/settings/network' }],
       });
     }
@@ -845,11 +1157,13 @@ export class PublicService {
     this.signIn = null;
     signIn?.handle.cancel();
     const hosts = this.deps.db.select({ hostname: appPublic.hostname }).from(appPublic).all();
+    const dashboard = getSetting(this.deps.db, 'public').dashboard;
     this.deps.db.delete(appPublic).run();
-    for (const { hostname } of hosts) this.endSessions(hostname);
+    for (const { hostname } of [...hosts, ...(dashboard ? [dashboard] : [])]) this.endSessions(hostname);
     await this.deps.connector.stop();
     await this.deps.secrets.delete(CLOUDFLARE_CREDENTIAL).catch(() => {});
-    setSetting(this.deps.db, 'public', { cloudflare: null });
+    setSetting(this.deps.db, 'public', { cloudflare: null, dashboard: null });
+    this.accessChanges.clear();
     rmSync(this.tunnelFile, { force: true });
     rmSync(this.logDir, { recursive: true, force: true });
     this.failure = null;

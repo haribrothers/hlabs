@@ -25,6 +25,8 @@ import { appUrl, useOpenApp } from '../home/use-open-app';
 import type { HomeApp } from '../home/home-app';
 import { useAppOverlay } from '../apps/app-overlay';
 import { publicCopy } from '../copy/public';
+import { publicDashboardCopy } from '../copy/public-dashboard';
+import { useOnPublic } from '../public/home-only';
 
 export const MAX_DOCK = 8;
 
@@ -40,6 +42,8 @@ export function useDockPins(signedIn: boolean, shippedPhase = VISIBLE_PHASE) {
   const overlay = useAppOverlay();
   const isAdmin = useMe(signedIn).data?.role === 'admin';
   const openApp = useOpenApp(isAdmin);
+  // On the public dashboard (US-SYS-47): an app that isn't public says "At home only" on its Dock tile too.
+  const onPublic = useOnPublic();
   const open = useOpenWindows();
   const enabled = signedIn && isFeatureEnabled('dockPins', shippedPhase);
   const layout = useQuery({ ...trpc.home.getLayout.queryOptions(), enabled, retry: false });
@@ -64,7 +68,7 @@ export function useDockPins(signedIn: boolean, shippedPhase = VISIBLE_PHASE) {
       icon: look.fallbackIcon,
       open: open.includes(app.id),
       pinned: isPinned,
-      publicLabel: app.public ? publicCopy.publicBadge : undefined,
+      publicLabel: app.public ? publicCopy.publicBadge : onPublic ? publicDashboardCopy.atHomeOnly : undefined,
     };
   };
   // Pinned apps first, then apps whose window is open (US-HOME-23).
@@ -149,6 +153,13 @@ export function useDockPins(signedIn: boolean, shippedPhase = VISIBLE_PHASE) {
     apps,
     overlays,
     canDrop: pinned.length < MAX_DOCK,
+    /** On the public dashboard a Dock tile opens as Home's does there (its public address, or "At home only"). */
+    onOpen: onPublic
+      ? (appId: string) => {
+          const app = byId.get(appId);
+          if (app) openApp(app);
+        }
+      : undefined,
     ...(enabled
       ? {
           onAdd: (tile: HTMLElement) => setAdding({ rect: tile.getBoundingClientRect(), tile }),

@@ -68,12 +68,12 @@ export function PhoneLoginError({ id, children }: { id: string; children: ReactN
   );
 }
 
-/** The full-width "Log in", with a spinner while it's checking (US-PHONE-05). */
-export function PhoneLogInButton({ disabled, busy }: { disabled: boolean; busy: boolean }) {
+/** The full-width "Log in" ("Continue" on the public sign-in), with a spinner while it's checking (US-PHONE-05). */
+export function PhoneLogInButton({ disabled, busy, label }: { disabled: boolean; busy: boolean; label?: string }) {
   return (
     <button type="submit" className="hl-p-primary hl-focus" disabled={disabled || busy} aria-busy={busy || undefined}>
       {busy ? <LoaderCircle aria-hidden className="hl-spin" {...iconDefaults} /> : null}
-      {loginCopy.logIn}
+      {label ?? loginCopy.logIn}
     </button>
   );
 }

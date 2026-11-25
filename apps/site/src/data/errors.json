@@ -138,6 +138,12 @@
     "body": "Use the newest code from your authenticator app."
   },
   {
+    "code": "AUTH_TWO_FACTOR_REQUIRED",
+    "slug": "auth-two-factor-required",
+    "title": "Turn on two-factor login first",
+    "body": "Signing in from the internet needs it. Turn it on in hlabs at home, under Settings › Account."
+  },
+  {
     "code": "BACKUP_DEST_AUTH_FAILED",
     "slug": "backup-dest-auth-failed",
     "title": "The backup destination didn't accept that",
@@ -202,6 +208,12 @@
     "slug": "daemon-starting",
     "title": "hlabs is starting",
     "body": "This usually takes less than a minute. Try again then."
+  },
+  {
+    "code": "DASHBOARD_NOT_PUBLIC",
+    "slug": "dashboard-not-public",
+    "title": "The dashboard isn't public",
+    "body": "Make it public first, then add Cloudflare's sign-in in front."
   },
   {
     "code": "DISK_FULL",
@@ -292,6 +304,12 @@
     "slug": "files-read-only",
     "title": "This folder is read-only",
     "body": "Save it somewhere else."
+  },
+  {
+    "code": "HOME_ONLY",
+    "slug": "home-only",
+    "title": "Do this at home or on your tailnet",
+    "body": "This only works from hlabs at home or on your tailnet, so someone with your password and code can't do it from the internet."
   },
   {
     "code": "HOSTNAME_TAKEN",
@@ -574,6 +592,12 @@
     "slug": "tray-token-rejected",
     "title": "The menu bar app isn't connected",
     "body": "Quit it and open it again."
+  },
+  {
+    "code": "TWO_FACTOR_REQUIRED_FOR_DASHBOARD",
+    "slug": "two-factor-required-for-dashboard",
+    "title": "Every admin needs two-factor login first",
+    "body": "An admin hasn't turned on two-factor login yet. Every admin needs it before the dashboard can be public."
   },
   {
     "code": "TWO_FACTOR_REQUIRED_FOR_PUBLIC",

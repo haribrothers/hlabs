@@ -55,8 +55,13 @@ export function actionsFromNotification(actions: readonly NotificationAction[] |
   });
 }
 
-/** Every allow-listed mutation is admin-only. */
-export const needsAdmin = (a: ToastAction) => a.kind === 'mutation' || (a.kind === 'navigate' && Boolean(a.admin));
+/** Mutations anyone may run from a toast: signing out my own other sessions (US-SYS-46). */
+const ANYONE: readonly ToastMutation[] = ['auth.revokeOtherSessions'];
+
+/** Every allow-listed mutation is admin-only, but signing out everywhere. */
+export const needsAdmin = (a: ToastAction) =>
+  (a.kind === 'mutation' && !ANYONE.includes(a.procedure as ToastMutation)) ||
+  (a.kind === 'navigate' && Boolean(a.admin));
 
 /** The buttons to show: at most two, none a member can't use, none from a phase that hasn't shipped. */
 export function visibleActions(
@@ -91,5 +96,8 @@ export function runToastMutation(
     case 'apps.setPublic':
       // From a toast only ever "Make private" (US-APP-29): never makes anything public.
       return client.apps.setPublic.mutate({ appId: String(input.appId), public: false });
+    case 'auth.revokeOtherSessions':
+      // "Sign out everywhere" (US-SYS-46): every other session of mine, wherever it is.
+      return client.auth.revokeOtherSessions.mutate();
   }
 }
