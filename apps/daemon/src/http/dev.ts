@@ -29,7 +29,7 @@ import { FakeTailscale } from '../tailscale/fake';
 import { FAKE_CLOUDFLARE_TOKEN, FakeCloudflare } from '../cloudflare/fake';
 import { appendAccessLine } from '../public/visits';
 import { FakeNas } from '../platform/fake-nas';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import type { ServiceHolder } from '../services';
 import { DEMO_PEOPLE } from '../demo/figures';
@@ -385,6 +385,50 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
       await services.jobs.settled(jobId);
     }
     return cloudflareState(fake);
+  });
+
+  // The pretend Cloudflare's sign-in page (US-SYS-43 in development): what "Sign in to Cloudflare" opens under
+  // `pnpm dev`, so setup can be tried by hand. Approve finishes the waiting sign-in with the fake's domain; closing the
+  // tab and pressing Cancel in hlabs cancels it, as with the real one.
+  const pretendPage = (title: string, body: string) =>
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">` +
+    `<title>${title}</title><style>body{font:16px system-ui,sans-serif;max-width:26rem;margin:4rem auto;padding:0 1rem;` +
+    `color:#1b1433;background:#f6f4fb}h1{font-size:1.4rem}.note{font-size:.85rem;color:#5b5570}` +
+    `button{font:inherit;font-weight:600;padding:.7rem 1.4rem;border:0;border-radius:999px;background:#1b1433;` +
+    `color:#fff;cursor:pointer}code{background:#e9e4ff;padding:0 .3rem;border-radius:4px}</style></head>` +
+    `<body><p class="note">Pretend Cloudflare · development only</p>${body}</body></html>`;
+  const fakeFor = (reply: FastifyReply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) {
+      void reply.code(503).send({ reason: 'starting' });
+      return null;
+    }
+    if (!(services.cloudflare instanceof FakeCloudflare)) {
+      void reply.code(409).send({ reason: 'not the fake Cloudflare' });
+      return null;
+    }
+    return services.cloudflare;
+  };
+  app.get('/dev/cloudflare/sign-in', async (_req, reply) => {
+    const fake = fakeFor(reply);
+    if (!fake) return reply;
+    const body = fake.signingIn
+      ? `<h1>Allow hlabs to set up a tunnel?</h1><p>hlabs asks for a tunnel and DNS records on your domain ` +
+        `<code>${fake.domain}</code>.</p><form method="post" action="${FakeCloudflare.DEV_SIGN_IN_PATH}">` +
+        `<button type="submit">Approve</button></form><p class="note">To cancel, close this tab and press Cancel in ` +
+        `hlabs.</p>`
+      : `<h1>Nothing is waiting</h1><p>Press “Sign in to Cloudflare” in hlabs first.</p>`;
+    return reply.type('text/html; charset=utf-8').send(pretendPage('Sign in to Cloudflare', body));
+  });
+  app.post('/dev/cloudflare/sign-in', async (_req, reply) => {
+    const fake = fakeFor(reply);
+    if (!fake) return reply;
+    const waiting = fake.signingIn;
+    if (waiting) fake.finishSignIn();
+    const body = waiting
+      ? `<h1>Approved</h1><p>hlabs carries on with <code>${fake.domain}</code>. You can close this tab.</p>`
+      : `<h1>Nothing is waiting</h1><p>Press “Sign in to Cloudflare” in hlabs first.</p>`;
+    return reply.type('text/html; charset=utf-8').send(pretendPage('Sign in to Cloudflare', body));
   });
 
   // A line in the public listener's access log, as Caddy writes it (Visits, US-APP-29): development and e2e have no

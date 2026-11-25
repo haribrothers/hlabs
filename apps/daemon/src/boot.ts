@@ -699,6 +699,8 @@ export async function boot(bootDeps: BootDeps): Promise<Services | null> {
   });
   // Public apps through Cloudflare Tunnel (US-APP-27…29, US-SYS-43, 44): never the real Cloudflare in development or e2e.
   const fakeCloudflare = config.devFakeCloudflare ? new FakeCloudflare() : null;
+  // "Sign in to Cloudflare" opens the pretend Cloudflare's page, where Approve finishes it (e2e sets its own link).
+  if (fakeCloudflare) fakeCloudflare.signInUrl = FakeCloudflare.DEV_SIGN_IN_PATH;
   const cloudflareDir = join(config.paths.dataDir, 'cloudflare');
   const cloudflare: CloudflareClient =
     deps.cloudflare ??

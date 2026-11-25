@@ -45,7 +45,7 @@ It then adds Tailscale Serve entries to your real Tailscale. Remove them when yo
 
 ### Public apps (Cloudflare) in development
 
-`pnpm dev` (and `pnpm dev:full`) uses a pretend Cloudflare, so making an app public never reaches Cloudflare or changes a real domain's DNS. Its domain is `example.com`, which already has `example.com`, `www` and `mail` in its DNS; "Sign in to Cloudflare" waits until you approve it with `curl -X POST http://127.0.0.1:7474/dev/cloudflare -H 'content-type: application/json' -d '{"approve":true}'`, and the API token it takes is `fake-cloudflare-token-0123456789`. The same route sets how it behaves (`autoApprove`, `failing`, `takenNames`, `setUp`, `reset`), and `POST /dev/public-visit` adds a line to the Visits log, since there's no Caddy in front under `pnpm dev`. The e2e tests always use it.
+`pnpm dev` (and `pnpm dev:full`) uses a pretend Cloudflare, so making an app public never reaches Cloudflare or changes a real domain's DNS. Its domain is `example.com`, which already has `example.com`, `www` and `mail` in its DNS; "Sign in to Cloudflare" opens its pretend sign-in page (`/dev/cloudflare/sign-in`), where Approve finishes setup, and the API token it takes is `fake-cloudflare-token-0123456789`. The same route sets how it behaves (`autoApprove`, `failing`, `takenNames`, `setUp`, `reset`), and `POST /dev/public-visit` adds a line to the Visits log, since there's no Caddy in front under `pnpm dev`. The e2e tests always use it.
 
 To try the real Cloudflare (`pnpm fetch-binaries` puts cloudflared in `.bin/`), with a domain of yours on Cloudflare:
 

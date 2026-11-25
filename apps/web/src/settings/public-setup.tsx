@@ -114,7 +114,8 @@ export function PublicSetupDialog({ status: initial, onClose }: { status: Cloudf
     const tab = window.open('', '_blank');
     try {
       const { url } = await client.public.cloudflareSignIn.mutate();
-      if (tab) tab.location.href = url;
+      // Cloudflare's link; the pretend Cloudflare's under `pnpm dev` is a path on this dashboard's own address.
+      if (tab) tab.location.href = new URL(url, window.location.href).toString();
       await refresh();
     } catch (err) {
       tab?.close();

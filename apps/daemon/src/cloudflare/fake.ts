@@ -32,6 +32,11 @@ export class FakeCloudflare implements CloudflareClient, TunnelConnector {
   autoApprove: number | null = null;
   /** Cloudflare's sign-in link the fake gives (e2e: never a real Cloudflare page). */
   signInUrl = 'about:blank#cloudflare-sign-in';
+  /**
+   * In development the link is the pretend Cloudflare's own page (`/dev/cloudflare/sign-in`, served by the daemon and
+   * reached through the dashboard's address), where Approve finishes the sign-in; tests keep the blank page.
+   */
+  static readonly DEV_SIGN_IN_PATH = '/dev/cloudflare/sign-in';
   /** Steps that fail, as Cloudflare would refuse or not answer. */
   failing = new Set<CloudflareStep>();
   /** The zone's DNS, with records hlabs didn't make (a website, email). */
