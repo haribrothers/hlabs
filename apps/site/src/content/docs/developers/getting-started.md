@@ -16,7 +16,7 @@ description: What to install, and running hlabs from its source code.
 git clone <your fork>
 cd hlabs
 pnpm install
-pnpm fetch-binaries   # Caddy, docker compose and restic into .bin/, checked against pinned checksums
+pnpm fetch-binaries   # Caddy, docker compose, restic and cloudflared into .bin/, checked against pinned checksums
 ```
 
 ## Run it
