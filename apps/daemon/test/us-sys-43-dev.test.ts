@@ -28,8 +28,15 @@ describe('US-SYS-43', () => {
     const html = await page.text();
     expect(html).toContain('Allow hlabs to set up a tunnel?');
     expect(html).toContain('<code>example.com</code>');
+    expect(html).toContain('enctype="text/plain"');
 
-    const approved = await fetch(`${d.url}/dev/cloudflare/sign-in`, { method: 'POST' });
+    // As the page's form sends it from the dashboard's address.
+    const approved = await fetch(`${d.url}/dev/cloudflare/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'text/plain', origin: 'https://hlabs.local' },
+      body: '',
+    });
+    expect(approved.status).toBe(200);
     expect(await approved.text()).toContain('Approved');
     await expect(signIn.done).resolves.toMatchObject({ domain: 'example.com', kind: 'signIn' });
     expect(fake.signingIn).toBe(false);

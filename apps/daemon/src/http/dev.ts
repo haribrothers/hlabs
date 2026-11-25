@@ -387,7 +387,8 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     return cloudflareState(fake);
   });
 
-  // The pretend Cloudflare's sign-in page (US-SYS-43 in development): what "Sign in to Cloudflare" opens under
+  // The pretend Cloudflare's sign-in page (US-SYS-43 in development; its form posts as text/plain, a body the daemon
+  // parses everywhere, where a urlencoded one would be refused with 415): what "Sign in to Cloudflare" opens under
   // `pnpm dev`, so setup can be tried by hand. Approve finishes the waiting sign-in with the fake's domain; closing the
   // tab and pressing Cancel in hlabs cancels it, as with the real one.
   const pretendPage = (title: string, body: string) =>
@@ -414,7 +415,7 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
     if (!fake) return reply;
     const body = fake.signingIn
       ? `<h1>Allow hlabs to set up a tunnel?</h1><p>hlabs asks for a tunnel and DNS records on your domain ` +
-        `<code>${fake.domain}</code>.</p><form method="post" action="${FakeCloudflare.DEV_SIGN_IN_PATH}">` +
+        `<code>${fake.domain}</code>.</p><form method="post" enctype="text/plain" action="${FakeCloudflare.DEV_SIGN_IN_PATH}">` +
         `<button type="submit">Approve</button></form><p class="note">To cancel, close this tab and press Cancel in ` +
         `hlabs.</p>`
       : `<h1>Nothing is waiting</h1><p>Press “Sign in to Cloudflare” in hlabs first.</p>`;
