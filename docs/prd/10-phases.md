@@ -505,11 +505,13 @@ Four tracks that don't wait for each other (D-151):
 | 13 | The rest of the phone app in Direction A | US-PHONE-25 to 28 (D-174) | Hari reviews the missing frames first, then checks on his iPhone |
 | 14 | Tablets: touch on the desktop layout | US-TAB-01 to 06 (D-175) | Hari reviews the tablet frames first, then checks on an iPad |
 | 15 | Docs screenshots | US-SITE-11 | after 13 and 14, so the screenshots show them |
+| 16 | The public dashboard | US-SYS-45 to 48 (D-182) | Hari reviews the frames first; checked by hand on his domain (Q-25) |
 
 **Done when**
 - [ ] All P2 stories pass; axe clean on every route; phone layouts verified on iOS Safari and Android Chrome.
 - [ ] The built-in store has the approved 100 apps and the nightly matrix installs ≥ 98 % of them.
 - [ ] Public apps: the Cloudflare prototype's findings are in D-171; a public app is checked by hand through Cloudflare Tunnel from outside the home network (login in front, 404s, headers, rate limit, turning it off).
+- [ ] The public dashboard (D-182): checked by hand through Cloudflare Tunnel from outside the home network (two-factor sign-in, a home-only change refused, the app tiles, Cloudflare's sign-in in front, turning it off).
 - [ ] **1.0 release.**
 
 **Stories**
@@ -579,6 +581,10 @@ Four tracks that don't wait for each other (D-151):
 - US-SYS-38 · Reset hlabs (P2)
 - US-SYS-43 · Set up a way to make apps public (P2, track D)
 - US-SYS-44 · See and stop everything that's public (P2, track D)
+- US-SYS-45 · Make the dashboard public (P2, track D)
+- US-SYS-46 · Sign in to the public dashboard (P2, track D)
+- US-SYS-47 · Some changes only work at home (P2, track D)
+- US-SYS-48 · Add Cloudflare's sign-in in front of the dashboard (P2, track D)
 
 *[Phone](../features/12-phone.md)*
 

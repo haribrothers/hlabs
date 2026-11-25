@@ -6,7 +6,7 @@ hlabs holds a household's photos, passwords and documents. Security rules here a
 1. **Nothing leaves the house unless the user turns it on.** No telemetry, no analytics, no crash reporting by default. The only outbound calls are: store index sync, image pulls, hlabs update checks, Tailscale (if enabled), backup destinations (if configured), an ntfy server for push notifications (only if the admin configures one, D-033), the API of a Pi-hole on another device (only if chosen as the local DNS server, D-106), on macOS the container engine download when no engine is found (pinned and checksum-verified, D-057), app libraries an admin adds (D-149), and for apps an admin makes public, Cloudflare (its API and the tunnel, D-150, D-171). Each is listed in Settings › Advanced › "What hlabs connects to".
 2. **The daemon is never directly exposed.** It binds to `127.0.0.1`; Caddy is the only listener on the network.
 3. **Least privilege.** The daemon runs as the logged-in user (macOS, Linux desktop) or a dedicated `hlabs` user (headless). Privileged operations (binding 80/443 on Linux, mounting SMB on Linux) go through a minimal helper with an allow-list of commands.
-4. **Only single apps go public, and only through hlabs** (D-150, §7.10). The dashboard and the daemon never do. No port forwarding, UPnP or dynamic DNS.
+4. **Only what an admin chooses goes public, and only through hlabs** (D-150, D-182, §7.10, §7.11): single apps, and the dashboard itself when an admin turns it on (off by default). The daemon never does (it stays on `127.0.0.1`). No port forwarding, UPnP or dynamic DNS.
 
 ## 7.2 Authentication
 - Passwords: min 12 characters, checked against a bundled list of the 100k most common passwords; Argon2id (`m=64 MiB, t=3, p=1`).
@@ -82,7 +82,7 @@ An admin can make an app reachable from the internet, one app at a time, through
 - A stolen or leaked Cloudflare token.
 
 **Controls**
-1. **Never public**: the dashboard, the daemon (`127.0.0.1` only) and apps whose manifest says `public.allowed: false` (Portainer and other admin tools). Only the app's own web service is reachable, at its own address; other apps and the dashboard's paths answer 404 there.
+1. **Never public**: the daemon (`127.0.0.1` only), the dashboard unless an admin makes it public (§7.11) and apps whose manifest says `public.allowed: false` (Portainer and other admin tools). Only the app's own web service is reachable, at its own address; other apps and the dashboard's paths answer 404 there.
 2. **Admins only, one app at a time**: a confirmation names the app and its public address; the change is in `audit_log` and every other admin gets a notification. Members can't make anything public.
 3. **A login in front**: Caddy's forward auth (US-APP-19) with hlabs's login, signed in at `/.hlabs/sign-in` on the public address itself with a host-only cookie for that address (D-178), and two-factor required for everyone allowed into that app; people without access to the app get 403. "<App>'s own login only" is offered only when the manifest says `public.ownLoginSafe: true`, with a warning naming who can then reach the sign-in page.
 4. **Hardening at Caddy** for public addresses: HTTPS on every leg (D-181: a page visited over plain HTTP is sent to its `https://` address, anything else sent that way is refused; cloudflared reaches Caddy's public listener over TLS with a certificate from hlabs's local CA, trusting only that CA), HSTS, the headers of the dashboard, a rate limit on login paths (and hlabs's lockout, §7.2), a request size limit unless the app's manifest asks for more (uploads), `Referrer-Policy: strict-origin-when-cross-origin`, the visitor's address from `CF-Connecting-IP` with cloudflared as the only trusted proxy, and hlabs's own cookies never sent to the app (D-178).
@@ -91,4 +91,25 @@ An admin can make an app reachable from the internet, one app at a time, through
 7. **Secrets and the domain**: the Cloudflare credential (from signing in to Cloudflare, or an API token scoped to the one zone's tunnel and DNS) is in the keychain, never in SQLite or logs; removing Cloudflare Tunnel deletes it, the tunnel and its records. hlabs only ever changes the DNS records it made, never the domain's other records (D-171).
 
 **Tests**: e2e makes an app public with fake providers and checks the login in front, two-factor, 403 for others, the 404s, the headers, the rate limit and turning it all off; the prototype (D-171) checks the real tunnel by hand, from outside the home network, before the stories are built.
+
+## 7.11 The public dashboard (D-182)
+An admin can make the dashboard itself reachable from the internet, through the same Cloudflare Tunnel, at a name of its own. It's off by default.
+
+**What we protect against**
+- A stolen password and two-factor code (phishing, a shared computer) used to take over the household's data or the computer.
+- Strangers trying passwords on the sign-in page, and learning who uses hlabs from it.
+- A session from home or the tailnet replayed on the public address, or a public session kept for weeks.
+- Someone turning it on without meaning to, or forgetting it's on.
+
+**Controls**
+1. **Off by default**: only an admin turns it on, with their password; audited; the other admins are notified; listed in Public access with the apps, and included in Turn off all public access and the menu-bar item.
+2. **Two-factor for everyone there**: it can't be turned on while an admin has no two-factor; anyone without it can't sign in there.
+3. **A plain sign-in**: username and password typed, never a list of users; no "Remember this phone"; the lockout of §7.2 and the public apps' limit per address (more than 20 failures in 10 minutes refuse it for an hour and warn the admins).
+4. **Sessions bound to the address**: a session made there works only there (`sessions.public_host`, and `X-Hlabs-Via: public`, which only the public listener sets and every other server deletes), ends after 12 hours, and a sign-in from a new place notifies the person.
+5. **Home-only changes** (US-SYS-47): factory reset, public access and the network, app sources and libraries, deploying your own apps, app permissions and secrets, people and roles, passwords and two-factor, restores and backup passwords, data moves and the engine are refused there with `HOME_ONLY`, enforced in the daemon and recorded when tried; stopping exposure always works.
+6. **Never there**: first-run setup, invites and reset links.
+7. **Cloudflare's sign-in in front**: recommended, set up by hlabs (an Access application with an email allow list) when the admin adds it.
+8. Everything in §7.10 control 4 (HTTPS on every leg, the headers, the request size limit, the visitor's address from Cloudflare).
+
+**Tests**: e2e with the pretend Cloudflare checks the dashboard on its public address: two-factor required, no user list, a home session refused there, the 12-hour end, every home-only procedure refused with `HOME_ONLY` (a contract test makes every procedure declare whether it is), the app tiles, and turning it off ending its sessions; checked by hand through Hari's domain (Q-25).
 

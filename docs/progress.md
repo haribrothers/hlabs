@@ -332,6 +332,10 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 - [x] US-SYS-38 · Reset hlabs (the database is deleted at the next start, D-170; MCP tokens join with phase 8)
 - [x] US-SYS-43 · Set up a way to make apps public (the pretend Cloudflare in e2e; Sign in to Cloudflare with a real domain is Q-24)
 - [x] US-SYS-44 · See and stop everything that's public (the menu-bar app's "Turn off public access" after Touch ID or the password, as US-INST-18)
+- [ ] US-SYS-45 · Make the dashboard public
+- [ ] US-SYS-46 · Sign in to the public dashboard
+- [ ] US-SYS-47 · Some changes only work at home
+- [ ] US-SYS-48 · Add Cloudflare's sign-in in front of the dashboard
 - [x] US-PHONE-01 · Switch to the phone layout with a bottom tab bar (tab bar docked to the bottom with the soft highlight, "App Store" tab, D-172, D-173)
 - [x] US-PHONE-02 · Touch targets, safe areas and phone-friendly inputs (44px hit areas, safe areas, 17px fields, keyboard hides the tab bar)
 - [x] US-PHONE-03 · Bottom sheets with soft spring and drag to dismiss (BottomSheet in packages/ui; ModalDialog becomes one on phones)
