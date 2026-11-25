@@ -1,13 +1,22 @@
 // Caddy's public listener (US-APP-27, 28; D-178; 07 §7.10 controls 1, 3 and 4). cloudflared sends every public name
 // here, on 127.0.0.1 only. It routes by name: each public app's own web service and hlabs's sign-in pages on its
 // address, and a 404 for any other name, so the dashboard, the daemon's API and private apps are never reachable from
-// the internet. On every public address: HTTPS only (a request Cloudflare marks as plain HTTP is refused, not
-// redirected), HSTS, nosniff and `Referrer-Policy: strict-origin-when-cross-origin`, a request size limit, the
+// the internet. HTTPS on every leg (D-181): cloudflared reaches this listener over TLS with a certificate from hlabs's
+// local CA (one internal name, PUBLIC_ORIGIN_NAME, never a public one), and a visit Cloudflare marks as plain HTTP is
+// sent to its https:// address when it's a page (GET or HEAD) and refused otherwise, so a form or a sign-in never goes
+// over plain HTTP. On every public address: HSTS, nosniff and `Referrer-Policy: strict-origin-when-cross-origin`, a request size limit, the
 // visitor's address from `CF-Connecting-IP` with cloudflared as the only trusted proxy, identity headers only from
 // forward auth, and hlabs's cookies taken out before the app sees the request.
 import { loopbackPort } from '../apps/ports';
 import { IDENTITY_HEADERS, PUBLIC_HOST_HEADER } from './headers';
 import type { PublicListener, PublicRoute } from './index';
+
+/**
+ * The name cloudflared asks for when it connects to the public listener (its `originServerName`), and the only name on
+ * the listener's certificate: issued by hlabs's local CA, which cloudflared trusts for this and nothing else (D-181).
+ * Visitors never see it; public addresses are routed by their Host header as before.
+ */
+export const PUBLIC_ORIGIN_NAME = 'public.hlabs.internal';
 
 /** The logger Caddy writes the public listener's access log to (Visits, US-APP-29). */
 export const PUBLIC_ACCESS_LOGGER = 'public';
@@ -46,6 +55,25 @@ function page(status: number, title: string) {
       ...PUBLIC_RESPONSE_HEADERS,
     },
     body: `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title></head><body><h1>${title}</h1></body></html>`,
+  };
+}
+
+/** How Cloudflare marks a visit that reached it over plain HTTP. */
+const PLAIN_HTTP = [
+  { header: { 'X-Forwarded-Proto': ['http'] } },
+  { header_regexp: { 'Cf-Visitor': { pattern: '"scheme"\\s*:\\s*"http"' } } },
+];
+
+/** The same address over HTTPS, for good (308 keeps the method; only GET and HEAD are sent here). */
+function toHttps() {
+  return {
+    handler: 'static_response',
+    status_code: 308,
+    headers: {
+      Location: ['https://{http.request.host}{http.request.uri}'],
+      'Cache-Control': ['no-store'],
+      ...PUBLIC_RESPONSE_HEADERS,
+    },
   };
 }
 
@@ -175,15 +203,14 @@ export function publicServer(listener: PublicListener, daemon: string) {
     trusted_proxies: { source: 'static', ranges: ['127.0.0.1/32', '::1/128'] },
     client_ip_headers: ['Cf-Connecting-Ip'],
     routes: [
-      // HTTPS only: Cloudflare already upgrades http:// at its edge, so a request marked plain HTTP is refused.
-      {
-        match: [
-          { header: { 'X-Forwarded-Proto': ['http'] } },
-          { header_regexp: { 'Cf-Visitor': { pattern: '"scheme"\\s*:\\s*"http"' } } },
-        ],
-        handle: [page(403, 'HTTPS only')],
+      // A visit Cloudflare marks as plain HTTP (the zone's "Always Use HTTPS" off): a page goes to its https:// address,
+      // anything else is refused, so nothing is ever sent on over plain HTTP (D-181).
+      ...PLAIN_HTTP.map((marked) => ({
+        match: [{ ...marked, method: ['GET', 'HEAD'] }],
+        handle: [toHttps()],
         terminal: true,
-      },
+      })),
+      { match: PLAIN_HTTP, handle: [page(403, 'HTTPS only')], terminal: true },
       ...listener.apps.map((a) => publicAppRoute(a, daemon)),
       // A name hlabs doesn't know (or an app made private a moment ago).
       { handle: [page(404, 'Page not found')], terminal: true },
@@ -207,7 +234,9 @@ export function publicServer(listener: PublicListener, daemon: string) {
           ]
         : [],
     },
-    // Plain HTTP from cloudflared on loopback: no certificates, and never one asked for a public name.
+    // TLS from cloudflared on loopback with the certificate for PUBLIC_ORIGIN_NAME (the tls app's `automate`, from the
+    // local CA): Caddy manages no other certificate here and never asks for one for a public name (D-181).
+    tls_connection_policies: [{ default_sni: PUBLIC_ORIGIN_NAME }],
     automatic_https: { disable: true },
     logs: { default_logger_name: PUBLIC_ACCESS_LOGGER },
   };

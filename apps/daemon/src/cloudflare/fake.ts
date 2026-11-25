@@ -9,6 +9,7 @@ import {
   type CloudflareCredential,
   type CloudflareSignIn,
   type CloudflareStep,
+  type ConnectorOrigin,
   type ConnectorState,
   type TunnelConnector,
 } from './types';
@@ -168,7 +169,7 @@ export class FakeCloudflare implements CloudflareClient, TunnelConnector {
     return [...this.records.values()].filter((r) => r.byHlabs).map((r) => r.name);
   }
 
-  async start(opts: { tunnelId: string; credentialsFile: string; origin: string }) {
+  async start(opts: ConnectorOrigin) {
     this.calls.push('connector:start');
     this.started = opts;
     this.connector = this.failing.has('connector') ? 'failed' : 'running';

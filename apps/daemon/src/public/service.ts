@@ -14,7 +14,9 @@ import { appSummary, catalogRow } from '../apps/list';
 import type { AppService } from '../apps/service';
 import type { SessionService } from '../auth/sessions';
 import type { TotpService } from '../auth/totp';
+import { caRootDir } from '../caddy/config';
 import type { PublicListener, PublicRoute } from '../caddy/index';
+import { PUBLIC_ORIGIN_NAME } from '../caddy/public';
 import {
   CloudflareError,
   type CloudflareClient,
@@ -194,7 +196,10 @@ export class PublicService {
     return this.deps.connector.start({
       tunnelId,
       credentialsFile: this.tunnelFile,
-      origin: `http://127.0.0.1:${this.deps.publicPort}`,
+      // Caddy's public listener over TLS, trusting only hlabs's local CA (D-181).
+      origin: `https://127.0.0.1:${this.deps.publicPort}`,
+      originServerName: PUBLIC_ORIGIN_NAME,
+      caPool: join(caRootDir(join(this.deps.dataDir, 'caddy', 'data')), 'root.crt'),
     });
   }
 

@@ -65,7 +65,12 @@ describe('US-SYS-43', () => {
     });
     // The connector runs for the tunnel, carrying every public name to the public listener on 127.0.0.1.
     expect(t.fake.state()).toBe('running');
-    expect(t.fake.started?.origin).toBe(`http://127.0.0.1:${t.d.config.publicPort}`);
+    // Caddy's public listener over TLS, trusting only hlabs's local CA (D-181).
+    expect(t.fake.started).toMatchObject({
+      origin: `https://127.0.0.1:${t.d.config.publicPort}`,
+      originServerName: 'public.hlabs.internal',
+      caPool: join(t.d.config.paths.dataDir, 'caddy', 'data', 'pki', 'authorities', 'local', 'root.crt'),
+    });
     expect(t.listener()).toMatchObject({ port: t.d.config.publicPort, apps: [] });
     expect(t.audits('public.cloudflare.setUp')).toHaveLength(1);
   });
@@ -304,10 +309,24 @@ describe('US-SYS-43 · the real Cloudflare, with its process and API faked', () 
     const yaml = connectorConfig({
       tunnelId: 'tun-1',
       credentialsFile: '/data/cloudflare/tunnel.json',
-      origin: 'http://127.0.0.1:7475',
+      origin: 'https://127.0.0.1:7475',
+      originServerName: 'public.hlabs.internal',
+      caPool: '/data/caddy/data/pki/authorities/local/root.crt',
     });
+    // To Caddy over TLS, trusting only hlabs's local CA (D-181).
     expect(yaml).toBe(
-      'tunnel: tun-1\ncredentials-file: "/data/cloudflare/tunnel.json"\nno-autoupdate: true\ningress:\n  - service: http://127.0.0.1:7475\n',
+      [
+        'tunnel: tun-1',
+        'credentials-file: "/data/cloudflare/tunnel.json"',
+        'no-autoupdate: true',
+        'ingress:',
+        '  - service: https://127.0.0.1:7475',
+        '    originRequest:',
+        '      originServerName: "public.hlabs.internal"',
+        '      caPool: "/data/caddy/data/pki/authorities/local/root.crt"',
+        '      noTLSVerify: false',
+        '',
+      ].join('\n'),
     );
   });
 });

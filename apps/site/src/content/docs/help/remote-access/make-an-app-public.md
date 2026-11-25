@@ -24,6 +24,16 @@ Your dashboard, your files and your other apps are never public. Nothing changes
 
 If your domain already has a website or email, they keep working: hlabs only ever adds, changes and deletes the DNS records it made for its public apps.
 
+### Keep it on HTTPS
+
+Two settings in Cloudflare make sure visitors always use HTTPS. They're for the whole domain, so hlabs leaves them to you:
+
+1. In Cloudflare, open your domain, then **SSL/TLS › Edge Certificates**.
+2. Turn on **Always Use HTTPS**.
+3. Set **Minimum TLS Version** to **TLS 1.2**.
+
+Even without them, hlabs sends a page visited with `http://` to its `https://` address and refuses anything else sent that way, so a password never goes over plain HTTP. Between Cloudflare and this computer, and inside it up to hlabs, the traffic is encrypted too.
+
 ## Set up Cloudflare Tunnel
 
 1. Open **Settings › Network & remote access**.

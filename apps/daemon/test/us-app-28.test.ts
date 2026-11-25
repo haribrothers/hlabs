@@ -5,18 +5,19 @@
 // trusted proxy, identity headers from forward auth only and hlabs's cookies never passed on (the real Caddy, when
 // `pnpm fetch-binaries` has put it in .bin).
 import { sessions } from '@hlabs/db';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { createServer, request, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import { request } from 'node:https';
 import type { AddressInfo } from 'node:net';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { generateSync } from 'otplib';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { LOOPBACK_OFFSET } from '../src/apps/ports';
-import { buildCaddyConfig } from '../src/caddy/config';
+import { buildCaddyConfig, caRootDir } from '../src/caddy/config';
 import type { ProxyState } from '../src/caddy/index';
 import { CaddyProxy } from '../src/caddy/proxy';
-import { stripHlabsCookies } from '../src/caddy/public';
+import { PUBLIC_ORIGIN_NAME, stripHlabsCookies } from '../src/caddy/public';
 import { publicNext } from '../src/http/public';
 import { silentLogger } from '../src/logger';
 import { readVisits } from '../src/public/visits';
@@ -318,6 +319,10 @@ describe('US-APP-28', () => {
     expect(json).toContain('"max_size":10485760');
     expect(json).toContain('"uri":"/auth/public-verify"');
     expect(json).toContain('"X-Forwarded-For":["{http.vars.client_ip}"]');
+    // TLS from cloudflared with the one internal name's certificate from the local CA, never a public name's (D-181).
+    expect(json).toContain('"tls_connection_policies":[{"default_sni":"public.hlabs.internal"}]');
+    expect(json).toContain('"certificates":{"automate":["public.hlabs.internal"]}');
+    expect(json).not.toMatch(/"subjects":\[[^\]]*example\.com/);
   });
 
   it("takes hlabs's cookies out of what the app gets, leaving the app's own (the same regexes Caddy runs)", () => {
@@ -359,7 +364,9 @@ describe.skipIf(!existsSync(CADDY))('US-APP-28 · the real Caddy on the public l
     await new Promise((r) => server.close(r));
     return port;
   }
-  /** A request as cloudflared makes it, to the public listener. */
+  /** hlabs's local CA certificate, as cloudflared's caPool (D-181). */
+  let ca = '';
+  /** A request as cloudflared makes it, to the public listener: over TLS, asking for the internal name. */
   function send(
     host: string,
     path: string,
@@ -369,14 +376,25 @@ describe.skipIf(!existsSync(CADDY))('US-APP-28 · the real Caddy on the public l
   ): Promise<{ status: number; headers: IncomingMessage['headers']; body: string }> {
     return new Promise((resolve, reject) => {
       const req = request(
-        { host: '127.0.0.1', port: publicPort, path, method, headers: { Host: host, ...headers }, agent: false },
+        {
+          host: '127.0.0.1',
+          port: publicPort,
+          path,
+          method,
+          headers: { Host: host, ...headers },
+          agent: false,
+          servername: PUBLIC_ORIGIN_NAME,
+          ca,
+        },
         (res) => {
-          let text = '';
-          res.on('data', (c: Buffer) => (text += c.toString()));
-          res.on('end', () => resolve({ status: res.statusCode!, headers: res.headers, body: text }));
+          answered = { status: res.statusCode!, headers: res.headers, body: '' };
+          res.on('data', (c: Buffer) => (answered!.body += c.toString()));
+          res.on('end', () => resolve(answered!));
         },
       );
-      req.on('error', reject);
+      // Caddy may answer (a 413) and close while a large body is still being written: the answer stands.
+      let answered: { status: number; headers: IncomingMessage['headers']; body: string } | null = null;
+      req.on('error', (err) => (answered ? resolve(answered) : reject(err)));
       req.end(body);
     });
   }
@@ -469,6 +487,18 @@ describe.skipIf(!existsSync(CADDY))('US-APP-28 · the real Caddy on the public l
       logger: silentLogger(),
     });
     await proxy.apply(state);
+    // The local CA and the listener's certificate are made as Caddy starts.
+    const root = join(caRootDir(proxy.paths.storageDir), 'root.crt');
+    for (let i = 0; i < 100 && !existsSync(root); i++) await new Promise((r) => setTimeout(r, 100));
+    ca = readFileSync(root, 'utf8');
+    for (let i = 0; i < 50; i++) {
+      const ok = await send('nope.example.com', '/').then(
+        () => true,
+        () => false,
+      );
+      if (ok) break;
+      await new Promise((r) => setTimeout(r, 200));
+    }
   }, 30_000);
 
   afterAll(async () => {
@@ -485,9 +515,22 @@ describe.skipIf(!existsSync(CADDY))('US-APP-28 · the real Caddy on the public l
     expect(daemonSaw.filter((r) => r.url.startsWith('/trpc'))).toEqual([]);
   });
 
-  it('refuses a request Cloudflare marks as plain HTTP, rather than redirecting it', async () => {
-    expect((await send('vault.example.com', '/', { 'X-Forwarded-Proto': 'http' })).status).toBe(403);
-    expect((await send('vault.example.com', '/', { 'Cf-Visitor': '{"scheme":"http"}' })).status).toBe(403);
+  it('sends a page visited over plain HTTP to its https:// address, and refuses anything else (D-181)', async () => {
+    const plain: Array<Record<string, string>> = [
+      { 'X-Forwarded-Proto': 'http' },
+      { 'Cf-Visitor': '{"scheme":"http"}' },
+    ];
+    for (const marked of plain) {
+      const page = await send('vault.example.com', '/albums?x=1', marked);
+      expect(page.status).toBe(308);
+      expect(page.headers.location).toBe('https://vault.example.com/albums?x=1');
+      expect(page.headers['strict-transport-security']).toBe('max-age=31536000');
+      expect((await send('vault.example.com', '/', marked, 'HEAD')).status).toBe(308);
+      // A form or a sign-in never goes on over plain HTTP, not even to the daemon's pages.
+      const before = daemonSaw.length;
+      expect((await send('vault.example.com', '/.hlabs/sign-in', marked, 'POST', Buffer.from('x'))).status).toBe(403);
+      expect(daemonSaw.length).toBe(before);
+    }
     expect(
       (await send('vault.example.com', '/', { 'X-Forwarded-Proto': 'https', 'Cf-Visitor': '{"scheme":"https"}' }))
         .status,
@@ -545,14 +588,17 @@ describe.skipIf(!existsSync(CADDY))('US-APP-28 · the real Caddy on the public l
   });
 
   it('keeps the request size limit', async () => {
+    // Caddy answers 413 and closes; if it closes while the body is still being written, the client sees the connection
+    // dropped instead. Either way the upload never reaches the app.
     const res = await send(
       'vault.example.com',
       '/upload',
       { Cookie: '__Host-hlabs_pub=ok', 'Content-Type': 'application/octet-stream' },
       'POST',
       Buffer.alloc(2 * 1024 * 1024),
-    );
-    expect(res.status).toBe(413);
+    ).catch((err: NodeJS.ErrnoException) => ({ status: err.code ?? 'error', body: '' }));
+    expect([413, 'EPIPE', 'ECONNRESET']).toContain(res.status);
+    expect(res.body).not.toMatch(/^got /);
   });
 
   it("an app with its own login only is reached without hlabs's login; a stopped one gets the daemon's page", async () => {

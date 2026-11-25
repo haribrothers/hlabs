@@ -61,9 +61,20 @@ export interface CloudflareClient {
 export type ConnectorState = 'stopped' | 'starting' | 'running' | 'failed';
 
 /** The cloudflared connector, run by the daemon like Caddy (one for every public name). */
+export interface ConnectorOrigin {
+  tunnelId: string;
+  credentialsFile: string;
+  /** Caddy's public listener: `https://127.0.0.1:<port>`. */
+  origin: string;
+  /** The name on the listener's certificate (D-181), asked for when connecting. */
+  originServerName: string;
+  /** hlabs's local CA certificate: the only one cloudflared trusts for the listener. */
+  caPool: string;
+}
+
 export interface TunnelConnector {
-  /** Runs it for the tunnel, sending every name to `origin` (`http://127.0.0.1:<public port>`); started again if it stops. */
-  start(opts: { tunnelId: string; credentialsFile: string; origin: string }): Promise<void>;
+  /** Runs it for the tunnel, sending every name to `origin` over TLS (D-181); started again if it stops. */
+  start(opts: ConnectorOrigin): Promise<void>;
   stop(): Promise<void>;
   state(): ConnectorState;
 }

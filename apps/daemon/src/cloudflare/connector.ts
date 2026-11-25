@@ -1,5 +1,5 @@
 // The bundled cloudflared, run by the daemon like Caddy (D-178): one connector for the tunnel, with one ingress rule
-// that sends every public name to Caddy's public listener on 127.0.0.1 (which answers only public addresses and 404s
+// that sends every public name to Caddy's public listener on 127.0.0.1 over TLS, trusting only hlabs's local CA (D-181) (which answers only public addresses and 404s
 // the rest). Its config and the tunnel's credentials are files in the data dir (0600), never on the command line. It's
 // recorded in the ChildRegistry, so a killed daemon's connector is ended at the next start, and started again after a
 // pause if it stops.
@@ -8,7 +8,7 @@ import { chmodSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Logger } from '../logger';
 import type { ChildRegistry } from '../platform/children';
-import type { ConnectorState, TunnelConnector } from './types';
+import type { ConnectorOrigin, ConnectorState, TunnelConnector } from './types';
 
 export interface CloudflaredConnectorDeps {
   /** `<binDir>/cloudflared` */
@@ -21,14 +21,18 @@ export interface CloudflaredConnectorDeps {
   spawn?: (command: string, args: string[], options: { env: NodeJS.ProcessEnv }) => ChildProcess;
 }
 
-/** cloudflared's config: the tunnel, its credentials file and the one ingress rule. */
-export function connectorConfig(opts: { tunnelId: string; credentialsFile: string; origin: string }): string {
+/** cloudflared's config: the tunnel, its credentials file and the one ingress rule, to Caddy over TLS (D-181). */
+export function connectorConfig(opts: ConnectorOrigin): string {
   return [
     `tunnel: ${opts.tunnelId}`,
     `credentials-file: ${JSON.stringify(opts.credentialsFile)}`,
     'no-autoupdate: true',
     'ingress:',
     `  - service: ${opts.origin}`,
+    '    originRequest:',
+    `      originServerName: ${JSON.stringify(opts.originServerName)}`,
+    `      caPool: ${JSON.stringify(opts.caPool)}`,
+    '      noTLSVerify: false',
     '',
   ].join('\n');
 }
@@ -36,7 +40,7 @@ export function connectorConfig(opts: { tunnelId: string; credentialsFile: strin
 export class CloudflaredConnector implements TunnelConnector {
   private child: ChildProcess | null = null;
   private current: ConnectorState = 'stopped';
-  private wanted: { tunnelId: string; credentialsFile: string; origin: string } | null = null;
+  private wanted: ConnectorOrigin | null = null;
   private restartTimer: NodeJS.Timeout | null = null;
 
   constructor(private readonly deps: CloudflaredConnectorDeps) {}
@@ -45,7 +49,7 @@ export class CloudflaredConnector implements TunnelConnector {
     return this.current;
   }
 
-  async start(opts: { tunnelId: string; credentialsFile: string; origin: string }): Promise<void> {
+  async start(opts: ConnectorOrigin): Promise<void> {
     this.wanted = opts;
     if (this.child && this.child.exitCode === null) await this.stopChild();
     this.spawnNow();

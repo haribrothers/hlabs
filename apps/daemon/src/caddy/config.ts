@@ -9,7 +9,7 @@ import { appHosts, homeDomains } from '../network/domains';
 import { fallbackErrorRoutes } from './fallback';
 import type { ProxyState } from './index';
 import { IDENTITY_HEADERS, PUBLIC_HOST_HEADER } from './headers';
-import { PUBLIC_ACCESS_LOGGER, publicAccessLog, publicServer } from './public';
+import { PUBLIC_ACCESS_LOGGER, PUBLIC_ORIGIN_NAME, publicAccessLog, publicServer } from './public';
 
 export interface CaddyPaths {
   /** Caddy's storage: the local CA, certificates, locks. */
@@ -249,7 +249,17 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
         },
       },
       tls: {
-        automation: { policies: [{ subjects: hosts, issuers: [{ module: 'internal' }] }] },
+        // The public listener's one certificate (D-181), from the same local CA, managed whether or not a server
+        // asks for it by name.
+        ...(state.public ? { certificates: { automate: [PUBLIC_ORIGIN_NAME] } } : {}),
+        automation: {
+          policies: [
+            {
+              subjects: state.public ? [...hosts, PUBLIC_ORIGIN_NAME] : hosts,
+              issuers: [{ module: 'internal' }],
+            },
+          ],
+        },
       },
       // Trust is installed by people through CertGuide, never by Caddy asking for an admin password.
       pki: { certificate_authorities: { local: { name: 'hlabs Local CA', install_trust: false } } },

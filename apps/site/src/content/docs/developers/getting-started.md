@@ -53,7 +53,7 @@ To try the real Cloudflare (`pnpm fetch-binaries` puts cloudflared in `.bin/`), 
 HLABS_DEV_FAKE_CLOUDFLARE=0 pnpm dev:full
 ```
 
-Public addresses reach Caddy's public listener on `127.0.0.1:7475` (`HLABS_PUBLIC_PORT`). Remove Cloudflare Tunnel in Settings › Network when you're done, so the tunnel and the DNS records hlabs made are deleted.
+Public addresses reach Caddy's public listener on `127.0.0.1:7475` (`HLABS_PUBLIC_PORT`), over TLS with a certificate for `public.hlabs.internal` from hlabs's local CA, which cloudflared is set to trust (D-181). Remove Cloudflare Tunnel in Settings › Network when you're done, so the tunnel and the DNS records hlabs made are deleted.
 
 ### Network drives in development
 
