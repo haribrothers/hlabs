@@ -188,10 +188,24 @@ async function run(appId: string): Promise<string | null> {
   log(appId, 'installing');
   const install = await mutate('apps.install', { appId, env, mounts, acceptRisks: true });
   if (install.error) return `install refused: ${JSON.stringify(install.error)}`;
-  const installed = await until(`${appId} installed`, INSTALL_MS, async () => {
-    const s = await appState(appId);
-    return s && (s.state === 'running' || s.state === 'install_failed') ? s : undefined;
-  });
+  const settled = () =>
+    until(`${appId} installed`, INSTALL_MS, async () => {
+      const s = await appState(appId);
+      return s && (s.state === 'running' || s.state === 'install_failed') ? s : undefined;
+    });
+  let installed = await settled();
+  // A registry that refuses for a moment (lscr.io's rate limit, with ~100 runners pulling at once) isn't the app's
+  // fault: Try again once, as a person would, after a pause.
+  if (installed.state === 'install_failed' && (installed.stateDetail as { step?: string } | null)?.step === 'pull') {
+    log(appId, 'pull failed; trying again in 60 s');
+    await sleep(60_000);
+    const retry = await mutate('apps.retryInstall', { appId });
+    if (retry.error) return `retry refused: ${JSON.stringify(retry.error)}`;
+    await until(`${appId} installing again`, 30_000, async () =>
+      (await appState(appId))?.state === 'install_failed' ? undefined : true,
+    );
+    installed = await settled();
+  }
   if (installed.state !== 'running') {
     say(containerLogs(appId));
     return `install failed: ${JSON.stringify(installed.stateDetail)}`;
