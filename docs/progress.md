@@ -281,6 +281,13 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 
 ## Phase 7 · v1.0 completeness
 
+Not shipped yet. "Done when", 26 Nov 2026:
+- #1 Every story's tests pass: unit and integration (3,135), e2e (522; axe in 78 specs, glass and solid). Four e2e specs failed once in the full local run and passed alone (US-AUTH-02, US-AUTH-03, US-SYS-41, US-STATE-14). Still to check by hand: the phone layouts on Android Chrome; iOS Safari's last fixes (the bottom band, switches, the tile menu, the tab bar with the keyboard).
+- #2 The 100 approved apps are in `store/`. The full matrix on `phase-7` (GitHub run 45868074399, Ubuntu 26.04) installed **88 of 100**, short of 98 %. Failed: 2fauth, AnythingLLM, Firefly III, Langflow, LibreChat, OpenClaw, Pi-hole, Portainer, Seerr, Tube Archivist, wg-easy, Zigbee2MQTT. The waves were checked on macOS, where Docker Desktop hides file ownership; on Linux, data folders that a container's own user can't write show up (Elasticsearch's node lock, Mosquitto's exit 13). The runner's kernel has no `ip_tables` (wg-easy), and port 53 is only freed for AdGuard Home's shard (Pi-hole).
+- #3 D-171 has the prototype's findings. Through the real Cloudflare on `h4sandbox.online`: the named tunnel, a public app's record, hlabs's login in front and HTTPS on every leg (Q-24). Still to check by hand: making an app private deletes its record with the sign-in credential, and a phone app behind the login.
+- #4 Checked by hand on `h4sandbox.online`, 26 Nov 2026 (Q-25): Cloudflare's sign-in in front (with the Access token, D-187), live updates through the tunnel, and an upload over 100 MB. Still to note from outside the home network: two-factor sign-in, a home-only change refused, the app tiles, and turning it off.
+- #5 The 1.0 release: not yet.
+
 - [x] US-HOME-13 · Open the notifications panel (the bell shows the count as the story asks, not the dot drawn; checked at desktop and phone width)
 - [x] US-HOME-14 · Act on and clear notifications (D-155; "Review" opens `/store/updates`, which arrives with US-STORE-15 in group 4)
 - [x] US-HOME-15 · See a friendly empty Home (members allowed to install apps get the admin version)
