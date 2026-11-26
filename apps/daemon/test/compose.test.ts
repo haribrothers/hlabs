@@ -48,6 +48,15 @@ describe('CliComposeRunner', () => {
     expect(calls[1]!.args.slice(-2)).toEqual(['down', '--remove-orphans']);
   });
 
+  it('restarts with stop, then up, so dependencies start first (D-189)', async () => {
+    const { calls, exec } = recorder();
+    await new CliComposeRunner({ binDir: '/nonexistent', socketPath: () => '/s', exec }).restart(project);
+    expect(calls.map((c) => c.args.slice(9))).toEqual([
+      ['stop'],
+      ['up', '--detach', '--pull', 'never', '--remove-orphans'],
+    ]);
+  });
+
   it('uses the bundled docker-compose binary when there is one', async () => {
     const binDir = tempDir();
     writeFileSync(join(binDir, 'docker-compose'), '');
