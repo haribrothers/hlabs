@@ -299,7 +299,10 @@ export async function boot(bootDeps: BootDeps): Promise<Services | null> {
   const reaped = children.reapStale();
   if (reaped) logger.warn({ reaped }, 'ended helper processes a previous daemon left running');
   // Remote access first: starting Caddy frees the web ports Tailscale Serve holds for hlabs (D-111).
-  const tailscale = deps.tailscale ?? (config.devFakeTailscale ? new FakeTailscale() : new LocalApiTailscale());
+  const fakeTailscale = !deps.tailscale && config.devFakeTailscale ? new FakeTailscale() : null;
+  // "Connect" opens the pretend Tailscale's log-in page, where Approve finishes it (e2e sets its own link).
+  if (fakeTailscale) fakeTailscale.authUrl = FakeTailscale.DEV_SIGN_IN_PATH;
+  const tailscale = deps.tailscale ?? fakeTailscale ?? new LocalApiTailscale();
   const sessions = new SessionService(db, bus);
   const remote = new RemoteService({
     db,

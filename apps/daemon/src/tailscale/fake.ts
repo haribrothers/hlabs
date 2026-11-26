@@ -2,6 +2,8 @@
 import { TailscaleError, type ServeConfig, type TailscaleClient, type TailscaleState } from './types';
 
 export class FakeTailscale implements TailscaleClient {
+  /** The pretend log-in page `pnpm dev` gives (served by the daemon's dev routes), so connecting can be tried by hand. */
+  static readonly DEV_SIGN_IN_PATH = '/dev/tailscale/sign-in';
   current: TailscaleState = { kind: 'needs_login', authUrl: null };
   config: ServeConfig = {};
   etag = 1;
@@ -25,6 +27,11 @@ export class FakeTailscale implements TailscaleClient {
     if (hostname) this.hostname = hostname;
     this.current = { kind: 'needs_login', authUrl: this.authUrl };
     if (this.autoComplete) this.finishLogin(this.autoComplete.tailnet, this.autoComplete.nodeName);
+  }
+
+  /** A log-in is waiting for the person (its page was given). */
+  get signingIn() {
+    return this.current.kind === 'needs_login' && this.current.authUrl !== null;
   }
 
   /** The person finished logging in, in the other tab. */

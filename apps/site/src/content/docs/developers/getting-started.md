@@ -35,7 +35,7 @@ Development keeps its data in `.dev-data/` at the root of the repository; delete
 
 ### Tailscale in development
 
-`pnpm dev` uses a pretend Tailscale, so it never changes the Tailscale on your computer. To try remote access for real:
+`pnpm dev` uses a pretend Tailscale, so it never changes the Tailscale on your computer. **Connect** opens its pretend log-in page (`/dev/tailscale/sign-in`), where **Approve** puts this computer on the pretend tailnet `tail1234.ts.net`, and Settings then shows **Connected**. `POST /dev/tailscale` sets what it reports (`state`, `autoComplete`, `denyWrites`, `servedPorts`); the e2e tests always use it. To try remote access for real:
 
 ```sh
 HLABS_DEV_FAKE_TAILSCALE=0 pnpm dev:full

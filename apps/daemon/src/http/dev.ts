@@ -445,13 +445,13 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
   // parses everywhere, where a urlencoded one would be refused with 415): what "Sign in to Cloudflare" opens under
   // `pnpm dev`, so setup can be tried by hand. Approve finishes the waiting sign-in with the fake's domain; closing the
   // tab and pressing Cancel in hlabs cancels it, as with the real one.
-  const pretendPage = (title: string, body: string) =>
+  const pretendPage = (title: string, body: string, service = 'Cloudflare') =>
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">` +
     `<title>${title}</title><style>body{font:16px system-ui,sans-serif;max-width:26rem;margin:4rem auto;padding:0 1rem;` +
     `color:#1b1433;background:#f6f4fb}h1{font-size:1.4rem}.note{font-size:.85rem;color:#5b5570}` +
     `button{font:inherit;font-weight:600;padding:.7rem 1.4rem;border:0;border-radius:999px;background:#1b1433;` +
     `color:#fff;cursor:pointer}code{background:#e9e4ff;padding:0 .3rem;border-radius:4px}</style></head>` +
-    `<body><p class="note">Pretend Cloudflare · development only</p>${body}</body></html>`;
+    `<body><p class="note">Pretend ${service} · development only</p>${body}</body></html>`;
   const fakeFor = (reply: FastifyReply) => {
     const services = holder.current;
     if (!services?.readiness.isReady) {
@@ -484,6 +484,44 @@ export function registerDevRoutes(app: FastifyInstance, holder: ServiceHolder): 
       ? `<h1>Approved</h1><p>hlabs carries on with <code>${fake.domain}</code>. You can close this tab.</p>`
       : `<h1>Nothing is waiting</h1><p>Press “Sign in to Cloudflare” in hlabs first.</p>`;
     return reply.type('text/html; charset=utf-8').send(pretendPage('Sign in to Cloudflare', body));
+  });
+
+  // The pretend Tailscale's log-in page (US-SYS-02 in development): what "Connect" opens under `pnpm dev`, so
+  // connecting can be tried by hand (never Tailscale's real site, where the pretend link is a 404). Approve signs this
+  // computer in to the pretend tailnet; the settings row then turns Connected on its next check.
+  const fakeTailscaleFor = (reply: FastifyReply) => {
+    const services = holder.current;
+    if (!services?.readiness.isReady) {
+      void reply.code(503).send({ reason: 'starting' });
+      return null;
+    }
+    if (!(services.tailscale instanceof FakeTailscale)) {
+      void reply.code(409).send({ reason: 'not the fake Tailscale' });
+      return null;
+    }
+    return services.tailscale;
+  };
+  const nothingWaiting = `<h1>Nothing is waiting</h1><p>Press “Connect” in hlabs first.</p>`;
+  app.get(FakeTailscale.DEV_SIGN_IN_PATH, async (_req, reply) => {
+    const fake = fakeTailscaleFor(reply);
+    if (!fake) return reply;
+    const body = fake.signingIn
+      ? `<h1>Add this device to your tailnet?</h1><p><code>${fake.hostname ?? 'hlabs'}</code> joins the pretend ` +
+        `tailnet <code>tail1234.ts.net</code>.</p><form method="post" enctype="text/plain" ` +
+        `action="${FakeTailscale.DEV_SIGN_IN_PATH}"><button type="submit">Approve</button></form>` +
+        `<p class="note">To cancel, close this tab and press Cancel in hlabs.</p>`
+      : nothingWaiting;
+    return reply.type('text/html; charset=utf-8').send(pretendPage('Sign in to Tailscale', body, 'Tailscale'));
+  });
+  app.post(FakeTailscale.DEV_SIGN_IN_PATH, async (_req, reply) => {
+    const fake = fakeTailscaleFor(reply);
+    if (!fake) return reply;
+    const waiting = fake.signingIn;
+    if (waiting) fake.finishLogin();
+    const body = waiting
+      ? `<h1>Approved</h1><p>This computer is on the pretend tailnet. You can close this tab.</p>`
+      : nothingWaiting;
+    return reply.type('text/html; charset=utf-8').send(pretendPage('Sign in to Tailscale', body, 'Tailscale'));
   });
 
   // A line in the public listener's access log, as Caddy writes it (Visits, US-APP-29): development and e2e have no

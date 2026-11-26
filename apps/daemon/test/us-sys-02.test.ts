@@ -46,9 +46,9 @@ describe('US-SYS-02', () => {
   it('signed out: a log-in that names the computer after the server; once running, hlabs publishes (D-102)', async () => {
     const { d, ts, connect, status } = await setup();
     const res = (await connect()).result!.data;
-    expect(res).toEqual({ state: 'needs_login', loginUrl: 'https://login.tailscale.com/a/fake' });
+    expect(res).toEqual({ state: 'needs_login', loginUrl: '/dev/tailscale/sign-in' });
     expect(ts.hostname).toBe('hlabs');
-    expect(await status()).toMatchObject({ state: 'waiting', loginUrl: 'https://login.tailscale.com/a/fake' });
+    expect(await status()).toMatchObject({ state: 'waiting', loginUrl: '/dev/tailscale/sign-in' });
 
     ts.finishLogin('tail1234.ts.net');
     expect(await status()).toMatchObject({

@@ -55,7 +55,9 @@ export function useRemoteConnect({ via = 'settings' }: { via?: 'settings' | 'onb
           via === 'onboarding'
             ? await client.onboarding.connectRemote.mutate(input)
             : await client.network.remote.connect.mutate(input);
-        if (result.state === 'needs_login' && result.loginUrl && tab) tab.location.href = result.loginUrl;
+        // The pretend Tailscale's page under `pnpm dev` is a path on this address: made whole for the blank tab.
+        if (result.state === 'needs_login' && result.loginUrl && tab)
+          tab.location.href = new URL(result.loginUrl, window.location.href).toString();
         // Not installed: the tab shows where to get it (US-ONB-17).
         else if (result.state === 'not_installed' && tab) tab.location.href = tailscaleDownload();
         else tab?.close();
