@@ -34,6 +34,22 @@ Two settings in Cloudflare make sure visitors always use HTTPS. They're for the 
 
 Even without them, hlabs sends a page visited with `http://` to its `https://` address and refuses anything else sent that way, so a password never goes over plain HTTP. Between Cloudflare and this computer, and inside it up to hlabs, the traffic is encrypted too.
 
+### What it costs
+
+hlabs doesn't charge for any of this. On Cloudflare's **Free plan**:
+
+- **Cloudflare Tunnel is free**, and Cloudflare doesn't bill for the traffic to your public apps, the dashboard or Files.
+- **Cloudflare's sign-in in front** (Zero Trust) is free for up to 50 people, then Cloudflare charges per person.
+- **Your domain** costs what your registrar charges each year.
+
+Cloudflare's prices can change: check [Cloudflare's plans](https://www.cloudflare.com/plans/) for the latest.
+
+What to keep in mind instead of a bill:
+
+- **Large media**: Cloudflare's terms limit serving lots of video and other large files through its network on the Free plan. Sharing photos, documents and the odd big file is fine; streaming a movie library to several people can get the account limited. For that, use [Tailscale](/help/remote-access/tailscale/), which has no such limit.
+- **Your home internet**: everything visitors download leaves through your connection's upload speed, and counts towards any monthly data cap your provider has.
+- **100 MB a request**: Cloudflare refuses anything bigger in one go. Files sends uploads in small pieces, so big files work there; an app that uploads a large file in one request may not.
+
 ## Set up Cloudflare Tunnel
 
 1. Open **Settings › Network & remote access**.
@@ -56,7 +72,7 @@ The app gets a **Public** badge on its tile and in its settings, and the other a
 
 Some apps can't be made public, such as tools that can control your other apps; their settings say why.
 
-If the app is a media app, check Cloudflare's terms before sharing a media library: they limit streaming large amounts of video through Cloudflare's network.
+If the app is a media app, check Cloudflare's terms before sharing a media library: they limit streaming large amounts of video through Cloudflare's network (see [What it costs](#what-it-costs)).
 
 ## Who can get in
 

@@ -36,7 +36,7 @@ The row then reads **Public at https://hlabs.example.com · since** *date* **by*
 
 ## Add Cloudflare's sign-in in front
 
-Cloudflare can check who someone is before they even see hlabs's sign-in: it sends a code to an email address on your list, and only then shows the page. Bots and strangers never reach hlabs. It's free for up to 50 people.
+Cloudflare can check who someone is before they even see hlabs's sign-in: it sends a code to an email address on your list, and only then shows the page. Bots and strangers never reach hlabs. It's free for up to 50 people (see [What it costs](/help/remote-access/make-an-app-public/#what-it-costs)).
 
 - Add it while making the dashboard public, or later with **Add Cloudflare's sign-in…** on the Dashboard row. Type each email address and press Return.
 - The row then reads **Cloudflare's sign-in in front · 3 email addresses**. Choose **Change…** to change the list, or **Remove** there to take it away.
