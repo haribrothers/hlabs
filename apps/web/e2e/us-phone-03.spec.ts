@@ -35,7 +35,8 @@ test('US-PHONE-03 a sheet with a handle; a long drag closes it, a short slow one
   const grab = { x: handle.x + handle.width / 2, y: handle.y + handle.height / 2 };
   await drag(page, grab, 40, 4, 120);
   await expect(sheet).toBeVisible();
-  await expect.poll(async () => Math.round((await box(sheet)).y)).toBe(Math.round(b.y));
+  // Back at the bottom edge (its top can move a little if what's in it finished loading meanwhile).
+  await expect.poll(async () => Math.round((await box(sheet)).y + (await box(sheet)).height)).toBe(viewport.height);
 
   await drag(page, grab, b.height * 0.5, 6);
   await expect(sheet).toBeHidden();
