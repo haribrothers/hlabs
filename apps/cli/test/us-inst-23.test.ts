@@ -217,7 +217,8 @@ describe('US-INST-23', () => {
 
     it.skipIf(!openssl)('refuses a changed SHA256SUMS, another key and a tarball that does not match', () => {
       fake('uname', 'echo x86_64');
-      let r = fetch(build(({ sums }) => ({ sums: sums.replace(/^./, '0') })));
+      // Always a different first character: a hash that starts with 0 would otherwise stay the same.
+      let r = fetch(build(({ sums }) => ({ sums: sums.replace(/^./, (c) => (c === '0' ? '1' : '0')) })));
       expect(r.status).toBe(1);
       expect(r.err).toContain("✗ The download's signature doesn't match the hlabs key");
 
