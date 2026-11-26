@@ -27,7 +27,8 @@ describe('US-SYS-28', () => {
   it('Download builds the bundle as a job and saves it under the name hlabs gives', async () => {
     const save = vi.spyOn(browser, 'save').mockImplementation(() => {});
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(new Blob(['zip']), {
+      // A string, not a Blob: jsdom's Blob has no stream(), which Node 22's Response needs.
+      new Response('zip', {
         status: 200,
         headers: { 'content-disposition': 'attachment; filename="hlabs-diagnostics-hlabs-2026-11-23.zip"' },
       }),
@@ -41,9 +42,15 @@ describe('US-SYS-28', () => {
     expect(within(row).getByText('Logs and system info, with passwords removed')).toBeInTheDocument();
     fireEvent.click(within(row).getByRole('button', { name: 'Download' }));
     expect(await within(row).findByRole('button', { name: /Preparing…/ })).toBeInTheDocument();
-    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.any(Blob), 'hlabs-diagnostics-hlabs-2026-11-23.zip'), {
-      timeout: 3_000,
-    });
+    // The download's body, as Node's own Blob (not jsdom's, so not `expect.any(Blob)`).
+    await waitFor(
+      () =>
+        expect(save).toHaveBeenCalledWith(
+          expect.objectContaining({ size: 3 }),
+          'hlabs-diagnostics-hlabs-2026-11-23.zip',
+        ),
+      { timeout: 3_000 },
+    );
     expect(fetchMock).toHaveBeenCalledWith('/api/diagnostics/J1', { credentials: 'same-origin' });
     await waitFor(() => expect(currentToasts().map((t) => t.title)).toContain('Diagnostics bundle downloaded'));
   });
