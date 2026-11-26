@@ -263,6 +263,11 @@ export class CloudflareApi implements CloudflareClient {
    * code 1010 and no message, Q-25) when the token lacks that permission, which asks for the token instead.
    */
   async checkAccess(cred: CloudflareCredential) {
+    // Cloudflare's sign-in (cloudflared's certificate) reads Access but can't change it: Hari's account listed the
+    // applications and login methods with it, then refused adding the one-time PIN login with 403, code 1010
+    // "auth.forbidden" (Q-25, D-187). Reading isn't proof of changing, so it always asks for the token.
+    if (cred.kind === 'signIn' && !cred.accessToken)
+      throw new CloudflareError('access', "Cloudflare's sign-in can't change Cloudflare Access", false, true);
     const { token, base } = this.accessBase(cred);
     for (const path of [`${base}/apps?per_page=1`, `${base}/identity_providers`]) {
       const { status, reply } = await this.call<unknown>('access', token, 'GET', path);

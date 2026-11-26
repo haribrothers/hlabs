@@ -205,6 +205,26 @@ describe('US-SYS-48 · the real Cloudflare API (fetch faked)', () => {
     expect(calls[0]!.auth).toBe('Bearer zone-token');
   });
 
+  it("Cloudflare's sign-in always asks for the token: it reads Access but can't change it (D-187)", async () => {
+    // What Hari's account did (Q-25): both reads answered with the sign-in, then adding the one-time PIN login was
+    // refused with 403 {"code":1010,"error":"auth.forbidden"} partway through the job.
+    const { client, calls } = api([
+      { match: /^GET .*\/access\//, body: { success: true, result: [] } },
+      {
+        match: /^POST .*\/access\/identity_providers$/,
+        status: 403,
+        body: { success: false, errors: [{ code: 1010, error: 'auth.forbidden' }] },
+      },
+    ]);
+    const err = await client.checkAccess(cred).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(CloudflareError);
+    expect(err).toMatchObject({ step: 'access', denied: true });
+    expect(calls).toHaveLength(0);
+    // With a token it checks with the token.
+    await client.checkAccess({ ...cred, accessToken: 'access-token' });
+    expect(calls.map((c) => c.auth)).toEqual(['Bearer access-token', 'Bearer access-token']);
+  });
+
   it('says a credential that Cloudflare refuses for Access is denied (so a token is asked for)', async () => {
     const { client } = api([
       {
@@ -213,7 +233,7 @@ describe('US-SYS-48 · the real Cloudflare API (fetch faked)', () => {
         body: { success: false, errors: [{ code: 10000, message: 'Authentication error' }] },
       },
     ]);
-    const err = await client.checkAccess(cred).catch((e: unknown) => e);
+    const err = await client.checkAccess({ ...cred, kind: 'token' }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(CloudflareError);
     expect(err).toMatchObject({ step: 'access', denied: true });
   });
@@ -229,7 +249,7 @@ describe('US-SYS-48 · the real Cloudflare API (fetch faked)', () => {
         body: { success: false, errors: [{ code: 1010 }] },
       },
     ]);
-    const err = await client.checkAccess(cred).catch((e: unknown) => e);
+    const err = await client.checkAccess({ ...cred, kind: 'token' }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(CloudflareError);
     expect(err).toMatchObject({ step: 'access', denied: true });
     // Cloudflare's answer as it gave it, with the status and the call; never "undefined", never the token.

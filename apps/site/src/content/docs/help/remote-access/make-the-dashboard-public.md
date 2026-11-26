@@ -43,12 +43,14 @@ Cloudflare can check who someone is before they even see hlabs's sign-in: it sen
 - hlabs makes this in **Cloudflare Zero Trust** for the dashboard's name, and removes it when the dashboard is private. It never changes Cloudflare sign-ins it didn't make.
 - Only admins see the list. It's kept in hlabs's settings, never in logs or diagnostics.
 
-If your Cloudflare sign-in can't manage this, hlabs asks for an **API token**: in Cloudflare, under **My Profile › API Tokens**, make one with these two permissions and paste it:
+hlabs asks for an **API token** for this when you connected Cloudflare with **Sign in to Cloudflare** (that sign-in can't change Zero Trust), or when your token can't. In Cloudflare, under **My Profile › API Tokens**, choose **Create Token › Create Custom Token**, add these two permissions for your account, and paste the token:
 
 - **Account · Access: Apps and Policies · Edit**
 - **Account · Access: Organizations, Identity Providers, and Groups · Edit** (so hlabs can use Cloudflare's one-time code by email)
 
-If you haven't used Cloudflare Zero Trust before, open **Zero Trust** in Cloudflare once first and choose a team name and the Free plan. It's kept in this computer's keychain with your other Cloudflare sign-in.
+If you haven't used Cloudflare Zero Trust before, open **Zero Trust** in Cloudflare once first and choose a team name and the Free plan. The token is kept in this computer's keychain with your other Cloudflare sign-in.
+
+Already use Zero Trust for something else? hlabs only adds its own application and policy, and leaves your team, users, groups, other applications and policies alone. If your account has no **One-time PIN** login method, hlabs adds it, and your other applications that accept every login method will then offer it too. To avoid that, add One-time PIN yourself first (**Settings › Authentication › Login methods**) and limit those applications to the methods they use.
 
 ## Sign in from the internet
 
