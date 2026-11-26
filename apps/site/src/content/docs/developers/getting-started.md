@@ -57,6 +57,15 @@ HLABS_DEV_FAKE_CLOUDFLARE=0 pnpm dev:full
 
 Public addresses reach Caddy's public listener on `127.0.0.1:7475` (`HLABS_PUBLIC_PORT`), over TLS with a certificate for `public.hlabs.internal` from hlabs's local CA, which cloudflared is set to trust (D-181). Remove Cloudflare Tunnel in Settings › Network when you're done, so the tunnel and the DNS records hlabs made are deleted.
 
+To try the public dashboard for real the same way:
+
+1. Turn on two-factor login for every admin in the dev instance (Settings › Account).
+2. In Settings › Network, choose **Make public…** on the Dashboard row and pick a name (`hlabs` makes `https://hlabs.<your domain>`). The public route serves the dev dashboard from Vite with the upstream's own `Host`, so Vite's `allowedHosts` doesn't need your domain.
+3. For **Cloudflare's sign-in in front**, have an API token ready with **Account · Access: Apps and Policies · Edit** and **Account · Access: Organizations, Identity Providers, and Groups · Edit**. The credential from "Sign in to Cloudflare" can read Cloudflare Access but not change it, so hlabs always asks for this token (D-187). On an account that has no One-time PIN login method, hlabs adds one, which other Access applications that accept every login method will then offer as well; add it yourself first on an account you use for other things.
+4. Open the address in a private window: Cloudflare's email-code page comes first, then hlabs's sign-in with the two-factor code.
+
+Make the dashboard private (or remove Cloudflare Tunnel) when you're done: hlabs deletes its DNS record and the Access application it made. Your dev data is in `.dev-data/` (logs in `.dev-data/logs/`, where a failed Cloudflare call shows Cloudflare's answer with the status and the call).
+
 ### Network drives in development
 
 Files' **+ Connect a drive** uses the drives on your real network. To try it without a NAS, start with a pretend one:

@@ -43,12 +43,17 @@ Cloudflare can check who someone is before they even see hlabs's sign-in: it sen
 - hlabs makes this in **Cloudflare Zero Trust** for the dashboard's name, and removes it when the dashboard is private. It never changes Cloudflare sign-ins it didn't make.
 - Only admins see the list. It's kept in hlabs's settings, never in logs or diagnostics.
 
-hlabs asks for an **API token** for this when you connected Cloudflare with **Sign in to Cloudflare** (that sign-in can't change Zero Trust), or when your token can't. In Cloudflare, under **My Profile › API Tokens**, choose **Create Token › Create Custom Token**, add these two permissions for your account, and paste the token:
+hlabs asks for an **API token** for this when you connected Cloudflare with **Sign in to Cloudflare** (that sign-in can manage the tunnel and DNS, but can't change Zero Trust), or when your token can't. Make a separate token for it:
 
-- **Account · Access: Apps and Policies · Edit**
-- **Account · Access: Organizations, Identity Providers, and Groups · Edit** (so hlabs can use Cloudflare's one-time code by email)
+1. If you haven't used Cloudflare Zero Trust before, open **Zero Trust** in Cloudflare once and choose a team name and the Free plan.
+2. In Cloudflare, open **My Profile › API Tokens** and choose **Create Token**, then **Create Custom Token**.
+3. Name it, for example "hlabs sign-in in front", and add these two permissions:
+   - **Account · Access: Apps and Policies · Edit**
+   - **Account · Access: Organizations, Identity Providers, and Groups · Edit** (so hlabs can use Cloudflare's one-time code by email)
+4. Under **Account Resources**, include your account, then choose **Continue to summary** and **Create Token**.
+5. Copy the token (Cloudflare shows it once) and paste it into hlabs when it asks.
 
-If you haven't used Cloudflare Zero Trust before, open **Zero Trust** in Cloudflare once first and choose a team name and the Free plan. The token is kept in this computer's keychain with your other Cloudflare sign-in.
+The token is kept in this computer's keychain with your other Cloudflare sign-in, and used only for Cloudflare's sign-in in front. Keep it separate from the token Cloudflare made when you signed in: deleting it in Cloudflare stops hlabs changing Zero Trust, and your public apps keep working.
 
 Already use Zero Trust for something else? hlabs only adds its own application and policy, and leaves your team, users, groups, other applications and policies alone. If your account has no **One-time PIN** login method, hlabs adds it, and your other applications that accept every login method will then offer it too. To avoid that, add One-time PIN yourself first (**Settings › Authentication › Login methods**) and limit those applications to the methods they use.
 
