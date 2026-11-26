@@ -130,10 +130,20 @@ function currentTarget(): Target {
   return `${os}-${arch}`;
 }
 
+/** Tries four times when GitHub's download servers answer 5xx or the connection drops (a CI matrix starts ~100 at once). */
 async function download(url: string): Promise<Buffer> {
-  const res = await fetch(url, { redirect: 'follow' });
-  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
-  return Buffer.from(await res.arrayBuffer());
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const res = await fetch(url, { redirect: 'follow' });
+      if (res.ok) return Buffer.from(await res.arrayBuffer());
+      const error = new Error(`${url}: HTTP ${res.status}`);
+      if (res.status < 500 || attempt === 4) throw error;
+      console.warn(`${error.message}, trying again`);
+    } catch (error) {
+      if (attempt === 4 || /HTTP [1-4]\d\d$/.test((error as Error).message)) throw error;
+    }
+    await new Promise((r) => setTimeout(r, attempt * 5_000));
+  }
 }
 
 function verify(data: Buffer, expected: string, what: string) {
