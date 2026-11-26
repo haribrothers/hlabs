@@ -23,6 +23,8 @@ services:
       - |
         [ -f /mosquitto/config/mosquitto.conf ] || printf '%s\n' 'listener 1883' 'allow_anonymous false' 'password_file /mosquitto/config/passwd' 'persistence true' 'persistence_location /mosquitto/data/' > /mosquitto/config/mosquitto.conf
         mosquitto_passwd -b -c /mosquitto/config/passwd hlabs "$$MQTT_PASSWORD"
+        # Mosquitto drops to its own user, which must own its files (the image's entrypoint, skipped here, does this).
+        chown -R mosquitto:mosquitto /mosquitto/config /mosquitto/data
         exec mosquitto -c /mosquitto/config/mosquitto.conf
     environment:
       MQTT_PASSWORD: ${MQTT_PASSWORD}

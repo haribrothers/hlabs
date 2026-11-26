@@ -23,6 +23,16 @@ pnpm store:port <id> --from https://…/docker-compose.yml # from the project's 
 
 It drafts `store/apps/<id>/`: the manifest, a compose file under the store's rules with every image pinned by tag and digest, the logo when the source has an SVG or PNG, and for Runtipi or CasaOS a `NOTICE` and a row in `store/ATTRIBUTION.md`. What it can't decide (the description, whether the app has its own login, which folders are the person's, what extra ports are for) is left as a value starting `TODO`, and it lists them. `pnpm store:lint` fails until every one is resolved. It never reads Umbrel's catalogue, which has no licence. Set `GITHUB_TOKEN` if GitHub's limit for anonymous requests runs out.
 
+### Who writes the app's data
+
+hlabs makes an app's data folders as its own user, which on a Linux server is `hlabs`. An image that runs as a fixed user (uid 1000, `www-data`) can't write to them there. Docker Desktop on a Mac hides this, so check a new app on Linux, where CI runs the matrix. Pick the first of these the image allows:
+
+1. `user: ${PUID}:${PGID}`: the app runs as hlabs's user and its files stay hlabs's, so backups can read them. If the image's home folder is closed to other users, point `HOME` into the data folder.
+2. `user: ${PUID}:0`, for images built to run as any user in group 0 (Elasticsearch, Langflow).
+3. When the image's files belong only to its own user, start as root (`user: '0:0'`). The entrypoint should `chown` only the folders the app mounts, then switch to the image's user with `setpriv --reuid … --regid … --init-groups`. If the image's own supervisor (such as s6) already switches users, leave that to it. An image that skips its own entrypoint must do the `chown` that entrypoint did.
+
+Files that end up owned by root or another user can only be deleted from inside one of the app's images, so pick a build with a shell (Portainer's `-alpine`).
+
 ## Keep apps up to date
 
 ```sh

@@ -36,6 +36,9 @@ services:
       retries: 30
   tubearchivist-es:
     image: docker.io/library/elasticsearch:9.5.5@sha256:6f11b295d5099c18b8774d280a82725d1184d0d5cb08373b12785ce7cd7a9bfb
+    # As hlabs's user in group 0, which Elasticsearch's image supports: its own (uid 1000) can't write a data folder
+    # hlabs made on Linux.
+    user: ${PUID}:0
     environment:
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
       ES_JAVA_OPTS: -Xms1g -Xmx1g

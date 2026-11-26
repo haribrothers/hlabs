@@ -1,13 +1,19 @@
 services:
   2fauth:
     image: docker.io/2fauth/2fauth:9.0.2@sha256:6774efa7c612e424eb17a54e2373524d9a04af6cad7e38d85d76fed87f6a48bd
+    # The image's files are its own user's only (uid 1000), so it can't run as hlabs's user: it starts as root, hands
+    # the data folder hlabs made to uid 1000 (Linux), and runs as that user, named for su.
+    user: '0:0'
     entrypoint:
       - /bin/sh
       - -c
       - |
-        [ -f /2fauth/app-key ] || head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n' > /2fauth/app-key
-        export APP_KEY="$$(cat /2fauth/app-key)"
-        exec /usr/local/bin/entrypoint.sh
+        chown 1000:1000 /2fauth
+        grep -q '^twofauth:' /etc/passwd || echo 'twofauth:x:1000:1000::/srv:/bin/sh' >> /etc/passwd
+        exec su -p -s /bin/sh twofauth -c '
+          [ -f /2fauth/app-key ] || head -c 16 /dev/urandom | od -An -tx1 | tr -d " \n" > /2fauth/app-key
+          export APP_KEY="$$(cat /2fauth/app-key)"
+          exec /usr/local/bin/entrypoint.sh'
     environment:
       APP_URL: ${HLABS_URL}
       TRUSTED_PROXIES: '*'

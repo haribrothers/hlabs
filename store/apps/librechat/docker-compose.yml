@@ -1,6 +1,8 @@
 services:
   librechat:
     image: ghcr.io/danny-avila/librechat:v0.8.7@sha256:c5db3331b845e1f289f8d04c0c77936c4bbe372f76730a804abc1c37e44d23a9
+    # As hlabs's user: the image's own (node, uid 1000) can't write the data folders hlabs made on Linux.
+    user: ${PUID}:${PGID}
     command:
       - sh
       - -c
@@ -33,7 +35,7 @@ services:
       - ${HLABS_APP_DATA}/keys:/app/keys
       - ${HLABS_APP_DATA}/images:/app/client/public/images
       - ${HLABS_APP_DATA}/uploads:/app/uploads
-      - ${HLABS_APP_DATA}/logs:/app/api/logs
+      - ${HLABS_APP_DATA}/logs:/app/logs
     depends_on:
       librechat-mongodb:
         condition: service_healthy

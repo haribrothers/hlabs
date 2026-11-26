@@ -1,6 +1,8 @@
 services:
   langflow:
     image: docker.io/langflowai/langflow:1.13.3@sha256:0dea79f5a557e1602b5514973484332f479cdb6b71cceb098536ecc231b02d7d
+    # As hlabs's user in group 0, which the image's own folders (/app/data) let write.
+    user: ${PUID}:0
     environment:
       LANGFLOW_DATABASE_URL: postgresql://langflow:${DB_PASSWORD}@langflow-db:5432/langflow
       LANGFLOW_CONFIG_DIR: /app/langflow

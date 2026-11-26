@@ -1,6 +1,15 @@
 services:
   anythingllm:
     image: docker.io/mintplexlabs/anythingllm:1.20.0@sha256:3e2b7bc8eb0f73a130fc575f1372bd4e7189e399a63c037497fc183c141fc0ae
+    # The image's /app is its own user's (uid 1000), so it can't run as hlabs's user: it starts as root, hands the
+    # data folder hlabs made to that user (Linux), and runs as it.
+    user: '0:0'
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        chown 1000:1000 /app/server/storage
+        exec setpriv --reuid=1000 --regid=1000 --init-groups env HOME=/app /bin/bash /usr/local/bin/docker-entrypoint.sh
     environment:
       STORAGE_DIR: /app/server/storage
       # No usage reports.

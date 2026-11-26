@@ -1,6 +1,7 @@
 services:
   portainer:
-    image: docker.io/portainer/portainer-ce:2.45.4@sha256:18616fff2998f8ca0e8ebe7f028658ae1682859cf43f212f81a849c1093ad639
+    image: docker.io/portainer/portainer-ce:2.45.4-alpine@sha256:15f6680e9c3260154684343566df3c168956e352a8cca8a50bcd81ce31df0143
+    # The Alpine build: it has a shell, which hlabs needs to delete the files Portainer writes as root on uninstall.
     command: [--http-enabled, --no-analytics]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
