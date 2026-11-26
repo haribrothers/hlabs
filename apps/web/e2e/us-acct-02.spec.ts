@@ -112,6 +112,8 @@ test.describe('US-ACCT-02 phone', () => {
     await main.evaluate((el) => {
       const tall = document.createElement('div');
       tall.style.height = '3000px';
+      // #main is a flex column: without this the empty div shrinks to nothing and a short page can't scroll.
+      tall.style.flexShrink = '0';
       el.append(tall);
     });
     const bar = page.locator('.hl-p-bar');

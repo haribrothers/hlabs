@@ -22,7 +22,8 @@ test('US-PHONE-11 the details as PhoneAppDetails draws them', async ({ page }, i
   await expect(strip).toContainText(/Memory\s*(\d+(\.\d)? GB\s*at least|—)/);
   await expect(strip).toContainText(/Disk\s*(\d+(\.\d)? GB\s*to start|—)/);
   await expect(strip).toContainText('Photos');
-  for (const chip of ['Files & photos', 'Apple Silicon', 'hlabs official'])
+  // The ARM64 chip is named for the computer hlabs runs on: "Apple Silicon" on a Mac, "ARM64" on Linux (CI).
+  for (const chip of ['Files & photos', process.platform === 'darwin' ? 'Apple Silicon' : 'ARM64', 'hlabs official'])
     await expect(page.getByText(chip, { exact: true })).toBeVisible();
   const facts = page.getByLabel('About this app');
   await expect(facts).toContainText('Version');
