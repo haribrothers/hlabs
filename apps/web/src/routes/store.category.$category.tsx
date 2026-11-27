@@ -6,7 +6,7 @@ import { AppListView } from '../store/app-list-view';
 function CategoryPage() {
   const { category } = Route.useParams();
   const id = category as StoreCategoryGroup;
-  return <AppListView input={{ category: id }} title={categoryLabels[id]} />;
+  return <AppListView input={{ category: id }} title={categoryLabels[id]} sortable />;
 }
 
 export const Route = createFileRoute('/store/category/$category')({

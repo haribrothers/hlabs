@@ -1,6 +1,16 @@
 import { LOGO_SCALE, LogoMark, Plus, tabGlyphs } from '@hlabs/icons';
-import { useRef, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
+import {
+  useRef,
+  useState,
+  type DragEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+} from 'react';
 import { cn } from '../lib/cn';
+import { useLongPress, type Point } from '../lib/long-press';
+import { useIsTouch } from '../lib/media';
 import { useReduceMotion } from '../lib/motion';
 import { useUiStrings } from '../lib/strings';
 import { badgeText, type AreaItem } from './areas';
@@ -16,7 +26,14 @@ export interface DockApp {
   /** Has an open window: shows the dot. */
   open?: boolean;
   badge?: number;
+  /** Pinned by the person (US-HOME-22): can be moved and has a menu. Open-only apps come after the pinned ones. */
+  pinned?: boolean;
+  /** Set while the app is reachable from the internet (US-APP-27): "Public" joins its tooltip and name. */
+  publicLabel?: string;
 }
+
+/** What a drag from Home carries: the app's id (US-HOME-22). */
+export const DOCK_DRAG_TYPE = 'application/x-hlabs-app';
 
 export interface DockProps {
   /** Home, App Store, Files, Usage, Backups, Settings; members get fewer (D-054). */
@@ -28,10 +45,18 @@ export interface DockProps {
   /** The person's pinned apps, in order (up to 8). */
   apps?: DockApp[];
   onOpenApp?: (id: string) => void;
-  /** Right-click or long-press on a pinned app. */
-  onAppMenu?: (id: string, e: MouseEvent | PointerEvent) => void;
-  /** Shows the dashed + tile. */
-  onAdd?: () => void;
+  /** Right-click, long-press, Shift+F10 or the Menu key on a pinned app; `anchor` is its tile. */
+  onAppMenu?: (id: string, anchor: HTMLElement) => void;
+  /** Shows the dashed + tile; `anchor` is the tile. */
+  onAdd?: (anchor: HTMLElement) => void;
+  /** A pinned app moved to `index` among the pinned apps (dragged sideways, or Alt+Left/Right). */
+  onMoveApp?: (id: string, index: number) => void;
+  /** A finger that held a pinned app (its menu open) starts moving it: close the menu (US-TAB-03). */
+  onAppMenuClose?: () => void;
+  /** An app dragged from Home dropped at `index` among the pinned apps. */
+  onDropApp?: (id: string, index: number) => void;
+  /** False when the Dock is full: a drag from Home opens no gap and drops nothing. Default true. */
+  canDrop?: boolean;
   onSearch?: () => void;
   /** Default true. */
   search?: boolean;
@@ -53,9 +78,24 @@ interface ItemProps {
   dot?: boolean;
   badge?: number;
   tileStyle?: React.CSSProperties;
-  onClick?: () => void;
-  onContextMenu?: (e: MouseEvent) => void;
-  onLongPress?: (e: PointerEvent) => void;
+  onClick?: (e: MouseEvent<HTMLButtonElement>) => void;
+  onContextMenu?: (e: MouseEvent<HTMLButtonElement>) => void;
+  onLongPress?: (tile: HTMLButtonElement) => void;
+  onKeyDown?: (e: KeyboardEvent<HTMLButtonElement>) => void;
+  draggable?: boolean;
+  onDragStart?: (e: DragEvent<HTMLButtonElement>) => void;
+  onDragEnd?: () => void;
+  dataApp?: string;
+  pinned?: boolean;
+  /** A tablet (US-TAB-04): a long press shows the name (or opens the menu); no hover. */
+  touch?: boolean;
+  /** Moving a pinned app by touch (US-TAB-03): where the finger has it, while it does. */
+  touchDrag?: {
+    start: (at: Point, tile: HTMLElement) => void;
+    move: (at: Point) => void;
+    end: (at: Point, dropped: boolean) => void;
+  };
+  dragStyle?: React.CSSProperties;
   children: ReactNode;
 }
 
@@ -71,38 +111,83 @@ function DockItem({
   onClick,
   onContextMenu,
   onLongPress,
+  onKeyDown,
+  draggable,
+  onDragStart,
+  onDragEnd,
+  dataApp,
+  pinned,
+  touch = false,
+  touchDrag,
+  dragStyle,
   children,
 }: ItemProps) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fired = useRef(false);
+  // On a tablet: a long press opens the menu, or shows the name while the finger rests (US-TAB-04); held and moved,
+  // a pinned app moves along the Dock (US-TAB-03).
+  const [held, setHeld] = useState(false);
+  const press = useLongPress({
+    enabled: touch,
+    onLongPress: (_at, tile) => {
+      if (onLongPress) onLongPress(tile as HTMLButtonElement);
+      else setHeld(true);
+    },
+    onRelease: () => setHeld(false),
+    onDragStart: touchDrag
+      ? (at, tile) => {
+          setHeld(false);
+          touchDrag.start(at, tile);
+        }
+      : undefined,
+    onDragMove: touchDrag?.move,
+    onDragEnd: touchDrag?.end,
+  });
   const clear = () => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
   };
-  const onPointerDown = (e: PointerEvent) => {
+  const onPointerDown = (e: PointerEvent<HTMLButtonElement>) => {
+    if (touch) return press.onPointerDown(e);
     if (!onLongPress || e.pointerType === 'mouse') return;
     fired.current = false;
-    e.persist?.();
+    // The event's target is gone by the time the timer fires: keep the tile.
+    const tile = e.currentTarget;
     timer.current = setTimeout(() => {
       fired.current = true;
-      onLongPress(e);
+      onLongPress(tile);
     }, LONG_PRESS_MS);
   };
   return (
     <button
       type="button"
       data-dock=""
+      data-dock-app={dataApp}
+      data-pinned={pinned ? '' : undefined}
+      data-held={held ? '' : undefined}
+      data-dragging={dragStyle ? '' : undefined}
+      style={dragStyle}
+      // A finger can't use the browser's drag (iPadOS lifts it into its own); it moves pinned apps itself.
+      draggable={touch ? false : draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onKeyDown={onKeyDown}
       className={cn('hl-dock-item', className)}
       aria-label={ariaLabel ?? label}
       aria-current={current ? 'page' : undefined}
-      onClick={() => {
+      onClick={(e) => {
         if (fired.current) {
           fired.current = false;
           return;
         }
-        onClick?.();
+        onClick?.(e);
       }}
-      onContextMenu={onContextMenu}
+      onContextMenu={(e) => {
+        // A finger's long press: ours, never the OS's menu.
+        if (touch && press.onContextMenu(e)) return;
+        if (touch) return e.preventDefault();
+        onContextMenu?.(e);
+      }}
       onPointerDown={onPointerDown}
       onPointerUp={clear}
       onPointerLeave={clear}
@@ -134,13 +219,95 @@ export function Dock({
   onOpenApp,
   onAppMenu,
   onAdd,
+  onMoveApp,
+  onAppMenuClose,
+  onDropApp,
+  canDrop = true,
   onSearch,
   search = true,
   magnify = true,
 }: DockProps) {
   const t = useUiStrings();
   const reduce = useReduceMotion();
+  // A tablet (US-TAB-04): no magnification, names on a long press, pinned apps moved by a finger (US-TAB-03).
+  const touch = useIsTouch();
+  const navRef = useRef<HTMLElement>(null);
+  /** The pinned app a finger is moving and where it is in the Dock (its slot gives way to the gap). */
+  const [fingerDrag, setFingerDrag] = useState<{ id: string; left: number; top: number; offset: number } | null>(null);
   const SearchGlyph = tabGlyphs.search;
+  const pinned = apps.filter((a) => a.pinned);
+  const unpinned = apps.filter((a) => !a.pinned);
+  /** Where a dragged app would land among the pinned apps, while one is over the Dock. */
+  const [gap, setGap] = useState<number | null>(null);
+  const dragging = useRef<string | null>(null);
+
+  /** The pinned app a pointer at `x` would go before. */
+  const indexAt = (nav: HTMLElement, x: number) => {
+    const tiles = Array.from(nav.querySelectorAll<HTMLElement>('[data-dock-app][data-pinned]')).filter(
+      (el) => el.dataset.dockApp !== dragging.current,
+    );
+    const i = tiles.findIndex((el) => {
+      const r = el.getBoundingClientRect();
+      return x < r.left + r.width / 2;
+    });
+    return i < 0 ? tiles.length : i;
+  };
+  const accepts = (e: DragEvent) =>
+    e.dataTransfer.types.includes(DOCK_DRAG_TYPE) && (dragging.current !== null || (canDrop && Boolean(onDropApp)));
+  const onDragOver = (e: DragEvent<HTMLElement>) => {
+    if (!accepts(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = dragging.current ? 'move' : 'copy';
+    setGap(indexAt(e.currentTarget, e.clientX));
+  };
+  const onDrop = (e: DragEvent<HTMLElement>) => {
+    if (!accepts(e)) return;
+    e.preventDefault();
+    const id = e.dataTransfer.getData(DOCK_DRAG_TYPE);
+    const at = indexAt(e.currentTarget, e.clientX);
+    setGap(null);
+    if (!id) return;
+    if (dragging.current) onMoveApp?.(id, at);
+    else onDropApp?.(id, at);
+    dragging.current = null;
+  };
+  const gapTile = <span key="gap" className="hl-dock-gap" aria-hidden="true" />;
+
+  // A finger's tile has left its slot: past it, the gap goes one further along the list it's drawn from.
+  const from = fingerDrag ? pinned.findIndex((p) => p.id === fingerDrag.id) : -1;
+  const gapAt = gap !== null && from >= 0 && gap >= from ? gap + 1 : gap;
+
+  /** Moving a pinned app along the Dock by touch: the tile follows the finger and drops where it lifts. */
+  const fingerDragFor = (id: string): ItemProps['touchDrag'] =>
+    onMoveApp
+      ? {
+          start: (at, tile) => {
+            const nav = navRef.current;
+            if (!nav) return;
+            onAppMenuClose?.();
+            dragging.current = id;
+            const n = nav.getBoundingClientRect();
+            const r = tile.getBoundingClientRect();
+            setFingerDrag({ id, left: r.left - n.left, top: r.top - n.top, offset: at.x - r.left });
+            setGap(indexAt(nav, at.x));
+          },
+          move: (at) => {
+            const nav = navRef.current;
+            if (!nav) return;
+            const n = nav.getBoundingClientRect();
+            setFingerDrag((d) => (d ? { ...d, left: at.x - n.left - d.offset } : d));
+            setGap(indexAt(nav, at.x));
+          },
+          end: (at, dropped) => {
+            const nav = navRef.current;
+            const index = nav ? indexAt(nav, at.x) : null;
+            dragging.current = null;
+            setFingerDrag(null);
+            setGap(null);
+            if (dropped && index !== null) onMoveApp(id, index);
+          },
+        }
+      : undefined;
 
   const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
     if (!NAV_KEYS.has(e.key)) return;
@@ -153,7 +320,17 @@ export function Dock({
   };
 
   return (
-    <nav aria-label={t.dock} className={cn('hl-dock', (!magnify || reduce) && 'hl-dock-still')} onKeyDown={onKeyDown}>
+    <nav
+      ref={navRef}
+      aria-label={t.dock}
+      className={cn('hl-dock', (!magnify || reduce || touch) && 'hl-dock-still')}
+      onKeyDown={onKeyDown}
+      onDragOver={onDragOver}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setGap(null);
+      }}
+      onDrop={onDrop}
+    >
       {areas.map((area) => {
         const badge = badges[area.id] ?? area.badge;
         const Glyph = tabGlyphs[(area.icon ?? area.id) as keyof typeof tabGlyphs] ?? tabGlyphs.home;
@@ -167,6 +344,7 @@ export function Dock({
             current={area.id === active}
             dot={area.id === active}
             badge={badge}
+            touch={touch}
             onClick={() => onSelect?.(area.id)}
           >
             {area.id === 'home' ? (
@@ -178,11 +356,16 @@ export function Dock({
         );
       })}
       {apps.length > 0 || onAdd ? <span className="hl-dock-sep" aria-hidden="true" /> : null}
-      {apps.map((app) => (
+      {[...pinned, ...unpinned].flatMap((app, i) => [
+        ...(gapAt !== null && i === gapAt ? [gapTile] : []),
         <DockItem
           key={`app-${app.id}`}
-          label={app.name}
-          ariaLabel={app.name + (app.open ? `, ${t.open}` : '')}
+          dataApp={app.id}
+          pinned={app.pinned}
+          label={app.publicLabel ? `${app.name} · ${app.publicLabel}` : app.name}
+          ariaLabel={
+            app.name + (app.publicLabel ? `, ${app.publicLabel.toLowerCase()}` : '') + (app.open ? `, ${t.open}` : '')
+          }
           className="hl-dock-item-app"
           tileClass="hl-dock-tile-app"
           tileStyle={{
@@ -191,16 +374,47 @@ export function Dock({
           }}
           dot={app.open}
           badge={app.badge}
+          touch={touch}
+          touchDrag={app.pinned ? fingerDragFor(app.id) : undefined}
+          dragStyle={
+            fingerDrag?.id === app.id
+              ? { position: 'absolute', left: fingerDrag.left, top: fingerDrag.top, margin: 0 }
+              : undefined
+          }
           onClick={() => onOpenApp?.(app.id)}
           onContextMenu={
-            onAppMenu
+            onAppMenu && app.pinned
               ? (e) => {
                   e.preventDefault();
-                  onAppMenu(app.id, e);
+                  onAppMenu(app.id, e.currentTarget);
                 }
               : undefined
           }
-          onLongPress={onAppMenu ? (e) => onAppMenu(app.id, e) : undefined}
+          onLongPress={onAppMenu && app.pinned ? (tile) => onAppMenu(app.id, tile) : undefined}
+          onKeyDown={(e) => {
+            if (!app.pinned) return;
+            // Shift+F10 or the Menu key: its menu. Alt+Left/Right: move it (US-HOME-22).
+            if (onAppMenu && ((e.shiftKey && e.key === 'F10') || e.key === 'ContextMenu')) {
+              e.preventDefault();
+              e.stopPropagation();
+              onAppMenu(app.id, e.currentTarget);
+            } else if (onMoveApp && e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+              e.preventDefault();
+              e.stopPropagation();
+              const at = pinned.findIndex((p) => p.id === app.id) + (e.key === 'ArrowLeft' ? -1 : 1);
+              if (at >= 0 && at < pinned.length) onMoveApp(app.id, at);
+            }
+          }}
+          draggable={Boolean(app.pinned && onMoveApp)}
+          onDragStart={(e) => {
+            dragging.current = app.id;
+            e.dataTransfer.setData(DOCK_DRAG_TYPE, app.id);
+            e.dataTransfer.effectAllowed = 'move';
+          }}
+          onDragEnd={() => {
+            dragging.current = null;
+            setGap(null);
+          }}
         >
           {app.logo ? (
             <img
@@ -212,17 +426,18 @@ export function Dock({
           ) : (
             app.icon
           )}
-        </DockItem>
-      ))}
+        </DockItem>,
+      ])}
+      {gapAt !== null && gapAt >= pinned.length && unpinned.length === 0 ? gapTile : null}
       {onAdd ? (
-        <DockItem label={t.addToDock} className="hl-dock-add" onClick={onAdd}>
+        <DockItem label={t.addToDock} className="hl-dock-add" touch={touch} onClick={(e) => onAdd(e.currentTarget)}>
           <Plus size={22} strokeWidth={2} aria-hidden="true" />
         </DockItem>
       ) : null}
       {search ? (
         <>
           <span className="hl-dock-sep" aria-hidden="true" />
-          <DockItem label={t.search} className="hl-dock-glassitem" onClick={onSearch}>
+          <DockItem label={t.search} className="hl-dock-glassitem" touch={touch} onClick={onSearch}>
             <SearchGlyph size={26} />
           </DockItem>
         </>

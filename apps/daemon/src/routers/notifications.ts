@@ -11,8 +11,17 @@ function readerOf(ctx: DaemonContext): Reader {
 
 export const notifications: AppHandlers<DaemonContext>['notifications'] = {
   list: (input, ctx) => ctx.services.notifications.list(readerOf(ctx), input),
+  unreadCount: (_input, ctx) => ({ count: ctx.services.notifications.unreadCount(readerOf(ctx)) }),
   markRead: ({ ids }, ctx) => {
     ctx.services.notifications.markRead(readerOf(ctx), ids);
+    return { ok: true };
+  },
+  markAllRead: (_input, ctx) => {
+    ctx.services.notifications.markAllRead(readerOf(ctx));
+    return { ok: true };
+  },
+  dismiss: ({ ids }, ctx) => {
+    ctx.services.notifications.dismiss(readerOf(ctx), ids);
     return { ok: true };
   },
 };

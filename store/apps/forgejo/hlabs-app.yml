@@ -1,0 +1,28 @@
+# As Gitea's: Git over SSH isn't offered (no raw port).
+schema: 1
+id: forgejo
+name: Forgejo
+version: '17.0.2'
+revision: 1
+tagline: Host your own Git repositories
+description: |
+  Keep your code in Git repositories with issues, pull requests, wikis and releases, like a small
+  GitHub. Forgejo is a community fork of Gitea. The first visit sets it up and creates your admin
+  account. Clone and push over https at the app's address.
+category: developer
+developer: { name: Forgejo, url: https://forgejo.org }
+source: https://codeberg.org/forgejo/forgejo
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#fb923c', '#7c2d12']
+  fallback: git-branch
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: forgejo, port: 3000, embed: true }
+health: { service: forgejo, http: /api/healthz, timeout: 120 }
+ownLogin: true
+backup:
+  pause: [forgejo]
+  beforeUpdate: true
+permissions: { network: internet }

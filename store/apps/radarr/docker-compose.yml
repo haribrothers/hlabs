@@ -1,0 +1,13 @@
+services:
+  radarr:
+    image: lscr.io/linuxserver/radarr:6.4.4@sha256:7a20f20de63706eee2ff6e4ac1f989a70c961f456aa47ccb6c78f2bb7657d9ae
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      RADARR__AUTH__METHOD: External
+      RADARR__AUTH__REQUIRED: DisabledForLocalAddresses
+      RADARR__LOG__ANALYTICSENABLED: 'False'
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config
+      - ${HLABS_FOLDER_MOVIES}:/movies
+      - ${HLABS_FOLDER_DOWNLOADS}:/downloads

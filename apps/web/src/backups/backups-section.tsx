@@ -1,6 +1,6 @@
 // Settings › Backups (BackupsOverview, US-BKP-01…04, US-BKP-23): when the last backup ran and what it covers, the
 // destinations, the schedule and the recent runs, with "Restore…" and "Back up now" beside the title (on a phone,
-// in the card). Live: job.progress moves the running backup, backup.run and job.finished refresh the page.
+// in the card, US-PHONE-26). Live: job.progress moves the running backup, backup.run and job.finished refresh the page.
 import { AlertTriangle, Check, Clock, iconDefaults } from '@hlabs/icons';
 import { formatBytes, isFeatureEnabled } from '@hlabs/shared';
 import { Badge, BarChart, Button, List, ListRow, Progress, cn } from '@hlabs/ui';
@@ -18,7 +18,9 @@ import { AddDestinationDialog } from './add-destination-dialog';
 import { EditDestinationDialog } from './edit-destination-dialog';
 import { dayTime, destinationLine, includedWords, nextLine, retentionWords, runLine, scheduleWords } from './format';
 import { IncludedDialog } from './included-dialog';
+import { PhoneBackups } from './phone-backups';
 import { RestoreFlow } from './restore-flow';
+import { HomeOnly, useHomeOnly } from '../public/home-only';
 
 const ICON = 'size-12';
 
@@ -89,15 +91,17 @@ export function BackupsActions() {
     <>
       {desktop ? (
         <div className="flex shrink-0 items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={none || blocked}
-            title={blocked ? copy.waitForTask : undefined}
-            onClick={() => setRestoring(true)}
-          >
-            {copy.restore}
-          </Button>
+          <HomeOnly procedure="backups.restore" label={copy.restore}>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={none || blocked}
+              title={blocked ? copy.waitForTask : undefined}
+              onClick={() => setRestoring(true)}
+            >
+              {copy.restore}
+            </Button>
+          </HomeOnly>
           <Button
             variant={none ? 'secondary' : 'primary'}
             size="sm"
@@ -156,6 +160,8 @@ export function BackupsSection() {
   const [editing, setEditing] = useState<string | null>(null);
   const [including, setIncluding] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  // From the internet (US-SYS-47): restoring and adding or changing a destination are at home only.
+  const addAway = useHomeOnly('backups.destinations.add');
   const o = query.data;
   if (!o) return null;
 
@@ -165,7 +171,6 @@ export function BackupsSection() {
   const details = isFeatureEnabled('backupRunDetail');
   const included = plan.data ? includedWords(o.included.apps, plan.data.include.folders) : null;
   const next = nextLine(o.nextRunAt, o.scheduleEnabled, now);
-  const blocked = o.blockedBy !== null;
   const editingDest = o.destinations.find((d) => d.id === editing) ?? null;
   const chart = o.chart.map((r) => ({
     label: dayTime(r.startedAt, now),
@@ -175,6 +180,39 @@ export function BackupsSection() {
   // A failed run is drawn full height (US-BKP-03).
   const peak = Math.max(1, ...chart.map((c) => c.value));
   const bars = chart.map((c) => (c.status === 'failed' ? { ...c, value: peak } : c));
+
+  const dialogs = (
+    <>
+      {adding ? <AddDestinationDialog onClose={() => setAdding(false)} /> : null}
+      {editingDest ? <EditDestinationDialog destination={editingDest} onClose={() => setEditing(null)} /> : null}
+      {including ? <IncludedDialog onClose={() => setIncluding(false)} /> : null}
+      {restoring ? (
+        <RestoreFlow
+          destinations={o.destinations}
+          jobId={o.restoring?.jobId ?? null}
+          onClose={() => setRestoring(false)}
+        />
+      ) : null}
+    </>
+  );
+  if (!desktop)
+    return (
+      <>
+        <PhoneBackups
+          o={o}
+          runs={runs.data?.runs ?? []}
+          now={now}
+          backingUp={backUp.isPending}
+          details={details}
+          onBackUp={() => backUp.mutate()}
+          onAdd={() => setAdding(true)}
+          onEdit={setEditing}
+          onIncluded={() => setIncluding(true)}
+          onRestore={() => setRestoring(true)}
+        />
+        {dialogs}
+      </>
+    );
 
   const title = none
     ? copy.noBackups
@@ -225,7 +263,9 @@ export function BackupsSection() {
           ) : null}
         </div>
         {none ? (
-          <Button onClick={() => setAdding(true)}>{copy.addDestination}</Button>
+          <HomeOnly procedure="backups.destinations.add" label={copy.addDestination} size="md">
+            <Button onClick={() => setAdding(true)}>{copy.addDestination}</Button>
+          </HomeOnly>
         ) : bars.length ? (
           <div className="w-full md:w-44">
             <BarChart
@@ -238,16 +278,6 @@ export function BackupsSection() {
               width={176}
             />
           </div>
-        ) : null}
-        {!desktop && !none ? (
-          <Button
-            disabled={blocked || !!o.running}
-            busy={backUp.isPending}
-            onClick={() => backUp.mutate()}
-            title={blocked ? copy.waitForTask : undefined}
-          >
-            {o.running ? copy.backingUp(o.running.progress) : copy.backUpNow}
-          </Button>
         ) : null}
       </section>
 
@@ -267,27 +297,35 @@ export function BackupsSection() {
                   <Badge tone={d.status === 'ok' ? 'success' : d.status === 'unreachable' ? 'danger' : 'warning'}>
                     {copy.status[d.status]}
                   </Badge>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    aria-label={copy.editFor(d.name)}
-                    onClick={() => setEditing(d.id)}
-                  >
-                    {copy.edit}
-                  </Button>
+                  <HomeOnly procedure="backups.destinations.update" label={copy.edit} name={copy.editFor(d.name)}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      aria-label={copy.editFor(d.name)}
+                      onClick={() => setEditing(d.id)}
+                    >
+                      {copy.edit}
+                    </Button>
+                  </HomeOnly>
                 </span>
               }
             />
           ))}
           <ListRow
             title={
-              <button
-                type="button"
-                onClick={() => setAdding(true)}
-                className="hl-focus cursor-pointer rounded-xs border-0 bg-transparent p-0 font-sans text-body font-semibold text-accent-link"
-              >
-                {copy.addDestination}
-              </button>
+              addAway ? (
+                <HomeOnly procedure="backups.destinations.add" label={copy.addDestination}>
+                  {null}
+                </HomeOnly>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAdding(true)}
+                  className="hl-focus cursor-pointer rounded-xs border-0 bg-transparent p-0 font-sans text-body font-semibold text-accent-link"
+                >
+                  {copy.addDestination}
+                </button>
+              )
             }
             subtitle={o.destinations.some((d) => d.offsite) ? undefined : copy.offsiteHint}
           />
@@ -306,20 +344,6 @@ export function BackupsSection() {
             ) : undefined
           }
         />
-        {!desktop && !none ? (
-          <ListRow
-            title={
-              <button
-                type="button"
-                disabled={blocked}
-                onClick={() => setRestoring(true)}
-                className="hl-focus cursor-pointer rounded-xs border-0 bg-transparent p-0 font-sans text-body text-ink disabled:opacity-45"
-              >
-                {copy.restore}
-              </button>
-            }
-          />
-        ) : null}
       </List>
 
       {runs.data?.runs.length ? (
@@ -367,16 +391,7 @@ export function BackupsSection() {
         </List>
       ) : null}
 
-      {adding ? <AddDestinationDialog onClose={() => setAdding(false)} /> : null}
-      {editingDest ? <EditDestinationDialog destination={editingDest} onClose={() => setEditing(null)} /> : null}
-      {including ? <IncludedDialog onClose={() => setIncluding(false)} /> : null}
-      {restoring ? (
-        <RestoreFlow
-          destinations={o.destinations}
-          jobId={o.restoring?.jobId ?? null}
-          onClose={() => setRestoring(false)}
-        />
-      ) : null}
+      {dialogs}
     </div>
   );
 }

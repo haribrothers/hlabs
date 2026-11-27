@@ -76,7 +76,11 @@ describe('buildCaddyConfig', () => {
 
   it('sends app traffic to the loopback port (D-049), through forward auth unless the app opted out', () => {
     const [, , immich, vaultwarden] = https.routes;
-    expect(immich.handle[0]).toEqual({ handler: 'headers', request: { delete: IDENTITY_HEADERS } });
+    // Identity headers, and the public listener's (D-178), only ever come from Caddy itself.
+    expect(immich.handle[0]).toEqual({
+      handler: 'headers',
+      request: { delete: [...IDENTITY_HEADERS, 'X-Hlabs-Public-Host', 'X-Hlabs-Via'] },
+    });
     expect(immich.handle[1]).toMatchObject({
       handler: 'reverse_proxy',
       upstreams: [{ dial: '127.0.0.1:7474' }],
@@ -88,8 +92,18 @@ describe('buildCaddyConfig', () => {
     expect(vaultwarden.handle[1].upstreams).toEqual([{ dial: '127.0.0.1:13001' }]);
   });
 
+  it("keeps the home dashboard's open streams across a config change, and only there", () => {
+    // The dashboard's event stream (and the dev server's reload socket) don't all drop when an app or the dashboard is
+    // made public; a public address's streams still end at once when it's made private.
+    expect(https.routes[1].handle[1]).toMatchObject({ handler: 'reverse_proxy', stream_close_delay: '1h' });
+    expect(JSON.stringify(config).match(/stream_close_delay/g)).toHaveLength(1);
+  });
+
   it('drops identity headers a browser sends on the dashboard too', () => {
-    expect(https.routes[1].handle[0]).toEqual({ handler: 'headers', request: { delete: IDENTITY_HEADERS } });
+    expect(https.routes[1].handle[0]).toEqual({
+      handler: 'headers',
+      request: { delete: [...IDENTITY_HEADERS, 'X-Hlabs-Public-Host', 'X-Hlabs-Via'] },
+    });
   });
 
   it('answers a down daemon with the fallback page on the dashboard only (US-STATE-04)', () => {
@@ -116,7 +130,11 @@ describe('buildCaddyConfig', () => {
     const onboarding = buildCaddyConfig(state({ onboardingComplete: false }), paths) as Json;
     const routes = onboarding.apps.http.servers.http.routes;
     expect(routes[1].match).toBeUndefined();
-    expect(routes[1].handle.at(-1)).toEqual({ handler: 'reverse_proxy', upstreams: [{ dial: '127.0.0.1:7474' }] });
+    expect(routes[1].handle.at(-1)).toEqual({
+      handler: 'reverse_proxy',
+      upstreams: [{ dial: '127.0.0.1:7474' }],
+      stream_close_delay: '1h',
+    });
   });
 
   it('uses the fallback ports and keeps them in redirects (D-016)', () => {
@@ -200,6 +218,7 @@ describe('NetworkService', () => {
       tailnetHost: null,
       lanAddresses: ['192.168.1.20'],
       apps: [{ appId: 'immich', hostname: 'immich', port: 12000, auth: 'hlabs', embed: false }],
+      public: null,
     });
     expect(t.mdns.names).toEqual(['hlabs.local', 'immich.hlabs.local']);
   });

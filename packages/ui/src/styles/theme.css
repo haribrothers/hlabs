@@ -44,6 +44,22 @@
   --text-tab-label: 11px;
   --text-tab-label--line-height: 13px;
   --text-tab-label--font-weight: 600;
+  --text-large-title: 34px;
+  --text-large-title--line-height: 41px;
+  --text-large-title--font-weight: 700;
+  --text-large-title--letter-spacing: -0.02em;
+  --text-row: 17px;
+  --text-row--line-height: 22px;
+  --text-row--font-weight: 400;
+  --text-subhead: 15px;
+  --text-subhead--line-height: 20px;
+  --text-subhead--font-weight: 400;
+  --text-footnote: 13px;
+  --text-footnote--line-height: 18px;
+  --text-footnote--font-weight: 400;
+  --text-tile-name: 12px;
+  --text-tile-name--line-height: 16px;
+  --text-tile-name--font-weight: 500;
   --text-mono: 13px;
   --text-mono--line-height: 20px;
   --text-mono--font-weight: 400;
@@ -70,6 +86,23 @@
   --spacing-control: 44px;
   --spacing-window: 1240px;
   --spacing-dock-tile: 56px;
+  --spacing-widget: 156px;
+  --spacing-widget-phone: 122px;
+  --spacing-tab-bar: 49px;
+  --spacing-home-indicator: 34px;
+  --spacing-tab-lens: 52px;
+  --spacing-nav-bar: 44px;
+  --spacing-row: 48px;
+  --spacing-icon-square: 30px;
+  --spacing-app-icon-phone: 60px;
+  --spacing-list-icon: 56px;
+  --spacing-button-phone: 50px;
+  --spacing-grabber: 36px;
+  --spacing-dock-edge-touch: 28px;
+  --spacing-row-touch: 60px;
+  --spacing-icon-square-touch: 36px;
+  --spacing-menu-touch: 272px;
+  --spacing-field-text-touch: 16px;
 }
 
 @theme inline {
@@ -77,6 +110,14 @@
   --color-wall-coral: var(--wall-coral);
   --color-wall-violet: var(--wall-violet);
   --color-wall-teal: var(--wall-teal);
+  --color-wall-ocean-base: var(--wall-ocean-base);
+  --color-wall-ocean-cyan: var(--wall-ocean-cyan);
+  --color-wall-ocean-blue: var(--wall-ocean-blue);
+  --color-wall-ocean-violet: var(--wall-ocean-violet);
+  --color-wall-forest-base: var(--wall-forest-base);
+  --color-wall-forest-gold: var(--wall-forest-gold);
+  --color-wall-forest-green: var(--wall-forest-green);
+  --color-wall-forest-teal: var(--wall-forest-teal);
   --color-logo-coral: var(--logo-coral);
   --color-logo-violet: var(--logo-violet);
   --color-logo-teal: var(--logo-teal);
@@ -106,6 +147,12 @@
   --color-danger: var(--danger);
   --color-danger-fill: var(--danger-fill);
   --color-badge: var(--badge);
+  --color-solid-widget: var(--solid-widget);
+  --color-solid-window: var(--solid-window);
+  --color-solid-dialog: var(--solid-dialog);
+  --color-solid-row: var(--solid-row);
+  --color-solid-control: var(--solid-control);
+  --color-solid-input: var(--solid-input);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);

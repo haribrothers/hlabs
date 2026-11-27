@@ -56,6 +56,11 @@ export const sessions = sqliteTable(
     userAgent: text('user_agent'),
     ip: text('ip'),
     revokedAt: ms('revoked_at'),
+    /**
+     * A session signed in on a public app's address (`photos.example.com`, D-178): valid on that host only, never on
+     * the dashboard or another app. Null for the dashboard's sessions.
+     */
+    publicHost: text('public_host'),
   },
   (t) => [index('sessions_user_idx').on(t.userId)],
 );

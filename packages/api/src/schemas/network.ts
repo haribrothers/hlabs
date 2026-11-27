@@ -44,6 +44,9 @@ export const remoteStatusSchema = z.object({
   loginUrl: z.string().nullable(),
   /** When this computer's Tailscale key expires (ms). */
   keyExpiry: z.number().nullable(),
+  /** Devices on the tailnet online now, this computer included, while connected; null when hlabs didn't ask
+   * Tailscale (`probe: false`). */
+  devicesOnline: z.number().int().nonnegative().nullable(),
 });
 export type RemoteStatus = z.infer<typeof remoteStatusSchema>;
 

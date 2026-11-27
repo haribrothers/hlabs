@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { MAIN_URL } from './instances';
 import { createMember } from './invites';
+import { peopleAction, peopleRow } from './people';
 
 const idFor = (project: string) => `access-demo-${project}`;
 const appFor = (project: string) => `Access demo ${project}`;
@@ -20,9 +21,9 @@ test('US-ACCT-24 share an app with a member and Save: their row counts it', asyn
   const name = `Access ${info.project.name} ${Date.now()}`;
   await createMember(page, request, MAIN_URL, { name });
   await page.goto('/settings/users');
-  const row = page.locator('.hl-list-row', { hasText: name });
+  const row = peopleRow(page, name);
   await expect(row).toContainText('0 apps');
-  await row.getByRole('button', { name: 'Apps access' }).click();
+  await peopleAction(page, info, row, 'Apps access');
 
   const dialog = page.getByRole('dialog', { name: new RegExp(`What ${name} can open`) });
   const share = dialog.getByRole('switch', { name: appFor(info.project.name) });

@@ -16,6 +16,50 @@
   }
 }
 
+/* The phone (US-PHONE-01, US-PHONE-02, D-172): the page clears the notch, the home indicator and, in landscape, the
+   sides; its last row is never under the tab bar. Home keeps the wallpaper under a scrim; every other page is the
+   solid base colour. The tab bar steps aside while the on-screen keyboard is open (src/lib/phone-viewport.ts). */
+@media (max-width: 767px) {
+  .hl-page {
+    position: relative;
+    padding-top: calc(var(--space-4) + env(safe-area-inset-top));
+    padding-left: calc(var(--space-4) + env(safe-area-inset-left));
+    padding-right: calc(var(--space-4) + env(safe-area-inset-right));
+    padding-bottom: calc(
+      var(--size-tab-bar) + var(--space-6) + max(env(safe-area-inset-bottom), var(--size-home-indicator))
+    );
+  }
+  [data-phone-surface='solid'] {
+    background: var(--wall-base) !important;
+  }
+  /* The log-in screens (PhoneRedesignA_Login): the wallpaper's glows at the top only, fading into the base. */
+  .hl-login-phone {
+    background:
+      radial-gradient(70% 35% at 0% 0%, color-mix(in srgb, var(--wall-coral) 45%, transparent) 0%, transparent 70%),
+      radial-gradient(80% 35% at 100% 0%, color-mix(in srgb, var(--wall-violet) 60%, transparent) 0%, transparent 70%),
+      var(--wall-base);
+  }
+  [data-phone-surface='wall']::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    pointer-events: none;
+  }
+}
+/* App tiles: no OS callout or text selection on a long press (US-PHONE-08). */
+.hl-no-callout {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* Where there's no hover, what appears on hover on a desktop is always shown (US-PHONE-02). */
+@media (hover: none) {
+  .hl-hover-reveal {
+    opacity: 1 !important;
+  }
+}
+
 /* Printing recovery codes (US-ACCT-09): only the element marked hl-print-area is printed. */
 @media print {
   body * {

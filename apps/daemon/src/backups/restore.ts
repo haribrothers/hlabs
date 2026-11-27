@@ -472,7 +472,14 @@ export class RestoreService {
         mkdirSync(p.staging, { recursive: true });
         await this.deps.restic.restore(
           repo,
-          { snapshotId: snap.snapshotId, path: snap.path, target: p.staging, signal: ctx.signal },
+          // An app's data goes back with its files' owners as they were (D-190); a Home folder stays hlabs's.
+          {
+            snapshotId: snap.snapshotId,
+            path: snap.path,
+            target: p.staging,
+            asRoot: p.kind === 'app',
+            signal: ctx.signal,
+          },
           (prog) =>
             this.step(id, (s) => s.kind === 'copy', { bytesDone: done + prog.bytesDone, bytesTotal: total }, report),
         );

@@ -47,11 +47,15 @@ export class FilesTrash {
   }
 
   /**
-   * Deletes the caller's Trash for good (US-FILE-18), audited. A big one is a job; `allUsers` comes with US-SYS-14.
+   * Deletes the caller's Trash for good (US-FILE-18), or with `allUsers` every person's (US-SYS-14, admins only),
+   * audited. A big one is a job.
    */
   async empty(caller: Caller, input?: { allUsers?: boolean }) {
-    if (input?.allUsers) throw hlabsError('NOT_IMPLEMENTED', 'Emptying everyone’s Trash comes with US-SYS-14');
-    const rows = this.deps.db.select().from(trashItems).where(eq(trashItems.ownerUserId, caller.id)).all();
+    const everyone = input?.allUsers === true;
+    if (everyone && caller.role !== 'admin') throw hlabsError('ACCESS_DENIED');
+    const rows = everyone
+      ? this.deps.db.select().from(trashItems).all()
+      : this.deps.db.select().from(trashItems).where(eq(trashItems.ownerUserId, caller.id)).all();
     const bytes = rows.reduce((n, r) => n + r.size, 0);
     this.deps.db
       .insert(auditLog)
@@ -61,7 +65,7 @@ export class FilesTrash {
         userId: caller.id,
         action: 'files.empty_trash',
         target: null,
-        detailJson: { count: rows.length, bytes },
+        detailJson: everyone ? { count: rows.length, bytes, allUsers: true } : { count: rows.length, bytes },
       })
       .run();
     const ids = rows.map((r) => r.id);
@@ -70,6 +74,12 @@ export class FilesTrash {
     }
     await this.deleteRows(ids);
     return { ok: true as const };
+  }
+
+  /** Everyone's Trash together (US-SYS-14). */
+  totals(): { bytes: number; count: number } {
+    const rows = this.deps.db.select({ size: trashItems.size }).from(trashItems).all();
+    return { bytes: rows.reduce((n, r) => n + r.size, 0), count: rows.length };
   }
 
   /** Each item's files, then its row; one already missing on disk just loses its row. */

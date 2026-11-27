@@ -4,13 +4,17 @@
 //
 //   node scripts/store-matrix.ts                  every app in store/apps
 //   node scripts/store-matrix.ts uptime-kuma gitea  just these
+//   --results <file>   also write each app's result as JSON, for store-report.ts (US-STORE-26)
+//   --prune-images     CI only: after each app, remove every unused image on the machine, so a runner with several
+//                      apps doesn't fill its disk
 //
 // CI has no mDNS, so "opens at" is checked by asking Caddy for the app's name directly (TLS SNI and Host
 // <app>.hlabs.local, checked against hlabs's own CA), which is what a browser that resolves the name gets.
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { request } from 'node:https';
 import { join, resolve } from 'node:path';
+import type { MatrixResult } from './store-select-lib.ts';
 
 const REPO = resolve(import.meta.dirname, '..');
 const DATA_DIR = resolve(REPO, '.matrix-data');
@@ -85,6 +89,7 @@ function startDaemon(): ChildProcess {
       HLABS_DEV_NO_ENGINE_CONTROL: '1',
       // A pretend Tailscale: e2e never touches the real one (CI has none).
       HLABS_DEV_FAKE_TAILSCALE: '1',
+      HLABS_DEV_FAKE_CLOUDFLARE: '1',
       HLABS_COMPOSE_PREFIX: 'hlabs-matrix',
       HLABS_LOG_LEVEL: 'warn',
     },
@@ -183,10 +188,24 @@ async function run(appId: string): Promise<string | null> {
   log(appId, 'installing');
   const install = await mutate('apps.install', { appId, env, mounts, acceptRisks: true });
   if (install.error) return `install refused: ${JSON.stringify(install.error)}`;
-  const installed = await until(`${appId} installed`, INSTALL_MS, async () => {
-    const s = await appState(appId);
-    return s && (s.state === 'running' || s.state === 'install_failed') ? s : undefined;
-  });
+  const settled = () =>
+    until(`${appId} installed`, INSTALL_MS, async () => {
+      const s = await appState(appId);
+      return s && (s.state === 'running' || s.state === 'install_failed') ? s : undefined;
+    });
+  let installed = await settled();
+  // A registry that refuses for a moment (lscr.io's rate limit, with ~100 runners pulling at once) isn't the app's
+  // fault: Try again once, as a person would, after a pause.
+  if (installed.state === 'install_failed' && (installed.stateDetail as { step?: string } | null)?.step === 'pull') {
+    log(appId, 'pull failed; trying again in 60 s');
+    await sleep(60_000);
+    const retry = await mutate('apps.retryInstall', { appId });
+    if (retry.error) return `retry refused: ${JSON.stringify(retry.error)}`;
+    await until(`${appId} installing again`, 30_000, async () =>
+      (await appState(appId))?.state === 'install_failed' ? undefined : true,
+    );
+    installed = await settled();
+  }
   if (installed.state !== 'running') {
     say(containerLogs(appId));
     return `install failed: ${JSON.stringify(installed.stateDetail)}`;
@@ -228,7 +247,10 @@ async function main() {
   const all = readdirSync(join(REPO, 'store', 'apps')).filter((id) =>
     existsSync(join(REPO, 'store', 'apps', id, 'hlabs-app.yml')),
   );
-  const wanted = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const resultsAt = args.includes('--results') ? args[args.indexOf('--results') + 1] : undefined;
+  const prune = args.includes('--prune-images');
+  const wanted = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--results');
   const ids = wanted.length ? wanted : all;
   const unknown = ids.filter((id) => !all.includes(id));
   if (unknown.length) throw new Error(`not in store/apps: ${unknown.join(', ')}`);
@@ -245,7 +267,7 @@ async function main() {
     stop();
     process.exit(130);
   });
-  const results: Array<[string, string | null]> = [];
+  const results: MatrixResult[] = [];
   try {
     await until('the daemon', 120_000, async () => ((await fetch(`${DAEMON}/healthz`)).ok ? true : undefined));
     const seed = await fetch(`${DAEMON}/dev/seed`, {
@@ -261,8 +283,9 @@ async function main() {
     }).catch(() => undefined);
 
     for (const id of ids) {
+      const started = Date.now();
       const problem = await run(id).catch((err: unknown) => (err instanceof Error ? err.message : String(err)));
-      results.push([id, problem]);
+      results.push({ id, problem, seconds: Math.round((Date.now() - started) / 1000) });
       log(id, problem ? `FAILED: ${problem}` : 'ok');
       if (problem) {
         // Leave nothing behind for the next app.
@@ -271,13 +294,24 @@ async function main() {
           () => undefined,
         );
       }
+      if (prune) {
+        try {
+          execFileSync('docker', ['image', 'prune', '-af'], { stdio: 'ignore' });
+        } catch {
+          // A full disk shows up as the next app's failure.
+        }
+      }
     }
   } finally {
     stop();
+    if (resultsAt) {
+      // Apps never reached (the daemon didn't start) have no result; store-report.ts counts them as failed.
+      writeFileSync(resultsAt, JSON.stringify(results, null, 2));
+    }
   }
   say('\nStore matrix');
-  for (const [id, problem] of results) say(`  ${problem ? '✗' : '✓'} ${id}${problem ? ` — ${problem}` : ''}`);
-  if (results.some(([, problem]) => problem)) process.exit(1);
+  for (const { id, problem } of results) say(`  ${problem ? '✗' : '✓'} ${id}${problem ? ` — ${problem}` : ''}`);
+  if (results.length < ids.length || results.some((r) => r.problem)) process.exit(1);
 }
 
 await main();

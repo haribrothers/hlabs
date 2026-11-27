@@ -29,6 +29,8 @@ export interface UiStrings {
   chartData: string;
   /** The first column of a chart's hidden table. */
   chartTime: string;
+  /** A line chart's gap (the thing measured wasn't running then): its tooltip and table. */
+  chartNoData: string;
   value: string;
   free: string;
   failed: string;
@@ -37,6 +39,14 @@ export interface UiStrings {
   of: (used: string, total: string) => string;
   shared: string;
   done: string;
+  /** A sheet's close button (US-PHONE-03). */
+  close: string;
+  /** A sheet bar's way out (PhoneRedesignA_FilesMove, D-172). */
+  cancel: string;
+  /** The ••• button of a phone row: "More for Taxes". */
+  more: (name: string) => string;
+  /** A sheet's grabber, for screen readers it's decorative; the close button closes it. */
+  back: string;
 }
 
 export const defaultStrings: UiStrings = {
@@ -60,6 +70,7 @@ export const defaultStrings: UiStrings = {
   chartPart: 'Part',
   chartData: 'Chart data',
   chartTime: 'Time',
+  chartNoData: 'No data',
   value: 'Value',
   free: 'Free',
   failed: 'Failed',
@@ -68,6 +79,10 @@ export const defaultStrings: UiStrings = {
   of: (used, total) => `${used} of ${total}`,
   shared: 'Shared',
   done: 'done',
+  close: 'Close',
+  cancel: 'Cancel',
+  more: (name) => `More for ${name}`,
+  back: 'Back',
 };
 
 const Context = createContext<UiStrings>(defaultStrings);

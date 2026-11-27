@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { cpus, totalmem } from 'node:os';
 import type { DaemonContext } from '../context';
 import { byUseDeps, storageByUse } from '../storage/by-use';
+import { appUsageDetail } from '../usage/app-detail';
 import { onlyApps, usageAppsFor } from '../usage/members';
 
 export const usage: AppHandlers<DaemonContext>['usage'] = {
@@ -60,4 +61,6 @@ export const usage: AppHandlers<DaemonContext>['usage'] = {
     if (scope !== 'host' && allowed !== null && !allowed.has(scope)) throw hlabsError('ACCESS_DENIED');
     return ctx.services.usageHistory.history(scope, range, metric);
   },
+  // US-APP-20, US-APP-21: an app's Usage tab (admins only, by the procedure).
+  appDetail: ({ appId }, ctx) => appUsageDetail(ctx.services, appId),
 };

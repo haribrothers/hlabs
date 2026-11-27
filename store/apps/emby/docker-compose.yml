@@ -1,0 +1,9 @@
+services:
+  emby:
+    image: lscr.io/linuxserver/emby:4.10.2@sha256:7de8f6c5c47a128c387fae67c4d6ff2dfce347cf1219e8fcb01315871446ade4
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config
+      - ${HLABS_FOLDER_MEDIA}:/media

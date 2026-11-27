@@ -1,5 +1,6 @@
 import { useId, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { useUiStrings } from '../lib/strings';
+import { useHoldTooltip } from './hold-tooltip';
 import {
   Announce,
   downsample,
@@ -100,8 +101,10 @@ export function StackedColumns({
           (part === null ? series : [series[part]!]).map((s) => ({ name: s.name, value: fmt(s.values[at] ?? 0) })),
         );
 
+  // A finger held on the chart shows its tooltip (US-TAB-01).
+  const hold = useHoldTooltip();
   return (
-    <figure className="hl-chart">
+    <figure className="hl-chart" {...hold}>
       {title ? (
         <figcaption className="hl-chart-title">
           {title}

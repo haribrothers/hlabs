@@ -36,6 +36,11 @@ export function errorText(err: unknown): ErrorText {
   return copy(data.detail ?? {});
 }
 
+/** The words for a code the daemon saved rather than threw (a source's last sync, US-STORE-18). */
+export function codeText(code: string, detail: Record<string, unknown> = {}): ErrorText {
+  return catalogue[code]?.(detail) ?? errorCopy.generic;
+}
+
 /** Title and body as one line, for inline errors in a dialog or form. */
 export function errorLine(err: unknown): string {
   const { title, body } = errorText(err);

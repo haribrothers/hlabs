@@ -15,19 +15,21 @@ export const motion = {
 function subscribe(onChange: () => void): () => void {
   if (typeof MutationObserver === 'undefined' || typeof document === 'undefined') return () => {};
   const observer = new MutationObserver(onChange);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-reduce-motion'] });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-motion'] });
   return () => observer.disconnect();
 }
 
+/** `reduced` or `full` from Settings › Appearance › Reduce motion; null before the dashboard knows. */
 const readSetting = () =>
-  typeof document !== 'undefined' && document.documentElement.getAttribute('data-reduce-motion') === 'true';
+  typeof document === 'undefined' ? null : document.documentElement.getAttribute('data-motion');
 
 /**
- * True when motion should be reduced: the OS setting, or Settings › Appearance › Reduce motion
- * (data-reduce-motion="true" on <html>). Swap transforms for fades when it's on.
+ * True when motion should be reduced (US-ACCT-35): Settings › Appearance › Reduce motion, set on <html> as
+ * data-motion="reduced" (on) or "full" (off), or the OS setting while there's neither. Swap transforms for fades
+ * when it's on.
  */
 export function useReduceMotion(): boolean {
   const os = useReducedMotion() ?? false;
-  const setting = useSyncExternalStore(subscribe, readSetting, () => false);
-  return os || setting;
+  const setting = useSyncExternalStore(subscribe, readSetting, () => null);
+  return setting === 'reduced' ? true : setting === 'full' ? false : os;
 }

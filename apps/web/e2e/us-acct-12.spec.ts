@@ -26,7 +26,7 @@ test('US-ACCT-12 turn two-factor on from Account, then off again', async ({ page
   await expect(codes).toHaveCount(10);
   await expect(codes.first()).toHaveText(/^[a-z0-9]{4}-[a-z0-9]{4}$/);
   await page.getByRole('dialog').getByRole('button', { name: 'Done' }).click();
-  await expect(page.getByText('On · authenticator app')).toBeVisible();
+  await expect(page.getByText(/^On( · authenticator app)?$/)).toBeVisible();
 
   // Off: warned, password and a current code.
   await page.getByRole('button', { name: 'Manage two-factor login' }).click();

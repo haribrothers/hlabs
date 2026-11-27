@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { Fragment, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '../lib/cn';
 
 export interface ChoiceOption<V extends string = string> {
@@ -11,6 +11,8 @@ export interface ChoiceOption<V extends string = string> {
   trailing?: ReactNode;
   /** Shown but can't be chosen; the subtitle says why. Arrow keys skip it. */
   disabled?: boolean;
+  /** Content right under the option (outside its button), such as who it lets in or a warning to accept. */
+  below?: ReactNode;
 }
 
 export interface ChoiceListProps<V extends string> {
@@ -69,30 +71,32 @@ export function ChoiceList<V extends string>({ label, options, value, onChange, 
       {options.map((o, i) => {
         const checked = o.value === value;
         return (
-          <button
-            key={o.value}
-            ref={(el) => {
-              refs.current[i] = el;
-            }}
-            type="button"
-            role="radio"
-            aria-checked={checked}
-            tabIndex={i === tabStop ? 0 : -1}
-            disabled={o.disabled}
-            className="hl-choice"
-            onClick={() => onChange(o.value)}
-          >
-            {o.icon ? (
-              <span className="hl-choice-icon" aria-hidden="true">
-                {o.icon}
+          <Fragment key={o.value}>
+            <button
+              ref={(el) => {
+                refs.current[i] = el;
+              }}
+              type="button"
+              role="radio"
+              aria-checked={checked}
+              tabIndex={i === tabStop ? 0 : -1}
+              disabled={o.disabled}
+              className="hl-choice"
+              onClick={() => onChange(o.value)}
+            >
+              {o.icon ? (
+                <span className="hl-choice-icon" aria-hidden="true">
+                  {o.icon}
+                </span>
+              ) : null}
+              <span className="hl-choice-text">
+                <span className="hl-choice-title">{o.title}</span>
+                {o.subtitle ? <span className="hl-choice-sub">{o.subtitle}</span> : null}
               </span>
-            ) : null}
-            <span className="hl-choice-text">
-              <span className="hl-choice-title">{o.title}</span>
-              {o.subtitle ? <span className="hl-choice-sub">{o.subtitle}</span> : null}
-            </span>
-            {o.trailing}
-          </button>
+              {o.trailing}
+            </button>
+            {o.below ? <div className="hl-choice-below">{o.below}</div> : null}
+          </Fragment>
         );
       })}
     </div>

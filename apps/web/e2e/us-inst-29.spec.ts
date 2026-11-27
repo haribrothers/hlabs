@@ -24,5 +24,7 @@ test('US-INST-29 offline, the saved shell says "Can\'t reach hlabs" and the page
   await context.setOffline(false);
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.getByRole('heading', { name: "Can't reach hlabs" })).toBeHidden({ timeout: 15_000 });
-  await expect(page.getByRole('heading', { name: /^Good (morning|afternoon|evening)/ })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Good (morning|afternoon|evening)|Welcome to hlabs)/ }),
+  ).toBeVisible();
 });

@@ -136,3 +136,52 @@ describe('LineChart peak note and StackedColumns', () => {
     expect(within(table).getAllByRole('row')).toHaveLength(3);
   });
 });
+
+describe('LineChart gaps and given ticks (US-APP-20)', () => {
+  const labels = ['10:00', '10:05', '10:10', '10:15', '10:20'];
+  it('breaks the line at null values and says "No data" for them', () => {
+    const { container } = render(
+      <LineChart title="Memory" series={[{ name: 'Memory', values: [1, 2, null, 4, 5] }]} labels={labels} />,
+    );
+    const d = container.querySelector('path.hl-chart-line')!.getAttribute('d')!;
+    expect(d.match(/M/g)).toHaveLength(2);
+    // The area wash is drawn per run too, never across the gap.
+    expect(container.querySelector('path.hl-chart-area')!.getAttribute('d')!.match(/Z/g)).toHaveLength(2);
+    const rows = [...container.querySelectorAll('tbody tr')].map((r) => r.textContent);
+    expect(rows[2]).toBe('10:10No data');
+    fireEvent.keyDown(screen.getByRole('img'), { key: 'Home' });
+    fireEvent.keyDown(screen.getByRole('img'), { key: 'ArrowRight' });
+    fireEvent.keyDown(screen.getByRole('img'), { key: 'ArrowRight' });
+    expect(screen.getByRole('status')).toHaveTextContent('10:10, Memory No data');
+  });
+
+  it('draws the x labels it is given instead of evenly spaced ones', () => {
+    const { container } = render(
+      <LineChart
+        series={[{ name: 'CPU', values: [1, 2, 3, 4, 5] }]}
+        labels={labels}
+        xTicks={[
+          { index: 1, label: '06:00' },
+          { index: 4, label: 'now' },
+        ]}
+      />,
+    );
+    const axis = [...container.querySelectorAll('text.hl-chart-axis')].map((t) => t.textContent);
+    expect(axis.slice(-2)).toEqual(['06:00', 'now']);
+    expect(axis).not.toContain('10:00');
+  });
+});
+
+describe('ListRow as a button', () => {
+  it('is one button for the whole row', async () => {
+    const { List, ListRow } = await import('../src/index');
+    let pressed = 0;
+    render(
+      <List label="Containers">
+        <ListRow title="vault-server" trailing="64 MB" hint="Show logs" onPress={() => pressed++} />
+      </List>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /vault-server/ }));
+    expect(pressed).toBe(1);
+  });
+});

@@ -13,8 +13,14 @@ describe('shell areas', () => {
     ]);
   });
 
-  it('gives phones five tabs with "Apps" for the App Store (US-PHONE-01)', () => {
-    expect(phoneAreas({ shippedPhase: 9 }).map((a) => a.label)).toEqual(['Home', 'Apps', 'Files', 'Usage', 'Settings']);
+  it('gives phones five tabs, the App Store named as on the Dock (US-PHONE-01, D-172)', () => {
+    expect(phoneAreas({ shippedPhase: 9 }).map((a) => a.label)).toEqual([
+      'Home',
+      'App Store',
+      'Files',
+      'Usage',
+      'Settings',
+    ]);
   });
 
   it('maps paths to their area', () => {

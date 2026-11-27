@@ -14,6 +14,7 @@ import { createTRPCClient, TRPCClientError, type TRPCLink } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
 import type { ComponentType, ReactNode } from 'react';
 import { ConfirmHost } from '../lib/confirm';
+import { AwayHost, HomeOnlyHost } from '../public/home-only';
 import { TRPCProvider } from '../lib/trpc';
 import { RouteError } from '../shell/route-fallbacks';
 
@@ -83,6 +84,8 @@ export function renderScreen(
       <>
         <Outlet />
         <ConfirmHost />
+        <HomeOnlyHost />
+        <AwayHost />
       </>
     ),
   });

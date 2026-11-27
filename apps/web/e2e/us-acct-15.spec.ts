@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
 import { createMember, signedInAs } from './invites';
 import { finishOnboarding } from './onboarding';
+import { peopleAction, peopleRow } from './people';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
@@ -16,11 +17,8 @@ test('US-ACCT-15 disabling signs the member out and stops their log-in; enabling
   const anu = await signedInAs(browser, info.project.use, FIRST_RUN_URL, member);
 
   await page.goto('/settings/users');
-  const row = page.locator('.hl-list-row', { hasText: 'Anu' });
-  const menu = async (item: string) => {
-    await row.getByRole('button', { name: 'More options for Anu' }).click();
-    await page.getByRole('menuitem', { name: item }).click();
-  };
+  const row = peopleRow(page, 'Anu');
+  const menu = (item: string) => peopleAction(page, info, row, item, true);
   await menu('Disable');
   await page.getByRole('alertdialog', { name: 'Disable Anu?' }).getByRole('button', { name: 'Disable' }).click();
   await expect(page.getByText('Anu is disabled')).toBeVisible();

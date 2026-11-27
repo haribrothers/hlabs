@@ -25,4 +25,5 @@ The product spec in `docs/` is the source of truth for what hlabs does; these pa
 - [The menu-bar app](/developers/menu-bar-app/): running and changing it.
 - [Building the app](/developers/building/): a Mac app with hlabs inside, and where an installed hlabs keeps things.
 - [Updates and signing](/developers/updates-and-signing/): your own signing key, and testing an update end to end.
+- [Docs screenshots](/developers/docs-screenshots/): taking the help's pictures from the dashboard, and the bot that keeps them current.
 - [Troubleshooting](/developers/troubleshooting/): the problems you're most likely to meet, and their fixes.

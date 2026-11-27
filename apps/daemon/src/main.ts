@@ -11,6 +11,8 @@ import { ServiceHolder } from './services';
 import { switchBackIfStale } from './updates/headless';
 import { updateUnderway } from './updates/install';
 import { hasUpdateMarker } from './updates/marker';
+import { plannedExitCode } from './system/lifecycle';
+import { startClockAt } from './platform/dev-clock';
 
 if (process.argv.includes('--update-watchdog')) {
   const root = process.env.HLABS_INSTALL_ROOT ?? '/opt/hlabs';
@@ -27,6 +29,8 @@ if (setPortsAt >= 0) {
 }
 
 const config = loadConfig();
+// The docs screenshots' instance starts on a fixed day (HLABS_DEV_CLOCK, development only, US-SITE-11).
+if (config.devClock !== null) startClockAt(config.devClock);
 const logger = createLogger(config);
 if (config.devAnonymousAdmin)
   logger.warn('HLABS_DEV_ANONYMOUS_ADMIN is on: every request is treated as an admin (dev only)');
@@ -53,7 +57,8 @@ async function stop(signal: string) {
   await Promise.race([app.close(), new Promise((resolve) => setTimeout(resolve, CLOSE_TIMEOUT_MS).unref())]);
   await shutdown(services);
   logger.info('stopped');
-  process.exit(0);
+  // 75 after "Restart hlabs" or a factory reset: launchd or systemd starts it again (D-133).
+  process.exit(plannedExitCode());
 }
 process.on('SIGINT', () => void stop('SIGINT'));
 process.on('SIGTERM', () => void stop('SIGTERM'));

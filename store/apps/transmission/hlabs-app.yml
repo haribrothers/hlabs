@@ -1,0 +1,34 @@
+schema: 1
+id: transmission
+name: Transmission
+version: '4.1.4'
+revision: 1
+tagline: A simple, light torrent client
+description: |
+  Add a magnet link or a .torrent file and Transmission downloads it into Shared/Downloads. Sonarr,
+  Radarr and Lidarr can send it downloads at http://transmission:9091. It works without opening a port
+  on your router.
+category: media
+developer: { name: Transmission, url: https://transmissionbt.com }
+source: https://github.com/transmission/transmission
+license: GPL-2.0
+icon:
+  logo: logo.svg
+  gradient: ['#d32f2f', '#5c0a0a']
+  fallback: download
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 256 }
+web: { service: transmission, port: 9091, embed: true }
+folders:
+  - key: downloads
+    label: Downloads
+    description: Where downloads land; the same folder in every download app
+    target: /downloads
+    default: shared:Downloads
+    mode: rw
+    required: true
+ownLogin: false
+backup:
+  pause: [transmission]
+  beforeUpdate: true
+permissions: { network: internet }

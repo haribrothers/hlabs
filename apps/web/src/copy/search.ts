@@ -5,6 +5,9 @@ export const searchCopy = {
   pill: 'Search apps, files, settings',
   shortcut: (mac: boolean) => (mac ? '⌘K' : 'Ctrl K'),
   esc: 'esc',
+  /** Closes search on a phone (US-PHONE-09). */
+  cancel: 'Cancel',
+  clear: 'Clear search',
   results: 'Search results',
   groups: {
     installed: 'Installed',
@@ -18,8 +21,11 @@ export const searchCopy = {
     settings: (app: string) => `${app} settings`,
     restart: (app: string) => `Restart ${app}`,
     logs: (app: string) => `View ${app} logs`,
+    /** An app taken off Home (US-HOME-18). */
+    addToHome: (app: string) => `Add ${app} to Home`,
   },
   restarting: (app: string) => `Restarting ${app}…`,
+  addedToHome: (app: string) => `${app} is back on Home`,
   install: 'Install',
   seeAllStore: 'See all App Store results',
   noResults: (query: string) => `No results for “${query}”`,

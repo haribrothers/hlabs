@@ -18,12 +18,21 @@ test('US-STATE-11 the confirm dialog asks, traps focus, closes without acting an
   await restart.click();
   await expect(dialog).toHaveAccessibleDescription('All apps stop for about a minute.');
   await expect(confirmButton).toBeFocused();
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('Tab');
+  // Focus stays inside: round the buttons (on a phone the sheet's "✕" Close too, US-PHONE-03) and back.
+  const stops = testInfo.project.name === 'phone' ? 3 : 2;
+  for (let i = 0; i < stops; i++) await page.keyboard.press('Tab');
   await expect(confirmButton).toBeFocused();
   expect((await new AxeBuilder({ page }).include('[role="alertdialog"]').analyze()).violations).toEqual([]);
 
   const phone = testInfo.project.name === 'phone';
+  // A sheet settles on its spring first (US-PHONE-03).
+  if (phone)
+    await expect
+      .poll(async () => {
+        const b = (await dialog.boundingBox())!;
+        return Math.round(b.y + b.height);
+      })
+      .toBe(page.viewportSize()!.height);
   const [dialogBox, confirmBox, cancelBox, viewport] = [
     await dialog.boundingBox(),
     await confirmButton.boundingBox(),

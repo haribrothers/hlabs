@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { confirm, ConfirmHost } from './confirm';
+import { phoneViewport } from '../test/phone';
 
 const restartAll = {
   title: 'Restart all apps?',
@@ -18,15 +19,6 @@ function setup() {
   const opener = screen.getByRole('button', { name: 'Open' });
   opener.focus();
   return opener;
-}
-
-function setPhone(phone: boolean) {
-  window.matchMedia = ((query: string) => ({
-    matches: !phone,
-    media: query,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-  })) as unknown as typeof window.matchMedia;
 }
 
 afterEach(() => {
@@ -123,13 +115,15 @@ describe('US-STATE-11', () => {
   });
 
   it('on a phone it is a bottom sheet with the verb above Cancel', async () => {
-    setPhone(true);
+    const restore = phoneViewport();
     setup();
     void act(() => void confirm(restartAll));
     const dialog = await screen.findByRole('alertdialog');
     expect(dialog).toHaveClass('hl-dialog-sheet');
-    const buttons = screen.getAllByRole('button').filter((b) => dialog.contains(b));
+    // The sheet's own "✕" (US-PHONE-03) comes first; then the verb above Cancel.
+    const buttons = screen.getAllByRole('button').filter((b) => dialog.contains(b) && b.textContent);
     expect(buttons.map((b) => b.textContent)).toEqual(['Restart', 'Cancel']);
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    restore();
   });
 });

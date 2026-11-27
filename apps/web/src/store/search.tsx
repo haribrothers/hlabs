@@ -2,6 +2,7 @@
 // 200 ms pause (Enter opens them at once); clearing it goes back to the view you came from; Escape clears it; "/"
 // focuses it from anywhere in the store on desktop. Results are the StoreSearch list (filters come in phase 7).
 import { Search, iconDefaults } from '@hlabs/icons';
+import { PhoneSearchField } from '@hlabs/ui';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { storeCopy } from '../copy/store';
@@ -12,7 +13,7 @@ export const SEARCH_DELAY_MS = 200;
 export const SEARCH_FIELD_ID = 'store-search';
 
 /** Queries are trimmed and at most 100 characters (US-STORE-05). */
-export const cleanQuery = (q: string) => q.trim().slice(0, 100);
+export const cleanQuery = (q: string) => q.trim().slice(0, 100).trim();
 
 export function StoreSearchField({ desktop }: { desktop: boolean }) {
   const navigate = useNavigate();
@@ -68,6 +69,40 @@ export function StoreSearchField({ desktop }: { desktop: boolean }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [desktop]);
 
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      show(value);
+    } else if (e.key === 'Escape' && value) {
+      // Clears the query (and keeps Escape from closing anything else).
+      e.preventDefault();
+      e.stopPropagation();
+      setValue('');
+      show('');
+    }
+  };
+  if (!desktop)
+    // PhoneStore's field (US-PHONE-10): 17px text, "✕" to clear it, which brings the sections back.
+    return (
+      <div role="search">
+        <PhoneSearchField
+          ref={input}
+          id={SEARCH_FIELD_ID}
+          label={copy.searchLabel}
+          placeholder={total === undefined ? copy.searchLabel : copy.searchPlaceholder(total)}
+          maxLength={100}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={onKeyDown}
+          clearLabel={copy.clearSearch}
+          onClear={() => {
+            setValue('');
+            show('');
+            input.current?.focus();
+          }}
+        />
+      </div>
+    );
   return (
     <div role="search" className="relative w-full md:w-80">
       <Search
@@ -86,18 +121,7 @@ export function StoreSearchField({ desktop }: { desktop: boolean }) {
         autoComplete="off"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            show(value);
-          } else if (e.key === 'Escape' && value) {
-            // Clears the query (and keeps Escape from closing anything else).
-            e.preventDefault();
-            e.stopPropagation();
-            setValue('');
-            show('');
-          }
-        }}
+        onKeyDown={onKeyDown}
       />
     </div>
   );

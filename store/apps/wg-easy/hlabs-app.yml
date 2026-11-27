@@ -1,0 +1,37 @@
+# From wg-easy's own docker-compose.yml, without SYS_MODULE and /lib/modules (D-163): it uses the
+# kernel's WireGuard.
+schema: 1
+id: wg-easy
+name: WireGuard Easy
+version: '15.5.0'
+revision: 1
+tagline: Your own VPN, managed from a web page
+description: |
+  Run your own WireGuard VPN and manage its devices from a web page: add a phone with a QR code, see
+  who's connected and turn devices off. Forward UDP port 51820 on your router to this computer so
+  devices can connect from outside. The first visit sets up your admin account.
+category: network
+developer: { name: WireGuard Easy, url: https://wg-easy.github.io/wg-easy }
+source: https://github.com/wg-easy/wg-easy
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#88171a', '#2e0708']
+  fallback: shield-check
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 256 }
+web: { service: wg-easy, port: 51821, embed: true }
+ports:
+  - service: wg-easy
+    container: 51820
+    host: 51820
+    protocol: udp
+    label: WireGuard
+ownLogin: true
+overlaps: [remoteAccess]
+backup:
+  pause: [wg-easy]
+  beforeUpdate: true
+permissions:
+  network: internet
+  capabilities: [NET_ADMIN]

@@ -1,6 +1,8 @@
 // The installable dashboard's icons (US-INST-28), rendered from docs/design/logos/hlabs-app-icon.svg into public/icons:
 // the app icon at 192 and 512 px, and a 512 px maskable one (the tile without its rounding or margin, so the mark sits
-// inside the safe zone whatever shape the system cuts). Run again when the logo changes:
+// inside the safe zone whatever shape the system cuts); and iOS's 180 px apple-touch-icon (US-PHONE-23), full bleed
+// like the maskable one, since iOS rounds the corners itself and shows transparency as black. Run again when the
+// logo changes:
 //   node apps/web/scripts/pwa-icons.mjs
 import { chromium } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -26,6 +28,7 @@ for (const [name, size, source] of [
   ['icon-192.png', 192, svg],
   ['icon-512.png', 512, svg],
   ['maskable-512.png', 512, maskable],
+  ['apple-touch-icon-180.png', 180, maskable],
 ]) {
   await page.setViewportSize({ width: size, height: size });
   await page.setContent(

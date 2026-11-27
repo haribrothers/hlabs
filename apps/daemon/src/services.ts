@@ -18,8 +18,10 @@ import type { UsageHistory } from './usage/history';
 import type { UsageSampler } from './usage/sampler';
 import type { AppWatch } from './apps/app-watch';
 import type { ReinstallService } from './apps/reinstall';
+import type { AppConfigService } from './apps/config';
 import type { SystemProbe } from './platform/system';
 import type { NotificationService } from './notifications/service';
+import type { AppWidgets } from './home/app-widgets';
 import type { FilesJanitor } from './files/janitor';
 import type { FilesService } from './files/service';
 import type { Trash } from './files/trash';
@@ -41,6 +43,7 @@ import type { CatalogService } from './store/catalog';
 import type { StoreService } from './store/service';
 import type { AppDiskUsage } from './apps/disk';
 import type { AutoUpdates } from './updates/auto';
+import type { SourcesService } from './store/sources';
 import type { SystemUpdateDeps } from './updates/install';
 import type { HlabsUpdates } from './updates/service';
 import type { InstallService } from './apps/install';
@@ -49,8 +52,13 @@ import type { DnsService } from './network/dns';
 import type { RemoteService } from './network/remote';
 import type { NetworkService } from './network/service';
 import type { TailscaleClient } from './tailscale/types';
+import type { CloudflareClient, TunnelConnector } from './cloudflare/types';
+import type { PublicService } from './public/service';
 import type { AppLogs } from './apps/logs';
 import type { UpdateService } from './apps/update';
+import type { ImagePruner } from './storage/images';
+import type { StorageSizes } from './storage/sizes';
+import type { SystemService } from './system/service';
 
 export interface Services {
   config: DaemonConfig;
@@ -64,6 +72,8 @@ export interface Services {
   proxy: ProxyManager;
   mdns: MdnsPublisher;
   catalog: CatalogService;
+  /** App sources beyond the built-in store (US-STORE-18, 19, 27…29). */
+  sources: SourcesService;
   store: StoreService;
   /** Installs apps (US-STORE-08…14). */
   installer: InstallService;
@@ -73,6 +83,8 @@ export interface Services {
   updates: UpdateService;
   /** Reinstalling an app, keeping its data and settings (US-APP-25). */
   reinstalls: ReinstallService;
+  /** App settings › Configuration and Permissions, and "Require hlabs login" (US-APP-13…19). */
+  appConfig: AppConfigService;
   /** hlabs's own updates: the update manifest, checked now and every 6 h (US-SYS-24). */
   hlabsUpdates: HlabsUpdates;
   /** "Update now" (US-SYS-23): who applies it here and how. */
@@ -89,6 +101,12 @@ export interface Services {
   /** The local DNS server hlabs keeps its names in (US-SYS-06). */
   dns: DnsService;
   tailscale: TailscaleClient;
+  /** Cloudflare for public apps (US-SYS-43): the real one, or a fake in tests, development and e2e. */
+  cloudflare: CloudflareClient;
+  /** The cloudflared connector (a fake with the fake Cloudflare). */
+  connector: TunnelConnector;
+  /** Public apps through Cloudflare Tunnel (US-APP-27…29, US-SYS-43, 44). */
+  publicApps: PublicService;
   /** Settles when the start-up reconcile has finished (tests). */
   reconciled: Promise<void>;
   /** Apps are being brought up (at start, or after the engine came back) (US-INST-11). */
@@ -115,6 +133,10 @@ export interface Services {
   discovery: NetworkDiscovery;
   /** Connected network drives: checked every minute, mounted again, disconnected (US-FILE-11, US-FILE-12). */
   networkDrives: NetworkDrives;
+  /** Files, the backup cache and hlabs's own folders, counted every 10 minutes at most (US-SYS-11). */
+  storageSizes: StorageSizes;
+  /** Removes images hlabs pulled that nothing uses (US-SYS-13, D-168). */
+  imagePruner: ImagePruner;
   /** Files: virtual paths, listings, uploads and downloads (07-files). */
   files: FilesService;
   /** Move to (US-FILE-22). */
@@ -128,6 +150,8 @@ export interface Services {
   /** Removes idle uploads and month-old Trash. */
   filesJanitor: FilesJanitor;
   notifications: NotificationService;
+  /** Apps' Home widgets, read from the apps (US-HOME-20). */
+  appWidgets: AppWidgets;
   /** restic, the bundled binary or a fake (D-133). */
   restic: Restic;
   /** Where backups go (US-BKP-08…11). */
@@ -139,6 +163,8 @@ export interface Services {
   restores: RestoreService;
   /** Uninstalling hlabs, the daemon's part (US-INST-21, US-INST-22, D-143). */
   uninstall: UninstallService;
+  /** Settings › Advanced: logs, diagnostics, connections, restart and factory reset (US-SYS-27…31, 37, 38). */
+  advanced: SystemService;
 }
 
 /** Holds services once boot has created them; requests before then get DAEMON_STARTING. */

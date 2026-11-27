@@ -5,7 +5,7 @@ import type { UpdateStatus } from '@hlabs/api';
 import { getSetting, setSetting, type HlabsDb } from '@hlabs/db';
 import type { EventBus } from '../events/bus';
 import type { Logger } from '../logger';
-import { noteBullets, type UpdateSource } from './source';
+import { noteBullets, type Channel, type UpdateSource } from './source';
 import { compareVersions } from './version';
 
 export const CHECK_EVERY_MS = 6 * 60 * 60_000;
@@ -17,8 +17,8 @@ export interface HlabsUpdatesDeps {
   source: UpdateSource;
   /** The version running now. */
   version: string;
-  /** Refreshes the store index (built-in store; other sources from phase 7). */
-  syncStore: () => void;
+  /** Refreshes the store: the built-in store and every source an admin added (US-STORE-18). */
+  syncStore: () => void | Promise<void>;
   /** The job "Update now" would have to wait for (D-020), or null. */
   blocker?: () => string | null;
   now?: () => number;
@@ -45,6 +45,24 @@ export class HlabsUpdates {
     };
   }
 
+  /**
+   * Beta updates (US-SYS-30): the channel changes, what the last check found on the other channel is forgotten, and a
+   * check runs now in the background. Back on stable from a beta build, nothing older is offered: hlabs stays on the
+   * build it runs until a stable version newer than it is out (compareVersions puts 1.5.0 after 1.5.0-beta.2).
+   */
+  setChannel(channel: Channel): boolean {
+    const { db, logger } = this.deps;
+    const u = getSetting(db, 'updates');
+    if (u.channel === channel) return false;
+    setSetting(db, 'updates', { ...u, channel, latest: null });
+    // A check already running asked the old channel: this one follows it.
+    void (this.checking ?? Promise.resolve())
+      .catch(() => undefined)
+      .then(() => this.check())
+      .catch((err: unknown) => logger.warn({ err }, 'update check failed'));
+    return true;
+  }
+
   /** One check at a time; a second ask while one runs gets the same answer. */
   check(): Promise<UpdateStatus> {
     this.checking ??= this.run().finally(() => (this.checking = null));
@@ -68,7 +86,7 @@ export class HlabsUpdates {
   private async run(): Promise<UpdateStatus> {
     const { db, bus, source, logger } = this.deps;
     try {
-      this.deps.syncStore();
+      await this.deps.syncStore();
     } catch (err) {
       logger.warn({ err }, 'store sync failed');
     }

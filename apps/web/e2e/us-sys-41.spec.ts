@@ -23,7 +23,7 @@ test('US-SYS-41 choose the subnet router: the addresses from away, invite links 
 
   // Invite links use the home-network address (D-109).
   await page.goto('/settings/users');
-  await page.getByRole('button', { name: 'Invite someone' }).click();
+  await page.getByRole('button', { name: 'Invite someone' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Invite someone' });
   await expect(dialog.getByRole('textbox', { name: 'Invite link' })).toHaveValue(
     /^https:\/\/[^/]+\.local(:\d+)?\/invite\//,

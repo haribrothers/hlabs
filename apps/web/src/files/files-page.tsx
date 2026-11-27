@@ -1,7 +1,7 @@
 // The Files window (FilesBrowser, 07-files): places on the left, the open folder (or Recents) on the right. On a
 // phone the places are chips above the folder. Escape closes the window, as Settings does.
 import type { FileEntry } from '@hlabs/api';
-import { GlassCard } from '@hlabs/ui';
+import { GlassCard, TabletBack, useIsTouchPortrait } from '@hlabs/ui';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { filesCopy as copy } from '../copy/files';
@@ -16,7 +16,8 @@ import { NewFolderDialog } from './new-folder-dialog';
 import { OpenWith } from './open-with';
 import { useFileUploads } from './use-file-uploads';
 import { SearchField, useDebouncedQuery } from './search';
-import { FilesChips, FilesSidebar, useDrives } from './sidebar';
+import { FilesChips, FilesPlacesList, FilesSidebar, useDrives } from './sidebar';
+import { FilesPhoneHeader } from './phone-header';
 import { ConnectDriveDialog } from './connect-drive-dialog';
 import { DisconnectDriveDialog } from './disconnect-drive-dialog';
 import { useTRPCClient } from '../lib/trpc';
@@ -27,9 +28,12 @@ import { useMoveFlow } from './move-flow';
 import { useTrashFlow } from './trash-flow';
 import type { MoveRoot } from './move-dialog';
 import { isFeatureEnabled } from '@hlabs/shared';
+import { InternetBanner } from '../public/home-only';
 
 export interface FilesPageProps {
   at: FilesLocation;
+  /** No place in the address (`/files`): an iPad in portrait shows the places to go into (US-TAB-05). */
+  atRoot?: boolean;
 }
 
 /** Where Files is, from `/files?path=…` or `/files?view=recents` (US-FILE-02: back and forward move between folders). */
@@ -51,13 +55,15 @@ export function placeName(path: string): string {
 /** The page, at the location in the URL. */
 export function FilesScreen() {
   const search = useSearch({ strict: false }) as Record<string, unknown>;
-  return <FilesPage at={locationOf(search)} />;
+  return <FilesPage at={locationOf(search)} atRoot={search.path === undefined && search.view === undefined} />;
 }
 
-export function FilesPage({ at }: FilesPageProps) {
+export function FilesPage({ at, atRoot = false }: FilesPageProps) {
   const me = useMe();
   const navigate = useNavigate();
   const desktop = useIsDesktop();
+  // An iPad in portrait: the sidebar becomes a list of places you go into (US-TAB-05).
+  const portrait = useIsTouchPortrait();
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const drives = useDrives(me.data?.role === 'admin');
@@ -128,7 +134,7 @@ export function FilesPage({ at }: FilesPageProps) {
         onOpenFile={onOpenFile}
         focusPath={focusPath}
         searchQuery={searchQuery}
-        // A phone shows the grid: its list layout is US-PHONE-16 (phase 9), and PhoneFilesMore has no toggle.
+        // A phone shows its own inset list (US-PHONE-25) and has no toggle.
         view={desktop ? prefs.view : 'grid'}
         sort={prefs.sort}
         onSort={prefs.sortBy}
@@ -162,6 +168,11 @@ export function FilesPage({ at }: FilesPageProps) {
         )}
         onRetryDrive={async (locationId) => {
           await trpcClient.storage.locations.reconnect.mutate({ locationId });
+        }}
+        places={desktop ? undefined : <FilesChips me={filesMe} at={at} />}
+        onAdd={{
+          onNewFolder: () => setNewFolder(true),
+          onUpload: (folderName) => uploads.choose(folderPath, folderName),
         }}
         onDropFiles={(data, folderName) => uploads.drop(data, folderPath, folderName)}
         notice={(folderName) => uploads.notice(folderPath, folderName)}
@@ -247,14 +258,38 @@ export function FilesPage({ at }: FilesPageProps) {
 
   if (!desktop) {
     return (
-      <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
-        <p className="m-0 text-display" aria-hidden="true">
-          {copy.title}
-        </p>
-        <FilesChips me={filesMe} at={at} />
+      // PhoneRedesignA_Files: the folder brings its own bar, title, search and places; Recents and Trash have them here.
+      <div className="flex min-h-0 w-full flex-1 flex-col">
+        {at.view === 'folder' ? null : (
+          <>
+            <FilesPhoneHeader />
+            <div className="mt-3 mb-4">
+              <FilesChips me={filesMe} at={at} />
+            </div>
+          </>
+        )}
         {main}
         {dialogs}
       </div>
+    );
+  }
+
+  if (portrait) {
+    return (
+      <GlassCard level={2} className="hl-window-fill flex min-h-0 w-full flex-1 flex-col overflow-hidden p-0">
+        <InternetBanner variant="window" />
+        {atRoot ? (
+          <FilesPlacesList me={filesMe} onConnect={() => setConnecting(true)} />
+        ) : (
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+            <div className="px-5 pt-4">
+              <TabletBack label={copy.title} onBack={() => void navigate({ to: '/files' })} />
+            </div>
+            {main}
+          </div>
+        )}
+        {dialogs}
+      </GlassCard>
     );
   }
 
@@ -263,6 +298,7 @@ export function FilesPage({ at }: FilesPageProps) {
       level={2}
       className="hl-window-fill mx-auto grid min-h-0 w-full max-w-window flex-1 grid-cols-[240px_1fr] overflow-hidden p-0"
     >
+      <InternetBanner variant="window" />
       <div className="flex min-h-0 flex-col border-r border-hairline px-3 pt-6 pb-5">
         <p className="m-0 mb-3 px-3 text-title-2 font-bold" aria-hidden="true">
           {copy.title}

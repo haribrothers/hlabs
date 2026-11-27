@@ -53,7 +53,12 @@ const toDaemon = {
   '/dev/rolled-back': DAEMON,
   '/dev/sync-store': DAEMON,
   '/dev/seed': DAEMON,
+  '/dev/fake-images': DAEMON,
+  '/dev/trash-item': DAEMON,
   '/dev/notify': DAEMON,
+  '/dev/log-line': DAEMON,
+  '/dev/cloudflare': DAEMON,
+  '/dev/public-visit': DAEMON,
 };
 
 export default defineConfig(({ command }) => ({
@@ -101,7 +106,9 @@ export default defineConfig(({ command }) => ({
   test: {
     environment: 'jsdom',
     globals: true,
-    include: ['src/**/*.test.{ts,tsx}'],
+    // And the e2e run's own helpers (docsShot and the screenshot bot's diff, US-SITE-11): `.unit.ts`, so Playwright,
+    // which runs everything named `.test.ts` under e2e/, leaves them alone.
+    include: ['src/**/*.test.{ts,tsx}', 'e2e/support/**/*.unit.ts'],
     setupFiles: ['src/test-setup.ts'],
   },
 }));

@@ -1,0 +1,25 @@
+schema: 1
+id: librespeed
+name: LibreSpeed
+version: '5.5.1'
+revision: 1
+tagline: Test the speed between your devices and hlabs
+description: |
+  A speed test you run against hlabs itself, to check your Wi-Fi and home network rather than your
+  internet connection. It has no login of its own: the hlabs login protects it.
+category: network
+developer: { name: LibreSpeed, url: https://librespeed.org }
+source: https://github.com/librespeed/speedtest
+license: LGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#0d9488', '#06312e']
+  fallback: gauge
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 128, disk: 128 }
+web: { service: librespeed, port: 80, embed: true }
+ownLogin: false
+backup:
+  pause: [librespeed]
+  beforeUpdate: true
+permissions: { network: internet }

@@ -8,6 +8,8 @@ import type { AppRoute } from '../apps/service';
 import { appHosts, homeDomains } from '../network/domains';
 import { fallbackErrorRoutes } from './fallback';
 import type { ProxyState } from './index';
+import { CADDY_ONLY_HEADERS, IDENTITY_HEADERS, VIA_HEADER } from './headers';
+import { PUBLIC_ACCESS_LOGGER, PUBLIC_ORIGIN_NAME, publicAccessLog, publicServer } from './public';
 
 export interface CaddyPaths {
   /** Caddy's storage: the local CA, certificates, locks. */
@@ -18,8 +20,7 @@ export interface CaddyPaths {
   webFallbackDir: string;
 }
 
-/** Headers only forward auth may set; anything a browser sends under these names is dropped. */
-export const IDENTITY_HEADERS = ['X-Hlabs-User', 'X-Hlabs-Role'];
+export { IDENTITY_HEADERS } from './headers';
 
 /** Where Caddy's local CA keeps the root certificate that CertGuide offers (`GET /ca.crt`). */
 export function caRootDir(storageDir: string): string {
@@ -27,6 +28,9 @@ export function caRootDir(storageDir: string): string {
 }
 
 const proxyTo = (dial: string) => ({ handler: 'reverse_proxy', upstreams: [{ dial }] });
+
+/** How long the home dashboard's open streams are kept when Caddy's config changes (they then reconnect). */
+export const DASHBOARD_STREAM_CLOSE_DELAY = '1h';
 
 /**
  * An app that declares `web.embed` (D-038) may be framed by the dashboard, and only by it (US-APP-01): its
@@ -85,7 +89,7 @@ function appRoute(app: AppRoute, hostname: string, daemon: string, ancestors: st
   return {
     match: [{ host: appHosts(app.hostname, hostname) }],
     handle: [
-      { handler: 'headers', request: { delete: IDENTITY_HEADERS } },
+      { handler: 'headers', request: { delete: CADDY_ONLY_HEADERS } },
       ...(app.auth === 'hlabs' ? [forwardAuth(daemon)] : []),
       app.embed ? { ...proxy, ...framedBy(ancestors) } : proxy,
     ],
@@ -105,7 +109,7 @@ function appUnavailable(daemon: string, hosts?: string[]) {
         handler: 'reverse_proxy',
         upstreams: [{ dial: daemon }],
         rewrite: { method: 'GET', uri: '/auth/unavailable' },
-        headers: { request: { set: { 'X-Forwarded-Host': ['{http.request.hostport}'] } } },
+        headers: { request: { set: { 'X-Forwarded-Host': ['{http.request.hostport}'] }, delete: [VIA_HEADER] } },
       },
     ],
     terminal: true,
@@ -147,7 +151,14 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
 
   const dashboard = {
     match: [{ host: dashboardHosts }],
-    handle: [{ handler: 'headers', request: { delete: IDENTITY_HEADERS } }, proxyTo(state.dashboardUpstream)],
+    handle: [
+      { handler: 'headers', request: { delete: CADDY_ONLY_HEADERS } },
+      // The dashboard's open streams (its event stream, and the dev server's reload socket under pnpm dev:full) outlive
+      // a config change (an app or the dashboard made public, a port changed) instead of all dropping at once, which
+      // reloaded the page mid-way through a dialog. Only here, at home: a public address's streams end at once when it's
+      // made private.
+      { ...proxyTo(state.dashboardUpstream), stream_close_delay: DASHBOARD_STREAM_CLOSE_DELAY },
+    ],
     terminal: true,
   };
   const caCert = {
@@ -192,7 +203,10 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
         default: {
           writer: { output: 'file', filename: paths.logFile, roll_size_mb: 10, roll_keep: 3 },
           level: 'WARN',
+          // Visits to public apps go to their own log only (US-APP-29): never the proxy log or diagnostics.
+          exclude: [`http.log.access.${PUBLIC_ACCESS_LOGGER}`],
         },
+        ...(state.public ? { [PUBLIC_ACCESS_LOGGER]: publicAccessLog(state.public) } : {}),
       },
     },
     apps: {
@@ -229,6 +243,8 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
             routes: httpRoutes,
             automatic_https: { disable: true },
           },
+          // Public apps (D-178): only while Cloudflare Tunnel is set up.
+          ...(state.public ? { public: publicServer(state.public, state.daemon, state.dashboardUpstream) } : {}),
           ...(opts.appPorts === false
             ? {}
             : Object.fromEntries(
@@ -240,7 +256,17 @@ export function buildCaddyConfig(state: ProxyState, paths: CaddyPaths, opts: { a
         },
       },
       tls: {
-        automation: { policies: [{ subjects: hosts, issuers: [{ module: 'internal' }] }] },
+        // The public listener's one certificate (D-181), from the same local CA, managed whether or not a server
+        // asks for it by name.
+        ...(state.public ? { certificates: { automate: [PUBLIC_ORIGIN_NAME] } } : {}),
+        automation: {
+          policies: [
+            {
+              subjects: state.public ? [...hosts, PUBLIC_ORIGIN_NAME] : hosts,
+              issuers: [{ module: 'internal' }],
+            },
+          ],
+        },
       },
       // Trust is installed by people through CertGuide, never by Caddy asking for an admin password.
       pki: { certificate_authorities: { local: { name: 'hlabs Local CA', install_trust: false } } },

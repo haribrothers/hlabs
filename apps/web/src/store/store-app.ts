@@ -7,9 +7,12 @@ import { storeCopy, tagLabels } from '../copy/store';
 export type StoreHost = inferRouterOutputs<AppRouter>['store']['getHome']['host'];
 export type InstalledApp = inferRouterOutputs<AppRouter>['apps']['list']['apps'][number];
 
-/** "Apple Silicon" (or "ARM64") when this computer and the app are arm64, then the manifest tags we know. */
+/**
+ * On an arm64 computer, "Apple Silicon" (or "ARM64") for an app with an arm64 image and "x86 only" for one without
+ * (US-STORE-23); then the manifest tags we know.
+ */
 export function storeTags(app: StoreApp, host: StoreHost): string[] {
-  const platform = host.arm64 && app.arm64 ? [storeCopy.arm64Tag[host.os]] : [];
+  const platform = host.arm64 ? [app.arm64 ? storeCopy.arm64Tag[host.os] : storeCopy.x86Only] : [];
   return [...platform, ...app.tags.flatMap((t) => (tagLabels[t] ? [tagLabels[t]] : []))];
 }
 

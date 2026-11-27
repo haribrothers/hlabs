@@ -1,5 +1,6 @@
 // US-HOME-11 · See only my shared apps on a member Home (first-run instance: an admin shares two of three apps).
 import AxeBuilder from '@axe-core/playwright';
+import { homeGreeting } from './phone';
 import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
 import { createMember, signedInAs, removeFakeApps } from './invites';
@@ -25,7 +26,7 @@ test('US-HOME-11 a member sees a greeting and only the apps shared with them, no
   const member = await createMember(page, request, FIRST_RUN_URL, { name: 'Anu', apps: ['Jelly demo', 'Photo demo'] });
 
   const home = await signedInAs(browser, info.project.use, FIRST_RUN_URL, member);
-  await expect(home.getByRole('heading', { level: 1, name: /, Anu$/ })).toBeVisible();
+  await expect(homeGreeting(home, test.info(), /, Anu$/)).toBeVisible();
   const grid = home.getByRole('list', { name: 'Apps' });
   await expect(grid.getByRole('listitem')).toHaveCount(2);
   await expect(grid.getByRole('button', { name: 'Open Jelly demo' })).toBeVisible();

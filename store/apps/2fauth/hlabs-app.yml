@@ -1,0 +1,26 @@
+# 2FAuth needs a 32-character key: a first start makes it and keeps it in the app's data.
+schema: 1
+id: 2fauth
+name: 2FAuth
+version: '9.0.2'
+revision: 1
+tagline: Your two-factor codes, in one place
+description: |
+  Keep the one-time codes for your accounts' two-step sign-in in one place, readable from any device.
+  Add accounts by scanning their QR codes. Create your account on the first visit.
+category: security
+developer: { name: Bubka, url: https://docs.2fauth.app }
+source: https://github.com/Bubka/2FAuth
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#4f46e5', '#1e1b4b']
+  fallback: key-round
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 128, disk: 256 }
+web: { service: 2fauth, port: 8000, embed: true }
+ownLogin: true
+backup:
+  pause: [2fauth]
+  beforeUpdate: true
+permissions: { network: internet }

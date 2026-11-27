@@ -1,5 +1,5 @@
 // Downloads the binaries hlabs bundles and checks each against a pinned checksum (03 §scripts, D-072): Caddy, the
-// docker-compose CLI plugin and restic (backups, D-008, D-133). Development and CI use the same files as a release.
+// docker-compose CLI plugin, restic (backups, D-008, D-133) and cloudflared (public apps, D-171). Development and CI use the same files as a release.
 //
 //   pnpm fetch-binaries                      # this computer's platform, into .bin/
 //   pnpm fetch-binaries --target linux-x64 --out dist/bin
@@ -22,7 +22,7 @@ interface Binary {
   /** Pinned per target: `sha256:` or `sha512:` of the downloaded file. */
   checksums: Record<Target, string>;
   /** Tarballs: the file to take out (it lands in the output folder under `name`). Plain downloads are the binary. */
-  extract?: (target: Target) => string;
+  extract?: (target: Target) => string | undefined;
   /** A bzip2-compressed binary (restic's releases). */
   bzip2?: boolean;
   /** Only for the app bundle (`--packaging`), not development. */
@@ -32,6 +32,7 @@ interface Binary {
 const CADDY_VERSION = '2.11.4';
 const COMPOSE_VERSION = '5.5.1';
 const RESTIC_VERSION = '0.18.1';
+const CLOUDFLARED_VERSION = '2026.10.7';
 /** The Node.js the app bundle runs hlabsd with (D-113); the major matches .nvmrc. */
 const NODE_VERSION = '22.23.3';
 
@@ -90,6 +91,23 @@ const BINARIES: Binary[] = [
     },
   },
   {
+    // The connector for Cloudflare Tunnel (US-SYS-43, D-171): a tarball on macOS, a plain binary on Linux.
+    name: 'cloudflared',
+    version: CLOUDFLARED_VERSION,
+    url: (t) => {
+      const [os, arch] = t.split('-') as [string, string];
+      const name = `cloudflared-${os === 'mac' ? 'darwin' : 'linux'}-${arch === 'x64' ? 'amd64' : 'arm64'}`;
+      return `https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_VERSION}/${name}${os === 'mac' ? '.tgz' : ''}`;
+    },
+    extract: (t) => (t.startsWith('mac') ? 'cloudflared' : undefined),
+    checksums: {
+      'mac-arm64': 'sha256:3586ccf397e98e5f437e60e7c307ca6ac463e110580503af8bb8e6f9ebf831bd',
+      'mac-x64': 'sha256:02f3edfd87684dd5b705607688e4eb4b323f6e777b81e7b3a85af556aa356848',
+      'linux-arm64': 'sha256:3df43aedc9ff291d1735b5cb576cb97e0b157488796db2e32b28aecabb445775',
+      'linux-x64': 'sha256:1f99fb518b83dec2ba8d870a7cc991d82a77e6196295a3d2754ba17ab9f91872',
+    },
+  },
+  {
     name: 'node',
     version: NODE_VERSION,
     url: (t) => `https://nodejs.org/dist/v${NODE_VERSION}/${nodeDir(t)}.tar.gz`,
@@ -112,10 +130,20 @@ function currentTarget(): Target {
   return `${os}-${arch}`;
 }
 
+/** Tries four times when GitHub's download servers answer 5xx or the connection drops (a CI matrix starts ~100 at once). */
 async function download(url: string): Promise<Buffer> {
-  const res = await fetch(url, { redirect: 'follow' });
-  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
-  return Buffer.from(await res.arrayBuffer());
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const res = await fetch(url, { redirect: 'follow' });
+      if (res.ok) return Buffer.from(await res.arrayBuffer());
+      const error = new Error(`${url}: HTTP ${res.status}`);
+      if (res.status < 500 || attempt === 4) throw error;
+      console.warn(`${error.message}, trying again`);
+    } catch (error) {
+      if (attempt === 4 || /HTTP [1-4]\d\d$/.test((error as Error).message)) throw error;
+    }
+    await new Promise((r) => setTimeout(r, attempt * 5_000));
+  }
 }
 
 function verify(data: Buffer, expected: string, what: string) {
@@ -149,8 +177,8 @@ for (const binary of BINARIES.filter((b) => values.packaging || !b.packaging)) {
   say(`Downloading ${binary.name} ${binary.version} (${target})…`);
   const data = await download(url);
   verify(data, binary.checksums[target], url);
-  if (binary.extract) {
-    const member = binary.extract(target);
+  const member = binary.extract?.(target);
+  if (member) {
     const tmp = join(tmpdir(), `hlabs-${binary.name}-${process.pid}.tar.gz`);
     const unpacked = join(tmpdir(), `hlabs-${binary.name}-${process.pid}`);
     writeFileSync(tmp, data);

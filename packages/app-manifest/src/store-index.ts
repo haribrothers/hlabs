@@ -50,6 +50,8 @@ export const StoreCuration = z
     collections: z.array(StoreCollection()).default([]),
     /** Curated order, most popular first; apps not listed follow A–Z (hlabs collects no usage data). */
     rank: z.array(appId).default([]),
+    /** Apps the update bot leaves alone: pinned on purpose (US-STORE-24). */
+    hold: z.array(appId).default([]),
   })
   .strict();
 export type StoreCuration = z.output<typeof StoreCuration>;

@@ -1,0 +1,27 @@
+schema: 1
+id: ntfy
+name: ntfy
+version: '2.38.1'
+revision: 1
+tagline: Send notifications to your phone from anything
+description: |
+  Send a notification to your phone or computer with a simple web request, from scripts, other apps or
+  your hlabs. Subscribe to a topic in the ntfy app or on its page. It has no login of its own: the hlabs
+  login protects its page.
+category: other
+developer: { name: Philipp Heckel, url: https://ntfy.sh }
+source: https://github.com/binwiederhier/ntfy
+license: Apache-2.0
+icon:
+  logo: logo.svg
+  gradient: ['#338574', '#0f2e28']
+  fallback: bell
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 128, disk: 512 }
+web: { service: ntfy, port: 80, embed: true }
+health: { service: ntfy, http: /v1/health, timeout: 120 }
+ownLogin: false
+backup:
+  pause: [ntfy]
+  beforeUpdate: true
+permissions: { network: internet }

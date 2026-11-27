@@ -4,14 +4,18 @@ import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
 import { createMember } from './invites';
 import { finishOnboarding } from './onboarding';
+import { peopleAction, peopleRow } from './people';
 
 test.use({ baseURL: FIRST_RUN_URL });
 
-test('US-ACCT-14 the admin makes a link; the member sets a new password with it, once', async ({ page, request }) => {
+test('US-ACCT-14 the admin makes a link; the member sets a new password with it, once', async ({
+  page,
+  request,
+}, info) => {
   await finishOnboarding(page, request);
   const member = await createMember(page, request, FIRST_RUN_URL, { name: 'Anu' });
   await page.goto('/settings/users');
-  await page.locator('.hl-list-row', { hasText: 'Anu' }).getByRole('button', { name: 'Reset password' }).click();
+  await peopleAction(page, info, peopleRow(page, 'Anu'), 'Reset password');
   const dialog = page.getByRole('dialog', { name: "Reset Anu's password" });
   const link = dialog.getByRole('textbox', { name: 'Reset link' });
   await expect(link).toHaveValue(/\/reset\/[A-Za-z0-9_-]{43}$/);

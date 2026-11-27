@@ -29,6 +29,8 @@ export const jobNames: Record<string, string> = {
   app_uninstall: 'the uninstall',
   app_move_data: 'the app data move',
   app_deploy_custom: 'the app setup',
+  app_reinstall: 'the reinstall',
+  app_config: 'the app restart',
   starter_apps: 'the starter apps',
   backup: 'the backup',
   engine_install: 'the engine install',
@@ -39,7 +41,16 @@ export const jobNames: Record<string, string> = {
   prune_images: 'the clean-up',
   files_move: 'the file move',
   diagnostics: 'the diagnostics bundle',
+  daemon_restart: 'the restart',
   hlabs_uninstall: 'the uninstall',
+  public_on: 'making the app public',
+  public_off: 'making the app private',
+  public_off_all: 'turning off public access',
+  public_setup: 'the Cloudflare Tunnel setup',
+  public_remove: 'removing Cloudflare Tunnel',
+  dashboard_public_on: 'making the dashboard public',
+  dashboard_public_off: 'making the dashboard private',
+  dashboard_access: "the change to Cloudflare's sign-in",
 };
 
 const tryAgain = 'Try again. If it keeps happening, check the logs in Settings › Advanced.';
@@ -72,6 +83,12 @@ export const errorCopy = {
     AUTH_INVALID_CREDENTIALS: () => ({ title: "That didn't match", body: 'Check your username and password.' }),
     AUTH_INVALID_PASSWORD: () => ({ title: "That password isn't right", body: 'Check it and try again.' }),
     AUTH_LOCKED: (d) => {
+      // The public sign-in's limit per address (US-SYS-46): that address is refused for an hour.
+      if (d?.address === true)
+        return {
+          title: 'Too many tries from this network',
+          body: 'hlabs refuses sign-ins from it for about an hour. Try again then.',
+        };
       const seconds =
         num(d, 'retryAfterSeconds') ?? (num(d, 'until') !== null ? (num(d, 'until')! - Date.now()) / 1000 : 900);
       return { title: 'Too many tries', body: `Wait ${minutes(seconds)}, then try again.` };
@@ -185,6 +202,49 @@ export const errorCopy = {
       body: "Neither the new version nor the previous one started. Check the app's logs.",
     }),
     HOSTNAME_TAKEN: () => ({ title: 'That address is taken', body: 'Choose another name.' }),
+    APP_CONFIG_UNDONE: (d) => ({
+      title: `${str(d, 'app', 'The app')} didn't start with the new settings, so they were undone`,
+      body: "It's running with its previous settings. Check its logs, then try again.",
+    }),
+    // App sources and libraries (US-STORE-18, 19, 27…29)
+    SOURCE_ADDRESS_INVALID: () => ({
+      title: "That isn't a source address",
+      body: 'Paste an https:// address, such as https://github.com/you/your-app-store, or a folder path.',
+    }),
+    SOURCE_UNREACHABLE: () => ({
+      title: "Couldn't reach the repository",
+      body: "Check the address and that this computer is online. A private repository can't be added.",
+    }),
+    SOURCE_EMPTY: () => ({
+      title: 'No hlabs apps found at this address',
+      body: "A source needs apps in hlabs's format, with an index.json made by hlabs library index.",
+    }),
+    SOURCE_INVALID: () => ({
+      title: "Couldn't read this source",
+      body: 'Its files are too big or point outside it. Ask whoever runs it.',
+    }),
+    SOURCE_SIGNATURE_MISMATCH: () => ({
+      title: "Signature doesn't match the saved key",
+      body: 'Its apps may have been changed by someone else, so hlabs stopped using it. Remove it, and add it again only if you trust the new key.',
+    }),
+    SOURCE_EXISTS: () => ({ title: 'This source is already added', body: "It's in the list above." }),
+    SOURCE_PATH_OUTSIDE: () => ({
+      title: 'Choose a folder in hlabs',
+      body: "A library folder has to be inside hlabs's storage, such as your Home folder.",
+    }),
+    SOURCE_PATH_SHARED: () => ({
+      title: 'Choose a folder only admins can change',
+      body: 'Others could change apps in Shared or their own Home folder. Use your Home folder instead.',
+    }),
+    SOURCE_BUILTIN: () => ({ title: "The built-in store can't be removed", body: 'It comes with hlabs.' }),
+    LIBRARY_APP_EXISTS: (d) => ({
+      title: `${str(d, 'library', 'Your library')} already has an app called ${str(d, 'id', 'that')}`,
+      body: 'Choose another name.',
+    }),
+    LIBRARY_KEY_MISSING: () => ({
+      title: 'There is no signing key on this computer',
+      body: 'Make one with hlabs library keygen, then sign again.',
+    }),
     // Storage, files and network
     STORAGE_NOT_WRITABLE: () => ({
       title: "hlabs can't save files there",
@@ -256,6 +316,93 @@ export const errorCopy = {
     TAILSCALE_HTTPS_DISABLED: () => ({
       title: 'HTTPS is off in Tailscale',
       body: 'Turn on HTTPS certificates in your Tailscale admin console.',
+    }),
+    // Public apps (US-APP-27…29, US-SYS-43, 44)
+    PUBLIC_NOT_SET_UP: () => ({
+      title: "Public access isn't set up",
+      body: 'Set up Cloudflare Tunnel in Settings › Network & remote access first.',
+    }),
+    PUBLIC_ALREADY_SET_UP: () => ({
+      title: 'Cloudflare Tunnel is already set up',
+      body: 'To use another domain, remove it in Settings › Network & remote access first.',
+    }),
+    PUBLIC_NOT_ALLOWED: (d) =>
+      d?.access === 'ownLogin'
+        ? {
+            title: "This app's own login isn't safe on the internet",
+            body: 'Choose people with an hlabs account instead.',
+          }
+        : {
+            title: "This app can't be made public",
+            body: typeof d?.reason === 'string' && d.reason ? d.reason : 'It can control your other apps.',
+          },
+    CLOUDFLARE_FAILED: (d) => {
+      const step = str(d ?? {}, 'step', '');
+      if (step === 'token')
+        return {
+          title: "Cloudflare didn't accept that token",
+          body: 'Check it has Zone · DNS · Edit and Account · Cloudflare Tunnel · Edit, then paste it again.',
+        };
+      if (step === 'zone')
+        return {
+          title: "That token doesn't cover this domain",
+          body: 'Check the domain is in your Cloudflare account and the token is for it, then try again.',
+        };
+      if (step === 'access')
+        return {
+          title: "Your Cloudflare sign-in can't manage Cloudflare Access",
+          body: 'Add an API token with Account · Access: Apps and Policies · Edit and Account · Access: Organizations, Identity Providers, and Groups · Edit, then try again.',
+        };
+      if (step === 'signIn')
+        return {
+          title: "Signing in to Cloudflare didn't finish",
+          body: 'Sign in to Cloudflare again and approve hlabs for your domain.',
+        };
+      return {
+        title: "Cloudflare didn't answer",
+        body: 'Nothing was left half done. Check your internet connection and try again.',
+      };
+    },
+    PUBLIC_HOSTNAME_TAKEN: (d) => ({
+      title: `${str(d ?? {}, 'hostname', 'That name')} is already in use`,
+      body: 'Something else on your domain uses it. Choose another name.',
+    }),
+    TWO_FACTOR_REQUIRED_FOR_PUBLIC: (d) => {
+      const users = Array.isArray(d?.users) ? (d.users as string[]) : [];
+      return {
+        title: 'Nobody could get in yet',
+        body: `${users.length ? users.join(', ') : 'Everyone with access'} needs two-factor login on first. Ask them to turn it on in Settings › Account, then try again.`,
+      };
+    },
+    APP_IS_PUBLIC: () => ({
+      title: 'Not while this app is public',
+      body: 'Make it private first, in its Access section.',
+    }),
+    // The public dashboard (US-SYS-45…48)
+    HOME_ONLY: () => ({
+      title: 'Do this at home or on your tailnet',
+      body: "This only works from hlabs at home or on your tailnet, so someone with your password and code can't do it from the internet.",
+    }),
+    TWO_FACTOR_REQUIRED_FOR_DASHBOARD: (d) => {
+      const admins = Array.isArray(d?.admins) ? (d.admins as string[]) : [];
+      const who =
+        admins.length === 0
+          ? "An admin hasn't"
+          : admins.length === 1
+            ? `${admins[0]} hasn't`
+            : `${admins.slice(0, -1).join(', ')} and ${admins.at(-1)} haven't`;
+      return {
+        title: 'Every admin needs two-factor login first',
+        body: `${who} turned on two-factor login yet. Every admin needs it before the dashboard can be public.`,
+      };
+    },
+    AUTH_TWO_FACTOR_REQUIRED: () => ({
+      title: 'Turn on two-factor login first',
+      body: 'Signing in from the internet needs it. Turn it on in hlabs at home, under Settings › Account.',
+    }),
+    DASHBOARD_NOT_PUBLIC: () => ({
+      title: "The dashboard isn't public",
+      body: "Make it public first, then add Cloudflare's sign-in in front.",
     }),
     // Backups and restore
     BACKUP_DEST_UNREACHABLE: () => ({

@@ -42,3 +42,17 @@ backup:
   pause: [webserver]
   beforeUpdate: true
 permissions: { network: internet }
+# Home widget (US-HOME-20, D-157): documents, and how many wait in the inbox, read with an API token.
+widgets:
+  - id: documents
+    name: Documents
+    template: twoStat
+    endpoint: { service: webserver, path: /api/statistics/ }
+    refresh: 300
+    fields:
+      first: { value: documents_total, label: documents }
+      second: { value: documents_inbox, label: in the inbox }
+    auth:
+      header: Authorization
+      prefix: 'Token '
+      help: In Paperless-ngx, open My profile and make an API auth token.

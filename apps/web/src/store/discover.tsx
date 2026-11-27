@@ -1,8 +1,14 @@
 // The store home (US-STORE-01): "Featured" cards, then the curated rows, each with "See all".
 import type { StoreApp } from '@hlabs/api';
+import { PhoneSection } from '@hlabs/ui';
 import { Link } from '@tanstack/react-router';
 import { storeCopy, tagLabels } from '../copy/store';
+import { useIsDesktop } from '../lib/use-media';
+import { useMe } from '../lib/use-me';
+import { usePendingUpdates } from '../shell/pending-updates';
 import { AppCard, FeaturedCard } from './cards';
+import { StoreChips } from './categories';
+import { PhoneAppList, PhoneFeaturedCard, PhoneUpdatesRow } from './phone-cards';
 import { StoreView } from './store-layout';
 import { useInstalls } from './use-installs';
 import { useStoreHome } from './use-store-home';
@@ -18,11 +24,60 @@ export function featuredEyebrow(app: StoreApp, index: number): { label: string; 
   return tag ? { label: tagLabels[tag]!, tag } : { label: copy.featured, tag: null };
 }
 
-export function Discover() {
+/** `shippedPhase`: the phase whose controls show (tests set it; D-036). */
+export function Discover({ shippedPhase }: { shippedPhase?: number } = {}) {
   const home = useStoreHome();
   const installs = useInstalls();
+  const desktop = useIsDesktop();
+  const updates = usePendingUpdates(useMe().data?.role === 'admin', shippedPhase);
   if (!home.data) return null;
   const { host, featured, collections } = home.data;
+  if (!desktop)
+    // PhoneStore (US-PHONE-10, D-172): Updates when some wait, the category chips, Featured cards you swipe
+    // sideways, then each row as a list.
+    return (
+      <StoreView title={copy.discover} phoneTitle={false}>
+        <div className="flex flex-col gap-5 pb-2">
+          {updates > 0 ? <PhoneUpdatesRow count={updates} /> : null}
+          <StoreChips />
+          {featured.length ? (
+            <section aria-labelledby="store-featured" className="flex flex-col gap-2">
+              <PhoneSection id="store-featured" title={copy.featured} />
+              <ul className="hl-p-featured-row m-0 list-none p-0">
+                {featured.map((app) => (
+                  <li key={app.id}>
+                    <PhoneFeaturedCard app={app} host={host} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+          {collections.map((row) => {
+            const title = row.title || copy.allApps;
+            const headingId = `store-row-${row.id}`;
+            return (
+              <section key={row.id} aria-labelledby={headingId} className="flex flex-col">
+                <PhoneSection
+                  id={headingId}
+                  title={title}
+                  action={
+                    <Link
+                      to="/store/collection/$collectionId"
+                      params={{ collectionId: row.id }}
+                      className="hl-p-link hl-focus"
+                      aria-label={copy.seeAllOf(title)}
+                    >
+                      {copy.seeAll}
+                    </Link>
+                  }
+                />
+                <PhoneAppList apps={row.apps} installs={installs} label={title} />
+              </section>
+            );
+          })}
+        </div>
+      </StoreView>
+    );
   return (
     <StoreView title={copy.discover} phoneTitle={false}>
       <div className="flex flex-col gap-8 pb-6">

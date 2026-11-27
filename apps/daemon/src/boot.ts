@@ -7,10 +7,22 @@ import { eq } from 'drizzle-orm';
 import { registerEngineRestart } from './engine/restart-job';
 import { registerEngineStart } from './engine/start-job';
 import { registerPause, resumeAfterQuit } from './apps/pause';
+import { finishFactoryReset, RESET_INCOMPLETE_KIND, takeFactoryResetMarker } from './system/factory-reset';
+import { requestRestart } from './system/lifecycle';
+import { SystemService } from './system/service';
 import { UninstallService } from './uninstall/service';
 import { registerHomeFolderTrash } from './users/home-trash-job';
 import { watchEngine } from './engine/watch';
-import { apps, MigrationFailedError, openDb, SchemaTooNewError, getSetting, setSetting, users } from '@hlabs/db';
+import {
+  apps,
+  MigrationFailedError,
+  openDb,
+  SchemaTooNewError,
+  getSetting,
+  setSetting,
+  storageLocations,
+  users,
+} from '@hlabs/db';
 import { hlabsError } from '@hlabs/api';
 import { nextOrigins } from '@hlabs/shared';
 import { existsSync, mkdirSync, renameSync, rmSync } from 'node:fs';
@@ -42,6 +54,12 @@ import { createMdnsPublisher, lanAddress, lanAddresses } from './mdns/publisher'
 import { DNS_RETRY_MS, DnsService } from './network/dns';
 import { RemoteService } from './network/remote';
 import { FakeTailscale } from './tailscale/fake';
+import { CloudflareApi } from './cloudflare/api';
+import { CloudflaredConnector } from './cloudflare/connector';
+import { FakeCloudflare } from './cloudflare/fake';
+import type { CloudflareClient, TunnelConnector } from './cloudflare/types';
+import { PublicService } from './public/service';
+import { CONTACT, recordContact } from './system/connections';
 import { LocalApiTailscale } from './tailscale/localapi';
 import type { TailscaleClient } from './tailscale/types';
 import { AppDiskUsage } from './apps/disk';
@@ -49,6 +67,10 @@ import { HlabsUpdates } from './updates/service';
 import { takeSwitchedBack, type HeadlessHost } from './updates/headless';
 import { nodeHeadlessHost } from './updates/headless-host';
 import { AUTO_UPDATED_KIND, AutoUpdates } from './updates/auto';
+import { StoreUpdateWatch } from './store/update-watch';
+import { SourcesService } from './store/sources';
+import { rootLocation } from './apps/folders';
+import { installedManifests, pendingUpdate } from './store/updates-list';
 import {
   confirmHeadlessSwitch,
   registerSystemUpdate,
@@ -72,11 +94,14 @@ import { FilesJanitor } from './files/janitor';
 import { FakeNas } from './platform/fake-nas';
 import { LinuxDiscovery, MacDiscovery, type NetworkDiscovery } from './platform/network-discovery';
 import { Destinations } from './backups/destinations';
-import { ResticCli, type Restic } from './backups/restic';
+import { hostCaFile, ResticCli, type Restic } from './backups/restic';
+import { HELPER_IMAGE } from './engine/helper-image';
 import { BackupService } from './backups/runner';
 import { PENDING_DB, RestoreService } from './backups/restore';
 import { PlanSizes } from './backups/plan';
 import { NetworkDrives } from './storage/drives';
+import { ImagePruner } from './storage/images';
+import { StorageSizes } from './storage/sizes';
 import { FilesService } from './files/service';
 import { Trash } from './files/trash';
 import { FileMover } from './files/move';
@@ -88,8 +113,11 @@ import { UsageHistory } from './usage/history';
 import { UsageSampler } from './usage/sampler';
 import { AppWatch } from './apps/app-watch';
 import { ReinstallService } from './apps/reinstall';
+import { AppConfigService } from './apps/config';
 import { NodeSystemProbe, type SystemProbe } from './platform/system';
 import { createSecretStore, type SecretStore } from './platform/secrets';
+import { AppWidgets } from './home/app-widgets';
+import { demoBootDeps } from './demo/fakes';
 import type { Readiness } from './readiness';
 import type { ServiceHolder, Services } from './services';
 
@@ -110,15 +138,22 @@ export interface BootDeps {
   mdns?: MdnsPublisher;
   /** The Tailscale on this computer (a fake in tests, and with HLABS_DEV_FAKE_TAILSCALE). */
   tailscale?: TailscaleClient;
+  /** Cloudflare and the cloudflared connector (a fake in tests, and with HLABS_DEV_FAKE_CLOUDFLARE). */
+  cloudflare?: CloudflareClient;
+  connector?: TunnelConnector;
   secrets?: SecretStore;
   system?: SystemProbe;
   host?: HostStats;
+  /** The computer's memory, for the usage samples (the docs screenshots' pretend Mac, D-177). */
+  totalMemory?: () => number;
   /** Tests that drive the sampler themselves turn the 5 s timer off. */
   sampleUsage?: boolean;
   /** Tests that drive the app watch themselves turn its 10 s timer off (US-APP-26). */
   watchApps?: boolean;
   /** Where hlabs's update manifest comes from (US-SYS-24); tests pass a fake. */
   updateSource?: UpdateSource;
+  /** How app sources are fetched (US-STORE-18); tests serve a library from disk. */
+  sourceFetch?: (url: string, init: { signal: AbortSignal; redirect: 'follow' }) => Promise<Response>;
   /** Tests turn the 6-hour update check off. */
   checkUpdates?: boolean;
   /** Headless updates' downloads, tar and restart; tests pass a fake. */
@@ -131,7 +166,8 @@ export interface BootDeps {
   mounter?: NetworkMounter;
   /** Finds SMB and NFS servers (US-FILE-11). */
   discovery?: NetworkDiscovery;
-  /** After a whole-system restore (US-BKP-18); tests pass a fake. */
+  /** Starts hlabsd again: after a whole-system restore (US-BKP-18), Restart hlabs (US-SYS-31) and a factory reset
+   * (US-SYS-38); tests pass a fake. */
   restartDaemon?: () => void;
   /** Run the backup schedule every minute and recover after a crash (off in most tests). */
   scheduleBackups?: boolean;
@@ -162,8 +198,15 @@ export interface BootDeps {
 export const UPDATE_HEALTH_WAIT_MS = 120_000;
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms).unref());
 
-export async function boot(deps: BootDeps): Promise<Services | null> {
-  const { config, logger, readiness, holder } = deps;
+export async function boot(bootDeps: BootDeps): Promise<Services | null> {
+  const { config, logger, readiness, holder } = bootDeps;
+  // The docs screenshots' instance (US-SITE-11, D-177): a pretend Mac, engine and apps, whatever this computer has.
+  const deps: BootDeps = config.devDemo
+    ? {
+        ...demoBootDeps({ dataDir: config.paths.dataDir, composePrefix: config.composePrefix }),
+        ...(Object.fromEntries(Object.entries(bootDeps).filter(([, v]) => v !== undefined)) as BootDeps),
+      }
+    : bootDeps;
 
   // 1. Config, database, migrations.
   readiness.step(0);
@@ -179,6 +222,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     readiness.fail('storage_unavailable');
     return null;
   }
+  // After a factory reset (US-SYS-38) the database goes before anything opens it: this start makes an empty one.
+  const resetMarker = takeFactoryResetMarker(config.paths.dataDir, logger);
   // A whole-system restore left the restored database (US-BKP-18): it goes in before anything opens the old one.
   const pendingDb = join(config.paths.dataDir, PENDING_DB);
   if (existsSync(pendingDb)) {
@@ -255,7 +300,10 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   const reaped = children.reapStale();
   if (reaped) logger.warn({ reaped }, 'ended helper processes a previous daemon left running');
   // Remote access first: starting Caddy frees the web ports Tailscale Serve holds for hlabs (D-111).
-  const tailscale = deps.tailscale ?? (config.devFakeTailscale ? new FakeTailscale() : new LocalApiTailscale());
+  const fakeTailscale = !deps.tailscale && config.devFakeTailscale ? new FakeTailscale() : null;
+  // "Connect" opens the pretend Tailscale's log-in page, where Approve finishes it (e2e sets its own link).
+  if (fakeTailscale) fakeTailscale.authUrl = FakeTailscale.DEV_SIGN_IN_PATH;
+  const tailscale = deps.tailscale ?? fakeTailscale ?? new LocalApiTailscale();
   const sessions = new SessionService(db, bus);
   const remote = new RemoteService({
     db,
@@ -282,6 +330,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     (config.mdns
       ? createMdnsPublisher(logger, () => getSetting(db, 'network').ports.https, children)
       : new NoopMdnsPublisher());
+  // Public apps (US-SYS-43): their listener comes from PublicService, made once notifications and sign-in exist.
+  let publicApps: PublicService | null = null;
   // A port another program holds (US-SYS-42): told to admins once notifications exist (below).
   let onPortProblem: (problem: PortProblem | null) => void = () => {};
   const network = new NetworkService({
@@ -290,6 +340,7 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     mdns,
     logger,
     routes: () => appService.routes(),
+    publicListener: () => publicApps?.listener() ?? null,
     dashboardUpstream: config.dashboardUpstream,
     daemon: `127.0.0.1:${config.port}`,
     heldBy: (port) => tailscaleServeHolds(port, { db, tailscale }),
@@ -327,8 +378,17 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
 
   // 4. The built-in store, then reconcile installed apps with the engine.
   readiness.step(3);
-  const catalog = new CatalogService(db, config.resources.storeDir, logger);
+  const catalog = new CatalogService(db, config.resources.storeDir, logger, join(config.paths.dataDir, 'sources'));
   const { synced, skipped } = catalog.syncBuiltin();
+  // Other app sources (US-STORE-18): read from their last copy now, synced again with the update check.
+  const sources = new SourcesService({
+    db,
+    catalog,
+    logger,
+    dataDir: config.paths.dataDir,
+    storageRoot: () => rootLocation(db)?.path ?? null,
+    fetch: deps.sourceFetch,
+  });
   logger.info({ apps: synced.length, skipped: skipped.length }, 'built-in store loaded');
   // Health waits take up to minutes, so apps come up in the background; /healthz doesn't wait for them.
   // How many reconciles are waiting or running: while any is, the tray says "Starting" (US-INST-11).
@@ -359,7 +419,15 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   // First run: keep the setup token ready and print the setup URL (US-ONB-01, D-041).
   const probe = deps.system ?? new NodeSystemProbe();
   const host = deps.host ?? new SystemHostStats();
-  const sampler = new UsageSampler({ db, bus, engine, host, logger, composePrefix: config.composePrefix });
+  const sampler = new UsageSampler({
+    db,
+    bus,
+    engine,
+    host,
+    logger,
+    composePrefix: config.composePrefix,
+    ...(deps.totalMemory ? { totalMemory: deps.totalMemory } : {}),
+  });
   registerEngineInstall({
     jobs,
     engine,
@@ -414,6 +482,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       },
     },
   });
+  // The onboarding after a factory reset reuses the setup token the browser that asked for it was given.
+  let resetLeft: { title: string; body: string } | null = null;
+  if (resetMarker) await finishFactoryReset(db, secrets, resetMarker, (n) => (resetLeft = n));
   const setupUrl = await onboarding.prepareSetupToken();
   if (setupUrl) {
     logger.info({ setupUrl }, 'hlabs is not set up yet: open the setup URL to start');
@@ -457,6 +528,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     appDataFreeBytes: () => probe.freeBytes(config.paths.appDataDir),
     isPortFree: deps.isPortFree,
     probes: deps.healthProbes,
+    // Uninstalling a public app makes it private first (US-APP-27).
+    makePrivate: (appId, by) => services.publicApps.makePrivateFor(appId, by),
   });
   installer.register();
   const updates = new UpdateService({
@@ -469,8 +542,12 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     engine,
     notifications,
     probes: deps.healthProbes,
+    backups: () => services.backups,
   });
   updates.register();
+  // App updates found by a store sync are announced once (US-STORE-16).
+  const installedManifest = installedManifests(appService);
+  const storeWatch = new StoreUpdateWatch({ db, bus, notifications, installed: installedManifest });
   const reinstalls = new ReinstallService({
     db,
     logger,
@@ -485,6 +562,19 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     probes: deps.healthProbes,
   });
   reinstalls.register();
+  const appConfig = new AppConfigService({
+    db,
+    logger,
+    jobs,
+    catalog,
+    apps: appService,
+    installer,
+    engine,
+    network,
+    probes: deps.healthProbes,
+    isPortFree: deps.isPortFree,
+  });
+  appConfig.register();
   const updateSource = deps.updateSource ?? new HttpUpdateSource();
   const hlabsUpdates = new HlabsUpdates({
     db,
@@ -492,7 +582,11 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     logger,
     source: updateSource,
     version: config.version,
-    syncStore: () => catalog.syncBuiltin(),
+    syncStore: async () => {
+      catalog.syncBuiltin();
+      await sources.syncAll();
+      storeWatch.afterSync();
+    },
     blocker: () => jobs.blocker('system_update'),
   });
   const systemUpdate: SystemUpdateDeps = {
@@ -519,6 +613,12 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       install: () => void startSystemUpdate(systemUpdate, null),
     },
     updateApp: (appId) => updates.update({ userId: null }, appId).jobId,
+    findUpdate: (appId) => {
+      const app = db.select().from(apps).where(eq(apps.id, appId)).get();
+      const u = app ? pendingUpdate(db, app, installedManifest) : null;
+      return u ? { to: u.store.version, newAccess: u.newAccess !== null } : null;
+    },
+    backupsDue: (until) => services.backups.dueBefore(until),
   });
   // Network drives (US-FILE-11): the system's tools, or a pretend NAS in development (HLABS_DEV_FAKE_NAS).
   const fakeNas = config.devFakeNas ? new FakeNas(join(config.paths.dataDir, 'fake-nas')) : null;
@@ -541,11 +641,47 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
   filesTrash.register();
   fileMover.register();
   const networkStorage = new NetworkStorage({ db, secrets, mounter, mountsDir });
-  const networkDrives = new NetworkDrives({ db, secrets, mounter, mountsDir, bus, logger });
+  const networkDrives = new NetworkDrives({
+    db,
+    secrets,
+    mounter,
+    mountsDir,
+    bus,
+    logger,
+    stopApp: (appId) => appService.stop(appId),
+  });
+  const storageSizes = new StorageSizes({
+    dataDir: config.paths.dataDir,
+    binDir: config.resources.binDir,
+    appDataDir: config.paths.appDataDir,
+    resticCacheDir: join(config.paths.dataDir, 'cache', 'restic'),
+    mountsDir,
+    storageRoot: () => {
+      const root = db.select().from(storageLocations).where(eq(storageLocations.isRoot, true)).get();
+      return root && (root.kind === 'local' || root.kind === 'external') ? root.path : null;
+    },
+  });
+  const imagePruner = new ImagePruner({
+    db,
+    engine,
+    jobs,
+    logger,
+    projectDir: (appId) => appService.project(appId).dir,
+  });
+  imagePruner.register();
   const drives = deps.drives ?? new NodeDriveProbe();
+  // On Linux, apps keep files to themselves that hlabs's user can't read or give back their owners: restic handles an
+  // app's data from a helper container there (D-190). As root, or on a Mac (Docker Desktop's sharing), it needn't.
+  const uid = process.getuid?.() ?? 0;
   const restic: Restic =
     deps.restic ??
-    new ResticCli(join(config.resources.binDir, 'restic'), join(config.paths.dataDir, 'cache', 'restic'));
+    new ResticCli(
+      join(config.resources.binDir, 'restic'),
+      join(config.paths.dataDir, 'cache', 'restic'),
+      process.platform === 'linux' && uid !== 0
+        ? { engine: () => engine.client, image: HELPER_IMAGE, uid, gid: process.getgid?.() ?? 0, caFile: hostCaFile() }
+        : null,
+    );
   const login = new LoginService(db, sessions, totp, bus, () =>
     nextOrigins({
       dashboardUrl: config.dashboardUrl,
@@ -574,7 +710,51 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
       await login.confirmPassword({ user, password, action, ip });
     },
   });
+  // Public apps through Cloudflare Tunnel (US-APP-27…29, US-SYS-43, 44): never the real Cloudflare in development or e2e.
+  const fakeCloudflare = config.devFakeCloudflare ? new FakeCloudflare() : null;
+  // "Sign in to Cloudflare" opens the pretend Cloudflare's page, where Approve finishes it (e2e sets its own link).
+  if (fakeCloudflare) fakeCloudflare.signInUrl = FakeCloudflare.DEV_SIGN_IN_PATH;
+  const cloudflareDir = join(config.paths.dataDir, 'cloudflare');
+  const cloudflare: CloudflareClient =
+    deps.cloudflare ??
+    fakeCloudflare ??
+    new CloudflareApi({
+      binary: join(config.resources.binDir, 'cloudflared'),
+      dir: cloudflareDir,
+      onContact: () => recordContact(db, CONTACT.cloudflare),
+    });
+  const connector: TunnelConnector =
+    deps.connector ??
+    fakeCloudflare ??
+    new CloudflaredConnector({
+      binary: join(config.resources.binDir, 'cloudflared'),
+      dir: cloudflareDir,
+      logger,
+      children,
+    });
+  publicApps = new PublicService({
+    db,
+    bus,
+    jobs,
+    logger,
+    secrets,
+    network,
+    apps: appService,
+    sessions,
+    totp,
+    cloudflare,
+    connector,
+    dataDir: config.paths.dataDir,
+    publicPort: config.publicPort,
+    confirmPassword: async (userId, password, action, ip) => {
+      const user = db.select().from(users).where(eq(users.id, userId)).get();
+      if (!user) throw hlabsError('AUTH_REQUIRED');
+      await login.confirmPassword({ user, password, action, ip });
+    },
+  });
+  publicApps.register();
   const services: Services = {
+    appWidgets: new AppWidgets({ db, secrets }),
     config,
     logger,
     readiness,
@@ -586,11 +766,13 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     proxy,
     mdns,
     catalog,
+    sources,
     store,
     installer,
     appDisk: disk,
     updates,
     reinstalls,
+    appConfig,
     hlabsUpdates,
     systemUpdate,
     autoUpdates,
@@ -598,6 +780,9 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     routing: network,
     remote,
     tailscale,
+    cloudflare,
+    connector,
+    publicApps,
     dns,
     apps: appService,
     reconciled,
@@ -620,6 +805,8 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     network: networkStorage,
     discovery,
     networkDrives,
+    storageSizes,
+    imagePruner,
     files,
     fileMover,
     filesTrash,
@@ -686,8 +873,40 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
           appendLog: async (line) => logger.info({ line }, 'uninstall: colima'),
         }),
     }),
+    // Made just below, from the services themselves.
+    advanced: undefined as unknown as SystemService,
   };
   services.uninstall.register();
+  services.advanced = new SystemService(services, {
+    restart: deps.restartDaemon ?? requestRestart,
+    // What shutdown stops on timers, so nothing brings an app back while a factory reset deletes.
+    quiesce: () => {
+      services.usage.stop();
+      services.usageHistory.stop();
+      services.appWatch.stop();
+      services.filesJanitor.stop();
+      services.networkDrives.stop();
+      services.destinations.stop();
+      services.backups.stop();
+      services.hlabsUpdates.stop();
+      services.autoUpdates.stop();
+      services.routing.stop();
+      services.login.stop();
+      // Nothing public while everything is deleted: the connector stops.
+      void services.publicApps.stop();
+    },
+  });
+  services.advanced.register();
+  if (resetLeft) {
+    const n: { title: string; body: string } = resetLeft;
+    services.notifications.create({
+      userId: null,
+      kind: RESET_INCOMPLETE_KIND,
+      severity: 'warning',
+      title: n.title,
+      body: n.body,
+    });
+  }
   holder.set(services);
   // Keep awake follows the setting and whether any app runs.
   services.keepAwake.update();
@@ -695,6 +914,11 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     if (entry.event.type === 'app.stateChanged') services.keepAwake.update();
   });
   services.login.startPruning();
+  // A tunnel set up before: its connector runs again, and the public listener comes back (US-SYS-43).
+  void services.publicApps
+    .start()
+    .then(() => network.sync())
+    .catch((err: unknown) => logger.error({ err }, 'public apps could not start'));
 
   // 6. Ready; usage sampling starts (US-USE-08).
   readiness.ready();
@@ -713,6 +937,11 @@ export async function boot(deps: BootDeps): Promise<Services | null> {
     void services.restores.recover().catch((err) => logger.warn({ err }, 'restore recovery failed'));
   }
   if (deps.checkUpdates !== false) {
+    try {
+      storeWatch.afterSync();
+    } catch (err) {
+      logger.warn({ err }, 'looking for app updates failed');
+    }
     services.hlabsUpdates.start();
     services.autoUpdates.start();
   }
@@ -773,6 +1002,7 @@ export async function shutdown(services: Services | null): Promise<void> {
   services.login.stop();
   services.keepAwake.stop();
   await services.jobs.shutdown();
+  await services.publicApps.stop().catch(() => {});
   await services.mdns.unpublishAll();
   await services.proxy.stop();
   services.db.$client.close();

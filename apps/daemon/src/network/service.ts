@@ -3,7 +3,7 @@
 // and tried again at the next change; the daemon keeps running without it.
 import { getSetting, type HlabsDb } from '@hlabs/db';
 import type { AppRoute } from '../apps/service';
-import type { ProxyManager, ProxyState } from '../caddy/index';
+import type { ProxyManager, ProxyState, PublicListener } from '../caddy/index';
 import type { EventBus } from '../events/bus';
 import type { Logger } from '../logger';
 import type { MdnsPublisher } from '../mdns/index';
@@ -16,6 +16,8 @@ export interface NetworkServiceDeps {
   mdns: MdnsPublisher;
   logger: Logger;
   routes: () => AppRoute[];
+  /** The public listener while Cloudflare Tunnel is set up (D-178), else null. */
+  publicListener?: () => PublicListener | null;
   dashboardUpstream: string;
   /** The daemon's loopback address, for forward auth. */
   daemon: string;
@@ -62,6 +64,7 @@ export class NetworkService {
       tailnetHost: tailnetHost(db),
       lanAddresses: (this.deps.lanAddresses ?? lanAddresses)(),
       apps: this.deps.routes(),
+      public: this.deps.publicListener?.() ?? null,
     };
   }
 

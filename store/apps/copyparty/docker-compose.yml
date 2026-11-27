@@ -1,0 +1,15 @@
+services:
+  copyparty:
+    image: docker.io/copyparty/ac:1.20.26@sha256:b2054d65e05daa8982ca17c26b12b74315c0ce586a03ff9018a59c80731b9e19
+    user: ${PUID}:${PGID}
+    # Without a config file of its own, copyparty in Docker turns reading off as a failsafe. A first start writes
+    # one that shares the folder with everyone who gets past the hlabs login; an existing file is left alone.
+    entrypoint:
+      - /bin/ash
+      - -c
+      - |
+        [ -f /cfg/hlabs.conf ] || printf '%s\n' '[/]' '  /w' '  accs:' '    rwmd: *' > /cfg/hlabs.conf
+        exec /bin/ash /z/cpp.sh -c /z/initcfg
+    volumes:
+      - ${HLABS_APP_DATA}/cfg:/cfg
+      - ${HLABS_FOLDER_FILES}:/w

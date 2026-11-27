@@ -79,9 +79,15 @@ backup:
   beforeUpdate: true
 dependsOn: []                    # other hlabs apps (ids) that must be installed
 permissions:                     # shown to the user; enforced where possible
-  network: lan                   # none | lan | internet (default internet)
+  network: lan                   # none | lan | internet (default internet): App settings' network switches start
+                                 # from it (US-APP-18): internet → both on, lan → internet off, none → both off
+  internetReason: Needed for website icons   # optional, max 80: shown under "Reach the internet" (US-APP-18)
   gpu: false
   dockerSocket: false            # true requires an admin warning at install
+  devices:                       # optional (D-163): passed in only when present on the computer (never on a Mac)
+    - { path: /dev/ttyUSB0, label: Zigbee USB adapter }
+  capabilities: []               # optional (D-163), from an allow-list: NET_ADMIN (a VPN). Devices and capabilities
+                                 # are risky: the install sheet lists them and asks for "I understand"
 ```
 
 ## Optional fields added in schema 1
@@ -94,26 +100,48 @@ web:
 widgets:                         # Home widgets the app can provide
   - id: library
     name: Photo library
-    template: stat               # stat | twoStat | list
-    endpoint: { service: immich-server, path: /api/server/statistics }
+    template: twoStat            # stat | twoStat | list
+    endpoint: { service: immich-server, path: /api/server/statistics }   # on the web service (D-049)
     refresh: 60                  # seconds
+    fields:                      # what fills the template, as paths in the JSON answer (D-157):
+      first: { value: photos, label: photos }      # stat: { value }; twoStat: { first, second };
+      second: { value: videos, label: videos }     # list: { items, title, detail? } (up to 3 rows)
+    auth:                        # optional: the endpoint needs a key made in the app; an admin pastes it in
+      header: x-api-key          # App settings and hlabs keeps it in the keychain. Such widgets are admins' only.
+      prefix: ''                 # before the key, e.g. "Token " or "Bearer "
+      help: Make a key in Immich under Account settings › API keys.
+public:                          # making the app public (D-150, D-171, 07 §7.10); defaults shown
+  allowed: true                  # false: never public (admin tools such as Portainer); an app with
+                                 # permissions.dockerSocket is never public whatever this says (D-179)
+  reason: It can see every password in your home.   # optional, ≤ 120 chars: why not, shown instead of
+                                 # "<App> can't be made public: it can control your other apps."
+  ownLoginSafe: false            # true: an admin may choose "<App>'s own login only" so its phone apps connect
+  maxBodyMb: 10                  # largest request through the public address, 1–10240 (raise for upload apps)
+overlaps: [remoteAccess]         # hlabs already does this: remoteAccess | backups | appManagement (D-148);
+                                 # the app's page says so ("hlabs already gives you remote access")
 ```
 The index may also carry optional `featured: [appId]`, `collections: [{ title, appIds }]` and per-app `rank` for the store home (D-019).
 
 ## Compose rules (enforced by the validator)
 - Use `${HLABS_APP_DATA}/<dir>` for app-private volumes and `${HLABS_FOLDER_<key>}` for folder requests. No other host bind mounts.
-- No `ports:` except those declared under `ports` above. No `privileged: true`, no `network_mode: host`, no `pid: host`, no `/var/run/docker.sock` unless `permissions.dockerSocket: true`.
-- Images must be pinned by tag **and** digest in the built-in store (`image: ghcr.io/…:v1.135.3@sha256:…`).
+- No `ports:` except those declared under `ports` above. No `privileged: true`, no `network_mode: host`, no `pid: host`, `ipc: host`, `uts: host`, `userns_mode: host` or `cgroup: host`, no `/var/run/docker.sock` unless `permissions.dockerSocket: true`.
+- `devices:` only for paths under `permissions.devices`, `cap_add:` only for `permissions.capabilities`, `sysctls:` only `net.*` and only with `NET_ADMIN` declared, `security_opt:` only `no-new-privileges` (D-163). hlabs leaves out a device that isn't on the computer.
+- Images must be pinned by tag **and** digest in the built-in store (`image: ghcr.io/…:v1.135.3@sha256:…`). An app whose image has no arm64 build lists only `linux/amd64` in `platforms` and shows "x86 only" (D-148).
+- An app ported from another store's definition (Runtipi, GPL-3.0; CasaOS, Apache-2.0) keeps a `NOTICE` file next to its manifest naming the source and its licence, and appears in `store/ATTRIBUTION.md` (D-148). `pnpm store:lint` checks both. A draft from the porting helper (`pnpm store:port`, US-STORE-25, D-153) marks what a person must decide with values starting `TODO`; `pnpm store:lint` refuses any manifest or compose value that starts `TODO`.
 - hlabs injects: a loopback port mapping `127.0.0.1:<port + 1000>:<web.port>` for the web service (D-049, D-086: the app's port is 12000–12999, its loopback port 13000–13999), network `hlabs` (external), labels `dev.hlabs.app=<id>`, `restart: unless-stopped`, log options (json-file, 10 MB × 3), and `TZ`.
 - Named and anonymous volumes are not allowed: everything an app keeps goes under `${HLABS_APP_DATA}` or a declared folder, so backups include it. `build`, `container_name` and `env_file` are not allowed either (hlabs names the project `hlabs-<id>` and writes the variables to the project's `.env`).
 - Only the web service joins the external `hlabs` network (with the project's `default` network); databases and workers stay on the project network. Every service gets the labels `dev.hlabs.app=<id>` and `dev.hlabs.service=<service>`.
+- App settings add to the render (US-APP-13…18, D-165): variables someone added are set on the web service (`KEY: ${KEY}`); folders given in AppPermissions are bind-mounted on the web service at `/mnt/hlabs/<folder-name>`; a manifest folder made read only is mounted `:ro`; an optional folder the app wasn't given is left out. With "Reach the internet" off, the app's own networks are `internal: true`, the web service doesn't join `hlabs`, and a forwarding sidecar `hlabs-forward` (`alpine/socat`, pinned by multi-arch digest) on the normal bridge `hlabs-edge` publishes the loopback web port (raw ports get `hlabs-forward-<protocol>-<port>`); while "Talk to other apps" is on the sidecar joins `hlabs` under the web service's name. With "Talk to other apps" off the web service leaves `hlabs`. The service names `hlabs-forward*`, the network `hlabs-edge` and container paths under `/mnt/hlabs/` are reserved for hlabs. A project keeps the compose file it was rendered from as `hlabs-source.yml`.
 - Validator issue codes (used by `pnpm store:lint` and install errors): `COMPOSE_INVALID`, `SERVICE_BUILD`, `IMAGE_NOT_PINNED`, `PRIVILEGED`, `HOST_NETWORK`, `HOST_PID`, `HOST_IPC`, `CONTAINER_NAME`, `ENV_FILE`, `PORT_NOT_DECLARED`, `BIND_MOUNT_NOT_ALLOWED`, `DOCKER_SOCKET`, `NAMED_VOLUME`, `UNKNOWN_FOLDER`, `MANIFEST_SERVICE_MISSING`.
 
 ## Variables available to compose
 `HLABS_APP_ID`, `HLABS_APP_DATA`, `HLABS_FOLDER_<KEY>`, `HLABS_HOSTNAME` (e.g. `immich.hlabs.local`), `HLABS_URL` (https URL), `HLABS_TAILNET_URL` (if remote access on), `TZ` (this computer's time zone by its current IANA name, e.g. `Asia/Kolkata`, never a legacy alias), `PUID`, `PGID`, plus every `env` key.
 
 ## Store index
-A source publishes `index.json` (generated by `pnpm store:build`): `{ schema: 1, source: { id, name }, apps: [{ id, version, revision, manifestUrl, composeUrl, logoUrl, digest, rank? }], featured?: [appId], collections?: [{ id, title, appIds }] }`. In the built-in store, `featured`, `collections` and `rank` come from `store/curation.yml` (`featured`, `collections: [{ id, title, appIds }]`, `rank: [appId]`, most popular first); `pnpm store:lint` checks that every id in it is an app in the store. `featured` and `collections` are the store home's Featured cards and rows (US-STORE-01); `rank` orders "Popular" (US-STORE-04). The daemon verifies the index signature (ed25519, source public key pinned when the source is added; the built-in source's key ships with hlabs).
+A source publishes `index.json` (generated by `pnpm store:build`): `{ schema: 1, source: { id, name }, apps: [{ id, version, revision, manifestUrl, composeUrl, logoUrl, digest, rank? }], featured?: [appId], collections?: [{ id, title, appIds }] }`. In the built-in store, `featured`, `collections` and `rank` come from `store/curation.yml` (`featured`, `collections: [{ id, title, appIds }]`, `rank: [appId]`, most popular first; `hold: [appId]`, apps the update bot leaves alone, US-STORE-24); `pnpm store:lint` checks that every id in it is an app in the store. `featured` and `collections` are the store home's Featured cards and rows (US-STORE-01); `rank` orders "Popular" (US-STORE-04). The daemon verifies the index signature (ed25519, source public key pinned when the source is added; the built-in source's key ships with hlabs).
+
+## Your own library (D-149)
+A library is a source in this same format: a folder with `apps/<id>/hlabs-app.yml`, `docker-compose.yml`, a logo and optional screenshots, and the `index.json` that `hlabs library index` builds (as `pnpm store:build` does for the built-in store), with `index.json.sig` when it's signed (`hlabs library keygen`, `hlabs library sign`: ed25519, the public key shown as a fingerprint when the source is added, US-STORE-19). `hlabs library check` runs the store's validator, so a library follows every compose rule above except that digests are optional. Apps copied from the built-in store ("Copy to my library") keep their manifest and compose file, with the id `<id>-custom` unless renamed. A signed library also publishes its public key as `hlabs-library.pub` beside `index.json`; `index.json.sig` is minisign's format (Ed25519 over the BLAKE2b-512 of the file, with a trusted comment and global signature), so `minisign -V` can check it too. hlabs reads a git repository's files from its raw address (GitHub, GitLab, Codeberg) and any other https address as the folder holding `index.json`; each app's manifest and compose file must match its `digest`. A folder library is read as it is at each sync (an `index.json` is only needed to sign it); when signed, apps changed since the index was signed are left out until it's signed again (D-160).
 
 ## Custom apps (DeployCustom, P3)
 Admins can paste a compose file (building from a git repo or Dockerfile is out of scope for v1). hlabs wraps it with a generated minimal manifest (name, icon gradient, web service/port chosen from a dropdown) and applies the same compose rules, except image digests are optional. Custom apps are labelled "Custom" and are never auto-updated.

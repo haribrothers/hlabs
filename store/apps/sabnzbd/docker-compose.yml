@@ -1,0 +1,15 @@
+services:
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:5.1.3@sha256:d225bbab93f54784c115a3b1d89711e469b1969c9f32aa6ebb11fb03b5804431
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        [ -f /config/sabnzbd.ini ] || printf '%s\n' '[misc]' 'host_whitelist = ${HLABS_HOSTNAME}, sabnzbd' 'download_dir = /downloads/incomplete' 'complete_dir = /downloads/complete' > /config/sabnzbd.ini
+        exec /init
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config
+      - ${HLABS_FOLDER_DOWNLOADS}:/downloads

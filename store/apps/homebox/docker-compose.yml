@@ -1,0 +1,11 @@
+services:
+  homebox:
+    image: ghcr.io/sysadminsmedia/homebox:0.27.1@sha256:9d0b64776c694f018c0ca06faf52105a33ca376024f46bb58e6ab0e2b728bb61
+    environment:
+      HBOX_LOG_LEVEL: info
+      HBOX_WEB_MAX_UPLOAD_SIZE: '10'
+      # No usage reports.
+      HBOX_OPTIONS_ALLOW_ANALYTICS: 'false'
+      HBOX_AUTH_API_KEY_PEPPER: ${API_KEY_PEPPER}
+    volumes:
+      - ${HLABS_APP_DATA}/data:/data

@@ -28,6 +28,8 @@ export type ToastAction =
       admin?: boolean;
       /** Hidden until the phase that delivers it ships (D-036). */
       feature?: Feature;
+      /** In the notifications panel the whole item opens it (its title is the link), not a button (US-HOME-14). */
+      item?: boolean;
     }
   | {
       /** Tries something in this page again (a download, US-APP-10); never from a notification. */

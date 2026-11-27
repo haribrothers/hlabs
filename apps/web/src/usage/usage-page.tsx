@@ -1,12 +1,13 @@
 // Live usage (US-USE-01…07, LiveUsage): how busy this computer is. The title and the engine it runs apps in, a time
 // range, four tiles (CPU, memory, storage, network), the main chart and the per-app table.
 import type { UsageOverview } from '@hlabs/api';
-import { GlassCard, ScrollPane, Segmented } from '@hlabs/ui';
+import { GlassCard, PhoneHeader, ScrollPane, Segmented } from '@hlabs/ui';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { usageCopy as copy } from '../copy/usage';
 import { pageQuery } from '../lib/error-copy';
+import { useIsDesktop } from '../lib/use-media';
 import { useMe } from '../lib/use-me';
 import { useTRPC } from '../lib/trpc';
 import { formatMemory } from './format';
@@ -15,6 +16,7 @@ import { MainChart } from './main-chart';
 import { RANGES, useUsageRange, type UsageRange } from './range';
 import { UsageTiles, type TileId } from './tiles';
 import { useLiveUsage } from './use-live-usage';
+import { InternetBanner } from '../public/home-only';
 
 /** "Container VM (Colima) · 4 CPUs · 8 GB allocated", "Docker Engine · uses the whole computer". */
 export function engineLine(engine: UsageOverview['engine']): string {
@@ -60,6 +62,60 @@ export function UsagePage() {
   useEffect(() => {
     document.title = copy.docTitle;
   }, []);
+  const desktop = useIsDesktop();
+
+  const tiles = (
+    <UsageTiles
+      current={current.data ?? null}
+      overview={overview.data ?? null}
+      points={points}
+      selected={metric}
+      onSelect={setMetric}
+      phone={!desktop}
+    />
+  );
+  const chart = (
+    <MainChart
+      metric={metric}
+      points={points}
+      range={range}
+      loading={switching}
+      memory={memory.data}
+      storage={overview.data?.storage}
+      memTotalBytes={overview.data?.memTotalBytes ?? current.data?.host.memTotalBytes ?? 0}
+      phone={!desktop}
+    />
+  );
+  const table = apps.data ? (
+    <AppTable
+      apps={apps.data.apps}
+      current={current.data ?? null}
+      onBrowseStore={me.data?.canInstallApps ? () => void navigate({ to: '/store' }) : undefined}
+      phone={!desktop}
+    />
+  ) : null;
+  const ranges = (
+    <Segmented
+      aria-label={copy.range}
+      value={range}
+      onChange={(v) => setRange(v as UsageRange)}
+      options={RANGES.map((value) => ({ value, label: copy.ranges[value] }))}
+      fill={!desktop}
+    />
+  );
+
+  if (!desktop)
+    // PhoneRedesignA_Usage (US-PHONE-27): "Live usage" as a large title with the engine under it, the range across the
+    // page, the tiles two to a row, the chart in a box and the apps as an inset list; the page scrolls as a whole.
+    return (
+      <div className="flex w-full flex-col gap-3.5">
+        <PhoneHeader title={copy.title} subtitle={overview.data ? engineLine(overview.data.engine) : undefined} />
+        {ranges}
+        {tiles}
+        {chart}
+        {table}
+      </div>
+    );
 
   return (
     // Like Settings and the Store, as tall as an app window: a window that fills the space above the Dock and never makes the page scroll; the
@@ -68,6 +124,7 @@ export function UsagePage() {
       level={2}
       className="hl-window-fill mx-auto flex min-h-0 w-full max-w-window flex-1 flex-col overflow-hidden p-0"
     >
+      <InternetBanner variant="window" />
       <ScrollPane
         className="flex-1"
         // The body sits inside the scroller's right margin (mr-2) and its scrollbar gutter (8px), so the header's right
@@ -83,38 +140,13 @@ export function UsagePage() {
                 {overview.data ? engineLine(overview.data.engine) : ' '}
               </p>
             </div>
-            <Segmented
-              aria-label={copy.range}
-              value={range}
-              onChange={(v) => setRange(v as UsageRange)}
-              options={RANGES.map((value) => ({ value, label: copy.ranges[value] }))}
-            />
+            {ranges}
           </header>
         }
       >
-        <UsageTiles
-          current={current.data ?? null}
-          overview={overview.data ?? null}
-          points={points}
-          selected={metric}
-          onSelect={setMetric}
-        />
-        <MainChart
-          metric={metric}
-          points={points}
-          range={range}
-          loading={switching}
-          memory={memory.data}
-          storage={overview.data?.storage}
-          memTotalBytes={overview.data?.memTotalBytes ?? current.data?.host.memTotalBytes ?? 0}
-        />
-        {apps.data ? (
-          <AppTable
-            apps={apps.data.apps}
-            current={current.data ?? null}
-            onBrowseStore={me.data?.canInstallApps ? () => void navigate({ to: '/store' }) : undefined}
-          />
-        ) : null}
+        {tiles}
+        {chart}
+        {table}
       </ScrollPane>
     </GlassCard>
   );

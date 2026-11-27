@@ -1,0 +1,25 @@
+schema: 1
+id: freshrss
+name: FreshRSS
+version: '1.30.4'
+revision: 1
+tagline: Follow your favourite sites and blogs in one place
+description: |
+  Subscribe to news sites, blogs and YouTube channels and read what's new in one tidy list, in the
+  browser or in any RSS app on your phone. The first visit sets up your account.
+category: productivity
+developer: { name: FreshRSS, url: https://freshrss.org }
+source: https://github.com/FreshRSS/FreshRSS
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#0062be', '#002a52']
+  fallback: rss
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: freshrss, port: 80, embed: true }
+ownLogin: true
+backup:
+  pause: [freshrss]
+  beforeUpdate: true
+permissions: { network: internet }

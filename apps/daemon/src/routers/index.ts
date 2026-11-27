@@ -14,6 +14,7 @@ import { network } from './network';
 import { jobs } from './jobs';
 import { notifications } from './notifications';
 import { onboarding } from './onboarding';
+import { publicAccess } from './public';
 import { storage } from './storage';
 import { store } from './store';
 import { settings } from './settings';
@@ -39,6 +40,7 @@ export const handlers: AppHandlers<DaemonContext> = {
   users,
   invites,
   network,
+  public: publicAccess,
   tray,
   usage,
   backups: backups as AppHandlers<DaemonContext>['backups'],

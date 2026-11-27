@@ -1,0 +1,33 @@
+services:
+  zigbee2mqtt:
+    image: docker.io/koenkk/zigbee2mqtt:2.14.3@sha256:fb4a6b0f6868ad1cd6a9996479802b2420e599c3463b62bbff8c8cd9a908f43a
+    environment:
+      ZIGBEE2MQTT_CONFIG_MQTT_SERVER: mqtt://zigbee2mqtt-mosquitto:1883
+      ZIGBEE2MQTT_CONFIG_MQTT_USER: hlabs
+      ZIGBEE2MQTT_CONFIG_MQTT_PASSWORD: ${MQTT_PASSWORD}
+      ZIGBEE2MQTT_CONFIG_FRONTEND_ENABLED: 'true'
+      ZIGBEE2MQTT_CONFIG_FRONTEND_PORT: '8080'
+      ZIGBEE2MQTT_CONFIG_HOMEASSISTANT_ENABLED: 'true'
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+      - /dev/ttyACM0:/dev/ttyACM0
+    volumes:
+      - ${HLABS_APP_DATA}/data:/app/data
+    depends_on:
+      - zigbee2mqtt-mosquitto
+  zigbee2mqtt-mosquitto:
+    image: docker.io/library/eclipse-mosquitto:2.0.23@sha256:6a332cc7a8dbe011cbc076180cbb76b37c6f0f55809682ea08e7980ef0112ad9
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        [ -f /mosquitto/config/mosquitto.conf ] || printf '%s\n' 'listener 1883' 'allow_anonymous false' 'password_file /mosquitto/config/passwd' 'persistence true' 'persistence_location /mosquitto/data/' > /mosquitto/config/mosquitto.conf
+        mosquitto_passwd -b -c /mosquitto/config/passwd hlabs "$$MQTT_PASSWORD"
+        # Mosquitto drops to its own user, which must own its files (the image's entrypoint, skipped here, does this).
+        chown -R mosquitto:mosquitto /mosquitto/config /mosquitto/data
+        exec mosquitto -c /mosquitto/config/mosquitto.conf
+    environment:
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    volumes:
+      - ${HLABS_APP_DATA}/mosquitto/config:/mosquitto/config
+      - ${HLABS_APP_DATA}/mosquitto/data:/mosquitto/data

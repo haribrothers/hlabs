@@ -1,11 +1,17 @@
 // A tile's menu (US-HOME-07): right-click, Shift+F10 or the Menu key, or a 500 ms long press on touch. Admins get
 // Open, Settings, View logs, Restart and Stop (Start when stopped) and Uninstall…; while an app is on its way
-// somewhere only View logs; members only Open. Esc or a click outside closes it and focus goes back to the tile.
+// somewhere only View logs; members only Open. Esc or a click outside closes it and focus goes back to the tile. On a
+// tablet the long press lifts the tile over a blurred Home with the same items beside it (TabletMenu, US-TAB-02).
 import {
+  CircleStop,
   ExternalLink,
   iconDefaults,
+  LayoutGrid,
   Play,
+  RotateCcw,
   RotateCw,
+  ScrollText,
+  Settings,
   SlidersHorizontal,
   Square,
   TextAlignStart,
@@ -19,15 +25,19 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  useIsPhone,
+  useIsTouch,
+  vibrateOnce,
 } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
-import { useId, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import { useId, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { UninstallDialog } from '../apps/uninstall-dialog';
 import { ReinstallDialog } from '../apps/reinstall';
 import { homeCopy } from '../copy/home';
 import { useTRPC } from '../lib/trpc';
 import type { HomeApp } from './home-app';
+import { useAppOverlay } from '../apps/app-overlay';
+import { PhoneTileMenu, phoneMenuItems, type PhoneMenuItem } from './phone-tile-menu';
 
 const copy = homeCopy.menu;
 /** How long a finger rests on a tile before its menu opens. */
@@ -56,6 +66,7 @@ export function TileMenu({
   isAdmin,
   onOpen,
   onCommand,
+  onEditHome,
   disabled = false,
   children,
 }: {
@@ -65,9 +76,11 @@ export function TileMenu({
   disabled?: boolean;
   onOpen: () => void;
   onCommand: (command: TileCommand) => void;
+  /** "Edit Home" at the end of the menu (US-HOME-16), when edit mode is available. */
+  onEditHome?: () => void;
   children: ReactNode;
 }) {
-  const navigate = useNavigate();
+  const overlay = useAppOverlay();
   const [open, setOpen] = useState(false);
   const [uninstalling, setUninstalling] = useState(false);
   const [reinstallOpen, setReinstallOpen] = useState(false);
@@ -75,6 +88,10 @@ export function TileMenu({
   const labelId = useId();
   const press = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number } | null>(null);
   const pressed = useRef(false);
+  // On a phone the long press lifts the tile over a blurred Home with its menu (US-PHONE-08, D-172).
+  const phone = useIsPhone();
+  // On a tablet the same, with the desktop's items (TabletMenu, US-TAB-02).
+  const touch = useIsTouch();
 
   const show = () => {
     pressed.current = false;
@@ -93,6 +110,7 @@ export function TileMenu({
       timer: setTimeout(() => {
         // The finger lifts after the menu opens: that tap mustn't open the app too.
         pressed.current = true;
+        if (phone || touch) vibrateOnce();
         setOpen(true);
       }, LONG_PRESS_MS),
     };
@@ -117,27 +135,12 @@ export function TileMenu({
     );
   item('open', copy.open, ExternalLink, onOpen, { disabled: isAdmin && moving });
   if (isAdmin && moving) {
-    item(
-      'logs',
-      copy.logs,
-      TextAlignStart,
-      () => void navigate({ to: '/apps/$appId/logs', params: { appId: app.id } }),
-    );
+    item('logs', copy.logs, TextAlignStart, () => overlay.openLogs(app.id));
   } else if (isAdmin) {
     if (app.state !== 'install_failed') {
-      item(
-        'settings',
-        copy.settings,
-        SlidersHorizontal,
-        () => void navigate({ to: '/apps/$appId/settings', params: { appId: app.id }, state: { from: '/' } }),
-      );
+      item('settings', copy.settings, SlidersHorizontal, () => overlay.openSettings(app.id));
     }
-    item(
-      'logs',
-      copy.logs,
-      TextAlignStart,
-      () => void navigate({ to: '/apps/$appId/logs', params: { appId: app.id } }),
-    );
+    item('logs', copy.logs, TextAlignStart, () => overlay.openLogs(app.id));
     if (app.state === 'running' || app.state === 'error') {
       items.push(<DropdownMenuSeparator key="sep-commands" />);
       item('restart', copy.restart, RotateCw, () => onCommand('restart'));
@@ -151,9 +154,95 @@ export function TileMenu({
     items.push(<DropdownMenuSeparator key="sep-uninstall" />);
     item('uninstall', copy.uninstall, Trash2, () => setUninstalling(true), { danger: true });
   }
-  // "Edit Home" (US-HOME-16) joins the end of this menu in phase 7 (D-036).
+  if (onEditHome) {
+    items.push(<DropdownMenuSeparator key="sep-edit" />);
+    item('edit', homeCopy.editHome, LayoutGrid, onEditHome);
+  }
 
   if (disabled) return children;
+  const handlers = {
+    onKeyDown,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp: endPress,
+    onPointerCancel: endPress,
+    onClickCapture: (e: MouseEvent) => {
+      if (!pressed.current) return;
+      pressed.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+    },
+  };
+  if (touch) {
+    const items = touchMenuItems(app, isAdmin, moving, {
+      open: onOpen,
+      settings: () => overlay.openSettings(app.id),
+      logs: () => overlay.openLogs(app.id),
+      command: onCommand,
+      reinstall: () => setReinstallOpen(true),
+      uninstall: () => setUninstalling(true),
+      editHome: onEditHome,
+    });
+    return (
+      <div
+        ref={holder}
+        className="hl-no-callout relative"
+        // The OS's own menu (and the long press's text selection) never shows on a tile; the timer opens ours.
+        onContextMenu={(e) => e.preventDefault()}
+        {...handlers}
+      >
+        {children}
+        <PhoneTileMenu
+          beside
+          app={app}
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (!o) requestAnimationFrame(() => holder.current?.querySelector<HTMLElement>('.hl-app')?.focus());
+          }}
+          anchor={() => holder.current?.querySelector<HTMLElement>('.hl-app-icon') ?? null}
+          items={items}
+        >
+          {uninstalling ? <UninstallFor appId={app.id} onClose={() => setUninstalling(false)} /> : null}
+          {reinstallOpen ? <ReinstallFor appId={app.id} onClose={() => setReinstallOpen(false)} /> : null}
+        </PhoneTileMenu>
+      </div>
+    );
+  }
+  if (phone) {
+    const items = phoneMenuItems(app, isAdmin, moving, {
+      open: onOpen,
+      settings: () => overlay.openSettings(app.id),
+      logs: () => overlay.openLogs(app.id),
+      command: onCommand,
+      reinstall: () => setReinstallOpen(true),
+      uninstall: () => setUninstalling(true),
+    });
+    return (
+      <div
+        ref={holder}
+        className="hl-no-callout relative w-full"
+        // The OS's own menu (and the long press's text selection) never shows on a tile; the timer opens ours.
+        onContextMenu={(e) => e.preventDefault()}
+        {...handlers}
+      >
+        {children}
+        <PhoneTileMenu
+          app={app}
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (!o) requestAnimationFrame(() => holder.current?.querySelector<HTMLElement>('.hl-app')?.focus());
+          }}
+          anchor={() => holder.current?.querySelector<HTMLElement>('.hl-app-icon') ?? null}
+          items={items}
+        >
+          {uninstalling ? <UninstallFor appId={app.id} onClose={() => setUninstalling(false)} /> : null}
+          {reinstallOpen ? <ReinstallFor appId={app.id} onClose={() => setReinstallOpen(false)} /> : null}
+        </PhoneTileMenu>
+      </div>
+    );
+  }
   return (
     <div
       ref={holder}
@@ -199,6 +288,47 @@ export function TileMenu({
       {reinstallOpen ? <ReinstallFor appId={app.id} onClose={() => setReinstallOpen(false)} /> : null}
     </div>
   );
+}
+
+/**
+ * A tablet's tile menu (TabletMenu, US-TAB-02): the desktop's items (US-HOME-07) in the phone's lifted layer, Uninstall…
+ * and Edit Home each apart.
+ */
+export function touchMenuItems(
+  app: HomeApp,
+  isAdmin: boolean,
+  moving: boolean,
+  act: {
+    open: () => void;
+    settings: () => void;
+    logs: () => void;
+    command: (c: TileCommand) => void;
+    reinstall: () => void;
+    uninstall: () => void;
+    editHome?: () => void;
+  },
+): PhoneMenuItem[] {
+  const items: PhoneMenuItem[] = [
+    { id: 'open', label: copy.open, glyph: ExternalLink, onSelect: act.open, disabled: isAdmin && moving },
+  ];
+  if (isAdmin && moving) items.push({ id: 'logs', label: copy.logs, glyph: ScrollText, onSelect: act.logs });
+  else if (isAdmin) {
+    if (app.state !== 'install_failed')
+      items.push({ id: 'settings', label: copy.settings, glyph: Settings, onSelect: act.settings });
+    items.push({ id: 'logs', label: copy.logs, glyph: ScrollText, onSelect: act.logs });
+    if (app.state === 'running' || app.state === 'error')
+      items.push({ id: 'restart', label: copy.restart, glyph: RotateCcw, onSelect: () => act.command('restart') });
+    if (app.state === 'running')
+      items.push({ id: 'stop', label: copy.stop, glyph: CircleStop, onSelect: () => act.command('stop') });
+    if (app.state === 'error')
+      items.push({ id: 'reinstall', label: copy.reinstall, glyph: Wrench, onSelect: act.reinstall });
+    if (app.state === 'stopped')
+      items.push({ id: 'start', label: copy.start, glyph: Play, onSelect: () => act.command('start') });
+    items.push({ id: 'uninstall', label: copy.uninstall, glyph: Trash2, onSelect: act.uninstall, danger: true });
+  }
+  if (act.editHome)
+    items.push({ id: 'edit', label: homeCopy.editHome, glyph: LayoutGrid, onSelect: act.editHome, apart: true });
+  return items;
 }
 
 /** "Uninstall…" from a tile: the same dialog as App settings, once the app's details are in (US-APP-11). */

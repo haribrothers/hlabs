@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { appsCopy } from '../copy/apps';
 import { useTRPC } from '../lib/trpc';
+import { sourcesCopy } from '../copy/store-sources';
 
 const copy = appsCopy;
 /** How soon to ask again while the first disk count is still going. */
@@ -47,7 +48,11 @@ export function AppStorage({ app }: { app: AppDetail }) {
 export function AppVersion({ app }: { app: AppDetail }) {
   return (
     <p className="m-0 text-body-sm text-ink-muted">
-      {app.latestVersion ? copy.updateAvailable(app.version, app.latestVersion) : copy.upToDate(app.version)}
+      {app.sourceRemoved
+        ? `${copy.versionOnly(app.version)} · ${sourcesCopy.sourceRemoved}`
+        : app.latestVersion
+          ? copy.updateAvailable(app.version, app.latestVersion)
+          : copy.upToDate(app.version)}
     </p>
   );
 }

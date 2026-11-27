@@ -1,0 +1,34 @@
+schema: 1
+id: calibre-web
+name: Calibre-Web
+version: '0.6.27'
+revision: 1
+tagline: Read and share your Calibre ebook library in the browser
+description: |
+  Browse, read and download the books in a Calibre library, and send them to an e-reader. Point it at
+  a folder with a Calibre library (it has a metadata.db file). Sign in the first time as admin with
+  the password admin123, then change it in Admin.
+category: books
+developer: { name: Calibre-Web, url: https://github.com/janeczku/calibre-web }
+source: https://github.com/janeczku/calibre-web
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#45b29d', '#164038']
+  fallback: book-open
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: calibre-web, port: 8083, embed: true }
+folders:
+  - key: books
+    label: Books
+    description: Your ebook library
+    target: /books
+    default: shared:Books
+    mode: rw
+    required: true
+ownLogin: true
+backup:
+  pause: [calibre-web]
+  beforeUpdate: true
+permissions: { network: internet }

@@ -10,8 +10,8 @@ export const areaLabels = {
   settings: 'Settings',
 } as const;
 
-/** The phone tab bar says "Apps" for the App Store (US-PHONE-01). */
-export const phoneAreaLabels = { ...areaLabels, store: 'Apps' } as const;
+/** The phone tab bar names the areas as the Dock does: "App Store" (US-PHONE-01, D-172). */
+export const phoneAreaLabels = areaLabels;
 
 export const shellCopy = {
   /** The connection banner (US-STATE-19). */
@@ -32,4 +32,8 @@ export const uiStrings: Partial<UiStrings> = {
   search: 'Search',
   addToDock: 'Add to Dock',
   dismiss: 'Dismiss',
+  close: 'Close',
+  cancel: 'Cancel',
+  more: (name: string) => `More for ${name}`,
+  back: 'Back',
 };

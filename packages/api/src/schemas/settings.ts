@@ -3,6 +3,8 @@ import { io } from '../trpc';
 import { empty, engineKindSchema, jobRefSchema, ok, pending } from './common';
 
 export const accentSchema = z.enum(['violet', 'mint', 'amber', 'rose']);
+/** Wallpapers (US-ACCT-32): Dusk (the default), Ocean, Forest, or the person's own uploaded photo. */
+export const wallpaperSchema = z.enum(['dusk', 'ocean', 'forest', 'custom']);
 
 export const startupSchema = z.object({
   /** Start hlabs when the person logs in; the tray applies it (D-042). */
@@ -34,9 +36,13 @@ export const settings = {
   /** Global settings shown in Settings; more keys join with their sections. */
   get: io(empty, z.object({ startup: startupSchema })),
   appearance: {
+    /**
+     * The caller's own look (D-010, US-ACCT-32…35), any signed-in person: only the fields sent change. `custom`
+     * needs a photo uploaded first (`POST /api/appearance/wallpaper`), else VALIDATION_FAILED.
+     */
     update: io(
       z.object({
-        wallpaper: z.string().optional(),
+        wallpaper: wallpaperSchema.optional(),
         accent: accentSchema.optional(),
         reduceTransparency: z.boolean().optional(),
         reduceMotion: z.boolean().optional(),

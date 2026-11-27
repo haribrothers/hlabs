@@ -1,0 +1,35 @@
+schema: 1
+id: karakeep
+name: Karakeep
+version: '0.35.0'
+revision: 1
+tagline: Bookmarks, notes and images, tagged and searchable
+description: |
+  Save links, notes, images and PDFs in one place. Karakeep fetches titles and previews, keeps a copy of
+  each page and makes everything searchable. Create your account on the first visit; the first account
+  is the admin. Karakeep was called Hoarder.
+category: productivity
+developer: { name: Karakeep, url: https://karakeep.app }
+source: https://github.com/karakeep-app/karakeep
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#f97316', '#5c2a09']
+  fallback: bookmark
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1536, disk: 2048 }
+web: { service: karakeep, port: 3000, embed: true }
+env:
+  - key: NEXTAUTH_SECRET
+    type: secret
+    generate: true
+    hidden: true
+  - key: MEILI_MASTER_KEY
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [karakeep, karakeep-meilisearch]
+  beforeUpdate: true
+permissions: { network: internet }

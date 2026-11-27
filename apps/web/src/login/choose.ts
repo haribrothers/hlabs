@@ -14,8 +14,11 @@ export function chooseLoginView(opts: {
   remembered: RememberedUser | null;
   listedUsers: number;
   next?: string;
+  /** On the dashboard's public address only the typed sign-in (LoginPublic, US-SYS-46), whoever was remembered. */
+  publicAddress?: boolean;
 }): LoginDestination {
   if (opts.signedIn) return { href: safeNext(opts.next) };
+  if (opts.publicAddress) return { to: '/login/username', search: withNext(opts.next) };
   if (opts.remembered)
     return { to: '/login/password', search: { user: opts.remembered.username, ...withNext(opts.next) } };
   return { to: opts.listedUsers > 0 ? '/login/users' : '/login/username', search: withNext(opts.next) };

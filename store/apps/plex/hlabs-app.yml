@@ -1,0 +1,48 @@
+schema: 1
+id: plex
+name: Plex
+version: '1.43.5'
+revision: 1
+tagline: Stream your films, shows and music to every screen
+description: |
+  Plex organises the films, series and music on your drives and streams them to its apps on TVs,
+  phones and game consoles. Sign in with a free Plex account on the first visit. Plex is closed source;
+  some features need a Plex Pass. Its TV and phone apps on your network connect on port 32400.
+category: media
+developer: { name: Plex, url: https://www.plex.tv }
+source: https://github.com/linuxserver/docker-plex
+license: Proprietary
+icon:
+  logo: logo.svg
+  gradient: ['#282a2d', '#0b0c0d']
+  fallback: clapperboard
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 2048, disk: 4096 }
+web: { service: plex, port: 32400, embed: true }
+health: { service: plex, http: /identity, timeout: 300 }
+folders:
+  - key: media
+    label: Media library
+    description: Your movies, shows and music
+    target: /media
+    default: shared:Media
+    mode: ro
+    required: true
+ports:
+  - service: plex
+    container: 32400
+    host: 32400
+    protocol: tcp
+    label: Plex apps on your TV and phones
+env:
+  - key: PLEX_CLAIM
+    type: secret
+    label: Claim code
+    description: Optional. From plex.tv/claim, valid for 4 minutes; links this server to your Plex account.
+    required: false
+ownLogin: true
+backup:
+  pause: [plex]
+  exclude: [Library/Application Support/Plex Media Server/Cache/, transcode/]
+  beforeUpdate: true
+permissions: { network: internet }

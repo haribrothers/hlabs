@@ -20,6 +20,10 @@ If hlabs can't announce its name on your network, the row says **Not published**
 
 To pick other ports, choose **Change**. Use 443 and 80, or numbers from 1024 to 65535. hlabs checks they're free first, and lists the ports your apps already use so you can avoid them. After you save, the page moves to the new address; bookmarks with the old port stop working.
 
+## Public access
+
+**Public access** lets you make single apps, or the dashboard itself, reachable from the internet at names under your own domain, through Cloudflare Tunnel. It lists the dashboard and every public app with its address, who can get in, and since when; see [Make an app public](/help/remote-access/make-an-app-public/) and [Make the dashboard public](/help/remote-access/make-the-dashboard-public/).
+
 ## App addresses
 
 Every installed app has its own address, such as `https://jellyfin.hlabs.local`. Choose an address to open the app in a new tab, or **Copy** to copy it. An app whose name can't be announced uses its own port on hlabs's address instead, like `https://hlabs.local:12001`.

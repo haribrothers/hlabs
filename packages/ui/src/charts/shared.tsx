@@ -33,7 +33,7 @@ export const DOWNSAMPLE_TO = 200;
  * Which points to keep: all of them up to 500; otherwise at most 200 buckets, each kept by its highest total so peaks
  * survive. The chart, its keyboard stepping and its hidden table all use the same set.
  */
-export function downsample(n: number, series: { values: number[] }[]): number[] {
+export function downsample(n: number, series: { values: ReadonlyArray<number | null> }[]): number[] {
   const all = Array.from({ length: n }, (_, i) => i);
   if (n <= DOWNSAMPLE_OVER) return all;
   const size = n / DOWNSAMPLE_TO;
@@ -116,34 +116,38 @@ export function SrTable({
   columns: string[];
   rows: string[][];
 }) {
+  // Hidden in a 1px box: a table itself grows to its rows whatever its size says, so a long one would make the
+  // nearest scrolling container scroll (App settings' Usage tab).
   return (
-    <table className="hl-sr" id={id}>
-      <caption>{caption}</caption>
-      <thead>
-        <tr>
-          {columns.map((c, i) => (
-            <th key={i} scope="col">
-              {c}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r, i) => (
-          <tr key={i}>
-            {r.map((c, j) =>
-              j === 0 ? (
-                <th key={j} scope="row">
-                  {c}
-                </th>
-              ) : (
-                <td key={j}>{c}</td>
-              ),
-            )}
+    <div className="hl-sr">
+      <table id={id}>
+        <caption>{caption}</caption>
+        <thead>
+          <tr>
+            {columns.map((c, i) => (
+              <th key={i} scope="col">
+                {c}
+              </th>
+            ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i}>
+              {r.map((c, j) =>
+                j === 0 ? (
+                  <th key={j} scope="row">
+                    {c}
+                  </th>
+                ) : (
+                  <td key={j}>{c}</td>
+                ),
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

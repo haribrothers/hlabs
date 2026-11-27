@@ -88,8 +88,9 @@ test('US-STORE-17 a new version that does not start is rolled back to the one th
   await expect(settings.getByText('Version 1.0.0 · 1.1.0 available')).toBeVisible();
   await settings.getByRole('button', { name: 'Update' }).click();
 
-  // It goes updating → rolling_back → running, on 1.0.0 again.
-  await expect.poll(async () => (await app(page))?.state, { timeout: 120_000 }).toBe('rolling_back');
+  // It goes updating → rolling_back → running, on 1.0.0 again. Rolling back can be over between two polls, so the
+  // update is seen starting, then running again; the page's banner below says it was rolled back.
+  await expect.poll(async () => (await app(page))?.state, { timeout: 120_000 }).toMatch(/^(updating|rolling_back)$/);
   await expect.poll(async () => (await app(page))?.state, { timeout: 120_000 }).toBe('running');
   const after = (await app(page))!;
   expect(after.version).toBe('1.0.0');
@@ -98,7 +99,9 @@ test('US-STORE-17 a new version that does not start is rolled back to the one th
   // The app's page says what happened.
   await page.goto(`/store/app/${ID}`);
   const banner = page.getByRole('status').filter({ hasText: 'rolled it back' });
-  await expect(banner.getByText("Rollback demo's update didn't start, so hlabs rolled it back")).toBeVisible();
+  await expect(banner.getByText("Rollback demo's update didn't start, so hlabs rolled it back")).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(banner.getByText("It's running 1.0.0 again.")).toBeVisible();
   await banner.getByRole('button', { name: 'Dismiss' }).click();
   await expect(banner).toHaveCount(0);

@@ -7,8 +7,8 @@ features: [F-INST-01, F-INST-02, F-ONB-02]
 import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 import macInstall from '../../../../assets/screens/MacInstall.webp';
 import trayStates from '../../../../assets/screens/TrayStates.webp';
-import onbSystem from '../../../../assets/screens/OnbSystem.webp';
-import onbWelcome from '../../../../assets/screens/OnbWelcome.webp';
+import setupSystem from '../../../../assets/shots/setup-system.webp';
+import setupWelcome from '../../../../assets/shots/setup-welcome.webp';
 
 For admins: the person who installs hlabs.
 
@@ -56,11 +56,11 @@ A Mac with Apple silicon (an Intel build is offered when there is one) running m
      </TabItem>
    </Tabs>
 
-   <img src={onbSystem.src} alt="Setup's system check: processor, macOS, the container engine, free space and web ports." width="900" loading="lazy" />
+   <img src={setupSystem.src} alt="Setup's system check: processor, macOS, the container engine, free space and web ports." width="900" loading="lazy" />
 
 5. Follow the rest of setup: your admin account, two-factor login, where your data lives and a few apps to start with. See [Set up hlabs](../../get-started/set-up/).
 
-   <img src={onbWelcome.src} alt="Setup's welcome screen with Get started." width="900" loading="lazy" />
+   <img src={setupWelcome.src} alt="Setup's welcome screen with Get started." width="900" loading="lazy" />
 
 </Steps>
 

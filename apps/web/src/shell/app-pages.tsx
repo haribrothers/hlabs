@@ -1,12 +1,22 @@
 // The pages the daemon answers with on app hostnames, where the dashboard isn't loaded (US-AUTH-17, US-AUTH-19). They
 // are built into the fallback bundle (pages.html) and read their data from the JSON the daemon adds, so they make no
 // requests. "Search" on the 404 screen needs the dashboard, so it isn't here. The "no access" page matches the dashboard's
-// (AccessDenied) with the app and who to ask.
+// (AccessDenied) with the app and who to ask. On a public app's address (D-178) the sign-in in front of the app, signing
+// out and "<App> isn't running" come from ./public-pages, and "no access" offers Sign out, as the dashboard isn't there.
 import { Lock, TriangleAlert, iconDefaults } from '@hlabs/icons';
 import { Avatar, avatarColorFor, GlassCard } from '@hlabs/ui';
 import { useEffect } from 'react';
 import { engineCopy } from '../copy/engine';
 import { accessCopy, appPageCopy } from '../copy/settings';
+import {
+  AppNotRunning,
+  PublicSignIn,
+  PublicSignOut,
+  SignOutForm,
+  type AppNotRunningData,
+  type PublicSignInData,
+  type PublicSignOutData,
+} from './public-pages';
 
 export interface NoAccessData {
   kind: 'noAccess';
@@ -17,11 +27,18 @@ export interface NoAccessData {
   displayName: string;
   avatarColor: string | null;
   accent: string;
+  /** On a public app's address: Sign out (POST /.hlabs/sign-out) instead of Home, which isn't reachable there. */
+  publicHost?: string;
 }
 
 /** What the daemon puts in `<script id="hlabs-page">` (apps/daemon/src/http/static-page.ts). */
 export type AppPageData =
-  { kind: 'notFound'; homeUrl: string } | { kind: 'engineStopped'; homeUrl: string } | NoAccessData;
+  | { kind: 'notFound'; homeUrl: string }
+  | { kind: 'engineStopped'; homeUrl: string }
+  | NoAccessData
+  | PublicSignInData
+  | PublicSignOutData
+  | AppNotRunningData;
 
 export function readAppPageData(doc: Document = document): AppPageData | null {
   try {
@@ -97,7 +114,13 @@ export function AppNoAccess({ data }: { data: NoAccessData }) {
             <span className="text-caption text-ink-muted">{appPageCopy.member}</span>
           </span>
         </div>
-        <HomeLink href={data.homeUrl} />
+        {data.publicHost ? (
+          <div className="flex w-full max-w-[400px] flex-col">
+            <SignOutForm />
+          </div>
+        ) : (
+          <HomeLink href={data.homeUrl} />
+        )}
       </GlassCard>
     </main>
   );
@@ -107,6 +130,9 @@ export function AppPage({ data }: { data: AppPageData | null }) {
   // Without data (opened directly), send people Home on this host's dashboard.
   if (!data) return <AppNotFound homeUrl="/" />;
   if (data.kind === 'noAccess') return <AppNoAccess data={data} />;
+  if (data.kind === 'publicSignIn') return <PublicSignIn data={data} />;
+  if (data.kind === 'publicSignOut') return <PublicSignOut data={data} />;
+  if (data.kind === 'appNotRunning') return <AppNotRunning data={data} />;
   if (data.kind === 'engineStopped') return <AppEngineStopped homeUrl={data.homeUrl} />;
   return <AppNotFound homeUrl={data.homeUrl} />;
 }

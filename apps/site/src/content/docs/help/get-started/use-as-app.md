@@ -31,3 +31,7 @@ If the app can't reach hlabs, because this computer is offline, away from home w
 ## Remove it
 
 Remove it like any other app: in Chrome or Edge, open the app's menu (the three dots at the top) and choose **Uninstall**; for Safari's app, drag it out of the Dock and delete it from your Applications folder. Nothing in hlabs changes.
+
+## On your phone
+
+You can add hlabs to your phone's Home Screen too: on an iPhone in Safari, tap **Share**, then **Add to Home Screen**; on Android in Chrome, choose **Install app** from the browser menu. See [Use hlabs on your phone](../phone/#add-hlabs-to-your-home-screen).

@@ -13,6 +13,7 @@ import { errorCode, errorLine } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useNow } from '../lib/use-now';
+import { HomeOnly } from '../public/home-only';
 
 /** How often to ask while waiting for the person to log in to Tailscale. */
 export const LOGIN_POLL_MS = 2_000;
@@ -54,7 +55,9 @@ export function useRemoteConnect({ via = 'settings' }: { via?: 'settings' | 'onb
           via === 'onboarding'
             ? await client.onboarding.connectRemote.mutate(input)
             : await client.network.remote.connect.mutate(input);
-        if (result.state === 'needs_login' && result.loginUrl && tab) tab.location.href = result.loginUrl;
+        // The pretend Tailscale's page under `pnpm dev` is a path on this address: made whole for the blank tab.
+        if (result.state === 'needs_login' && result.loginUrl && tab)
+          tab.location.href = new URL(result.loginUrl, window.location.href).toString();
         // Not installed: the tab shows where to get it (US-ONB-17).
         else if (result.state === 'not_installed' && tab) tab.location.href = tailscaleDownload();
         else tab?.close();
@@ -194,9 +197,11 @@ function DisconnectButton() {
       },
     });
   return (
-    <Button variant="secondary" size="sm" onClick={ask}>
-      {copy.disconnect}
-    </Button>
+    <HomeOnly procedure="network.remote.disconnect" label={copy.disconnect}>
+      <Button variant="secondary" size="sm" onClick={ask}>
+        {copy.disconnect}
+      </Button>
+    </HomeOnly>
   );
 }
 
@@ -207,9 +212,11 @@ export function TailscaleRow({ remote }: { remote: RemoteStatus }) {
   const now = useNow().getTime();
   const { connect, problem, dialogs } = useRemoteConnect();
   const connectButton = (
-    <Button variant="secondary" size="sm" busy={connect.isPending} onClick={() => connect.mutate({})}>
-      {copy.connect}
-    </Button>
+    <HomeOnly procedure="network.remote.connect" label={copy.connect}>
+      <Button variant="secondary" size="sm" busy={connect.isPending} onClick={() => connect.mutate({})}>
+        {copy.connect}
+      </Button>
+    </HomeOnly>
   );
   let subtitle: ReactNode = copy.notConnectedHint;
   let trailing: ReactNode = connectButton;

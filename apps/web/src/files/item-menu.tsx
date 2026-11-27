@@ -2,8 +2,20 @@
 // key; arrow keys move, Enter chooses, Esc closes and focus goes back to the item. On a phone the same actions open
 // from the item's "•••" as a bottom sheet (PhoneFilesActions).
 import type { FileEntry } from '@hlabs/api';
-import { AppLogo, appTileLook } from '@hlabs/icons';
-import { fileKindOf, FileIcon } from '@hlabs/icons/files';
+import {
+  AppLogo,
+  appTileLook,
+  Copy,
+  Download,
+  Eye,
+  FolderInput,
+  iconDefaults,
+  Link2,
+  Pencil,
+  Share,
+  Trash2,
+  type LucideIcon,
+} from '@hlabs/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +25,12 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-  ModalDialog,
+  BottomSheet,
+  InsetRow,
+  InsetRowButton,
+  InsetRowContent,
+  insetRowClass,
+  SheetHeader,
 } from '@hlabs/ui';
 import type { FileAccent } from '@hlabs/ui/files';
 import { useQuery } from '@tanstack/react-query';
@@ -23,6 +40,7 @@ import { filesCopy as copy } from '../copy/files';
 import { appAddress } from '../lib/app-address';
 import { useTRPC } from '../lib/trpc';
 import { metaOf } from './file-grid';
+import { phoneMetaOf, PhoneItemIcon } from './phone-file-list';
 import type { ItemAction, MenuEntry } from './item-menu-model';
 
 function useOpenWithApps(entry: FileEntry | null) {
@@ -109,11 +127,23 @@ export function ItemMenu({
   );
 }
 
-const ROW =
-  'hl-focus flex min-h-12.5 w-full cursor-pointer items-center gap-3 border-0 border-t border-hairline bg-transparent px-4 text-left font-sans text-body first:border-t-0 disabled:cursor-default disabled:opacity-45';
-const INK = 'text-ink';
+const GLYPH: Partial<Record<ItemAction, LucideIcon>> = {
+  open: Eye,
+  share: Share,
+  download: Download,
+  copyLink: Link2,
+  rename: Pencil,
+  move: FolderInput,
+  duplicate: Copy,
+  trash: Trash2,
+};
+/** The actions that are tiles at the top of a phone's sheet (PhoneRedesignA_FilesActions). */
+const TILES: ItemAction[] = ['open', 'share', 'download'];
 
-/** A phone's "•••" for one item: its name and size, then the same actions in groups. */
+/**
+ * A phone's "•••" for one item (PhoneRedesignA_FilesActions): its icon, name and size beside "✕", Open, Share and
+ * Download as tiles, then the other actions as inset lists with their glyphs, Move to Trash apart in red.
+ */
 export function ItemSheet({
   entry,
   accent,
@@ -129,37 +159,61 @@ export function ItemSheet({
 }) {
   const apps = useOpenWithApps(entry);
   const [openWith, setOpenWith] = useState(false);
+  const [now] = useState(() => Date.now());
   const choose = (action: ItemAction) => {
     onClose();
     onAction(action);
   };
+  const all = groups.flat();
+  const tiles = TILES.map((a) => all.find((m) => m.action === a)).filter((m): m is MenuEntry => !!m);
+  const rows = groups.map((g) => g.filter((m) => !TILES.includes(m.action))).filter((g) => g.length > 0);
+  const glyph = (action: ItemAction) => {
+    const Glyph = GLYPH[action];
+    return Glyph ? (
+      <span aria-hidden className="hl-p-row-glyph">
+        <Glyph {...iconDefaults} />
+      </span>
+    ) : undefined;
+  };
   return (
-    <ModalDialog open onOpenChange={(open) => (open ? null : onClose())} sheetOnPhone title={entry.name}>
-      <div className="flex flex-col gap-3.5">
-        <div className="-mt-2 flex items-center gap-3">
-          {entry.kind === 'folder' ? (
-            <FileIcon folder path={entry.path} accent={accent} size={40} />
-          ) : (
-            <FileIcon kind={fileKindOf(entry.name, entry.mime)} name={entry.name} mime={entry.mime} size={40} />
-          )}
-          <span className="text-body-sm text-ink-muted">{metaOf(entry)}</span>
-        </div>
-        {groups.map((group) => (
-          <div key={group[0]!.action} className="overflow-hidden rounded-lg bg-surface-row">
+    <BottomSheet open onOpenChange={(open) => (open ? null : onClose())} titled closeButton={false}>
+      <SheetHeader
+        leading={<PhoneItemIcon entry={entry} accent={accent} size={40} />}
+        title={entry.name}
+        subtitle={entry.kind === 'folder' ? metaOf(entry) : phoneMetaOf(entry, now)}
+        onClose={onClose}
+      />
+      <div className="hl-sheet-scroll flex flex-col gap-4 pt-2 pb-6">
+        {tiles.length ? (
+          <div className="hl-p-actions">
+            {tiles.map((m) => {
+              const Glyph = GLYPH[m.action]!;
+              return (
+                <button
+                  key={m.action}
+                  type="button"
+                  className="hl-p-action"
+                  disabled={m.disabled}
+                  onClick={() => choose(m.action)}
+                >
+                  <Glyph aria-hidden {...iconDefaults} />
+                  {m.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+        {rows.map((group) => (
+          <div key={group[0]!.action} className="hl-p-group">
             {group.map((m) =>
               m.action === 'openWith' ? (
                 <Fragment key={m.action}>
-                  <button
-                    type="button"
-                    className={`${ROW} ${INK}`}
+                  <InsetRowButton
+                    title={m.label}
                     aria-expanded={openWith}
+                    chevron
                     onClick={() => setOpenWith((o) => !o)}
-                  >
-                    <span className="flex-1">{m.label}</span>
-                    <span aria-hidden="true" className="text-ink-muted">
-                      ›
-                    </span>
-                  </button>
+                  />
                   {openWith
                     ? (apps.length ? apps : [null]).map((app) =>
                         app ? (
@@ -168,42 +222,43 @@ export function ItemSheet({
                             href={appAddress(app.urls)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={`${ROW} ${INK} pl-8 no-underline`}
+                            className={insetRowClass()}
                           >
-                            <AppLogo
-                              decorative
-                              name={app.name}
-                              src={app.icon.logoUrl}
-                              colors={appTileLook(app.name, app.icon, 20).colors}
-                              fallbackIcon={appTileLook(app.name, app.icon, 20).fallbackIcon}
-                              size={20}
-                              radius={6}
+                            <InsetRowContent
+                              leading={
+                                <AppLogo
+                                  decorative
+                                  name={app.name}
+                                  src={app.icon.logoUrl}
+                                  colors={appTileLook(app.name, app.icon, 24).colors}
+                                  fallbackIcon={appTileLook(app.name, app.icon, 24).fallbackIcon}
+                                  size={24}
+                                  radius={6}
+                                />
+                              }
+                              title={app.name}
                             />
-                            {app.name}
                           </a>
                         ) : (
-                          <span key="none" className={`${ROW} pl-8 text-ink-muted`}>
-                            {copy.noApps}
-                          </span>
+                          <InsetRow key="none" title={<span className="text-ink-muted">{copy.noApps}</span>} />
                         ),
                       )
                     : null}
                 </Fragment>
               ) : (
-                <button
+                <InsetRowButton
                   key={m.action}
-                  type="button"
-                  className={`${ROW} ${m.danger ? 'text-danger' : INK}`}
+                  title={m.label}
+                  danger={m.danger}
                   disabled={m.disabled}
+                  trailing={glyph(m.action)}
                   onClick={() => choose(m.action)}
-                >
-                  {m.label}
-                </button>
+                />
               ),
             )}
           </div>
         ))}
       </div>
-    </ModalDialog>
+    </BottomSheet>
   );
 }

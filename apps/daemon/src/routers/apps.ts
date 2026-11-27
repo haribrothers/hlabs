@@ -1,8 +1,13 @@
 import type { AppHandlers } from '@hlabs/api';
 import { hlabsError } from '@hlabs/api';
 import { listApps } from '../apps/list';
-import { visibleAppIds } from '../home/layout';
+import { appUpdatesOf } from '../store/updates-list';
+import { auditLog } from '@hlabs/db';
+import { ulid } from '@hlabs/shared';
+import { widgetKeyRef } from '../home/app-widgets';
+import { appWidgetsOf, visibleAppIds } from '../home/layout';
 import type { DaemonContext } from '../context';
+import { actor } from './public';
 
 /** The signed-in person, as an installer. */
 function installer(ctx: DaemonContext) {
@@ -34,6 +39,8 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
   install: (input, ctx) =>
     ctx.services.installer.begin(installer(ctx), {
       ...input,
+      // From the source it's listed in (a library app isn't in the built-in store, US-STORE-27).
+      source: input.source ?? ctx.services.sources.sourceOf(input.appId) ?? undefined,
       env: input.env ?? {},
       mounts: (input.mounts ?? []).map((m) => ({ ...m, subpath: m.subpath ?? '', mode: m.mode ?? 'rw' })),
       acceptRisks: input.acceptRisks ?? false,
@@ -62,9 +69,70 @@ export const apps: AppHandlers<DaemonContext>['apps'] = {
   watchLogs: (input, ctx, signal) =>
     ctx.services.logs.watch(input.appId, { service: input.service, since: input.since }, signal),
   update: (input, ctx) => ctx.services.updates.update(installer(ctx), input.appId),
+  /** Every app in the Updates list, in its order (US-STORE-15). */
+  updateAll: (_input, ctx) => {
+    const order = appUpdatesOf(ctx.services).pending.map((p) => p.appId);
+    return ctx.services.updates.updateAll(installer(ctx), order);
+  },
   retryInstall: (input, ctx) => ctx.services.installer.retry(installer(ctx), input.appId, input.portOverrides?.web),
   uninstall: (input, ctx) => ctx.services.installer.uninstall(installer(ctx), input.appId, input.keepData),
   reinstall: (input, ctx) => ctx.services.reinstalls.reinstall(installer(ctx), input.appId),
+  // App settings › Configuration and Permissions (US-APP-13…18), admins only (the router's access).
+  getConfig: (input, ctx) => ctx.services.appConfig.get(input.appId, installer(ctx)),
+  revealSecret: (input, ctx) => ctx.services.appConfig.revealSecret(installer(ctx), input.appId, input.key),
+  setConfig: (input, ctx) =>
+    ctx.services.appConfig.setConfig(installer(ctx), input.appId, {
+      env: input.env,
+      hostname: input.hostname,
+      hostPort: input.hostPort,
+    }),
+  setPermissions: (input, ctx) =>
+    ctx.services.appConfig.setPermissions(installer(ctx), input.appId, {
+      mounts: input.mounts.map((m) => ({ ...m, subpath: m.subpath ?? '', mode: m.mode ?? 'rw' })),
+      network: input.network,
+    }),
+  // "Require hlabs login" (US-APP-19): the route changes at once, audited.
+  setAuthMode: async (input, ctx) => {
+    await ctx.services.appConfig.setAuthMode(installer(ctx), input.appId, input.mode);
+    return { ok: true as const };
+  },
+  /** Whether this app's Home widgets need a key, and whether one is set (US-HOME-20, D-157). */
+  widgetKey: async ({ appId }, ctx) => {
+    const app = appWidgetsOf(ctx.services.db, appId);
+    if (!app) throw hlabsError('NOT_FOUND');
+    const keyed = app.widgets.find((w) => w.auth);
+    return {
+      needed: Boolean(keyed),
+      set: keyed ? Boolean(await ctx.services.secrets.get(widgetKeyRef(appId))) : false,
+      help: keyed?.auth?.help ?? null,
+    };
+  },
+  /** The key in the keychain (never SQLite or logs), audited without it (07 §7.7). */
+  setWidgetKey: async ({ appId, key }, ctx) => {
+    const user = installer(ctx);
+    const app = appWidgetsOf(ctx.services.db, appId);
+    if (!app?.widgets.some((w) => w.auth)) throw hlabsError('NOT_FOUND');
+    if (key === null) await ctx.services.secrets.delete(widgetKeyRef(appId));
+    else await ctx.services.secrets.set(widgetKeyRef(appId), key);
+    ctx.services.appWidgets.forget(appId);
+    ctx.services.db
+      .insert(auditLog)
+      .values({
+        id: ulid(),
+        at: Date.now(),
+        userId: user.userId,
+        action: key === null ? 'app.widget_key.removed' : 'app.widget_key.set',
+        target: appId,
+        detailJson: null,
+        ip: user.ip,
+      })
+      .run();
+    return { ok: true as const };
+  },
+  // Public apps (US-APP-27…29): admins only (the router's access, and PublicService again).
+  setPublic: (input, ctx) => ctx.services.publicApps.setPublic(actor(ctx), input),
+  publicOptions: ({ appId }, ctx) => ctx.services.publicApps.options(appId, actor(ctx)),
+  publicVisits: (input, ctx) => ctx.services.publicApps.visits(actor(ctx), input),
   /** Only the apps this person can open, enforced here, not in the UI (07 §7.4). */
   list: (_input, ctx) => {
     const id = ctx.identity;

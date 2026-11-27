@@ -281,60 +281,93 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 
 ## Phase 7 · v1.0 completeness
 
-- [ ] US-HOME-13 · Open the notifications panel
-- [ ] US-HOME-14 · Act on and clear notifications
-- [ ] US-HOME-15 · See a friendly empty Home
-- [ ] US-HOME-16 · Enter and leave edit mode
-- [ ] US-HOME-17 · Rearrange apps and widgets
-- [ ] US-HOME-18 · Remove an app or widget from Home
-- [ ] US-HOME-19 · Add a widget from the picker
-- [ ] US-HOME-22 · Pin my favourite apps to the Dock
-- [ ] US-HOME-20 · Show app widgets with live data
-- [ ] US-STORE-04 · Browse a category
-- [ ] US-STORE-05 · Search results with filters
-- [ ] US-STORE-15 · See and apply available updates
-- [ ] US-STORE-16 · Check for updates and auto-update in the background
-- [ ] US-STORE-18 · See and manage app sources
-- [ ] US-STORE-19 · Add a source with a pinned signing key
-- [ ] US-APP-13 · Edit environment variables
-- [ ] US-APP-14 · Secrets are hidden and can be revealed by an admin
-- [ ] US-APP-15 · Change web address and port
-- [ ] US-APP-16 · Save configuration and restart
-- [ ] US-APP-17 · Folder access
-- [ ] US-APP-18 · Network access
-- [ ] US-APP-19 · Require hlabs login in front of an app
-- [ ] US-APP-20 · Resource use tiles and 24-hour chart
-- [ ] US-APP-21 · Per-container usage
-- [ ] US-ACCT-32 · Choose a wallpaper
-- [ ] US-ACCT-33 · Choose an accent colour
-- [ ] US-ACCT-34 · Home screen options
-- [ ] US-ACCT-35 · Reduce transparency and motion
-- [ ] US-SYS-11 · See what is using storage
-- [ ] US-SYS-12 · Manage data location and drives
-- [ ] US-SYS-13 · Free space from unused app images
-- [ ] US-SYS-14 · Empty everyone's trash
-- [ ] US-SYS-27 · View hlabs logs
-- [ ] US-SYS-28 · Download a diagnostics bundle
-- [ ] US-SYS-29 · See what hlabs connects to
-- [ ] US-SYS-30 · Opt in to beta updates
-- [ ] US-SYS-31 · Restart hlabs
-- [ ] US-SYS-37 · Confirm a factory reset
-- [ ] US-SYS-38 · Reset hlabs
-- [ ] US-PHONE-01 · Switch to the phone layout with a bottom tab bar
-- [ ] US-PHONE-02 · Touch targets, safe areas and phone-friendly inputs
-- [ ] US-PHONE-03 · Bottom sheets with soft spring and drag to dismiss
-- [ ] US-PHONE-04 · Back navigation and resuming after the phone sleeps
-- [ ] US-PHONE-05 · Log in on a phone
-- [ ] US-PHONE-06 · Two-factor, lockout and forgot password on phone
-- [ ] US-PHONE-07 · Phone Home header and stacked widgets
-- [ ] US-PHONE-08 · App grid and opening apps on phone
-- [ ] US-PHONE-09 · Search from Home on phone
-- [ ] US-PHONE-10 · Browse the App Store on phone
-- [ ] US-PHONE-11 · App details on phone
-- [ ] US-PHONE-12 · Install an app from the phone
-- [ ] US-PHONE-23 · Add hlabs to the home screen
-- [ ] US-PHONE-24 · Run as a standalone web app
-- [ ] US-SITE-11 · Keep screenshots in the docs current
+Not shipped yet. "Done when", 26 Nov 2026:
+- #1 Every story's tests pass: unit and integration (3,135), e2e (522; axe in 78 specs, glass and solid). Four e2e specs failed once in the full local run and passed alone (US-AUTH-02, US-AUTH-03, US-SYS-41, US-STATE-14). On PR #10 (27 Nov) every check passes on CI, including e2e on Linux in every project, after fixing tests that only failed there (US-SYS-28, US-ACCT-02, US-PHONE-03, US-PHONE-11, US-APP-24). Still to check by hand: the phone layouts on Android Chrome; iOS Safari's last fixes (the bottom band, switches, the tile menu, the tab bar with the keyboard).
+- #2 The 100 approved apps are in `store/`. The first full matrix on `phase-7` (GitHub run 45868074399, Ubuntu 26.04, 26 Nov) installed 88 of 100: the waves had been checked on macOS, where Docker Desktop hides file ownership. Fixed by D-188 (who writes an app's data on Linux), D-189 (restart is stop, then up), wg-easy on nftables and port 53 for Pi-hole's runner; checked in an Ubuntu 26.04 VM and on macOS. The full matrix then installed **100 of 100** (run 45878192345, 27 Nov).
+- #3 D-171 has the prototype's findings. Through the real Cloudflare on `h4sandbox.online`: the named tunnel, a public app's record, hlabs's login in front and HTTPS on every leg (Q-24). Still to check by hand: making an app private deletes its record with the sign-in credential, and a phone app behind the login.
+- #4 Checked by hand on `h4sandbox.online`, 26 Nov 2026 (Q-25): Cloudflare's sign-in in front (with the Access token, D-187), live updates through the tunnel, and an upload over 100 MB. Still to note from outside the home network: two-factor sign-in, a home-only change refused, the app tiles, and turning it off.
+- #5 The 1.0 release: not yet.
+
+- [x] US-HOME-13 · Open the notifications panel (the bell shows the count as the story asks, not the dot drawn; checked at desktop and phone width)
+- [x] US-HOME-14 · Act on and clear notifications (D-155; "Review" opens `/store/updates`, which arrives with US-STORE-15 in group 4)
+- [x] US-HOME-15 · See a friendly empty Home (members allowed to install apps get the admin version)
+- [x] US-HOME-16 · Enter and leave edit mode ("Wallpaper" shows once Appearance is built, group 8)
+- [x] US-HOME-17 · Rearrange apps and widgets (dnd-kit; the pick-up announcement is followed at once by "<App>, position 1 of N")
+- [x] US-HOME-18 · Remove an app or widget from Home
+- [x] US-HOME-19 · Add a widget from the picker (with Remote access and Backups widgets, which were missing)
+- [x] US-HOME-22 · Pin my favourite apps to the Dock
+- [x] US-HOME-20 · Show app widgets with live data (D-157: fields and admins' API keys; widgets for Immich, Jellyfin and Paperless-ngx, not checked against live apps yet)
+- [x] US-STORE-04 · Browse a category (Popular, New, A–Z remembered per browser; pages of 50; feature `storeBrowse`)
+- [x] US-STORE-05 · Search results with filters (the daemon filters and counts; "Can't find an app?" shows with app sources, group 5)
+- [x] US-STORE-15 · See and apply available updates (`apps.updateAll`; the Dock badge; Update all in Settings › Updates too)
+- [x] US-STORE-16 · Check for updates and auto-update in the background (D-158: release dates, new access, the backup first, `app.updatesAvailable`)
+- [x] US-STORE-18 · See and manage app sources (D-160: git sources over HTTPS raw files, folders under the storage root; feature `storeSources`)
+- [x] US-STORE-19 · Add a source with a pinned signing key (minisign-format ed25519; "Trust this source?" shows the fingerprint)
+- [x] US-STORE-23 · Find the apps people run on a home server (D-161, `store/APPS.md`; all four waves in: 23 media and book apps, 23 file and productivity apps, 21 AI, developer, finance, security and other apps, 19 home, network and monitoring apps (D-163 devices and capabilities); three screenshots each, except Plex and Tautulli (need a plex.tv account), Tailscale (sign-in only) and Ollama (no page), and one for DDNS Updater; "x86 only", the porting credit and the overlap note)
+- [x] US-STORE-24 · Keep the built-in apps up to date (D-154; `pnpm store:updates` checked against the real registries for all 14 apps, `--pr` against a throwaway clone with a stand-in `gh`; store-updates.yml first runs once it's on `main`; its checks need the `STORE_UPDATES_TOKEN` secret)
+- [x] US-STORE-25 · Port an app with the porting helper (D-153; checked for real: Vaultwarden drafted from Runtipi, its four TODOs resolved, then store:lint and store:matrix passed; Jellyfin drafted from CasaOS)
+- [x] US-STORE-26 · Test only the apps a change touches (D-152; checked locally and by a run of store.yml on the phase-7 branch with Uptime Kuma; the nightly schedule runs from `main`, so shards of five and issues are first seen after the phase is merged)
+- [x] US-STORE-27 · Start my own app library (`hlabs library init/add/check/index`; Mac admins and the CLI: Q-22)
+- [x] US-STORE-28 · Sign my library (`hlabs library keygen/sign`, the key in hlabs's keychain)
+- [x] US-STORE-29 · Copy a built-in app into my library (a git library's copy downloads as a zip)
+- [x] US-APP-13 · Edit environment variables
+- [x] US-APP-14 · Secrets are hidden and can be revealed by an admin
+- [x] US-APP-15 · Change web address and port
+- [x] US-APP-16 · Save configuration and restart
+- [x] US-APP-17 · Folder access
+- [x] US-APP-18 · Network access
+- [x] US-APP-19 · Require hlabs login in front of an app
+- [x] US-APP-20 · Resource use tiles and 24-hour chart
+- [x] US-APP-21 · Per-container usage
+- [x] US-APP-27 · Make an app public (D-179, D-180; the real tunnel and a name in a real zone are Q-24's hand checks)
+- [x] US-APP-28 · Choose who gets into a public app (sign-in on the public address, D-178; e2e stands in for Caddy's public listener, its routing is the daemon's tests)
+- [x] US-APP-29 · See who visits a public app (Visits in App settings, `?view=visits`, D-180)
+- [x] US-ACCT-32 · Choose a wallpaper
+- [x] US-ACCT-33 · Choose an accent colour
+- [x] US-ACCT-34 · Home screen options
+- [x] US-ACCT-35 · Reduce transparency and motion
+- [x] US-SYS-11 · See what is using storage
+- [x] US-SYS-12 · Manage data location and drives
+- [x] US-SYS-13 · Free space from unused app images (D-168)
+- [x] US-SYS-14 · Empty everyone's trash
+- [x] US-SYS-27 · View hlabs logs (new lines every 2 s while open rather than on the event stream, D-169)
+- [x] US-SYS-28 · Download a diagnostics bundle
+- [x] US-SYS-29 · See what hlabs connects to (Cloudflare joins it with US-SYS-43, D-171)
+- [x] US-SYS-30 · Opt in to beta updates
+- [x] US-SYS-31 · Restart hlabs (exit 75 for launchd/systemd, D-169; under `pnpm dev` hlabsd isn't started again; the real LaunchAgent and unit are checked by hand at phase end)
+- [x] US-SYS-37 · Confirm a factory reset (the story's hostname and password, not the screen's "Type RESET"; "stale session" read as D-170)
+- [x] US-SYS-38 · Reset hlabs (the database is deleted at the next start, D-170; MCP tokens join with phase 8)
+- [x] US-SYS-43 · Set up a way to make apps public (the pretend Cloudflare in e2e; Sign in to Cloudflare with a real domain is Q-24)
+- [x] US-SYS-44 · See and stop everything that's public (the menu-bar app's "Turn off public access" after Touch ID or the password, as US-INST-18)
+- [x] US-SYS-45 · Make the dashboard public (the menu-bar card reads "Public: the dashboard and 2 apps"; through Hari's domain by hand is Q-25)
+- [x] US-SYS-46 · Sign in to the public dashboard (e2e through a stand-in for Caddy's public listener; through Cloudflare by hand is Q-25)
+- [x] US-SYS-47 · Some changes only work at home (every home-only procedure refused with HOME_ONLY in e2e too; D-184, D-185)
+- [x] US-SYS-48 · Add Cloudflare's sign-in in front of the dashboard (the pretend Cloudflare's Access apps; a real one by hand is Q-25)
+- [x] US-PHONE-01 · Switch to the phone layout with a bottom tab bar (tab bar docked to the bottom with the soft highlight, "App Store" tab, D-172, D-173)
+- [x] US-PHONE-02 · Touch targets, safe areas and phone-friendly inputs (44px hit areas, safe areas, 17px fields, keyboard hides the tab bar)
+- [x] US-PHONE-03 · Bottom sheets with soft spring and drag to dismiss (BottomSheet in packages/ui; ModalDialog becomes one on phones)
+- [x] US-PHONE-04 · Back navigation and resuming after the phone sleeps (back buttons named after the parent; resume refetch and reconnect)
+- [x] US-PHONE-05 · Log in on a phone (PhoneLogin: the list with the password under it, "Remember this phone", "via Tailscale")
+- [x] US-PHONE-06 · Two-factor, lockout and forgot password on phone (Login2FA, LoginLocked and ForgotPassword full screen)
+- [x] US-PHONE-07 · Phone Home header and widgets (large title, greeting, widgets as a swipeable row with page dots)
+- [x] US-PHONE-08 · App grid and opening apps on phone (60px tiles, long-press tile menu, App settings as a full-height sheet (D-166))
+- [x] US-PHONE-09 · Search from Home on phone (full-screen Search with Cancel and inset grouped results)
+- [x] US-PHONE-10 · Browse the App Store on phone (PhoneStore: Updates row, chips, Featured cards, rows with one pill; StoreCategory page)
+- [x] US-PHONE-11 · App details on phone (PhoneAppDetails)
+- [x] US-PHONE-12 · Install an app from the phone (InstallSheet as a sheet that changed input keeps; failures come back as a sheet)
+- [x] US-PHONE-23 · Add hlabs to the home screen (apple-touch-icon, Apple meta tags, the one-time iOS hint)
+- [x] US-PHONE-24 · Run as a standalone web app (standalone detection, "Remember this phone" on, offline shell, one reload onto a new version)
+- [x] US-PHONE-25 · Files on the phone in the new design (D-174: the folder as an inset list with •••, the actions sheet, Select with its bar in the tab bar's place, Move to, Rename, Trash and the folder picker as sheets)
+- [x] US-PHONE-26 · Backups on the phone in the new design (D-174: the last-backup card with run bars, inset rows, the empty state, Add destination and a running restore as sheets)
+- [x] US-PHONE-27 · Live usage, notifications and updates on the phone in the new design (D-174: the range as a segmented control and tiles two to a row, Notifications as a sheet, the App Store's and Settings' Updates)
+- [x] US-PHONE-28 · Settings pages on the phone in the new design (D-174: Account with Edit in the bar, Appearance, Users with a ••• sheet and Invite as a sheet, Network, Storage, Engine's state card, Advanced)
+- [x] US-TAB-01 · Touch-sized controls on a tablet (D-175)
+- [x] US-TAB-02 · Long-press for every right-click menu (D-175)
+- [x] US-TAB-03 · Drag by touch (D-175)
+- [x] US-TAB-04 · The Dock on a touch screen (D-175)
+- [x] US-TAB-05 · iPad in portrait (D-175)
+- [x] US-TAB-06 · The on-screen keyboard and the Home Screen app on a tablet (D-175)
+- [x] US-SITE-11 · Keep screenshots in the docs current
 
 ## Phase 8 · Power features (P3)
 

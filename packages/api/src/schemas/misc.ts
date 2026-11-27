@@ -100,6 +100,17 @@ export const trayStatusSchema = z.object({
   onboardingComplete: z.boolean(),
   /** The first admin's "Reduce transparency" (Settings › Appearance). */
   reduceTransparency: z.boolean(),
+  /**
+   * How many apps are public on the internet, and their names ("Public: 2 apps · Immich, Jellyfin", US-SYS-44): the
+   * menu offers "Turn off public access" while any is. Always sent (optional only for older fixtures).
+   */
+  publicApps: z.number().int().nonnegative().optional(),
+  publicAppNames: z.array(z.string()).optional(),
+  /**
+   * The dashboard is public (US-SYS-45): "Public: the dashboard and 2 apps", and "Turn off public access" makes it
+   * private too. Always sent (optional only for older fixtures).
+   */
+  publicDashboard: z.boolean().optional(),
 });
 export type TrayStatus = z.infer<typeof trayStatusSchema>;
 
@@ -113,8 +124,21 @@ export const trayUserSchema = z.object({
 });
 export type TrayUser = z.infer<typeof trayUserSchema>;
 
+/** A library signing key's public half (US-STORE-28); the private half never leaves the daemon's keychain. */
+const libraryKeySchema = z.object({ publicKey: z.string(), fingerprint: z.string() });
+
 export const tray = {
   status: io(empty, trayStatusSchema),
+  /**
+   * `hlabs library keygen` (US-STORE-28): an ed25519 key for signing libraries, kept in the keychain (or the encrypted
+   * file on a headless server). With one already, it's returned (`existed`) unless `replace`.
+   */
+  libraryKeygen: io(
+    z.object({ replace: z.boolean().default(false) }),
+    libraryKeySchema.extend({ existed: z.boolean() }),
+  ),
+  /** `hlabs library sign`: index.json's bytes (base64, ≤ 1 MB) → its minisign signature with that key. */
+  librarySign: io(z.object({ data: z.string().max(1_400_000) }), libraryKeySchema.extend({ signature: z.string() })),
   /** Enabled accounts, admins first, then by name (US-INST-17). */
   listUsers: io(empty, z.object({ users: z.array(trayUserSchema) })),
   quickAction: io(
@@ -168,7 +192,12 @@ export const tray = {
     z.object({ keepData: z.boolean(), removeColima: z.boolean(), via: z.enum(['tray', 'cli']).optional() }),
     jobRefSchema,
   ),
-  /** A job, for following `hlabs_uninstall` (the tray token may call tray.* only). */
+  /**
+   * "Turn off public access" (US-SYS-44), after the computer's own confirmation (Touch ID or the login password, as
+   * for US-INST-18): the same `public_off_all` job as Settings; the one already running when there is one.
+   */
+  publicOff: io(empty, jobRefSchema),
+  /** A job, for following `hlabs_uninstall` or `public_off_all` (the tray token may call tray.* only). */
   job: io(jobRefSchema, jobSchema),
   /** The setup URL, and with Caddy the same at each LAN address and at the published `.local` name (US-INST-24). */
   setupUrl: io(

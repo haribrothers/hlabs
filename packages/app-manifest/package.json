@@ -7,13 +7,16 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
-    "./node": "./src/node.ts"
+    "./node": "./src/node.ts",
+    "./library": "./src/library.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "store:lint": "tsx src/cli/store-lint.ts ../../store",
-    "store:build": "tsx src/cli/store-build.ts ../../store"
+    "store:build": "tsx src/cli/store-build.ts ../../store",
+    "store:port": "tsx src/cli/store-port.ts ../../store",
+    "store:updates": "tsx src/cli/store-updates.ts ../../store"
   },
   "dependencies": {
     "@hlabs/icons": "workspace:*",

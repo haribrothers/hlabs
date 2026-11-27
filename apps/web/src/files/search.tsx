@@ -5,11 +5,13 @@ import type { FileEntry } from '@hlabs/api';
 import { iconDefaults, Search } from '@hlabs/icons';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type KeyboardEvent } from 'react';
+import { PhoneSearchField, useIsTouch } from '@hlabs/ui';
 import { filesCopy as copy } from '../copy/files';
 import { useIsDesktop } from '../lib/use-media';
 import { useTRPC } from '../lib/trpc';
 import { FileGrid } from './file-grid';
+import { PhoneFileList } from './phone-file-list';
 import type { FilesMe } from './places';
 import { crumbName } from './places';
 
@@ -47,6 +49,43 @@ export function SearchField({
   place: string;
 }) {
   const desktop = useIsDesktop();
+  // A tablet: a round search button that opens into the field, so the folder's name keeps its room (TabletFiles).
+  const touch = useIsTouch();
+  const [opened, setOpened] = useState(false);
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape' && value) {
+      // Back to the folder (and Escape doesn't close the window).
+      e.preventDefault();
+      e.stopPropagation();
+      onChange('');
+    }
+  };
+  if (!desktop)
+    // PhoneRedesignA_Files: the phone's search field, "Search in Documents".
+    return (
+      <div role="search" className="w-full">
+        <PhoneSearchField
+          label={copy.search}
+          placeholder={copy.searchIn(place)}
+          maxLength={200}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onClear={() => onChange('')}
+          onKeyDown={onKeyDown}
+        />
+      </div>
+    );
+  if (touch && !opened && !value)
+    return (
+      <button
+        type="button"
+        className="hl-p-ibtn hl-focus"
+        aria-label={copy.searchIn(place)}
+        onClick={() => setOpened(true)}
+      >
+        <Search aria-hidden {...iconDefaults} />
+      </button>
+    );
   return (
     <div role="search" className="relative w-full md:w-56">
       <Search
@@ -58,21 +97,19 @@ export function SearchField({
         type="search"
         className="hl-input w-full rounded-pill pl-10"
         aria-label={copy.search}
-        placeholder={desktop ? copy.searchPlaceholder : copy.searchIn(place)}
+        placeholder={copy.searchPlaceholder}
         maxLength={200}
         autoComplete="off"
         spellCheck={false}
         enterKeyHint="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape' && value) {
-            // Back to the folder (and Escape doesn't close the window).
-            e.preventDefault();
-            e.stopPropagation();
-            onChange('');
-          }
+        onKeyDown={onKeyDown}
+        // Opened from the button: typing starts at once; left empty, it's a button again.
+        ref={(el) => {
+          if (el && touch && opened && !value && document.activeElement !== el) el.focus();
         }}
+        onBlur={() => (value ? undefined : setOpened(false))}
       />
     </div>
   );
@@ -114,19 +151,28 @@ export function SearchResults({
       </p>
     );
   }
+  const open = (e: FileEntry) =>
+    e.kind === 'folder' ? void navigate({ to: '/files', search: { path: e.path } }) : onOpenFile(e, data.items);
   const note = data.capped ? copy.capped(SEARCH_LIMIT) : data.truncated ? copy.truncated : null;
   return (
     <div className="flex flex-col gap-3">
-      <FileGrid
-        items={data.items}
-        label={copy.results}
-        accent={me.accent}
-        onOpen={(e) =>
-          e.kind === 'folder' ? void navigate({ to: '/files', search: { path: e.path } }) : onOpenFile(e, data.items)
-        }
-        openOnClick={!desktop}
-        below={(e) => resultFolder(crumbs, path, e.path)}
-      />
+      {desktop ? (
+        <FileGrid
+          items={data.items}
+          label={copy.results}
+          accent={me.accent}
+          onOpen={open}
+          below={(e) => resultFolder(crumbs, path, e.path)}
+        />
+      ) : (
+        <PhoneFileList
+          items={data.items}
+          label={copy.results}
+          accent={me.accent}
+          onOpen={open}
+          below={(e) => resultFolder(crumbs, path, e.path)}
+        />
+      )}
       {note ? (
         <p className="m-0 text-center text-caption text-ink-muted" role="status">
           {note}

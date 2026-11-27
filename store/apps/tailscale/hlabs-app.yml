@@ -1,0 +1,44 @@
+# It runs in userspace mode (no NET_ADMIN or /dev/net/tun), with Tailscale's own web client as its
+# page.
+schema: 1
+id: tailscale
+name: Tailscale
+version: '1.104.7'
+revision: 1
+tagline: Reach your home network from anywhere
+description: |
+  Adds a device to your Tailscale network that can share your home network (subnet routing) or act as an
+  exit node, for the devices hlabs's own remote access doesn't cover. Sign in with your Tailscale
+  account on its page.
+category: network
+developer: { name: Tailscale, url: https://tailscale.com }
+source: https://github.com/tailscale/tailscale
+license: BSD-3-Clause
+icon:
+  logo: logo.svg
+  gradient: ['#242424', '#000000']
+  fallback: network
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 128, disk: 256 }
+web: { service: tailscale, port: 5252, embed: true }
+env:
+  - key: DEVICE_NAME
+    label: Device name
+    description: How it appears in your Tailscale network
+    default: hlabs-tailscale
+    required: true
+  - key: ROUTES
+    label: Networks to share
+    description: Optional. For example 192.168.1.0/24; approve them in the Tailscale admin console
+    required: false
+  - key: AUTH_KEY
+    type: secret
+    label: Auth key
+    description: Optional. Instead of signing in on its page
+    required: false
+ownLogin: true
+overlaps: [remoteAccess]
+backup:
+  pause: [tailscale]
+  beforeUpdate: true
+permissions: { network: internet }

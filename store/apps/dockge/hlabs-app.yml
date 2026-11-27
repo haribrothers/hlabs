@@ -1,0 +1,26 @@
+schema: 1
+id: dockge
+name: Dockge
+version: '1.5.0'
+revision: 1
+tagline: Write and run your own Docker Compose stacks
+description: |
+  Write docker-compose.yml files in the browser and start, stop and update them, with live logs. Good for
+  running something the App Store doesn't have. The first visit sets up your admin account.
+category: developer
+developer: { name: Louis Lam, url: https://dockge.kuma.pet }
+source: https://github.com/louislam/dockge
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#64748b', '#1e293b']
+  fallback: layers
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: dockge, port: 5001, embed: true }
+ownLogin: true
+overlaps: [appManagement]
+backup:
+  pause: [dockge]
+  beforeUpdate: true
+permissions: { network: internet, dockerSocket: true }

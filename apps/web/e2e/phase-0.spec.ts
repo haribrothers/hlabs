@@ -7,7 +7,7 @@ import { expect, test } from '@playwright/test';
 // built (D-092): from phase 5, Home, App Store, Files, Usage, Backups and Settings, then Search in the Dock.
 const AREAS = ['Home', 'App Store', 'Files', 'Usage', 'Backups', 'Settings'];
 // The phone tab bar's shorter names (D-054); Backups isn't a tab (US-PHONE-01).
-const TABS = ['Home', 'Apps', 'Files', 'Usage', 'Settings'];
+const TABS = ['Home', 'App Store', 'Files', 'Usage', 'Settings'];
 
 test('GET /healthz returns 200 when the daemon is ready', async ({ request }) => {
   const res = await request.get('/healthz');
@@ -23,7 +23,9 @@ test.describe('desktop', () => {
     const dock = page.getByRole('navigation', { name: 'Dock' });
     await expect(dock).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Tab bar' })).toBeHidden();
-    await expect(dock.getByRole('button')).toHaveCount(AREAS.length + 1);
+    // The areas, "Add to Dock" (US-HOME-22) and Search.
+    await expect(dock.getByRole('button')).toHaveCount(AREAS.length + 2);
+    await expect(dock.getByRole('button', { name: 'Add to Dock' })).toBeVisible();
     await expect(dock.getByRole('button', { name: 'Search' })).toBeVisible();
     for (const area of AREAS) await expect(dock.getByRole('button', { name: area })).toBeVisible();
     await expect(dock.getByRole('button', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
@@ -41,6 +43,8 @@ test.describe('desktop', () => {
     await dock.getByRole('button', { name: 'Home' }).focus();
     await page.keyboard.press('End');
     await expect(dock.getByRole('button', { name: 'Search' })).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
+    await expect(dock.getByRole('button', { name: 'Add to Dock' })).toBeFocused();
     await page.keyboard.press('ArrowLeft');
     await expect(dock.getByRole('button', { name: 'Settings' })).toBeFocused();
     await page.keyboard.press('Enter');
@@ -92,6 +96,8 @@ for (const theme of ['glass', 'solid'] as const) {
       await page.goto(path);
       await page.evaluate((t) => (document.documentElement.dataset.theme = t), theme);
       await page.getByRole('navigation').first().waitFor();
+      // The settled page: a section's heading arrives with its data.
+      await page.getByRole('heading', { level: 1 }).first().waitFor();
       const results = await new AxeBuilder({ page }).analyze();
       expect(results.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
     }

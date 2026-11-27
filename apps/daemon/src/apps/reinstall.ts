@@ -182,8 +182,11 @@ export class ReinstallService {
 
       // 3. Every image downloaded again.
       report('pulling', 20);
-      await installer.pullAll(ctx, images, (within) =>
-        ctx.report(20 + Math.round(within * 60), JSON.stringify({ step: 'pulling' })),
+      await installer.pullAll(
+        ctx,
+        images,
+        (within) => ctx.report(20 + Math.round(within * 60), JSON.stringify({ step: 'pulling' })),
+        appId,
       );
 
       // 4. Started, and healthy.

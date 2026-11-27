@@ -96,6 +96,8 @@ export const jobKindSchema = z.enum([
   'app_uninstall',
   /** Rebuilds an app's containers and images, keeping its data and settings (US-APP-25). */
   'app_reinstall',
+  /** Saving an app's settings and restarting it, undone when it isn't healthy (US-APP-16, US-APP-18). */
+  'app_config',
   'app_move_data',
   'app_deploy_custom',
   'starter_apps',
@@ -112,7 +114,26 @@ export const jobKindSchema = z.enum([
   'empty_trash',
   /** A deleted person's Home folder going to the trash (US-ACCT-16). */
   'home_folder_trash',
+  /** A diagnostics bundle being built (US-SYS-28). */
   'diagnostics',
+  /** "Restart hlabs" (US-SYS-31): stops the apps, then the daemon exits for launchd or systemd to start it again. */
+  'daemon_restart',
+  /** Making an app public, or changing its public address or who gets in (US-APP-27, US-APP-28). */
+  'public_on',
+  /** Making an app private (US-APP-27). */
+  'public_off',
+  /** "Turn off all public access" (US-SYS-44): every public app made private; the tunnel stays. */
+  'public_off_all',
+  /** Setting up Cloudflare Tunnel once hlabs has a credential (US-SYS-43): the tunnel, its connector. */
+  'public_setup',
+  /** "Remove Cloudflare Tunnel" (US-SYS-43): every app private, then the tunnel, its DNS records and the credential. */
+  'public_remove',
+  /** Making the dashboard public at its own name (US-SYS-45): its DNS record, then Caddy's public listener. */
+  'dashboard_public_on',
+  /** Making the dashboard private (US-SYS-45): the route goes, its sessions end, then its record and Access app. */
+  'dashboard_public_off',
+  /** Adding, changing or removing Cloudflare's sign-in in front of the dashboard (US-SYS-48). */
+  'dashboard_access',
   /** Dev and test only. */
   'noop',
 ]);

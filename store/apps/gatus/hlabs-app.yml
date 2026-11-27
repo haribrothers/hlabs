@@ -1,0 +1,37 @@
+# Gatus's image has no shell, so a small helper writes an example config.yaml on the first start; an
+# existing one is left alone.
+schema: 1
+id: gatus
+name: Gatus
+version: '5.38.0'
+revision: 1
+tagline: Health checks and a status page for your services
+description: |
+  Gatus checks websites and services on a schedule and shows their health on a status page, with alerts
+  when something goes down. Its checks are written in config.yaml in its folder (Home/Gatus); edit it in
+  Files and restart the app. It has no login of its own: the hlabs login protects it.
+category: monitoring
+developer: { name: TwiN, url: https://gatus.io }
+source: https://github.com/TwiN/gatus
+license: Apache-2.0
+icon:
+  logo: logo.svg
+  gradient: ['#1d4ed8', '#0b1d52']
+  fallback: heart-pulse
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 128, disk: 256 }
+web: { service: gatus, port: 8080, embed: true }
+health: { service: gatus, http: /health, timeout: 120 }
+folders:
+  - key: config
+    label: Gatus configuration
+    description: Its config.yaml, which lists what it checks
+    target: /config
+    default: home:Gatus
+    mode: rw
+    required: true
+ownLogin: false
+backup:
+  pause: [gatus]
+  beforeUpdate: true
+permissions: { network: internet }

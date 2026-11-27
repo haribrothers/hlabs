@@ -1,0 +1,35 @@
+schema: 1
+id: vikunja
+name: Vikunja
+version: '2.8.0'
+revision: 1
+tagline: To-do lists and projects for the whole family
+description: |
+  Keep to-do lists and projects as lists, boards, tables or a timeline, with due dates, reminders and
+  sharing. Create your account on the first visit.
+category: productivity
+developer: { name: Vikunja, url: https://vikunja.io }
+source: https://github.com/go-vikunja/vikunja
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#1973ff', '#0a2d66']
+  fallback: list-todo
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: vikunja, port: 3456, embed: true }
+health: { service: vikunja, http: /health, timeout: 180 }
+env:
+  - key: JWT_SECRET
+    type: secret
+    generate: true
+    hidden: true
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [vikunja, vikunja-db]
+  beforeUpdate: true
+permissions: { network: internet }

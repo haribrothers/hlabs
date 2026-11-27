@@ -6,6 +6,10 @@ import type { HlabsDb } from './db';
 import { settings } from './schema/system';
 
 export const ACCENTS = ['violet', 'mint', 'amber', 'rose'] as const;
+/** Wallpapers (US-ACCT-32): the three drawn ones, and the person's own photo once uploaded. */
+export const WALLPAPERS = ['dusk', 'ocean', 'forest', 'custom'] as const;
+/** The formats a wallpaper photo is kept in, by extension. */
+export const WALLPAPER_EXTS = ['jpg', 'png', 'webp'] as const;
 export const ENGINE_KINDS = ['orbstack', 'docker-desktop', 'colima', 'docker-engine'] as const;
 
 const portSchema = z.number().int().min(1).max(65535);
@@ -59,6 +63,9 @@ export const settingsSchemas = {
         .default(null),
       /** The newest version `update.available` has been emitted for, so each version is announced once. */
       announced: z.string().nullable().default(null),
+      /** Each app's newest update already announced after a store sync (`<version>#<revision>`), so it's told once
+       * (US-STORE-16). */
+      announcedApps: z.record(z.string(), z.string()).default({}),
       /** The nights (local date the window opened, YYYY-MM-DD) automatic updates last ran, once a night (US-SYS-26). */
       autoNight: z
         .object({ hlabs: z.string().nullable().default(null), apps: z.string().nullable().default(null) })
@@ -72,6 +79,7 @@ export const settingsSchemas = {
       lastCheckedAt: null,
       latest: null,
       announced: null,
+      announcedApps: {},
       autoNight: { hlabs: null, apps: null },
     }),
   remote: z
@@ -174,6 +182,51 @@ export const settingsSchemas = {
     })
     // All three on after onboarding (US-SYS-20).
     .default({ startAtLogin: true, autostartApps: true, keepAwake: true }),
+  /**
+   * Public apps through Cloudflare Tunnel (US-SYS-43, D-171): the tunnel and the DNS records hlabs made (the only ones
+   * it ever changes or deletes). The credential is keychain item `cloudflare-credential`, never here; the tunnel's
+   * credentials file is `<dataDir>/cloudflare/tunnel.json` (0600).
+   */
+  public: z
+    .object({
+      cloudflare: z
+        .object({
+          /** The zone apps get names under: `example.com`. */
+          domain: z.string(),
+          zoneId: z.string(),
+          accountId: z.string(),
+          tunnelId: z.string(),
+          /** How hlabs got its credential: "Sign in to Cloudflare" or an API token. */
+          credential: z.enum(['signIn', 'token']),
+          /** The DNS records hlabs made: `{ id, name }` (the record's id at Cloudflare, `photos.example.com`). */
+          records: z.array(z.object({ id: z.string(), name: z.string() })).default([]),
+          setUpAt: z.number().int(),
+          setUpBy: z.string().nullable(),
+        })
+        .nullable()
+        .default(null),
+      /**
+       * The dashboard on a public address of its own (US-SYS-45, D-182); null while private, the default on every
+       * install. `recordId`: its DNS record (also in `cloudflare.records`). `access`: Cloudflare's sign-in in front
+       * (US-SYS-48): the Access application and policy hlabs made, and the email addresses allowed (admins only, never
+       * in logs, job payloads or diagnostics).
+       */
+      dashboard: z
+        .object({
+          /** `hlabs.example.com` */
+          hostname: z.string(),
+          recordId: z.string().nullable(),
+          since: z.number().int(),
+          by: z.string().nullable(),
+          access: z
+            .object({ appId: z.string(), policyId: z.string(), emails: z.array(z.string()) })
+            .nullable()
+            .default(null),
+        })
+        .nullable()
+        .default(null),
+    })
+    .default({ cloudflare: null, dashboard: null }),
   /** Last-contacted time per outbound service (Advanced › What hlabs connects to). */
   connections: z.record(z.string(), z.object({ lastContactAt: z.number().int() })).default({}),
 } as const;
@@ -182,20 +235,27 @@ export const settingsSchemas = {
 export const userSettingsSchemas = {
   appearance: z
     .object({
-      wallpaper: z.string().default('dusk'),
+      wallpaper: z.enum(WALLPAPERS).default('dusk'),
       accent: z.enum(ACCENTS).default('violet'),
       reduceTransparency: z.boolean().default(false),
-      reduceMotion: z.boolean().default(false),
+      /** null until the person sets it: the device's own reduce-motion setting decides (US-ACCT-35). */
+      reduceMotion: z.boolean().nullable().default(null),
       showWidgets: z.boolean().default(true),
       showGreeting: z.boolean().default(true),
+      /** Their uploaded photo at `<dataDir>/wallpapers/<userId>.<ext>`, and when (US-ACCT-32); null before one. */
+      customWallpaper: z
+        .object({ ext: z.enum(WALLPAPER_EXTS), uploadedAt: z.number().int() })
+        .nullable()
+        .default(null),
     })
     .default({
       wallpaper: 'dusk',
       accent: 'violet',
       reduceTransparency: false,
-      reduceMotion: false,
+      reduceMotion: null,
       showWidgets: true,
       showGreeting: true,
+      customWallpaper: null,
     }),
   /** Per-user in-app notification switches (D-043); missing keys mean "on". */
   notifications: z.record(z.string(), z.boolean()).default({}),

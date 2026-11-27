@@ -11,6 +11,8 @@ import type { Logger } from '../logger';
 export const MINUTE = 60_000;
 export const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
+/** 5 s samples in a 1m point. */
+const SAMPLES_PER_MINUTE = 12;
 export const KEEP_1M_MS = 7 * DAY;
 export const KEEP_1H_MS = 90 * DAY;
 
@@ -176,6 +178,42 @@ export class UsageHistory {
       if (v !== null && (peak === null || v > peak.value)) peak = { ts: p.ts, value: v };
     }
     return { scope, range, resolution, points, peak };
+  }
+
+  /**
+   * An app's Usage tab figures (US-APP-20): its average CPU since midnight (this computer's time) and its highest memory
+   * in the last 24 hours, from its 1m points and the 5 s samples not yet written as one; null without data. A 1m point
+   * counts as the 12 samples it averages.
+   */
+  appSummary(appId: string): { cpuAvgToday: number | null; memPeak24h: number | null } {
+    const now = this.now();
+    const midnight = new Date(now).setHours(0, 0, 0, 0);
+    const stored = this.stored(appId, '1m', now - DAY, now);
+    const writtenUntil = (stored.at(-1)?.ts ?? -Infinity) + MINUTE;
+    const live = this.deps
+      .recent()
+      .filter((s) => s.ts >= now - DAY)
+      .flatMap((s) => {
+        const v = valuesOf(s, appId);
+        return v ? [{ ts: s.ts, ...pick(v) }] : [];
+      });
+    let memPeak24h: number | null = null;
+    for (const p of [...stored, ...live]) {
+      if (p.memBytes !== null && (memPeak24h === null || p.memBytes > memPeak24h)) memPeak24h = p.memBytes;
+    }
+    let sum = 0;
+    let weight = 0;
+    for (const p of stored) {
+      if (p.ts < midnight || p.cpu === null) continue;
+      sum += p.cpu * SAMPLES_PER_MINUTE;
+      weight += SAMPLES_PER_MINUTE;
+    }
+    for (const p of live) {
+      if (p.ts < midnight || p.ts < writtenUntil || p.cpu === null) continue;
+      sum += p.cpu;
+      weight += 1;
+    }
+    return { cpuAvgToday: weight ? sum / weight : null, memPeak24h };
   }
 
   /** Every app that has points in the range (uninstalled ones too, until they age out). */

@@ -1,0 +1,39 @@
+schema: 1
+id: wikijs
+name: Wiki.js
+version: '3.6.0'
+revision: 1
+tagline: A modern wiki for your family or team
+description: |
+  Write pages in Markdown or a visual editor, organise them in folders and find anything with search.
+  Choose your admin account when you install it.
+category: productivity
+developer: { name: Requarks, url: https://js.wiki }
+source: https://github.com/requarks/wiki
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#1976d2', '#0d2f5e']
+  fallback: book-open-text
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: wikijs, port: 3000, embed: true }
+env:
+  - key: ADMIN_EMAIL
+    label: Your email
+    description: For signing in to Wiki.js; it sends no email unless you set that up
+    required: true
+  - key: ADMIN_PASS
+    type: secret
+    label: Password
+    description: For signing in to Wiki.js
+    required: true
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [wikijs, wikijs-db]
+  beforeUpdate: true
+permissions: { network: internet }

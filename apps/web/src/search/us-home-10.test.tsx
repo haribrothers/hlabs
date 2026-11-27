@@ -117,15 +117,16 @@ describe('US-HOME-10', () => {
   });
 
   it.each([
-    ['Jellyfin settings', '/apps/jellyfin/settings'],
-    ['View Jellyfin logs', '/apps/jellyfin/logs'],
+    // An app's settings and logs open over the page (D-166).
+    ['Jellyfin settings', '/?settings=jellyfin'],
+    ['View Jellyfin logs', '/?logs=jellyfin'],
     ['Jellyseerr', '/store/app/jellyseerr'],
     ['Account', '/settings/account'],
   ])('choosing "%s" opens %s', async (name, path) => {
     const { router } = open();
     await type('jelly');
     fireEvent.click(await screen.findByRole('option', { name: new RegExp(`^${name}`) }));
-    await waitFor(() => expect(router.state.location.pathname).toBe(path));
+    await waitFor(() => expect(router.state.location.href).toBe(path));
   });
 
   it('"See all App Store results" opens the store search with the query', async () => {

@@ -28,7 +28,7 @@ describe('US-STORE-06', () => {
     const { store } = service();
     const d = await store.getApp('immich');
     expect(d.app).toMatchObject({ id: 'immich', name: 'Immich', group: 'files', arm64: true });
-    expect(d.source).toEqual({ id: 'builtin', name: 'hlabs', official: true });
+    expect(d.source).toEqual({ id: 'builtin', name: 'hlabs official', official: true, signed: true, kind: 'builtin' });
     expect(d.version).toBe('3.2.2');
     expect(d.description).toMatch(/photo and video backup/);
     expect(d.address).toBe('immich.hlabs.local');

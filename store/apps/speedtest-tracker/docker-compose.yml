@@ -1,0 +1,18 @@
+services:
+  speedtest-tracker:
+    image: lscr.io/linuxserver/speedtest-tracker:1.15.1@sha256:132d35a355474be17822e2ff3df4866407187ca978a768935fea06f52ae24493
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        [ -f /config/app-key ] || php -r 'echo "base64:".base64_encode(random_bytes(32));' > /config/app-key
+        export APP_KEY="$$(cat /config/app-key)"
+        exec /init
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      APP_URL: ${HLABS_URL}
+      DB_CONNECTION: sqlite
+      SPEEDTEST_SCHEDULE: ${SPEEDTEST_SCHEDULE}
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config

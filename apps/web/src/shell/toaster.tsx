@@ -2,6 +2,7 @@
 // one holds it; it goes on once the pointer and focus have both left. Up to two buttons each (US-STATE-15).
 import { Button, Toast } from '@hlabs/ui';
 import { Link } from '@tanstack/react-router';
+import { overlayForPath, useAppOverlay } from '../apps/app-overlay';
 import { useState } from 'react';
 import { toastCopy } from '../copy/toasts';
 import { errorLine } from '../lib/error-copy';
@@ -53,7 +54,10 @@ function ToastActions({ toast, actions }: { toast: ToastItem; actions: ToastActi
   return (
     <div className="flex flex-wrap gap-2 pt-1">
       {actions.map((a) =>
-        a.kind === 'navigate' ? (
+        a.kind === 'navigate' && overlayForPath(a.to) ? (
+          // An app's settings or logs open over the page (D-166).
+          <OverlayLink key={a.label} to={a.to} label={a.label} onFollow={() => handled(toast)} />
+        ) : a.kind === 'navigate' ? (
           <Link
             key={a.label}
             to={a.to}
@@ -109,9 +113,15 @@ export function Toaster() {
   const needsRole = toasts.some((t) => t.actions?.some(needsAdmin));
   const me = useMe(needsRole);
   const isAdmin = me.data?.role === 'admin';
-  if (toasts.length === 0) return null;
   return (
-    <div className="pointer-events-none fixed inset-x-4 bottom-24 z-50 flex flex-col items-end gap-2 sm:inset-x-auto sm:right-6 sm:bottom-28">
+    // Always there, and a live region: a dialog (App settings, Logs) hides the rest of the page from assistive tech
+    // but keeps live regions (aria-hidden), so toasts that arrive while one is open are still read and can be used;
+    // the dialogs leave presses here alone (`data-hl-toasts`, ModalPanel).
+    <div
+      data-hl-toasts=""
+      aria-live="polite"
+      className="pointer-events-none fixed inset-x-4 bottom-24 z-50 flex flex-col items-end gap-2 sm:inset-x-auto sm:right-6 sm:bottom-28"
+    >
       {/* Newest on top; the rest wait (US-STATE-16). */}
       {onScreen(toasts)
         .reverse()
@@ -139,5 +149,22 @@ export function Toaster() {
           </div>
         ))}
     </div>
+  );
+}
+
+/** A toast's link to an app's settings or logs: they open over the page (D-166). */
+function OverlayLink({ to, label, onFollow }: { to: string; label: string; onFollow: () => void }) {
+  const overlay = useAppOverlay();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        onFollow();
+        overlay.follow(to);
+      }}
+      className="hl-btn hl-btn-secondary hl-btn-sm hl-focus"
+    >
+      {label}
+    </button>
   );
 }

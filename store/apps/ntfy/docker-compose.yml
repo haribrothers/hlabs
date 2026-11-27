@@ -1,0 +1,11 @@
+services:
+  ntfy:
+    image: docker.io/binwiederhier/ntfy:v2.38.1@sha256:038da2be5e668fee6d36a62884eea48975e1b71c29a56964e5298c1b9165a573
+    command: serve
+    environment:
+      NTFY_BASE_URL: ${HLABS_URL}
+      NTFY_BEHIND_PROXY: 'true'
+      NTFY_CACHE_FILE: /var/cache/ntfy/cache.db
+      NTFY_ATTACHMENT_CACHE_DIR: /var/cache/ntfy/attachments
+    volumes:
+      - ${HLABS_APP_DATA}/cache:/var/cache/ntfy

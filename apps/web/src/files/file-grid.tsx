@@ -3,13 +3,14 @@
 import type { FileEntry } from '@hlabs/api';
 import { formatBytes } from '@hlabs/shared';
 import { iconDefaults, MoreHorizontal } from '@hlabs/icons';
-import { IconButton } from '@hlabs/ui';
+import { IconButton, useIsTouch } from '@hlabs/ui';
 import { FileItem, type FileAccent } from '@hlabs/ui/files';
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { filesCopy as copy } from '../copy/files';
 import type { ClickMods } from './selection';
 import { itemDragProps, type DragProps } from './drag';
 import { consumeLongPress, longPressProps } from './long-press';
+import { useFilesTouch } from './touch-press';
 
 /** "24 items" under a folder, the size under a file. */
 export const metaOf = (e: FileEntry) =>
@@ -122,6 +123,9 @@ export function FileGrid({
   const [current, setCurrent] = useState<string | null>(null);
   const [over, setOver] = useState<string | null>(null);
   const tabStop = items.some((e) => e.path === current) ? current : (items[0]?.path ?? null);
+  // A tablet: a long press opens the menu and a held item moves by finger (US-TAB-02, US-TAB-03).
+  const touch = useIsTouch() && !openOnClick;
+  const finger = useFilesTouch({ root: ref, enabled: touch, items, onMenu, drag, setOver });
 
   // Focus moves to `focusPath` once, when it shows up: a later reload of the list (an upload, an Undo) mustn't pull it
   // back from wherever the person has moved it since.
@@ -211,6 +215,8 @@ export function FileGrid({
       role="group"
       aria-label={label}
       onKeyDown={onKeyDown}
+      onPointerDown={finger.containerProps.onPointerDown}
+      onContextMenu={finger.containerProps.onContextMenu}
       className="grid grid-cols-[repeat(auto-fill,minmax(132px,1fr))] justify-items-center gap-x-2 gap-y-3"
     >
       {items.map((e) => {
@@ -218,9 +224,13 @@ export function FileGrid({
         return (
           <div
             key={e.path}
-            className={`group relative rounded-lg ${over === e.path ? 'bg-accent-wash ring-2 ring-accent' : ''}`}
-            {...itemDragProps(e, drag, setOver)}
-            {...longPressProps(select?.onLongPress && !select.selecting ? () => select.onLongPress!(e) : undefined)}
+            className={`group relative rounded-lg ${over === e.path ? 'bg-accent-wash ring-2 ring-accent' : ''} ${
+              finger.dragged.has(e.path) ? 'opacity-35' : ''
+            }`}
+            {...itemDragProps(e, touch ? undefined : drag, setOver)}
+            {...longPressProps(
+              select?.onLongPress && !select.selecting && !touch ? () => select.onLongPress!(e) : undefined,
+            )}
           >
             <FileItem
               name={e.name}
@@ -265,6 +275,7 @@ export function FileGrid({
           </div>
         );
       })}
+      {finger.overlay}
     </div>
   );
 }

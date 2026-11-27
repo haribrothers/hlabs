@@ -1,0 +1,41 @@
+services:
+  ghostfolio:
+    image: docker.io/ghostfolio/ghostfolio:3.100.0@sha256:1bc2ff4740410dd2c3bdde95738268f4c619cf4eeec491e3967bec18c95130b1
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: '3333'
+      ACCESS_TOKEN_SALT: ${ACCESS_TOKEN_SALT}
+      JWT_SECRET_KEY: ${JWT_SECRET}
+      DATABASE_URL: postgresql://ghostfolio:${DB_PASSWORD}@ghostfolio-db:5432/ghostfolio?connect_timeout=300
+      REDIS_HOST: ghostfolio-valkey
+      REDIS_PORT: '6379'
+      REDIS_PASSWORD: ''
+    depends_on:
+      ghostfolio-db:
+        condition: service_healthy
+      ghostfolio-valkey:
+        condition: service_healthy
+  ghostfolio-db:
+    image: docker.io/library/postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_USER: ghostfolio
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ghostfolio
+    volumes:
+      - ${HLABS_APP_DATA}/postgres:/var/lib/postgresql
+    healthcheck:
+      # Over TCP, so it passes only once the real server is up (not during first-start setup).
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U ghostfolio -d ghostfolio']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  ghostfolio-valkey:
+    image: docker.io/valkey/valkey:9@sha256:70739f85ad2ee01a726a965584a0f94895f01b0c60b3cc8b0aeef11eaa6888cf
+    volumes:
+      - ${HLABS_APP_DATA}/valkey:/data
+    healthcheck:
+      test: [CMD, valkey-cli, ping]
+      interval: 5s
+      timeout: 5s
+      retries: 30

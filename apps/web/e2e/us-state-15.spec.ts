@@ -33,7 +33,7 @@ test('US-STATE-15 Retry runs the action; a failure updates the toast, success re
   const retry = toast.getByRole('button', { name: 'Retry' });
   await expect(retry).toBeVisible();
   // View logs opens AppLogs (phase 2): the e2e dev server previews phase 2 (D-092), so it shows.
-  await expect(toast.getByRole('link', { name: 'View logs' })).toBeVisible();
+  await expect(toast.getByRole('button', { name: 'View logs' })).toBeVisible();
 
   await retry.click();
   await expect(toast).toContainText('hlabs is busy. Wait for what it’s doing to finish, then try again.');
@@ -44,9 +44,10 @@ test('US-STATE-15 Retry runs the action; a failure updates the toast, success re
   await expect(toast).toBeHidden();
   expect(calls).toBe(2);
 
-  // Manage storage waits for Settings › Storage (phase 7).
+  // Manage storage opens Settings › Storage (built in phase 7's group 9, D-151).
   await page.getByRole('button', { name: 'Show warning toast' }).click();
   const warning = page.getByRole('status').filter({ hasText: 'Low disk space' });
   await expect(warning).toBeVisible();
-  await expect(warning.getByRole('link', { name: 'Manage storage' })).toHaveCount(0);
+  await warning.getByRole('link', { name: 'Manage storage' }).click();
+  await expect(page).toHaveURL(/\/settings\/storage$/);
 });

@@ -1,0 +1,12 @@
+services:
+  stirling-pdf:
+    image: docker.io/stirlingtools/stirling-pdf:3.5.0@sha256:f5a38801f2dd551c26d0089ee3ea48d86a565e3adb414cb31e974bc9562cb48a
+    environment:
+      SECURITY_ENABLELOGIN: 'false'
+      # No usage reports.
+      SYSTEM_ENABLEANALYTICS: 'false'
+      LANGS: en_GB
+    volumes:
+      - ${HLABS_APP_DATA}/tessdata:/usr/share/tesseract-ocr/5/tessdata
+      - ${HLABS_APP_DATA}/configs:/configs
+      - ${HLABS_APP_DATA}/logs:/logs

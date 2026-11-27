@@ -23,7 +23,7 @@ test('US-APP-08 Logs opens from App settings, titled "<App> logs", following, an
   await expect(page.getByRole('button', { name: 'Following' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('log').getByText(/No logs yet\.|Couldn't load the logs/)).toBeVisible();
   await page.getByRole('button', { name: 'Back to app settings' }).click();
-  await expect(page).toHaveURL(new RegExp(`/apps/${ID}/settings$`));
+  await expect(page).toHaveURL(new RegExp(`[?&]settings=${ID}$`));
 });
 
 const BROKEN = 'logs-back-demo';
@@ -39,18 +39,18 @@ test('US-APP-08 Logs opened from a broken tile: Back opens App settings and Clos
   try {
     await page.goto('/');
     await page.getByRole('button', { name: 'Loop demo, error', exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/apps/${BROKEN}/logs$`));
+    await expect(page).toHaveURL(new RegExp(`[?&]logs=${BROKEN}(&|$)`));
     await page.getByRole('button', { name: 'Back to app settings' }).click();
-    await expect(page).toHaveURL(new RegExp(`/apps/${BROKEN}/settings$`));
+    await expect(page).toHaveURL(new RegExp(`[?&]settings=${BROKEN}$`));
     await page.getByRole('button', { name: 'Close' }).click();
     await expect(page).toHaveURL(`${MAIN_URL}/`);
     // And from the settings: Logs, Back, Close still ends on Home.
     await page.goto(`/apps/${BROKEN}/settings`);
     await page.getByRole('button', { name: 'Logs', exact: true }).click();
     await page.getByRole('button', { name: 'Back to app settings' }).click();
-    await expect(page).toHaveURL(new RegExp(`/apps/${BROKEN}/settings$`));
+    await expect(page).toHaveURL(new RegExp(`[?&]settings=${BROKEN}$`));
     await page.goBack();
-    await expect(page).not.toHaveURL(/\/logs$/);
+    await expect(page).not.toHaveURL(/[?&]logs=/);
   } finally {
     await request.post(`${MAIN_URL}/dev/fake-app`, { data: { id: BROKEN, remove: true } });
   }

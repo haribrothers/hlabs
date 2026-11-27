@@ -1,5 +1,6 @@
 // US-ACCT-03 · See and edit my profile (first-run instance, after onboarding).
 import AxeBuilder from '@axe-core/playwright';
+import { homeGreeting } from './phone';
 import { expect, test } from '@playwright/test';
 import { FIRST_RUN_URL } from './instances';
 import { ADMIN, finishOnboarding } from './onboarding';
@@ -33,5 +34,5 @@ test('US-ACCT-03 edit my name and colour; Account and the Home greeting follow',
   await expect(page.getByText('Hari P', { exact: true })).toBeVisible();
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1, name: /, Hari P$/ })).toBeVisible();
+  await expect(homeGreeting(page, test.info(), /, Hari P$/)).toBeVisible();
 });

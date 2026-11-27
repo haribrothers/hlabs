@@ -10,6 +10,10 @@ import { filesCopy as copy } from '../copy/files';
 import { errorCode, errorData, errorLine } from '../lib/error-copy';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { cleanName } from './new-folder-dialog';
+import { PhoneItemIcon } from './phone-file-list';
+import { useIsDesktop } from '../lib/use-media';
+import { useMe } from '../lib/use-me';
+import type { FileAccent } from '@hlabs/ui/files';
 
 /** "Lease agreement" and ".pdf"; a folder, a dotfile or a name without a dot keeps it all. */
 export function splitName(entry: Pick<FileEntry, 'name' | 'kind'>): { base: string; ext: string } {
@@ -30,6 +34,8 @@ export function RenameDialog({
 }) {
   const trpc = useTRPC();
   const client = useTRPCClient();
+  const phone = !useIsDesktop();
+  const me = useMe(phone).data;
   const queryClient = useQueryClient();
   const input = useRef<HTMLInputElement>(null);
   const { base, ext } = splitName(entry);
@@ -84,17 +90,26 @@ export function RenameDialog({
       title={copy.renameTitle}
       initialFocus={input}
       finalFocus={() => document.querySelector<HTMLElement>(`[data-path="${CSS.escape(done.current ?? entry.path)}"]`)}
+      // A phone (PhoneRedesignA_FilesRename): Cancel and the title in the sheet's bar, one white Rename at the bottom.
+      sheetBar={{ cancelLabel: copy.cancel }}
       actions={
         <>
-          <Button variant="secondary" onClick={onClose} disabled={rename.isPending}>
-            {copy.cancel}
-          </Button>
+          {phone ? null : (
+            <Button variant="secondary" onClick={onClose} disabled={rename.isPending}>
+              {copy.cancel}
+            </Button>
+          )}
           <Button onClick={submit} busy={rename.isPending} disabled={!name || taken === name}>
             {inUse ? copy.renameAnyway : copy.rename}
           </Button>
         </>
       }
     >
+      {phone ? (
+        <span aria-hidden className="flex justify-center pt-2 pb-1">
+          <PhoneItemIcon entry={entry} accent={(me?.appearance.accent ?? 'violet') as FileAccent} size={56} />
+        </span>
+      ) : null}
       <form
         className="flex flex-col gap-4"
         onSubmit={(e) => {

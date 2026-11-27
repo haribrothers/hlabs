@@ -15,7 +15,7 @@ test('US-ACCT-21 copy the link and press Done: the invite is pending in Users', 
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   const name = `Guest ${info.workerIndex}-${Date.now()}`;
   await page.goto('/settings/users');
-  await page.getByRole('button', { name: 'Invite someone' }).click();
+  await page.getByRole('button', { name: 'Invite someone' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Invite someone' });
   const link = dialog.getByRole('textbox', { name: 'Invite link' });
   await expect(link).toHaveValue(/^https:\/\/hlabs\.local(:\d+)?\/invite\/[A-Za-z0-9_-]{43}$/);
@@ -34,7 +34,7 @@ test('US-ACCT-21 copy the link and press Done: the invite is pending in Users', 
 test('US-ACCT-21 Close without copying revokes the invite', async ({ page }, info) => {
   const name = `Gone ${info.workerIndex}-${Date.now()}`;
   await page.goto('/settings/users');
-  await page.getByRole('button', { name: 'Invite someone' }).click();
+  await page.getByRole('button', { name: 'Invite someone' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Invite someone' });
   await expect(dialog.getByRole('textbox', { name: 'Invite link' })).toHaveValue(/\/invite\//);
   await dialog.getByLabel('Their name (optional)').fill(name);

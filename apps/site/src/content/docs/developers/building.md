@@ -10,7 +10,7 @@ pnpm build:tray                  # this version (0.0.0)
 pnpm build:tray --version 0.0.1  # a version of your choice
 ```
 
-It builds the dashboard and hlabsd, puts them together with a Node.js runtime, Caddy and docker compose into the app, and builds the menu-bar app around them. The result is `apps/tray/src-tauri/target/release/bundle/macos/hlabs.app`; copy it to Applications and open it. The app isn't signed with an Apple certificate yet, so the first time macOS may ask you to confirm you want to open it.
+It builds the dashboard and hlabsd, puts them together with a Node.js runtime, Caddy, docker compose, restic and cloudflared (the connector for public apps) into the app, and builds the menu-bar app around them. The result is `apps/tray/src-tauri/target/release/bundle/macos/hlabs.app`; copy it to Applications and open it. The app isn't signed with an Apple certificate yet, so the first time macOS may ask you to confirm you want to open it.
 
 Add `--dmg` for the disk image as well: `dist/hlabs-<version>-mac-arm64.dmg` (`-x64` on an Intel Mac). Building it opens a Finder window for a moment, and the first time macOS asks whether your terminal may control Finder. The window's background is `apps/tray/dmg/background.html`; after changing it, run `node apps/tray/dmg/render.mjs` and commit the PNGs and the TIFF. `preview-light.png` and `preview-dark.png` show the layout with pretend icons.
 
@@ -23,9 +23,11 @@ On first launch the app sets up hlabs as a background service for your user:
 | What | Where |
 | --- | --- |
 | The background service | `~/Library/LaunchAgents/dev.hlabs.daemon.plist` (label `dev.hlabs.daemon`), running `hlabs.app/Contents/Resources/daemon/hlabsd.mjs` |
-| Its data | `~/Library/Application Support/hlabs` (the database `hlabs.db`, `caddy/`, `run/`) |
+| Its data | `~/Library/Application Support/hlabs` (the database `hlabs.db`, `caddy/`, `run/`, and `cloudflare/` with the tunnel's credentials file once public access is set up) |
 | Its logs | `~/Library/Application Support/hlabs/logs/hlabsd.1.log` (newest first) and `launchd.log` |
 | The menu-bar app's token | the keychain, service `dev.hlabs`, account `tray-token` |
+| Cloudflare's credential (public apps) | the keychain, service `dev.hlabs`, account `cloudflare-credential` |
+| Visits to public apps | `~/Library/Application Support/hlabs/logs/public/access.log` (Caddy's access log for its public listener, kept 7 days) |
 
 This is separate from development (`.dev-data/`): the installed hlabs has its own users, apps and settings.
 
@@ -58,7 +60,7 @@ pnpm build:linux                        # this version (0.0.0)
 pnpm build:linux --version 0.0.1        # a version of your choice
 ```
 
-It puts hlabsd, Node.js, Caddy, restic, docker compose, the `hlabs` command and the systemd unit into `dist/linux/hlabs-<version>-linux-<arch>.tar.gz`, and writes `SHA256SUMS`, `install.sh` and a signature for each. It signs with `TAURI_SIGNING_PRIVATE_KEY` (and `HLABS_UPDATE_PUBLIC_KEY`, its public half) when they're set. Otherwise it makes a key for this build (`dist/linux/build.key`) and writes its public half into that `install.sh`, so the install still checks a real signature.
+It puts hlabsd, Node.js, Caddy, restic, docker compose, cloudflared, the `hlabs` command and the systemd unit into `dist/linux/hlabs-<version>-linux-<arch>.tar.gz`, and writes `SHA256SUMS`, `install.sh` and a signature for each. It signs with `TAURI_SIGNING_PRIVATE_KEY` (and `HLABS_UPDATE_PUBLIC_KEY`, its public half) when they're set. Otherwise it makes a key for this build (`dist/linux/build.key`) and writes its public half into that `install.sh`, so the install still checks a real signature.
 
 Install it on that computer, or on a test machine that can read `dist/linux`:
 

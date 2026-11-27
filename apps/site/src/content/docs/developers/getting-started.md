@@ -16,7 +16,7 @@ description: What to install, and running hlabs from its source code.
 git clone <your fork>
 cd hlabs
 pnpm install
-pnpm fetch-binaries   # Caddy, docker compose and restic into .bin/, checked against pinned checksums
+pnpm fetch-binaries   # Caddy, docker compose, restic and cloudflared into .bin/, checked against pinned checksums
 ```
 
 ## Run it
@@ -35,13 +35,36 @@ Development keeps its data in `.dev-data/` at the root of the repository; delete
 
 ### Tailscale in development
 
-`pnpm dev` uses a pretend Tailscale, so it never changes the Tailscale on your computer. To try remote access for real:
+`pnpm dev` uses a pretend Tailscale, so it never changes the Tailscale on your computer. **Connect** opens its pretend log-in page (`/dev/tailscale/sign-in`), where **Approve** puts this computer on the pretend tailnet `tail1234.ts.net`, and Settings then shows **Connected**. `POST /dev/tailscale` sets what it reports (`state`, `autoComplete`, `denyWrites`, `servedPorts`); the e2e tests always use it. To try remote access for real:
 
 ```sh
 HLABS_DEV_FAKE_TAILSCALE=0 pnpm dev:full
 ```
 
 It then adds Tailscale Serve entries to your real Tailscale. Remove them when you're done (`tailscale serve reset`), or they'll get in the way of an installed hlabs later.
+
+### Public apps (Cloudflare) in development
+
+`pnpm dev` (and `pnpm dev:full`) uses a pretend Cloudflare, so making an app public never reaches Cloudflare or changes a real domain's DNS. Its domain is `example.com`, which already has `example.com`, `www` and `mail` in its DNS; "Sign in to Cloudflare" opens its pretend sign-in page (`/dev/cloudflare/sign-in`), where Approve finishes setup, and the API token it takes is `fake-cloudflare-token-0123456789`. The same route sets how it behaves (`autoApprove`, `failing`, `takenNames`, `setUp`, `reset`, and for the public dashboard `dashboard: { hostname }` or `null` and `accessDenied`), and `POST /dev/public-visit` adds a line to the Visits log, since there's no Caddy in front under `pnpm dev`. The e2e tests always use it.
+
+The public dashboard is reached through Caddy's public listener only, which marks each request `X-Hlabs-Via: public` (with `X-Hlabs-Public-Host`); every other Caddy server deletes that header, so the daemon can trust it. Without Caddy (under `pnpm dev`, and in e2e), a stand-in for the public listener sends the same headers itself, with `X-Forwarded-For` and `CF-IPCountry` for the visitor. From there, the changes in `HOME_ONLY_PROCEDURES` (`packages/shared/src/home-only.ts`) answer `HOME_ONLY`; a new tRPC procedure must be added there or to the list of what works anywhere in `packages/api/src/us-sys-47.test.ts`, or that test fails. `POST /dev/age-sessions { username, ms }` moves someone's sessions back in time, to see the public dashboard's 12-hour end. In e2e the stand-in is `publicDashboard()` (`apps/web/e2e/public-dashboard.ts`), which serves `https://hlabs.example.com` from the worker's Vite with those headers; a new home-only procedure also needs a valid call in `apps/web/e2e/support/home-only-inputs.ts`, which the US-SYS-47 spec makes from the public address (`e2e/support/us-sys-47.unit.ts`, run by `pnpm test`, fails until it's there).
+
+To try the real Cloudflare (`pnpm fetch-binaries` puts cloudflared in `.bin/`), with a domain of yours on Cloudflare:
+
+```sh
+HLABS_DEV_FAKE_CLOUDFLARE=0 pnpm dev:full
+```
+
+Public addresses reach Caddy's public listener on `127.0.0.1:7475` (`HLABS_PUBLIC_PORT`), over TLS with a certificate for `public.hlabs.internal` from hlabs's local CA, which cloudflared is set to trust (D-181). Remove Cloudflare Tunnel in Settings › Network when you're done, so the tunnel and the DNS records hlabs made are deleted.
+
+To try the public dashboard for real the same way:
+
+1. Turn on two-factor login for every admin in the dev instance (Settings › Account).
+2. In Settings › Network, choose **Make public…** on the Dashboard row and pick a name (`hlabs` makes `https://hlabs.<your domain>`). The public route serves the dev dashboard from Vite with the upstream's own `Host`, so Vite's `allowedHosts` doesn't need your domain.
+3. For **Cloudflare's sign-in in front**, have an API token ready with **Account · Access: Apps and Policies · Edit** and **Account · Access: Organizations, Identity Providers, and Groups · Edit**. The credential from "Sign in to Cloudflare" can read Cloudflare Access but not change it, so hlabs always asks for this token (D-187). On an account that has no One-time PIN login method, hlabs adds one, which other Access applications that accept every login method will then offer as well; add it yourself first on an account you use for other things.
+4. Open the address in a private window: Cloudflare's email-code page comes first, then hlabs's sign-in with the two-factor code.
+
+Make the dashboard private (or remove Cloudflare Tunnel) when you're done: hlabs deletes its DNS record and the Access application it made. Your dev data is in `.dev-data/` (logs in `.dev-data/logs/`, where a failed Cloudflare call shows Cloudflare's answer with the status and the call).
 
 ### Network drives in development
 
@@ -62,7 +85,9 @@ pnpm test        # every package's unit tests (Vitest)
 pnpm test:e2e    # the dashboard in a real browser (Playwright, with axe)
 ```
 
-The end-to-end tests run their own hlabs on other ports (7574 for hlabs, 5273 for the dashboard) with their own data, so they never touch your development hlabs. The installable dashboard's tests (the `pwa` project) also build the dashboard into `apps/web/dist-pwa` and serve it on 5373, because its web manifest and service worker only exist in builds. The first run needs the browsers: `pnpm --filter @hlabs/web exec playwright install chromium`.
+Each unit test run keeps what its tests write (a daemon's data per test, fake stores and drives) in one `hlabs-test-…` folder in the system temp folder, and removes it when the run ends. That's `/tmp` under `pnpm test`, because Turborepo doesn't pass `TMPDIR` on. A run that's stopped part-way leaves its folder behind; a later run removes it once it's a day old, along with the module copies Vitest leaves there.
+
+The end-to-end tests run their own hlabs on other ports (7574 for hlabs, 5273 for the dashboard) with their own data, so they never touch your development hlabs. The installable dashboard's tests (the `pwa` project) also build the dashboard into `apps/web/dist-pwa` and serve it on 5373, because its web manifest and service worker only exist in builds. The tablet specs (`us-tab-*.spec.ts`, the `tablet` project) run Chromium as an iPad by touch (1180 × 820, touch on and no mouse, turned upright where they test portrait), so `(hover: none) and (pointer: coarse)` matches as it does on a real iPad. The first run needs the browsers: `pnpm --filter @hlabs/web exec playwright install chromium`. The first-run instances (daemons on 7480 and up, one per worker, each with its own `.e2e-data-first-run-<n>` folder and secrets file) are started again when hlabsd exits with code 75, as launchd and systemd do, so Restart hlabs and the factory reset are tested there and nowhere else. The help's screenshots have a Playwright project of their own that a plain run skips: see [Docs screenshots](/developers/docs-screenshots/).
 
 For the menu-bar app's Rust code: `cd apps/tray/src-tauri && cargo test`.
 

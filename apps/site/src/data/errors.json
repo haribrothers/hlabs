@@ -12,6 +12,12 @@
     "body": "Wait for it to finish what it’s doing, then try again."
   },
   {
+    "code": "APP_CONFIG_UNDONE",
+    "slug": "app-config-undone",
+    "title": "The app didn't start with the new settings, so they were undone",
+    "body": "It's running with its previous settings. Check its logs, then try again."
+  },
+  {
     "code": "APP_DISK_FULL",
     "slug": "app-disk-full",
     "title": "There’s no space for this app",
@@ -34,6 +40,12 @@
     "slug": "app-health-timeout",
     "title": "The app didn't start in time",
     "body": "Check its logs, then try again."
+  },
+  {
+    "code": "APP_IS_PUBLIC",
+    "slug": "app-is-public",
+    "title": "Not while this app is public",
+    "body": "Make it private first, in its Access section."
   },
   {
     "code": "APP_NETWORK_UNREACHABLE",
@@ -126,6 +138,12 @@
     "body": "Use the newest code from your authenticator app."
   },
   {
+    "code": "AUTH_TWO_FACTOR_REQUIRED",
+    "slug": "auth-two-factor-required",
+    "title": "Turn on two-factor login first",
+    "body": "Signing in from the internet needs it. Turn it on in hlabs at home, under Settings › Account."
+  },
+  {
     "code": "BACKUP_DEST_AUTH_FAILED",
     "slug": "backup-dest-auth-failed",
     "title": "The backup destination didn't accept that",
@@ -174,6 +192,12 @@
     "body": "Use the password from when these backups were made."
   },
   {
+    "code": "CLOUDFLARE_FAILED",
+    "slug": "cloudflare-failed",
+    "title": "Cloudflare didn't answer",
+    "body": "Nothing was left half done. Check your internet connection and try again."
+  },
+  {
     "code": "CSRF_REJECTED",
     "slug": "csrf-rejected",
     "title": "That didn't go through",
@@ -184,6 +208,12 @@
     "slug": "daemon-starting",
     "title": "hlabs is starting",
     "body": "This usually takes less than a minute. Try again then."
+  },
+  {
+    "code": "DASHBOARD_NOT_PUBLIC",
+    "slug": "dashboard-not-public",
+    "title": "The dashboard isn't public",
+    "body": "Make it public first, then add Cloudflare's sign-in in front."
   },
   {
     "code": "DISK_FULL",
@@ -276,6 +306,12 @@
     "body": "Save it somewhere else."
   },
   {
+    "code": "HOME_ONLY",
+    "slug": "home-only",
+    "title": "Do this at home or on your tailnet",
+    "body": "This only works from hlabs at home or on your tailnet, so someone with your password and code can't do it from the internet."
+  },
+  {
     "code": "HOSTNAME_TAKEN",
     "slug": "hostname-taken",
     "title": "That address is taken",
@@ -310,6 +346,18 @@
     "slug": "last-admin",
     "title": "hlabs needs at least one admin",
     "body": "Make someone else an admin first."
+  },
+  {
+    "code": "LIBRARY_APP_EXISTS",
+    "slug": "library-app-exists",
+    "title": "Your library already has an app called that",
+    "body": "Choose another name."
+  },
+  {
+    "code": "LIBRARY_KEY_MISSING",
+    "slug": "library-key-missing",
+    "title": "There is no signing key on this computer",
+    "body": "Make one with hlabs library keygen, then sign again."
   },
   {
     "code": "NAS_AUTH_FAILED",
@@ -402,10 +450,88 @@
     "body": "Choose a new one."
   },
   {
+    "code": "PUBLIC_ALREADY_SET_UP",
+    "slug": "public-already-set-up",
+    "title": "Cloudflare Tunnel is already set up",
+    "body": "To use another domain, remove it in Settings › Network & remote access first."
+  },
+  {
+    "code": "PUBLIC_HOSTNAME_TAKEN",
+    "slug": "public-hostname-taken",
+    "title": "That name is already in use",
+    "body": "Something else on your domain uses it. Choose another name."
+  },
+  {
+    "code": "PUBLIC_NOT_ALLOWED",
+    "slug": "public-not-allowed",
+    "title": "This app can't be made public",
+    "body": "It can control your other apps."
+  },
+  {
+    "code": "PUBLIC_NOT_SET_UP",
+    "slug": "public-not-set-up",
+    "title": "Public access isn't set up",
+    "body": "Set up Cloudflare Tunnel in Settings › Network & remote access first."
+  },
+  {
     "code": "RESTORE_NOT_CANCELLABLE",
     "slug": "restore-not-cancellable",
     "title": "The restore can't be stopped now",
     "body": "Stopping it here could damage your data. It will finish soon."
+  },
+  {
+    "code": "SOURCE_ADDRESS_INVALID",
+    "slug": "source-address-invalid",
+    "title": "That isn't a source address",
+    "body": "Paste an https:// address, such as https://github.com/you/your-app-store, or a folder path."
+  },
+  {
+    "code": "SOURCE_BUILTIN",
+    "slug": "source-builtin",
+    "title": "The built-in store can't be removed",
+    "body": "It comes with hlabs."
+  },
+  {
+    "code": "SOURCE_EMPTY",
+    "slug": "source-empty",
+    "title": "No hlabs apps found at this address",
+    "body": "A source needs apps in hlabs's format, with an index.json made by hlabs library index."
+  },
+  {
+    "code": "SOURCE_EXISTS",
+    "slug": "source-exists",
+    "title": "This source is already added",
+    "body": "It's in the list above."
+  },
+  {
+    "code": "SOURCE_INVALID",
+    "slug": "source-invalid",
+    "title": "Couldn't read this source",
+    "body": "Its files are too big or point outside it. Ask whoever runs it."
+  },
+  {
+    "code": "SOURCE_PATH_OUTSIDE",
+    "slug": "source-path-outside",
+    "title": "Choose a folder in hlabs",
+    "body": "A library folder has to be inside hlabs's storage, such as your Home folder."
+  },
+  {
+    "code": "SOURCE_PATH_SHARED",
+    "slug": "source-path-shared",
+    "title": "Choose a folder only admins can change",
+    "body": "Others could change apps in Shared or their own Home folder. Use your Home folder instead."
+  },
+  {
+    "code": "SOURCE_SIGNATURE_MISMATCH",
+    "slug": "source-signature-mismatch",
+    "title": "Signature doesn't match the saved key",
+    "body": "Its apps may have been changed by someone else, so hlabs stopped using it. Remove it, and add it again only if you trust the new key."
+  },
+  {
+    "code": "SOURCE_UNREACHABLE",
+    "slug": "source-unreachable",
+    "title": "Couldn't reach the repository",
+    "body": "Check the address and that this computer is online. A private repository can't be added."
   },
   {
     "code": "STORAGE_LOCATION_IN_USE",
@@ -466,6 +592,18 @@
     "slug": "tray-token-rejected",
     "title": "The menu bar app isn't connected",
     "body": "Quit it and open it again."
+  },
+  {
+    "code": "TWO_FACTOR_REQUIRED_FOR_DASHBOARD",
+    "slug": "two-factor-required-for-dashboard",
+    "title": "Every admin needs two-factor login first",
+    "body": "An admin hasn't turned on two-factor login yet. Every admin needs it before the dashboard can be public."
+  },
+  {
+    "code": "TWO_FACTOR_REQUIRED_FOR_PUBLIC",
+    "slug": "two-factor-required-for-public",
+    "title": "Nobody could get in yet",
+    "body": "Everyone with access needs two-factor login on first. Ask them to turn it on in Settings › Account, then try again."
   },
   {
     "code": "UPDATE_CHECK_FAILED",

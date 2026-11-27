@@ -1,0 +1,27 @@
+schema: 1
+id: portainer
+name: Portainer
+version: '2.45.4'
+revision: 1
+tagline: See and manage every container on this computer
+description: |
+  Portainer shows every Docker container, image, volume and network on this computer and lets you start,
+  stop and change them, including the ones hlabs runs. Create its admin account within 5 minutes of the
+  first start, or restart it to try again. Changing hlabs's own apps here can break them.
+category: developer
+developer: { name: Portainer, url: https://www.portainer.io }
+source: https://github.com/portainer/portainer
+license: Zlib
+icon:
+  logo: logo.svg
+  gradient: ['#13bef9', '#0b3d57']
+  fallback: container
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: portainer, port: 9000, embed: true }
+ownLogin: true
+overlaps: [appManagement]
+backup:
+  pause: [portainer]
+  beforeUpdate: true
+permissions: { network: internet, dockerSocket: true }

@@ -93,8 +93,13 @@ export class CliComposeRunner implements ComposeRunner {
     return this.run(project, ['stop']);
   }
 
-  restart(project: ComposeProject) {
-    return this.run(project, ['restart']);
+  /**
+   * Stop, then up: `compose restart` starts every service at once, ignoring `depends_on`, so an app that exits when its
+   * database isn't up yet fails its restart (Vikunja); `up` waits for each dependency's condition first (D-189).
+   */
+  async restart(project: ComposeProject) {
+    await this.stop(project);
+    await this.up(project);
   }
 
   down(project: ComposeProject, options: DownOptions = {}) {

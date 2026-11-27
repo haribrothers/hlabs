@@ -11,9 +11,13 @@ import { registerDashboard } from './http/dashboard';
 import { registerDevRoutes } from './http/dev';
 import { registerHealthz } from './http/healthz';
 import { registerAuthVerify } from './http/verify';
+import { registerPublicPages } from './http/public';
 import { registerAppAssets } from './http/app-assets';
+import { registerAppearance } from './http/appearance';
 import { registerAppLogs } from './http/app-logs';
+import { registerDiagnostics } from './http/diagnostics';
 import { registerFiles } from './http/files';
+import { anonymousAdmin, countryOf, dashboardSession, publicHostFor, viaOf } from './http/via';
 import type { Logger } from './logger';
 import type { Readiness } from './readiness';
 import { dispatcher } from './routers/index';
@@ -30,7 +34,8 @@ export interface ServerDeps {
 
 /**
  * The tray token (from loopback, never through Caddy) or the session cookie decides who is calling; without either,
- * the development-only anonymous admin or nobody.
+ * the development-only anonymous admin (never from the public dashboard) or nobody. From the public dashboard only a
+ * session made there counts, and from anywhere else never one (US-SYS-46, http/via.ts).
  */
 async function identify(
   config: DaemonConfig,
@@ -47,8 +52,15 @@ async function identify(
   }
   const raw = readCookie(req.headers.cookie, SESSION_COOKIE);
   const services = holder.current;
-  if (raw && services?.readiness.isReady) {
-    const session = services.sessions.resolve(raw);
+  // While restarting or resetting (US-SYS-31, US-SYS-38) the session still counts, so calls answer DAEMON_STARTING
+  // rather than sending people to log in; once the database is closed for good there's no session to read.
+  if (raw && services) {
+    let session: ReturnType<typeof services.sessions.resolve> = null;
+    try {
+      session = dashboardSession(services, req.headers, raw);
+    } catch {
+      // The daemon is stopping.
+    }
     if (session) {
       return {
         kind: 'user',
@@ -58,7 +70,7 @@ async function identify(
       };
     }
   }
-  if (config.devAnonymousAdmin) return { kind: 'user', userId: 'dev', role: 'admin' };
+  if (anonymousAdmin(config.devAnonymousAdmin, req.headers)) return { kind: 'user', userId: 'dev', role: 'admin' };
   return { kind: 'anonymous' };
 }
 
@@ -83,11 +95,14 @@ export async function buildServer({
 
   registerHealthz(app, readiness, config.version);
   registerAuthVerify(app, holder, config.resources.webFallbackDir);
+  registerPublicPages(app, holder, config.resources.webFallbackDir);
   registerAppAssets(app, holder, config.devAnonymousAdmin);
   registerAppLogs(app, holder, config.devAnonymousAdmin);
+  registerDiagnostics(app, holder, config.devAnonymousAdmin);
   registerFiles(app, holder, config.devAnonymousAdmin, () =>
     dashboardOrigins(config.dashboardUrl, holder.current?.db ?? null),
   );
+  registerAppearance(app, holder, () => dashboardOrigins(config.dashboardUrl, holder.current?.db ?? null));
   if (config.dev) registerDevRoutes(app, holder);
   registerDashboard(app, config.resources.webDir);
 
@@ -97,17 +112,23 @@ export async function buildServer({
     logLevel: config.dev ? 'info' : 'warn',
     trpcOptions: {
       router: appRouter,
-      createContext: async ({ req, res }) =>
-        new DaemonContext(holder, dispatcher, await identify(config, holder, trayTokens, req), {
+      createContext: async ({ req, res }) => {
+        const db = holder.current?.db ?? null;
+        const via = viaOf(req.headers, db);
+        return new DaemonContext(holder, dispatcher, await identify(config, holder, trayTokens, req), {
           ip: req.ip,
           userAgent: req.headers['user-agent'] ?? null,
           setupToken: headerValue(req.headers['x-hlabs-setup']),
           csrfToken: headerValue(req.headers['x-hlabs-csrf']),
           origin: headerValue(req.headers.origin),
           host: headerValue(req.headers['x-forwarded-host']) ?? headerValue(req.headers.host),
-          allowedOrigins: dashboardOrigins(config.dashboardUrl, holder.current?.db ?? null),
+          allowedOrigins: dashboardOrigins(config.dashboardUrl, db),
+          via,
+          publicHost: publicHostFor(req.headers, db),
+          country: via === 'public' ? countryOf(req.headers) : null,
           setCookie: (cookie) => void res.header('set-cookie', cookie),
-        }),
+        });
+      },
       onError: ({ path, error }) => {
         if (error.code === 'INTERNAL_SERVER_ERROR') logger.error({ err: error, path }, 'procedure failed');
       },

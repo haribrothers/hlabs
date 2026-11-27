@@ -3,13 +3,13 @@
 import { EXCLUSIVE_JOB_KINDS } from '@hlabs/shared';
 import { Button, Progress } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSubscription } from '@trpc/tanstack-react-query';
 import { engineCopy } from '../copy/engine';
 import { errorCopy } from '../copy/errors';
 import { confirm } from '../lib/confirm';
 import { showErrorToast } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
+import { useEventStream } from '../lib/use-event-stream';
 
 const copy = engineCopy;
 const EXCLUSIVE = new Set<string>(EXCLUSIVE_JOB_KINDS);
@@ -18,31 +18,24 @@ const EXCLUSIVE = new Set<string>(EXCLUSIVE_JOB_KINDS);
 export function useActiveJobs(enabled = true) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  useSubscription(
-    trpc.events.stream.subscriptionOptions(
-      { types: ['job.progress', 'job.finished'] },
-      {
-        enabled,
-        onData: ({ data: event }) => {
-          void queryClient.invalidateQueries({ queryKey: trpc.jobs.list.queryKey() });
-          if (event.type === 'job.finished' && event.data.kind === 'engine_restart' && event.data.state === 'failed') {
-            showToast({ tone: 'danger', title: copy.notBack });
-          }
-          // Start engine that didn't work (US-STATE-09): what to do, and the way to the engine's settings.
-          if (event.type === 'job.finished' && event.data.kind === 'engine_start' && event.data.state === 'failed') {
-            const { title, body } = errorCopy.codes.ENGINE_START_FAILED();
-            showToast({
-              tone: 'danger',
-              title,
-              body,
-              key: 'engine_start_failed',
-              actions: [{ kind: 'navigate', label: copy.details, to: '/settings/engine', admin: true }],
-            });
-          }
-        },
-      },
-    ),
-  );
+  useEventStream((event) => {
+    if (!enabled || (event.type !== 'job.progress' && event.type !== 'job.finished')) return;
+    void queryClient.invalidateQueries({ queryKey: trpc.jobs.list.queryKey() });
+    if (event.type === 'job.finished' && event.data.kind === 'engine_restart' && event.data.state === 'failed') {
+      showToast({ tone: 'danger', title: copy.notBack });
+    }
+    // Start engine that didn't work (US-STATE-09): what to do, and the way to the engine's settings.
+    if (event.type === 'job.finished' && event.data.kind === 'engine_start' && event.data.state === 'failed') {
+      const { title, body } = errorCopy.codes.ENGINE_START_FAILED();
+      showToast({
+        tone: 'danger',
+        title,
+        body,
+        key: 'engine_start_failed',
+        actions: [{ kind: 'navigate', label: copy.details, to: '/settings/engine', admin: true }],
+      });
+    }
+  });
   return useQuery({ ...trpc.jobs.list.queryOptions(), enabled, retry: false });
 }
 

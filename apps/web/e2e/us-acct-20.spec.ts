@@ -26,11 +26,17 @@ test('US-ACCT-20 allowing installs gives members the App Store and an Install ap
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
   const anu = await signedInAs(browser, info.project.use, FIRST_RUN_URL, member);
-  await expect(anu.getByRole('list', { name: 'Apps' }).getByText('Install app')).toHaveCount(0);
+  // Nothing shared with them yet, so Home is empty (US-HOME-15): the tile shows there once they may install.
+  await expect(anu.getByRole('link', { name: 'Install app' })).toHaveCount(0);
 
   await Promise.all([page.waitForResponse((r) => r.url().includes('users.updatePolicy')), install.click()]);
   await expect(install).toHaveAttribute('aria-checked', 'true');
   // Their open Home follows (access.changed): the tile, and the App Store in the Dock.
-  await expect(anu.getByRole('list', { name: 'Apps' }).getByText('Install app')).toBeVisible();
-  if (!isMobile) await expect(anu.getByRole('link', { name: 'App Store' })).toBeVisible();
+  await expect(
+    anu.getByRole('region', { name: 'No apps yet' }).getByRole('link', { name: 'Install app' }),
+  ).toBeVisible();
+  if (!isMobile)
+    await expect(
+      anu.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: 'App Store' }),
+    ).toBeVisible();
 });

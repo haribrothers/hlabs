@@ -478,17 +478,40 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 
 ## Phase 7 · v1.0 completeness
 
-**Goal:** Everything P2: the comfortable product.
+**Goal:** Everything P2: the comfortable product, with the apps people run on a home server, their own app libraries, and apps they can share on the internet.
 
-**Deliverables**
-- Notifications, empty Home, edit mode, widgets.
-- Store categories, search, updates list, sources.
-- App configuration, permissions, usage detail.
-- Appearance, storage, advanced, factory reset.
-- Phone layouts for log in, Home, store and app details; PWA.
+Four tracks that don't wait for each other (D-151):
+- **A · The comfortable product:** notifications, empty Home, edit mode, widgets; store categories, search, updates list, sources; app configuration, permissions, usage detail; appearance, storage, advanced, factory reset; phone layouts and the PWA.
+- **B · A bigger built-in store (D-148):** first the tools (the porting helper, the update bot, CI per changed app), then Hari approves the list of 100 apps, then they're ported in waves of about 20, each merged when its matrix passes.
+- **C · Your own app library (D-149):** after sources (US-STORE-18, 19): the `hlabs library` commands, signing, the template repository and help guide, and "Copy to my library".
+- **D · Public apps (D-150, D-171):** first the threat model (07 §7.10) and a prototype with Cloudflare Tunnel on Hari's domain and one test app (its own name, hlabs's login with two-factor in front on that name, phone apps behind the login, the hardening), on the development Mac, reviewed with Hari (a quick tunnel first, then Hari's domain on Cloudflare); then the public-access designs redrawn without Funnel; then the stories.
+
+**Work order** (Hari, 22 Nov 2026): the stories are built in groups, each finished without stopping except for a question. US-STORE-26 came first.
+
+| # | Group | Stories | Stops for |
+|---|---|---|---|
+| 1 | Store tools | US-STORE-25, 24 | — |
+| 2 | Notifications and empty Home | US-HOME-13, 14, 15 | — |
+| 3 | Edit Home, widgets and Dock | US-HOME-16, 17, 18, 19, 22, 20 | — |
+| 4 | Store browsing and updates | US-STORE-04, 05, 15, 16 | — |
+| 5 | App sources and your own library | US-STORE-18, 19, 27, 28, 29 | — |
+| 6 | The 100 apps | US-STORE-23, in waves of about 20 | Hari approves the list (Q-20) |
+| 7 | App configuration and usage | US-APP-13 to 21 | — |
+| 8 | Appearance | US-ACCT-32 to 35 | — |
+| 9 | Storage | US-SYS-11 to 14 | — |
+| 10 | System tools and reset | US-SYS-27 to 31, 37, 38 | — |
+| 11 | Public apps | Cloudflare prototype, then US-SYS-43, 44, US-APP-27 to 29 | Hari reviews the prototype (D-171); waits for Hari's domain on Cloudflare; live checks from outside the home network |
+| 12 | Phone and PWA | US-PHONE-01 to 12, 23, 24 | Hari checks on iOS Safari and Android Chrome |
+| 13 | The rest of the phone app in Direction A | US-PHONE-25 to 28 (D-174) | Hari reviews the missing frames first, then checks on his iPhone |
+| 14 | Tablets: touch on the desktop layout | US-TAB-01 to 06 (D-175) | Hari reviews the tablet frames first, then checks on an iPad |
+| 15 | Docs screenshots | US-SITE-11 | after 13 and 14, so the screenshots show them |
+| 16 | The public dashboard | US-SYS-45 to 48 (D-182) | Hari reviews the frames first; checked by hand on his domain (Q-25) |
 
 **Done when**
 - [ ] All P2 stories pass; axe clean on every route; phone layouts verified on iOS Safari and Android Chrome.
+- [ ] The built-in store has the approved 100 apps and the nightly matrix installs ≥ 98 % of them.
+- [ ] Public apps: the Cloudflare prototype's findings are in D-171; a public app is checked by hand through Cloudflare Tunnel from outside the home network (login in front, 404s, headers, rate limit, turning it off).
+- [ ] The public dashboard (D-182): checked by hand through Cloudflare Tunnel from outside the home network (two-factor sign-in, a home-only change refused, the app tiles, Cloudflare's sign-in in front, turning it off).
 - [ ] **1.0 release.**
 
 **Stories**
@@ -513,6 +536,13 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-STORE-16 · Check for updates and auto-update in the background (P2)
 - US-STORE-18 · See and manage app sources (P2)
 - US-STORE-19 · Add a source with a pinned signing key (P2)
+- US-STORE-23 · Find the apps people run on a home server (P2, track B)
+- US-STORE-24 · Keep the built-in apps up to date (P2, track B)
+- US-STORE-25 · Port an app with the porting helper (P2, track B)
+- US-STORE-26 · Test only the apps a change touches (P2, track B)
+- US-STORE-27 · Start my own app library (P2, track C)
+- US-STORE-28 · Sign my library (P2, track C)
+- US-STORE-29 · Copy a built-in app into my library (P2, track C)
 
 *[Using & managing apps](../features/06-apps.md)*
 
@@ -525,6 +555,9 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-APP-19 · Require hlabs login in front of an app (P2)
 - US-APP-20 · Resource use tiles and 24-hour chart (P2)
 - US-APP-21 · Per-container usage (P2)
+- US-APP-27 · Make an app public (P2, track D)
+- US-APP-28 · Choose who gets into a public app (P2, track D)
+- US-APP-29 · See who visits a public app (P2, track D)
 
 *[Settings · account & people](../features/09-account-people.md)*
 
@@ -546,6 +579,12 @@ Tell Claude Code: *"Implement phase N"* or *"Implement US-XXX-NN"*. Tick stories
 - US-SYS-31 · Restart hlabs (P2)
 - US-SYS-37 · Confirm a factory reset (P2)
 - US-SYS-38 · Reset hlabs (P2)
+- US-SYS-43 · Set up a way to make apps public (P2, track D)
+- US-SYS-44 · See and stop everything that's public (P2, track D)
+- US-SYS-45 · Make the dashboard public (P2, track D)
+- US-SYS-46 · Sign in to the public dashboard (P2, track D)
+- US-SYS-47 · Some changes only work at home (P2, track D)
+- US-SYS-48 · Add Cloudflare's sign-in in front of the dashboard (P2, track D)
 
 *[Phone](../features/12-phone.md)*
 

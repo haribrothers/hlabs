@@ -2,7 +2,8 @@
 // says how much is here and who can see it. Errors and empty folders say what to do next.
 import type { FileEntry } from '@hlabs/api';
 import { formatBytes, isFeatureEnabled } from '@hlabs/shared';
-import { Button, ScrollPane } from '@hlabs/ui';
+import { iconDefaults, Plus } from '@hlabs/icons';
+import { Button, ScrollPane, useIsTouch } from '@hlabs/ui';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState, type DragEvent, type ReactNode } from 'react';
@@ -13,6 +14,9 @@ import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { showErrorToast } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
 import { Breadcrumb } from './breadcrumb';
+import { AddSheet } from './add-sheet';
+import { FilesPhoneHeader } from './phone-header';
+import { PhoneFileList } from './phone-file-list';
 import { FileGrid, type SelectProps } from './file-grid';
 import { FileList } from './file-list';
 import { FolderSkeleton } from './folder-skeleton';
@@ -147,7 +151,13 @@ export function FolderView({
   onDropItems,
   onTrashItems,
   onMoveItems,
+  places,
+  onAdd,
 }: {
+  /** A phone's place chips, under the search field (PhoneRedesignA_Files). */
+  places?: ReactNode;
+  /** A phone's "+": New folder and Upload here (PhoneRedesignA_Files). */
+  onAdd?: { onNewFolder: () => void; onUpload?: (folderName: string) => void };
   /** Move to… and Move to Trash for the selected items, once their stories ship (US-FILE-22, US-FILE-16). */
   selectionActions?: (entries: FileEntry[], clear: () => void, readOnly: boolean) => Omit<SelectionActions, 'onShare'>;
   /** Move to Trash (or delete for good on a network drive) for these items here (US-FILE-16). */
@@ -179,6 +189,7 @@ export function FolderView({
 }) {
   const navigate = useNavigate();
   const desktop = useIsDesktop();
+  const touch = useIsTouch();
   const { query, listing, items } = useFolder(path, sort);
   const queryClient = useQueryClient();
   const trpc = useTRPC();
@@ -187,6 +198,7 @@ export function FolderView({
   const place = listing?.place ?? { area: 'home', name: null, readOnly: provisionalReadOnly(path) };
   const [dragging, setDragging] = useState(false);
   const [renaming, setRenaming] = useState<FileEntry | null>(null);
+  const [adding, setAdding] = useState(false);
   // The right-click menu (at a point) or a phone's ••• sheet (US-FILE-21).
   const [menu, setMenu] = useState<{ entries: FileEntry[]; at: { x: number; y: number } | null } | null>(null);
   const client = useTRPCClient();
@@ -253,6 +265,8 @@ export function FolderView({
           carry: (e) => (select.selected.has(e.path) ? chosen : [e]),
           from: path,
           onDrop: (folder, entries, from) => onDropItems(entries, from, folder),
+          // A finger that held an item opened its menu; moving on drags it instead (US-TAB-03).
+          onTouchDragStart: () => setMenu(null),
         }
       : undefined;
   /** The menu is for the item; on a ticked one while selecting, for every ticked item. Nothing gets selected (D-137). */
@@ -408,51 +422,60 @@ export function FolderView({
       );
     }
   } else if (!listing) {
-    body = <FolderSkeleton view={view} />;
+    body = <FolderSkeleton view={desktop ? view : 'list'} />;
   } else if (items.length === 0) {
     body = <Message title={copy.emptyFolder} body={listing.place.readOnly ? undefined : copy.emptyWritable} />;
   } else {
     const name = last?.name ?? copy.areaNames[last?.path ?? ''] ?? copy.title;
-    body =
-      view === 'list' ? (
-        <FileList
-          items={items}
-          label={name}
-          accent={me.accent}
-          sort={sort}
-          onSort={onSort ?? (() => {})}
-          onOpen={open}
-          openOnClick={!desktop}
-          select={select}
-          drag={drag}
-          onMenu={onMenu}
-          onDeleteKey={
-            onTrashItems && !place.readOnly
-              ? (e) => onTrashItems(selecting && select.selected.has(e.path) ? chosen : [e], place, clear)
-              : undefined
-          }
-          onRename={canRename ? setRenaming : undefined}
-          focusPath={focusAfter ?? focusPath}
-        />
-      ) : (
-        <FileGrid
-          items={items}
-          label={name}
-          accent={me.accent}
-          onOpen={open}
-          openOnClick={!desktop}
-          select={select}
-          drag={drag}
-          onMenu={onMenu}
-          onDeleteKey={
-            onTrashItems && !place.readOnly
-              ? (e) => onTrashItems(selecting && select.selected.has(e.path) ? chosen : [e], place, clear)
-              : undefined
-          }
-          onRename={canRename ? setRenaming : undefined}
-          focusPath={focusAfter ?? focusPath}
-        />
-      );
+    body = !desktop ? (
+      <PhoneFileList
+        items={items}
+        label={name}
+        accent={me.accent}
+        onOpen={open}
+        select={select}
+        onMenu={onMenu}
+        focusPath={focusAfter ?? focusPath}
+      />
+    ) : view === 'list' ? (
+      <FileList
+        items={items}
+        label={name}
+        accent={me.accent}
+        sort={sort}
+        onSort={onSort ?? (() => {})}
+        onOpen={open}
+        openOnClick={!desktop}
+        select={select}
+        drag={drag}
+        onMenu={onMenu}
+        onDeleteKey={
+          onTrashItems && !place.readOnly
+            ? (e) => onTrashItems(selecting && select.selected.has(e.path) ? chosen : [e], place, clear)
+            : undefined
+        }
+        onRename={canRename ? setRenaming : undefined}
+        focusPath={focusAfter ?? focusPath}
+      />
+    ) : (
+      <FileGrid
+        items={items}
+        label={name}
+        accent={me.accent}
+        onOpen={open}
+        openOnClick={!desktop}
+        select={select}
+        drag={drag}
+        onMenu={onMenu}
+        onDeleteKey={
+          onTrashItems && !place.readOnly
+            ? (e) => onTrashItems(selecting && select.selected.has(e.path) ? chosen : [e], place, clear)
+            : undefined
+        }
+        onRename={canRename ? setRenaming : undefined}
+        focusPath={focusAfter ?? focusPath}
+      />
+    );
   }
 
   const footer =
@@ -473,7 +496,8 @@ export function FolderView({
 
   const header = (
     <div className="flex flex-wrap items-center gap-3">
-      <div className="min-w-0 flex-1">
+      {/* On a tablet the toolbar goes under the folder's name rather than squeezing it (iPad portrait, US-TAB-05). */}
+      <div className={touch ? 'min-w-0 flex-1 basis-64' : 'min-w-0 flex-1'}>
         <Breadcrumb crumbs={crumbs} />
       </div>
       <div className="flex flex-wrap items-center gap-2 max-md:w-full">
@@ -561,15 +585,83 @@ export function FolderView({
     />
   ) : null;
 
-  // A phone scrolls the whole page (PhoneFiles); a desktop window scrolls the folder under its header.
+  // A phone scrolls the whole page (PhoneRedesignA_Files): the bar with "+" and "Select" over the large title, the
+  // search field, the places, the breadcrumb, then the folder as an inset list.
   if (!desktop) {
+    const canSelect = !!listing && items.length > 0 && !searchQuery;
+    const readOnly = place.readOnly;
     return (
-      <div className="flex min-w-0 flex-col gap-4">
-        {header}
-        {notice?.(folderName)}
-        <div className="flex flex-col">{body}</div>
-        {footer}
+      <div className="flex min-w-0 flex-col">
+        {selecting ? (
+          <FilesPhoneHeader
+            leading={
+              <button type="button" className="hl-p-tbtn hl-focus" onClick={() => setSel(selectAll(sel, order))}>
+                {copy.selectAll}
+              </button>
+            }
+            middle={copy.selected(chosen.length)}
+            trailing={
+              <button type="button" className="hl-p-tbtn hl-p-tbtn-strong hl-focus" onClick={clear}>
+                {copy.done}
+              </button>
+            }
+          />
+        ) : (
+          <FilesPhoneHeader
+            trailing={
+              <>
+                {onAdd && !query.isError ? (
+                  <button
+                    type="button"
+                    className={`hl-p-tbtn hl-focus${readOnly ? ' opacity-50' : ''}`}
+                    aria-label={copy.addHere}
+                    aria-haspopup="dialog"
+                    aria-disabled={readOnly || undefined}
+                    title={readOnly ? copy.readOnly : undefined}
+                    onClick={() => (readOnly ? undefined : setAdding(true))}
+                  >
+                    <Plus aria-hidden {...iconDefaults} className="size-6" />
+                  </button>
+                ) : null}
+                {canSelect ? (
+                  <button type="button" className="hl-p-tbtn hl-focus" onClick={() => setSelectingIn(path)}>
+                    {copy.select}
+                  </button>
+                ) : null}
+              </>
+            }
+          />
+        )}
+        {selecting ? null : <div className="mt-2.5">{search}</div>}
+        {places ? <div className="mt-3">{places}</div> : null}
+        <div className="mt-2">
+          <Breadcrumb crumbs={crumbs} phone />
+        </div>
+        {notice?.(folderName) ? <div className="mb-3">{notice(folderName)}</div> : null}
+        <div className="mt-1 flex flex-col">{body}</div>
+        {listing && !searchQuery ? (
+          <footer className="hl-p-foot">
+            <span className="block">
+              {chosen.length > 0
+                ? copy.footerSelected(
+                    copy.items(listing.count),
+                    chosen.length,
+                    formatBytes(chosen.reduce((n, e) => n + (e.size ?? 0), 0)),
+                  )
+                : copy.footer(copy.items(listing.count), formatBytes(listing.filesBytes))}
+            </span>
+            <span className="block">{footerRight(listing.place, me)}</span>
+          </footer>
+        ) : null}
         {selecting ? <PhoneSelectionBar entries={chosen} actions={actions} /> : null}
+        {onAdd ? (
+          <AddSheet
+            open={adding}
+            onOpenChange={setAdding}
+            onNewFolder={onAdd.onNewFolder}
+            onUpload={onAdd.onUpload ? () => onAdd.onUpload!(folderName) : undefined}
+          />
+        ) : null}
         {dialogs}
         {menuUi}
       </div>

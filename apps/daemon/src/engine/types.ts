@@ -48,6 +48,23 @@ export interface PullProgress {
 
 /** The container engine as the daemon uses it; dockerode in production, a fake in tests (11 §Test pyramid).
  * Stacks go up and down through the compose CLI instead (D-003). */
+export interface RunOnceOptions {
+  image: string;
+  entrypoint: string[];
+  cmd: string[];
+  /** `uid:gid` inside the container (`0:0` for root). */
+  user: string;
+  env: Record<string, string>;
+  /** Docker's `host:container[:ro]`. */
+  binds: string[];
+  /** Capabilities beyond Docker's defaults (DAC_READ_SEARCH). */
+  capAdd?: string[];
+  /** No network at all, or Docker's default bridge (to reach a cloud destination). */
+  network: 'none' | 'bridge';
+  onStdout?: (line: string) => void;
+  signal?: AbortSignal;
+}
+
 export interface ContainerEngine {
   ping(): Promise<boolean>;
   info(): Promise<EngineInfo>;
@@ -77,12 +94,25 @@ export interface ContainerEngine {
   removeImage(image: string): Promise<void>;
   /** An image's size on disk (`sha256:…` or a reference), or null when it isn't here. */
   imageSize(image: string): Promise<number | null>;
+  /** An image's id (`sha256:…`) and size, from a reference or an id; null when it isn't here (US-SYS-13). */
+  imageInfo(image: string): Promise<{ id: string; sizeBytes: number } | null>;
+  /**
+   * The image ids every container on the engine uses: all of them, running or stopped, whatever project or program
+   * made them (not only hlabs's). Freeing space never removes one of these (US-SYS-13, D-168).
+   */
+  containerImageIds(): Promise<Set<string>>;
   /**
    * Empties a folder on this computer from inside a throwaway container of `image`, run as root: for an app's data
    * that the app wrote as root or another user, which hlabs can't delete itself on Linux. Throws when the image can't
    * do it (no shell) or the container fails.
    */
   clearFolder(image: string, hostPath: string): Promise<void>;
+  /**
+   * Runs a throwaway container to the end and removes it: hlabs's helpers that need what only root in a container can
+   * do on Linux (restic reading app data that apps keep to themselves, D-190). Pulls `image` first when it isn't here.
+   * Each stdout line goes to `onStdout` as it comes; aborting stops the container with SIGINT.
+   */
+  runOnce(opts: RunOnceOptions): Promise<{ exitCode: number; stdout: string; stderr: string }>;
   /** Freezes a running container for a consistent backup copy (US-BKP-05); `unpause` lets it go on. */
   pauseContainer(containerId: string): Promise<void>;
   unpauseContainer(containerId: string): Promise<void>;

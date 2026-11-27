@@ -1,14 +1,17 @@
 // Updating an app to its store's newer version, and rolling back an update that doesn't start (US-STORE-17, 02 §2.5).
-// Before anything changes, the project's compose file, .env and manifest copy and the images it runs are kept in
-// `.previous/`. The new version is written with the same settings, its images pulled and started; if it doesn't come up
+// With "Back up app data before updating" (or the new version's `backup.beforeUpdate`), a `pre_update` backup of the app
+// runs first; without a destination the update goes on and says so (US-STORE-16). Before anything changes, the
+// project's compose file, .env and manifest copy and the images it runs are kept in `.previous/`. The new version is written with the same settings, its images pulled and started; if it doesn't come up
 // healthy, the app goes rolling_back, the kept files go back and the previous version starts again. Data restore from
 // the backup taken before the update arrives with backups (phase 5, D-036).
 import { hlabsError } from '@hlabs/api';
-import { apps, auditLog, jobs as jobsTable, notifications, type HlabsDb } from '@hlabs/db';
+import { isNewer } from '@hlabs/app-manifest';
+import { apps, auditLog, getSetting, jobs as jobsTable, notifications, type HlabsDb } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { BackupService } from '../backups/runner';
 import type { EngineService } from '../engine/service';
 import type { JobContext, JobRunner } from '../jobs/runner';
 import type { Logger } from '../logger';
@@ -19,21 +22,25 @@ import { resolveEnv } from './env';
 import { waitHealthy, type HealthProbes } from './health';
 import type { InstallService } from './install';
 import { loopbackPort } from './ports';
-import { MANIFEST_COPY, type AppService } from './service';
+import { MANIFEST_COPY, SOURCE_COPY, type AppService } from './service';
 import { canTransition, stateDetail } from './state-machine';
 
 /** The previous version's files, kept beside the project while it updates. */
 export const SNAPSHOT_DIR = '.previous';
-const SNAPSHOT_FILES = [COMPOSE_FILE, ENV_FILE, MANIFEST_COPY];
+const SNAPSHOT_FILES = [COMPOSE_FILE, ENV_FILE, MANIFEST_COPY, SOURCE_COPY];
 export const ROLLED_BACK_KIND = 'app.update_rolled_back';
 export const RESTORE_FAILED_KIND = 'app.update_restore_failed';
 
-interface UpdatePayload {
+export interface UpdatePayload {
   appId: string;
   /** Null: an automatic update (US-SYS-26). */
   userId: string | null;
   fromVersion: string;
   toVersion: string;
+  /** Who started it: someone pressing Update (or Update all), or the night's automatic updates (US-STORE-15). */
+  trigger?: 'manual' | 'auto';
+  /** False: it updated without the backup it asks for, as there's no backup destination (US-STORE-16). */
+  backedUp?: boolean;
 }
 
 export interface UpdateDeps {
@@ -49,6 +56,8 @@ export interface UpdateDeps {
   engine: Pick<EngineService, 'client'>;
   notifications: Pick<NotificationService, 'create'>;
   probes?: HealthProbes;
+  /** The backup before an update (made after this service, so asked for when needed). */
+  backups?: () => Pick<BackupService, 'beforeUpdate'> | undefined;
 }
 
 export class UpdateService {
@@ -70,7 +79,7 @@ export class UpdateService {
     }
     const entry = catalog.get(appId, app.sourceId ?? undefined);
     if (!entry) throw hlabsError('NOT_FOUND');
-    if (entry.manifest.version === app.version) {
+    if (!isNewer({ version: app.version, revision: this.installedRevision(appId) }, entry.manifest)) {
       throw hlabsError('VALIDATION_FAILED', `${appId} is already on ${app.version}`, { appId });
     }
     const payload: UpdatePayload = {
@@ -78,8 +87,35 @@ export class UpdateService {
       userId: user.userId,
       fromVersion: app.version,
       toVersion: entry.manifest.version,
+      trigger: user.userId === null ? 'auto' : 'manual',
     };
     return { jobId: jobs.start('app_update', { target: appId, payload }) };
+  }
+
+  /**
+   * `apps.updateAll` (US-STORE-15): every app in `appIds` (the Updates list, in its order) queued; app jobs run one at
+   * a time, so they update in that order and one failing doesn't stop the rest. Apps that can't update now are left
+   * out.
+   */
+  updateAll(user: { userId: string | null }, appIds: readonly string[]): { jobIds: string[] } {
+    const jobIds = appIds.flatMap((appId) => {
+      try {
+        return [this.update(user, appId).jobId];
+      } catch (err) {
+        this.deps.logger.warn({ err, appId }, 'update not queued');
+        return [];
+      }
+    });
+    return { jobIds };
+  }
+
+  /** The installed manifest's revision (0 without one). */
+  private installedRevision(appId: string): number {
+    try {
+      return this.deps.apps.manifest(appId).revision ?? 0;
+    } catch {
+      return 0;
+    }
   }
 
   /**
@@ -130,6 +166,22 @@ export class UpdateService {
     const project = this.deps.apps.project(appId);
     const name = entry.manifest.name;
 
+    // 0. The app's data, backed up first when asked for; nothing has changed yet if that fails.
+    const wantsBackup = getSetting(db, 'updates').backupBeforeUpdate || entry.manifest.backup.beforeUpdate;
+    const backups = this.deps.backups?.();
+    if (wantsBackup && backups) {
+      ctx.report(1, 'Backing up app data');
+      const done = await backups.beforeUpdate(appId, ctx, (f) =>
+        ctx.report(1 + Math.round(f * 4), 'Backing up app data'),
+      );
+      if (done === 'no_destination') {
+        db.update(jobsTable)
+          .set({ payloadJson: { ...ctx.payload, backedUp: false } })
+          .where(eq(jobsTable.id, ctx.jobId))
+          .run();
+      }
+    }
+
     // 1. The current version, kept: its files and the images it runs.
     ctx.report(5, 'Keeping the current version');
     const snapshot = join(project.dir, SNAPSHOT_DIR);
@@ -156,8 +208,11 @@ export class UpdateService {
         installer.storedMounts(appId),
       );
       const images = [...new Set(Object.values(entry.compose.services).map((s) => s.image!))];
-      await installer.pullAll(ctx, images, (within) =>
-        ctx.report(10 + Math.round(within * 50), 'Downloading the new version'),
+      await installer.pullAll(
+        ctx,
+        images,
+        (within) => ctx.report(10 + Math.round(within * 50), 'Downloading the new version'),
+        appId,
       );
       // A folder the new version mounts that the old one didn't, made by hlabs (not root-owned on Linux).
       installer.prepareAppData(appId, entry.compose);

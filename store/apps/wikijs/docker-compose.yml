@@ -1,0 +1,30 @@
+services:
+  wikijs:
+    image: ghcr.io/requarks/wiki:3.6.0@sha256:85be143b4f550bc616c25137e5ceaf4070a2ce64cb4bb3c575e2c9eddeeb0d1d
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: wikijs-db
+      DB_PORT: '5432'
+      DB_USER: wikijs
+      DB_PASS: ${DB_PASSWORD}
+      DB_NAME: wiki
+      # The admin account a first start creates (without these, Wiki.js makes admin@example.com with a default password).
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASS: ${ADMIN_PASS}
+    depends_on:
+      wikijs-db:
+        condition: service_healthy
+  wikijs-db:
+    image: docker.io/library/postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_USER: wikijs
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: wiki
+    volumes:
+      - ${HLABS_APP_DATA}/postgres:/var/lib/postgresql
+    healthcheck:
+      # Over TCP, so it passes only once the real server is up (not during first-start setup).
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U wikijs -d wiki']
+      interval: 5s
+      timeout: 5s
+      retries: 30

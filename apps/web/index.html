@@ -5,9 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Add to Home Screen on iOS (US-PHONE-23): its icon and title, and a home-screen app without Safari's bars whose
+         status bar shows the page (the wallpaper's base colour) under it. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="hlabs" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <!-- The installable dashboard (US-INST-28); the manifest link is added by the build. -->
     <meta name="theme-color" content="%HLABS_THEME%" />
     <title>hlabs</title>
+    <!-- Before the first paint (US-ACCT-33, US-ACCT-35, D-167): the look last used on this device, as
+         src/lib/appearance.ts keeps it, so the accent, solid theme and motion don't flash. Plain script, no module. -->
+    <script>
+      try {
+        var look = JSON.parse(localStorage.getItem('hlabs.appearance') || 'null');
+        var root = document.documentElement;
+        if (look && /^(violet|mint|amber|rose)$/.test(look.accent)) root.setAttribute('data-accent', look.accent);
+        if (look && look.solid === true) root.setAttribute('data-theme', 'solid');
+        if (look && (look.motion === 'reduced' || look.motion === 'full'))
+          root.setAttribute('data-motion', look.motion);
+      } catch (e) {}
+    </script>
+    <!-- iOS 26 Home Screen app (WebKit 301108): the app's drawing area ends about a status bar's height above the
+         screen's edge, and iOS fills the band with the page's background. Measure it (--hl-vgap, data-vgap) so
+         phone.css colours the band as the tab bar's lower part; nothing on other devices, or when the gap isn't
+         between 20 and 80px. -->
+    <script>
+      (function () {
+        var ios =
+          /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        var standalone =
+          navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+        if (!ios || !standalone) return;
+        function apply() {
+          var portrait = innerHeight >= innerWidth;
+          var expected = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+          var gap = Math.round(expected - innerHeight);
+          var root = document.documentElement;
+          if (gap >= 20 && gap <= 80) {
+            root.style.setProperty('--hl-vgap', gap + 'px');
+            root.setAttribute('data-vgap', '');
+          } else {
+            root.style.removeProperty('--hl-vgap');
+            root.removeAttribute('data-vgap');
+          }
+        }
+        apply();
+        addEventListener('resize', apply);
+        addEventListener('orientationchange', function () {
+          setTimeout(apply, 300);
+        });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

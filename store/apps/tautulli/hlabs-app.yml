@@ -1,0 +1,27 @@
+schema: 1
+id: tautulli
+name: Tautulli
+version: '2.19.1'
+revision: 1
+tagline: See what everyone is watching on Plex
+description: |
+  Tautulli shows who watched what on your Plex server, when and on which device, with history, graphs
+  and notifications. Connect it to Plex at http://plex:32400 on the first visit.
+category: media
+developer: { name: Tautulli, url: https://tautulli.com }
+source: https://github.com/Tautulli/Tautulli
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#e5a00d', '#5c3d00']
+  fallback: bar-chart-3
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: tautulli, port: 8181, embed: true }
+health: { service: tautulli, http: /status, timeout: 120 }
+ownLogin: false
+backup:
+  pause: [tautulli]
+  exclude: [logs/, cache/]
+  beforeUpdate: true
+permissions: { network: internet }

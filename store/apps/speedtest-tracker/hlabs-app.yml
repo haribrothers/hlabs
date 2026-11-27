@@ -1,0 +1,34 @@
+# A first start makes its encryption key (APP_KEY) and keeps it in the app's data; an existing one is
+# left alone.
+schema: 1
+id: speedtest-tracker
+name: Speedtest Tracker
+version: '1.15.1'
+revision: 1
+tagline: Check your internet speed on a schedule
+description: |
+  Runs internet speed tests on a schedule and keeps a history, so you can see whether you get the speed
+  you pay for. Sign in the first time as admin@example.com with the password password, then change
+  both.
+category: network
+developer: { name: Alex Justesen, url: https://speedtest-tracker.dev }
+source: https://github.com/alexjustesen/speedtest-tracker
+license: MIT
+icon:
+  logo: logo.png
+  gradient: ['#f59e0b', '#5c3a03']
+  fallback: gauge
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: speedtest-tracker, port: 80, embed: true }
+env:
+  - key: SPEEDTEST_SCHEDULE
+    label: Schedule
+    description: When to test, as a cron expression; the default is every 6 hours
+    default: '0 */6 * * *'
+    required: true
+ownLogin: true
+backup:
+  pause: [speedtest-tracker]
+  beforeUpdate: true
+permissions: { network: internet }

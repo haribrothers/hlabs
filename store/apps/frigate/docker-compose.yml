@@ -1,0 +1,10 @@
+services:
+  frigate:
+    image: ghcr.io/blakeblackshear/frigate:0.18.3@sha256:d1a3e0008557bb3f3314d442ecd4ba68e9b16ab7872d64612649f7a6e5156635
+    shm_size: 256mb
+    stop_grace_period: 30s
+    tmpfs:
+      - /tmp/cache:size=1000000000
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config
+      - ${HLABS_FOLDER_RECORDINGS}:/media/frigate

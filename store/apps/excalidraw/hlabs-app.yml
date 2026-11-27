@@ -1,0 +1,27 @@
+# Excalidraw publishes only a latest tag, so it is pinned by digest and held from the update bot
+# (curation.yml); bump it by hand.
+schema: 1
+id: excalidraw
+name: Excalidraw
+version: '2026.05.06'
+revision: 1
+tagline: Sketch diagrams that look hand-drawn
+description: |
+  A whiteboard for quick diagrams and sketches with a hand-drawn look. Drawings stay in your browser;
+  export them as images or files to keep or share them.
+category: productivity
+developer: { name: Excalidraw, url: https://excalidraw.com }
+source: https://github.com/excalidraw/excalidraw
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#6965db', '#25236b']
+  fallback: pencil-ruler
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 128, disk: 128 }
+web: { service: excalidraw, port: 80, embed: true }
+ownLogin: false
+backup:
+  pause: [excalidraw]
+  beforeUpdate: true
+permissions: { network: internet }

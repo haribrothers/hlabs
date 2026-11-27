@@ -15,6 +15,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { TRPCClientError } from '@trpc/client';
 import { useId, useState, type FormEvent } from 'react';
 import { accountCopy } from '../copy/account';
+import { useIsDesktop } from '../lib/use-media';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 
@@ -138,7 +139,33 @@ export function profileLine(
   return `${who} · ${a.homeFolderBytes === null ? copy.calculating : copy.inHomeFolder(formatBytes(a.homeFolderBytes))}`;
 }
 
+/**
+ * "Edit" at the right of a phone's bar (PhoneRedesignA_Account): opens Edit profile; named "Edit profile" for screen
+ * readers.
+ */
+export function EditProfileButton() {
+  const trpc = useTRPC();
+  const account = useQuery({ ...trpc.account.get.queryOptions(), retry: false });
+  const [editing, setEditing] = useState(false);
+  if (!account.data) return null;
+  return (
+    <>
+      <button
+        type="button"
+        className="hl-p-tbtn hl-focus"
+        aria-label={copy.editProfile}
+        aria-haspopup="dialog"
+        onClick={() => setEditing(true)}
+      >
+        {copy.edit}
+      </button>
+      {editing ? <EditProfile account={account.data} onClose={() => setEditing(false)} /> : null}
+    </>
+  );
+}
+
 export function Profile() {
+  const desktop = useIsDesktop();
   const trpc = useTRPC();
   const account = useQuery({
     ...trpc.account.get.queryOptions(),
@@ -148,6 +175,16 @@ export function Profile() {
   const [editing, setEditing] = useState(false);
   if (!account.data) return null;
   const a = account.data;
+  // A phone (PhoneRedesignA_Account): the avatar large and centred, the name under it, then "<username> · <role>";
+  // Edit is in the bar (EditProfileButton).
+  if (!desktop)
+    return (
+      <div className="flex flex-col items-center gap-1 pt-1 text-center">
+        <Avatar name={a.displayName} color={avatarColorFor(a.username, a.avatarColor)} size="lg" />
+        <p className="m-0 mt-2 text-title-2 font-bold">{a.displayName}</p>
+        <p className="m-0 text-body text-ink-muted">{profileLine(a)}</p>
+      </div>
+    );
   // One row on the list surface, as in the design: avatar, name over "<username> · <role> · <size>", Edit profile.
   return (
     <div className="hl-list-box">

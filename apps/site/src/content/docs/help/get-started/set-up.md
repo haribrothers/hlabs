@@ -21,11 +21,15 @@ The first time hlabs starts, it makes a one-time setup address. Open it in a bro
 
 Setup opens on a welcome screen. It takes about five minutes: press **Get started** to check this computer, then follow the steps.
 
+![Setup's welcome screen: Welcome to hlabs, Get started, and Setup takes about five minutes.](../../../../assets/shots/setup-welcome.webp)
+
 The address keeps working until setup is finished, even if hlabs or the computer restarts. You can open it in more than one tab.
 
 You don't have to finish in one go. Close the browser or restart the computer, then open the setup address again: setup picks up at the step you were on. **Back** takes you to earlier steps.
 
 ## Check this computer
+
+![Setup's system check on a Mac: the processor, macOS, the container engine, free disk space and ports 80 and 443 all pass, then Start hlabs when I log in and the name on your network.](../../../../assets/shots/setup-system.webp)
 
 The first step checks the processor, the operating system, the container runtime (such as OrbStack, Docker Desktop, Colima or Docker Engine), free disk space and web ports.
 

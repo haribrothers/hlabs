@@ -1,0 +1,31 @@
+schema: 1
+id: langflow
+name: Langflow
+version: '1.13.3'
+revision: 1
+tagline: Build AI agents and workflows by drawing them
+description: |
+  Connect models, prompts, tools and data on a canvas to build chatbots, agents and pipelines, then run
+  them from the page or through its API. It has no login of its own: the hlabs login protects it.
+category: ai
+developer: { name: Langflow, url: https://www.langflow.org }
+source: https://github.com/langflow-ai/langflow
+license: MIT
+icon:
+  logo: logo.png
+  gradient: ['#7c3aed', '#2e1065']
+  fallback: workflow
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 2048, disk: 2048 }
+web: { service: langflow, port: 7860, embed: true }
+health: { service: langflow, http: /health, timeout: 600 }
+env:
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: false
+backup:
+  pause: [langflow, langflow-db]
+  beforeUpdate: true
+permissions: { network: internet }

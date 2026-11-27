@@ -8,6 +8,7 @@ export * from './home';
 export * from './misc';
 export * from './network';
 export * from './onboarding';
+export * from './public';
 export * from './settings';
 export * from './storage';
 export * from './store';

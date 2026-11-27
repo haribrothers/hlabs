@@ -55,7 +55,8 @@ test('US-SYS-18 the restart progress sits inside the engine row', async ({ page,
   await page.goto('/settings/engine');
   const bar = page.getByRole('progressbar', { name: 'Restarting the engine' });
   await expect(bar).toBeVisible();
-  const row = page.locator('.hl-list-row').filter({ has: bar });
+  // On a phone it's in the engine's card (US-PHONE-28).
+  const row = page.locator('.hl-list-row, .hl-p-card').filter({ has: bar });
   const [b, r] = [(await bar.boundingBox())!, (await row.boundingBox())!];
   // Inside the row's padding on the right, and centred on the row.
   expect(b.x + b.width).toBeLessThanOrEqual(r.x + r.width - 16);

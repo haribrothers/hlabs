@@ -1,0 +1,53 @@
+// The App Store's Updates (StoreUpdates, US-STORE-15 and US-STORE-16). Sentence case, plain words.
+export const storeUpdatesCopy = {
+  title: 'Updates',
+  updateAll: (n: number) => `Update all (${n})`,
+  /** In a phone's bar (US-PHONE-27); its name still says how many. */
+  updateAllShort: 'Update all',
+  restartBriefly: 'apps restart briefly while they update',
+  updatingOf: (i: number, n: number) => `Updating ${i} of ${n}…`,
+  versions: (from: string, to: string, released: string) => `${from} → ${to} · released ${released}`,
+  whatsNew: "What's new",
+  hideNotes: 'Hide notes',
+  noNotes: "This version didn't come with release notes.",
+  update: 'Update',
+  updateApp: (app: string) => `Update ${app}`,
+  updating: 'Updating…',
+  updatingApp: (app: string) => `Updating ${app}`,
+  notesOf: (app: string) => `What's new in ${app}`,
+  rolledBack: 'Rolled back',
+  rolledBackLabel: (app: string) => `${app}'s update rolled back: see what happened`,
+  // US-STORE-16
+  needsApproval: 'Needs your approval: asks for new access',
+  review: 'Review',
+  reviewApp: (app: string) => `Review what ${app} asks for`,
+  reviewTitle: (app: string, version: string) => `${app} ${version} asks for new access`,
+  reviewIntro:
+    "This version can do more than the one you have. It won't update by itself; update it when you're happy with this.",
+  folders: 'Folders',
+  folderRead: (label: string) => `${label} · read only`,
+  folderWrite: (label: string) => `${label} · read and write`,
+  ports: 'Ports',
+  port: (label: string, host: number, protocol: string) => `${label} · ${host}/${protocol.toUpperCase()}`,
+  permissions: 'Permissions',
+  network: { lan: 'Your home network', internet: 'The internet' },
+  gpu: 'The graphics card (GPU)',
+  dockerSocket: 'Docker, to run other containers',
+  device: (label: string, path: string) => `${label} (${path})`,
+  capability: (cap: string) => (cap === 'NET_ADMIN' ? 'Network settings (NET_ADMIN)' : cap),
+  close: 'Close',
+  // No updates
+  upToDate: 'All apps are up to date',
+  checked: (when: string) => `Checked ${when}`,
+  neverChecked: 'Not checked yet',
+  checkNow: 'Check now',
+  checkFailed: "Couldn't check for updates. Check your internet connection and try again.",
+  // Recently updated
+  recent: 'Recently updated',
+  updatedWhen: (when: string) => `Updated ${when}`,
+  automatically: 'automatically',
+  notBackedUp: 'Not backed up: no backup destination',
+  // Footer
+  footer: "hlabs backs up an app's data before updating it. Change this in ",
+  footerLink: 'Settings › Updates',
+};

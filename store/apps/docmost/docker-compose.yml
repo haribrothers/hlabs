@@ -1,0 +1,39 @@
+services:
+  docmost:
+    image: docker.io/docmost/docmost:0.98.0@sha256:c3bdc84767de0fc9431763523636ddfd783c35c25ef7d4a3c95c064628e78d7a
+    environment:
+      APP_URL: ${HLABS_URL}
+      APP_SECRET: ${APP_SECRET}
+      DATABASE_URL: postgresql://docmost:${DB_PASSWORD}@docmost-db:5432/docmost?schema=public
+      REDIS_URL: redis://docmost-valkey:6379
+      DISABLE_TELEMETRY: 'true'
+    volumes:
+      - ${HLABS_APP_DATA}/storage:/app/data/storage
+    depends_on:
+      docmost-db:
+        condition: service_healthy
+      docmost-valkey:
+        condition: service_healthy
+  docmost-db:
+    image: docker.io/library/postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_USER: docmost
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: docmost
+    volumes:
+      - ${HLABS_APP_DATA}/postgres:/var/lib/postgresql
+    healthcheck:
+      # Over TCP, so it passes only once the real server is up (not during first-start setup).
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U docmost -d docmost']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  docmost-valkey:
+    image: docker.io/valkey/valkey:9@sha256:70739f85ad2ee01a726a965584a0f94895f01b0c60b3cc8b0aeef11eaa6888cf
+    volumes:
+      - ${HLABS_APP_DATA}/valkey:/data
+    healthcheck:
+      test: [CMD, valkey-cli, ping]
+      interval: 5s
+      timeout: 5s
+      retries: 30

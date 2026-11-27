@@ -1,10 +1,66 @@
 // Facts about this computer for the onboarding system check (US-ONB-04). Behind an interface so tests use a fake.
 import type { EngineKind } from '@hlabs/api';
 import { constants } from 'node:fs';
-import { access, readFile, stat, statfs } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { access, readFile, realpath, stat, statfs } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { arch, cpus, homedir, release, totalmem } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
+import { promisify } from 'node:util';
+import { parsePlist } from './drives';
+
+const run = promisify(execFile);
+
+/** The mount point of the volume holding `path` (`df -P`'s last column). */
+async function mountPoint(path: string): Promise<string> {
+  let dir = path;
+  while (
+    !(await stat(dir).then(
+      () => true,
+      () => false,
+    )) &&
+    dirname(dir) !== dir
+  )
+    dir = dirname(dir);
+  const { stdout } = await run('df', ['-P', dir], { timeout: 5_000 });
+  const line = stdout.trim().split('\n').at(-1) ?? '';
+  const at = line.indexOf(' /');
+  return at >= 0 ? line.slice(at + 1).trim() : '/';
+}
+
+async function macDiskMedia(path: string): Promise<DiskMedia> {
+  const { stdout } = await run('/usr/sbin/diskutil', ['info', '-plist', await mountPoint(path)], { timeout: 5_000 });
+  const info = parsePlist(stdout);
+  return {
+    internal: typeof info.Internal === 'boolean' ? info.Internal : null,
+    solidState: typeof info.SolidState === 'boolean' ? info.SolidState : null,
+  };
+}
+
+async function linuxDiskMedia(path: string): Promise<DiskMedia> {
+  const { stdout } = await run('findmnt', ['-no', 'SOURCE', '--target', path], { timeout: 5_000 });
+  const device = stdout.trim().split('\n')[0] ?? '';
+  if (!device.startsWith('/dev/')) return { internal: null, solidState: null };
+  let block = await realpath(join('/sys/class/block', basename(device)));
+  // A partition's disk is the folder above it.
+  if (
+    await stat(join(block, 'partition')).then(
+      () => true,
+      () => false,
+    )
+  )
+    block = dirname(block);
+  const read = (file: string) =>
+    readFile(join(block, file), 'utf8').then(
+      (t) => t.trim(),
+      () => null,
+    );
+  const [removable, rotational] = await Promise.all([read('removable'), read('queue/rotational')]);
+  return {
+    internal: removable === null ? null : removable === '0',
+    solidState: rotational === null ? null : rotational === '0',
+  };
+}
 
 export interface OsInfo {
   platform: 'darwin' | 'linux';
@@ -27,12 +83,19 @@ export interface SystemProbe {
   diskId(path: string): Promise<string | null>;
   /** Where an engine keeps its images: a VM's disk lives in the home folder; Docker Engine uses /var/lib/docker. */
   engineStoragePath(kind: EngineKind): string;
+  /** What kind of disk holds `path`: inside the computer or not, solid state or spinning; null where it can't tell. */
+  diskMedia(path: string): Promise<DiskMedia>;
   /** Another process is listening on the port (all interfaces). */
   portInUse(port: number): Promise<boolean>;
   /** This account may read and write the socket (false: e.g. not in the `docker` group). */
   canAccess(socketPath: string): Promise<boolean>;
   /** Engine apps installed on a Mac (OrbStack, Docker Desktop), in detection order, running or not. */
   installedEngineApps(): Promise<EngineKind[]>;
+}
+
+export interface DiskMedia {
+  internal: boolean | null;
+  solidState: boolean | null;
 }
 
 /** Where the Mac engine apps live (/Applications or ~/Applications). */
@@ -100,6 +163,22 @@ export class NodeSystemProbe implements SystemProbe {
 
   engineStoragePath(kind: EngineKind): string {
     return kind === 'docker-engine' ? '/var/lib/docker' : homedir();
+  }
+
+  private readonly media = new Map<string, Promise<DiskMedia>>();
+
+  /** macOS: `diskutil info` of the volume (Internal, SolidState); Linux: the block device's `removable` and
+   * `queue/rotational` in /sys. Asked once per path. */
+  diskMedia(path: string): Promise<DiskMedia> {
+    let known = this.media.get(path);
+    if (!known) {
+      known = (process.platform === 'darwin' ? macDiskMedia(path) : linuxDiskMedia(path)).catch(() => ({
+        internal: null,
+        solidState: null,
+      }));
+      this.media.set(path, known);
+    }
+    return known;
   }
 
   canAccess(socketPath: string): Promise<boolean> {

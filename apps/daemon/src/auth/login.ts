@@ -60,6 +60,8 @@ export interface LoginChallenge {
   remember: boolean;
   next?: string;
   expiresAt: number;
+  /** Started on a public app's address (D-178): finished only there, with a session for that host. */
+  publicHost?: string;
 }
 
 export class LoginService {
@@ -181,6 +183,11 @@ export class LoginService {
     ip: string;
     userAgent: string | null;
     now?: number;
+    /**
+     * Signing in on a public app's address (D-178): two-factor is required (no session without it:
+     * `twoFactorRequired`), and the session the code step starts belongs to that host only.
+     */
+    publicHost?: string;
   }) {
     const now = opts.now ?? Date.now();
     const typed = opts.username;
@@ -204,9 +211,12 @@ export class LoginService {
         remember: opts.remember,
         next: opts.next,
         expiresAt: now + CHALLENGE_MS,
+        ...(opts.publicHost ? { publicHost: opts.publicHost } : {}),
       });
-      return { kind: 'totp' as const, challengeId };
+      return { kind: 'totp' as const, challengeId, userId: user.id };
     }
+    // A public address lets nobody in without two-factor (07 §7.10): the right password starts no session there.
+    if (opts.publicHost) return { kind: 'twoFactorRequired' as const, userId: user.id };
     return {
       kind: 'ok' as const,
       ...this.startSession(user.id, opts.remember, opts.next, opts.ip, opts.userAgent, now),
@@ -217,9 +227,16 @@ export class LoginService {
    * The code step of a log-in (US-AUTH-08): the challenge must be under 5 minutes old; a wrong code counts toward
    * the lockout like a wrong password; the right one starts the session.
    */
-  async verifyTotp(opts: { challengeId: string; code: string; ip: string; userAgent: string | null; now?: number }) {
+  async verifyTotp(opts: {
+    challengeId: string;
+    code: string;
+    ip: string;
+    userAgent: string | null;
+    now?: number;
+    publicHost?: string;
+  }) {
     const now = opts.now ?? Date.now();
-    const { user, challenge, failures } = this.secondStep(opts.challengeId, opts.ip, now);
+    const { user, challenge, failures } = this.secondStep(opts.challengeId, opts.ip, now, opts.publicHost);
     let right: boolean;
     try {
       right = await this.totp.verifyLogin(user.id, opts.code, now);
@@ -233,7 +250,15 @@ export class LoginService {
       throw hlabsError('AUTH_TOTP_INVALID');
     }
     this.challenges.delete(opts.challengeId);
-    return this.startSession(user.id, challenge.remember, challenge.next, opts.ip, opts.userAgent, now);
+    return this.startSession(
+      user.id,
+      challenge.remember,
+      challenge.next,
+      opts.ip,
+      opts.userAgent,
+      now,
+      challenge.publicHost,
+    );
   }
 
   /**
@@ -246,9 +271,10 @@ export class LoginService {
     ip: string;
     userAgent: string | null;
     now?: number;
+    publicHost?: string;
   }) {
     const now = opts.now ?? Date.now();
-    const { user, challenge, failures } = this.secondStep(opts.challengeId, opts.ip, now);
+    const { user, challenge, failures } = this.secondStep(opts.challengeId, opts.ip, now, opts.publicHost);
     const code = normaliseRecoveryCode(opts.code);
     const unused = this.db
       .select()
@@ -288,15 +314,27 @@ export class LoginService {
       now,
     });
     return {
-      ...this.startSession(user.id, challenge.remember, challenge.next, opts.ip, opts.userAgent, now),
+      ...this.startSession(
+        user.id,
+        challenge.remember,
+        challenge.next,
+        opts.ip,
+        opts.userAgent,
+        now,
+        challenge.publicHost,
+      ),
       recoveryCodesLeft: left,
     };
   }
 
-  /** The waiting challenge and its user, unless it expired or the pair is locked. */
-  private secondStep(challengeId: string, ip: string, now: number) {
+  /**
+   * The waiting challenge and its user, unless it expired or the pair is locked. A challenge finishes only where it
+   * started: the dashboard's on the dashboard, a public address's on that address.
+   */
+  private secondStep(challengeId: string, ip: string, now: number, publicHost?: string) {
     const challenge = this.challenge(challengeId, now);
-    if (!challenge) throw hlabsError('AUTH_CHALLENGE_EXPIRED');
+    if (!challenge || (challenge.publicHost ?? null) !== (publicHost ?? null))
+      throw hlabsError('AUTH_CHALLENGE_EXPIRED');
     const user = this.db.select().from(users).where(eq(users.id, challenge.userId)).get();
     if (!user || user.disabledAt !== null) {
       this.challenges.delete(challengeId);
@@ -324,6 +362,11 @@ export class LoginService {
     });
   }
 
+  /** Drops a waiting two-factor step (a public sign-in refused after the password: no access). */
+  dropChallenge(id: string): void {
+    this.challenges.delete(id);
+  }
+
   /** The waiting two-factor step, if it hasn't expired (US-AUTH-08). */
   challenge(id: string, now = Date.now()): LoginChallenge | null {
     const c = this.challenges.get(id);
@@ -342,13 +385,14 @@ export class LoginService {
     ip: string,
     userAgent: string | null,
     now = Date.now(),
+    publicHost?: string,
   ) {
-    const session = this.sessions.create({ userId, remember, ip, userAgent, now });
+    const session = this.sessions.create({ userId, remember, ip, userAgent, now, publicHost });
     const user = this.db.update(users).set({ lastActiveAt: now }).where(eq(users.id, userId)).returning().get();
     // A completed log-in (not just the password of a two-factor account) starts the count again.
     if (user)
       this.db.insert(loginAttempts).values({ id: ulid(), username: user.username, ip, at: now, success: true }).run();
-    this.audit(userId, 'auth.login.succeeded', null, ip, now);
+    this.audit(userId, 'auth.login.succeeded', publicHost ? { publicHost } : null, ip, now);
     return { session, redirectTo: safeNext(next, this.nextOrigins()) };
   }
 
@@ -359,7 +403,12 @@ export class LoginService {
 
   /** A warning notification for one user, or for all admins (`userId` null), announced on the bus. */
   private notify(n: { userId: string | null; kind: string; title: string; body: string; now: number }) {
-    createNotification(this.db, this.bus, { ...n, severity: 'warning' });
+    // Opens Settings › Account, where sessions are (US-HOME-14).
+    createNotification(this.db, this.bus, {
+      ...n,
+      severity: 'warning',
+      actions: [{ kind: 'navigate', to: '/settings/account' }],
+    });
   }
 
   private audit(

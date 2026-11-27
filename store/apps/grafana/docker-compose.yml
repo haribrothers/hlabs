@@ -1,0 +1,13 @@
+services:
+  grafana:
+    image: docker.io/grafana/grafana:13.3.1@sha256:0615ec4fbd4072004b7d86b46ded63013a74b7d6eb1119273dd89e8fa25c13cf
+    user: ${PUID}:${PGID}
+    environment:
+      GF_SERVER_ROOT_URL: ${HLABS_URL}
+      # No usage reports or update checks.
+      GF_ANALYTICS_REPORTING_ENABLED: 'false'
+      GF_ANALYTICS_CHECK_FOR_UPDATES: 'false'
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: 'false'
+      GF_NEWS_NEWS_FEED_ENABLED: 'false'
+    volumes:
+      - ${HLABS_APP_DATA}/data:/var/lib/grafana

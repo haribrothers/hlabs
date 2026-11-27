@@ -2,20 +2,73 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parse } from 'yaml';
+import { isMap, isSeq, parse, parseDocument, type Node } from 'yaml';
 import { validateCompose, type ComposeFile, type ComposeIssue } from './compose';
 import { AppManifest } from './manifest';
+import { attributedApps } from './port';
 import { StoreCuration, StoreIndex } from './store-index';
+export { generateLibraryKey, keyFingerprint, signIndex, verifyIndex, type LibraryKey } from './signing';
+export { Registry, RegistryError, parseImageRef, pinned, type ImageManifest, type ImageRef } from './registry';
 
 export const MANIFEST_FILE = 'hlabs-app.yml';
 export const COMPOSE_FILE = 'docker-compose.yml';
 export const CURATION_FILE = 'curation.yml';
+export const NOTICE_FILE = 'NOTICE';
+export const ATTRIBUTION_FILE = 'ATTRIBUTION.md';
+
+/** Values the porting helper left for a person to decide (US-STORE-25): any string starting "TODO". */
+export function findTodos(value: unknown, path: Array<string | number> = []): Array<{ path: string; text: string }> {
+  if (typeof value === 'string') {
+    return /^TODO\b/.test(value) ? [{ path: path.join('.') || '(root)', text: value.replace(/^TODO:?\s*/, '') }] : [];
+  }
+  if (Array.isArray(value)) return value.flatMap((v, i) => findTodos(v, [...path, i]));
+  if (value && typeof value === 'object') return Object.entries(value).flatMap(([k, v]) => findTodos(v, [...path, k]));
+  return [];
+}
 
 export interface AppIssue {
   file: string;
   path: string;
   code: string;
   message: string;
+  /** The line in `file` the problem is on (1-based), when it can be found (`hlabs library check`, US-STORE-27). */
+  line?: number;
+}
+
+/** The 1-based line of a dotted path (`services.wiki.network_mode`) in YAML text, or of its nearest parent there. */
+export function lineOf(text: string, path: string): number | undefined {
+  if (!path || path.startsWith('(')) return undefined;
+  let node: unknown;
+  try {
+    node = parseDocument(text).contents;
+  } catch {
+    return undefined;
+  }
+  // Where the deepest part of the path found starts: a mapping's key, or a list's item.
+  let at: number | undefined;
+  for (const key of path.split('.')) {
+    if (isMap(node)) {
+      const pair = node.items.find((p) => String((p.key as { value?: unknown } | null)?.value) === key);
+      if (!pair) break;
+      at = (pair.key as Node | null)?.range?.[0] ?? at;
+      node = pair.value;
+    } else if (isSeq(node)) {
+      const item = node.items[Number(key)] as Node | undefined;
+      if (!item) break;
+      at = item.range?.[0] ?? at;
+      node = item;
+    } else break;
+  }
+  return at === undefined ? undefined : text.slice(0, at).split('\n').length;
+}
+
+/** Adds lines to issues from the files' text. */
+function withLines(issues: AppIssue[], texts: Record<string, string | undefined>): AppIssue[] {
+  return issues.map((i) => {
+    const text = texts[i.file];
+    const line = text === undefined ? undefined : lineOf(text, i.path);
+    return line === undefined ? i : { ...i, line };
+  });
 }
 
 export interface LoadedApp {
@@ -44,12 +97,20 @@ export function loadAppDir(dir: string, options: { requireDigest: boolean }): Lo
   const rawManifest = readYaml(join(dir, MANIFEST_FILE), issues, MANIFEST_FILE);
   const rawCompose = readYaml(join(dir, COMPOSE_FILE), issues, COMPOSE_FILE);
 
+  const todos = findTodos(rawManifest);
+  for (const t of todos) issues.push({ file: MANIFEST_FILE, path: t.path, code: 'TODO_LEFT', message: t.text });
+  for (const t of findTodos(rawCompose)) {
+    issues.push({ file: COMPOSE_FILE, path: t.path, code: 'TODO_LEFT', message: t.text });
+  }
+
   let manifest: AppManifest | null = null;
   if (rawManifest !== undefined) {
     const parsed = AppManifest.safeParse(rawManifest);
     if (parsed.success) manifest = parsed.data;
     else {
-      for (const i of parsed.error.issues) {
+      // A TODO is already reported; the schema's complaint about the same value adds nothing.
+      const underTodo = (path: string) => todos.some((t) => path === t.path || path.startsWith(`${t.path}.`));
+      for (const i of parsed.error.issues.filter((i) => !underTodo(i.path.join('.')))) {
         issues.push({
           file: MANIFEST_FILE,
           path: i.path.join('.') || '(root)',
@@ -91,7 +152,13 @@ export function loadAppDir(dir: string, options: { requireDigest: boolean }): Lo
     if (composeIssues.length === 0) compose = rawCompose as ComposeFile;
   }
 
-  return { dir, manifest, compose, issues };
+  const text = (name: string) => (existsSync(join(dir, name)) ? readFileSync(join(dir, name), 'utf8') : undefined);
+  return {
+    dir,
+    manifest,
+    compose,
+    issues: withLines(issues, { [MANIFEST_FILE]: text(MANIFEST_FILE), [COMPOSE_FILE]: text(COMPOSE_FILE) }),
+  };
 }
 
 export function listAppDirs(storeDir: string): string[] {
@@ -106,6 +173,40 @@ export function listAppDirs(storeDir: string): string[] {
 /** Validates every app in a store folder. Built-in apps must pin images by digest. */
 export function lintStore(storeDir: string, options = { requireDigest: true }): LoadedApp[] {
   return listAppDirs(storeDir).map((dir) => loadAppDir(dir, options));
+}
+
+/**
+ * Apps drafted from another store's definition keep a NOTICE and a row in store/ATTRIBUTION.md (06, D-148):
+ * each one without the other is a problem.
+ */
+export function attributionIssues(storeDir: string): AppIssue[] {
+  const file = join(storeDir, ATTRIBUTION_FILE);
+  const listed = new Set(existsSync(file) ? attributedApps(readFileSync(file, 'utf8')) : []);
+  const issues: AppIssue[] = [];
+  const dirs = listAppDirs(storeDir);
+  const ids = new Set(dirs.map((d) => d.split(/[\\/]/).at(-1)!));
+  for (const dir of dirs) {
+    const id = dir.split(/[\\/]/).at(-1)!;
+    if (existsSync(join(dir, NOTICE_FILE)) && !listed.has(id)) {
+      issues.push({
+        file: ATTRIBUTION_FILE,
+        path: id,
+        code: 'ATTRIBUTION_MISSING',
+        message: `apps/${id} has a NOTICE but isn't in ${ATTRIBUTION_FILE}`,
+      });
+    }
+  }
+  for (const id of listed) {
+    if (!ids.has(id) || !existsSync(join(storeDir, 'apps', id, NOTICE_FILE))) {
+      issues.push({
+        file: ATTRIBUTION_FILE,
+        path: id,
+        code: 'NOTICE_MISSING',
+        message: `${ATTRIBUTION_FILE} lists ${id}, which has no apps/${id}/${NOTICE_FILE}`,
+      });
+    }
+  }
+  return issues;
 }
 
 /** The store's curation (featured apps, rows, rank), or an empty one. Throws when the file is invalid. */
@@ -131,13 +232,20 @@ export function curationIssues(curation: StoreCuration, appIds: ReadonlySet<stri
   check(curation.featured, 'featured');
   curation.collections.forEach((c, i) => check(c.appIds, `collections[${i}].appIds`));
   check(curation.rank, 'rank');
+  check(curation.hold, 'hold');
   return issues;
 }
 
-export function buildStoreIndex(storeDir: string, source: { id: string; name: string }): StoreIndex {
-  const apps = lintStore(storeDir);
-  const broken = apps.filter((a) => a.issues.length > 0);
-  if (broken.length) throw new Error(`Fix store:lint issues first (${broken.length} app(s))`);
+export function buildStoreIndex(
+  storeDir: string,
+  source: { id: string; name: string },
+  options: { requireDigest?: boolean; skipBroken?: boolean } = {},
+): StoreIndex {
+  const all = lintStore(storeDir, { requireDigest: options.requireDigest ?? true });
+  const broken = all.filter((a) => a.issues.length > 0);
+  // A library indexes the apps that pass and says which don't (US-STORE-27); the built-in store must be clean.
+  if (broken.length && !options.skipBroken) throw new Error(`Fix store:lint issues first (${broken.length} app(s))`);
+  const apps = all.filter((a) => a.issues.length === 0);
   const curation = loadCuration(storeDir);
   if (curationIssues(curation, new Set(apps.map((a) => a.manifest!.id))).length) {
     throw new Error('Fix store:lint issues in curation.yml first');

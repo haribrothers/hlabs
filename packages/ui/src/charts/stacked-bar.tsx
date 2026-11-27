@@ -1,12 +1,15 @@
 import { useId, useState, type KeyboardEvent } from 'react';
 import { useUiStrings } from '../lib/strings';
 import { Announce, formatNumber, seriesColor, SrTable, stepKey, Swatch } from './shared';
+import { useHoldTooltip } from './hold-tooltip';
 
 export interface StackedBarProps {
   /** Used parts in chart order (apps, files, system); the rest of total shows as Free. */
   segments: { label: string; value: number }[];
   total?: number;
   title?: string;
+  /** Names the chart for assistive technology when there's no visible title (the heading is elsewhere). */
+  label?: string;
   unit?: string;
   formatValue?: (v: number) => string;
   /** False inside a link or button (a Home widget): not focusable, no keys, no table; its label says it all. */
@@ -17,7 +20,7 @@ export interface StackedBarProps {
  * One bar that splits a total into parts, with a legend of values under it. Left/Right (Home/End) step through the
  * parts, each announced; a hidden table linked with aria-describedby; in forced colours each part has its own pattern.
  */
-export function StackedBar({ segments, total, title, unit, formatValue, interactive = true }: StackedBarProps) {
+export function StackedBar({ segments, total, title, label, unit, formatValue, interactive = true }: StackedBarProps) {
   const t = useUiStrings();
   const tableId = useId();
   const [idx, setIdx] = useState<number | null>(null);
@@ -28,8 +31,11 @@ export function StackedBar({ segments, total, title, unit, formatValue, interact
   const parts = [...segments, { label: t.free, value: free }];
   const current = idx === null ? null : parts[idx];
   const described = parts.map((s) => `${s.label} ${fmt(s.value)}`).join(', ');
+  const name = title ?? label;
+  // A finger held on the chart shows its tooltip (US-TAB-01).
+  const hold = useHoldTooltip();
   return (
-    <figure className="hl-chart">
+    <figure className="hl-chart" {...hold}>
       {title ? (
         <figcaption className="hl-chart-title">
           {title}
@@ -42,12 +48,12 @@ export function StackedBar({ segments, total, title, unit, formatValue, interact
         {...(interactive
           ? {
               tabIndex: 0,
-              'aria-label': `${title ?? t.chartData}. ${described}. ${t.chartHint}`,
+              'aria-label': `${name ?? t.chartData}. ${described}. ${t.chartHint}`,
               'aria-describedby': tableId,
               onKeyDown: (e: KeyboardEvent) => stepKey(e, parts.length, idx, setIdx),
               onBlur: () => setIdx(null),
             }
-          : { 'aria-label': title ? `${title}. ${described}` : described })}
+          : { 'aria-label': name ? `${name}. ${described}` : described })}
       >
         {/* An empty part has no sliver in the bar; the legend still names it. */}
         {segments.map((s, i) =>
@@ -92,7 +98,7 @@ export function StackedBar({ segments, total, title, unit, formatValue, interact
           <Announce text={current ? `${current.label} ${fmt(current.value)}` : ''} />
           <SrTable
             id={tableId}
-            caption={title ?? t.chartData}
+            caption={name ?? t.chartData}
             columns={[t.chartPart, t.value]}
             rows={parts.map((p) => [p.label, fmt(p.value)])}
           />

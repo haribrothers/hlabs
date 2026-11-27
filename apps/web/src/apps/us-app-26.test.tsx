@@ -54,7 +54,7 @@ describe('US-APP-26', () => {
     const card = t.closest('[role="alert"], [role="status"]') as HTMLElement;
     expect(within(card).getByText('It quit unexpectedly 3 times in 5 minutes.')).toBeInTheDocument();
     expect(currentToasts()[0]).toMatchObject({ tone: 'warning', key: 'app.crashed:uptime-kuma' });
-    await waitFor(() => expect(within(card).getByRole('link', { name: 'View logs' })).toBeInTheDocument());
+    await waitFor(() => expect(within(card).getByRole('button', { name: 'View logs' })).toBeInTheDocument());
     fireEvent.click(within(card).getByRole('button', { name: 'Restart' }));
     await waitFor(() => expect(restart.calls).toEqual([{ appId: 'uptime-kuma' }]));
   });

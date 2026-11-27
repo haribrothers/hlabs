@@ -2,7 +2,11 @@
 // binary through this interface; tests use a fake. Passwords and keys reach restic only through the child process's
 // environment, never its command line or a log (07 §7.7). `--json` output drives progress.
 import { hlabsError, type HlabsCode } from '@hlabs/api';
+import { TRPCError } from '@trpc/server';
 import { spawn } from 'node:child_process';
+import { existsSync, mkdirSync } from 'node:fs';
+import { isAbsolute } from 'node:path';
+import type { ContainerEngine } from '../engine/types';
 
 /** Where a repository is and what opens it. */
 export interface Repo {
@@ -34,6 +38,8 @@ export interface BackupResult {
   filesChanged: number;
   /** Bytes in the backed-up folders. */
   totalBytes: number;
+  /** Files or folders restic couldn't read, so the snapshot is without them (its exit code 3). */
+  unreadable: number;
 }
 
 export interface ResticProgress {
@@ -47,9 +53,10 @@ export interface Restic {
   /** `ok` when the repository is there and the password opens it, `missing` when there's none yet. */
   probe(repo: Repo, opts?: { timeoutMs?: number; signal?: AbortSignal }): Promise<'ok' | 'missing'>;
   init(repo: Repo, opts?: { timeoutMs?: number }): Promise<void>;
+  /** `asRoot`: an app's data, which on Linux holds files its containers keep to themselves (D-190). */
   backup(
     repo: Repo,
-    opts: { paths: string[]; tags: string[]; excludes?: string[]; signal?: AbortSignal },
+    opts: { paths: string[]; tags: string[]; excludes?: string[]; asRoot?: boolean; signal?: AbortSignal },
     onProgress?: (p: ResticProgress) => void,
   ): Promise<BackupResult>;
   /** `forget --prune` with the plan's retention, each folder on its own (restic groups by host and paths). */
@@ -59,10 +66,13 @@ export interface Restic {
   repoSize(repo: Repo): Promise<number>;
   /** Bytes a snapshot restores to (`stats --mode restore-size`). */
   restoreSize(repo: Repo, snapshotId: string): Promise<number>;
-  /** Restores `path` of the snapshot (a folder it backed up) into `target`, as its contents. */
+  /**
+   * Restores `path` of the snapshot (a folder it backed up) into `target`, as its contents. `asRoot`: an app's data put
+   * back in its place, with each file's owner as it was (D-190); a copy for someone to look at keeps hlabs's.
+   */
   restore(
     repo: Repo,
-    opts: { snapshotId: string; path: string; target: string; signal?: AbortSignal },
+    opts: { snapshotId: string; path: string; target: string; asRoot?: boolean; signal?: AbortSignal },
     onProgress?: (p: ResticProgress) => void,
   ): Promise<void>;
   /** Removes stale locks (after a crash, US-BKP-05). */
@@ -90,18 +100,112 @@ interface RunResult {
   stderr: string;
 }
 
+/**
+ * restic for an app's data on Linux (D-190): the bundled binary in a throwaway container, as hlabs's own user (so the
+ * repository stays hlabs's, also on an NFS share that maps root to nobody) with only the capabilities it needs, set by
+ * util-linux's `setpriv`: reading any file for a backup, putting owners back for a restore.
+ */
+export interface ResticAsRoot {
+  engine: () => ContainerEngine | null;
+  /** An image with util-linux's setpriv: `HELPER_IMAGE`. */
+  image: string;
+  uid: number;
+  gid: number;
+  /** The host's CA bundle, for a cloud destination over HTTPS; null when there's none. */
+  caFile: string | null;
+}
+
+/** Where Linux keeps its CA bundle (Debian and Ubuntu, Fedora and RHEL, openSUSE, Alpine). */
+export function hostCaFile(exists: (path: string) => boolean = existsSync): string | null {
+  const candidates = [
+    '/etc/ssl/certs/ca-certificates.crt',
+    '/etc/pki/tls/certs/ca-bundle.crt',
+    '/etc/ssl/ca-bundle.pem',
+    '/etc/ssl/cert.pem',
+  ];
+  return candidates.find((p) => exists(p)) ?? null;
+}
+
+/** Capabilities restic keeps as hlabs's user: what it reads for a backup, what it sets for a restore. */
+const BACKUP_CAPS = ['dac_read_search'];
+const RESTORE_CAPS = ['chown', 'fowner', 'dac_override', 'fsetid'];
+
 export class ResticCli implements Restic {
   constructor(
     private readonly bin: string,
     /** restic's cache, kept with hlabs's data (`<dataDir>/cache/restic`). */
     private readonly cacheDir: string,
+    /** Linux with hlabs not running as root; null elsewhere, where restic reads everything already. */
+    private readonly root: ResticAsRoot | null = null,
   ) {}
+
+  /** The bundled restic in a helper container (D-190), as hlabs's user with `caps`; `binds` are the folders it uses. */
+  private async inContainer(
+    engine: ContainerEngine,
+    repo: Repo,
+    args: string[],
+    asRoot: { caps: string[]; binds: string[] },
+    opts: { signal?: AbortSignal; onLine?: (line: string) => void },
+  ): Promise<RunResult> {
+    const root = this.root!;
+    mkdirSync(this.cacheDir, { recursive: true });
+    const local = isAbsolute(repo.url);
+    const caps = asRoot.caps.map((c) => `+${c}`).join(',');
+    const binds = [
+      `${this.bin}:/hlabs/restic:ro`,
+      `${this.cacheDir}:${this.cacheDir}`,
+      ...(root.caFile ? [`${root.caFile}:/hlabs/ca.crt:ro`] : []),
+      ...(local ? [`${repo.url}:${repo.url}`] : []),
+      ...asRoot.binds,
+    ];
+    try {
+      const res = await engine.runOnce({
+        image: root.image,
+        user: '0:0',
+        entrypoint: ['setpriv'],
+        cmd: [
+          `--reuid=${root.uid}`,
+          `--regid=${root.gid}`,
+          '--clear-groups',
+          `--inh-caps=${caps}`,
+          `--ambient-caps=${caps}`,
+          '/hlabs/restic',
+          ...args,
+        ],
+        env: {
+          HOME: this.cacheDir,
+          RESTIC_REPOSITORY: repo.url,
+          RESTIC_CACHE_DIR: this.cacheDir,
+          ...(root.caFile ? { SSL_CERT_FILE: '/hlabs/ca.crt' } : {}),
+          ...repo.env,
+        },
+        binds,
+        capAdd: asRoot.caps.includes('dac_read_search') ? ['DAC_READ_SEARCH'] : [],
+        network: local ? 'none' : 'bridge',
+        onStdout: opts.onLine,
+        signal: opts.signal,
+      });
+      if (opts.signal?.aborted) throw hlabsError('INTERNAL', 'Cancelled');
+      return { code: res.exitCode, stdout: res.stdout, stderr: res.stderr };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      throw hlabsError('INTERNAL', `restic helper: ${(error as Error).message}`);
+    }
+  }
 
   private run(
     repo: Repo,
     args: string[],
-    opts: { timeoutMs?: number; signal?: AbortSignal; onLine?: (line: string) => void } = {},
+    opts: {
+      timeoutMs?: number;
+      signal?: AbortSignal;
+      onLine?: (line: string) => void;
+      asRoot?: { caps: string[]; binds: string[] };
+    } = {},
   ): Promise<RunResult> {
+    // Without an engine (stopped, or none yet) restic runs here and reads what hlabs's user can (`unreadable`).
+    const engine = opts.asRoot && this.root ? this.root.engine() : null;
+    if (engine && opts.asRoot) return this.inContainer(engine, repo, args, opts.asRoot, opts);
     return new Promise((resolve, reject) => {
       // Only what restic needs: never the daemon's own environment, which may hold other secrets.
       const env: Record<string, string> = {
@@ -172,16 +276,20 @@ export class ResticCli implements Restic {
 
   async backup(
     repo: Repo,
-    opts: { paths: string[]; tags: string[]; excludes?: string[]; signal?: AbortSignal },
+    opts: { paths: string[]; tags: string[]; excludes?: string[]; asRoot?: boolean; signal?: AbortSignal },
     onProgress?: (p: ResticProgress) => void,
   ): Promise<BackupResult> {
     const args = ['backup', '--json', '--host', 'hlabs', ...opts.tags.flatMap((t) => ['--tag', t])];
     for (const e of opts.excludes ?? []) args.push('--exclude', e);
     let summary: Record<string, unknown> | null = null;
+    let unreadable = 0;
     await this.ok(repo, [...args, ...opts.paths], {
       signal: opts.signal,
+      // Read-only, at the same paths, so snapshots are the same whichever way restic ran.
+      ...(opts.asRoot ? { asRoot: { caps: BACKUP_CAPS, binds: opts.paths.map((p) => `${p}:${p}:ro`) } } : {}),
       onLine: (line) => {
         const msg = parseJson(line);
+        if (msg?.message_type === 'error') unreadable++;
         if (msg?.message_type === 'status' && onProgress) {
           onProgress({
             fraction: Number(msg.percent_done ?? 0),
@@ -198,6 +306,7 @@ export class ResticCli implements Restic {
       bytesAdded: Number(s.data_added ?? 0),
       filesChanged: Number(s.files_new ?? 0) + Number(s.files_changed ?? 0),
       totalBytes: Number(s.total_bytes_processed ?? 0),
+      unreadable,
     };
   }
 
@@ -251,11 +360,12 @@ export class ResticCli implements Restic {
 
   async restore(
     repo: Repo,
-    opts: { snapshotId: string; path: string; target: string; signal?: AbortSignal },
+    opts: { snapshotId: string; path: string; target: string; asRoot?: boolean; signal?: AbortSignal },
     onProgress?: (p: ResticProgress) => void,
   ) {
     await this.ok(repo, ['restore', '--json', `${opts.snapshotId}:${opts.path}`, '--target', opts.target], {
       signal: opts.signal,
+      ...(opts.asRoot ? { asRoot: { caps: RESTORE_CAPS, binds: [`${opts.target}:${opts.target}`] } } : {}),
       onLine: (line) => {
         const msg = parseJson(line);
         if (msg?.message_type === 'status' && onProgress) {

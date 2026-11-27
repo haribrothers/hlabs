@@ -1,0 +1,28 @@
+schema: 1
+id: stirling-pdf
+name: Stirling-PDF
+version: '3.5.0'
+revision: 1
+tagline: Merge, split, convert and sign PDFs in your browser
+description: |
+  Dozens of PDF tools in one page: merge and split, compress, convert to and from Office files and
+  images, add page numbers, sign and read scanned text. Files stay on your hlabs. It has no login of its
+  own: the hlabs login protects it.
+category: productivity
+developer: { name: Stirling Tools, url: https://www.stirlingpdf.com }
+source: https://github.com/Stirling-Tools/Stirling-PDF
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#d32f2f', '#5c1010']
+  fallback: file-text
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 2048 }
+web: { service: stirling-pdf, port: 8080, embed: true }
+health: { service: stirling-pdf, http: /api/v1/info/status, timeout: 300 }
+ownLogin: false
+backup:
+  pause: [stirling-pdf]
+  exclude: [logs/]
+  beforeUpdate: true
+permissions: { network: internet }

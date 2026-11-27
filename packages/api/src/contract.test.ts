@@ -26,6 +26,7 @@ const EXPECTED: Row[] = [
   ['auth.listLoginUsers', 'q', 'public'], ['auth.login', 'm', 'public'], ['auth.verifyTotp', 'm', 'public'],
   ['auth.useRecoveryCode', 'm', 'public'], ['auth.resetPassword', 'm', 'public'], ['auth.logout', 'm', 'authed'], ['auth.continue', 'm', 'authed'],
   ['auth.me', 'q', 'authed'], ['auth.listSessions', 'q', 'authed'], ['auth.revokeSession', 'm', 'authed'],
+  ['auth.revokeOtherSessions', 'm', 'authed'],
 
   ['account.get', 'q', 'authed'], ['account.update', 'm', 'authed'], ['account.changePassword', 'm', 'authed'],
   ['account.totp.begin', 'm', 'authed'], ['account.totp.confirm', 'm', 'authed'], ['account.totp.disable', 'm', 'authed'],
@@ -41,7 +42,7 @@ const EXPECTED: Row[] = [
   ['store.getHome', 'q', 'authed'], ['store.listApps', 'q', 'authed'], ['store.getApp', 'q', 'authed'],
   ['store.listCategories', 'q', 'authed'], ['store.listUpdates', 'q', 'admin'], ['store.sources.list', 'q', 'admin'],
   ['store.sources.inspect', 'q', 'admin'], ['store.sources.add', 'm', 'admin'], ['store.sources.remove', 'm', 'admin'],
-  ['store.sources.sync', 'm', 'admin'],
+  ['store.sources.sync', 'm', 'admin'], ['store.copyToLibrary', 'm', 'admin'],
 
   ['apps.list', 'q', 'authed'], ['apps.get', 'q', 'authed'], ['apps.install', 'm', 'authed'],
   ['apps.retryInstall', 'm', 'admin'], ['apps.start', 'm', 'admin'], ['apps.stop', 'm', 'admin'],
@@ -50,7 +51,12 @@ const EXPECTED: Row[] = [
   ['apps.revealSecret', 'm', 'admin'], ['apps.setMounts', 'm', 'admin'], ['apps.setPermissions', 'm', 'admin'],
   ['apps.setAutostart', 'm', 'admin'], ['apps.setAutoUpdate', 'm', 'admin'], ['apps.setAuthMode', 'm', 'admin'],
   ['apps.logs', 'q', 'admin'], ['apps.watchLogs', 's', 'admin'], ['apps.moveData', 'm', 'admin'],
-  ['apps.deployCustom', 'm', 'admin'],
+  ['apps.deployCustom', 'm', 'admin'], ['apps.widgetKey', 'q', 'admin'], ['apps.setWidgetKey', 'm', 'admin'],
+  ['apps.setPublic', 'm', 'admin'], ['apps.publicOptions', 'q', 'admin'], ['apps.publicVisits', 'q', 'admin'],
+
+  ['public.status', 'q', 'admin'], ['public.cloudflareSignIn', 'm', 'admin'], ['public.cancelSignIn', 'm', 'admin'],
+  ['public.setupCloudflare', 'm', 'admin'], ['public.remove', 'm', 'admin'], ['public.turnOffAll', 'm', 'admin'],
+  ['public.setDashboard', 'm', 'admin'], ['public.setDashboardAccess', 'm', 'admin'],
 
   ['home.getLayout', 'q', 'authed'], ['home.saveLayout', 'm', 'authed'], ['home.saveDock', 'm', 'authed'],
   ['home.listWidgets', 'q', 'authed'], ['home.getWidgetData', 'q', 'authed'], ['home.searchEverything', 'q', 'authed'],
@@ -105,6 +111,7 @@ const EXPECTED: Row[] = [
   ['tray.resetPassword', 'm', 'tray'], ['tray.quit', 'm', 'tray'], ['tray.useOtherPort', 'm', 'tray'], ['tray.setStartAtLogin', 'm', 'tray'], ['tray.appLogs', 'q', 'tray'],
   ['tray.startEngine', 'm', 'tray'], ['tray.diagnostics', 'q', 'tray'], ['tray.uninstallInfo', 'q', 'tray'],
   ['tray.uninstall', 'm', 'tray'], ['tray.setupUrl', 'q', 'tray'], ['tray.job', 'q', 'tray'],
+  ['tray.libraryKeygen', 'm', 'tray'], ['tray.librarySign', 'm', 'tray'], ['tray.publicOff', 'm', 'tray'],
 
   ['events.stream', 's', 'authed|tray'],
 ];

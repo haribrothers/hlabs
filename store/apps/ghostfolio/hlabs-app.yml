@@ -1,0 +1,39 @@
+schema: 1
+id: ghostfolio
+name: Ghostfolio
+version: '3.100.0'
+revision: 1
+tagline: Follow your investments in one place
+description: |
+  Track your shares, funds and other investments across accounts, with performance, allocation and
+  dividends over time. The first visit sets up your account.
+category: finance
+developer: { name: Ghostfolio, url: https://ghostfol.io }
+source: https://github.com/ghostfolio/ghostfolio
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#36cfcc', '#0e4a49']
+  fallback: trending-up
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 1024 }
+web: { service: ghostfolio, port: 3333, embed: true }
+health: { service: ghostfolio, http: /api/v1/health, timeout: 300 }
+env:
+  - key: ACCESS_TOKEN_SALT
+    type: secret
+    generate: true
+    hidden: true
+  - key: JWT_SECRET
+    type: secret
+    generate: true
+    hidden: true
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [ghostfolio, ghostfolio-db]
+  beforeUpdate: true
+permissions: { network: internet }

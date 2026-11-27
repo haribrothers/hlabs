@@ -21,6 +21,37 @@ export interface ProxyState {
    */
   lanAddresses?: string[];
   apps: AppRoute[];
+  /** The listener cloudflared sends public names to, while Cloudflare Tunnel is set up (D-178); else none. */
+  public?: PublicListener | null;
+}
+
+/** A public app's route on the public listener (US-APP-27, 28). */
+export interface PublicRoute {
+  appId: string;
+  /** `photos.example.com` */
+  hostname: string;
+  /** The app's port (12000–12999); its web service is on the loopback port 1000 above it (D-086). */
+  port: number;
+  /** hlabs's login (forward auth on the public address) or the app's own only. */
+  access: 'hlabs' | 'ownLogin';
+  /** The largest request it takes (manifest `public.maxBodyMb`). */
+  maxBodyMb: number;
+}
+
+/**
+ * Caddy's public listener (D-178): on 127.0.0.1 only, answering only public addresses (an unknown name is 404, never
+ * the dashboard, the daemon or a private app), with cloudflared as the only trusted proxy.
+ */
+export interface PublicListener {
+  port: number;
+  /** Where its access log goes (Visits, US-APP-29): `<dataDir>/logs/public`, kept 7 days. */
+  logDir: string;
+  apps: PublicRoute[];
+  /**
+   * The dashboard's public name while it's public (US-SYS-45, D-182): served there as on the home server, with the
+   * public hardening and `X-Hlabs-Via: public` on every request it passes on. Null (or absent) while it's private.
+   */
+  dashboard?: { hostname: string } | null;
 }
 
 /** Caddy couldn't start because another program holds one of hlabs's web ports (US-SYS-42). */

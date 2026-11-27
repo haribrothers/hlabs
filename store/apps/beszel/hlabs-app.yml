@@ -1,0 +1,27 @@
+schema: 1
+id: beszel
+name: Beszel
+version: '0.21.2'
+revision: 1
+tagline: Simple monitoring for all your computers
+description: |
+  A light dashboard of processor, memory, disk and container use for each of your computers and servers,
+  with history and alerts. Add a computer from its page: Beszel shows the command that installs its
+  small agent there. The first visit sets up your admin account.
+category: monitoring
+developer: { name: henrygd, url: https://beszel.dev }
+source: https://github.com/henrygd/beszel
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#22c55e', '#0b3a1d']
+  fallback: server
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: beszel, port: 8090, embed: true }
+health: { service: beszel, http: /api/health, timeout: 120 }
+ownLogin: true
+backup:
+  pause: [beszel]
+  beforeUpdate: true
+permissions: { network: internet }

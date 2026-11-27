@@ -1,6 +1,15 @@
 import Docker from 'dockerode';
+import { Writable } from 'node:stream';
+import { HELPER_IMAGE } from './helper-image';
 import { LogFrames, type ContainerLogLine } from './log-frames';
-import type { ContainerEngine, ContainerStats, ContainerState, EngineInfo, PullProgress } from './types';
+import type {
+  ContainerEngine,
+  ContainerStats,
+  ContainerState,
+  EngineInfo,
+  PullProgress,
+  RunOnceOptions,
+} from './types';
 
 /** The real engine, over its unix socket (D-003: dockerode for everything but compose up/down). */
 export class DockerodeEngine implements ContainerEngine {
@@ -62,12 +71,18 @@ export class DockerodeEngine implements ContainerEngine {
   async pullImage(ref: string, onProgress: (progress: PullProgress) => void, signal?: AbortSignal): Promise<void> {
     const stream = (await this.slow.pull(ref, { abortSignal: signal })) as NodeJS.ReadableStream;
     const layers = new PullLayers();
+    // Docker reports a pull that fails partway (a registry hiccup) as an `error` event in the stream, which
+    // followProgress doesn't treat as a failure; without this the pull "succeeds" and compose finds no image.
+    let failure: string | null = null;
     await new Promise<void>((resolve, reject) => {
       this.slow.modem.followProgress(
         stream,
-        (error) => (error ? reject(error) : resolve()),
+        (error) => (error ? reject(error) : failure ? reject(new Error(failure)) : resolve()),
         (event: PullEvent) => {
-          if (event.error) return;
+          if (event.error) {
+            failure ??= event.errorDetail?.message ?? event.error;
+            return;
+          }
           if (layers.update(event)) onProgress(layers.progress());
         },
       );
@@ -153,6 +168,8 @@ export class DockerodeEngine implements ContainerEngine {
   }
 
   async clearFolder(image: string, hostPath: string): Promise<void> {
+    // Only hlabs's small helper is downloaded for this; an app's own image that's gone is just skipped.
+    if (image === HELPER_IMAGE && !(await this.hasImage(image))) await this.pullImage(image, () => undefined);
     const container = await this.slow.createContainer({
       Image: image,
       User: '0:0',
@@ -166,6 +183,59 @@ export class DockerodeEngine implements ContainerEngine {
       const { StatusCode } = (await container.wait()) as { StatusCode: number };
       if (StatusCode !== 0) throw new Error(`clearing ${hostPath} with ${image} exited ${StatusCode}`);
     } finally {
+      await container.remove({ force: true }).catch(() => undefined);
+    }
+  }
+
+  async runOnce(opts: RunOnceOptions): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+    if (!(await this.hasImage(opts.image))) await this.pullImage(opts.image, () => undefined, opts.signal);
+    const container = await this.slow.createContainer({
+      Image: opts.image,
+      User: opts.user,
+      Entrypoint: opts.entrypoint,
+      Cmd: opts.cmd,
+      Env: Object.entries(opts.env).map(([k, v]) => `${k}=${v}`),
+      Labels: { 'dev.hlabs.helper': 'true' },
+      AttachStdout: true,
+      AttachStderr: true,
+      HostConfig: { Binds: opts.binds, CapAdd: opts.capAdd ?? [], NetworkMode: opts.network },
+    });
+    const stop = () => void container.kill({ signal: 'SIGINT' }).catch(() => undefined);
+    try {
+      const stream = (await container.attach({ stream: true, stdout: true, stderr: true })) as NodeJS.ReadableStream;
+      let stdout = '';
+      let stderr = '';
+      let partial = '';
+      const out = new Writable({
+        write(chunk: Buffer, _enc, done) {
+          const text = chunk.toString('utf8');
+          stdout += text;
+          if (opts.onStdout) {
+            partial += text;
+            const lines = partial.split('\n');
+            partial = lines.pop() ?? '';
+            for (const l of lines) if (l.trim()) opts.onStdout(l);
+          }
+          done();
+        },
+      });
+      const err = new Writable({
+        write(chunk: Buffer, _enc, done) {
+          stderr += chunk.toString('utf8');
+          if (stderr.length > 64 * 1024) stderr = stderr.slice(-64 * 1024);
+          done();
+        },
+      });
+      const ended = new Promise<void>((resolve) => stream.on('end', resolve));
+      this.slow.modem.demuxStream(stream, out, err);
+      opts.signal?.addEventListener('abort', stop, { once: true });
+      await container.start();
+      const { StatusCode } = (await container.wait()) as { StatusCode: number };
+      await ended;
+      if (partial.trim() && opts.onStdout) opts.onStdout(partial);
+      return { exitCode: StatusCode, stdout, stderr };
+    } finally {
+      opts.signal?.removeEventListener('abort', stop);
       await container.remove({ force: true }).catch(() => undefined);
     }
   }
@@ -193,6 +263,22 @@ export class DockerodeEngine implements ContainerEngine {
     } catch {
       return null;
     }
+  }
+
+  async imageInfo(image: string): Promise<{ id: string; sizeBytes: number } | null> {
+    try {
+      const inspect = await this.docker.getImage(image).inspect();
+      return { id: inspect.Id, sizeBytes: inspect.Size };
+    } catch (error) {
+      if ((error as { statusCode?: number }).statusCode === 404) return null;
+      throw error;
+    }
+  }
+
+  async containerImageIds(): Promise<Set<string>> {
+    // Every container, running or not, of any project: no filters.
+    const list = await this.docker.listContainers({ all: true });
+    return new Set(list.map((c) => c.ImageID).filter(Boolean));
   }
 
   async projectContainers(project: string): Promise<ContainerState[]> {
@@ -259,6 +345,7 @@ interface PullEvent {
   id?: string;
   status?: string;
   error?: string;
+  errorDetail?: { message?: string };
   progressDetail?: { current?: number; total?: number };
 }
 

@@ -46,15 +46,17 @@ describe('US-SYS-02', () => {
   it('signed out: a log-in that names the computer after the server; once running, hlabs publishes (D-102)', async () => {
     const { d, ts, connect, status } = await setup();
     const res = (await connect()).result!.data;
-    expect(res).toEqual({ state: 'needs_login', loginUrl: 'https://login.tailscale.com/a/fake' });
+    expect(res).toEqual({ state: 'needs_login', loginUrl: '/dev/tailscale/sign-in' });
     expect(ts.hostname).toBe('hlabs');
-    expect(await status()).toMatchObject({ state: 'waiting', loginUrl: 'https://login.tailscale.com/a/fake' });
+    expect(await status()).toMatchObject({ state: 'waiting', loginUrl: '/dev/tailscale/sign-in' });
 
     ts.finishLogin('tail1234.ts.net');
     expect(await status()).toMatchObject({
       state: 'connected',
       url: 'https://hlabs.tail1234.ts.net',
       nodeName: 'hlabs',
+      // This computer, at least (the Remote access widget, US-HOME-02).
+      devicesOnline: 1,
     });
     expect(ts.config).toEqual({
       TCP: { '443': { HTTPS: true }, '14001': { HTTPS: true } },
@@ -173,6 +175,8 @@ describe('US-SYS-02', () => {
         MagicDNSSuffix: 'tail9.ts.net',
         CertDomains: ['hari-home.tail9.ts.net'],
         Self: { DNSName: 'hari-home.tail9.ts.net.', KeyExpiry: '2027-04-01T00:00:00Z' },
+        // Two other devices online, one offline: the Remote access widget says "3 devices online" (US-HOME-02).
+        Peer: { a: { Online: true }, b: { Online: false }, c: { Online: true } },
       }),
     ).toEqual({
       kind: 'running',
@@ -180,6 +184,7 @@ describe('US-SYS-02', () => {
       nodeName: 'hari-home',
       httpsEnabled: true,
       keyExpiry: Date.parse('2027-04-01T00:00:00Z'),
+      peersOnline: 2,
     });
     expect(stateFromStatus({ BackendState: 'NeedsLogin', AuthURL: 'https://login.tailscale.com/a/x' })).toEqual({
       kind: 'needs_login',

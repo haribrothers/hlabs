@@ -32,6 +32,8 @@ const set = (next: Partial<InstallState>) => {
 /** Running as an installed app: Chrome, Edge and Safari's Add to Dock all report `standalone` (or a window overlay). */
 export function isStandalone(win: Window = window): boolean {
   try {
+    // iOS's home-screen app says so on navigator.standalone (US-PHONE-24).
+    if ((win.navigator as (Navigator & { standalone?: boolean }) | undefined)?.standalone === true) return true;
     return ['standalone', 'window-controls-overlay', 'minimal-ui'].some(
       (m) => win.matchMedia?.(`(display-mode: ${m})`).matches,
     );
@@ -45,6 +47,16 @@ export function browserKind(ua: string = navigator.userAgent): InstallBrowser {
   if (/Edg\/|Chrome\/|Chromium\//.test(ua)) return /Firefox|OPR\//.test(ua) ? 'other' : 'chromium';
   if (/Macintosh/.test(ua) && /Safari\//.test(ua) && !/Firefox|FxiOS|CriOS/.test(ua)) return 'safari';
   return 'other';
+}
+
+/**
+ * Safari on an iPhone or iPad, where "Add to Home Screen" is in the Share sheet (US-PHONE-23). Not Chrome, Firefox or
+ * Edge on iOS (CriOS, FxiOS, EdgiOS), which say Safari in their user agent too. iPadOS asks for the desktop site and
+ * says "Macintosh", with touch.
+ */
+export function isIosSafari(ua: string = navigator.userAgent, touchPoints = navigator.maxTouchPoints ?? 0): boolean {
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && touchPoints > 1);
+  return ios && /Safari\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(ua);
 }
 
 /** Starts listening; call once, before the app renders. */
@@ -85,4 +97,21 @@ export function useInstall(): InstallState {
 export function resetInstall(next: Partial<InstallState> = {}, withPrompt: InstallPromptEvent | null = null): void {
   prompt = withPrompt;
   set({ standalone: false, canPrompt: withPrompt !== null, installed: false, browser: 'other', ...next });
+}
+
+/**
+ * When a new version's service worker takes over a page an older one served (US-PHONE-24), the page reloads once so
+ * it runs the new shell. Not on the first install (no worker served the page yet), and only once per page.
+ */
+export function reloadOnNewShell(
+  sw: Pick<ServiceWorkerContainer, 'controller' | 'addEventListener'>,
+  reload: () => void = () => window.location.reload(),
+): void {
+  if (!sw.controller) return;
+  let reloaded = false;
+  sw.addEventListener('controllerchange', () => {
+    if (reloaded) return;
+    reloaded = true;
+    reload();
+  });
 }

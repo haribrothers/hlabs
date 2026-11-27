@@ -57,6 +57,11 @@ export function testConfig(overrides: Partial<DaemonConfig> = {}): DaemonConfig 
     // Never the real Tailscale on the machine running the tests.
     devFakeTailscale: true,
     devFakeNas: false,
+    // Never the real Cloudflare.
+    devFakeCloudflare: true,
+    publicPort: 7475,
+    devDemo: false,
+    devClock: null,
     ...overrides,
   };
 }

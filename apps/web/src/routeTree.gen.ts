@@ -19,6 +19,7 @@ import { Route as TrustRouteImport } from './routes/trust'
 import { Route as UsageRouteImport } from './routes/usage'
 import { Route as AppsAppIdRouteImport } from './routes/apps.$appId'
 import { Route as DevUiRouteImport } from './routes/dev/ui'
+import { Route as DevWidgetsRouteImport } from './routes/dev/widgets'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as LoginCodeRouteImport } from './routes/login.code'
@@ -34,6 +35,8 @@ import { Route as SetupIndexRouteImport } from './routes/setup.index'
 import { Route as SetupStepRouteImport } from './routes/setup.$step'
 import { Route as StoreIndexRouteImport } from './routes/store.index'
 import { Route as StoreSearchRouteImport } from './routes/store.search'
+import { Route as StoreSourcesRouteImport } from './routes/store.sources'
+import { Route as StoreUpdatesRouteImport } from './routes/store.updates'
 import { Route as AppsAppIdLogsRouteImport } from './routes/apps_.$appId.logs'
 import { Route as AppsAppIdSettingsRouteImport } from './routes/apps_.$appId.settings'
 import { Route as SettingsAccountTwoFactorRouteImport } from './routes/settings.account.two-factor'
@@ -90,6 +93,11 @@ const AppsAppIdRoute = AppsAppIdRouteImport.update({
 const DevUiRoute = DevUiRouteImport.update({
   id: '/dev/ui',
   path: '/dev/ui',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevWidgetsRoute = DevWidgetsRouteImport.update({
+  id: '/dev/widgets',
+  path: '/dev/widgets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
@@ -167,6 +175,16 @@ const StoreSearchRoute = StoreSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => StoreRoute,
 } as any)
+const StoreSourcesRoute = StoreSourcesRouteImport.update({
+  id: '/sources',
+  path: '/sources',
+  getParentRoute: () => StoreRoute,
+} as any)
+const StoreUpdatesRoute = StoreUpdatesRouteImport.update({
+  id: '/updates',
+  path: '/updates',
+  getParentRoute: () => StoreRoute,
+} as any)
 const AppsAppIdLogsRoute = AppsAppIdLogsRouteImport.update({
   id: '/apps_/$appId/logs',
   path: '/apps/$appId/logs',
@@ -216,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/usage': typeof UsageRoute
   '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
+  '/dev/widgets': typeof DevWidgetsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
   '/login/forgot': typeof LoginForgotRoute
@@ -227,6 +246,8 @@ export interface FileRoutesByFullPath {
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/store/search': typeof StoreSearchRoute
+  '/store/sources': typeof StoreSourcesRoute
+  '/store/updates': typeof StoreUpdatesRoute
   '/login/': typeof LoginIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/setup/': typeof SetupIndexRoute
@@ -247,6 +268,7 @@ export interface FileRoutesByTo {
   '/usage': typeof UsageRoute
   '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
+  '/dev/widgets': typeof DevWidgetsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
   '/login/forgot': typeof LoginForgotRoute
@@ -258,6 +280,8 @@ export interface FileRoutesByTo {
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/store/search': typeof StoreSearchRoute
+  '/store/sources': typeof StoreSourcesRoute
+  '/store/updates': typeof StoreUpdatesRoute
   '/login': typeof LoginIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/setup': typeof SetupIndexRoute
@@ -282,6 +306,7 @@ export interface FileRoutesById {
   '/usage': typeof UsageRoute
   '/apps/$appId': typeof AppsAppIdRoute
   '/dev/ui': typeof DevUiRoute
+  '/dev/widgets': typeof DevWidgetsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/login/code': typeof LoginCodeRoute
   '/login/forgot': typeof LoginForgotRoute
@@ -293,6 +318,8 @@ export interface FileRoutesById {
   '/settings/$section': typeof SettingsSectionRoute
   '/setup/$step': typeof SetupStepRoute
   '/store/search': typeof StoreSearchRoute
+  '/store/sources': typeof StoreSourcesRoute
+  '/store/updates': typeof StoreUpdatesRoute
   '/login/': typeof LoginIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/setup/': typeof SetupIndexRoute
@@ -318,6 +345,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/apps/$appId'
     | '/dev/ui'
+    | '/dev/widgets'
     | '/invite/$token'
     | '/login/code'
     | '/login/forgot'
@@ -329,6 +357,8 @@ export interface FileRouteTypes {
     | '/settings/$section'
     | '/setup/$step'
     | '/store/search'
+    | '/store/sources'
+    | '/store/updates'
     | '/login/'
     | '/settings/'
     | '/setup/'
@@ -349,6 +379,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/apps/$appId'
     | '/dev/ui'
+    | '/dev/widgets'
     | '/invite/$token'
     | '/login/code'
     | '/login/forgot'
@@ -360,6 +391,8 @@ export interface FileRouteTypes {
     | '/settings/$section'
     | '/setup/$step'
     | '/store/search'
+    | '/store/sources'
+    | '/store/updates'
     | '/login'
     | '/settings'
     | '/setup'
@@ -383,6 +416,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/apps/$appId'
     | '/dev/ui'
+    | '/dev/widgets'
     | '/invite/$token'
     | '/login/code'
     | '/login/forgot'
@@ -394,6 +428,8 @@ export interface FileRouteTypes {
     | '/settings/$section'
     | '/setup/$step'
     | '/store/search'
+    | '/store/sources'
+    | '/store/updates'
     | '/login/'
     | '/settings/'
     | '/setup/'
@@ -418,6 +454,7 @@ export interface RootRouteChildren {
   UsageRoute: typeof UsageRoute
   AppsAppIdRoute: typeof AppsAppIdRoute
   DevUiRoute: typeof DevUiRoute
+  DevWidgetsRoute: typeof DevWidgetsRoute
   InviteTokenRoute: typeof InviteTokenRoute
   LoginCodeRoute: typeof LoginCodeRoute
   LoginForgotRoute: typeof LoginForgotRoute
@@ -503,6 +540,13 @@ declare module '@tanstack/react-router' {
       path: '/dev/ui'
       fullPath: '/dev/ui'
       preLoaderRoute: typeof DevUiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/widgets': {
+      id: '/dev/widgets'
+      path: '/dev/widgets'
+      fullPath: '/dev/widgets'
+      preLoaderRoute: typeof DevWidgetsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
@@ -610,6 +654,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreSearchRouteImport
       parentRoute: typeof StoreRoute
     }
+    '/store/sources': {
+      id: '/store/sources'
+      path: '/sources'
+      fullPath: '/store/sources'
+      preLoaderRoute: typeof StoreSourcesRouteImport
+      parentRoute: typeof StoreRoute
+    }
+    '/store/updates': {
+      id: '/store/updates'
+      path: '/updates'
+      fullPath: '/store/updates'
+      preLoaderRoute: typeof StoreUpdatesRouteImport
+      parentRoute: typeof StoreRoute
+    }
     '/apps_/$appId/logs': {
       id: '/apps_/$appId/logs'
       path: '/apps/$appId/logs'
@@ -692,6 +750,8 @@ const SetupRouteWithChildren = SetupRoute._addFileChildren(SetupRouteChildren)
 
 interface StoreRouteChildren {
   StoreSearchRoute: typeof StoreSearchRoute
+  StoreSourcesRoute: typeof StoreSourcesRoute
+  StoreUpdatesRoute: typeof StoreUpdatesRoute
   StoreIndexRoute: typeof StoreIndexRoute
   StoreCategoryCategoryRoute: typeof StoreCategoryCategoryRoute
   StoreCollectionCollectionIdRoute: typeof StoreCollectionCollectionIdRoute
@@ -699,6 +759,8 @@ interface StoreRouteChildren {
 
 const StoreRouteChildren: StoreRouteChildren = {
   StoreSearchRoute: StoreSearchRoute,
+  StoreSourcesRoute: StoreSourcesRoute,
+  StoreUpdatesRoute: StoreUpdatesRoute,
   StoreIndexRoute: StoreIndexRoute,
   StoreCategoryCategoryRoute: StoreCategoryCategoryRoute,
   StoreCollectionCollectionIdRoute: StoreCollectionCollectionIdRoute,
@@ -717,6 +779,7 @@ const rootRouteChildren: RootRouteChildren = {
   UsageRoute: UsageRoute,
   AppsAppIdRoute: AppsAppIdRoute,
   DevUiRoute: DevUiRoute,
+  DevWidgetsRoute: DevWidgetsRoute,
   InviteTokenRoute: InviteTokenRoute,
   LoginCodeRoute: LoginCodeRoute,
   LoginForgotRoute: LoginForgotRoute,

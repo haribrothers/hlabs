@@ -7,6 +7,7 @@ import { HomeView } from './home-view';
 
 const APPEARANCE: Appearance = {
   wallpaper: 'dusk',
+  customWallpaperUrl: null,
   accent: 'violet',
   reduceTransparency: false,
   reduceMotion: false,
@@ -67,8 +68,8 @@ describe('US-HOME-01', () => {
     expect(document.documentElement.dataset.accent).toBe('violet');
     rerender(<Probe appearance={{ ...APPEARANCE, accent: 'mint', reduceMotion: true }} />);
     expect(document.documentElement.dataset.accent).toBe('mint');
-    expect(document.documentElement.dataset.reduceMotion).toBe('true');
-    expect(wallpaperClass('dusk')).toBe('hl-wall');
-    expect(wallpaperClass('aurora')).toBe('hl-wall');
+    expect(document.documentElement.dataset.motion).toBe('reduced');
+    expect(wallpaperClass({ wallpaper: 'dusk', customWallpaperUrl: null })).toBe('hl-wall');
+    expect(wallpaperClass({ wallpaper: 'aurora' as never, customWallpaperUrl: null })).toBe('hl-wall');
   });
 });

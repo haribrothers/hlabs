@@ -1,0 +1,8 @@
+services:
+  grocy:
+    image: lscr.io/linuxserver/grocy:4.7.1@sha256:ef5ea5094aa2ed32df74528c4bdd94713679038c97add02045d881550c2a59a8
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config

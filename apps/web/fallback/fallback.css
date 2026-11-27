@@ -4,6 +4,7 @@
 @import '@hlabs/ui/base.css';
 @source '../src/health';
 @source '../src/shell/app-pages.tsx';
+@source '../src/shell/public-pages.tsx';
 
 @layer base {
   html,

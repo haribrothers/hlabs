@@ -10,6 +10,8 @@ import { loginRedirect } from '../login/signed-out';
 import { Shell } from '../shell/shell';
 import { FinishSetupElsewhere } from './finish-setup-elsewhere';
 import { firstRunView } from './first-run';
+import { NotOnPublicAddress } from '../login/not-here';
+import { useSignedOutVia } from '../public/home-only';
 
 /** Opening setup (a page load) resumes at the saved step; moving around inside the tab doesn't (US-ONB-03). */
 let entryDecided = false;
@@ -49,10 +51,15 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
     case 'loading':
       return <div className="hl-wall min-h-full" aria-busy="true" />;
     case 'setup':
+      return <NotOnPublic>{children}</NotOnPublic>;
     case 'plain':
       return children;
     case 'elsewhere':
-      return <FinishSetupElsewhere />;
+      return (
+        <NotOnPublic>
+          <FinishSetupElsewhere />
+        </NotOnPublic>
+      );
     case 'redirect':
       return <Navigate to={view.to} search={view.search} replace />;
     case 'app': {
@@ -70,4 +77,10 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
       );
     }
   }
+}
+
+/** First-run setup is never served on the dashboard's public address (US-SYS-46). */
+function NotOnPublic({ children }: { children: ReactNode }) {
+  const via = useSignedOutVia();
+  return via === 'public' ? <NotOnPublicAddress /> : children;
 }

@@ -10,13 +10,17 @@ test('US-AUTH-01 choose your account from the list, then the password screen gre
   page,
   request,
   browser,
-}) => {
+}, info) => {
   await finishOnboarding(page, request);
 
   // Another browser, signed out.
   const other = await (await browser.newContext({ baseURL: FIRST_RUN_URL })).newPage();
   await other.goto('/login/users');
-  await expect(other.getByRole('heading', { level: 1, name: "Who's using hlabs?" })).toBeVisible();
+  // A phone titles the page "Log in to hlabs", with "Who's using hlabs?" over the list (PhoneRedesignA_Login).
+  if (info.project.name.includes('phone')) {
+    await expect(other.getByRole('heading', { level: 1, name: 'Log in to hlabs' })).toBeVisible();
+    await expect(other.getByRole('group', { name: "Who's using hlabs?" })).toBeVisible();
+  } else await expect(other.getByRole('heading', { level: 1, name: "Who's using hlabs?" })).toBeVisible();
   const hari = other.getByRole('button', { name: 'Hari Prasad, Admin' });
   await expect(hari).toBeVisible();
   await expect(other.getByRole('navigation', { name: 'Dock' })).toHaveCount(0);
@@ -24,6 +28,12 @@ test('US-AUTH-01 choose your account from the list, then the password screen gre
 
   await hari.focus();
   await other.keyboard.press('Enter');
+  if (info.project.name.includes('phone')) {
+    // On a phone the account is chosen in place, with the password under the list (US-PHONE-05).
+    await expect(hari).toHaveAttribute('aria-pressed', 'true');
+    await expect(other.getByPlaceholder('Password')).toBeFocused();
+    return;
+  }
   await expect(other).toHaveURL(/\/login\/password\?user=hari$/);
   await expect(other.getByRole('heading', { level: 1, name: 'Welcome back, Hari Prasad' })).toBeVisible();
   await expect(other.getByText('@hari · Admin')).toBeVisible();

@@ -24,6 +24,9 @@
     "db:migrate": "pnpm --filter @hlabs/db db:migrate",
     "store:lint": "pnpm --filter @hlabs/app-manifest store:lint",
     "store:build": "pnpm --filter @hlabs/app-manifest store:build",
+    "store:port": "pnpm --filter @hlabs/app-manifest store:port",
+    "store:updates": "pnpm --filter @hlabs/app-manifest store:updates",
+    "store:matrix": "node scripts/store-matrix.ts",
     "ui:tokens": "pnpm --filter @hlabs/ui tokens",
     "dev:tray": "node scripts/dev-tray.ts",
     "build:tray": "node scripts/build-tray.ts",
@@ -32,7 +35,8 @@
     "site:build": "turbo run build --filter=@hlabs/site^... && node scripts/site-releases.ts && pnpm --filter @hlabs/site site:build",
     "site:check": "node scripts/site-check.ts",
     "site:e2e": "turbo run build --filter=@hlabs/site^... && pnpm --filter @hlabs/site test:e2e",
-    "test:e2e": "pnpm --filter @hlabs/web test:e2e"
+    "test:e2e": "pnpm --filter @hlabs/web test:e2e",
+    "docs:shots": "pnpm --filter @hlabs/web docs-shots"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",

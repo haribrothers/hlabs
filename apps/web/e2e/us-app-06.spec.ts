@@ -1,5 +1,5 @@
 // US-APP-06 · Behaviour switches (main instance, admin, desktop): "Start automatically" saves at once and is still
-// off after a reload. Later phases' switches are hidden.
+// off after a reload. "Include in backups" (a later phase) is hidden; "Update automatically" shows from phase 7.
 import { expect, test } from '@playwright/test';
 import { MAIN_URL } from './instances';
 
@@ -23,5 +23,6 @@ test('US-APP-06 "Start automatically" saves at once and keeps its value', async 
   await page.reload();
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
   await expect(behaviour.getByRole('switch', { name: 'Include in backups' })).toHaveCount(0);
-  await expect(behaviour.getByRole('switch', { name: 'Update automatically' })).toHaveCount(0);
+  // Phase 7 (previewed): the night's automatic updates for this app.
+  await expect(behaviour.getByRole('switch', { name: 'Update automatically' })).toBeVisible();
 });

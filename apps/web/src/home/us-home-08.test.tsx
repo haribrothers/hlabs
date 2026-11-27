@@ -71,7 +71,8 @@ describe('US-HOME-08', () => {
   it("an app in error opens its logs, which say why it isn't running", async () => {
     const { router } = home([app('kuma', 'Uptime Kuma', 'error')]);
     fireEvent.click(await screen.findByRole('button', { name: 'Uptime Kuma, error' }));
-    await waitFor(() => expect(router.state.location.pathname).toBe('/apps/kuma/logs'));
+    // Over Home (D-166).
+    await waitFor(() => expect(router.state.location.href).toBe('/?logs=kuma'));
   });
 
   it('the logs of an app in error start with the reason', async () => {

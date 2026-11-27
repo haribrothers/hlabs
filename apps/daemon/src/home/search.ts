@@ -13,7 +13,7 @@ const EMPTY_QUERY_APPS = 8;
 /** The App Store group shows at most this many (US-HOME-10). */
 const STORE_LIMIT = 3;
 
-type Action = { kind: 'settings' | 'restart' | 'logs'; appId: string; appName: string };
+type Action = { kind: 'settings' | 'restart' | 'logs' | 'addToHome'; appId: string; appName: string };
 
 export function searchEverything(
   deps: { db: HlabsDb; store: Pick<StoreService, 'listApps'>; isPublished: (name: string) => boolean },
@@ -27,9 +27,10 @@ export function searchEverything(
   const canInstall = admin || getSetting(db, 'people').membersCanInstall;
 
   // Installed apps in this person's Home order (only those they can open).
-  const order = getLayout(db, user)
-    .items.filter((i) => i.kind === 'app')
-    .map((i) => i.id);
+  const layout = getLayout(db, user);
+  const order = layout.items.filter((i) => i.kind === 'app').map((i) => i.id);
+  // Apps taken off Home are still found, with a way back (US-HOME-18).
+  const offHome = new Set(layout.hidden);
   const rank = (id: string) => (order.includes(id) ? order.indexOf(id) : order.length);
   const apps = listApps(db, user, deps.isPublished).apps.sort((a, b) => rank(a.id) - rank(b.id));
 
@@ -55,7 +56,17 @@ export function searchEverything(
   ).slice(0, limit);
 
   // Actions name their app, so "jelly" and "restart jelly" both find "Restart Jellyfin".
-  const actions = admin
+  const addBack = byScore(
+    apps
+      .filter((app) => offHome.has(app.id))
+      .flatMap((app) => {
+        const score = bestMatch([`Add ${app.name} to Home`, app.name], query);
+        return score === null
+          ? []
+          : [{ item: { kind: 'addToHome' as const, appId: app.id, appName: app.name }, score }];
+      }),
+  );
+  const adminActions = admin
     ? byScore(
         apps.flatMap((app) => {
           const candidates: Array<[Action['kind'], string]> = [
@@ -70,8 +81,9 @@ export function searchEverything(
             return score === null ? [] : [{ item: { kind, appId: app.id, appName: app.name }, score }];
           });
         }),
-      ).slice(0, limit)
+      )
     : [];
+  const actions = [...addBack, ...adminActions].slice(0, limit);
 
   let store: ReturnType<StoreService['listApps']>['items'] | null = null;
   let storeTotal = 0;

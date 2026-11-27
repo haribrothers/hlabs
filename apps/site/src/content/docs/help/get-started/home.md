@@ -1,22 +1,31 @@
 ---
 title: Your Home screen
 description: What Home shows when you open hlabs, and how to get around.
-features: [F-HOME-01, F-HOME-02, F-HOME-03, F-HOME-04, F-HOME-05, F-STATE-03]
+features: [F-HOME-01, F-HOME-02, F-HOME-03, F-HOME-04, F-HOME-05, F-HOME-06, F-HOME-07, F-HOME-08, F-HOME-09, F-STATE-03]
 ---
 
 For everyone who uses hlabs.
+
+![Home on a computer: "Good morning, Hari", the search field, four widgets (Live usage, Storage, Remote access and Backups), the apps and the Dock.](../../../../assets/shots/home.webp)
 
 ## Greeting and wallpaper
 
 Home greets you by name: "Good morning" from 5:00 to 11:59, "Good afternoon" from 12:00 to 17:59 and "Good evening" from 18:00, using your device's clock. It changes on its own if you leave Home open. If you haven't set a display name, it uses your username.
 
-Your wallpaper and accent colour are your own: other people on this hlabs keep theirs. Everyone starts with the Dusk wallpaper and the violet accent.
+Until you have any apps, Home says "Welcome to hlabs" instead.
+
+Your wallpaper and accent colour are your own: other people on this hlabs keep theirs. Everyone starts with the Dusk wallpaper and the violet accent. Change them, or hide the widgets or the greeting, in [Settings › Appearance](/help/get-started/appearance/).
 
 ## Widgets
 
-Admins see a row of widgets under the greeting. **Storage** shows how much space is left on this computer and what's using it. Select it to open Usage. If a widget can't load, it says so and has a button to try again; the others keep working.
+Admins see a row of widgets under the greeting:
 
-More widgets (live usage, remote access and backups) appear as those parts of hlabs arrive.
+- **Live usage**: how busy the processor is and how much memory is in use. Select it to open Usage.
+- **Storage**: how much space is left on this computer and what apps and the system use. It says **Almost full** when less than a tenth is free.
+- **Remote access**: your hlabs address on your tailnet, how many of your devices are online, and the DNS server and HTTPS it uses; or **Set up remote access** when it's off.
+- **Backups**: when the last backup worked, what goes where, and a bar for each recent backup. A failed one turns red and says why; **Choose where** appears until you have somewhere to back up to.
+
+Each widget names its state at the top right, such as **Connected**, **Failed** or **Needs you**, in colour and in words. If a widget can't load, it says so and has **Try again**; the others keep working. On a phone, the widgets are a row you swipe sideways, two at a time, with dots underneath showing where you are (see [Use hlabs on your phone](../phone/#home)).
 
 ## Your apps
 
@@ -51,6 +60,33 @@ Right-click a tile (or press and hold it on a touch screen, or press Shift+F10 o
 
 New apps appear on Home as soon as they're installed, and removed apps disappear, without reloading the page. With a keyboard, use Tab to reach the apps and the arrow keys to move between them.
 
+## Arrange Home
+
+To change what's on Home and in what order, choose **Edit Home**: in an app tile's menu, by right-clicking an empty part of the wallpaper, or by pressing and holding an empty part of Home. Home then says "Drag to rearrange":
+
+- Drag an app or a widget to a new place. Apps move within the grid and widgets within their row. With a keyboard, Tab to it, press Space to pick it up, the arrow keys to move it and Space to drop it (Esc puts it back). On a touch screen, press and hold, then drag.
+- Select **–** on an app to take it off Home. It stays installed and keeps running. To bring it back, select **Add app** in the editing bar and **Add** beside it; it goes back at the end of your apps. Search also finds it, with **Add <app> to Home**. Select **–** on a widget to remove it.
+- **Add widget** opens a list of widgets: hlabs's own (for admins also App status and Updates) and those your apps offer. Up to four fit on Home.
+- **Wallpaper** opens Settings › Appearance.
+- **Done** saves Home for every device you sign in on. Esc instead puts everything back as it was.
+
+Some app widgets, such as Immich's photo library, read the app with an API key you make in the app. Until an admin adds it in the app's settings (**Home widget**), the widget says so. hlabs keeps the key in this computer's keychain. Those widgets show figures for everyone using the app, so only admins can add them.
+
+## Before you have any apps
+
+With nothing installed yet, Home says **No apps yet** where your apps will be. Admins (and family members allowed to install apps) get the **Install app** tile and **Browse the App Store**; most people start with a photo library, a media server and a password manager. Family members who can't install apps are told which admin to ask to share one. As soon as the first app starts installing, its tile takes the place of the message.
+
+## Notifications
+
+The bell at the top right of Home shows how many notifications you haven't read. Select it to see them: today's first, then earlier ones, newest at the top. Each says what happened and when, and unread ones are highlighted with a dot. New ones appear as they arrive. On a phone they open in a sheet from the bottom of the screen, with **Mark all read** and **✕** beside its title.
+
+- Many have a link to the fix, such as **View logs** for an app that couldn't start or **Review** for app updates. Following it marks the notification read. If the app it's about has been uninstalled since, hlabs says so instead.
+- A notification about repeated failed logins opens Settings › Account, where you can see where you're signed in.
+- **Mark all read** clears every highlight. To remove one from the list, point at it (or Tab to it) and select **×**.
+- Press Esc or select anywhere else to close the list.
+
+Admins share the notifications about hlabs itself, such as an app that stopped working: when one admin reads or removes one, it's read or removed for every admin. Family members only get their own, such as an app being shared with them.
+
 ## Search
 
 Press ⌘K on a Mac (Ctrl+K on other computers) from anywhere in hlabs, or select **Search apps, files, settings** on Home or **Search** in the Dock. Before you type, Search lists your apps. Use ↑ and ↓ to move and ↵ to open. Press the shortcut again or Esc to close it.
@@ -74,11 +110,13 @@ Opening an app's address while the engine is stopped shows the same message, wit
 
 ## The Dock
 
-The Dock at the bottom of the screen takes you to each part of hlabs; a dot marks where you are. Point at a tile to see its name. With a keyboard, Tab to the Dock, use the left and right arrow keys (Home and End jump to the ends) and press Enter. On a phone, the tab bar does the same job.
+The Dock at the bottom of the screen takes you to each part of hlabs; a dot marks where you are. Point at a tile to see its name. With a keyboard, Tab to the Dock, use the left and right arrow keys (Home and End jump to the ends) and press Enter. On a phone, the tab bar docked to the bottom of the screen does the same job (see [Use hlabs on your phone](../phone/)). On an iPad or another tablet, touch and hold a tile to see its name (see [Use hlabs on an iPad or tablet](../tablet/)).
 
 Parts of hlabs that haven't arrived yet aren't shown in the Dock. The App Store, Files, Usage and Backups appear as they're added.
 
 Family members see Home, Files and Settings in their Dock, plus Usage and the App Store when an admin allows them.
+
+You can keep up to eight apps in the Dock, so they're a click away from anywhere. Select **+** to choose from the apps you can open, or drag an app from Home onto the Dock. Right-click (or press and hold) a pinned app for **Open**, **Open in a new tab**, **App settings** (admins) and **Remove from Dock**. Drag pinned apps sideways to reorder them, or press Alt with the left or right arrow key. Everyone has their own Dock, the same on each device. Apps you can no longer open leave it by themselves.
 
 ## Home for family members
 

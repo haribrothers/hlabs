@@ -1,0 +1,11 @@
+services:
+  transmission:
+    image: lscr.io/linuxserver/transmission:4.1.4@sha256:5baf08cd73a566699f35baad3c4a84ba7d7057220566c5fb29969bf2292dc2ff
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      # Transmission answers only the addresses it's told about.
+      HOST_WHITELIST: ${HLABS_HOSTNAME},transmission
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config
+      - ${HLABS_FOLDER_DOWNLOADS}:/downloads

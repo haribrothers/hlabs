@@ -18,6 +18,7 @@ Everything that happens after an app is installed: opening it, checking that it 
 | F-APP-07 | Per-app usage | P2 | 7 | `AppUsageDetail` |
 | F-APP-08 | Move app data | P3 | 8 | `AppMoveData` |
 | F-APP-09 | Reinstall an app | P1 | 4 | `AppSettings`, `AppLogs`, `ReinstallConfirm`, `HomeStates` |
+| F-APP-10 | Make an app public | P2 | 7 | `AppSettingsPublic`, `AppPublic`, `AppPublicVisits` |
 
 ## User stories
 
@@ -472,6 +473,52 @@ Everything that happens after an app is installed: opening it, checking that it 
 - The manifest is the project's copy (`hlabs-app.json`), or the catalogue's when it lists the same version; never a newer version (that's an update, US-STORE-17).
 - The menu bar counts a reinstalling app as starting (US-INST-11); the usage table lists it with the apps that aren't running (US-USE-07).
 - No backup is taken first: the data isn't touched. Once backups ship (phase 5) this can be revisited.
+
+### US-APP-27 · Make an app public
+**Feature:** F-APP-10 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppSettingsPrivate`, `AppPublic`, `AppSettingsPublic`, `PhoneAppPublic`
+**As** an admin, **I want** to make one app reachable from the internet, **so that** people without access to my tailnet can use it, such as a friend opening a shared album.
+
+**Acceptance criteria**
+- **Given** an app's Access section, **when** a way to go public is set up (US-SYS-43), **then** it shows "Public on the internet" with a "Make public…" button; without one it reads "Set up public access in Settings › Network first" with a link there.
+- **Given** "Make public…", **then** `AppPublic` shows the address it will have (a name I type under my Cloudflare domain, suggested from the app's name, e.g. `photos.example.com`; D-171), who can get in (US-APP-28), and "Anyone on the internet can reach this address. hlabs asks for a login first." with "Make public" and "Cancel".
+- **Given** I confirm, **then** a `public_on` job sets up the address, the app's Access section and its Home tile show a "Public" badge, `audit_log` records it, and every other admin gets a notification "<Name> made <App> public at <address>".
+- **Given** the manifest says `public.allowed: false`, **then** the button is replaced by "<App> can't be made public: it can control your other apps." (or the manifest's reason).
+- **Given** the app is a media app (category `media`), **then** the dialog also says "Cloudflare's terms limit streaming large amounts of video through its network. Check them before sharing a media library." (D-171)
+- **Given** "Make private", **when** confirmed, **then** the address stops answering within seconds, the badge goes, and it's audited.
+- **Given** the app is public, **then** automatic updates for it are on and their switch reads "On while <App> is public" (07 §7.10).
+
+**Implementation notes**
+- API: `apps.setPublic` (admin): `{ appId, public: boolean, hostname?, access?: 'hlabs' | 'ownLogin' }` → `{ jobId }`; `apps.get` gains `public { address, access, since, by } | null`; event `app.publicChanged`.
+- Data: `app_public` (04).
+- hlabsCodes: `PUBLIC_NOT_SET_UP`, `PUBLIC_NOT_ALLOWED`, `CLOUDFLARE_FAILED`, `PUBLIC_HOSTNAME_TAKEN`.
+- Edge: uninstalling a public app makes it private first; stopping it leaves the address showing Caddy's "<App> isn't running" page.
+
+### US-APP-28 · Choose who gets into a public app
+**Feature:** F-APP-10 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppPublic`, `AppPublicOwnLogin`, `PhoneAppPublic`
+**As** an admin, **I want** to decide how people sign in to a public app, **so that** it's safe and its phone apps still work when they need to.
+
+**Acceptance criteria**
+- **Given** `AppPublic`, **then** "Who can get in" offers "People with an hlabs account and access to <App>" (chosen) and, only when the manifest says `public.ownLoginSafe: true`, "<App>'s own login only (its phone and desktop apps connect)".
+- **Given** the hlabs login, **when** someone opens the address, **then** they sign in to hlabs first; everyone allowed into the app must have two-factor on, and the dialog lists who doesn't yet ("Ravi hasn't turned on two-factor login yet, so can't get in until then."); people without access get the "You don't have access to this" page (US-STATE-20).
+- **Given** "<App>'s own login only", **when** chosen, **then** a warning says "Anyone on the internet can reach <App>'s sign-in page. Use a strong password for every <App> account." and needs "I understand" ticked.
+- **Given** the address, **then** only the app's own web service is reachable there: the dashboard's paths and other apps answer 404, and hlabs's cookies are never passed to the app.
+
+**Implementation notes**
+- Caddy: forward auth as US-APP-19, plus the 07 §7.10 hardening on the public address only.
+- Edge: changing the login choice is audited and notifies the other admins.
+
+### US-APP-29 · See who visits a public app
+**Feature:** F-APP-10 · **Priority:** P2 · **Phase:** 7 · **Screens:** `AppPublicVisits`
+**As** an admin, **I want** to see the requests to a public app, **so that** I notice when strangers are trying to get in.
+
+**Acceptance criteria**
+- **Given** a public app, **when** I open "Visits", **then** I see the last 7 days of requests to its public address: time, address (IP and country when Cloudflare provides it), path, result (Signed in, Asked to sign in, Refused, Too many tries), newest first, filterable by result.
+- **Given** more than 20 failed sign-ins from one address in 10 minutes, **then** that address is refused for an hour and admins get a warning notification "Someone keeps trying to sign in to <App>", with "Make private" as an action.
+- **Given** members, **then** they never see Visits.
+
+**Implementation notes**
+- API: `apps.publicVisits` (admin): `{ appId, result?, cursor? }` → `{ items, nextCursor }`.
+- Data: Caddy's access log for public addresses, kept 7 days under `<dataDir>/logs/public/` (not in backups or diagnostics).
 
 ## API additions
 Merged into [05-api](../prd/05-api.md) under "Contract additions from the feature files".

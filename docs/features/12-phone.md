@@ -26,11 +26,11 @@ The phone layout of the hlabs dashboard: the same React SPA as the desktop, rend
 **As** anyone signed in, **I want** the dashboard to turn into a phone layout with a tab bar when I open it on my phone, **so that** I can reach every part of hlabs with one thumb.
 
 **Acceptance criteria**
-- **Given** a viewport narrower than 768px, **when** any signed-in route renders, **then** the phone layout is used: no wallpaper windows, no Dock (D-054), a single-column page and a fixed bottom tab bar; resizing across 768px switches layouts without a reload and keeps the current route.
-- **Given** the phone layout, **when** the tab bar renders for an admin, **then** it shows five tabs in this order: "Home", "Apps", "Files", "Usage", "Settings", each with an icon and label; there is no search circle in the tab bar.
-- **Given** the tab bar, **when** I tap a tab, **then** it navigates to Home (`PhoneHome`), App Store (`PhoneStore`), Files (`PhoneFiles`), Live usage (same content as `LiveUsage` in 08-usage-backups.md, single column) or Settings (`PhoneSettings`), and the active tab has `aria-current="page"` and the accent colour.
-- **Given** an admin and 2 app updates available, **when** the tab bar renders, **then** the "Apps" tab shows a Badge "2" with accessible label "2 updates"; with 0 updates no badge is shown.
-- **Given** a member, **when** the tab bar renders, **then** it shows "Home", "Files" and "Settings"; "Apps" is added only if "Members can install apps" is on, and "Usage" only if both the global `people.membersCanSeeUsage` switch and the member's own `users.can_see_usage` switch are on (D-029); tabs keep the admin order, and the Apps badge is never shown (navigation per 07-security.md §7.4, "What members see").
+- **Given** a viewport narrower than 768px, **when** any signed-in route renders, **then** the phone layout is used: no wallpaper windows, no Dock (D-054), a single-column page and a tab bar docked to the bottom edge (D-172); resizing across 768px switches layouts without a reload and keeps the current route.
+- **Given** the phone layout, **when** the tab bar renders for an admin, **then** it shows five tabs in this order: "Home", "App Store", "Files", "Usage", "Settings", each with an icon and label; there is no search circle in the tab bar.
+- **Given** the tab bar, **when** I tap a tab, **then** it navigates to Home (`PhoneHome`), App Store (`PhoneStore`), Files (`PhoneFiles`), Live usage (same content as `LiveUsage` in 08-usage-backups.md, single column) or Settings (`PhoneSettings`), and the active tab has `aria-current="page"`, the accent colour and a soft highlight behind it (not colour alone, D-172).
+- **Given** an admin and 2 app updates available, **when** the tab bar renders, **then** the "App Store" tab shows a Badge "2" with accessible label "2 updates"; with 0 updates no badge is shown.
+- **Given** a member, **when** the tab bar renders, **then** it shows "Home", "Files" and "Settings"; "App Store" is added only if "Members can install apps" is on, and "Usage" only if both the global `people.membersCanSeeUsage` switch and the member's own `users.can_see_usage` switch are on (D-029); tabs keep the admin order, and the App Store badge is never shown (navigation per 07-security.md §7.4, "What members see").
 - **Given** a member opens the URL of a tab they don't have (for example `/usage`), **then** the "You don't have access to this" page (US-STATE-20) is shown, with no redirect.
 - **Given** I tap the tab of the page I am already on, **when** the page is scrolled down, **then** it scrolls to the top (and in Files, returns to the root of the current location).
 
@@ -123,14 +123,14 @@ The phone layout of the hlabs dashboard: the same React SPA as the desktop, rend
 - UI: TextField, Button.
 - Edge case: pasting a code with a space (`123 456`) is accepted.
 
-### US-PHONE-07 · Phone Home header and stacked widgets
+### US-PHONE-07 · Phone Home header and widgets
 **Feature:** F-PHONE-03 · **Priority:** P2 · **Phase:** 7 · **Screens:** `PhoneHome`
-**As** anyone signed in, **I want** Home on my phone to greet me and show my widgets in one column, **so that** I can check on hlabs at a glance.
+**As** anyone signed in, **I want** Home on my phone to greet me and show my widgets in a row I can swipe, **so that** I can check on hlabs at a glance.
 
 **Acceptance criteria**
 - **Given** I open `PhoneHome`, **when** it renders, **then** the header shows the greeting ("Good evening, Hari", same time-of-day rule as 04-home.md and D-039), a notifications button and a "Search" button.
 - **Given** 3 unread notifications, **when** the header renders, **then** the notifications button shows a dot and has the label "Notifications, 3 new"; tapping it opens `HomeNotifications` as a bottom sheet.
-- **Given** my saved layout has widgets, **when** Home renders, **then** widgets are stacked full-width in one column, in layout order, above the app grid.
+- **Given** my saved layout has widgets, **when** Home renders, **then** widgets form a row above the app grid, in layout order, two per screen, that I swipe sideways with page dots showing where I am (D-172); each widget keeps its own tap target.
 - **Given** the "Live usage" widget, **when** it renders for an admin (or a member for whom both `people.membersCanSeeUsage` and `users.can_see_usage` are on, D-029), **then** it shows "CPU" %, "Memory" % and "Storage" as free space ("142 GB left of 256 GB"), updating from `usage.sample`; tapping it opens the Usage tab.
 - **Given** a member for whom either switch is off, **when** Home renders, **then** the Live usage widget is not shown.
 - **Given** phone layout, **when** I long-press on empty space, **then** nothing happens: editing the Home layout is desktop-only in v1, and phone shows the layout saved on desktop.
@@ -138,7 +138,7 @@ The phone layout of the hlabs dashboard: the same React SPA as the desktop, rend
 **Implementation notes**
 - API: `home.getLayout`, `home.listWidgets`, `usage.current`, `storage.summary`, `notifications.list`, `auth.me`.
 - Data: `home_layout`, `notifications`.
-- UI: GlassCard, StatusDot, Sparkline. Loading and empty states same as 04-home.md (`HomeStates`, `HomeEmpty`) in one column.
+- UI: GlassCard, StatusDot, Sparkline. Loading and empty states same as 04-home.md (`HomeStates`, `HomeEmpty`), in the phone layout of D-172.
 
 ### US-PHONE-08 · App grid and opening apps on phone
 **Feature:** F-PHONE-03 · **Priority:** P2 · **Phase:** 7 · **Screens:** `PhoneHome`
@@ -148,8 +148,8 @@ The phone layout of the hlabs dashboard: the same React SPA as the desktop, rend
 - **Given** installed apps I can access, **when** Home renders, **then** they show as a 4-column grid of AppIcon tiles with one-line labels truncated with an ellipsis, in layout order, followed by an "Install app" tile (admins, or members allowed to install).
 - **Given** a running app, **when** I tap its tile, **then** the app opens at its URL for the host I am on, taken from the app's `urls` (`urls.tailnet`, e.g. `https://hlabs.<tailnet>.ts.net:<port>`, when on `*.ts.net` (D-012), else `urls.lan`, e.g. `https://<appId>.hlabs.local`) in a new browser tab; the dashboard stays open.
 - **Given** an app that is not running (stopped, error, installing), **when** the grid renders, **then** its tile shows the state with a StatusDot as in 04-home.md; for an admin, tapping it opens the app's settings instead of the app; for a member, tapping it shows the same Toast as US-HOME-08 ("<App> isn't running right now. Ask <admin name> to start it.") with no action button.
-- **Given** I am an admin, **when** I long-press a tile for 500 ms, **then** the phone vibrates once (if supported) and the app's settings open for that app; the OS context menu is suppressed on tiles.
-- **Given** the `PhoneAppSettings` sheet, **then** it is hidden until phase 9 ships (D-036); before that, the app's settings open full-screen in one column (`AppSettings` from 06-apps.md) with a back control to Home.
+- **Given** I am an admin, **when** I long-press a tile for 500 ms, **then** the phone vibrates once (if supported) and a context menu opens over the blurred Home (`PhoneRedesignA_TileMenu`, D-172) with Open, Settings, Logs, Restart and Uninstall…; Settings opens the app's settings. The OS context menu is suppressed on tiles.
+- **Given** an app's settings on a phone, **then** they open as a full-height sheet (`PhoneRedesignA_AppSettings`, D-172) with Overview, Configuration, Permissions and Usage as a segmented control, over the page they came from (D-166).
 - **Given** I tap "Install app", **when** it is tapped, **then** the Apps tab (`PhoneStore`) opens.
 
 **Implementation notes**
@@ -409,6 +409,46 @@ The phone layout of the hlabs dashboard: the same React SPA as the desktop, rend
 - API: `auth.login`, `system.health` (reachability check), `GET /healthz`.
 - UI: Button, Logo. Standalone detection via `matchMedia('(display-mode: standalone)')` and `navigator.standalone` (iOS).
 - Edge case: the session cookie must be set on the tailnet host as well as `.hlabs.local` (07-security.md §7.3), since an installed app keeps the host it was installed from.
+
+### US-PHONE-25 · Files on the phone in the new design
+**Feature:** F-PHONE-01 · **Priority:** P2 · **Phase:** 7 · **Screens:** `PhoneRedesignA_Files`, `PhoneRedesignA_FilesActions`, `PhoneRedesignA_FilesSelect`, `PhoneRedesignA_FilesMove`, `PhoneRedesignA_FilesRename`, `PhoneRedesignA_FilesTrash`, `PhoneRedesignA_FolderPicker`
+**As** anyone signed in on a phone, **I want** Files to look and work like the rest of the phone app, **so that** hlabs feels like one app.
+
+**Acceptance criteria**
+- **Given** Files on a phone, **then** it follows Direction A (D-172, D-174): a "Files" large title with "+" and "Select" in the bar, a search field, places as chips (Home, Photos, the drives, Trash), the breadcrumb, and the folder as an inset grouped list with a ••• button on every row.
+- **Given** •••, a selection, Move to, Rename, the Trash or the folder picker, **then** each is the frame's sheet or screen: the actions sheet with Open, Share, Download and the list of actions; the selection bar in the tab bar's place; Move to as a full-height sheet; Rename as a sheet with the name selected up to its extension; the Trash with "Restore all" and "Empty trash".
+- **Given** any of them, **then** what it does is unchanged (US-FILE-01…24): only the phone layout changes, and the desktop is untouched.
+
+**Implementation notes**
+- Layout only; phone-only new behaviour (upload from the phone's photo library, US-PHONE-17) stays in its phase.
+
+### US-PHONE-26 · Backups on the phone in the new design
+**Feature:** F-PHONE-01 · **Priority:** P2 · **Phase:** 7 · **Screens:** `PhoneRedesignA_Backups`, `PhoneRedesignA_BackupsEmpty`, `PhoneRedesignA_BackupAdd`, `PhoneRedesignA_RestoreProgress`
+**As** an admin on a phone, **I want** Backups in the phone app's design, **so that** I can check and start backups the same way as everything else.
+
+**Acceptance criteria**
+- **Given** Backups on a phone, **then** it follows Direction A: "‹ Settings" over a "Backups" large title, the last backup with its run bars and "Back up now", the destination, schedule and restore as inset rows, and the recent runs.
+- **Given** no destination, adding one, or a restore running, **then** they look like `BackupsEmpty`, `BackupAdd` (a sheet) and `RestoreProgress` (a sheet over Backups).
+- **Given** any of them, **then** what they do is unchanged (US-BKP-*); the desktop is untouched.
+
+### US-PHONE-27 · Live usage, notifications and updates on the phone in the new design
+**Feature:** F-PHONE-01 · **Priority:** P2 · **Phase:** 7 · **Screens:** `PhoneRedesignA_Usage`, `PhoneRedesignA_Notifications`, `PhoneRedesignA_StoreUpdates`, `PhoneRedesignA_Updates`
+**As** anyone signed in on a phone, **I want** Live usage, Notifications and Updates in the phone app's design, **so that** nothing looks out of place.
+
+**Acceptance criteria**
+- **Given** Usage on a phone, **then** it follows `PhoneRedesignA_Usage`: a "Live usage" large title, the range as a segmented control, the tiles two per row, the chart and "Apps by memory".
+- **Given** the bell, **then** Notifications open as a sheet (`PhoneRedesignA_Notifications`) with "Mark all read" and Today / Earlier groups.
+- **Given** App Store › Updates and Settings › Updates, **then** they follow `PhoneRedesignA_StoreUpdates` and `PhoneRedesignA_Updates`.
+- **Given** any of them, **then** what they do is unchanged; the desktop is untouched.
+
+### US-PHONE-28 · Settings pages on the phone in the new design
+**Feature:** F-PHONE-01 · **Priority:** P2 · **Phase:** 7 · **Screens:** `PhoneRedesignA_Account`, `PhoneRedesignA_Appearance`, `PhoneRedesignA_Users`, `PhoneRedesignA_Invite`, `PhoneRedesignA_Network`, `PhoneRedesignA_Storage`, `PhoneRedesignA_Engine`, `PhoneRedesignA_Advanced`
+**As** an admin on a phone, **I want** every Settings page in the phone app's design, **so that** settings read the same everywhere.
+
+**Acceptance criteria**
+- **Given** any Settings page on a phone, **then** it is a page you go into: "‹ Settings" over its large title, inset grouped lists, values on the right of rows, switches as in D-172, and its dialogs as sheets.
+- **Given** Account, Appearance, Users (with Invite), Network & remote access, Storage, Engine & startup, Updates and Advanced, **then** each follows its frame.
+- **Given** any of them, **then** what they do is unchanged; the desktop is untouched.
 
 ## API additions
 Merged into [05-api](../prd/05-api.md) under "Contract additions from the feature files".

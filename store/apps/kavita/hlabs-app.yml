@@ -1,0 +1,42 @@
+schema: 1
+id: kavita
+name: Kavita
+version: '0.9.1'
+revision: 1
+tagline: A reader for your comics, manga and ebooks
+description: |
+  Kavita reads the comics, manga and ebooks in your folders and gives everyone their own shelves and
+  reading progress, in the browser or with OPDS apps. The first visit sets up your admin account.
+category: books
+developer: { name: Kavita, url: https://www.kavitareader.com }
+source: https://github.com/Kareadita/Kavita
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#4ac694', '#163d2e']
+  fallback: library
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: kavita, port: 5000, embed: true }
+health: { service: kavita, http: /api/health, timeout: 180 }
+folders:
+  - key: books
+    label: Books
+    description: Your ebook library
+    target: /books
+    default: shared:Books
+    mode: ro
+    required: true
+  - key: comics
+    label: Comics and manga
+    description: Your comics and manga
+    target: /comics
+    default: shared:Comics
+    mode: ro
+    required: false
+ownLogin: true
+backup:
+  pause: [kavita]
+  exclude: [config/logs/, config/cache/]
+  beforeUpdate: true
+permissions: { network: internet }

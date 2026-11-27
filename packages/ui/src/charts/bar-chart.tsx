@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import { StatusDot } from '../components/status-dot';
 import { useUiStrings } from '../lib/strings';
 import { formatNumber, niceMax, showLabel, SrTable } from './shared';
+import { useHoldTooltip } from './hold-tooltip';
 
 export interface BarDatum {
   label: string;
@@ -54,8 +55,10 @@ export function BarChart({
   const label = valueLabel ?? t.value;
   const current = idx === null ? null : data[idx];
 
+  // A finger held on the chart shows its tooltip (US-TAB-01).
+  const hold = useHoldTooltip();
   return (
-    <figure className="hl-chart">
+    <figure className="hl-chart" {...hold}>
       {title ? <figcaption className={compact ? 'sr-only' : 'hl-chart-title'}>{title}</figcaption> : null}
       <div className="hl-chart-plot">
         <svg

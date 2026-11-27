@@ -1,0 +1,28 @@
+schema: 1
+id: dozzle
+name: Dozzle
+version: '11.5.0'
+revision: 1
+tagline: Live logs from every container
+description: |
+  Read the logs of every container on this computer as they happen, with search and filters. hlabs shows
+  an app's logs in its settings too. It has no login of its own: the hlabs login protects it.
+category: monitoring
+developer: { name: Amir Raminfar, url: https://dozzle.dev }
+source: https://github.com/amir20/dozzle
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#0ea5e9', '#0c3a52']
+  fallback: scroll-text
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 128, disk: 128 }
+web: { service: dozzle, port: 8080, embed: true }
+ownLogin: false
+overlaps: [appManagement]
+backup:
+  pause: [dozzle]
+  beforeUpdate: true
+permissions:
+  network: internet
+  dockerSocket: true

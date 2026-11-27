@@ -29,6 +29,14 @@ const envSchema = z.object({
   HLABS_DEV_NO_ENGINE_CONTROL: flag,
   HLABS_DEV_FAKE_TAILSCALE: flag,
   HLABS_DEV_FAKE_NAS: flag,
+  /** A pretend Cloudflare for public apps (US-SYS-43): development and e2e never reach Cloudflare (D-171). */
+  HLABS_DEV_FAKE_CLOUDFLARE: flag,
+  /** Caddy's public listener on 127.0.0.1, where cloudflared sends public names (D-178). */
+  HLABS_PUBLIC_PORT: z.coerce.number().int().min(1).max(65535).default(7475),
+  /** The docs screenshots' instance (US-SITE-11, D-177): a pretend computer, engine and apps with steady figures. */
+  HLABS_DEV_DEMO: flag,
+  /** Development only: the time hlabsd starts at (an ISO date), so the docs screenshots never change with the day. */
+  HLABS_DEV_CLOCK: z.iso.datetime({ offset: true }).optional(),
   HLABS_NETMOUNT_BIN: z.string().optional(),
   HLABS_PRIV_HELPER: z.string().optional(),
   HLABS_SECRET_STORE: z.enum(['keychain', 'file']).optional(),
@@ -126,6 +134,14 @@ export interface DaemonConfig {
   devFakeTailscale: boolean;
   /** A pretend NAS (nas.local) for network drives in development and e2e (US-FILE-11). */
   devFakeNas: boolean;
+  /** Development and e2e: a pretend Cloudflare for public apps, so nothing reaches Cloudflare (US-SYS-43). */
+  devFakeCloudflare: boolean;
+  /** Caddy's public listener, on 127.0.0.1 only: cloudflared's one destination (D-178). */
+  publicPort: number;
+  /** The docs screenshots' instance (US-SITE-11, D-177): a pretend Mac, engine and app usage with steady figures. */
+  devDemo: boolean;
+  /** Development only: the time hlabsd's clock starts at (ms), or null for the real time (US-SITE-11). */
+  devClock: number | null;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
@@ -145,8 +161,17 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
   if (e.HLABS_DEV_FAKE_TAILSCALE && e.NODE_ENV === 'production') {
     throw new Error('HLABS_DEV_FAKE_TAILSCALE is for development only and is refused in production.');
   }
+  if (e.HLABS_DEV_FAKE_CLOUDFLARE && e.NODE_ENV === 'production') {
+    throw new Error('HLABS_DEV_FAKE_CLOUDFLARE is for development only and is refused in production.');
+  }
   if (e.HLABS_DEV_IGNORE_ENGINES && e.NODE_ENV === 'production') {
     throw new Error('HLABS_DEV_IGNORE_ENGINES is for development only and is refused in production.');
+  }
+  if (e.HLABS_DEV_DEMO && e.NODE_ENV === 'production') {
+    throw new Error('HLABS_DEV_DEMO is for development only and is refused in production.');
+  }
+  if (e.HLABS_DEV_CLOCK && e.NODE_ENV === 'production') {
+    throw new Error('HLABS_DEV_CLOCK is for development only and is refused in production.');
   }
   const platformPaths = defaultPaths({ platform: process.platform, home: homedir(), headless: e.HLABS_HEADLESS });
   const paths = e.HLABS_DATA_DIR
@@ -191,5 +216,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): DaemonConfig {
     devNoEngineControl: e.HLABS_DEV_NO_ENGINE_CONTROL,
     devFakeTailscale: e.HLABS_DEV_FAKE_TAILSCALE,
     devFakeNas: e.HLABS_DEV_FAKE_NAS,
+    devFakeCloudflare: e.HLABS_DEV_FAKE_CLOUDFLARE,
+    publicPort: e.HLABS_PUBLIC_PORT,
+    devDemo: e.HLABS_DEV_DEMO,
+    devClock: e.HLABS_DEV_CLOCK ? Date.parse(e.HLABS_DEV_CLOCK) : null,
   };
 }

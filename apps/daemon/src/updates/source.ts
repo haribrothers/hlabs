@@ -45,6 +45,16 @@ const manifestSchema = z.object({
     .default({}),
 });
 
+/** Where update checks go, for "What hlabs connects to" (US-SYS-29): github.com, or HLABS_UPDATE_ENDPOINT's host. */
+export function updateHost(endpoint: string | undefined = process.env.HLABS_UPDATE_ENDPOINT): string {
+  if (!endpoint) return new URL(RELEASES).host;
+  try {
+    return new URL(endpoint.replace('{channel}', 'stable')).host;
+  } catch {
+    return endpoint;
+  }
+}
+
 export function releaseUrl(version: string): string {
   return `${RELEASES}/tag/v${version.replace(/^v/, '')}`;
 }

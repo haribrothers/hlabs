@@ -25,7 +25,10 @@ test('US-AUTH-12 five failures pause logging in as that user, with a countdown',
   await expect(timer).toHaveText(/^1[45]:\d\d$/);
   const first = await timer.innerText();
   await expect(timer).not.toHaveText(first);
-  await expect(other.getByRole('button', { name: /^Try again in \d+:\d\d$/ })).toBeDisabled();
+  // On a phone the countdown is the card's; "Try again" comes once it's over (PhoneRedesignA_LoginLocked).
+  if (test.info().project.name.includes('phone'))
+    await expect(other.getByText('Try again in', { exact: true })).toBeVisible();
+  else await expect(other.getByRole('button', { name: /^Try again in \d+:\d\d$/ })).toBeDisabled();
   // US-AUTH-13: the admin is told.
   await expect(other.getByText('The admin gets a notification about repeated failed logins.')).toBeVisible();
   expect((await new AxeBuilder({ page: other }).analyze()).violations).toEqual([]);

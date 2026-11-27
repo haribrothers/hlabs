@@ -1,13 +1,14 @@
 // US-ACCT-13 · See everyone who uses hlabs (main instance, signed in as an admin).
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { peopleRow } from './people';
 
 test('US-ACCT-13 Users lists people with my own row first and no actions on it', async ({ page }, info) => {
   await page.goto('/settings/users');
   await expect(page.getByRole('heading', { level: 1, name: 'Users' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Invite someone' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Invite someone' }).first()).toBeVisible();
   const people = page.getByRole('group', { name: /^People · \d+$/ });
-  const mine = people.locator('.hl-list-row').first();
+  const mine = peopleRow(people, '(you)').first();
   await expect(mine).toContainText('(you)');
   await expect(mine).toContainText('Admin');
   await expect(mine.getByRole('button')).toHaveCount(0);
@@ -78,11 +79,12 @@ test('US-ACCT-13 member, disabled and invite rows (lists answered with fixed peo
   await expect(people.getByText('Disabled')).toBeVisible();
   await expect(people.getByText('Link created today · expires in 7 days · Member')).toBeVisible();
   // Other specs' members may be listed too; the two fixed members have their own buttons.
+  // (On a phone they're in each row's ••• sheet, US-PHONE-28.)
   for (const who of ['Anu', 'Ravi'])
     await expect(
-      people
-        .locator('.hl-list-row', { hasText: `@${who.toLowerCase()} ·` })
-        .getByRole('button', { name: 'Apps access' }),
+      peopleRow(people, `@${who.toLowerCase()} ·`).getByRole('button', {
+        name: info.project.name.includes('phone') ? `More options for ${who}` : 'Apps access',
+      }),
     ).toBeVisible();
   if (process.env.HLABS_SHOTS)
     await page.screenshot({ path: `${process.env.HLABS_SHOTS}/users-rows-${info.project.name}.png` });

@@ -20,9 +20,27 @@ const DESTINATIONS: ReadonlyArray<{
   { path: /^\/settings\/updates$/, action: { label: copy.viewDetails, admin: true, feature: 'hlabsUpdates' } },
   // SettingsNetwork (phase 3): another program holds hlabs's web port (US-SYS-42).
   { path: /^\/settings\/network$/, action: { label: copy.changePort, admin: true, feature: 'remoteAccess' } },
+  // The App Store's updates (phase 7, US-STORE-15): "2 app updates available".
+  { path: /^\/store\/updates$/, action: { label: copy.review, admin: true, feature: 'appUpdates' } },
+  // Settings › Account, where sessions are: repeated failed logins, a used recovery code (US-HOME-14).
+  { path: /^\/settings\/account$/, action: { label: copy.seeSessions, item: true } },
+  // A public app's Visits (US-APP-29): the attack warning's "See visits".
+  {
+    path: /^\/apps\/[^/]+\/settings\?view=visits$/,
+    action: { label: copy.seeVisits, admin: true, feature: 'publicApps' },
+  },
+  // A public app's settings (US-APP-27): "<Name> made <App> public…".
+  { path: /^\/apps\/[^/]+\/settings$/, action: { label: copy.appSettings, admin: true } },
   // SettingsStorage (phase 7).
   { path: /^\/settings\/storage$/, action: { label: copy.manageStorage, admin: true, feature: 'storageSettings' } },
 ];
+
+/** A navigate action's `params` as the address's search (`/apps/immich/settings?view=visits`): strings only. */
+function withParams(to: string, params: Record<string, unknown> | undefined): string {
+  const entries = Object.entries(params ?? {}).filter((e): e is [string, string] => typeof e[1] === 'string');
+  if (!entries.length) return to;
+  return `${to}${to.includes('?') ? '&' : '?'}${new URLSearchParams(entries).toString()}`;
+}
 
 /** A notification's buttons as toast actions; anything not on the allow-list is dropped. */
 export function actionsFromNotification(actions: readonly NotificationAction[] | null): ToastAction[] {
@@ -31,13 +49,19 @@ export function actionsFromNotification(actions: readonly NotificationAction[] |
       if (!(TOAST_MUTATIONS as readonly string[]).includes(a.procedure)) return [];
       return [{ kind: 'mutation', label: a.label, procedure: a.procedure, input: a.input }];
     }
-    const known = DESTINATIONS.find((d) => d.path.test(a.to));
-    return [{ kind: 'navigate', to: a.to, ...(known?.action ?? { label: copy.open }) }];
+    const to = withParams(a.to, a.params);
+    const known = DESTINATIONS.find((d) => d.path.test(to));
+    return [{ kind: 'navigate', to, ...(known?.action ?? { label: copy.open }) }];
   });
 }
 
-/** Every allow-listed mutation is admin-only. */
-export const needsAdmin = (a: ToastAction) => a.kind === 'mutation' || (a.kind === 'navigate' && Boolean(a.admin));
+/** Mutations anyone may run from a toast: signing out my own other sessions (US-SYS-46). */
+const ANYONE: readonly ToastMutation[] = ['auth.revokeOtherSessions'];
+
+/** Every allow-listed mutation is admin-only, but signing out everywhere. */
+export const needsAdmin = (a: ToastAction) =>
+  (a.kind === 'mutation' && !ANYONE.includes(a.procedure as ToastMutation)) ||
+  (a.kind === 'navigate' && Boolean(a.admin));
 
 /** The buttons to show: at most two, none a member can't use, none from a phase that hasn't shipped. */
 export function visibleActions(
@@ -69,5 +93,11 @@ export function runToastMutation(
       return client.backups.runNow.mutate(input as Parameters<typeof client.backups.runNow.mutate>[0]);
     case 'settings.updates.check':
       return client.settings.updates.check.mutate();
+    case 'apps.setPublic':
+      // From a toast only ever "Make private" (US-APP-29): never makes anything public.
+      return client.apps.setPublic.mutate({ appId: String(input.appId), public: false });
+    case 'auth.revokeOtherSessions':
+      // "Sign out everywhere" (US-SYS-46): every other session of mine, wherever it is.
+      return client.auth.revokeOtherSessions.mutate();
   }
 }

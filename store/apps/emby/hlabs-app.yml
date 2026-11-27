@@ -1,0 +1,35 @@
+schema: 1
+id: emby
+name: Emby
+version: '4.10.2'
+revision: 1
+tagline: Your own streaming service for films, shows and music
+description: |
+  Emby organises the films, series and music on your drives and streams them to its apps on TVs and
+  phones and to the browser. The first visit sets up your admin account. Emby is closed source; some
+  features need Emby Premiere.
+category: media
+developer: { name: Emby, url: https://emby.media }
+source: https://github.com/linuxserver/docker-emby
+license: Proprietary
+icon:
+  logo: logo.svg
+  gradient: ['#52b54b', '#1d4d1a']
+  fallback: clapperboard
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 2048 }
+web: { service: emby, port: 8096, embed: true }
+folders:
+  - key: media
+    label: Media library
+    description: Your movies, shows and music
+    target: /media
+    default: shared:Media
+    mode: ro
+    required: true
+ownLogin: true
+backup:
+  pause: [emby]
+  exclude: [cache/, logs/]
+  beforeUpdate: true
+permissions: { network: internet }

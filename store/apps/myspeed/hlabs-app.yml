@@ -1,0 +1,25 @@
+schema: 1
+id: myspeed
+name: MySpeed
+version: '1.0.9'
+revision: 1
+tagline: Speed tests with a clear history
+description: |
+  Measures your internet speed automatically and shows the results as easy charts over days and weeks,
+  with notifications when it drops. It has no login of its own: the hlabs login protects it.
+category: network
+developer: { name: Mathias Wagner, url: https://myspeed.dev }
+source: https://github.com/gnmyt/myspeed
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#3b82f6', '#0f2557']
+  fallback: gauge
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 128, disk: 256 }
+web: { service: myspeed, port: 5216, embed: true }
+ownLogin: false
+backup:
+  pause: [myspeed]
+  beforeUpdate: true
+permissions: { network: internet }

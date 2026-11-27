@@ -62,6 +62,8 @@ describe('US-HOME-03', () => {
       embed: false,
       ownLogin: false,
       urls: { local: 'https://jellyfin.hlabs.local', tailnet: 'https://hlabs.tail1234.ts.net:14001', port: 12001 },
+      // Private: not on the internet (US-APP-27).
+      public: null,
     });
     expect(list.apps[1]).toMatchObject({ embed: true, icon: { logoUrl: null, gradient: null, fallback: null } });
   });
@@ -96,6 +98,7 @@ describe('US-HOME-03', () => {
         { kind: 'app', id: 'immich' },
       ],
       dock: ['immich'],
+      hidden: [],
     });
   });
 });

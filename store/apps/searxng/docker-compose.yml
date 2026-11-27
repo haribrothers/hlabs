@@ -1,0 +1,8 @@
+services:
+  searxng:
+    image: docker.io/searxng/searxng:2026.11.21-c6ee3e9fd@sha256:fc1d81d7e9d04d3c8b3e23c7162feddf5c3d6aecd32e67a56eaabcb8d8747f79
+    environment:
+      SEARXNG_BASE_URL: ${HLABS_URL}/
+      SEARXNG_SECRET: ${SEARXNG_SECRET}
+    volumes:
+      - ${HLABS_APP_DATA}/config:/etc/searxng

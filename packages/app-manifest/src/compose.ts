@@ -20,7 +20,12 @@ export interface ComposeIssue {
     | 'DOCKER_SOCKET'
     | 'NAMED_VOLUME'
     | 'UNKNOWN_FOLDER'
-    | 'MANIFEST_SERVICE_MISSING';
+    | 'MANIFEST_SERVICE_MISSING'
+    | 'DEVICE_NOT_DECLARED'
+    | 'CAPABILITY_NOT_DECLARED'
+    | 'SYSCTL_NOT_ALLOWED'
+    | 'SECURITY_OPT_NOT_ALLOWED'
+    | 'HOST_NAMESPACE';
   message: string;
 }
 
@@ -38,6 +43,13 @@ const composeService = z
     env_file: z.unknown().optional(),
     ports: z.array(z.union([z.string(), z.number(), z.object({}).loose()])).optional(),
     volumes: z.array(z.union([z.string(), volumeLong])).optional(),
+    devices: z.array(z.union([z.string(), z.object({ source: z.string().optional() }).loose()])).optional(),
+    cap_add: z.array(z.string()).optional(),
+    sysctls: z.union([z.array(z.string()), z.record(z.string(), z.unknown())]).optional(),
+    security_opt: z.array(z.string()).optional(),
+    userns_mode: z.string().optional(),
+    uts: z.string().optional(),
+    cgroup: z.string().optional(),
   })
   .loose();
 
@@ -121,6 +133,37 @@ export function validateCompose(raw: unknown, manifest: AppManifest, options: Va
     if (svc.network_mode === 'host') add(`${at}.network_mode`, 'HOST_NETWORK', 'Host networking is not allowed');
     if (svc.pid === 'host') add(`${at}.pid`, 'HOST_PID', 'Sharing the host PID namespace is not allowed');
     if (svc.ipc === 'host') add(`${at}.ipc`, 'HOST_IPC', 'Sharing the host IPC namespace is not allowed');
+    for (const key of ['userns_mode', 'uts', 'cgroup'] as const) {
+      if (svc[key] === 'host') add(`${at}.${key}`, 'HOST_NAMESPACE', `${key}: host is not allowed`);
+    }
+    // Devices and capabilities only as the manifest declares them (D-163), so the install sheet can say so.
+    const devices = new Set(manifest.permissions.devices.map((d) => d.path));
+    svc.devices?.forEach((entry, i) => {
+      const source = typeof entry === 'string' ? entry.split(':')[0] : entry.source;
+      if (!source || !devices.has(source)) {
+        add(`${at}.devices[${i}]`, 'DEVICE_NOT_DECLARED', 'Declare the device under permissions.devices');
+      }
+    });
+    const capabilities = new Set<string>(manifest.permissions.capabilities);
+    svc.cap_add?.forEach((cap, i) => {
+      if (!capabilities.has(cap.replace(/^CAP_/, ''))) {
+        add(`${at}.cap_add[${i}]`, 'CAPABILITY_NOT_DECLARED', 'Declare the capability under permissions.capabilities');
+      }
+    });
+    const sysctls = Array.isArray(svc.sysctls)
+      ? svc.sysctls.map((s) => s.split('=')[0]!)
+      : Object.keys(svc.sysctls ?? {});
+    sysctls.forEach((key) => {
+      // The container's own network settings, for an app that already declares NET_ADMIN (a VPN).
+      if (!(key.startsWith('net.') && capabilities.has('NET_ADMIN'))) {
+        add(`${at}.sysctls`, 'SYSCTL_NOT_ALLOWED', `sysctl ${key} needs permissions.capabilities: [NET_ADMIN]`);
+      }
+    });
+    svc.security_opt?.forEach((opt, i) => {
+      if (!/^no-new-privileges(:true)?$/.test(opt)) {
+        add(`${at}.security_opt[${i}]`, 'SECURITY_OPT_NOT_ALLOWED', 'Only no-new-privileges is allowed');
+      }
+    });
     if (svc.container_name)
       add(`${at}.container_name`, 'CONTAINER_NAME', 'hlabs names containers; remove container_name');
     if (svc.env_file !== undefined)

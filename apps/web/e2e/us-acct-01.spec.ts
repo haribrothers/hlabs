@@ -12,10 +12,13 @@ test.describe('US-ACCT-01', () => {
     await expect(nav.getByRole('link')).toHaveText([
       'Account',
       'Users',
+      'Appearance',
       'Network & remote access',
+      'Storage',
       'Engine & startup',
       'Backups',
       'Updates',
+      'Advanced',
     ]);
     await expect(nav.getByRole('link', { name: 'Account' })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeVisible();
@@ -23,9 +26,9 @@ test.describe('US-ACCT-01', () => {
   });
 
   test('a section from a later phase, or an unknown one, is "Page not found"', async ({ page }) => {
-    await page.goto('/settings/storage');
+    await page.goto('/settings/about');
     await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible();
-    await expect(page).toHaveURL(/\/settings\/storage$/);
+    await expect(page).toHaveURL(/\/settings\/about$/);
     await page.goto('/settings/nope');
     await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible();
   });

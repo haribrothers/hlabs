@@ -4,10 +4,17 @@
 // it's healthy, then sets up its address and marks it running. The app stays `installing` until it is healthy, so any
 // failure is `install_failed` (D-081). A failure leaves nothing else changed and can be retried or removed.
 import { hlabsCodeOf, hlabsError, type HlabsCode, type InstallStep, type InstallStepDetail } from '@hlabs/api';
-import { hasRiskyPermissions, renderApp, type AppManifest, type ComposeFile } from '@hlabs/app-manifest';
+import {
+  EXTRA_MOUNT_ROOT,
+  hasRiskyPermissions,
+  renderApp,
+  type AppManifest,
+  type ComposeFile,
+} from '@hlabs/app-manifest';
 import {
   appAccess,
   appEnv,
+  appImages,
   appMounts,
   apps,
   auditLog,
@@ -46,6 +53,7 @@ import { allocatePort, loopbackPort, loopbackPortFree } from './ports';
 import { stopIfPaused } from './pause';
 import type { AppService } from './service';
 import { canTransition, stateDetail } from './state-machine';
+import { HELPER_IMAGE } from '../engine/helper-image';
 import { hostTimeZone } from '../platform/timezone';
 import { tailnetAppPort } from '@hlabs/shared';
 
@@ -85,6 +93,11 @@ export interface InstallDeps {
   timeZone?: () => string;
   /** How much disk each app uses (US-APP-07). */
   disk?: AppDiskUsage;
+  /**
+   * Makes a public app private before it's uninstalled (US-APP-27): its DNS record goes and it's audited. Boot sets it
+   * once PublicService exists.
+   */
+  makePrivate?: (appId: string, by: { userId: string | null; ip?: string | null }) => Promise<void>;
 }
 
 /** The share of the bar each step fills: pulls take 0–80%, the rest share 80–100% (US-STORE-12). */
@@ -132,6 +145,8 @@ export class InstallService {
     this.deps.jobs.register<{ appId: string; user: Installer; keepData?: boolean }>('app_uninstall', {
       run: async ({ payload, report }) => {
         report(10);
+        // A public app is made private first (its address already stopped answering when it went to uninstalling).
+        await this.deps.makePrivate?.(payload.appId, { userId: payload.user.userId, ip: payload.user.ip ?? null });
         if (payload.keepData === undefined) await this.removeFailed(payload.user, payload.appId);
         else await this.removeApp(payload.user, payload.appId, payload.keepData, report);
       },
@@ -212,12 +227,15 @@ export class InstallService {
       dataFolder: tildePath(join(this.deps.appDataDir, appId)),
       disk: (await this.deps.disk?.get(appId)) ?? null,
       version: app.version,
-      latestVersion: latestVersion(app.version, catalogRow(db, app)?.version),
+      // An app whose source was removed has nothing to update from (US-STORE-18).
+      latestVersion: app.sourceId === null ? null : latestVersion(app.version, catalogRow(db, app)?.version),
+      sourceRemoved: app.sourceId === null && !app.custom,
       services: this.deps.apps.services(appId),
       dependents: this.dependents(appId),
       autostart: app.autostart,
       autoUpdate: app.autoUpdate,
       custom: app.custom,
+      authMode: app.authMode,
     };
   }
 
@@ -270,6 +288,10 @@ export class InstallService {
           hostname,
           portFallback: port,
           authMode: manifest.web.auth,
+          // Network access follows the manifest (US-APP-18), except that `lan` keeps the internet for now: Docker's
+          // internal networks would cut the home network too (Q-23, D-165), so only `none` starts without either.
+          netInternet: manifest.permissions.network !== 'none',
+          netApps: manifest.permissions.network !== 'none',
           installedAt: now,
           updatedAt: now,
           installedBy: user.userId,
@@ -427,9 +449,11 @@ export class InstallService {
       report('check', 1, { arch });
 
       // 2. Images, weighted by bytes; images already here count as done (a retry reuses them).
-      await this.pullAll(ctx, images, (within, detail, eta) => report('pull', within, detail, eta)).catch((error) => {
-        throw new StepFailure('pull', error instanceof StepFailure ? error.error : error);
-      });
+      await this.pullAll(ctx, images, (within, detail, eta) => report('pull', within, detail, eta), appId).catch(
+        (error) => {
+          throw new StepFailure('pull', error instanceof StepFailure ? error.error : error);
+        },
+      );
 
       // 3. Data folders: app data, and chosen folders that don't exist yet (a new Home › Photos).
       report('folders', 0);
@@ -506,10 +530,16 @@ export class InstallService {
   }
 
   /** Pulls what's missing; reports bytes across images, never going backwards, with an ETA after 5 s. */
+  /**
+   * Pulls the images that aren't here yet. Each one pulled is recorded for `appId` in `app_images`: only those may
+   * ever be removed to free space (US-SYS-13, D-168). An image already on the engine isn't recorded: hlabs can't tell
+   * it apart from the person's own.
+   */
   async pullAll(
     ctx: JobContext<unknown>,
     images: string[],
     report: (within: number, detail: InstallStepDetail, etaSeconds: number | null) => void,
+    appId: string,
   ): Promise<void> {
     const engine = this.deps.engine.client;
     if (!engine) throw hlabsError('ENGINE_UNAVAILABLE');
@@ -555,9 +585,21 @@ export class InstallService {
       } catch (error) {
         throw hlabsError(classifyPullError(error), (error as Error).message);
       }
+      await this.recordPull(appId, image);
       finished.add(image);
       emit();
     }
+  }
+
+  /** hlabs pulled `ref` for `appId` (D-168). A failed look-up only means the image can't be freed later. */
+  private async recordPull(appId: string, ref: string): Promise<void> {
+    const info = await this.deps.engine.client?.imageInfo(ref).catch(() => null);
+    if (!info) return;
+    this.deps.db
+      .insert(appImages)
+      .values({ imageId: info.id, appId, ref, pulledAt: Date.now() })
+      .onConflictDoUpdate({ target: [appImages.imageId, appImages.appId], set: { ref, pulledAt: Date.now() } })
+      .run();
   }
 
   writeProject(
@@ -570,12 +612,19 @@ export class InstallService {
   ) {
     const appData = join(this.deps.appDataDir, manifest.id);
     const domain = `${getSetting(this.deps.db, 'hostname')}.local`;
+    const settings = this.appSettings(manifest);
     const rendered = renderApp({
       manifest,
       compose,
       webPort: loopbackPort(port),
       appDataDir: appData,
       folders: folderPaths(manifest, mounts, appData),
+      extraEnv: Object.keys(settings.env),
+      extraMounts: settings.extraMounts,
+      folderModes: settings.folderModes,
+      network: settings.network,
+      // The sidecars that publish an app without the internet reach its containers by name (D-165).
+      projectName: this.deps.apps.project(manifest.id).name,
       hostname: `${hostname}.${domain}`,
       url: `https://${hostname}.${domain}`,
       // Its tailnet address, while remote access is on (D-012, D-102, D-110).
@@ -585,9 +634,55 @@ export class InstallService {
       tz: (this.deps.timeZone ?? hostTimeZone)(),
       puid: process.getuid?.() ?? 1000,
       pgid: process.getgid?.() ?? 1000,
-      env,
+      // Variables added in App settings, unless given here (US-APP-13).
+      env: { ...settings.env, ...env },
+      presentDevices: manifest.permissions.devices.map((d) => d.path).filter((d) => existsSync(d)),
     });
-    this.deps.apps.writeProject(manifest.id, rendered, manifest);
+    this.deps.apps.writeProject(manifest.id, rendered, manifest, compose);
+  }
+
+  /**
+   * What App settings added to an app (US-APP-13…18), so every render keeps it (installing again, updating,
+   * reinstalling): variables that aren't the manifest's (secret ones from its .env), folders given at
+   * `/mnt/hlabs/<name>`, folders made read only, and its network access.
+   */
+  appSettings(manifest: AppManifest) {
+    const { db } = this.deps;
+    const appId = manifest.id;
+    const prompts = new Set(manifest.env.map((p) => p.key));
+    const custom = db
+      .select()
+      .from(appEnv)
+      .where(eq(appEnv.appId, appId))
+      .all()
+      .filter((r) => !prompts.has(r.key));
+    const kept = custom.some((r) => r.value === null) ? this.keptEnv(appId) : {};
+    const env = Object.fromEntries(custom.map((r) => [r.key, r.value ?? kept[r.key] ?? '']));
+    const mounts = db
+      .select({
+        target: appMounts.target,
+        subpath: appMounts.subpath,
+        mode: appMounts.mode,
+        path: storageLocations.path,
+      })
+      .from(appMounts)
+      .innerJoin(storageLocations, eq(storageLocations.id, appMounts.storageLocationId))
+      .where(eq(appMounts.appId, appId))
+      .all();
+    const keys = new Set(manifest.folders.map((f) => f.key));
+    const app = db
+      .select({ internet: apps.netInternet, apps: apps.netApps })
+      .from(apps)
+      .where(eq(apps.id, appId))
+      .get();
+    return {
+      env,
+      extraMounts: mounts
+        .filter((m) => m.target.startsWith(`${EXTRA_MOUNT_ROOT}/`))
+        .map((m) => ({ target: m.target, hostPath: join(m.path, m.subpath), mode: m.mode })),
+      folderModes: Object.fromEntries(mounts.filter((m) => keys.has(m.target)).map((m) => [m.target, m.mode])),
+      network: app ?? { internet: true, apps: true },
+    };
   }
 
   /** Values kept from an earlier install of this app (its .env stays with kept data, US-APP-12). */
@@ -755,7 +850,8 @@ export class InstallService {
     const engine = this.deps.engine.client;
     if (!engine) throw hlabsError('ENGINE_UNAVAILABLE');
     let lastError: unknown = null;
-    for (const image of this.appImages(app, projectDir)) {
+    // The app's own images first; hlabs's helper (which has a shell) when none of them has one (Portainer's).
+    for (const image of [...this.appImages(app, projectDir), HELPER_IMAGE]) {
       try {
         await engine.clearFolder(image, appData);
         rmSync(appData, gone);
@@ -829,6 +925,8 @@ export function riskList(m: AppManifest): string[] {
     ...(m.permissions.dockerSocket ? ['dockerSocket'] : []),
     ...(m.permissions.gpu ? ['gpu'] : []),
     ...m.ports.map((p) => `port:${p.host}/${p.protocol}`),
+    ...m.permissions.devices.map((d) => `device:${d.path}`),
+    ...m.permissions.capabilities.map((c) => `capability:${c}`),
   ];
 }
 

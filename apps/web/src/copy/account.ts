@@ -17,6 +17,8 @@ export const accountCopy = {
   roles: { admin: 'Admin', member: 'Member' },
   who: (username: string, role: string) => `${username} · ${role}`,
   editProfile: 'Edit profile',
+  /** The bar's button on a phone (PhoneRedesignA_Account); its accessible name stays "Edit profile". */
+  edit: 'Edit',
   profileTitle: 'Edit profile',
   displayName: 'Display name',
   enterName: 'Enter a name',
@@ -110,6 +112,10 @@ export const accountCopy = {
   signOutFailed: (device: string) => `Couldn't sign out ${device}. Try again.`,
   deviceLine: (device: string, browser: string) => `${device} · ${browser}`,
   seenLine: (network: string, seen: string) => `${network} · ${seen}`,
+  /** A sign-in on a public app's address, valid there only (D-178). */
+  publicSeenLine: (host: string, seen: string) => `Public app at ${host} · ${seen}`,
+  /** A session on the dashboard's public address (US-SYS-46). */
+  publicDashboardSeenLine: (host: string, seen: string) => `Public dashboard at ${host} · ${seen}`,
   activeNow: 'active now',
   unknownDevice: 'Unknown device',
   unknownBrowser: 'Browser',

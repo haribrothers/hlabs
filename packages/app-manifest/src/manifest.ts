@@ -86,15 +86,46 @@ const health = z
     message: 'Pick one health check: http, tcp or container',
   });
 
+/** Where a value is in the endpoint's JSON answer: `photos`, `data.total`, `items[0].name` (US-HOME-20, D-157). */
+const valuePath = z
+  .string()
+  .regex(/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*|\[\d+\])*$/, 'Use a path like photos or data.total');
+/** One figure: the value and the word after it ("1 204 photos"). */
+const statField = z.object({ value: valuePath, label: z.string().min(1).max(30) }).strict();
+
 const widget = z
   .object({
     id: z.string().regex(/^[a-z][a-z0-9-]*$/),
     name: z.string().min(1),
     template: z.enum(['stat', 'twoStat', 'list']),
+    /** On the app's web service, the only one published (D-049). */
     endpoint: z.object({ service: serviceName, path: z.string().startsWith('/') }).strict(),
     refresh: z.number().int().min(10).default(60),
+    /** Which parts of the answer fill the template: stat `{ value }`, twoStat `{ first, second }`, list `{ items, title, detail? }`. */
+    fields: z.union([
+      z.object({ value: statField }).strict(),
+      z.object({ first: statField, second: statField }).strict(),
+      z.object({ items: valuePath, title: valuePath, detail: valuePath.optional() }).strict(),
+    ]),
+    /** The endpoint needs an API key made in the app: the header it goes in, and where to make it. */
+    auth: z
+      .object({
+        header: z.string().regex(/^[A-Za-z][A-Za-z0-9-]*$/),
+        /** Before the key in the header, e.g. "Token " or "Bearer ". */
+        prefix: z.string().max(20).optional(),
+        help: z.string().min(1).max(200),
+      })
+      .strict()
+      .optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (w) =>
+      (w.template === 'stat' && 'value' in w.fields) ||
+      (w.template === 'twoStat' && 'first' in w.fields) ||
+      (w.template === 'list' && 'items' in w.fields),
+    { message: 'fields must match the template', path: ['fields'] },
+  );
 
 export const AppManifest = z
   .object({
@@ -146,15 +177,49 @@ export const AppManifest = z
     permissions: z
       .object({
         network: z.enum(['none', 'lan', 'internet']).default('internet'),
+        /** Why it reaches the internet, beside "Reach the internet" in App settings (US-APP-18): "Needed for website icons". */
+        internetReason: z.string().min(1).max(80).optional(),
         gpu: z.boolean().default(false),
         dockerSocket: z.boolean().default(false),
+        /**
+         * Devices it may use (a Zigbee adapter), passed in only when present on the computer: none on a Mac, where
+         * Docker can't reach USB (D-163). Risky: installing asks for "I understand".
+         */
+        devices: z
+          .array(
+            z
+              .object({
+                path: z.string().regex(/^\/dev\/[A-Za-z0-9._/-]+$/, 'A device path under /dev'),
+                label: z.string().min(1),
+              })
+              .strict(),
+          )
+          .default([]),
+        /** Linux capabilities it needs, from an allow-list (a VPN's NET_ADMIN, D-163). Risky. */
+        capabilities: z.array(z.enum(['NET_ADMIN'])).default([]),
       })
       .strict()
-      .default({ network: 'internet', gpu: false, dockerSocket: false }),
+      .default({ network: 'internet', gpu: false, dockerSocket: false, devices: [], capabilities: [] }),
     // Optional fields added in schema 1 (D-019).
     releaseNotes: z.string().optional(),
     ownLogin: z.boolean().default(false),
+    /** What hlabs already does that this app also does; its page says so (D-148, US-STORE-23). */
+    overlaps: z.array(z.enum(['remoteAccess', 'backups', 'appManagement'])).default([]),
     widgets: z.array(widget).default([]),
+    /**
+     * Making the app public (D-150, D-171, 07 §7.10). `allowed: false` never lets it be (admin tools; an app with the
+     * Docker socket never is either), with `reason` saying why; `ownLoginSafe` offers "<App>'s own login only" so its
+     * phone and desktop apps connect; `maxBodyMb` is the largest request through its public address.
+     */
+    public: z
+      .object({
+        allowed: z.boolean().default(true),
+        reason: z.string().min(1).max(120).optional(),
+        ownLoginSafe: z.boolean().default(false),
+        maxBodyMb: z.number().int().min(1).max(10_240).default(10),
+      })
+      .strict()
+      .default({ allowed: true, ownLoginSafe: false, maxBodyMb: 10 }),
   })
   .strict()
   .superRefine((m, ctx) => {
@@ -173,12 +238,25 @@ export const AppManifest = z
       m.folders.map((f) => f.key),
       'folders',
     );
+    m.widgets.forEach((w, i) => {
+      if (w.endpoint.service !== m.web.service)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['widgets', i, 'endpoint', 'service'],
+          message: 'A widget reads from the web service, the only one hlabs can reach',
+        });
+    });
+    unique(
+      m.widgets.map((w) => w.id),
+      'widgets',
+    );
     if (m.dependsOn.includes(m.id))
       ctx.addIssue({ code: 'custom', path: ['dependsOn'], message: 'An app cannot depend on itself' });
   });
 
 export type AppManifest = z.output<typeof AppManifest>;
 export type AppManifestInput = z.input<typeof AppManifest>;
+export type AppWidget = AppManifest['widgets'][number];
 
 /** `library` → `HLABS_FOLDER_LIBRARY` (06 §Variables available to compose). */
 export function folderVariable(key: string): string {
@@ -187,5 +265,11 @@ export function folderVariable(key: string): string {
 
 /** True when installing needs the "risky permissions" acknowledgement (US-STORE-10). */
 export function hasRiskyPermissions(m: AppManifest): boolean {
-  return m.permissions.dockerSocket || m.permissions.gpu || m.ports.length > 0;
+  return (
+    m.permissions.dockerSocket ||
+    m.permissions.gpu ||
+    m.ports.length > 0 ||
+    m.permissions.devices.length > 0 ||
+    m.permissions.capabilities.length > 0
+  );
 }

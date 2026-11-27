@@ -1,0 +1,35 @@
+# Each start rebuilds its library from the .zim files in its folder, so it also starts with none.
+schema: 1
+id: kiwix
+name: Kiwix
+version: '3.8.2'
+revision: 1
+tagline: Wikipedia and more, offline
+description: |
+  Read Wikipedia, Wiktionary, Stack Exchange, TED talks and thousands of books without the internet. Put
+  .zim files from library.kiwix.org in its folder and restart the app to add them. Full English Wikipedia
+  is about 100 GB; smaller editions start at a few hundred megabytes.
+category: other
+developer: { name: Kiwix, url: https://kiwix.org }
+source: https://github.com/kiwix/kiwix-tools
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#000000', '#3f3f46']
+  fallback: library
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: kiwix, port: 8080, embed: true }
+folders:
+  - key: content
+    label: Kiwix library
+    description: Your .zim files
+    target: /data
+    default: shared:Kiwix
+    mode: rw
+    required: true
+ownLogin: false
+backup:
+  pause: [kiwix]
+  beforeUpdate: true
+permissions: { network: internet }

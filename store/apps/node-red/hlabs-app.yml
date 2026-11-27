@@ -1,0 +1,26 @@
+schema: 1
+id: node-red
+name: Node-RED
+version: '5.0.10'
+revision: 1
+tagline: Wire together devices, apps and online services
+description: |
+  Build automations by connecting blocks in the browser: when this happens, do that. It talks to Home
+  Assistant, MQTT, web services and thousands of add-on nodes. It has no login of its own: the hlabs
+  login protects it.
+category: home
+developer: { name: OpenJS Foundation, url: https://nodered.org }
+source: https://github.com/node-red/node-red
+license: Apache-2.0
+icon:
+  logo: logo.svg
+  gradient: ['#8f0000', '#3d0000']
+  fallback: workflow
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: node-red, port: 1880, embed: true }
+ownLogin: false
+backup:
+  pause: [node-red]
+  beforeUpdate: true
+permissions: { network: internet }

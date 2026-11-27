@@ -1,0 +1,2094 @@
+/* The phone layout (< 768px), Direction A · Native iOS-like (D-172): the tab bar docked to the bottom edge, large
+   titles that collapse into a compact bar, inset grouped lists, bottom sheets with a grabber. Every value comes from
+   tokens.css. The classes are only used by the phone layout, so the desktop is unchanged. */
+@layer components {
+  /* ---------- Tab bar ---------- */
+  .hl-tabbar {
+    position: relative;
+    width: 100%;
+    display: flex;
+    /* 8px between the tabs' hit areas (US-PHONE-02). */
+    gap: var(--space-2);
+    box-sizing: border-box;
+    /* The home-indicator room under the labels: the device's inset, or at least size-home-indicator where the
+       browser reports none, so the bar reads the same everywhere (D-172). */
+    --hl-tab-inset: max(env(safe-area-inset-bottom), var(--size-home-indicator));
+    height: calc(var(--size-tab-bar) + var(--hl-tab-inset));
+    padding: 0 calc(var(--space-2) + env(safe-area-inset-right)) var(--hl-tab-inset)
+      calc(var(--space-2) + env(safe-area-inset-left));
+    background: var(--surface-dialog);
+    backdrop-filter: blur(var(--blur-bar)) saturate(190%);
+    border-top: 1px solid var(--hairline);
+  }
+  .hl-tab {
+    position: relative;
+    flex: 1 1 0;
+    min-width: var(--size-control);
+    height: var(--size-tab-bar);
+    border: 0;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--ink-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font: 600 11px/13px var(--hl-font-sans);
+    cursor: pointer;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--hl-dur-fast) ease;
+  }
+  .hl-tab[aria-current='page'] {
+    color: var(--accent-tab);
+  }
+  /* A ring for keyboard focus only, inside the bar; a tap leaves none. */
+  .hl-tab:focus {
+    outline: none;
+  }
+  .hl-tab:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  .hl-tab-glyph {
+    position: relative;
+    width: var(--size-tab-lens);
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hl-tab-glyph > svg {
+    position: relative;
+  }
+  /* The soft highlight behind the current tab's glyph (not colour alone, D-172). */
+  .hl-tab-lens {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-pill);
+    background: var(--accent-wash);
+  }
+  .hl-tab-label {
+    white-space: nowrap;
+  }
+  .hl-tab .hl-count {
+    top: 3px;
+    left: calc(50% + var(--space-2));
+  }
+  /* The shell is exactly the viewport and pages scroll inside it. */
+  .hl-shell {
+    height: 100dvh;
+  }
+  /* iOS 26 Home Screen app (WebKit 301108, viewport-fit=cover with the black-translucent status bar): the app's
+     drawing area ends about a status bar's height above the screen's edge, and iOS fills that band with the page's
+     background colour; nothing the page draws reaches it. index.html measures it and sets data-vgap; then the page's
+     background is the tab bar's colour and the bar is opaque in it, so the band reads as the bar's lower part. The bar
+     keeps its own home-indicator room: iOS can put the drawing area right again (after a scroll) without telling the
+     page, and labels without it would sit on the screen's edge (D-172). */
+  :root[data-vgap],
+  :root[data-vgap] body {
+    background-color: var(--solid-dialog);
+  }
+  :root[data-vgap] .hl-tabbar {
+    background: var(--solid-dialog);
+  }
+  .hl-nav-phone {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 40;
+  }
+  /* A bar that takes the tab bar's place for a moment (Files' selection bar), or the on-screen keyboard. */
+  [data-tab-bar-hidden='true'] .hl-nav-phone,
+  [data-keyboard='open'] .hl-nav-phone {
+    display: none;
+  }
+
+  /* ---------- Headers ---------- */
+  .hl-p-header {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .hl-p-large {
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    font: 700 34px/41px var(--hl-font-sans);
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+  .hl-p-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .hl-p-title-trailing {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+  }
+  .hl-p-subtitle {
+    margin-top: 2px;
+    font: 400 15px/20px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+  .hl-p-sentinel {
+    height: 1px;
+    margin-top: -1px;
+  }
+  /* A pushed screen's row: the back button, and Share or Search at the right. */
+  .hl-p-nav {
+    height: var(--size-nav-bar);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 calc(-1 * var(--space-2));
+  }
+  .hl-p-back {
+    height: var(--size-nav-bar);
+    min-width: var(--size-control);
+    display: inline-flex;
+    align-items: center;
+    padding: 0 var(--space-2) 0 0;
+    border: 0;
+    border-radius: var(--radius-xs);
+    background: none;
+    color: var(--accent-link);
+    font: 400 17px/22px var(--hl-font-sans);
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .hl-p-back-chevron {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+  .hl-p-bar-end {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  /* A button in a bar (Share, Search, Cancel): the link colour, 44px. */
+  .hl-p-tbtn {
+    height: var(--size-nav-bar);
+    min-width: var(--size-control);
+    padding: 0 var(--space-2);
+    border: 0;
+    border-radius: var(--radius-xs);
+    background: none;
+    color: var(--accent-link);
+    font: 400 17px/22px var(--hl-font-sans);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .hl-p-tbtn-strong {
+    font-weight: 600;
+  }
+  /* The compact bar: hidden at the top of the page, there once the large title has scrolled away. */
+  .hl-p-bar {
+    position: fixed;
+    top: 0;
+    inset-inline: 0;
+    z-index: 30;
+    box-sizing: border-box;
+    height: calc(var(--size-nav-bar) + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) calc(var(--space-2) + env(safe-area-inset-right)) 0
+      calc(var(--space-2) + env(safe-area-inset-left));
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    background: var(--surface-dialog);
+    backdrop-filter: blur(var(--blur-bar)) saturate(190%);
+    border-bottom: 1px solid var(--hairline);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity var(--hl-dur-fast) ease,
+      visibility var(--hl-dur-fast);
+  }
+  .hl-p-bar[data-collapsed] {
+    opacity: 1;
+    visibility: visible;
+  }
+  .hl-p-bar-side {
+    display: flex;
+    min-width: 0;
+  }
+  .hl-p-bar-title {
+    font: 600 17px/22px var(--hl-font-sans);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60vw;
+  }
+  .hl-p-bar .hl-p-bar-end {
+    justify-self: end;
+  }
+
+  /* ---------- Sections and grouped lists ---------- */
+  .hl-p-sec {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+  .hl-p-sec h2 {
+    margin: 0;
+    font: 700 22px/28px var(--hl-font-sans);
+  }
+  .hl-p-link {
+    min-height: var(--size-control);
+    display: inline-flex;
+    align-items: center;
+    border: 0;
+    padding: 0;
+    background: none;
+    color: var(--accent-link);
+    font: 400 17px/22px var(--hl-font-sans);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .hl-p-group-wrap {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .hl-p-label {
+    margin: 0 var(--space-4) 6px;
+    font: 600 13px/18px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+  .hl-p-foot {
+    margin: 6px var(--space-4) 0;
+    font: 400 13px/18px var(--hl-font-sans);
+    color: var(--ink-faint);
+  }
+  .hl-p-group {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-radius: var(--radius-sm);
+    background: var(--solid-widget);
+    overflow: hidden;
+  }
+  .hl-sheet .hl-p-group {
+    background: var(--solid-row);
+  }
+  .hl-p-row {
+    box-sizing: border-box;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--size-row);
+    padding: 0 var(--space-4);
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: 400 17px/22px var(--hl-font-sans);
+    text-align: left;
+    text-decoration: none;
+    cursor: default;
+  }
+  button.hl-p-row,
+  a.hl-p-row {
+    cursor: pointer;
+  }
+  button.hl-p-row:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+  .hl-p-row-danger {
+    color: var(--danger);
+  }
+  .hl-p-row-accent .hl-p-row-title {
+    color: var(--accent-link);
+  }
+  .hl-p-row-main {
+    flex: 1;
+    min-width: 0;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  /* A hairline between rows, from the text on (inset past the icon, as iOS draws it). */
+  .hl-p-row + .hl-p-row .hl-p-row-main,
+  li + li > .hl-p-row .hl-p-row-main {
+    border-top: 1px solid var(--hairline);
+  }
+  .hl-p-row-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 10px 0;
+  }
+  .hl-p-row-title {
+    overflow-wrap: anywhere;
+  }
+  .hl-p-row-sub {
+    font: 400 13px/18px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+  .hl-p-row-value {
+    flex-shrink: 0;
+    color: var(--ink-faint);
+  }
+  .hl-p-chev {
+    display: flex;
+    color: var(--ink-faint);
+  }
+  .hl-p-chev svg {
+    width: 20px;
+    height: 20px;
+  }
+  .hl-p-sq {
+    width: var(--size-icon-square);
+    height: var(--size-icon-square);
+    flex-shrink: 0;
+    border-radius: var(--radius-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--solid-control);
+    color: var(--ink);
+  }
+  .hl-p-sq svg {
+    width: 18px;
+    height: 18px;
+  }
+  .hl-p-sq[data-tone='backups'] {
+    background: var(--dock-backups);
+  }
+  .hl-p-sq[data-tone='usage'] {
+    background: var(--dock-usage);
+  }
+  .hl-p-sq[data-tone='store'] {
+    background: var(--dock-store);
+  }
+  .hl-p-sq[data-tone='files'] {
+    background: var(--dock-files);
+  }
+  .hl-p-sq[data-tone='settings'] {
+    background: var(--dock-settings);
+  }
+  /* A count in a row (Updates 2): the tab bar's badge colour, 22px. */
+  .hl-p-badge {
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    box-sizing: border-box;
+    border-radius: 11px;
+    background: var(--badge);
+    color: var(--ink);
+    font: 700 13px/22px var(--hl-font-sans);
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  /* ---------- Fields and buttons ---------- */
+  .hl-p-search {
+    box-sizing: border-box;
+    height: var(--size-control);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--solid-input);
+    color: var(--ink-faint);
+    font: 400 17px/22px var(--hl-font-sans);
+  }
+  .hl-p-search:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .hl-p-search-glyph {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  .hl-p-search input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: none;
+    padding: 0;
+    background: transparent;
+    color: var(--ink);
+    font: 400 17px/22px var(--hl-font-sans);
+  }
+  .hl-p-search input::placeholder {
+    color: var(--ink-faint);
+  }
+  .hl-p-search input::-webkit-search-cancel-button {
+    display: none;
+  }
+  .hl-p-search-clear {
+    width: var(--size-control);
+    height: var(--size-control);
+    margin-right: calc(-1 * var(--space-3));
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: none;
+    display: grid;
+    place-items: center;
+    color: var(--wall-base);
+    cursor: pointer;
+  }
+  .hl-p-search-clear svg {
+    width: 18px;
+    height: 18px;
+    padding: 2px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    background: var(--ink-faint);
+  }
+  /* Home's search button: the same field on glass. */
+  .hl-p-search-glass {
+    background: var(--surface-widget);
+    border: 1px solid var(--border-glass);
+    color: var(--ink-muted);
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+  }
+  .hl-p-get {
+    height: var(--size-control);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    border: 0;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .hl-p-get > span {
+    height: 30px;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-pill);
+    background: var(--solid-control);
+    color: var(--accent-link);
+    font: 700 15px/30px var(--hl-font-sans);
+    white-space: nowrap;
+  }
+  .hl-p-get:disabled {
+    cursor: default;
+  }
+  .hl-p-get:disabled > span {
+    color: var(--ink-muted);
+  }
+  .hl-p-primary,
+  .hl-p-secondary {
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--size-button-phone);
+    border: 0;
+    border-radius: var(--radius-pill);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    font: 700 17px/22px var(--hl-font-sans);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .hl-p-primary {
+    background: var(--fill-primary);
+    color: var(--ink-on-light);
+  }
+  .hl-p-secondary {
+    background: var(--solid-control);
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .hl-p-primary:disabled,
+  .hl-p-secondary:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  /* A round 44px button on Home's wallpaper (notifications, account). */
+  .hl-p-ibtn {
+    position: relative;
+    width: var(--size-control);
+    height: var(--size-control);
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--border-glass);
+    padding: 0;
+    display: grid;
+    place-items: center;
+    background: var(--surface-widget);
+    color: var(--ink);
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .hl-p-ibtn svg {
+    width: 20px;
+    height: 20px;
+  }
+  .hl-p-dot {
+    position: absolute;
+    top: 9px;
+    right: 10px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--badge);
+    border: 1.5px solid var(--wall-base);
+  }
+  .hl-p-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+  }
+  .hl-p-dots > span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ink-faint);
+  }
+  .hl-p-dots > span[data-current] {
+    background: var(--ink);
+  }
+  /* The segmented control (App settings' tabs, a category's order). */
+  .hl-p-seg {
+    box-sizing: border-box;
+    height: var(--size-control);
+    padding: 3px;
+    border-radius: var(--radius-sm);
+    background: var(--solid-control);
+    display: flex;
+    gap: 2px;
+  }
+  .hl-p-seg > button {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 0;
+    border-radius: 9px;
+    padding: 0 var(--space-1);
+    background: none;
+    color: var(--ink);
+    font: 600 12px/16px var(--hl-font-sans);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .hl-p-seg > button[aria-selected='true'],
+  .hl-p-seg > button[aria-pressed='true'] {
+    background: var(--fill-primary);
+    color: var(--ink-on-light);
+  }
+  .hl-p-seg-wide > button {
+    font-size: 15px;
+    line-height: 20px;
+  }
+  .hl-p-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 600 13px/18px var(--hl-font-sans);
+  }
+  .hl-p-status::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* ---------- Bottom sheets (US-PHONE-03) ---------- */
+  .hl-sheet {
+    position: fixed;
+    z-index: 60;
+    inset-inline: 0;
+    bottom: 0;
+    box-sizing: border-box;
+    max-height: calc(var(--hl-visual-height, 100dvh) * 0.92);
+    display: flex;
+    flex-direction: column;
+    padding: 0 calc(var(--space-4) + env(safe-area-inset-right)) env(safe-area-inset-bottom)
+      calc(var(--space-4) + env(safe-area-inset-left));
+    border-radius: var(--radius-window) var(--radius-window) 0 0;
+    background: var(--solid-dialog);
+    box-shadow: var(--shadow-window);
+    color: var(--ink);
+    font-family: var(--hl-font-sans);
+    /* Only the body pans; the rest of the sheet is for dragging it down. */
+    touch-action: none;
+    outline: none;
+  }
+  .hl-sheet-full {
+    height: calc(var(--hl-visual-height, 100dvh) * 0.92);
+  }
+  .hl-sheet-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    margin: 0 calc(-1 * var(--space-4));
+    padding: 0 var(--space-4);
+  }
+  .hl-sheet-handle {
+    display: block;
+    flex-shrink: 0;
+    align-self: center;
+    width: var(--size-grabber);
+    height: 5px;
+    margin: 6px 0 var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--ink-faint);
+  }
+  .hl-sheet-close {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-2);
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: var(--size-control);
+    height: var(--size-control);
+    border: 0;
+    padding: 0;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: var(--ink-muted);
+    cursor: pointer;
+  }
+  .hl-sheet-close::before {
+    content: '';
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--solid-control);
+  }
+  .hl-sheet-close svg {
+    position: relative;
+    width: 16px;
+    height: 16px;
+  }
+  /* A ModalDialog as a sheet: the dialog's own parts, full-width buttons stacked, the body scrolling inside. */
+  .hl-sheet.hl-dialog {
+    width: auto;
+    max-width: none;
+    gap: var(--space-4);
+    padding-top: 0;
+    padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom));
+  }
+  .hl-sheet > .hl-dialog-title,
+  .hl-sheet > .hl-dialog-icon {
+    padding-right: calc(var(--size-control) + var(--space-2));
+  }
+  .hl-sheet > .hl-dialog-body {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding: var(--space-1);
+    margin: calc(-1 * var(--space-1));
+  }
+  .hl-sheet.hl-sheet-full > .hl-dialog-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .hl-sheet > .hl-dialog-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hl-sheet > .hl-dialog-actions .hl-btn {
+    height: var(--size-button-phone);
+    font-size: 17px;
+  }
+  /* A sheet's own bar: Cancel, the title in the middle (InstallSheet). */
+  .hl-sheet-bar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    height: var(--size-nav-bar);
+    margin: 0 calc(-1 * var(--space-2));
+    flex-shrink: 0;
+  }
+  .hl-sheet-bar-title {
+    margin: 0;
+    font: 600 17px/22px var(--hl-font-sans);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hl-sheet-footer {
+    flex-shrink: 0;
+    margin: 0 calc(-1 * var(--space-4));
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    border-top: 1px solid var(--hairline);
+  }
+
+  /* ---------- The phone's Home grid (US-PHONE-08): 60px tiles, 12px names on one line ---------- */
+  @media (max-width: 767px) {
+    .hl-app {
+      width: 100%;
+      min-width: 64px;
+      gap: 6px;
+    }
+    .hl-app-icon {
+      width: var(--size-app-icon-phone);
+      height: var(--size-app-icon-phone);
+      border-radius: var(--radius-md);
+    }
+    .hl-app-name {
+      max-width: 100%;
+      font: 500 12px/16px var(--hl-font-sans);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  /* ---------- Touch (US-PHONE-02): every control's hit area is at least 44 × 44 px ---------- */
+  @media (max-width: 767px) {
+    .hl-btn-sm {
+      height: var(--size-control);
+      border: 5px solid transparent;
+      background-clip: padding-box;
+    }
+    .hl-btn-md {
+      height: var(--size-control);
+      border: 1px solid transparent;
+      background-clip: padding-box;
+    }
+    .hl-btn-link {
+      min-height: var(--size-control);
+    }
+    /* A 44px tap target with a 32px track drawn inside it (::before). Safari on iPhone paints a button's background
+       under its borders whatever background-clip says, so the track is its own shape and the button stays clear. */
+    .hl-switch,
+    .hl-switch[aria-checked='true'] {
+      position: relative;
+      width: calc(var(--size-control) + var(--space-2));
+      height: var(--size-control);
+      border: 0;
+      padding: 0 2px;
+      align-items: center;
+      background: transparent;
+    }
+    .hl-switch::before {
+      content: '';
+      position: absolute;
+      inset: 6px 0;
+      border-radius: var(--radius-pill);
+      background: var(--surface-control);
+      transition: background var(--hl-dur) ease;
+    }
+    .hl-switch[aria-checked='true']::before {
+      background: var(--accent-strong);
+    }
+    .hl-switch .hl-switch-knob {
+      position: relative;
+      width: calc(var(--size-control) - var(--space-4));
+      height: calc(var(--size-control) - var(--space-4));
+    }
+    .hl-switch-label {
+      min-height: var(--size-control);
+    }
+    /* Rows of the design system's List: 48px (D-172), above the 44px target. */
+    .hl-list-row {
+      min-height: var(--size-row);
+    }
+    /* 16px at least, so iOS doesn't zoom into a field when it's focused. */
+    .hl-input,
+    input,
+    textarea,
+    select {
+      font-size: 17px;
+    }
+  }
+
+  /* Search on a phone (US-PHONE-09): the whole screen on the solid page, with Cancel instead of the keys. */
+  @media (max-width: 767px) {
+    .hl-command {
+      inset: 0;
+      top: 0;
+      transform: none;
+      width: 100%;
+      max-width: none;
+      max-height: none;
+      height: var(--hl-visual-height, 100dvh);
+      border-radius: 0;
+      border: 0;
+      background: var(--wall-base);
+      box-shadow: none;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+  }
+}
+
+/* Full-screen search fades in (US-PHONE-09). */
+@media (max-width: 767px) {
+  .hl-anim-command {
+    animation-name: hl-fade-in;
+  }
+}
+
+@layer components {
+  /* Home's widgets on a phone: two to a screen, the next one peeking (D-172). */
+  /* The row runs from the gutter to the screen's edge (100% = its width): two widgets, their gap and a 22px peek of
+     the next, as the frame draws it (164px each at 390px). */
+  .hl-p-widget {
+    width: calc((100% - var(--space-4) - var(--space-3) * 2 - var(--space-2)) / 2);
+  }
+  .hl-p-widgets-end-two {
+    flex: 0 0 calc(100% - (100% - var(--space-4) - var(--space-3) * 2 - var(--space-2)) - var(--space-3) * 2);
+  }
+  .hl-p-widgets-end-one {
+    flex: 0 0 calc(100% - (100% - var(--space-4) - var(--space-3) * 2 - var(--space-2)) / 2 - var(--space-3));
+  }
+  .hl-p-widget > * {
+    width: 100%;
+    height: var(--size-widget-phone);
+    box-sizing: border-box;
+  }
+  .hl-p-row:focus-visible {
+    outline-offset: -2px;
+  }
+}
+
+@layer components {
+  /* PhoneHome's account button: the person's initial on the accent. */
+  .hl-p-avatar {
+    border: 0;
+    background: var(--accent);
+    color: var(--ink-on-light);
+    font: 700 17px/22px var(--hl-font-sans);
+  }
+}
+
+@layer components {
+  /* A tile's menu on a phone (PhoneRedesignA_TileMenu): Home blurred and dimmed, the tile lifted, the menu beside it. */
+  .hl-p-menu-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: var(--scrim-strong);
+    backdrop-filter: blur(var(--blur-window)) saturate(120%);
+  }
+  .hl-p-menu-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 61;
+    outline: none;
+    /* Safari on iPhone sends a tap's click only to elements that look clickable; this one closes the menu. */
+    cursor: pointer;
+  }
+  .hl-p-menu-tile {
+    position: fixed;
+    display: flex;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-menu);
+    overflow: hidden;
+  }
+  .hl-p-menu {
+    position: fixed;
+    cursor: default;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-glass);
+    background: var(--solid-dialog);
+    box-shadow: var(--shadow-menu);
+    overflow: hidden;
+    color: var(--ink);
+  }
+  .hl-p-menu-head {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    font: 400 13px/18px var(--hl-font-sans);
+    color: var(--ink-muted);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .hl-p-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--size-row);
+    width: 100%;
+    padding: 0 var(--space-4);
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: 400 17px/22px var(--hl-font-sans);
+    text-align: left;
+    cursor: pointer;
+  }
+  .hl-p-menu-item.hl-p-row-danger {
+    color: var(--danger);
+  }
+  .hl-p-menu-item:disabled {
+    color: var(--ink-faint);
+    cursor: default;
+  }
+  .hl-p-menu-item + .hl-p-menu-item {
+    border-top: 1px solid var(--hairline);
+  }
+  .hl-p-menu-item:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  .hl-p-menu-gap {
+    display: block;
+    height: var(--space-2);
+    background: var(--scrim-strong);
+  }
+}
+
+/* The design system's List on a phone: inset grouped (D-172), 17px rows at least 48px tall, 13px subtitles, the
+   label above the box, on the solid colours. Desktop keeps its own. */
+@media (max-width: 767px) {
+  @layer components {
+    .hl-list {
+      gap: 6px;
+    }
+    .hl-list-label,
+    .hl-list-hint {
+      margin: 0 var(--space-4);
+    }
+    .hl-list-box {
+      border-radius: var(--radius-sm);
+      background: var(--solid-widget);
+    }
+    .hl-sheet .hl-list-box {
+      background: var(--solid-row);
+    }
+    .hl-list-row {
+      min-height: var(--size-row);
+      box-sizing: border-box;
+      padding: 10px var(--space-4);
+      font: 400 17px/22px var(--hl-font-sans);
+    }
+    .hl-list-sub {
+      font: 400 13px/18px var(--hl-font-sans);
+    }
+  }
+}
+
+/* Tabs in a sheet (App settings' Overview, Configuration…) and a phone page's choices (Live usage's range, Invite's
+   role): the iOS segmented control, full width (D-172). */
+@layer components {
+  .hl-sheet .hl-seg,
+  .hl-seg.hl-seg-fill {
+    display: flex;
+    align-self: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    height: var(--size-control);
+    padding: 3px;
+    gap: 2px;
+    border-radius: var(--radius-sm);
+    background: var(--solid-control);
+  }
+  .hl-sheet .hl-seg-opt,
+  .hl-seg-fill .hl-seg-opt {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+    padding: 0 var(--space-1);
+    border-radius: 9px;
+    font: 600 12px/16px var(--hl-font-sans);
+    white-space: nowrap;
+  }
+  .hl-sheet .hl-seg-thumb,
+  .hl-seg-fill .hl-seg-thumb {
+    border-radius: 9px;
+  }
+  /* Outside a sheet the choices read at 15px (PhoneRedesignA_Usage, PhoneRedesignA_Invite). */
+  .hl-seg-fill .hl-seg-opt {
+    font-size: 15px;
+    line-height: 20px;
+  }
+  /* App settings' actions on a phone: square tiles with the glyph over the word. */
+  .hl-p-actions {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+  .hl-p-action {
+    min-height: calc(var(--size-control) + var(--space-5));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--solid-row);
+    color: var(--ink);
+    font: 600 13px/18px var(--hl-font-sans);
+    cursor: pointer;
+  }
+  .hl-p-action:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .hl-p-action:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .hl-p-action svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@layer components {
+  /* The close button in a sheet's own header (App settings), not in the corner. */
+  .hl-sheet-close.hl-sheet-close-inline {
+    position: relative;
+    top: auto;
+    right: auto;
+    flex-shrink: 0;
+    margin-right: calc(-1 * var(--space-2));
+  }
+}
+
+@layer components {
+  /* An app in a phone list (PhoneStore, StoreCategory): 76px, the hairline from the text on. */
+  .hl-p-li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: calc(var(--size-list-icon) + var(--space-5));
+  }
+  .hl-p-li-body {
+    flex: 1;
+    min-width: 0;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .hl-p-li-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-radius: var(--radius-xs);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .hl-p-li-text b {
+    font: 600 17px/22px var(--hl-font-sans);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hl-p-li-text span {
+    font: 400 13px/18px var(--hl-font-sans);
+    color: var(--ink-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* PhoneStore's Featured: cards you swipe sideways, the next one peeking. */
+  .hl-p-featured-row {
+    display: flex;
+    gap: var(--space-3);
+    margin-right: calc(-1 * var(--space-4));
+    padding-right: var(--space-4);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .hl-p-featured-row::-webkit-scrollbar {
+    display: none;
+  }
+  .hl-p-featured-row > li {
+    flex: 0 0 calc(100% - var(--space-10));
+    scroll-snap-align: start;
+  }
+  .hl-p-featured {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-lg);
+    background: var(--solid-widget);
+    overflow: hidden;
+  }
+  .hl-p-featured-band {
+    position: relative;
+    flex-shrink: 0;
+    height: calc(var(--size-app-icon) + var(--space-4));
+    background: linear-gradient(135deg, var(--card-from), var(--card-to));
+  }
+  .hl-p-featured-logo {
+    position: absolute;
+    left: var(--space-4);
+    bottom: calc(-1 * var(--space-7));
+    display: flex;
+  }
+  .hl-p-featured-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: calc(var(--space-7) + var(--space-2)) var(--space-4) var(--space-3);
+  }
+  /* The store's category chips on a phone: the chosen one white. */
+  .hl-p-chip {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    min-height: var(--size-control);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-pill);
+    background: var(--solid-widget);
+    color: var(--ink);
+    font: 600 15px/20px var(--hl-font-sans);
+    text-decoration: none;
+    white-space: nowrap;
+    border: 0;
+    cursor: pointer;
+  }
+  .hl-p-chip[aria-current='page'] {
+    background: var(--fill-primary);
+    color: var(--ink-on-light);
+  }
+  .hl-p-chip:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .hl-p-seg > button[aria-checked='true'] {
+    background: var(--fill-primary);
+    color: var(--ink-on-light);
+  }
+}
+
+@layer components {
+  /* A field inside an inset row (PhoneLogin): 17px, no box of its own. */
+  .hl-p-input {
+    flex: 1;
+    min-width: 0;
+    height: var(--size-control);
+    border: 0;
+    outline: none;
+    padding: 0;
+    background: transparent;
+    color: var(--ink);
+    font: 400 17px/22px var(--hl-font-sans);
+  }
+  .hl-p-input::placeholder {
+    color: var(--ink-faint);
+  }
+  .hl-p-row:focus-within:has(.hl-p-input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+}
+
+/* The two-factor code on a phone (PhoneRedesignA_Login2FA): six larger boxes. */
+@media (max-width: 767px) {
+  @layer components {
+    .hl-code {
+      justify-content: center;
+    }
+    .hl-code-digit {
+      width: calc(var(--size-control) + var(--space-1));
+      height: calc(var(--size-control) + var(--space-3));
+      border-radius: var(--radius-sm);
+      background: var(--solid-widget);
+    }
+  }
+}
+
+/* Forced colours: the tab bar keeps its own opaque colours (its text passes 4.5:1 on them), and the current tab is
+   underlined as well as highlighted. */
+@media (forced-colors: active) {
+  .hl-tabbar {
+    forced-color-adjust: none;
+    background: var(--solid-dialog);
+  }
+  .hl-tab[aria-current='page'] .hl-tab-label {
+    text-decoration: underline;
+  }
+}
+
+@layer components {
+  /* PhoneAppDetails' strip under the app: four cells between hairlines (PhoneRedesignA_Details). */
+  .hl-p-strip {
+    display: flex;
+    align-items: stretch;
+    padding: var(--space-3) 0;
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .hl-p-strip > div + div {
+    border-left: 1px solid var(--hairline);
+  }
+  .hl-p-strip svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* ---------- Group 13 (US-PHONE-25…28): the rest of the phone app in Direction A (D-174) ---------- */
+@layer components {
+  /* The ••• at the end of a row: a 44px target, the glyph in the ink colour. */
+  .hl-p-more {
+    width: var(--size-control);
+    height: var(--size-control);
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    margin-right: calc(-1 * var(--space-2));
+    border: 0;
+    padding: 0;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .hl-p-more svg {
+    width: 22px;
+    height: 22px;
+  }
+  /* A box on a page that isn't a list: the inset group's colour and corners, 16px inside. */
+  .hl-p-card {
+    box-sizing: border-box;
+    border-radius: var(--radius-sm);
+    background: var(--solid-widget);
+    padding: var(--space-4);
+    min-width: 0;
+  }
+  .hl-sheet .hl-p-card {
+    background: var(--solid-row);
+  }
+  /* The top of an action sheet: icon or avatar, the name and a line, "✕" beside them. */
+  .hl-sheet-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--size-control);
+    padding: var(--space-1) 0 var(--space-2);
+    flex-shrink: 0;
+  }
+  .hl-sheet-head-lead {
+    display: flex;
+    flex-shrink: 0;
+  }
+  .hl-sheet-head-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .hl-sheet-head-title {
+    margin: 0;
+    font: 600 17px/22px var(--hl-font-sans);
+    overflow-wrap: anywhere;
+  }
+  .hl-sheet-head[data-large] .hl-sheet-head-title {
+    font: 700 28px/34px var(--hl-font-sans);
+    letter-spacing: -0.01em;
+  }
+  .hl-sheet-head-sub {
+    margin: 0;
+    font: 400 13px/18px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+  .hl-sheet-close-inline-wrap {
+    display: flex;
+    flex-shrink: 0;
+    margin-right: calc(-1 * var(--space-2));
+  }
+  .hl-sheet-close-inline-wrap > .hl-sheet-close {
+    position: relative;
+    top: auto;
+    right: auto;
+  }
+  /* A dialog with its title in the sheet's bar (ModalDialog sheetBar): the body scrolls, actions at the bottom. */
+  .hl-sheet.hl-dialog.hl-dialog-barred {
+    gap: var(--space-3);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .hl-sheet.hl-dialog-barred > .hl-dialog-body {
+    flex: 1 1 auto;
+    padding-bottom: var(--space-4);
+  }
+  .hl-sheet-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .hl-sheet-actions .hl-btn,
+  .hl-sheet-actions .hl-p-primary,
+  .hl-sheet-actions .hl-p-secondary {
+    width: 100%;
+    height: var(--size-button-phone);
+    border-radius: var(--radius-pill);
+    font-size: 17px;
+  }
+  /* Two buttons side by side (New folder · Move to Taxes): the second one wider. */
+  .hl-sheet-actions-row {
+    display: flex;
+    gap: var(--space-3);
+  }
+  .hl-sheet-actions-row > :first-child {
+    flex: 0 1 auto;
+    width: auto;
+    padding: 0 var(--space-5);
+  }
+  .hl-sheet-actions-row > :last-child {
+    flex: 1 1 auto;
+  }
+  /* A glyph at the end of an action row (Rename… ✎, Move to… ⇥). */
+  .hl-p-row-glyph {
+    display: flex;
+    flex-shrink: 0;
+    color: var(--ink-muted);
+  }
+  .hl-p-row-danger .hl-p-row-glyph {
+    color: var(--danger);
+  }
+  .hl-p-row-glyph svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* US-PHONE-25: Files */
+@layer components {
+  /* Files' bar: "+" and "Select" at the right, or "Select all · 2 selected · Done" while selecting. */
+  .hl-p-files-nav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+  }
+  .hl-p-files-compact::before {
+    content: attr(data-label);
+  }
+  /* A row of a folder (PhoneRedesignA_Files): 60px, the icon or photo, the name and a line, "•••". */
+  .hl-p-file {
+    position: relative;
+    min-height: calc(var(--size-row) + var(--space-3));
+    --hl-file-inset: calc(var(--space-4) + 36px + var(--space-3));
+  }
+  .hl-p-file[data-selecting] {
+    --hl-file-inset: calc(var(--space-4) + 24px + var(--space-3) * 2 + 36px);
+  }
+  .hl-p-file + .hl-p-file::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: var(--hl-file-inset);
+    right: var(--space-4);
+    border-top: 1px solid var(--hairline);
+  }
+  .hl-p-file[data-checked] {
+    background: var(--accent-wash);
+  }
+  .hl-p-file-open {
+    flex: 1;
+    min-width: 0;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    border: 0;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    outline: none;
+  }
+  .hl-p-file:has(.hl-p-file-open:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  .hl-p-file-icon {
+    display: flex;
+    flex-shrink: 0;
+  }
+  .hl-p-thumb {
+    flex-shrink: 0;
+    border-radius: var(--radius-xs);
+    object-fit: cover;
+  }
+  /* A sheet's row of choices ("+": New folder, Upload). */
+  .hl-p-sheet-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-bottom: var(--space-6);
+  }
+  /* The selection bar in the tab bar's place (PhoneRedesignA_FilesSelect). */
+  .hl-p-selbar {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 40;
+  }
+  .hl-p-selbar .hl-tab {
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .hl-p-selbar .hl-tab[data-danger] {
+    color: var(--danger);
+  }
+  .hl-p-selbar .hl-tab:disabled,
+  .hl-p-selbar .hl-tab[aria-disabled='true'] {
+    opacity: 0.45;
+    cursor: default;
+  }
+  .hl-p-selbar .hl-tab svg {
+    width: 24px;
+    height: 24px;
+  }
+  /* The breadcrumb on a phone: 15px, the steps in the link colour, where you are in semibold. */
+  .hl-p-crumbs ol {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--size-control);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font: 400 15px/20px var(--hl-font-sans);
+  }
+  .hl-p-crumbs a,
+  .hl-p-crumbs button {
+    color: var(--accent-link);
+    text-decoration: none;
+    font: inherit;
+  }
+  .hl-p-crumbs h1,
+  .hl-p-crumbs [aria-current] {
+    margin: 0;
+    font: 600 15px/20px var(--hl-font-sans);
+    color: var(--ink);
+  }
+  .hl-p-crumbs svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--ink-faint);
+  }
+  .hl-p-chip[data-on] {
+    background: var(--fill-primary);
+    color: var(--ink-on-light);
+  }
+  /* Place chips with a glyph (Trash). */
+  .hl-p-chip svg {
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+  }
+  /* The round Restore of a Trash row, and the 44px target around it. */
+  .hl-p-round {
+    position: relative;
+    width: var(--size-control);
+    height: var(--size-control);
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    margin-right: calc(-1 * var(--space-1));
+    border: 0;
+    padding: 0;
+    background: none;
+    color: var(--accent-link);
+    cursor: pointer;
+  }
+  .hl-p-round::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background: var(--solid-control);
+  }
+  .hl-p-round svg {
+    position: relative;
+    width: 20px;
+    height: 20px;
+  }
+  .hl-p-round:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .hl-p-round:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 0;
+    border-radius: 50%;
+  }
+  /* Text buttons beside a heading (Trash's Restore all, Empty trash). */
+  .hl-p-tlink {
+    min-height: var(--size-control);
+    border: 0;
+    padding: 0;
+    background: none;
+    color: var(--accent-link);
+    font: 400 17px/22px var(--hl-font-sans);
+    cursor: pointer;
+  }
+  .hl-p-tlink[data-danger] {
+    color: var(--danger);
+  }
+  .hl-p-tlink:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+  .hl-p-days {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .hl-p-days svg {
+    width: 14px;
+    height: 14px;
+  }
+  /* Move to's folders as an inset list (PhoneRedesignA_FilesMove): indented by depth, a tick on the chosen one. */
+  .hl-p-tree-row {
+    position: relative;
+    width: 100%;
+    min-height: calc(var(--size-row) + var(--space-1));
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    border: 0;
+    padding: 0 var(--space-4) 0 calc(var(--space-4) + var(--hl-depth, 0) * 22px);
+    background: none;
+    color: var(--ink);
+    font: 400 17px/22px var(--hl-font-sans);
+    text-align: left;
+    cursor: pointer;
+  }
+  .hl-p-tree-row + .hl-p-tree-row::before,
+  .hl-p-tree-row + p + .hl-p-tree-row::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: calc(var(--space-4) + var(--hl-depth, 0) * 22px + 24px + var(--space-3));
+    right: var(--space-4);
+    border-top: 1px solid var(--hairline);
+  }
+  .hl-p-tree-row[aria-selected='true'] {
+    background: var(--accent-wash);
+  }
+  .hl-p-tree-row:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  .hl-p-tree-row .hl-p-tree-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hl-p-tree-row svg {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    color: var(--accent-link);
+  }
+  /* The folder picker's list as an inset list with chevrons (PhoneRedesignA_FolderPicker). */
+  .hl-p-pick-row {
+    position: relative;
+    min-height: calc(var(--size-row) + var(--space-1));
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-3) 0 var(--space-4);
+    color: var(--ink);
+    font: 400 17px/22px var(--hl-font-sans);
+    cursor: pointer;
+    user-select: none;
+  }
+  .hl-p-pick-row + .hl-p-pick-row::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: calc(var(--space-4) + 28px + var(--space-3));
+    right: var(--space-4);
+    border-top: 1px solid var(--hairline);
+  }
+  .hl-p-pick-row:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  /* A sheet's line under its bar (the folder picker's "For Immich · Photos · read and write"). */
+  .hl-sheet-sub {
+    margin: calc(-1 * var(--space-2)) 0 0;
+    text-align: center;
+    font: 400 13px/18px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+}
+
+/* The tick of a selected row: a 24px circle, filled with a check when chosen. Unlayered, over the checkbox's own
+   utility classes. */
+@media (max-width: 767px) {
+  input.hl-p-tick {
+    appearance: none;
+    -webkit-appearance: none;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    border: 2px solid var(--ink-faint);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: transparent;
+  }
+  input.hl-p-tick:checked {
+    border-color: var(--accent-strong);
+    background: var(--accent-strong);
+  }
+  input.hl-p-tick:checked::after {
+    content: '';
+    width: 10px;
+    height: 5px;
+    margin-top: -3px;
+    border-left: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    transform: rotate(-45deg);
+  }
+}
+@layer components {
+  /* A heading inside Files on a phone (Recents, Trash): 22px bold, as a section's. */
+  .hl-p-sec-title {
+    margin: 0;
+    font: 700 22px/28px var(--hl-font-sans);
+  }
+}
+
+/* US-PHONE-26/27: Backups, Live usage, Notifications and Updates on a phone (D-174). */
+@layer components {
+  /* Backups' card: the state in a 44px circle, "2 hours ago" and "Next: …". */
+  .hl-p-state-icon {
+    width: var(--size-control);
+    height: var(--size-control);
+    flex-shrink: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--solid-control);
+  }
+  .hl-p-state-icon svg {
+    width: 26px;
+    height: 26px;
+  }
+  .hl-p-state-title {
+    margin: 0;
+    font: 700 20px/25px var(--hl-font-sans);
+  }
+  .hl-p-state-sub {
+    margin: 0;
+    font: 400 15px/20px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+  /* The last runs as bars: green by the data changed, a failed one short and red under a ✕. */
+  .hl-p-runbars {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-1);
+    height: 32px;
+  }
+  .hl-p-runbar {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    background: var(--success);
+    opacity: 0.85;
+  }
+  .hl-p-runbar-failed {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 2px;
+    color: var(--danger);
+  }
+  .hl-p-runbar-failed svg {
+    width: 12px;
+    height: 12px;
+  }
+  .hl-p-runbar-failed > span {
+    width: 100%;
+    height: 30%;
+    border-radius: 3px 3px 0 0;
+    background: var(--danger);
+  }
+  /* "No backups yet": the Backups colour in a 64px circle over a centred title, the line and the button. */
+  .hl-p-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-7) var(--space-5) var(--space-5);
+    text-align: center;
+  }
+  .hl-p-empty-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--dock-backups);
+    color: var(--ink);
+    margin-bottom: var(--space-2);
+  }
+  .hl-p-empty-icon svg {
+    width: 30px;
+    height: 30px;
+  }
+  .hl-p-empty-title {
+    margin: 0;
+    font: 700 22px/28px var(--hl-font-sans);
+  }
+  .hl-p-empty-body {
+    margin: 0 0 var(--space-3);
+    font: 400 15px/22px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+  /* A status at the right of a row: "● Healthy", "✓ Succeeded". */
+  .hl-p-status-lg {
+    font: 600 15px/20px var(--hl-font-sans);
+    flex-shrink: 0;
+  }
+  .hl-p-run-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-shrink: 0;
+    font: 400 15px/20px var(--hl-font-sans);
+  }
+  .hl-p-run-status svg {
+    width: 16px;
+    height: 16px;
+  }
+  .hl-p-check {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    color: var(--accent-link);
+  }
+  /* Add destination's password: mono, wrapping, read only. */
+  .hl-p-secret {
+    height: auto;
+    padding: var(--space-3) 0;
+    resize: none;
+    font: 400 15px/24px var(--hl-font-mono);
+  }
+  /* The restore's title in its sheet: the step, a 22px title, the line under it. */
+  .hl-p-restore-title > span:nth-child(2) {
+    font: 700 22px/28px var(--hl-font-sans);
+  }
+  .hl-p-restore-title > span:last-child {
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  /* Live usage's tiles: label, value, line and how full it is. */
+  .hl-p-tile {
+    box-sizing: border-box;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: 14px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: var(--solid-widget);
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+  }
+  .hl-p-tile[aria-pressed='true'] {
+    border-color: var(--accent);
+  }
+  .hl-p-tile-label {
+    font: 600 13px/18px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+  .hl-p-tile-value {
+    font: 700 24px/30px var(--hl-font-sans);
+  }
+  .hl-p-tile-detail {
+    font: 400 13px/18px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+  .hl-p-meter {
+    display: flex;
+    height: 5px;
+    margin-top: var(--space-1);
+    border-radius: 3px;
+    background: var(--solid-control);
+    overflow: hidden;
+  }
+  .hl-p-meter > span {
+    background: var(--accent);
+  }
+  /* The apps' table on a phone, in an inset box: rows 48px, 15px text. */
+  .hl-p-group > table th,
+  .hl-p-group > table td {
+    font-size: 15px;
+  }
+
+  /* A notification in the phone's sheet: the icon square, the title with its time and dot, the body, its actions. */
+  .hl-p-note {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-2) var(--space-3) var(--space-4);
+  }
+  .hl-p-note + .hl-p-note .hl-p-note-main {
+    border-top: 1px solid var(--hairline);
+    margin-top: calc(-1 * var(--space-3));
+    padding-top: var(--space-3);
+  }
+  .hl-p-note > .hl-p-sq {
+    margin-top: 2px;
+  }
+  .hl-p-note-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .hl-p-note-title {
+    flex: 1;
+    min-width: 0;
+    font: 600 15px/20px var(--hl-font-sans);
+    overflow-wrap: anywhere;
+  }
+  .hl-p-note-time {
+    flex-shrink: 0;
+    font: 400 13px/20px var(--hl-font-sans);
+    color: var(--ink-faint);
+  }
+  .hl-p-note-dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .hl-p-note-body {
+    margin: 0;
+    font: 400 15px/20px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+  .hl-p-note .hl-p-link {
+    min-height: 36px;
+    font-size: 15px;
+  }
+  .hl-p-note-dismiss {
+    width: var(--size-control);
+    height: var(--size-control);
+    flex-shrink: 0;
+    margin: calc(-1 * var(--space-2)) 0;
+    display: grid;
+    place-items: center;
+    border: 0;
+    padding: 0;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+  }
+  .hl-p-note-dismiss svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* An app with an update (StoreUpdates, Settings › Updates): 44px logo, name, versions, "What's new", an Update pill. */
+  .hl-p-urow {
+    padding: var(--space-3) var(--space-4);
+  }
+  .hl-p-urow + .hl-p-urow {
+    border-top: 1px solid var(--hairline);
+  }
+  .hl-p-urow-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .hl-p-urow-name {
+    font: 400 17px/22px var(--hl-font-sans);
+  }
+  .hl-p-urow-sub {
+    font: 400 13px/18px var(--hl-font-sans);
+    color: var(--ink-muted);
+  }
+  .hl-p-urow-link {
+    border: 0;
+    padding: 0;
+    background: none;
+    color: var(--accent-link);
+    font: inherit;
+    font-size: 13px;
+    line-height: 18px;
+    text-decoration: none;
+    cursor: pointer;
+    border-radius: var(--radius-xs);
+  }
+  .hl-p-urow-link.text-warning {
+    color: var(--warning);
+  }
+  .hl-p-notes {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-xs);
+    background: var(--solid-control);
+    font: 400 15px/20px var(--hl-font-sans);
+  }
+  /* The hlabs logo in Settings › Updates' box: 48px on the control colour. */
+  .hl-p-logo-box {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    display: grid;
+    place-items: center;
+    background: var(--solid-control);
+  }
+}
+
+/* A bar that takes the tab bar's place (Files' selection bar) or the on-screen keyboard hides the tab bar. Unlayered,
+   so it wins over the shell's `flex` utility on the same element. */
+[data-tab-bar-hidden='true'] .hl-nav-phone,
+[data-keyboard='open'] .hl-nav-phone {
+  display: none;
+}
+
+/* US-PHONE-28: Settings pages (PhoneRedesignA_Account, _Appearance, _Users, _Invite, _Network, _Storage, _Engine,
+   _Advanced). */
+@media (max-width: 767px) {
+  @layer components {
+    /* Appearance: the wallpapers as four tall tiles in a box, the chosen one ringed with a tick. */
+    .hl-wallpicks {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-2) var(--space-2);
+      border-radius: var(--radius-sm);
+      background: var(--solid-widget);
+    }
+    .hl-wallpick {
+      color: var(--ink);
+      font: 400 15px/20px var(--hl-font-sans);
+    }
+    .hl-wallpick[aria-pressed='true'] {
+      font-weight: 700;
+    }
+    .hl-wallpick-thumb {
+      position: relative;
+      aspect-ratio: 5 / 8;
+      border-radius: var(--radius-md);
+      color: var(--ink-muted);
+    }
+    .hl-wallpick-thumb svg {
+      width: 24px;
+      height: 24px;
+    }
+    .hl-wallpick-check {
+      position: absolute;
+      right: 6px;
+      bottom: 6px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--accent);
+      color: var(--ink-on-light);
+    }
+    .hl-wallpick-check svg {
+      width: 14px;
+      height: 14px;
+      stroke-width: 3;
+    }
+    /* Accent colours: four swatches with their names, in a box. */
+    .hl-swatches {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-2);
+      border-radius: var(--radius-sm);
+      background: var(--solid-widget);
+    }
+    .hl-swatch {
+      width: auto;
+      height: auto;
+      min-height: var(--size-control);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-1);
+      border-radius: var(--radius-sm);
+      color: var(--ink);
+      font: 400 15px/20px var(--hl-font-sans);
+    }
+    .hl-swatch[aria-checked='true'] {
+      font-weight: 700;
+    }
+    .hl-swatch-dot {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      color: var(--ink-on-light);
+    }
+    .hl-swatch-dot svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 3;
+    }
+    .hl-swatch[aria-checked='true'] .hl-swatch-dot {
+      box-shadow:
+        0 0 0 2px var(--solid-widget),
+        0 0 0 4px var(--ink);
+      border-color: transparent;
+    }
+    /* A row's small button reads as the frames' pill (Restart, Download, Free 6.2 GB): 30px drawn inside its 44px
+       target, the link colour on the control colour. */
+    .hl-list-row .hl-btn-secondary.hl-btn-sm,
+    .hl-p-card .hl-btn-secondary.hl-btn-sm {
+      border-width: 7px 0;
+      border-radius: var(--radius-pill);
+      padding-inline: var(--space-4);
+      color: var(--accent-link);
+      font: 700 15px/20px var(--hl-font-sans);
+    }
+    .hl-list-row .hl-btn-secondary.hl-btn-sm:disabled,
+    .hl-p-card .hl-btn-secondary.hl-btn-sm:disabled {
+      color: var(--ink-muted);
+    }
+    /* A row that opens something: the value and chevron at its end, no button look of its own. */
+    .hl-list-row .hl-p-row-value {
+      font: 400 17px/22px var(--hl-font-sans);
+    }
+  }
+}

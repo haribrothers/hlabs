@@ -6,6 +6,8 @@ features: [F-ACCT-01, F-ACCT-02, F-ACCT-03, F-ACCT-04, F-ACCT-09]
 
 For everyone who uses hlabs.
 
+![Settings › Account: your profile, using hlabs as an app, password and two-factor login, and signed-in devices.](../../../../assets/shots/settings.webp)
+
 Open **Settings** from the Dock (or the tab bar on a phone). It opens on **Account**, your own profile and security.
 
 Admins see the sections for the whole of hlabs; family members see only the ones about their own account: Account, Appearance, Notifications and About. At the top of a member's Account page, hlabs says who manages apps, users and system settings, so you know whom to ask. If someone opens a link to a section they can't use, hlabs says "You don't have access to this" and offers a way back to Home.
@@ -16,7 +18,19 @@ Some sections arrive with later updates of hlabs and aren't listed until then.
 
 On a computer, Settings opens as a window: sections on the left, the one you chose on the right. With a keyboard, use the up and down arrow keys in the list of sections and press Enter to open one. Press Escape to close Settings and go back to Home.
 
-On a phone you see the list of sections first. Tap one to open it, and tap **Settings** at the top to go back to the list.
+On a phone you see the list of sections first, starting with your own account. Tap one to open it, and tap **‹ Settings** at the top (or use your browser's back button) to go back to the list.
+
+## Appearance
+
+**Settings › Appearance** is your own look: wallpaper, accent colour, what Home shows, and solid backgrounds or less motion. See [Appearance](/help/get-started/appearance/).
+
+## Storage
+
+**Settings › Storage** (admins) shows what fills the disk, where your data lives and which drives are connected, and frees space from old app images and everyone's trash. See [Storage](/help/get-started/storage/).
+
+## Advanced
+
+**Settings › Advanced** (admins) has hlabs's own logs, a diagnostics bundle for bug reports, the list of services hlabs talks to, beta updates, Restart hlabs and the factory reset. See [Advanced settings](/help/get-started/advanced/).
 
 ## Your profile
 
@@ -24,7 +38,7 @@ On a phone you see the list of sections first. Tap one to open it, and tap **Set
 
 ## Signed-in devices
 
-**Settings › Account** lists every device where you're logged in, the one you're using first ("This device"). Each shows the kind of device and browser, how it reaches hlabs (your home network, Tailscale or this computer) and when it was last used. hlabs works these out from the browser, so it can't show a device's own name.
+**Settings › Account** lists every device where you're logged in, the one you're using first ("This device"). Each shows the kind of device and browser, how it reaches hlabs (your home network, Tailscale or this computer) and when it was last used. hlabs works these out from the browser, so it can't show a device's own name. A sign-in on a public app's address says so, for example "Public app at photos.example.com", and one on the [public dashboard](/help/remote-access/make-the-dashboard-public/) "Public dashboard at hlabs.example.com": each works on that address only.
 
 Don't recognise a device, or lost one? Choose **Sign out** next to it. It's logged out straight away; if hlabs is open on it, it goes to the log-in screen. To log out of the device you're using, choose **Log out** at the bottom of Account.
 

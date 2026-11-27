@@ -19,6 +19,7 @@ apps/web/e2e/.auth/
 .matrix-data/
 .e2e-data-first-run/
 .e2e-data-first-run-*/
+.e2e-data-docs/
 .astro/
 
 apps/daemon/native/.build/

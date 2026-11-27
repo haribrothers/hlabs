@@ -1,6 +1,7 @@
 // One Settings section (US-ACCT-01): the section, "You don't have access to this" for a member at an admin-only URL
 // (no redirect, no admin data asked for), or "Page not found". Opening a section moves focus to its heading.
-import { ScrollPane } from '@hlabs/ui';
+import { PhoneHeader, ScrollPane, TabletBack, useIsTouchPortrait } from '@hlabs/ui';
+import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, type ComponentType } from 'react';
 import { settingsCopy } from '../copy/settings';
 import { useIsDesktop } from '../lib/use-media';
@@ -8,9 +9,13 @@ import { useMe } from '../lib/use-me';
 import { AccessDenied } from '../shell/access-denied';
 import { BackupsActions, BackupsSection } from '../backups/backups-section';
 import { AccountSection } from './account-section';
+import { EditProfileButton } from './profile';
+import { AdvancedSection } from './advanced-section';
+import { AppearanceSection } from './appearance-section';
 import { EngineSection, EngineStatus } from './engine-section';
 import { NetworkSection } from './network-section';
 import { sectionAccess, type SectionId } from './sections';
+import { StorageSection } from './storage-section';
 import { UpdatesSection } from './updates-section';
 import { InviteButton, UsersSection } from './users-section';
 
@@ -19,10 +24,13 @@ const CONTENT: Partial<
 > = {
   account: AccountSection,
   users: UsersSection,
+  appearance: AppearanceSection,
   network: NetworkSection,
+  storage: StorageSection,
   engine: EngineSection,
   updates: UpdatesSection,
   backups: BackupsSection,
+  advanced: AdvancedSection,
 };
 
 /** Something shown next to a section's title, such as the engine's state. */
@@ -30,6 +38,21 @@ const ASIDE: Partial<Record<SectionId, ComponentType>> = {
   users: InviteButton,
   engine: EngineStatus,
   backups: BackupsActions,
+};
+
+/**
+ * On a phone (D-172): what goes at the right of the bar instead ("Edit", the person-plus), and the sections whose
+ * aside is in their content instead (the engine's state is in its card, PhoneRedesignA_Engine).
+ */
+const PHONE_BAR: Partial<Record<SectionId, ComponentType>> = {
+  account: EditProfileButton,
+  users: InviteButton,
+};
+const PHONE_NO_ASIDE = new Set<SectionId>(['users', 'engine']);
+
+/** The browser tab's title (outside the component, so the React compiler leaves `document` alone). */
+const setDocumentTitle = (title: string) => {
+  document.title = title;
 };
 
 export function SectionPage({
@@ -46,12 +69,16 @@ export function SectionPage({
 }) {
   const me = useMe().data;
   const desktop = useIsDesktop();
+  // An iPad in portrait: "‹ Settings" above the title, back to the list (TabletSettingsPortraitPage, US-TAB-05).
+  const portrait = useIsTouchPortrait();
   const heading = useRef<HTMLHeadingElement>(null);
+  const router = useRouter();
+  const navigate = useNavigate();
   const access = me ? sectionAccess(id, me.role, shippedPhase) : null;
   const label = access?.kind === 'ok' ? access.section.label : null;
   useEffect(() => {
     if (!label) return;
-    document.title = settingsCopy.sectionTitle(label);
+    setDocumentTitle(settingsCopy.sectionTitle(label));
     heading.current?.focus();
   }, [label]);
 
@@ -59,6 +86,32 @@ export function SectionPage({
   if (access.kind !== 'ok') return <AccessDenied kind={access.kind} />;
   const Content = CONTENT[access.section.id];
   const Aside = ASIDE[access.section.id];
+  const PhoneBar = PHONE_BAR[access.section.id];
+  const content = Content ? (
+    <Content openTwoFactor={openTwoFactor} next={next} shippedPhase={shippedPhase} />
+  ) : (
+    <p className="m-0 text-body text-ink-muted">{settingsCopy.empty}</p>
+  );
+  const back = () => (router.history.canGoBack() ? router.history.back() : void navigate({ to: '/settings' }));
+  if (!desktop)
+    // A section on a phone (D-172): "‹ Settings" (Back, or the list after a deep link, US-PHONE-04), the section's
+    // name as a large title, then its content on the page, which scrolls as a whole.
+    return (
+      <section className="flex flex-col gap-4" aria-labelledby="settings-section-heading">
+        <PhoneHeader
+          title={access.section.label}
+          titleId="settings-section-heading"
+          titleRef={heading}
+          back={{
+            label: settingsCopy.back,
+            onBack: back,
+          }}
+          barTrailing={PhoneBar ? <PhoneBar /> : undefined}
+          trailing={Aside && !PHONE_NO_ASIDE.has(access.section.id) ? <Aside /> : undefined}
+        />
+        {content}
+      </section>
+    );
   return (
     // The title stays put while the content scrolls under it and fades out (macOS Settings style). The pane
     // reaches the window's top and right edges; the scrollbar starts below the title and stays clear of the corners.
@@ -70,19 +123,20 @@ export function SectionPage({
         bodyClassName={desktop ? 'pl-7 pr-3 pt-2' : 'pl-5 pr-3 pt-2'}
         data-testid="settings-scroll"
         header={
-          <div className="flex items-center justify-between gap-4">
-            <h1 id="settings-section-heading" ref={heading} tabIndex={-1} className="m-0 text-title-1 outline-none">
-              {access.section.label}
-            </h1>
-            {Aside ? <Aside /> : null}
+          <div className="flex flex-col">
+            {portrait ? (
+              <TabletBack label={settingsCopy.back} onBack={() => void navigate({ to: '/settings' })} />
+            ) : null}
+            <div className="flex items-center justify-between gap-4">
+              <h1 id="settings-section-heading" ref={heading} tabIndex={-1} className="m-0 text-title-1 outline-none">
+                {access.section.label}
+              </h1>
+              {Aside ? <Aside /> : null}
+            </div>
           </div>
         }
       >
-        {Content ? (
-          <Content openTwoFactor={openTwoFactor} next={next} shippedPhase={shippedPhase} />
-        ) : (
-          <p className="m-0 text-body text-ink-muted">{settingsCopy.empty}</p>
-        )}
+        {content}
       </ScrollPane>
     </section>
   );

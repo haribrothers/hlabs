@@ -2,7 +2,63 @@ import { STORE_CATEGORY_GROUP_IDS } from '@hlabs/shared';
 import { z } from 'zod';
 import { io } from '../trpc';
 import { homeAppSchema } from './apps';
-import { appIdSchema, appRefSchema, appStateSchema, empty, idSchema, ok, pageInputSchema, pending } from './common';
+import { appIdSchema, appRefSchema, appStateSchema, empty, idSchema, ok, pageInputSchema } from './common';
+
+/** A source address: an https URL (a git repository or where index.json is) or a folder path under the storage root. */
+const sourceAddressInput = z.object({ url: z.string().trim().min(1).max(500) });
+
+/** A problem that left an app out of its source's catalogue (US-STORE-27). */
+export const sourceProblemSchema = z.object({
+  appId: z.string(),
+  /** `apps/<id>/<file>` */
+  file: z.string(),
+  line: z.number().int().positive().optional(),
+  message: z.string(),
+});
+
+/** One source on App sources (US-STORE-18). */
+export const appSourceSchema = z.object({
+  id: idSchema,
+  name: z.string(),
+  /** The address or folder; empty for the built-in store. */
+  url: z.string(),
+  kind: z.enum(['builtin', 'git', 'index', 'local']),
+  appCount: z.number().int().nonnegative(),
+  lastSyncedAt: z.number().nullable(),
+  /** Why the last sync failed (an hlabs code), else null; the previous catalogue stays. */
+  lastError: z.string().nullable(),
+  /** False after a signature mismatch, until removed and added again. */
+  enabled: z.boolean(),
+  signed: z.boolean(),
+  keyFingerprint: z.string().nullable(),
+  problems: z.array(sourceProblemSchema),
+  removable: z.boolean(),
+  /** A folder library's place in Files ("Open folder"), when Files shows it. */
+  filesPath: z.string().nullable(),
+});
+export type AppSource = z.infer<typeof appSourceSchema>;
+
+export const sourceInspectionSchema = z.object({
+  kind: z.enum(['git', 'index', 'local']),
+  url: z.string(),
+  name: z.string(),
+  appCount: z.number().int().nonnegative(),
+  signed: z.boolean(),
+  keyFingerprint: z.string().nullable(),
+});
+
+/** What an update asks for beyond the installed version (US-STORE-16, `newAccess` in @hlabs/app-manifest). */
+export const newAccessSchema = z.object({
+  folders: z.array(z.object({ key: z.string(), label: z.string(), mode: z.enum(['ro', 'rw']) })),
+  ports: z.array(z.object({ label: z.string(), host: z.number(), protocol: z.enum(['tcp', 'udp']) })),
+  permissions: z.object({
+    network: z.enum(['lan', 'internet']).nullable(),
+    gpu: z.boolean(),
+    dockerSocket: z.boolean(),
+    devices: z.array(z.object({ path: z.string(), label: z.string() })),
+    capabilities: z.array(z.string()),
+  }),
+});
 
 /** App updates (US-SYS-25): installed apps with a newer store version, and updates that rolled back. */
 export const storeUpdatesSchema = z.object({
@@ -16,6 +72,24 @@ export const storeUpdatesSchema = z.object({
       toVersion: z.string(),
       /** The new version's "What's new" (Markdown, the manifest's `releaseNotes`); null without notes. */
       releaseNotes: z.string().nullable(),
+      /** When this version reached the store ("released 2 days ago", US-STORE-15). */
+      releasedAt: z.number(),
+      /** What it asks for that the installed version didn't (US-STORE-16); null when nothing. It never updates by
+       * itself then. */
+      newAccess: newAccessSchema.nullable(),
+    }),
+  ),
+  /** Updates that finished in the last 14 days, newest first (US-STORE-15). */
+  recent: z.array(
+    z.object({
+      appId: z.string(),
+      name: z.string(),
+      icon: homeAppSchema.shape.icon,
+      version: z.string(),
+      at: z.number(),
+      automatic: z.boolean(),
+      /** It updated without the backup it asks for: there's no backup destination (US-STORE-16). */
+      notBackedUp: z.boolean(),
     }),
   ),
   /** Updates that didn't start and were rolled back, until an admin dismisses them (US-STORE-17). */
@@ -75,11 +149,24 @@ export const storeServiceSchema = z.object({
 export const storeAppDetailsSchema = z.object({
   host: storeHostSchema,
   app: storeAppSchema,
-  source: z.object({ id: idSchema, name: z.string(), official: z.boolean() }),
+  source: z.object({
+    id: idSchema,
+    name: z.string(),
+    official: z.boolean(),
+    /** Its index is signed (the built-in store always is); unsigned apps say "Not signed" (US-STORE-28). */
+    signed: z.boolean(),
+    kind: z.enum(['builtin', 'git', 'index', 'local']),
+  }),
   version: z.string(),
+  /** The project's website (the manifest's `source`, else its developer's), for "Open the app's website". */
+  website: z.string().nullable(),
   description: z.string(),
   /** The app's README.md (markdown), shown instead of the description when present. */
   readme: z.string().nullable(),
+  /** Drafted from another app store's definition (its NOTICE file, D-148): credited under About (US-STORE-23). */
+  packagedFrom: z.object({ store: z.enum(['Runtipi', 'CasaOS']), license: z.string() }).nullable(),
+  /** What hlabs already does that this app also does (the manifest's `overlaps`): a note on its page (US-STORE-23). */
+  overlaps: z.array(z.enum(['remoteAccess', 'backups', 'appManagement'])),
   releaseNotes: z.string().nullable(),
   /** Up to 5 screenshot URLs. */
   screenshots: z.array(z.string()),
@@ -125,6 +212,9 @@ export const storeAppDetailsSchema = z.object({
     ports: z.array(z.object({ label: z.string(), host: z.number(), protocol: z.enum(['tcp', 'udp']) })),
     gpu: z.boolean(),
     dockerSocket: z.boolean(),
+    /** Devices it uses when they're plugged in, and Linux capabilities it needs (D-163). Both risky. */
+    devices: z.array(z.object({ path: z.string(), label: z.string() })),
+    capabilities: z.array(z.string()),
   }),
   /** Other apps it needs installed first. */
   dependsOn: z.array(z.object({ appId: z.string(), name: z.string(), installed: z.boolean() })),
@@ -181,6 +271,8 @@ export const store = {
       /** A collection's title when `collection` was asked for. */
       title: z.string().nullable(),
       items: z.array(storeAppSchema),
+      /** Every match (after `arm64Only`, before `installedOnly`) and how many are installed: the chips' numbers. */
+      counts: z.object({ all: z.number().int().nonnegative(), installed: z.number().int().nonnegative() }),
       nextCursor: z.string().nullable(),
     }),
   ),
@@ -191,10 +283,27 @@ export const store = {
   ),
   listUpdates: io(empty, storeUpdatesSchema),
   sources: {
-    list: io(empty, pending),
-    inspect: io(z.object({ url: z.string().url() }), pending),
-    add: io(z.object({ url: z.string().url(), publicKey: z.string().optional() }), z.object({ sourceId: idSchema })),
+    list: io(empty, z.object({ sources: z.array(appSourceSchema) })),
+    /** "Trust this source?" (US-STORE-19): what's at an address or folder, before anything is saved. */
+    inspect: io(sourceAddressInput, sourceInspectionSchema),
+    /** Adds it with the fingerprint seen in "Trust this source?" (null: unsigned); refused if it now differs. */
+    add: io(
+      sourceAddressInput.extend({ keyFingerprint: z.string().max(40).nullable() }),
+      z.object({ sourceId: idSchema }),
+    ),
     remove: io(z.object({ sourceId: idSchema }), ok),
-    sync: io(z.object({ sourceId: idSchema.optional() }), ok),
+    /** "Check now": one source (or all) synced; the row as it is after. */
+    sync: io(z.object({ sourceId: idSchema.optional() }), z.object({ sources: z.array(appSourceSchema) })),
   },
+  /**
+   * "Copy to my library" (US-STORE-29): a folder library gets `apps/<newId>/`; a git library's copy is a zip to
+   * download (`/api/store/copy/<token>.zip`, one use, 5 minutes).
+   */
+  copyToLibrary: io(
+    z.object({ appId: appIdSchema, sourceId: idSchema.optional(), libraryId: idSchema, newId: appIdSchema }),
+    z.union([
+      z.object({ kind: z.literal('folder'), appId: appIdSchema, path: z.string() }),
+      z.object({ kind: z.literal('zip'), url: z.string() }),
+    ]),
+  ),
 };

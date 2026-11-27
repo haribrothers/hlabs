@@ -44,3 +44,18 @@ Removes hlabs from this server. Only with `sudo`. See [Uninstall hlabs](../../in
 | `--keep-data` | Keep `/var/lib/hlabs`, so you can reinstall later. |
 | `--delete-everything` | Delete `/var/lib/hlabs` and the `hlabs` user too. |
 | `--yes` | Don't ask whether to uninstall, for scripts. |
+
+## `hlabs library`
+
+Makes your own app library: apps hlabs installs and updates from the App Store like its own. See [Make your own app library](../../apps/your-own-library/). You don't need `sudo` for `init`, `add`, `check` and `index`; `keygen` and `sign` ask hlabs, so they need it like the other commands.
+
+| Command | Does |
+| --- | --- |
+| `hlabs library init <folder>` | Starts a library: a README, `apps/` with an example app, and a GitHub workflow that checks it and rebuilds `index.json` on every push. |
+| `hlabs library add <id> [folder]` | Adds `apps/<id>/` with a manifest and compose file to fill in. |
+| `hlabs library check [folder]` | Checks every app with the App Store's rules and lists each problem with its file and line, such as `apps/wiki/docker-compose.yml:12 Host networking isn't allowed.` Exit code 1 when an app has a problem. |
+| `hlabs library index [folder]` | Writes `index.json` for the apps that pass. A git library needs it. |
+| `hlabs library keygen` | Makes a key to sign libraries with and prints its fingerprint. The private key stays in hlabs's keychain. `--replace` makes a new one. |
+| `hlabs library sign [folder]` | Signs `index.json`: writes `index.json.sig` and `hlabs-library.pub`. |
+
+The folder is the current one unless you give it.

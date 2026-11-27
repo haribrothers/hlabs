@@ -1,0 +1,25 @@
+schema: 1
+id: it-tools
+name: IT-Tools
+version: '2024.10.22'
+revision: 1
+tagline: Handy tools for developers in one page
+description: |
+  Dozens of small tools in one place: encoders and decoders, hash and UUID generators, JSON and YAML
+  formatters, converters and calculators. Everything runs in your browser.
+category: developer
+developer: { name: Corentin Thomasset, url: https://it-tools.tech }
+source: https://github.com/CorentinTh/it-tools
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#18a058', '#0a3d22']
+  fallback: wrench
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 128, disk: 128 }
+web: { service: it-tools, port: 80, embed: true }
+ownLogin: false
+backup:
+  pause: [it-tools]
+  beforeUpdate: true
+permissions: { network: internet }

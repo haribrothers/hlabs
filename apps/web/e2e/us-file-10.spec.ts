@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { homeFolder } from './files';
+import { folderAction, homeFolder } from './files';
 
 test('US-FILE-10 a taken name asks, and Keep both saves "<name> (2).<ext>"', async ({ page }, info) => {
   const name = `Conflict ${info.project.name}`;
@@ -11,7 +11,7 @@ test('US-FILE-10 a taken name asks, and Keep both saves "<name> (2).<ext>"', asy
   try {
     await page.goto(`/files?path=${encodeURIComponent(f.path)}`);
     const chooser = page.waitForEvent('filechooser');
-    await page.getByRole('button', { name: 'Upload' }).click();
+    await (await folderAction(page, info.project.name === 'phone', 'Upload')).click();
     await (await chooser).setFiles([{ name: 'Report.pdf', mimeType: 'application/pdf', buffer: Buffer.from('new') }]);
     const dialog = page.getByRole('dialog', { name: `“Report.pdf” already exists in ${name}` });
     await dialog.getByRole('button', { name: 'Keep both' }).click();

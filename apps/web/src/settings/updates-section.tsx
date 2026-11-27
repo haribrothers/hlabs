@@ -4,12 +4,13 @@
 // job has to finish first ("Wait for … to finish"); the page then shows that hlabs is updating (US-STATE-01).
 import { LogoMark } from '@hlabs/icons';
 import { isFeatureEnabled } from '@hlabs/shared';
-import { Button, List, ListRow, Switch } from '@hlabs/ui';
+import { Badge, Button, List, ListRow, PhoneCard, PillButton, Switch } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { updatesCopy as copy } from '../copy/updates';
 import { handledGlobally, pageQuery, showErrorToast } from '../lib/error-copy';
 import { timeAgo } from '../lib/relative-time';
 import { showToast } from '../lib/toasts';
+import { useIsDesktop } from '../lib/use-media';
 import { useNow } from '../lib/use-now';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useEventStream } from '../lib/use-event-stream';
@@ -110,11 +111,82 @@ function HlabsUpdate() {
     },
   });
 
+  const desktop = useIsDesktop();
   const s = status.data;
   if (!s) return null;
   const checked =
     s.lastCheckedAt === null ? copy.neverChecked : copy.lastChecked(timeAgo(s.lastCheckedAt, now.getTime()));
   const available = s.available;
+  const wait = s.blockedBy ? (
+    <p id="hlabs-update-wait" className="m-0 text-caption text-ink-muted">
+      {copy.waitFor(copy.jobName(s.blockedBy))}
+    </p>
+  ) : null;
+  if (!desktop)
+    // PhoneRedesignA_Updates (US-PHONE-27): a box with the hlabs logo, what's out and what you have, the notes, and a
+    // full-width "Update now"; up to date, "Check now" sits at its right.
+    return (
+      <PhoneCard aria-labelledby="hlabs-update-title" className="flex flex-col gap-3" role="region">
+        <div className="flex items-center gap-3">
+          <span className="hl-p-logo-box" aria-hidden="true">
+            <LogoMark size={LOGO} title="" />
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <h2 id="hlabs-update-title" className="m-0 text-row font-semibold">
+              {available ? copy.available(available.version) : copy.upToDate}
+            </h2>
+            <p className="m-0 flex flex-wrap items-center gap-2 text-footnote text-ink-muted">
+              <span>{available ? copy.youHave(s.version) : copy.versionLine(s.version)}</span>
+              {s.channel === 'beta' ? <Badge tone="accent">{copy.beta}</Badge> : null}
+            </p>
+          </div>
+          {available ? null : (
+            <PillButton
+              aria-busy={check.isPending || undefined}
+              disabled={check.isPending}
+              onClick={() => check.mutate()}
+            >
+              {check.isPending ? copy.checking : copy.checkNow}
+            </PillButton>
+          )}
+        </div>
+        {available && available.notes.length ? (
+          <ul className="m-0 flex list-disc flex-col pl-5 text-body-sm text-ink-muted">
+            {available.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        ) : null}
+        <p className="m-0 flex flex-wrap gap-x-3 text-footnote text-ink-muted">
+          <span>{checked}</span>
+          {available ? (
+            <a
+              href={available.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hl-focus rounded-xs text-accent-link"
+            >
+              {copy.fullNotes}
+            </a>
+          ) : null}
+        </p>
+        {available ? (
+          <>
+            <button
+              type="button"
+              className="hl-p-primary hl-focus"
+              aria-busy={install.isPending || install.isSuccess || undefined}
+              disabled={!!s.blockedBy || install.isPending || install.isSuccess}
+              aria-describedby={s.blockedBy ? 'hlabs-update-wait' : undefined}
+              onClick={() => install.mutate()}
+            >
+              {install.isPending || install.isSuccess ? copy.starting : copy.updateNow}
+            </button>
+            {wait}
+          </>
+        ) : null}
+      </PhoneCard>
+    );
   return (
     <section
       aria-labelledby="hlabs-update-title"
@@ -132,8 +204,10 @@ function HlabsUpdate() {
         <h2 id="hlabs-update-title" className="m-0 text-body font-bold">
           {available ? copy.available(available.version) : copy.upToDate}
         </h2>
-        <p className="m-0 text-body-sm text-ink-muted">
-          {available ? copy.youHave(s.version) : copy.versionLine(s.version)}
+        <p className="m-0 flex flex-wrap items-center gap-2 text-body-sm text-ink-muted">
+          <span>{available ? copy.youHave(s.version) : copy.versionLine(s.version)}</span>
+          {/* On the beta channel (US-SYS-30). */}
+          {s.channel === 'beta' ? <Badge tone="accent">{copy.beta}</Badge> : null}
         </p>
         {available && available.notes.length ? (
           <ul className="m-0 mt-1 flex list-disc flex-col gap-0.5 pl-5 text-body-sm">
@@ -166,11 +240,7 @@ function HlabsUpdate() {
           >
             {install.isPending || install.isSuccess ? copy.starting : copy.updateNow}
           </Button>
-          {s.blockedBy ? (
-            <p id="hlabs-update-wait" className="m-0 text-caption text-ink-muted">
-              {copy.waitFor(copy.jobName(s.blockedBy))}
-            </p>
-          ) : null}
+          {wait}
         </div>
       ) : (
         <Button variant="secondary" busy={check.isPending} onClick={() => check.mutate()}>

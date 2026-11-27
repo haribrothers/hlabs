@@ -7,6 +7,7 @@ import { lstat, mkdir, open, readdir, realpath, rename, stat } from 'node:fs/pro
 import { join } from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { csrfMatches, readCookie, SESSION_COOKIE } from '../auth/sessions';
+import { anonymousAdmin, dashboardSession } from './via';
 import type { Readable } from 'node:stream';
 import { z } from 'zod';
 import { CHUNK_MAX } from '../files/uploads';
@@ -33,8 +34,8 @@ export function whoIs(
     void reply.code(503).send();
     return null;
   }
-  const session = services.sessions.resolve(readCookie(req.headers.cookie, SESSION_COOKIE));
-  if (!session && !devAnonymousAdmin) {
+  const session = dashboardSession(services, req.headers);
+  if (!session && !anonymousAdmin(devAnonymousAdmin, req.headers)) {
     void reply.code(401).send();
     return null;
   }
@@ -195,7 +196,7 @@ function sendError(reply: FastifyReply, err: unknown, logger: Pick<Logger, 'warn
 }
 
 /** Mutations need the session's CSRF header, and a dashboard Origin when one is sent (07 §7.3), as in tRPC. */
-function csrfOk(req: FastifyRequest, raw: string | null, allowedOrigins: () => readonly string[]): boolean {
+export function csrfOk(req: FastifyRequest, raw: string | null, allowedOrigins: () => readonly string[]): boolean {
   if (raw === null) return true; // The development admin (no session).
   const origin = typeof req.headers.origin === 'string' ? req.headers.origin : null;
   if (origin !== null && !allowedOrigins().includes(origin)) return false;
@@ -224,7 +225,7 @@ export function registerFiles(
     const who = whoIs(req, reply, holder, devAnonymousAdmin);
     if (!who) return null;
     const raw = readCookie(req.headers.cookie, SESSION_COOKIE) ?? null;
-    if (!csrfOk(req, who.services.sessions.resolve(raw) ? raw : null, allowedOrigins)) {
+    if (!csrfOk(req, dashboardSession(who.services, req.headers, raw) ? raw : null, allowedOrigins)) {
       void reply.code(403).send({ hlabsCode: 'CSRF_REJECTED', detail: null });
       return null;
     }

@@ -32,7 +32,12 @@ export const appSources = sqliteTable('app_sources', {
   /** Pinned ed25519 key of the source's index signature. */
   publicKey: text('public_key'),
   lastSyncedAt: ms('last_synced_at'),
+  /** What went wrong with the last sync, as an hlabs error code (the dashboard says it in words, US-STORE-18). */
   lastError: text('last_error'),
+  /** Apps left out at the last sync and why, with file and line (US-STORE-27): `[{ appId, file, line?, message }]`. */
+  problemsJson: json<Array<{ appId: string; file: string; line?: number; message: string }>>('problems_json')
+    .notNull()
+    .default([]),
 });
 
 export const catalogApps = sqliteTable(
@@ -46,6 +51,8 @@ export const catalogApps = sqliteTable(
     manifestJson: json<unknown>('manifest_json').notNull(),
     updatedAt: ms('updated_at').notNull(),
     firstSeenAt: ms('first_seen_at').notNull(),
+    /** When this version (or revision) first reached the catalogue: "released 2 days ago" in Updates (US-STORE-15). */
+    versionSeenAt: ms('version_seen_at').notNull().default(0),
   },
   (t) => [primaryKey({ columns: [t.sourceId, t.appId] })],
 );
@@ -133,4 +140,43 @@ export const homeLayout = sqliteTable('home_layout', {
   itemsJson: json<HomeLayoutItem[]>('items_json').notNull().default([]),
   /** Pinned Dock apps, ordered, max 8 (D-054). */
   dockJson: json<string[]>('dock_json').notNull().default([]),
+  /** Apps taken off Home but still installed (US-HOME-18): not appended again as new. */
+  hiddenJson: json<string[]>('hidden_json').notNull().default([]),
+});
+
+/**
+ * Images hlabs itself pulled for an app (US-SYS-13, D-168): the only images "Free space" may ever remove. A row is
+ * written when a pull brings in an image that wasn't on the engine before; one already there (the person's own, or
+ * another hlabs's on the same engine) is never recorded. Rows outlive the app (no foreign key): an uninstalled app's
+ * images are what's left over. A row goes when its image is removed or found gone.
+ */
+export const appImages = sqliteTable(
+  'app_images',
+  {
+    /** `sha256:…`, as the engine names the image. */
+    imageId: text('image_id').notNull(),
+    appId: text('app_id').notNull(),
+    /** The reference pulled, e.g. `jellyfin/jellyfin:10.10.3`. */
+    ref: text('ref').notNull(),
+    pulledAt: ms('pulled_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.imageId, t.appId] })],
+);
+
+/**
+ * A public app (US-APP-27…29, D-150, D-171): a row means the app is reachable from the internet through Cloudflare
+ * Tunnel at `hostname` (a name under the Cloudflare domain); removed when it's made private. `access` is who gets in:
+ * hlabs's login with two-factor, or the app's own login only (`public.ownLoginSafe`, US-APP-28).
+ */
+export const appPublic = sqliteTable('app_public', {
+  appId: text('app_id')
+    .primaryKey()
+    .references(() => apps.id, { onDelete: 'cascade' }),
+  /** `https://photos.example.com` */
+  address: text('address').notNull(),
+  /** `photos.example.com`, lowercase. */
+  hostname: text('hostname').notNull().unique(),
+  access: text('access', { enum: ['hlabs', 'ownLogin'] }).notNull(),
+  enabledBy: text('enabled_by').references(() => users.id, { onDelete: 'set null' }),
+  enabledAt: ms('enabled_at').notNull(),
 });

@@ -1,0 +1,31 @@
+services:
+  openclaw:
+    image: ghcr.io/openclaw/openclaw:2026.11.7@sha256:461cc655301409901f2df11d6ec9f029f9709e4607826e9780fd74f8e1d12a16
+    # Runs as hlabs's user, so its files are hlabs's on Linux; the image's own home (/home/node) is closed to other
+    # users, so OpenClaw's home and state are the data folder at /openclaw.
+    user: ${PUID}:${PGID}
+    # A first start writes the gateway's starting config (local mode); OpenClaw fills in the rest. Its page is reached
+    # through hlabs at addresses that change (this computer's name, Tailscale), so the Control UI accepts the address it
+    # was opened at (Caddy keeps the Host); the gateway token and hlabs's sign-in still guard it.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /openclaw/.openclaw
+        [ -f /openclaw/.openclaw/openclaw.json ] || printf '%s\n' '{"gateway": {"mode": "local", "controlUi": {"dangerouslyAllowHostHeaderOriginFallback": true}}}' > /openclaw/.openclaw/openclaw.json
+        exec tini -s -- node /app/docker-entrypoint.mjs node dist/index.js gateway --bind lan --port 18789
+    environment:
+      HOME: /openclaw
+      OPENCLAW_HOME: /openclaw
+      OPENCLAW_STATE_DIR: /openclaw/.openclaw
+      OPENCLAW_CONFIG_PATH: /openclaw/.openclaw/openclaw.json
+      OPENCLAW_WORKSPACE_DIR: /openclaw/.openclaw/workspace
+      OPENCLAW_GATEWAY_PORT: '18789'
+      OPENCLAW_GATEWAY_TOKEN: ${GATEWAY_TOKEN}
+      OPENCLAW_DISABLE_BONJOUR: '1'
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      OLLAMA_HOST: http://ollama:11434
+    volumes:
+      - ${HLABS_APP_DATA}/state:/openclaw

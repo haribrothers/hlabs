@@ -1,0 +1,26 @@
+schema: 1
+id: ddns-updater
+name: DDNS Updater
+version: '2.10.0'
+revision: 1
+tagline: Keep a domain pointed at your home
+description: |
+  When your home's internet address changes, DDNS Updater updates your domain at Cloudflare, Namecheap,
+  DuckDNS and dozens of other providers. Add your domains to config.json in its data. It has no login
+  of its own: the hlabs login protects it.
+category: network
+developer: { name: Quentin McGaw, url: https://github.com/qdm12/ddns-updater }
+source: https://github.com/qdm12/ddns-updater
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#4f46e5', '#1e1b4b']
+  fallback: globe
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 64, disk: 128 }
+web: { service: ddns-updater, port: 8000, embed: true }
+ownLogin: false
+backup:
+  pause: [ddns-updater]
+  beforeUpdate: true
+permissions: { network: internet }

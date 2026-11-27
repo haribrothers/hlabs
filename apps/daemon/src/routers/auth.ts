@@ -1,12 +1,68 @@
 import type { AppHandlers } from '@hlabs/api';
-import { hlabsError } from '@hlabs/api';
-import { auditLog, getSetting, getUserSetting, sessions, users } from '@hlabs/db';
+import { hlabsCodeOf, hlabsError } from '@hlabs/api';
+import { auditLog, getSetting, sessions, users } from '@hlabs/db';
 import { ulid } from '@hlabs/shared';
 import { asc, eq, isNull } from 'drizzle-orm';
+import { appearanceFor } from '../account/appearance';
+import { noteSignInPlace } from '../auth/new-place';
 import { csrfTokenFor } from '../auth/sessions';
 import { clearSessionCookie, setSessionCookie } from './session-cookie';
 import type { DaemonContext } from '../context';
 import { resetPassword } from '../users/reset-link';
+
+/** Wrong passwords and codes, and the lockout: what counts toward the public limit per address (US-SYS-46). */
+const FAILED_SIGN_IN = new Set([
+  'AUTH_INVALID_CREDENTIALS',
+  'AUTH_TOTP_INVALID',
+  'AUTH_RECOVERY_INVALID',
+  'AUTH_LOCKED',
+]);
+
+/** An address refused after too many failed sign-ins on a public address: AUTH_LOCKED for the rest of the hour. */
+const addressRefused = (until: number) =>
+  hlabsError('AUTH_LOCKED', 'Too many failed sign-ins from this address', {
+    retryAfterSeconds: Math.max(1, Math.ceil((until - Date.now()) / 1000)),
+    address: true,
+  });
+
+/**
+ * A sign-in step on the public dashboard (US-SYS-46, D-182): its public name (the session belongs to it only), once
+ * the visitor's address isn't refused by the public limit; undefined at home or on the tailnet.
+ */
+function publicSignIn(ctx: DaemonContext): string | undefined {
+  if (ctx.request.via !== 'public') return undefined;
+  const host = ctx.request.publicHost;
+  if (!host) throw hlabsError('NOT_FOUND');
+  const until = ctx.services.publicApps.limiter.refusedUntil(ctx.request.ip, Date.now());
+  if (until) throw addressRefused(until);
+  return host;
+}
+
+/** On the public dashboard a failed step counts toward the address's limit; the one over it refuses the address. */
+async function countingFailures<T>(ctx: DaemonContext, publicHost: string | undefined, work: () => Promise<T>) {
+  try {
+    return await work();
+  } catch (err) {
+    if (publicHost && FAILED_SIGN_IN.has(hlabsCodeOf(err))) {
+      const { publicApps } = ctx.services;
+      publicApps.dashboardSignInFailed(ctx.request.ip);
+      const until = publicApps.limiter.refusedUntil(ctx.request.ip, Date.now());
+      if (until) throw addressRefused(until);
+    }
+    throw err;
+  }
+}
+
+/** After a sign-in on the public dashboard: a new place is told to the person (US-SYS-46). */
+function afterPublicSignIn(ctx: DaemonContext, publicHost: string | undefined, userId: string) {
+  if (!publicHost) return;
+  noteSignInPlace(ctx.services.db, ctx.services.bus, {
+    userId,
+    ip: ctx.request.ip,
+    country: ctx.request.country,
+    publicHost,
+  });
+}
 
 export const auth: AppHandlers<DaemonContext>['auth'] = {
   /**
@@ -53,7 +109,34 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
   listSessions: (_input, ctx) => {
     const id = ctx.identity;
     if (id.kind !== 'user' || !id.session) throw hlabsError('AUTH_REQUIRED');
-    return { items: ctx.services.sessions.listFor(id.userId, id.session.id) };
+    const dashboard = getSetting(ctx.services.db, 'public').dashboard?.hostname.toLowerCase() ?? null;
+    return {
+      items: ctx.services.sessions
+        .listFor(id.userId, id.session.id)
+        .map((s) => ({ ...s, publicDashboard: s.publicHost !== null && s.publicHost === dashboard })),
+    };
+  },
+  /**
+   * "Sign out everywhere" (US-SYS-46): every session of mine but this one ends, wherever it was signed in; each device
+   * hears `session.revoked`. Works from the public dashboard too.
+   */
+  revokeOtherSessions: (_input, ctx) => {
+    const id = ctx.identity;
+    if (id.kind !== 'user' || !id.session) throw hlabsError('AUTH_REQUIRED');
+    const ended = ctx.services.sessions.revoke({ userId: id.userId, except: id.session.id });
+    ctx.services.db
+      .insert(auditLog)
+      .values({
+        id: ulid(),
+        at: Date.now(),
+        userId: id.userId,
+        action: 'session.revokeOthers',
+        target: id.userId,
+        detailJson: { ended: ended.length },
+        ip: ctx.request.ip,
+      })
+      .run();
+    return { ended: ended.length };
   },
   /**
    * Log out (US-AUTH-16): this session only; the cookie is cleared on the domain it was set on, so app hostnames'
@@ -82,39 +165,51 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
   useRecoveryCode: async ({ challengeId, code }, ctx) => {
     const { origin, allowedOrigins, ip, userAgent } = ctx.request;
     if (origin !== null && !allowedOrigins.includes(origin)) throw hlabsError('CSRF_REJECTED');
-    const { session, redirectTo, recoveryCodesLeft } = await ctx.services.login.useRecoveryCode({
-      challengeId,
-      code,
-      ip,
-      userAgent,
-    });
+    const publicHost = publicSignIn(ctx);
+    const userId = ctx.services.login.challenge(challengeId)?.userId;
+    const { session, redirectTo, recoveryCodesLeft } = await countingFailures(ctx, publicHost, () =>
+      ctx.services.login.useRecoveryCode({ challengeId, code, ip, userAgent, publicHost }),
+    );
     setSessionCookie(ctx, session);
+    if (userId) afterPublicSignIn(ctx, publicHost, userId);
     return { redirectTo, recoveryCodesLeft };
   },
   /** The two-factor step of a log-in (US-AUTH-08). */
   verifyTotp: async ({ challengeId, code }, ctx) => {
     const { origin, allowedOrigins, ip, userAgent } = ctx.request;
     if (origin !== null && !allowedOrigins.includes(origin)) throw hlabsError('CSRF_REJECTED');
-    const { session, redirectTo } = await ctx.services.login.verifyTotp({ challengeId, code, ip, userAgent });
+    const publicHost = publicSignIn(ctx);
+    const userId = ctx.services.login.challenge(challengeId)?.userId;
+    const { session, redirectTo } = await countingFailures(ctx, publicHost, () =>
+      ctx.services.login.verifyTotp({ challengeId, code, ip, userAgent, publicHost }),
+    );
     setSessionCookie(ctx, session);
+    if (userId) afterPublicSignIn(ctx, publicHost, userId);
     return { redirectTo };
   },
   /**
    * Username and password (US-AUTH-03). Public, but only from the dashboard's own origin. Two-factor accounts get a
-   * challenge instead of a session (US-AUTH-08).
+   * challenge instead of a session (US-AUTH-08). On the public dashboard (US-SYS-46) two-factor is always asked
+   * (AUTH_TWO_FACTOR_REQUIRED without it, and no session), there's no "Remember me", the session belongs to that
+   * address only and ends after 12 hours, and failures count toward the address's limit too.
    */
   login: async ({ username, password, remember, next }, ctx) => {
     const { origin, allowedOrigins, ip, userAgent } = ctx.request;
     if (origin !== null && !allowedOrigins.includes(origin)) throw hlabsError('CSRF_REJECTED');
-    const result = await ctx.services.login.login({
-      username,
-      password,
-      remember: remember ?? false,
-      next,
-      ip,
-      userAgent,
-    });
+    const publicHost = publicSignIn(ctx);
+    const result = await countingFailures(ctx, publicHost, () =>
+      ctx.services.login.login({
+        username,
+        password,
+        remember: publicHost ? false : (remember ?? false),
+        next,
+        ip,
+        userAgent,
+        publicHost,
+      }),
+    );
     if (result.kind === 'totp') return { status: 'totp_required' as const, challengeId: result.challengeId };
+    if (result.kind === 'twoFactorRequired') throw hlabsError('AUTH_TWO_FACTOR_REQUIRED');
     setSessionCookie(ctx, result.session);
     return { status: 'ok' as const, redirectTo: result.redirectTo };
   },
@@ -124,7 +219,10 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
    */
   listLoginUsers: (_input, ctx) => {
     const { db } = ctx.services;
-    if (!getSetting(db, 'people').showUserList) return { users: [] };
+    // Never on the public dashboard: strangers don't learn who uses hlabs (US-SYS-46).
+    const via = ctx.request.via;
+    if (via === 'public') return { users: [], via };
+    if (!getSetting(db, 'people').showUserList) return { users: [], via };
     const rows = db
       .select({
         id: users.id,
@@ -144,6 +242,7 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
         ...rows.filter((u) => u.role === 'admin').sort(byName),
         ...rows.filter((u) => u.role !== 'admin').sort(byName),
       ],
+      via,
     };
   },
 
@@ -179,8 +278,9 @@ export const auth: AppHandlers<DaemonContext>['auth'] = {
       canSeeShared: admin || user.canSeeShared,
       // Whether this session was started with "Remember me", so this device can reuse the choice (US-AUTH-14).
       remember: id.session.remember,
-      appearance: getUserSetting(ctx.services.db, 'appearance', user.id),
+      appearance: appearanceFor(ctx.services.db, user.id),
       csrfToken: csrfTokenFor(id.session.raw),
+      via: ctx.request.via,
     };
   },
 };

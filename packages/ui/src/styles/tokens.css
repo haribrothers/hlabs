@@ -5,6 +5,14 @@
   --wall-coral: #f97b5c;
   --wall-violet: #6d4aff;
   --wall-teal: #0ea5a0;
+  --wall-ocean-base: #0a1638;
+  --wall-ocean-cyan: #22c7e0;
+  --wall-ocean-blue: #2f6bff;
+  --wall-ocean-violet: #6d4aff;
+  --wall-forest-base: #0c1f16;
+  --wall-forest-gold: #e0b416;
+  --wall-forest-green: #1fa64a;
+  --wall-forest-teal: #0e9f86;
   --logo-coral: #ff8a6b;
   --logo-violet: #8b6bff;
   --logo-teal: #2dd4bf;
@@ -34,6 +42,12 @@
   --danger: #ff9a9e;
   --danger-fill: #c4262b;
   --badge: #d92d20;
+  --solid-widget: #2b2350;
+  --solid-window: #221b42;
+  --solid-dialog: #241d46;
+  --solid-row: #332a5c;
+  --solid-control: #3d3468;
+  --solid-input: #2e2656;
   --chart-1: #8b6bff;
   --chart-2: #e5694a;
   --chart-3: #14a39a;
@@ -79,6 +93,23 @@
   --size-control: 44px;
   --size-window: 1240px;
   --size-dock-tile: 56px;
+  --size-widget: 156px;
+  --size-widget-phone: 122px;
+  --size-tab-bar: 49px;
+  --size-home-indicator: 34px;
+  --size-tab-lens: 52px;
+  --size-nav-bar: 44px;
+  --size-row: 48px;
+  --size-icon-square: 30px;
+  --size-app-icon-phone: 60px;
+  --size-list-icon: 56px;
+  --size-button-phone: 50px;
+  --size-grabber: 36px;
+  --size-dock-edge-touch: 28px;
+  --size-row-touch: 60px;
+  --size-icon-square-touch: 36px;
+  --size-menu-touch: 272px;
+  --size-field-text-touch: 16px;
 }
 
 [data-theme='solid'] {

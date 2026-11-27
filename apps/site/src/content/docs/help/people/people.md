@@ -6,6 +6,8 @@ features: [F-ACCT-05, F-ACCT-07, F-ACCT-08, F-ACCT-06]
 
 For admins only.
 
+![Settings › Users: Hari, the admin, and two family members with Apps access and Reset password, then the log-in screen and what members can do.](../../../../assets/shots/people.webp)
+
 Open **Settings › Users** to see everyone who uses hlabs. The heading shows how many people there are, counting invites that haven't been used yet.
 
 Each person shows:
@@ -21,6 +23,8 @@ Admins can change everything and open every app. Members only see the apps you s
 Someone who has been disabled is shown faded, with a **Disabled** label. They can't log in until an admin enables them again; their account and files are kept.
 
 Invites that haven't been used yet are listed under the people, with when the link was made, how many days it has left and the role it gives. Invites that were used or have expired aren't listed.
+
+On a phone, everyone is in one list with their role at the right. Tap **•••** on a person's row for everything you can do for them: **Apps access**, **Reset password…**, **Make admin**, **Disable** and **Delete…**. On a waiting invite, **•••** has **Copy link** and **Revoke**. **Invite someone** is at the end of the list and as the person-with-a-plus at the top right; the invite opens as a sheet with **Close** and **Done** at its top and **Member** or **Admin** side by side.
 
 ## Invite someone
 

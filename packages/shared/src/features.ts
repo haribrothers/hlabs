@@ -46,9 +46,13 @@ export const FEATURE_PHASE = {
   notifications: 7,
   /** The App Store updates list (F-STORE-08) and the Dock's update badge (US-HOME-05). */
   appUpdates: 7,
-  /** "Update all" in Settings › Updates (US-SYS-25). */
+  /** "Update all" in Settings › Updates (US-SYS-25) and the App Store's Updates (US-STORE-15). */
   updateAll: 7,
+  /** A category's sort (Popular, New, A–Z) and its count line (US-STORE-04). */
+  storeBrowse: 7,
   homeEdit: 7,
+  /** Pinned apps in the Dock (US-HOME-22). */
+  dockPins: 7,
   widgets: 7,
   storeSources: 7,
   appearance: 7,
@@ -86,10 +90,46 @@ export const FEATURE_PHASE = {
   advancedSettings: 7,
   about: 8,
   notificationPrefs: 9,
+  /** Public apps through Cloudflare Tunnel (F-APP-10, F-SYS-13, D-171): Settings › Network › Public access, an app's
+   * "Make public…", Visits and the menu bar's "Turn off public access". */
+  publicApps: 7,
+  /** The dashboard on a public address of its own (F-SYS-14, D-182): its row in Public access, "At home only" on the
+   * public address, the public sign-in and Cloudflare's sign-in in front (US-SYS-45…48). */
+  publicDashboard: 7,
 } as const satisfies Record<string, number>;
 
 export type Feature = keyof typeof FEATURE_PHASE;
 
+/**
+ * Phase 7 is built in groups (D-151, D-156): its features that are built already, previewed on the dashboard's dev
+ * server with BUILDING_PHASE's, while the rest of the phase stays hidden. Add a feature when its group lands.
+ */
+export const BUILT_AHEAD: readonly Feature[] = [
+  'notifications',
+  'homeEdit',
+  'widgets',
+  'dockPins',
+  'storeBrowse',
+  'appUpdates',
+  'updateAll',
+  'storeSources',
+  'appUsage',
+  'appConfig',
+  'appPermissions',
+  'appearance',
+  'storageSettings',
+  'advancedSettings',
+  'factoryReset',
+  'pwa',
+  'publicApps',
+  'publicDashboard',
+];
+
+/** The dev server is previewing (never in a build or unit tests). */
+const PREVIEWING = typeof __HLABS_PREVIEW_PHASE__ !== 'undefined' && __HLABS_PREVIEW_PHASE__ !== null;
+
 export function isFeatureEnabled(feature: Feature, shippedPhase: number = VISIBLE_PHASE): boolean {
-  return FEATURE_PHASE[feature] <= shippedPhase;
+  if (FEATURE_PHASE[feature] <= shippedPhase) return true;
+  // Only for the dev server's own view, not a phase a caller (a test) asks about.
+  return PREVIEWING && shippedPhase === VISIBLE_PHASE && BUILT_AHEAD.includes(feature);
 }

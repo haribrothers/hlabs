@@ -1,0 +1,12 @@
+services:
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:17.0.2@sha256:879f4f10a98e3e167b32cde5f7ae3af0163d50bfacf567559a27a0e95a95670c
+    environment:
+      USER_UID: ${PUID}
+      USER_GID: ${PGID}
+      FORGEJO__database__DB_TYPE: sqlite3
+      FORGEJO__server__DOMAIN: ${HLABS_HOSTNAME}
+      FORGEJO__server__ROOT_URL: ${HLABS_URL}/
+      FORGEJO__server__DISABLE_SSH: 'true'
+    volumes:
+      - ${HLABS_APP_DATA}/data:/data

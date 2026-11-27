@@ -21,6 +21,8 @@ The system half of Settings: how hlabs is reached on the home network and over T
 | F-SYS-10 | AI access (MCP) | P3 | 8 | `SettingsAI` |
 | F-SYS-11 | Factory reset | P2 | 7 | `FactoryReset` |
 | F-SYS-12 | About | P3 | 8 | `SettingsAbout` |
+| F-SYS-13 | Public access | P2 | 7 | `SettingsNetworkPublic`, `PublicSetup`, `TrayPublic` |
+| F-SYS-14 | Public dashboard | P2 | 7 | `SettingsNetworkPublicDashboard`, `DashboardPublic`, `LoginPublic`, `HomeOnlyAction`, `HomePublicAddress`, `CloudflareAccessSetup` |
 
 ## User stories
 
@@ -709,6 +711,109 @@ The system half of Settings: how hlabs is reached on the home network and over T
 **Implementation notes**
 - API: none (static asset).
 - UI: Dialog, TextField (search), List/ListRow.
+
+### US-SYS-43 · Set up a way to make apps public
+**Feature:** F-SYS-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** `SettingsNetworkPublicNone`, `PublicSetup`, `PublicRemove`
+**As** an admin, **I want** to connect hlabs to Cloudflare Tunnel, **so that** I can share apps without opening my router (D-171).
+
+**Acceptance criteria**
+- **Given** Settings › Network & remote access, **then** a "Public access" group says "Make single apps, or the dashboard itself, reachable from the internet." (D-182) and, until it's set up, "Public apps go through Cloudflare Tunnel, at names under a domain of yours. Your tailnet stays private." with "Set up Cloudflare Tunnel…".
+- **Given** "Set up Cloudflare Tunnel…", **then** `PublicSetup` says what's needed first ("A domain of yours, added to your Cloudflare account", with a help link for adding one) and "Cloudflare will see the traffic to your public apps.", and offers **"Sign in to Cloudflare"**: hlabs shows Cloudflare's sign-in link (opened in a new tab), I approve and pick the domain there, and hlabs receives a credential for that domain only, then creates the tunnel and starts its connector, all without leaving hlabs (D-171). "Use an API token instead" stays as a fallback: it says what the token needs ("Zone · DNS · Edit and Account · Cloudflare Tunnel · Edit, for this domain only") and checks it. The credential or token goes to the keychain (07 §7.7).
+- **Given** the domain has other DNS records (a website, email), **then** hlabs only ever creates, changes and deletes the records it made for its public apps (kept in `settings.public`), never anyone else's, and refuses a name that's already in the domain's DNS (`PUBLIC_HOSTNAME_TAKEN`).
+- **Given** Cloudflare Tunnel is set up, **when** I remove it, **then** every public app is made private first (listed in the confirmation), then the tunnel, its DNS records and the token are deleted.
+- **Given** "What hlabs connects to" (US-SYS-29), **then** it lists Cloudflare while the tunnel is set up.
+
+**Implementation notes**
+- API: `public.status` (admin) → `{ cloudflare: { state, domain?, reason? }, apps: [...] }`; `public.cloudflareSignIn` → `{ url }` then `public.status` until the domain is chosen, or `public.setupCloudflare { domain, token }`; `public.remove`; audited.
+- The `cloudflared` connector is a bundled binary like Caddy (pinned, checksum-verified, 07 §7.9), run by the daemon, its credentials in the data dir (0600).
+- Data: `settings.public` (the tunnel's state and the DNS records hlabs made), keychain `cloudflare-credential` (the sign-in's credential or the token).
+
+### US-SYS-44 · See and stop everything that's public
+**Feature:** F-SYS-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** `SettingsNetworkPublic`, `PublicTurnOffAll`, `TrayPublic`
+**As** an admin, **I want** one place that shows every public app and stops them all, **so that** I always know what strangers can reach.
+
+**Acceptance criteria**
+- **Given** the Public access group, **then** it lists each public app: name, address, who can get in, since when and by whom, with "Visits" and "Make private".
+- **Given** "Turn off all public access", **when** confirmed, **then** every public app is made private in one job, the tunnel stays set up, it's audited and other admins are notified.
+- **Given** the menu-bar app, **when** any app is public, **then** its menu shows "Public: 2 apps" with "Turn off public access", which does the same after the computer's own confirmation (Touch ID or your password, as for US-INST-18).
+- **Given** nothing is public, **then** the group reads "No apps are public."
+
+**Implementation notes**
+- API: `public.turnOffAll` (admin, and `tray.publicOff` for the menu-bar app) → `{ jobId }`; `tray.status` gains `publicApps` (count).
+
+### US-SYS-45 · Make the dashboard public
+**Feature:** F-SYS-14 · **Priority:** P2 · **Phase:** 7 · **Screens:** `SettingsNetworkPublicDashboard`, `DashboardPublic`, `TrayPublic`
+**As** an admin, **I want** to choose to make the hlabs dashboard reachable from the internet, **so that** the people in my household can use hlabs from a device without Tailscale (D-182).
+
+**Acceptance criteria**
+- **Given** Cloudflare Tunnel is set up (US-SYS-43), **then** the Public access group has a "Dashboard" row: "Not public. Reach it at home or on your tailnet." with "Make public…"; without the tunnel it reads "Set up Cloudflare Tunnel first to make the dashboard public." It's off by default, on every install.
+- **Given** "Make public…", **then** `DashboardPublic` shows the address it will have (a name under my domain, suggested `hlabs`, e.g. `hlabs.example.com`), what changes ("Anyone on the internet can reach the sign-in page. Everyone signs in with two-factor, and some changes only work at home."), the list of what only works at home (US-SYS-47), the recommendation to add Cloudflare's sign-in in front (US-SYS-48), and asks for my password before "Make the dashboard public".
+- **Given** an admin has no two-factor login, **then** the button is off and the dialog says who ("Asha hasn't turned on two-factor login yet. Every admin needs it before the dashboard can be public."); members without two-factor don't block it but can't sign in there (US-SYS-46).
+- **Given** I confirm, **then** a `dashboard_public_on` job adds the name to the tunnel (a DNS record hlabs made, as for apps), the row reads "Public at https://hlabs.example.com · since 3 Dec by Hari" with an amber "Public" badge, `audit_log` records it, and every other admin gets "Hari made the dashboard public at https://hlabs.example.com".
+- **Given** "Make private", **when** confirmed, **then** the address stops answering within seconds, every session signed in there ends, the DNS record is deleted, it's audited and the other admins are notified. Making it private works from the public address too (it ends my own session there).
+- **Given** "Turn off all public access" (US-SYS-44) or the menu-bar item, **then** the dashboard is made private along with the apps; the menu reads "Public: the dashboard and 2 apps".
+- **Given** Cloudflare Tunnel is removed (US-SYS-43), **then** the dashboard is made private first, listed in the confirmation with the apps.
+
+**Implementation notes**
+- API: `public.setDashboard { public, hostname?, password }` (admin; password re-checked) → `{ jobId }`; `public.status` gains `dashboard: { address, hostname, since, by, cloudflareAccess } | null` and `dashboardBlockedBy: [displayName]` (admins without two-factor). hlabsCodes: `TWO_FACTOR_REQUIRED_FOR_DASHBOARD` (`{ admins }`), `PUBLIC_HOSTNAME_TAKEN`, `PUBLIC_NOT_SET_UP`.
+- Data: `settings.public.dashboard { hostname, recordId, since, by, access }`; job kinds `dashboard_public_on`, `dashboard_public_off`; notification kind `dashboard.public_on` (info, other admins); event `public.statusChanged`.
+- Caddy: the dashboard's name gets a route on the public listener (D-178, D-181) to the dashboard and the daemon's `/trpc`, `/api` and the dashboard's own paths, as on the home server, with the public hardening; Caddy sets `X-Hlabs-Via: public` there and deletes it from every request on every other server, so only the public listener can say a request came from the internet. The dashboard's origins (CSRF) gain the public address while it's public.
+- `tray.status` gains `publicDashboard` (bool).
+
+### US-SYS-46 · Sign in to the public dashboard
+**Feature:** F-SYS-14 · **Priority:** P2 · **Phase:** 7 · **Screens:** `LoginPublic`, `Login2FA`, `LoginLocked`
+**As** someone with an hlabs account, **I want** to sign in to the dashboard from anywhere, **so that** I can use hlabs away from home, safely.
+
+**Acceptance criteria**
+- **Given** the public address, **then** the sign-in asks for my username and password (`LoginPublic`): it never lists who uses hlabs, and has no "Remember this phone".
+- **Given** a right password, **then** the two-factor code is always asked (`Login2FA`, recovery codes work); someone without two-factor gets "Turn on two-factor login first. Signing in from the internet needs it. Turn it on in hlabs at home, under Settings › Account." and no session is made.
+- **Given** I'm signed in there, **then** the session belongs to the public address only (a session from home or the tailnet doesn't work there, and the other way round), ends after 12 hours however active I am, and is listed in Settings › Account sessions as "Public dashboard at hlabs.example.com".
+- **Given** a sign-in from a place I haven't signed in from in 30 days (another network address and country), **then** I get a notification "New sign-in to hlabs from <country> (<address>)" with "Not you? Sign out everywhere", and it's in `audit_log`.
+- **Given** failed sign-ins, **then** the lockout of 07 §7.2 applies, and more than 20 failures in 10 minutes from one address refuse it for an hour and warn the admins ("Someone keeps trying to sign in to the hlabs dashboard"), as for public apps (US-APP-29).
+- **Given** the first-run setup, an invite link or a password reset link, **then** they're never served on the public address: it answers "Open this at home or on your tailnet."
+
+**Implementation notes**
+- Sessions: the dashboard's login on the public listener makes a session with `sessions.public_host` = the dashboard's public name (D-178's column), `remember` false and `expires_at` 12 hours on; `auth.me` and every request check that `X-Hlabs-Via: public` and `public_host` agree, so a cookie taken from home is refused there.
+- `auth.me` gains `via: 'home' | 'tailnet' | 'public'` (the UI uses it for US-SYS-47 and the app tiles).
+- Notification kind `account.new_sign_in` (warning, to the person; action `auth.revokeOtherSessions`, label "Sign out everywhere"); its "seen places" are the last 30 days of the person's own sign-ins in `audit_log`.
+
+### US-SYS-47 · Some changes only work at home
+**Feature:** F-SYS-14 · **Priority:** P2 · **Phase:** 7 · **Screens:** `HomeOnlyAction`, `HomePublicAddress`
+**As** an admin, **I want** the riskiest changes to need me at home or on the tailnet, **so that** a stolen password and code can't take over the whole computer (D-182).
+
+**Acceptance criteria**
+- **Given** the public address, **then** these answer "Do this at home or on your tailnet" (`HomeOnlyAction`) instead of doing it, for everyone, admins too:
+  - factory reset;
+  - Cloudflare Tunnel set up or removed, making an app or the dashboard public or changing how, and every other Network & remote access change (Tailscale, ports, DNS, the server's name);
+  - adding or removing app sources and libraries, deploying your own apps, changing an app's configuration, permissions or "Require hlabs login", and showing its secrets;
+  - creating AI access tokens;
+  - inviting people, changing someone's role, deleting a person, making reset links, and requiring two-factor for everyone;
+  - changing my own password, turning two-factor off or on, and new recovery codes;
+  - restoring a backup, adding, changing or removing a backup destination, and showing a backup password;
+  - moving where data lives, and switching the container engine.
+  Making things private, "Turn off all public access" and signing out everywhere still work there: stopping exposure is never home-only.
+- **Given** a control for one of these on the public address, **then** it shows, with a house icon and "At home only", instead of being hidden, and choosing it explains why.
+- **Given** a request for one of these from the public address made some other way (not the UI), **then** the daemon refuses it with `HOME_ONLY` and records the attempt in `audit_log`.
+- **Given** the public dashboard's Home, **then** a public app's tile opens its public address; any other app's tile shows "At home only" and says "<App> opens at home or on your tailnet." (admins also see "Make <App> public…", which is itself home-only); Files, Usage, Backups and Notifications work as at home.
+
+**Implementation notes**
+- Each of these procedures is declared home-only in the router (`homeOnlyProcedure`, or a `homeOnly: true` meta read by one middleware), enforced in the daemon from `X-Hlabs-Via`, never only in the UI; a contract test lists them so a new procedure must choose.
+- hlabsCode `HOME_ONLY`.
+
+### US-SYS-48 · Add Cloudflare's sign-in in front of the dashboard
+**Feature:** F-SYS-14 · **Priority:** P2 · **Phase:** 7 · **Screens:** `CloudflareAccessSetup`
+**As** an admin, **I want** Cloudflare to check who someone is before they even reach the hlabs sign-in, **so that** bots and strangers never see it (D-182).
+
+**Acceptance criteria**
+- **Given** the dashboard is public, or I'm making it public, **then** "Add Cloudflare's sign-in in front (recommended)" explains it ("Cloudflare asks for a code sent to an email address on your list before showing hlabs's sign-in. It's free for up to 50 people.") with a field for the email addresses allowed.
+- **Given** I add it, **then** hlabs creates a Cloudflare Access application for the dashboard's name with a policy allowing those email addresses (one-time code by email), and the row reads "Cloudflare's sign-in in front · 3 email addresses" with "Change…" and "Remove".
+- **Given** the Cloudflare credential can't manage Access, **then** it says so and asks for an API token with "Account · Access: Apps and Policies · Edit" and "Account · Access: Organizations, Identity Providers, and Groups · Edit" (the one-time PIN login method, D-186) added, kept in the keychain with the other credential.
+- **Given** the dashboard is made private or Cloudflare Tunnel is removed, **then** the Access application hlabs made is deleted too; hlabs never changes Access applications it didn't make.
+- **Given** the email addresses, **then** they're kept in `settings.public.dashboard.access` (admins only), never in logs or diagnostics.
+
+**Implementation notes**
+- API: `public.setDashboardAccess { emails } | { off: true }` (admin, home-only) → `{ jobId }`; hlabsCodes `CLOUDFLARE_FAILED { step: 'access' }`.
+- `CloudflareClient` gains `createAccessApp`, `updateAccessPolicy`, `deleteAccessApp` (the fake keeps them in memory); checked by hand with Hari's domain (Q-25).
 
 ## API additions
 Merged into [05-api](../prd/05-api.md) under "Contract additions from the feature files".

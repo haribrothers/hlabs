@@ -11,6 +11,7 @@ import { errorCode, errorLine } from '../lib/error-copy';
 import { showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useIsDesktop } from '../lib/use-media';
+import { HomeOnly } from '../public/home-only';
 
 type Dns = NetworkStatus['dns'];
 type Kind = Dns['kind'];
@@ -61,9 +62,11 @@ export function DnsServerRows({ dns }: { dns: Dns }) {
         trailing={
           <span className="flex items-center gap-2">
             {problem ? <Badge tone="warning">{problem}</Badge> : null}
-            <Button variant="secondary" size="sm" aria-label={copy.changeDns} onClick={() => setChanging(true)}>
-              {copy.change}
-            </Button>
+            <HomeOnly procedure="network.setDnsServer" label={copy.change} name={copy.changeDns}>
+              <Button variant="secondary" size="sm" aria-label={copy.changeDns} onClick={() => setChanging(true)}>
+                {copy.change}
+              </Button>
+            </HomeOnly>
           </span>
         }
       />

@@ -1,0 +1,9 @@
+services:
+  changedetection:
+    image: docker.io/dgtlmoon/changedetection.io:0.70.4@sha256:b6aae2572a0bf1a671b1b202365ddcfe16a31fa8a60be89df606705731b55f8b
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      BASE_URL: ${HLABS_URL}
+    volumes:
+      - ${HLABS_APP_DATA}/datastore:/datastore

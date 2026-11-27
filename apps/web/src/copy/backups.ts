@@ -16,6 +16,16 @@ export const backupsCopy = {
   scheduleOff: 'Scheduled backups are off',
   nextBackup: (when: string) => `next backup ${when}`,
   notBackedUp: (n: number) => `${n} ${n === 1 ? 'app' : 'apps'} not backed up`,
+  // On a phone (US-PHONE-26, PhoneRedesignA_Backups)
+  nextShort: (when: string) => `Next: ${when}`,
+  barsLabel: (n: number, failed: number, lastFailed: string | null) =>
+    `Last ${n} ${n === 1 ? 'backup' : 'backups'}: ${n - failed} succeeded${
+      failed ? `, ${failed} failed${lastFailed ? `, the last on ${lastFailed}` : ''}` : ''
+    }`,
+  addDestinationPhone: 'Add a destination',
+  scheduleRow: 'Schedule',
+  restoreAfterFirst: 'Restore turns on after your first backup.',
+  recent: 'Recent',
   // Destinations (US-BKP-02)
   destinations: 'Destinations',
   encrypted: 'Encrypted',

@@ -39,6 +39,7 @@ export const Route = createFileRoute('/login/')({
         remembered: readRememberedUser(),
         listedUsers: list.data?.users.length ?? 0,
         next,
+        publicAddress: list.data?.via === 'public',
       });
       void ('href' in where
         ? router.navigate({ href: where.href, replace: true })

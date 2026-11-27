@@ -28,7 +28,7 @@ describe('US-STORE-06', () => {
   });
 
   it('names another source by its name, and shows Open when installed', async () => {
-    show(details({ source: { id: 'x', name: 'Family apps', official: false } }), [
+    show(details({ source: { id: 'x', name: 'Family apps', official: false, signed: true, kind: 'git' } }), [
       {
         id: 'immich',
         name: 'Immich',
@@ -38,7 +38,7 @@ describe('US-STORE-06', () => {
         urls: { local: 'https://immich.hlabs.local', tailnet: null },
       },
     ]);
-    expect(await screen.findByText('Family apps')).toBeInTheDocument();
+    expect(await screen.findByText('From Family apps')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'Open' })).toBeInTheDocument();
   });
 
@@ -107,6 +107,6 @@ describe('US-STORE-06', () => {
   it('on an arm64 computer, an app without an arm64 image can’t be installed and says why', async () => {
     show(details({ app: storeApp('immich', 'Immich', { arm64: false }) }));
     expect(await screen.findByRole('button', { name: 'Install' })).toBeDisabled();
-    expect(screen.getByText("There's no Apple Silicon version of this app yet.")).toBeInTheDocument();
+    expect(screen.getByRole('note')).toHaveTextContent("There's no Apple Silicon version of this app yet.");
   });
 });

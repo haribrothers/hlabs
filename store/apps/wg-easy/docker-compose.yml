@@ -1,0 +1,26 @@
+services:
+  wg-easy:
+    image: ghcr.io/wg-easy/wg-easy:15.5.0@sha256:071f79a639e9361123a5e57733107320207b844ddbbd92dfa6962f541fe8aac8
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      net.ipv4.ip_forward: '1'
+      net.ipv4.conf.all.src_valid_mark: '1'
+    # The image uses the legacy iptables, which newer kernels (Ubuntu 26.04's) no longer have: there, nftables instead.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        if ! iptables-legacy -t nat -L >/dev/null 2>&1; then
+          for t in iptables ip6tables; do
+            for s in '' -restore -save; do ln -sf "/usr/sbin/$$t-nft$$s" "/etc/alternatives/$$t$$s"; done
+          done
+        fi
+        exec docker-entrypoint.sh /usr/bin/dumb-init node server/index.mjs
+    environment:
+      PORT: '51821'
+      HOST: 0.0.0.0
+      # The container sees plain HTTP; Caddy serves the page over HTTPS.
+      INSECURE: 'true'
+    volumes:
+      - ${HLABS_APP_DATA}/wireguard:/etc/wireguard

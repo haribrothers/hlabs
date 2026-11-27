@@ -1,0 +1,13 @@
+services:
+  navidrome:
+    image: docker.io/deluan/navidrome:0.64.2@sha256:38dc2727bfcfd5ede290f8ada114fc90368146f265ae4701ddddbcbe2a44ee52
+    user: ${PUID}:${PGID}
+    environment:
+      ND_SCANSCHEDULE: 1h
+      ND_LOGLEVEL: info
+      ND_BASEURL: ''
+      # No usage reports to the Navidrome project.
+      ND_ENABLEINSIGHTSCOLLECTOR: 'false'
+    volumes:
+      - ${HLABS_APP_DATA}/data:/data
+      - ${HLABS_FOLDER_MUSIC}:/music:ro

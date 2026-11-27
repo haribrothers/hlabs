@@ -40,6 +40,8 @@ describe('openDb', () => {
       [
         'app_access',
         'app_env',
+        'app_images',
+        'app_public',
         'app_mounts',
         'app_sources',
         'apps',
@@ -165,6 +167,7 @@ describe('settings', () => {
       lastCheckedAt: null,
       latest: null,
       announced: null,
+      announcedApps: {},
       autoNight: { hlabs: null, apps: null },
     });
   });

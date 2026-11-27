@@ -114,6 +114,8 @@ for (const required of [
   'web',
   'web-fallback',
   'bin/caddy',
+  // Public apps' connector (D-171, D-178), run by hlabsd like Caddy.
+  'bin/cloudflared',
 ]) {
   if (!existsSync(join(out, required))) throw new Error(`The bundle is missing ${required}`);
 }

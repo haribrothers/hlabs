@@ -51,6 +51,8 @@ export const appsCopy = {
   // Reinstall (US-APP-24, US-APP-25)
   fixHint: "Restart it, or reinstall it if that doesn't help. Its data is kept either way.",
   reinstallEllipsis: 'Reinstall…',
+  /** The action tile in the phone's App settings sheet (US-PHONE-08). */
+  reinstallShort: 'Reinstall',
   reinstall: 'Reinstall',
   reinstallTitle: (app: string) => `Reinstall ${app}?`,
   reinstallBody: (app: string, version: string, size: string | null) =>
@@ -105,6 +107,14 @@ export const appsCopy = {
   addressCopied: 'Address copied',
   copyFailed: "Couldn't copy the address. Select it and copy it yourself.",
   alsoOnTailnet: 'Also on your tailnet',
+  // Require hlabs login (US-APP-19)
+  requireLogin: 'Require hlabs login',
+  requireLoginHint: 'Adds your hlabs sign-in in front of the app',
+  ownLoginToo: 'Uses its own login too',
+  loginOffTitle: (app: string) => `Turn off hlabs login for ${app}?`,
+  loginOffBody: (address: string, app: string) =>
+    `Anyone who can reach ${address} will see ${app}'s own sign-in page. Members without access to it in hlabs will no longer be blocked.`,
+  turnOff: 'Turn off',
   // Behaviour (US-APP-06)
   behaviour: 'Behaviour',
   startAutomatically: 'Start automatically',
@@ -119,6 +129,7 @@ export const appsCopy = {
   stoppedDisk: (size: string) => `Stopped · Disk ${size}`,
   countingDisk: 'Counting disk use…',
   upToDate: (version: string) => `Version ${version} · up to date`,
+  versionOnly: (version: string) => `Version ${version}`,
   updateAvailable: (version: string, next: string) => `Version ${version} · ${next} available`,
   // Updating, and an update that rolled back (US-APP-07, US-STORE-17)
   update: 'Update',

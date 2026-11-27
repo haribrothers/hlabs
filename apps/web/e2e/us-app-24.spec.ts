@@ -97,6 +97,10 @@ test('US-APP-24 a broken app whose containers and image were removed is reinstal
     .toString()
     .trim();
   expect(back).not.toBe('');
-  await page.goto('/');
-  await expect(page.getByRole('button', { name: 'Open Crash demo', exact: true })).toBeVisible();
+  // On Linux, Docker adding the app's network changes this computer's network, and Chrome then drops what's loading
+  // (ERR_NETWORK_CHANGED): load Home again until it's there.
+  await expect(async () => {
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: 'Open Crash demo', exact: true })).toBeVisible({ timeout: 10_000 });
+  }).toPass({ timeout: 60_000 });
 });

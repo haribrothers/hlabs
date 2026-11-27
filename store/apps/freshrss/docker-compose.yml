@@ -1,0 +1,9 @@
+services:
+  freshrss:
+    image: docker.io/freshrss/freshrss:1.30.4@sha256:af44385229541bee24aa9148d0ff8f3b40e095373c63a2c0f74e09a27d3c59df
+    environment:
+      CRON_MIN: '3,33'
+      TRUSTED_PROXY: 172.16.0.0/12 192.168.0.0/16 10.0.0.0/8
+    volumes:
+      - ${HLABS_APP_DATA}/data:/var/www/FreshRSS/data
+      - ${HLABS_APP_DATA}/extensions:/var/www/FreshRSS/extensions

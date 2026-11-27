@@ -164,17 +164,26 @@ export function FramePanel({ children }: { children: ReactNode }) {
 
 export type WindowPanel = 'settings' | 'logs';
 
-/** The dialog open over the window, from the address (`?panel=settings|logs&from=settings&at=…`). */
-export function windowPanel(search: Record<string, unknown>): { panel?: WindowPanel; from?: 'settings'; at?: number } {
+/**
+ * The dialog open over the window, from the address (`?panel=settings|logs&from=settings&at=…&service=…`; `service`
+ * filters the logs to one container, US-APP-21).
+ */
+export function windowPanel(search: Record<string, unknown>): {
+  panel?: WindowPanel;
+  from?: 'settings';
+  at?: number;
+  service?: string;
+} {
   return {
     ...(search.panel === 'settings' || search.panel === 'logs' ? { panel: search.panel } : {}),
     ...(search.from === 'settings' ? { from: 'settings' as const } : {}),
     ...(typeof search.at === 'number' ? { at: search.at } : {}),
+    ...(typeof search.service === 'string' && search.service ? { service: search.service } : {}),
   };
 }
 
 export function AppWindow({ appId }: { appId: string }) {
-  const { panel, from, at } = windowPanel(useSearch({ strict: false }) as Record<string, unknown>);
+  const { panel, from, at, service } = windowPanel(useSearch({ strict: false }) as Record<string, unknown>);
   const navigate = useNavigate();
   const { data: app, lastChange } = useApp(appId);
   // Uninstalled while open (US-APP-12): say so, then go Home.
@@ -188,7 +197,7 @@ export function AppWindow({ appId }: { appId: string }) {
     home();
   };
   // Dialogs over the window: in the address, so Back in the browser closes them, and the window stays mounted.
-  const showPanel = (next: { panel?: WindowPanel; from?: 'settings' }) =>
+  const showPanel = (next: { panel?: WindowPanel; from?: 'settings'; service?: string }) =>
     void navigate({ to: '/apps/$appId', params: { appId }, search: next });
   const openLogs = () => showPanel({ panel: 'logs' });
   const openSettings = () => showPanel({ panel: 'settings' });
@@ -361,12 +370,14 @@ export function AppWindow({ appId }: { appId: string }) {
             appId={appId}
             onClose={closePanel}
             onOpenLogs={() => showPanel({ panel: 'logs', from: 'settings' })}
+            onOpenContainerLogs={(name) => showPanel({ panel: 'logs', from: 'settings', service: name })}
           />
         ) : null}
         {isAdmin && panel === 'logs' ? (
           <AppLogs
             appId={appId}
             at={at}
+            service={service}
             backTo={from === 'settings' ? 'settings' : 'app'}
             onBack={from === 'settings' ? openSettings : closePanel}
           />

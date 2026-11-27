@@ -14,9 +14,10 @@ describe('US-HOME-01', () => {
     const appearance = async () => ((await d.query('auth.me')).result!.data as { appearance: unknown }).appearance;
     expect(await appearance()).toEqual({
       wallpaper: 'dusk',
+      customWallpaperUrl: null,
       accent: 'violet',
       reduceTransparency: false,
-      reduceMotion: false,
+      reduceMotion: null,
       showWidgets: true,
       showGreeting: true,
     });

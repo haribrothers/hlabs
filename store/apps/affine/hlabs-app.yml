@@ -1,0 +1,33 @@
+# From AFFiNE's own docker-compose.yml; its database migration runs before the server instead of as a
+# separate one-off service.
+schema: 1
+id: affine
+name: AFFiNE
+version: '0.27.4'
+revision: 1
+tagline: Docs, whiteboards and databases in one workspace
+description: |
+  Write, draw and plan in one place: pages that turn into whiteboards, tables and kanban boards, edited
+  together in real time. The first visit sets up your admin account.
+category: productivity
+developer: { name: Toeverything, url: https://affine.pro }
+source: https://github.com/toeverything/AFFiNE
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#1e96eb', '#0b3a5c']
+  fallback: layout-template
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 2048, disk: 2048 }
+web: { service: affine, port: 3010, embed: true }
+health: { service: affine, http: /info, timeout: 600 }
+env:
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [affine, affine-db]
+  beforeUpdate: true
+permissions: { network: internet }

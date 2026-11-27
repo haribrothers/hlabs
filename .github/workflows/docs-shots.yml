@@ -1,0 +1,88 @@
+# The docs screenshots bot (US-SITE-11, D-177): after a change to the dashboard reaches main (and by hand), take the
+# help's screenshots from the real dashboard on the docs instance (the docs-shots Playwright project, with the demo data
+# set), compare each with the committed one, and when any changed by more than 1% of its pixels (or is new), open or
+# update one pull request with them on branch docs-shots/update. It never commits to main: Hari reads the pull request
+# and merges it, and site.yml (and Cloudflare's build of main) then builds the site with the new images.
+#
+# Pull requests opened with Actions' own token don't start other workflows. As the store update bot does (D-154), it
+# uses the secret STORE_UPDATES_TOKEN (a fine-grained token for this repository: Contents and Pull requests, read and
+# write) when it's set, so every check runs as on any pull request; without it, checks wait until someone pushes to
+# the branch.
+name: docs-shots
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/web/src/**
+      - apps/web/e2e/docs-shots/**
+      - apps/web/e2e/support/docs-shot.ts
+      - apps/daemon/src/**
+      - packages/ui/**
+      - packages/icons/**
+      - packages/shared/src/**
+      - store/**
+      - .github/workflows/docs-shots.yml
+  workflow_dispatch:
+
+# A newer main makes a run of an older one pointless.
+concurrency:
+  group: docs-shots
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.STORE_UPDATES_TOKEN || github.token }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm fetch-binaries
+      - run: pnpm --filter @hlabs/icons build
+      - run: pnpm --filter @hlabs/web exec playwright install --with-deps chromium
+      - name: Take the docs screenshots (the docs-shots project, demo data set)
+        run: pnpm --filter @hlabs/web docs-shots
+        env:
+          CI: 'true'
+      - name: Keep only the screenshots that changed by more than 1% of pixels
+        id: compare
+        run: pnpm --filter @hlabs/web docs-shots:compare --report "$RUNNER_TEMP/docs-shots.md"
+      - name: Open or update the pull request
+        if: steps.compare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.STORE_UPDATES_TOKEN || github.token }}
+          BRANCH: docs-shots/update
+          SHA: ${{ github.sha }}
+        run: |
+          git config user.name 'hlabs docs bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -C "$BRANCH"
+          git add apps/site/src/assets/shots
+          git commit --quiet --no-verify -m "Docs screenshots from ${SHA::7} (US-SITE-11)"
+          git push --quiet --force origin "$BRANCH"
+          gh label create docs-shots --color 1D76DB --description 'New docs screenshots (US-SITE-11)' --force
+          title='Docs screenshots: the dashboard changed'
+          number=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh pr edit "$number" --title "$title" --body-file "$RUNNER_TEMP/docs-shots.md" --add-label docs-shots
+          else
+            gh pr create --base main --head "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/docs-shots.md" --label docs-shots
+          fi
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: docs-shots-report
+          path: apps/web/playwright-report
+          retention-days: 7

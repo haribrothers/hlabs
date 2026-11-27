@@ -1,13 +1,14 @@
 // App logos and screenshots (US-STORE-01, US-STORE-06, US-HOME-03), for anyone signed in:
 //   GET /api/store/apps/:sourceId/:appId/assets/*   a catalogue app's
 //   GET /api/apps/:appId/assets/*                   an installed app's (from the source it came from)
+//   GET /api/store/copy/:token.zip                  "Copy to my library" for a git library (admins, once, US-STORE-29)
 // SVGs are served with a CSP that forbids scripts, so opening one directly can't run anything.
 import { apps } from '@hlabs/db';
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
-import { readCookie, SESSION_COOKIE } from '../auth/sessions';
+import { anonymousAdmin, dashboardSession } from './via';
 import type { ServiceHolder } from '../services';
 import { ASSET_TYPES, BUILTIN_SOURCE_ID } from '../store/catalog';
 
@@ -17,7 +18,7 @@ export function registerAppAssets(app: FastifyInstance, holder: ServiceHolder, d
   const serve = async (req: FastifyRequest<{ Params: Params }>, reply: FastifyReply) => {
     const services = holder.current;
     if (!services) return reply.code(503).send();
-    const signedIn = devAnonymousAdmin || services.sessions.resolve(readCookie(req.headers.cookie, SESSION_COOKIE));
+    const signedIn = anonymousAdmin(devAnonymousAdmin, req.headers) || dashboardSession(services, req.headers);
     if (!signedIn) return reply.code(401).send();
     const { appId } = req.params;
     const sourceId =
@@ -38,4 +39,19 @@ export function registerAppAssets(app: FastifyInstance, holder: ServiceHolder, d
   };
   app.get('/api/store/apps/:sourceId/:appId/assets/*', { logLevel: 'warn' }, serve);
   app.get('/api/apps/:appId/assets/*', { logLevel: 'warn' }, serve);
+
+  app.get<{ Params: { file: string } }>('/api/store/copy/:file', async (req, reply) => {
+    const services = holder.current;
+    if (!services) return reply.code(503).send();
+    const session = dashboardSession(services, req.headers);
+    if (!anonymousAdmin(devAnonymousAdmin, req.headers) && session?.role !== 'admin') return reply.code(404).send();
+    const token = req.params.file.replace(/\.zip$/, '');
+    const zip = services.sources.takeZip(token);
+    if (!zip) return reply.code(404).send();
+    return reply
+      .header('content-type', 'application/zip')
+      .header('content-disposition', `attachment; filename="${zip.name}"`)
+      .header('cache-control', 'no-store')
+      .send(zip.data);
+  });
 }

@@ -1,0 +1,29 @@
+schema: 1
+id: seerr
+name: Seerr
+version: '3.5.2'
+revision: 1
+tagline: Let your family ask for films and shows
+description: |
+  A friendly page where everyone can browse and request films and series. Requests go to Sonarr and
+  Radarr, and people see when they are ready to watch. Sign in with your Jellyfin, Plex or Emby
+  account on the first visit; Seerr reaches Jellyfin at http://jellyfin:8096. Seerr was called
+  Jellyseerr and Overseerr.
+category: media
+developer: { name: Seerr, url: https://seerr.dev }
+source: https://github.com/seerr-team/seerr
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#6366f1', '#1e1b4b']
+  fallback: popcorn
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 512 }
+web: { service: seerr, port: 5055, embed: true }
+health: { service: seerr, http: /api/v1/status, timeout: 120 }
+ownLogin: true
+backup:
+  pause: [seerr]
+  exclude: [logs/, cache/]
+  beforeUpdate: true
+permissions: { network: internet }

@@ -1,0 +1,52 @@
+# From OpenClaw's own docker-compose.yml (the gateway, listening on the container's network); a first
+# start writes its starting config (local mode), and an existing one is left alone.
+schema: 1
+id: openclaw
+name: OpenClaw
+version: '2026.11.7'
+revision: 1
+tagline: A personal AI assistant that does things for you
+description: |
+  OpenClaw is an AI assistant that answers you in the chat apps you already use (Telegram, WhatsApp,
+  Signal and more) and can act for you: run commands, browse the web and send messages. Give it an
+  API key for Anthropic, OpenAI or Gemini, or use Ollama on this computer. Choose an access token when
+  you install it; its page asks for it. It can do anything its accounts allow, so connect only what
+  you trust it with.
+category: ai
+developer: { name: OpenClaw, url: https://openclaw.ai }
+source: https://github.com/openclaw/openclaw
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#ef4444', '#5c1111']
+  fallback: bot
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 2048, disk: 4096 }
+web: { service: openclaw, port: 18789, embed: true }
+env:
+  - key: GATEWAY_TOKEN
+    type: secret
+    label: Access token
+    description: You type it into OpenClaw's page to connect; at least 16 characters
+    required: true
+  - key: ANTHROPIC_API_KEY
+    type: secret
+    label: Anthropic API key
+    description: For Claude models (optional)
+    required: false
+  - key: OPENAI_API_KEY
+    type: secret
+    label: OpenAI API key
+    description: For GPT models (optional)
+    required: false
+  - key: GEMINI_API_KEY
+    type: secret
+    label: Gemini API key
+    description: For Google Gemini models (optional)
+    required: false
+ownLogin: true
+backup:
+  pause: [openclaw]
+  exclude: [workspace/.cache/]
+  beforeUpdate: true
+permissions: { network: internet }

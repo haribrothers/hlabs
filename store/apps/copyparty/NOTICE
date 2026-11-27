@@ -1,0 +1,5 @@
+hlabs's files for CopyParty were drafted from the CasaOS app store's definition and changed to follow hlabs's app format
+and compose rules (images pinned by digest, data under ${HLABS_APP_DATA}, folders the person chooses).
+
+Source: https://github.com/IceWhaleTech/CasaOS-AppStore/tree/07178f6d2c2797bd93e4260ba72f3ee972b1041e/Apps/CopyParty
+Licence: Apache License 2.0 (Apache-2.0).

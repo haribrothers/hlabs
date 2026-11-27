@@ -1,0 +1,45 @@
+# From BookLore's own example docker-compose.yml, adapted to hlabs's compose rules.
+schema: 1
+id: booklore
+name: BookLore
+version: '2.4.0'
+revision: 1
+tagline: A beautiful home for your ebooks
+description: |
+  BookLore organises your ebooks with covers and details, lets you read them in the browser and keeps
+  everyone's reading progress. Drop new books in and it files them. The first visit sets up your admin
+  account.
+category: books
+developer: { name: BookLore, url: https://booklore.org }
+source: https://github.com/booklore-app/booklore
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#2563eb', '#172554']
+  fallback: book-open
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 2048 }
+web: { service: booklore, port: 6060, embed: true }
+health: { service: booklore, http: /api/v1/healthcheck, timeout: 300 }
+folders:
+  - key: books
+    label: Books
+    description: Your ebook library
+    target: /books
+    default: shared:Books
+    mode: rw
+    required: true
+env:
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+  - key: DB_ROOT_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [booklore, booklore-db]
+  beforeUpdate: true
+permissions: { network: internet }

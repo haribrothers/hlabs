@@ -3,6 +3,8 @@
 @import './tokens.css';
 @import './theme.css';
 @import './components.css';
+@import './phone.css';
+@import './tablet.css';
 
 /* Let Tailwind see the classes used inside @hlabs/ui components. */
 @source '../';

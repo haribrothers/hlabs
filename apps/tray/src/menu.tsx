@@ -3,6 +3,7 @@
 import type { TrayStatus } from '@hlabs/api';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { invoke } from '@tauri-apps/api/core';
+import { Globe, iconDefaults } from '@hlabs/icons';
 import { type MenuItem } from '@hlabs/ui';
 import { isLinux, TrayMenu, TraySetup } from './native-menu';
 import { useEffect, useState } from 'react';
@@ -18,6 +19,7 @@ import { appsLine, formatCpu, formatFree, formatMemory } from './format';
 import { useOpenSetup, useSetupPending } from './setup';
 import { quitTray, setQuitBusy, useStopping } from './quit';
 import { useQuickAction } from './quick-action';
+import { usePublicOff, type PublicOffPhase } from './public-off';
 import { useApplyUpdate, useUpdateCheck, type CheckFeedback } from './updates';
 import { useStartAtLogin } from './start-at-login';
 import { useMenuOpen, useTrayStatus } from './status';
@@ -79,7 +81,43 @@ export interface RunningActions {
   checkUpdates?: { feedback: CheckFeedback; run: () => void };
   /** "Back up now" as the backup's state has it (US-INST-07); shown once backups ship (D-036). */
   backup?: MenuItem;
+  /**
+   * "Turn off public access…" while any app or the dashboard is public (US-SYS-44, US-SYS-45): how many apps, their
+   * names, whether the dashboard is, and the action.
+   */
+  publicOff?: { count: number; names: readonly string[]; dashboard?: boolean; phase: PublicOffPhase; run: () => void };
 }
+
+/** "Public: 2 apps" and the item that turns it all off; nothing while neither an app nor the dashboard is public. */
+function publicItems(p: RunningActions['publicOff']): MenuItem[] {
+  if (!p || (p.count <= 0 && !p.dashboard)) return [];
+  const item: MenuItem =
+    p.phase === 'busy'
+      ? { label: t.turningOffPublic, disabled: true }
+      : p.phase === 'failed'
+        ? { label: t.publicOffFailed, disabled: true }
+        : { label: t.turnOffPublic, detail: isLinux() ? t.asksForPassword : t.asksForTouchId, onSelect: p.run };
+  return [
+    { separator: true },
+    // The Mac menu shows these on the card above (TrayPublic); a Linux desktop's native menu has no card (D-145).
+    ...(isLinux() ? [{ label: publicLine(p.count, p.names, p.dashboard ?? false), disabled: true }] : []),
+    item,
+  ];
+}
+
+/** "Public: 2 apps", or "Public: the dashboard and 2 apps" while the dashboard is public too (US-SYS-45). */
+export const publicTitle = (count: number, dashboard: boolean) =>
+  dashboard ? t.publicDashboard(count) : t.publicApps(count);
+
+/** "hlabs dashboard, Immich, Jellyfin": what's public, by name. */
+export const publicNamesLine = (names: readonly string[], dashboard: boolean) =>
+  (dashboard ? [t.dashboardName, ...names] : names).join(', ');
+
+/** "Public: 2 apps · Immich, Jellyfin". */
+const publicLine = (count: number, names: readonly string[], dashboard: boolean) => {
+  const named = publicNamesLine(names, dashboard);
+  return named ? `${publicTitle(count, dashboard)} · ${named}` : publicTitle(count, dashboard);
+};
 
 const CHECK_LABEL: Record<Exclude<CheckFeedback, null>, string> = {
   checking: t.checking,
@@ -98,6 +136,8 @@ export const quitItem: MenuItem = { label: t.quit, shortcut: '⌘Q', onSelect: (
  */
 export function runningItems(actions: RunningActions = {}, phase?: number): MenuItem[] {
   return [
+    // Never behind a phase flag: a way to stop what's public always shows while something is (07 §7.10).
+    ...publicItems(actions.publicOff),
     { separator: true },
     { label: t.openDashboard, shortcut: '⌘D', onSelect: actions.openDashboard },
     { label: actions.copied ? t.copied : t.copyAddress, onSelect: actions.copyAddress },
@@ -366,6 +406,11 @@ export function RunningMenu({
   const pause = useQuickAction('pauseAll', onChanged);
   const openDashboard = dashboard.open;
   const backUpNow = useBackUpNow(status?.backup, openDashboard, onChanged);
+  const publicDashboard = status?.publicDashboard ?? false;
+  const publicOff = usePublicOff(onChanged, undefined, publicDashboard);
+  const publicCount = status?.publicApps ?? 0;
+  const publicNames = status?.publicAppNames ?? [];
+  const publicNamed = publicNamesLine(publicNames, publicDashboard);
   const cpu = formatCpu(status?.cpuPercent);
   const memory = formatMemory(status?.memoryUsedBytes);
   const free = formatFree(status?.freeBytes);
@@ -380,6 +425,15 @@ export function RunningMenu({
         { label: t.memory, value: memory, spoken: t.memorySpoken(memory) },
         { label: t.free, value: free, spoken: t.freeSpoken(free) },
       ]}
+      notice={
+        publicCount > 0 || publicDashboard
+          ? {
+              icon: <Globe {...iconDefaults} />,
+              title: publicTitle(publicCount, publicDashboard),
+              body: publicNamed || undefined,
+            }
+          : undefined
+      }
       items={runningItems(
         {
           openDashboard: () => void dashboard.open(),
@@ -389,6 +443,13 @@ export function RunningMenu({
           startAtLogin,
           checkUpdates,
           backup: backupItem(status?.backup, backUpNow),
+          publicOff: {
+            count: publicCount,
+            names: publicNames,
+            dashboard: publicDashboard,
+            phase: publicOff.phase,
+            run: publicOff.run,
+          },
         },
         phase,
       )}

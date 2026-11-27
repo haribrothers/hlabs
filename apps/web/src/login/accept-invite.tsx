@@ -11,6 +11,9 @@ import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
 import { JoinForm } from './join-form';
 import { LoginLayout } from './login-layout';
+import { NotOnPublicAddress } from './not-here';
+import { errorCode } from '../lib/error-copy';
+import { useSignedOutVia } from '../public/home-only';
 
 /** "You'll get your own Home screen and a private Files folder." plus what was shared, as the invite says. */
 export function inviteLead(invite: Pick<InviteInspect, 'role' | 'appCount' | 'inviterName'>): string {
@@ -56,10 +59,13 @@ export function AcceptInvite({ token, preview = false }: { token: string; previe
   const trpc = useTRPC();
   const invite = useQuery({ ...trpc.invites.inspect.queryOptions({ token }), retry: false });
   const me = useMe();
+  // Never on the dashboard's public address (US-SYS-46): the daemon refuses with HOME_ONLY there too.
+  const via = useSignedOutVia();
   useEffect(() => {
     document.title = `${copy.docTitle} · hlabs`;
   }, []);
 
+  if (via === 'public' || errorCode(invite.error) === 'HOME_ONLY') return <NotOnPublicAddress />;
   if (invite.isPending) return <LoginLayout>{null}</LoginLayout>;
   if (invite.isError) {
     return (

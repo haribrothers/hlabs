@@ -1,0 +1,25 @@
+schema: 1
+id: grocy
+name: Grocy
+version: '4.7.1'
+revision: 1
+tagline: Groceries, stock and chores for your home
+description: |
+  Keep track of what's in the cupboards and fridge, what runs out soon, shopping lists, recipes and
+  household chores. Sign in the first time as admin with the password admin, then change it.
+category: productivity
+developer: { name: Bernd Bestel, url: https://grocy.info }
+source: https://github.com/grocy/grocy
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#337ab7', '#132f48']
+  fallback: shopping-basket
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: grocy, port: 80, embed: true }
+ownLogin: true
+backup:
+  pause: [grocy]
+  beforeUpdate: true
+permissions: { network: internet }

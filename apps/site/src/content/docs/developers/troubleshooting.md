@@ -41,6 +41,10 @@ The first visit after a code change waits for Vite to prepare the page, which ca
 
 The full suite runs five hlabs instances, each with its own Vite, plus a browser per worker. On a busy computer (antivirus scanning, Spotlight indexing, a container engine running real apps) pages and requests can take longer than the tests wait, and many "first-run" specs fail together while each passes on its own. Run one project at a time (`pnpm --filter @hlabs/web exec playwright test --project=first-run`), lower the workers (`--workers=2`), or rely on CI, which runs each project on a machine of its own.
 
+## hlabs stopped after Restart hlabs or a factory reset
+
+hlabsd asks to be started again by exiting with code 75; an installed hlabs is started again by launchd or systemd. Under `pnpm dev`, `tsx watch` doesn't start it again until you save a file in `apps/daemon`, or you run `pnpm dev` again. The apps Restart stopped come back when it starts. A factory reset of your development hlabs deletes `.dev-data`'s database (at that next start), its apps' data and its secrets, as it would on a real one.
+
 ## Where to look
 
 - Development: the terminal running `pnpm dev`.

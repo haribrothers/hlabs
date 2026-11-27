@@ -62,7 +62,7 @@ export function storeBadge(updates: number, opts: NavOptions & { shippedPhase?: 
   return updates > 0 ? updates : undefined;
 }
 
-/** Phone tabs (US-PHONE-01): Home, Apps, Files, Usage, Settings; Backups lives in Settings there. */
+/** Phone tabs (US-PHONE-01): Home, App Store, Files, Usage, Settings; Backups lives in Settings there. */
 const PHONE_AREAS: AreaId[] = ['home', 'store', 'files', 'usage', 'settings'];
 
 export function phoneAreas(opts: NavOptions = {}): AreaItem[] {

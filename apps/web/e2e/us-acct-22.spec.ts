@@ -19,7 +19,7 @@ test.afterAll(async ({ request }, info) => {
 test('US-ACCT-22 apps to share for a member, none for an admin', async ({ page }, info) => {
   const appName = nameFor(info.project.name);
   await page.goto('/settings/users');
-  await page.getByRole('button', { name: 'Invite someone' }).click();
+  await page.getByRole('button', { name: 'Invite someone' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Invite someone' });
   await expect(dialog.getByRole('textbox', { name: 'Invite link' })).toHaveValue(/\/invite\//);
   await expect(dialog.getByRole('radio', { name: /Member/ })).toHaveAttribute('aria-checked', 'true');

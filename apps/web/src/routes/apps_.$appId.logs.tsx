@@ -1,17 +1,14 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { AppLogs } from '../apps/app-logs';
+import { createFileRoute, redirect } from '@tanstack/react-router';
+import { appOverlay } from '../apps/app-overlay';
 
-function AppLogsPage() {
-  const { appId } = Route.useParams();
-  const { at } = Route.useSearch();
-  return <AppLogs appId={appId} at={at} />;
-}
-
-// An app's logs (US-APP-08); `at` opens them at a moment, such as an update that failed (US-STORE-17).
+// An app's logs open over the page they're opened from (D-166). This address (notifications, the tray, older links)
+// opens them over Home; `at` opens them at a moment (US-STORE-17), `service` filtered to one container (US-APP-21).
 export const Route = createFileRoute('/apps_/$appId/logs')({
-  component: AppLogsPage,
-  validateSearch: (search: Record<string, unknown>): { at?: number } =>
-    typeof search.at === 'number' || (typeof search.at === 'string' && /^\d+$/.test(search.at))
-      ? { at: Number(search.at) }
-      : {},
+  beforeLoad: ({ params, search }) => {
+    throw redirect({
+      to: '/',
+      search: appOverlay({ ...(search as Record<string, unknown>), logs: params.appId }) as never,
+      replace: true,
+    });
+  },
 });

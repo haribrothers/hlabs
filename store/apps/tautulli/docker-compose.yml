@@ -1,0 +1,8 @@
+services:
+  tautulli:
+    image: lscr.io/linuxserver/tautulli:2.19.1@sha256:5e8f80cc18f03c606a3567c8a9b37d80812ed8017d2e2f8ff2e2a91b54a3aef1
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+    volumes:
+      - ${HLABS_APP_DATA}/config:/config

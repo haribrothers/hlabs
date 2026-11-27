@@ -1,0 +1,6 @@
+services:
+  wallos:
+    image: docker.io/bellamy/wallos:5.11.3@sha256:84c3b218e144a1292b2be6ad2f0b9d620277e860d307c3cfa5aff3ee629aae17
+    volumes:
+      - ${HLABS_APP_DATA}/db:/var/www/html/db
+      - ${HLABS_APP_DATA}/logos:/var/www/html/images/uploads/logos

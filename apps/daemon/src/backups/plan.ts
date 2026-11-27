@@ -91,6 +91,12 @@ export function includedItems(db: HlabsDb, appDataDir: string, include = include
   ];
 }
 
+/** One installed app as a backup item, whether or not the plan includes it (the backup before an update). */
+export function installedItem(db: HlabsDb, appDataDir: string, appId: string): BackupItem | null {
+  const a = installedApps(db).find((x) => x.row.id === appId);
+  return a ? { kind: 'app', id: appId, label: a.name, path: join(appDataDir, appId) } : null;
+}
+
 /** "Include new apps automatically": an app installed or a person added later is ticked (D-134). */
 export function includeNew(db: HlabsDb, item: { app?: string; folder?: string }) {
   const row = planRow(db);

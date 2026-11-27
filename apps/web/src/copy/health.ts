@@ -37,6 +37,8 @@ export const reasonCopy: Record<string, string | null> = {
     "hlabs couldn't update its database. Your data hasn't been changed. Open the hlabs app on the host computer to see details.",
   storage_unavailable: "hlabs can't find its storage folder. Check that the drive is connected.",
   update_stuck: 'The update is taking longer than expected. Open the hlabs app on the host computer to see details.',
+  restarting: null,
+  resetting: null,
 };
 
 /** The line for a reason; unknown reasons get none. */
@@ -53,4 +55,14 @@ export const updatingCopy = {
   /** US-STATE-02: once per browser session, after the reload. */
   doneTitle: 'hlabs is up to date',
   doneBody: (version: string) => `Version ${version}`,
+} as const;
+
+/** "Restart hlabs" (US-SYS-31) and a factory reset (US-SYS-38): the full-screen state while hlabs is away. */
+export const restartingCopy = {
+  restartTitle: 'Restarting hlabs…',
+  restartBody: 'Apps are stopping and starting again. This page reconnects by itself, usually within a minute.',
+  resetTitle: 'Resetting hlabs…',
+  resetBody: 'Everything on this computer is being deleted. Setup opens here when hlabs is ready.',
+  stepLine: (step: number, steps: number, label: string) => `Step ${step} of ${steps} · ${label}`,
+  resetSteps: ['Stopping apps', 'Deleting data', 'Removing settings', 'Restarting hlabs'],
 } as const;

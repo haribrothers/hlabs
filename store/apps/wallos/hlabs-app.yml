@@ -1,0 +1,25 @@
+schema: 1
+id: wallos
+name: Wallos
+version: '5.11.3'
+revision: 1
+tagline: Keep an eye on your subscriptions
+description: |
+  List the subscriptions you pay for, see what they cost each month and get a reminder before each one
+  renews. Create your account on the first visit.
+category: finance
+developer: { name: Miguel Ribeiro, url: https://wallosapp.com }
+source: https://github.com/ellite/Wallos
+license: GPL-3.0
+icon:
+  logo: logo.png
+  gradient: ['#007bff', '#002d5e']
+  fallback: receipt
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 128, disk: 256 }
+web: { service: wallos, port: 80, embed: true }
+ownLogin: true
+backup:
+  pause: [wallos]
+  beforeUpdate: true
+permissions: { network: internet }

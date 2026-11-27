@@ -1,0 +1,7 @@
+services:
+  kavita:
+    image: docker.io/jvmilazz0/kavita:0.9.1@sha256:31181a32f0dda73cae68721867028a7253d57881b58bea5754cd9e578e75421a
+    volumes:
+      - ${HLABS_APP_DATA}/config:/kavita/config
+      - ${HLABS_FOLDER_BOOKS}:/books:ro
+      - ${HLABS_FOLDER_COMICS}:/comics:ro

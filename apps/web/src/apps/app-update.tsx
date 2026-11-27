@@ -5,13 +5,13 @@ import type { AppDetail } from '@hlabs/api';
 import { iconDefaults, RotateCcw, TriangleAlert, X } from '@hlabs/icons';
 import { Button, IconButton } from '@hlabs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSubscription } from '@trpc/tanstack-react-query';
 import { Link } from '@tanstack/react-router';
 import { appsCopy } from '../copy/apps';
 import { handledGlobally, showErrorToast } from '../lib/error-copy';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
 import { useMe } from '../lib/use-me';
 import { useActiveJobs } from '../settings/engine-restart';
+import { useEventStream } from '../lib/use-event-stream';
 
 const copy = appsCopy;
 
@@ -121,18 +121,10 @@ export function DetailsRolledBack({ appId, installed }: { appId: string; install
   const queryClient = useQueryClient();
   const app = useQuery({ ...trpc.apps.get.queryOptions({ appId }), enabled, retry: false });
   // An update settling (running again, or error) may bring the banner or change it.
-  useSubscription(
-    trpc.events.stream.subscriptionOptions(
-      { types: ['app.stateChanged'] },
-      {
-        enabled,
-        onData: ({ data: event }) => {
-          if (event.type === 'app.stateChanged' && event.data.appId === appId) {
-            void queryClient.invalidateQueries({ queryKey: trpc.apps.get.queryKey({ appId }) });
-          }
-        },
-      },
-    ),
-  );
+  useEventStream((event) => {
+    if (enabled && event.type === 'app.stateChanged' && event.data.appId === appId) {
+      void queryClient.invalidateQueries({ queryKey: trpc.apps.get.queryKey({ appId }) });
+    }
+  });
   return app.data ? <RolledBackBanner app={app.data} /> : null;
 }

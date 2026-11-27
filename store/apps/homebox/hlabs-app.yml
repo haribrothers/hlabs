@@ -1,0 +1,31 @@
+schema: 1
+id: homebox
+name: Homebox
+version: '0.27.1'
+revision: 1
+tagline: An inventory of everything in your home
+description: |
+  Keep a list of what you own and where it is, with photos, receipts, warranties and labels you can
+  print. Create your account on the first visit.
+category: productivity
+developer: { name: Homebox, url: https://homebox.software }
+source: https://github.com/sysadminsmedia/homebox
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#5b21b6', '#2e1065']
+  fallback: package
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: homebox, port: 7745, embed: true }
+health: { service: homebox, http: /api/v1/status, timeout: 120 }
+env:
+  - key: API_KEY_PEPPER
+    type: secret
+    generate: true
+    hidden: true
+ownLogin: true
+backup:
+  pause: [homebox]
+  beforeUpdate: true
+permissions: { network: internet }

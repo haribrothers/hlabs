@@ -1,0 +1,6 @@
+services:
+  actual:
+    image: docker.io/actualbudget/actual-server:26.11.0@sha256:06cf186569cf58d93e12659ff1a517b65b5b0ebee7050a3991d4bd8a1d398da6
+    user: ${PUID}:${PGID}
+    volumes:
+      - ${HLABS_APP_DATA}/data:/data

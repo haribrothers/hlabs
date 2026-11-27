@@ -329,6 +329,17 @@ async fn confirm_uninstall() -> Result<bool, String> {
     .map_err(|e| e.to_string())?
 }
 
+/// US-SYS-44: the OS confirms the person at the computer before "Turn off public access" (as US-INST-18 does);
+/// false when they cancelled. The menu then calls `tray.publicOff` and follows its job.
+#[tauri::command]
+async fn confirm_public_off() -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        os_confirm::default_confirm().confirm(os_confirm::PUBLIC_OFF_REASON)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 /// US-INST-22 "Removing hlabs", after the daemon's job: the LaunchAgent is booted out (the daemon stops) and deleted,
 /// the login item and the tray token go. Development has none of these, so nothing happens there.
 #[tauri::command]
@@ -959,6 +970,7 @@ pub fn run() {
             native_menu::set_native_menu,
             open_uninstall_window,
             confirm_uninstall,
+            confirm_public_off,
             uninstall_remove_hlabs,
             uninstall_delete_data,
             uninstall_quit,

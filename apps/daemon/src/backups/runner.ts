@@ -29,9 +29,18 @@ import type { JobContext, JobRunner } from '../jobs/runner';
 import type { Logger } from '../logger';
 import type { NotificationService } from '../notifications/service';
 import type { SecretStore } from '../platform/secrets';
-import { previousRun } from './cron';
+import { nextRun, previousRun } from './cron';
 import type { Destinations } from './destinations';
-import { includedItems, includeOf, isOverdue, nextRunAt, planRow, scheduleState, type BackupItem } from './plan';
+import {
+  includedItems,
+  includeOf,
+  installedItem,
+  isOverdue,
+  nextRunAt,
+  planRow,
+  scheduleState,
+  type BackupItem,
+} from './plan';
 import type { Repo, Restic } from './restic';
 
 export const RETRY_TRIES = 3;
@@ -46,7 +55,7 @@ type Dest = typeof backupDestinations.$inferSelect;
 type RunRow = typeof backupRuns.$inferSelect;
 
 export interface BackupPayload {
-  trigger: 'schedule' | 'manual';
+  trigger: 'schedule' | 'manual' | 'pre_update';
   destinationId?: string;
   retry?: boolean;
 }
@@ -148,6 +157,42 @@ export class BackupService {
     };
   }
 
+  /**
+   * The backup before an app updates (US-STORE-16): that app's data and the system part to each destination, as
+   * `pre_update` runs, inside the update's own job. `no_destination` when there's nowhere to put it (the update goes
+   * on and says so); a failed run throws its code, so the update doesn't start without it.
+   */
+  async beforeUpdate(
+    appId: string,
+    job: Pick<JobContext<unknown>, 'jobId' | 'target' | 'signal'>,
+    report: (fraction: number, message?: string) => void,
+  ): Promise<'done' | 'no_destination'> {
+    const dests = this.deps.destinations.rows();
+    if (!dests.length) return 'no_destination';
+    const app = installedItem(this.deps.db, this.deps.appDataDir, appId);
+    const ctx: JobContext<BackupPayload> = { ...job, payload: { trigger: 'pre_update' }, report: () => {} };
+    for (const [i, dest] of dests.entries()) {
+      const code = await this.runOne(dest, app ? [app] : [], ctx, (f, m) => report((i + f) / dests.length, m));
+      if (code) throw hlabsError(code);
+    }
+    return 'done';
+  }
+
+  /**
+   * A scheduled backup will start (or is starting) before `until`: automatic updates wait for that night's backups
+   * (US-STORE-16). False when backups are off or have nowhere to go.
+   */
+  dueBefore(until: number, now = this.now()): boolean {
+    const plan = planRow(this.deps.db);
+    if (!plan.enabled || !this.deps.destinations.rows().length) return false;
+    if (this.active()) return true;
+    const state = scheduleState(this.deps.db);
+    const slot = previousRun(plan.scheduleCron, now);
+    if (slot !== null && state.lastSlot !== null && slot > state.lastSlot) return true;
+    const next = nextRun(plan.scheduleCron, now);
+    return next !== null && next < until;
+  }
+
   private async run(ctx: JobContext<BackupPayload>) {
     const { destinations } = this.deps;
     const dests = ctx.payload.destinationId ? [destinations.get(ctx.payload.destinationId)] : destinations.rows();
@@ -246,12 +291,18 @@ export class BackupService {
                 paths: [item.path],
                 tags: [`${item.kind}:${item.id}`, `run:${runId}`],
                 excludes: item.kind === 'app' ? this.excludes(item.id) : [],
+                // An app's files its containers keep to themselves: read as root on Linux (D-190).
+                asRoot: item.kind === 'app',
                 signal: ctx.signal,
               },
               (p) => report((i + p.fraction) / steps, item.label),
             ),
           log,
         );
+        if (res.unreadable > 0) {
+          log(`Couldn't read ${res.unreadable} of ${item.label}'s files; this backup doesn't have them`);
+          this.deps.logger.warn({ item: item.id, unreadable: res.unreadable }, 'backup could not read some files');
+        }
         bytes += res.bytesAdded;
         files += res.filesChanged;
       }

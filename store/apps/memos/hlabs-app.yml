@@ -1,0 +1,26 @@
+schema: 1
+id: memos
+name: Memos
+version: '26.11.2'
+revision: 1
+tagline: Jot down notes and ideas, like a private timeline
+description: |
+  Write quick notes, lists and links in a timeline only you (or your family) can see, with tags,
+  search and Markdown. The first visit sets up your admin account.
+category: productivity
+developer: { name: Memos, url: https://usememos.com }
+source: https://github.com/usememos/memos
+license: MIT
+icon:
+  logo: logo.svg
+  gradient: ['#16a34a', '#0b3a1c']
+  fallback: notebook-pen
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 512 }
+web: { service: memos, port: 5230, embed: true }
+health: { service: memos, http: /healthz, timeout: 120 }
+ownLogin: true
+backup:
+  pause: [memos]
+  beforeUpdate: true
+permissions: { network: internet }

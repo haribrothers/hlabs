@@ -6,11 +6,15 @@ features: [F-BKP-01, F-BKP-02, F-BKP-03, F-BKP-06]
 
 For admins.
 
+![Settings › Backups: the last backup 6 hours ago, a NAS destination, the schedule and the recent runs.](../../../../assets/shots/backups.webp)
+
 hlabs copies your apps' data and your Home folders to a place you choose, every night at 03:00. Every copy is encrypted before it leaves this computer. Backups is for admins: choose **Backups** in the Dock, or **Settings › Backups**.
+
+On a phone, Backups opens from **Settings**: a box at the top says when the last backup ran and when the next one is, shows the last ten as bars (a failed one is short and red, under a ✕) and has **Back up now**. Your destinations, **What's included**, the schedule and **Restore…** are the rows under it, and **Recent** lists the latest runs with how each went.
 
 ## Add a place for backups
 
-Choose **+ Add a destination** and pick where the copies go:
+Choose **+ Add a destination** and pick where the copies go. On a phone it's **Add a destination**, and the choices open in a sheet from the bottom of the screen, with **Cancel** at its top left:
 
 - **Cloud storage:** any S3-compatible service, such as Backblaze B2. Enter its endpoint (an `https://` address), the bucket, and your access key and secret key.
 - **Network drive:** a NAS or another computer's shared folder. Pick one you already connected in Files, or enter its address (`smb://nas.local/Backups` or `nfs://nas.local/volume1/backups`) with a username and password.
@@ -30,7 +34,7 @@ If a place already has backups from hlabs (say you set up hlabs again), hlabs as
 
 ## What gets backed up
 
-Choose the **11 apps and 3 Home folders** line under the last backup to choose:
+Choose the **11 apps and 3 Home folders** line under the last backup (on a phone, **What's included** under your destinations) to choose:
 
 - **Apps:** each installed app's data. Some apps leave out things they can make again, such as Jellyfin's library; the list says what.
 - **Files:** each person's Home folder, and Shared.
@@ -39,6 +43,8 @@ Choose the **11 apps and 3 Home folders** line under the last backup to choose:
 hlabs's own settings, the people who can sign in and each app's setup are always included, so you can bring back the whole system on a new computer.
 
 Apps that need it pause for a few seconds while their data is copied, so the copy is consistent. They carry on by themselves.
+
+On a Linux server, apps such as databases keep some of their files private. hlabs reads them through Docker, so they're in the backup too. A restore puts each file back with the owner it had. Docker must be running for this. If it isn't, the backup goes ahead without those files, and its log says how many of each app's files it couldn't read.
 
 ## When a backup fails
 

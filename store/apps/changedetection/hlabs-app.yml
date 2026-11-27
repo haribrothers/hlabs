@@ -1,0 +1,25 @@
+schema: 1
+id: changedetection
+name: changedetection.io
+version: '0.70.4'
+revision: 1
+tagline: Get told when a web page changes
+description: |
+  Watch web pages for changes (a price drop, a new job post, back in stock) and get a notification with
+  what changed. It has no login of its own: the hlabs login protects it.
+category: monitoring
+developer: { name: dgtlmoon, url: https://changedetection.io }
+source: https://github.com/dgtlmoon/changedetection.io
+license: Apache-2.0
+icon:
+  logo: logo.svg
+  gradient: ['#3056d3', '#0f1f52']
+  fallback: scan-eye
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 256, disk: 1024 }
+web: { service: changedetection, port: 5000, embed: true }
+ownLogin: false
+backup:
+  pause: [changedetection]
+  beforeUpdate: true
+permissions: { network: internet }

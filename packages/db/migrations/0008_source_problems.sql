@@ -1,0 +1,1 @@
+ALTER TABLE `app_sources` ADD `problems_json` text DEFAULT '[]' NOT NULL;

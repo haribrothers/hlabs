@@ -1,23 +1,28 @@
 // Settings › Network & remote access, Home network (US-SYS-01): the local address (and its home.arpa name, D-105),
-// HTTPS, web ports, the local DNS server (US-SYS-06) and every app's address. Follows app and system changes without
+// HTTPS, web ports, the local DNS server (US-SYS-06), Public access (US-SYS-43, 44) and every app's address. Follows app and system changes without
 // polling.
-import { AppLogo, appTileLook } from '@hlabs/icons';
+import { AppLogo, appTileLook, House, Lock, Network } from '@hlabs/icons';
 import type { NetworkStatus } from '@hlabs/api';
 import { isFeatureEnabled } from '@hlabs/shared';
 import { Badge, Button, List, ListRow, tokens } from '@hlabs/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { useSubscription } from '@trpc/tanstack-react-query';
 import { useState, type ReactNode } from 'react';
 import { CopyAddress } from '../apps/app-access';
 import { networkCopy as copy } from '../copy/network';
 import type { HomeApp } from '../home/home-app';
 import { useTRPC } from '../lib/trpc';
 import { useIsDesktop } from '../lib/use-media';
+import { RowEnd, RowIcon } from './phone-rows';
 import { DnsServerRows } from './dns-server';
 import { TailscaleRow, useRemoteStatus } from './remote-access';
 import { SubnetRouterOption, SubnetRouterRows } from './subnet-router';
 import { WebPortsDialog } from './web-ports-dialog';
+import { PublicAccess } from './public-access';
+import { PublicBadge } from '../public/public-badge';
+import { useEventStream } from '../lib/use-event-stream';
+import { explainHomeOnly, HomeOnly, HomeOnlyPill, useHomeOnly } from '../public/home-only';
+import { publicDashboardCopy as dashCopy } from '../copy/public-dashboard';
 
 const LOGO = tokens.SPACE_7;
 /** Fallback ports (D-016): when hlabs is on one of these, the usual one was taken. */
@@ -58,13 +63,27 @@ function HomeNetwork({
   onChangePorts: () => void;
 }) {
   const { home, ports } = status;
+  // A phone (PhoneRedesignA_Network): icon squares, the address as the row's value, Web ports a row you tap.
+  const phone = !useIsDesktop();
+  // From the internet, changing the ports is at home only (US-SYS-47).
+  const portsAway = useHomeOnly('network.setPorts');
   return (
     <List label={copy.homeNetwork}>
       <ListRow
-        title={copy.localAddress}
+        leading={phone ? <RowIcon icon={House} /> : undefined}
+        title={
+          phone ? (
+            <span className="flex items-baseline justify-between gap-2">
+              {copy.localAddress}
+              <span className="hl-p-row-value font-mono">{bare(home.localAddress)}</span>
+            </span>
+          ) : (
+            copy.localAddress
+          )
+        }
         subtitle={
           <span className="flex flex-col gap-0.5">
-            {mono(bare(home.localAddress))}
+            {phone ? null : mono(bare(home.localAddress))}
             <span>{copy.dnsName(bare(home.dnsAddress))}</span>
             {home.published ? null : (
               <>
@@ -79,14 +98,17 @@ function HomeNetwork({
             {home.published ? null : <Badge tone="warning">{copy.notPublished}</Badge>}
             {/* Renaming the server ships in phase 9 (D-036). */}
             {isFeatureEnabled('renameServer', shippedPhase) ? (
-              <Button variant="secondary" size="sm">
-                {copy.rename}
-              </Button>
+              <HomeOnly procedure="network.setHostname" label={copy.rename}>
+                <Button variant="secondary" size="sm">
+                  {copy.rename}
+                </Button>
+              </HomeOnly>
             ) : null}
           </span>
         }
       />
       <ListRow
+        leading={phone ? <RowIcon icon={Lock} /> : undefined}
         title={copy.https}
         subtitle={copy.httpsHint}
         trailing={
@@ -98,15 +120,36 @@ function HomeNetwork({
           ) : null
         }
       />
-      <ListRow
-        title={copy.webPorts}
-        subtitle={portsLine(ports)}
-        trailing={
-          <Button variant="secondary" size="sm" onClick={onChangePorts}>
-            {copy.change}
-          </Button>
-        }
-      />
+      {phone ? (
+        <ListRow
+          leading={<RowIcon icon={Network} />}
+          title={copy.webPorts}
+          subtitle={portsLine(ports)}
+          trailing={portsAway ? <HomeOnlyPill label={dashCopy.atHomeOnly} /> : <RowEnd chevron />}
+          label={
+            portsAway
+              ? dashCopy.atHomeOnlyLabel(`${copy.change} ${copy.webPorts.toLowerCase()}`)
+              : `${copy.change} ${copy.webPorts.toLowerCase()}`
+          }
+          onPress={portsAway ? () => explainHomeOnly('network.setPorts') : onChangePorts}
+        />
+      ) : (
+        <ListRow
+          title={copy.webPorts}
+          subtitle={portsLine(ports)}
+          trailing={
+            <HomeOnly
+              procedure="network.setPorts"
+              label={copy.change}
+              name={`${copy.change} ${copy.webPorts.toLowerCase()}`}
+            >
+              <Button variant="secondary" size="sm" onClick={onChangePorts}>
+                {copy.change}
+              </Button>
+            </HomeOnly>
+          }
+        />
+      )}
       <DnsServerRows dns={status.dns} />
     </List>
   );
@@ -144,7 +187,16 @@ function AppAddresses({ apps }: { apps: readonly HomeApp[] }) {
                     radius={tokens.SPACE_2}
                   />
                 }
-                title={app.name}
+                title={
+                  app.public ? (
+                    <span className="flex flex-wrap items-center gap-2">
+                      {app.name}
+                      <PublicBadge />
+                    </span>
+                  ) : (
+                    app.name
+                  )
+                }
                 // As drawn: the address on the right; under the name on a phone.
                 subtitle={desktop ? undefined : <AddressLink url={app.urls.local} />}
                 trailing={
@@ -215,17 +267,11 @@ export function NetworkSection({ shippedPhase }: { shippedPhase?: number }) {
   const [changing, setChanging] = useState(false);
   const apps = useQuery({ ...trpc.apps.list.queryOptions(), retry: false });
   // Installs, uninstalls and the server coming back change the addresses (no polling).
-  useSubscription(
-    trpc.events.stream.subscriptionOptions(
-      { types: ['app.stateChanged', 'system.status'] },
-      {
-        onData: () => {
-          void queryClient.invalidateQueries({ queryKey: trpc.network.status.queryKey() });
-          void queryClient.invalidateQueries({ queryKey: trpc.apps.list.queryKey() });
-        },
-      },
-    ),
-  );
+  useEventStream((event) => {
+    if (event.type !== 'app.stateChanged' && event.type !== 'system.status') return;
+    void queryClient.invalidateQueries({ queryKey: trpc.network.status.queryKey() });
+    void queryClient.invalidateQueries({ queryKey: trpc.apps.list.queryKey() });
+  });
 
   if (status.isError) {
     return (
@@ -259,6 +305,8 @@ export function NetworkSection({ shippedPhase }: { shippedPhase?: number }) {
           </>
         )}
       </List>
+      {/* Public apps through Cloudflare Tunnel (US-SYS-43, 44), phase 7 (D-036). */}
+      {isFeatureEnabled('publicApps', shippedPhase) ? <PublicAccess shippedPhase={shippedPhase} /> : null}
       {apps.data ? <AppAddresses apps={apps.data.apps} /> : null}
       {changing ? <WebPortsDialog onClose={() => setChanging(false)} /> : null}
     </div>

@@ -8,6 +8,7 @@ import { ulid } from '@hlabs/shared';
 import type { AppRoute } from '../apps/service';
 import type { SessionService } from '../auth/sessions';
 import type { Logger } from '../logger';
+import { CONTACT, recordContact } from '../system/connections';
 import { TailscaleError, type ServeConfig, type TailscaleClient, type TailscaleState } from '../tailscale/types';
 import { tailnetDashboardUrl } from './domains';
 import { tailnetAppPort } from '@hlabs/shared';
@@ -32,6 +33,8 @@ export interface RemoteStatus {
   url: string | null;
   loginUrl: string | null;
   keyExpiry: number | null;
+  /** Devices on the tailnet online now, this computer included; null without asking Tailscale (US-HOME-02). */
+  devicesOnline: number | null;
 }
 
 export type ConnectResult =
@@ -229,7 +232,11 @@ export class RemoteService {
       if (saved.mode !== 'tailscale' || saved.state !== 'connected') return;
       try {
         const ts = await this.state();
-        if (ts.kind === 'running') await this.publish(ts, saved.dashboardPort);
+        if (ts.kind === 'running') {
+          await this.publish(ts, saved.dashboardPort);
+          // For Advanced › "What hlabs connects to" (US-SYS-29).
+          recordContact(this.deps.db, CONTACT.tailscale);
+        }
       } catch (err) {
         this.deps.logger.warn({ err }, "couldn't update the apps on the tailnet");
       }
@@ -339,6 +346,7 @@ export class RemoteService {
       url: connected ? tailnetDashboardUrl(this.deps.db) : null,
       loginUrl: null,
       keyExpiry: null,
+      devicesOnline: null,
     };
   }
 
@@ -357,6 +365,7 @@ export class RemoteService {
         url: null,
         loginUrl: null,
         keyExpiry: null,
+        devicesOnline: null,
       };
     }
     const ts = await this.state();
@@ -389,6 +398,7 @@ export class RemoteService {
       url: state === 'connected' ? tailnetDashboardUrl(this.deps.db) : null,
       loginUrl: state === 'waiting' ? this.loginUrl : null,
       keyExpiry: ts.kind === 'running' ? ts.keyExpiry : null,
+      devicesOnline: state === 'connected' && ts.kind === 'running' ? (ts.peersOnline ?? 0) + 1 : null,
     };
   }
 }

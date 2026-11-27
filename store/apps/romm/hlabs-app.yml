@@ -1,0 +1,57 @@
+schema: 1
+id: romm
+name: RomM
+version: '5.4.1'
+revision: 1
+tagline: Organise your retro game collection and play in the browser
+description: |
+  RomM sorts the game files in your Games folder by console, adds covers and details, and lets you
+  play many of them in the browser. Put games in Games/roms/<console>, e.g. roms/snes. Cover art needs
+  a free IGDB key (optional). The first visit sets up your admin account.
+category: media
+developer: { name: RomM, url: https://romm.app }
+source: https://github.com/rommapp/romm
+license: AGPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#553e98', '#1d1440']
+  fallback: gamepad-2
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 1024, disk: 2048 }
+web: { service: romm, port: 8080, embed: true }
+health: { service: romm, http: /api/heartbeat, timeout: 300 }
+folders:
+  - key: games
+    label: Games
+    description: Your game files, in roms/<console> folders
+    target: /romm/library
+    default: shared:Games
+    mode: rw
+    required: true
+env:
+  - key: DB_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+  - key: DB_ROOT_PASSWORD
+    type: secret
+    generate: true
+    hidden: true
+  - key: ROMM_AUTH_SECRET_KEY
+    type: secret
+    generate: true
+    hidden: true
+  - key: IGDB_CLIENT_ID
+    label: IGDB client ID
+    description: Optional. For covers and game details; make one at api-docs.igdb.com
+    required: false
+  - key: IGDB_CLIENT_SECRET
+    type: secret
+    label: IGDB client secret
+    required: false
+ownLogin: true
+backup:
+  pause: [romm, romm-db]
+  exclude: [redis/]
+  beforeUpdate: true
+permissions: { network: internet }

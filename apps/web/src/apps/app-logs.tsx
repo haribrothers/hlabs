@@ -45,6 +45,8 @@ interface LogsProps {
   appId: string;
   /** Open the logs at this moment, not following (US-STORE-17). */
   at?: number;
+  /** Open them filtered to this container (its compose service), from App settings › Usage (US-APP-21). */
+  service?: string;
   /**
    * Opened over the app window: a dialog, and Back goes to where it was opened from there, App settings or the
    * window itself (phase 2 feedback, D-096).
@@ -76,7 +78,7 @@ function useBackToSettings(appId: string) {
       : void navigate({ to: '/apps/$appId/settings', params: { appId }, replace: true, state: { from: state.from } });
 }
 
-function AppLogsView({ appId, at, onBack, backTo = 'settings' }: LogsProps) {
+function AppLogsView({ appId, at, service: initialService, onBack, backTo = 'settings' }: LogsProps) {
   const { data: app } = useApp(appId);
   const trpc = useTRPC();
   // Only an image without this computer's platform reads differently on macOS and Linux.
@@ -88,7 +90,7 @@ function AppLogsView({ appId, at, onBack, backTo = 'settings' }: LogsProps) {
   // Filters (US-APP-09): text and level on the loaded lines, the container on the server.
   const [text, setText] = useState('');
   const query = useDeferredValue(text.trim().toLowerCase());
-  const [service, setService] = useState<string | undefined>(undefined);
+  const [service, setService] = useState<string | undefined>(initialService);
   const [errorsOnly, setErrorsOnly] = useState(false);
   const { lines, loading, error } = useAppLogs(appId, service);
   // Opened at a moment (US-STORE-17): not following, and that moment in view once the lines are in.
@@ -316,7 +318,7 @@ function Cursor() {
 }
 
 /** The line with each match of the filter marked (case-insensitive). */
-function Highlighted({ text, query }: { text: string; query: string }) {
+export function Highlighted({ text, query }: { text: string; query: string }) {
   if (!query) return text;
   const lower = text.toLowerCase();
   const parts: ReactNode[] = [];

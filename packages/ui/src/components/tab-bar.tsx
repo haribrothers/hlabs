@@ -10,12 +10,16 @@ export interface TabBarProps {
   active?: string;
   defaultActive?: string;
   onSelect?: (id: string) => void;
-  /** Separate search circle. Phones pass false (search lives in App Store and Files). */
+  /** Separate search slot. Phones pass false (search lives on Home, in the App Store and in Files, US-PHONE-09). */
   search?: boolean;
   onSearch?: () => void;
 }
 
-/** The phone tab bar (< 768px): Liquid Glass capsule, a lens that slides to the selected tab. */
+/**
+ * The phone tab bar (< 768px, D-172): docked to the bottom edge, 49px plus the home-indicator inset, one tab per
+ * area with its glyph and name. The current tab is in the accent colour with a soft highlight behind its glyph (so
+ * it's never colour alone), and `aria-current="page"`; the highlight slides between tabs with `motion.spring`.
+ */
 export function TabBar({ items, active, defaultActive, onSelect, search = false, onSearch }: TabBarProps) {
   const t = useUiStrings();
   const reduce = useReduceMotion();
@@ -31,45 +35,46 @@ export function TabBar({ items, active, defaultActive, onSelect, search = false,
   return (
     <nav aria-label={t.tabBar} className="hl-tabbar">
       <LayoutGroup id={group}>
-        <div className="hl-tabbar-glass">
-          {items.map((item) => {
-            const Glyph = tabGlyphs[(item.icon ?? item.id) as keyof typeof tabGlyphs] ?? tabGlyphs.home;
-            const selected = item.id === current;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className="hl-tab"
-                aria-current={selected ? 'page' : undefined}
-                onClick={() => pick(item.id)}
-              >
+        {items.map((item) => {
+          const Glyph = tabGlyphs[(item.icon ?? item.id) as keyof typeof tabGlyphs] ?? tabGlyphs.home;
+          const selected = item.id === current;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className="hl-tab"
+              aria-current={selected ? 'page' : undefined}
+              onClick={() => pick(item.id)}
+            >
+              <span className="hl-tab-glyph">
                 {selected ? (
                   <m.span
+                    aria-hidden
                     className="hl-tab-lens"
                     layoutId={reduce ? undefined : 'tab-lens'}
                     transition={motion.spring}
                   />
                 ) : null}
-                <span className="hl-tab-content">
-                  <Glyph />
-                  <span>{item.label}</span>
+                <Glyph />
+              </span>
+              <span className="hl-tab-label">{item.label}</span>
+              {item.badge ? (
+                <span
+                  className="hl-count"
+                  aria-label={item.id === 'store' ? t.badgeUpdates(item.badge) : t.badgeNew(item.badge)}
+                >
+                  {badgeText(item.badge)}
                 </span>
-                {item.badge ? (
-                  <span
-                    className="hl-count"
-                    aria-label={item.id === 'store' ? t.badgeUpdates(item.badge) : t.badgeNew(item.badge)}
-                  >
-                    {badgeText(item.badge)}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
+              ) : null}
+            </button>
+          );
+        })}
       </LayoutGroup>
       {search ? (
-        <button type="button" className="hl-tab hl-tab-search hl-tabbar-glass" aria-label={t.search} onClick={onSearch}>
-          <SearchGlyph />
+        <button type="button" className="hl-tab" aria-label={t.search} onClick={onSearch}>
+          <span className="hl-tab-glyph">
+            <SearchGlyph />
+          </span>
         </button>
       ) : null}
     </nav>

@@ -1,0 +1,27 @@
+services:
+  gatus:
+    image: docker.io/twinproduction/gatus:v5.38.0@sha256:085ed63da963728965d00a3c78aa6167e3bf135218485b893201758e079e8415
+    environment:
+      GATUS_CONFIG_PATH: /config/config.yaml
+    volumes:
+      - ${HLABS_FOLDER_CONFIG}:/config
+      - ${HLABS_APP_DATA}/data:/data
+    depends_on:
+      gatus-config:
+        condition: service_healthy
+  gatus-config:
+    image: docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+    user: ${PUID}:${PGID}
+    command:
+      - sh
+      - -c
+      - |
+        [ -f /config/config.yaml ] || printf '%s\n' 'storage:' '  type: sqlite' '  path: /data/data.db' 'endpoints:' '  - name: Gatus' '    url: http://localhost:8080/health' '    interval: 5m' '    conditions:' '      - "[STATUS] == 200"' > /config/config.yaml
+        exec sleep 2147483647
+    volumes:
+      - ${HLABS_FOLDER_CONFIG}:/config
+    healthcheck:
+      test: [CMD, test, -f, /config/config.yaml]
+      interval: 2s
+      timeout: 2s
+      retries: 30

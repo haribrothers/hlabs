@@ -8,6 +8,7 @@ import { trayResetPassword } from '../tray/reset-password';
 import { setupUrls } from '../tray/setup-url';
 import { trayAppLogs } from '../tray/app-logs';
 import { trayUsers } from '../tray/users';
+import { libraryKeygen, librarySign } from '../store/library-keys';
 
 export const tray: AppHandlers<DaemonContext>['tray'] = {
   // US-INST-05: state, apps, CPU, memory, free space and the dashboard's address.
@@ -23,16 +24,22 @@ export const tray: AppHandlers<DaemonContext>['tray'] = {
   uninstallInfo: (_input, ctx) => ctx.services.uninstall.info(),
 
   // US-INST-22 (D-143, D-144): the daemon's part of uninstalling; the tray or install.sh does the rest after it.
+  libraryKeygen: ({ replace }, ctx) => libraryKeygen(ctx.services.secrets, replace ?? false),
+  librarySign: ({ data }, ctx) => librarySign(ctx.services.secrets, data),
   uninstall: ({ keepData, removeColima, via }, ctx) => ({
     jobId: ctx.services.uninstall.start({ keepData, removeColima, via: via ?? 'tray' }),
   }),
 
-  // Following the uninstall job (the tray token may call tray.* only, D-035).
+  // Following the uninstall job, or turning off public access (the tray token may call tray.* only, D-035).
   job: ({ jobId }, ctx) => {
     const job = ctx.services.jobs.get(jobId);
-    if (!job || job.kind !== 'hlabs_uninstall') throw hlabsError('NOT_FOUND');
+    if (!job || (job.kind !== 'hlabs_uninstall' && job.kind !== 'public_off_all')) throw hlabsError('NOT_FOUND');
     return job;
   },
+
+  // US-SYS-44: "Turn off public access" after the computer's own confirmation (Touch ID or the password, done by the
+  // tray before it calls this). Audited as the menu-bar app's; the admins are told.
+  publicOff: (_input, ctx) => ctx.services.publicApps.turnOffAll({ userId: null, ip: null }, 'tray'),
 
   // US-INST-25: one app's container logs for `hlabs logs --app` (the tray token calls tray.* only, D-035).
   appLogs: (input, ctx) => trayAppLogs(ctx.services, input),

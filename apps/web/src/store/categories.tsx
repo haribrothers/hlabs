@@ -3,9 +3,9 @@
 // own app), each hidden until its phase ships (D-036): in phase 2 none has, so the group isn't shown.
 import type { StoreCategoryGroup } from '@hlabs/shared';
 import { isFeatureEnabled, type Feature } from '@hlabs/shared';
-import { Badge, Menu } from '@hlabs/ui';
+import { Badge, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@hlabs/ui';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { categoryLabels, storeCopy } from '../copy/store';
 import { useTRPC } from '../lib/trpc';
@@ -88,10 +88,20 @@ export function StoreSidebar() {
           <ul className="m-0 flex list-none flex-col gap-1 p-0">
             {manage.map((item) => (
               <li key={item.id}>
-                <a href={item.path} className={sideItem}>
-                  {item.label}
-                  {item.id === 'updates' ? <UpdatesBadge /> : null}
-                </a>
+                {item.id === 'updates' ? (
+                  <Link to="/store/updates" className={sideItem} activeProps={{ 'aria-current': 'page' }}>
+                    {item.label}
+                    <UpdatesBadge />
+                  </Link>
+                ) : item.id === 'sources' ? (
+                  <Link to="/store/sources" className={sideItem} activeProps={{ 'aria-current': 'page' }}>
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a href={item.path} className={sideItem}>
+                    {item.label}
+                  </a>
+                )}
               </li>
             ))}
           </ul>
@@ -105,12 +115,44 @@ export function StoreSidebar() {
 function UpdatesBadge() {
   const trpc = useTRPC();
   const updates = useQuery({ ...trpc.store.listUpdates.queryOptions(), retry: false });
-  const count = (updates.data as { pending?: unknown[] } | undefined)?.pending?.length ?? 0;
+  const count = updates.data?.pending.length ?? 0;
   return count > 0 ? <Badge tone="accent">{count}</Badge> : null;
 }
 
-const chip =
-  'hl-focus inline-flex min-h-11 shrink-0 items-center rounded-pill bg-surface-row px-4 text-body-sm text-ink no-underline aria-[current=page]:bg-surface-control aria-[current=page]:font-semibold';
+/** A phone chip (D-172): the chosen one white, so it's marked by more than colour (aria-current too). */
+const chip = 'hl-p-chip';
+
+/** The phone's "Manage apps": a chip that opens Updates (with its count), App sources and Deploy your own app. */
+function ManageMenu({ items }: { items: ManageItem[] }) {
+  const navigate = useNavigate();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" className={chip}>
+          {copy.manageApps}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-52">
+        {items.map((item) => (
+          <DropdownMenuItem
+            key={item.id}
+            className="justify-between"
+            onSelect={() =>
+              item.id === 'updates'
+                ? void navigate({ to: '/store/updates' })
+                : item.id === 'sources'
+                  ? void navigate({ to: '/store/sources' })
+                  : window.location.assign(item.path)
+            }
+          >
+            {item.label}
+            {item.id === 'updates' ? <UpdatesBadge /> : null}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 /** The phone's categories: a row of chips that scrolls sideways, and "Manage apps" in a menu. */
 export function StoreChips() {
@@ -118,7 +160,10 @@ export function StoreChips() {
   const manage = manageItems(useMe().data?.role);
   return (
     <div className="flex items-center gap-2">
-      <nav aria-label={copy.categories} className="-mx-4 min-w-0 flex-1 overflow-x-auto px-4">
+      <nav
+        aria-label={copy.categories}
+        className="-mx-4 min-w-0 flex-1 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         <ul className="m-0 flex w-max list-none gap-2 p-0">
           <li>
             <DiscoverLink className={chip}>{copy.discover}</DiscoverLink>
@@ -132,9 +177,7 @@ export function StoreChips() {
           ))}
         </ul>
       </nav>
-      {manage.length ? (
-        <Menu label={copy.manageApps} items={manage.map((i) => ({ label: i.label, href: i.path }))} />
-      ) : null}
+      {manage.length ? <ManageMenu items={manage} /> : null}
     </div>
   );
 }

@@ -33,3 +33,17 @@ backup:
   exclude: [cache/]
   beforeUpdate: true
 permissions: { network: internet }
+# Home widget (US-HOME-20, D-157): what's in the library, read with an API key.
+widgets:
+  - id: library
+    name: Library
+    template: twoStat
+    endpoint: { service: jellyfin, path: /Items/Counts }
+    refresh: 300
+    fields:
+      first: { value: MovieCount, label: movies }
+      second: { value: SeriesCount, label: shows }
+    auth:
+      header: Authorization
+      prefix: 'MediaBrowser Token='
+      help: In Jellyfin, open Dashboard › API keys and make a key for hlabs.

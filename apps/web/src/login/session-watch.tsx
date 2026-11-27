@@ -9,6 +9,8 @@ import { loginCopy } from '../copy/login';
 import { setCsrfToken } from '../lib/csrf';
 import { NotificationFeed } from '../lib/notification-feed';
 import { useReconnectWhenVisible } from '../lib/stream-status';
+import { useRefreshOnResume } from '../lib/resume';
+import { markResetting, markRestarting, resetUnderway } from '../health/restarting';
 import { markUpdating } from '../health/updating';
 import { dismissNotificationToasts, showToast } from '../lib/toasts';
 import { useTRPC, useTRPCClient } from '../lib/trpc';
@@ -36,6 +38,8 @@ export function SessionWatch() {
   const signedOut = useSignedOutHere();
   const queryClient = useQueryClient();
   useReconnectWhenVisible();
+  // Back from sleep or another app: the stream and what's on screen are brought up to date (US-PHONE-04).
+  useRefreshOnResume();
   const [feed] = useState(
     () =>
       new NotificationFeed({
@@ -46,7 +50,16 @@ export function SessionWatch() {
   );
   useSubscription(
     trpc.events.stream.subscriptionOptions(
-      { types: ['session.revoked', 'access.changed', 'notification.created', 'notification.read', 'system.status'] },
+      {
+        types: [
+          'session.revoked',
+          'access.changed',
+          'notification.created',
+          'notification.read',
+          'notification.dismissed',
+          'system.status',
+        ],
+      },
       {
         onStarted: () => void feed.onConnected(),
         onConnectionStateChange: (state) => {
@@ -55,13 +68,20 @@ export function SessionWatch() {
         },
         onData: (envelope) => {
           const event = envelope.data;
-          if (event.type === 'session.revoked') void signedOut();
+          // A factory reset ends every session: this page shows the reset instead (US-SYS-38).
+          if (event.type === 'session.revoked') {
+            if (!resetUnderway()) void signedOut();
+          }
           // An admin changed what I can open (US-ACCT-26): Home's tiles, the Dock and app pages refetch now.
           else if (event.type === 'access.changed') void queryClient.invalidateQueries();
           else if (event.type === 'notification.created') feed.onCreated(event);
-          else if (event.type === 'notification.read') feed.onRead(event);
+          // Read or dismissed in another session (US-HOME-14): its toast goes here too.
+          else if (event.type === 'notification.read' || event.type === 'notification.dismissed') feed.onRead(event);
           // hlabs is about to stop for an update: every route gives way to "Updating hlabs" (US-STATE-01).
           else if (event.type === 'system.status' && event.data.state === 'updating') markUpdating();
+          // Restarting or being reset (US-SYS-31, US-SYS-38): "Restarting hlabs…" or "Resetting hlabs…".
+          else if (event.type === 'system.status' && event.data.state === 'restarting') markRestarting();
+          else if (event.type === 'system.status' && event.data.state === 'resetting') markResetting();
         },
       },
     ),

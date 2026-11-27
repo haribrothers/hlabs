@@ -1,10 +1,11 @@
 // Automatic updates (US-SYS-26, 02 §2.10, D-026): one window, 03:00–05:00 local time. With "Update hlabs
 // automatically" on, an available hlabs update is installed first; with "Update apps automatically" on, then every
-// running app allowed to update by itself (its settings) that has a newer version. A running backup or another job
+// running app allowed to update by itself (its settings) that has a newer version, unless that version asks for new
+// access (US-STORE-16: it waits in Updates for an admin). A running backup, that night's scheduled backup or another job
 // that can't share the time (D-020) is waited for, still within the window, else it's the next night. Each runs once
 // a night (kept in settings, so a restart or a rollback doesn't try again), and a notification says what was updated
 // or rolled back.
-import { apps, getSetting, setSetting, type HlabsDb } from '@hlabs/db';
+import { appPublic, apps, getSetting, setSetting, type HlabsDb } from '@hlabs/db';
 import { and, eq } from 'drizzle-orm';
 import type { EventBus } from '../events/bus';
 import type { JobRunner } from '../jobs/runner';
@@ -28,6 +29,11 @@ export interface AutoUpdatesDeps {
   hlabs: { available: () => string | null; install: () => void };
   /** Starting one app's update; returns its job. */
   updateApp: (appId: string) => string;
+  /** An installed app's update (newer version or revision) and whether it asks for new access; by default the
+   * store's version against the installed one. */
+  findUpdate?: (appId: string) => { to: string; newAccess: boolean } | null;
+  /** A scheduled backup starts (or is running) before this time: the apps wait for it (US-STORE-16). */
+  backupsDue?: (until: number) => boolean;
   now?: () => Date;
 }
 
@@ -36,6 +42,9 @@ const nightOf = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 export const inWindow = (d: Date) => d.getHours() >= WINDOW_START_HOUR && d.getHours() < WINDOW_END_HOUR;
+
+/** When the window that `d` is in closes. */
+const windowEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), WINDOW_END_HOUR).getTime();
 
 export class AutoUpdates {
   private timer: NodeJS.Timeout | null = null;
@@ -80,10 +89,20 @@ export class AutoUpdates {
         this.deps.hlabs.install();
         return;
       }
-      if (u.autoApps && u.autoNight.apps !== night) {
+      // Public apps update by themselves whatever the setting for the others (07 §7.10 control 6).
+      const publicIds = new Set(
+        db
+          .select({ appId: appPublic.appId })
+          .from(appPublic)
+          .all()
+          .map((r) => r.appId),
+      );
+      if ((u.autoApps || publicIds.size > 0) && u.autoNight.apps !== night) {
         // hlabs first: its update has to finish (it restarts the daemon) before the apps'.
         if (backupRunning || jobs.listActive().some((j) => j.kind === 'system_update')) return;
-        const due = this.dueApps();
+        // After that night's backups (US-STORE-16).
+        if (this.deps.backupsDue?.(windowEnd(now))) return;
+        const due = this.dueApps().filter((a) => u.autoApps || publicIds.has(a.id));
         if (due.length === 0) return;
         if (jobs.blocker('app_update')) return;
         setSetting(db, 'updates', { ...getSetting(db, 'updates'), autoNight: { ...u.autoNight, apps: night } });
@@ -100,17 +119,23 @@ export class AutoUpdates {
     }
   }
 
-  /** Running apps allowed to update by themselves with a newer version in the store. */
+  /** Running apps allowed to update by themselves with a newer version in the store that asks for nothing new. */
   private dueApps() {
     return this.deps.db
       .select()
       .from(apps)
-      .where(and(eq(apps.autoUpdate, true), eq(apps.state, 'running')))
+      .where(and(eq(apps.autoUpdate, true), eq(apps.state, 'running'), eq(apps.custom, false)))
       .all()
       .flatMap((app) => {
         const entry = this.deps.catalog.get(app.id, app.sourceId ?? undefined);
-        if (!entry || entry.manifest.version === app.version) return [];
-        return [{ id: app.id, name: entry.manifest.name, from: app.version, to: entry.manifest.version }];
+        if (!entry) return [];
+        const update = this.deps.findUpdate
+          ? this.deps.findUpdate(app.id)
+          : entry.manifest.version === app.version
+            ? null
+            : { to: entry.manifest.version, newAccess: false };
+        if (!update || update.newAccess) return [];
+        return [{ id: app.id, name: entry.manifest.name, from: app.version, to: update.to }];
       });
   }
 

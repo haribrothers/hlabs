@@ -1,0 +1,31 @@
+# Prowlarr's own login is replaced by the hlabs login (PROWLARR__AUTH__METHOD=External), as AdGuard Home's is (D-085).
+# FlareSolverr has no page of its own, so it runs inside Prowlarr (D-161).
+schema: 1
+id: prowlarr
+name: Prowlarr
+version: '2.7.0'
+revision: 1
+tagline: One place to manage the search sites for Sonarr, Radarr and Lidarr
+description: |
+  Add your torrent and Usenet search sites once and Prowlarr keeps Sonarr, Radarr and Lidarr in step
+  with them. FlareSolverr comes with it for sites behind a browser check: add it in Settings ›
+  Indexers › Indexer proxies at http://flaresolverr:8191.
+  Its own login is turned off (the hlabs login protects it). Other apps reach it at http://prowlarr:9696; it reaches your download apps the same way, e.g. http://qbittorrent:8080.
+category: media
+developer: { name: Prowlarr, url: https://prowlarr.com }
+source: https://github.com/Prowlarr/Prowlarr
+license: GPL-3.0
+icon:
+  logo: logo.svg
+  gradient: ['#e66001', '#5a2a05']
+  fallback: search
+platforms: [linux/amd64, linux/arm64]
+requirements: { memory: 512, disk: 1024 }
+web: { service: prowlarr, port: 9696, embed: true }
+health: { service: prowlarr, http: /ping, timeout: 180 }
+ownLogin: false
+backup:
+  pause: [prowlarr]
+  exclude: [logs/]
+  beforeUpdate: true
+permissions: { network: internet }

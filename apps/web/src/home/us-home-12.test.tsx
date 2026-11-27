@@ -44,7 +44,8 @@ describe('US-HOME-12', () => {
       'home.getWidgetData': widgets({ 'shared-apps': { total: 4, running: 4, adminName: 'Hari', canInstall: false } }),
     });
     expect(await screen.findByText('Shared with you by Hari')).toBeInTheDocument();
-    expect(screen.getByText('4 apps · all running')).toBeInTheDocument();
+    // The figure and its words read as one phrase.
+    expect(screen.getByText('4', { selector: 'span' }).closest('p')).toHaveTextContent('4 apps · all running');
     expect(screen.getByText('Ask Hari if you need another app')).toBeInTheDocument();
     expect(screen.queryByRole('link')).toBeNull();
   });

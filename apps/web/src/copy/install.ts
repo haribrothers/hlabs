@@ -5,6 +5,8 @@ export const installCopy = {
   // Install sheet
   title: (app: string) => `Install ${app}`,
   subtitle: 'Review what it can access',
+  /** Under it on a phone (PhoneRedesignA_InstallSheet). */
+  changeLater: "You can change this later in the app's settings.",
   folders: 'Folder access',
   home: 'Home',
   shared: 'Shared',
@@ -39,6 +41,9 @@ export const installCopy = {
   riskDocker: 'It can control Docker, so it can start, stop and change every app on hlabs.',
   riskPort: (label: string, port: number) => `It opens port ${port} (${label}) to your network.`,
   riskGpu: 'It uses your graphics card.',
+  riskDevice: (label: string, path: string) => `It can use ${label} (${path}) when it's plugged in.`,
+  riskCapability: (cap: string) =>
+    cap === 'NET_ADMIN' ? "It can change this computer's network settings, as a VPN needs." : `It needs ${cap}.`,
   understand: 'I understand',
   cancel: 'Cancel',
   install: 'Install',
@@ -67,6 +72,10 @@ export const installCopy = {
   ready: (app: string) => `${app} is ready`,
   open: 'Open',
   failed: 'Install failed',
+  /** InstallFailed as a phone sheet (US-PHONE-12). */
+  failedTitle: (name: string) => `${name} didn't install`,
+  seeDetails: 'See what went wrong',
+  close: 'Close',
   nothingChanged: 'Nothing else was changed',
   reason: {
     APP_PORT_IN_USE: (port: number | string) => `Port ${port} is already used by another program on this computer.`,

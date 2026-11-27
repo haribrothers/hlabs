@@ -69,6 +69,31 @@ export const HLABS_ERRORS = {
   /** An update didn't start, and neither did the previous version (US-STORE-17). */
   APP_ROLLBACK_FAILED: 'INTERNAL_SERVER_ERROR',
   HOSTNAME_TAKEN: 'CONFLICT',
+  /** New settings didn't start the app in time, so the previous ones were put back (US-APP-16). */
+  APP_CONFIG_UNDONE: 'INTERNAL_SERVER_ERROR',
+
+  // App sources and libraries (US-STORE-18, 19, 27…29)
+  /** Not an https address or a folder path. */
+  SOURCE_ADDRESS_INVALID: 'BAD_REQUEST',
+  /** The address didn't answer (offline, a typo, a private repository). */
+  SOURCE_UNREACHABLE: 'BAD_GATEWAY',
+  /** Nothing in hlabs's app format there: no index.json, or a folder without apps. */
+  SOURCE_EMPTY: 'NOT_FOUND',
+  /** What's there isn't readable as a source (too big, files outside it). */
+  SOURCE_INVALID: 'BAD_REQUEST',
+  /** The index isn't signed by the key saved when the source was added; the source is off until added again. */
+  SOURCE_SIGNATURE_MISMATCH: 'PRECONDITION_FAILED',
+  SOURCE_EXISTS: 'CONFLICT',
+  /** A library folder must be under the storage root. */
+  SOURCE_PATH_OUTSIDE: 'BAD_REQUEST',
+  /** A library folder can't be where members can change it: Shared or a member's Home. */
+  SOURCE_PATH_SHARED: 'BAD_REQUEST',
+  /** The built-in source can't be removed. */
+  SOURCE_BUILTIN: 'PRECONDITION_FAILED',
+  /** "Copy to my library": the library already has an app with that id (`detail.id`). */
+  LIBRARY_APP_EXISTS: 'CONFLICT',
+  /** `hlabs library sign` without a key made by `hlabs library keygen` on this computer. */
+  LIBRARY_KEY_MISSING: 'NOT_FOUND',
 
   // Storage, files and network
   STORAGE_NOT_WRITABLE: 'BAD_REQUEST',
@@ -105,6 +130,32 @@ export const HLABS_ERRORS = {
   DNS_SERVER_UNREACHABLE: 'PRECONDITION_FAILED',
   /** Pi-hole refused the app password (US-SYS-06). */
   DNS_SERVER_AUTH_FAILED: 'BAD_REQUEST',
+
+  // Public apps (US-APP-27…29, US-SYS-43, 44; D-171)
+  /** Making an app public before Cloudflare Tunnel is set up (Settings › Network › Public access). */
+  PUBLIC_NOT_SET_UP: 'PRECONDITION_FAILED',
+  /** Cloudflare Tunnel is set up already: remove it first to use another domain. */
+  PUBLIC_ALREADY_SET_UP: 'CONFLICT',
+  /** The manifest says `public.allowed: false`, or the app can control other apps: `detail.reason` (or null). */
+  PUBLIC_NOT_ALLOWED: 'PRECONDITION_FAILED',
+  /** Cloudflare refused or didn't answer: `detail.step` says at which step (`signIn`, `token`, `tunnel`, `dns`…). */
+  CLOUDFLARE_FAILED: 'BAD_GATEWAY',
+  /** The name is already in the domain's DNS (a record hlabs didn't make, or another public app's). */
+  PUBLIC_HOSTNAME_TAKEN: 'CONFLICT',
+  /** Nobody allowed into the app has two-factor on, so nobody could get in: `detail.users` names who to ask. */
+  TWO_FACTOR_REQUIRED_FOR_PUBLIC: 'PRECONDITION_FAILED',
+  /** Not while the app is public: automatic updates stay on, and so does the hlabs login with it (07 §7.10). */
+  APP_IS_PUBLIC: 'PRECONDITION_FAILED',
+
+  // The public dashboard (US-SYS-45…48; D-182, 07 §7.11)
+  /** Only at home or on the tailnet (US-SYS-47): the request came through the public dashboard; `detail.procedure`. */
+  HOME_ONLY: 'FORBIDDEN',
+  /** Every admin needs two-factor before the dashboard can be public: `detail.admins` names who hasn't turned it on. */
+  TWO_FACTOR_REQUIRED_FOR_DASHBOARD: 'PRECONDITION_FAILED',
+  /** Signing in on the public dashboard needs two-factor, and this account has none: no session (US-SYS-46). */
+  AUTH_TWO_FACTOR_REQUIRED: 'FORBIDDEN',
+  /** Cloudflare's sign-in in front needs the dashboard to be public first (US-SYS-48). */
+  DASHBOARD_NOT_PUBLIC: 'PRECONDITION_FAILED',
 
   // Backups and restore
   BACKUP_DEST_UNREACHABLE: 'BAD_GATEWAY',

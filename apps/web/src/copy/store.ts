@@ -24,9 +24,13 @@ export const storeCopy = {
   installApp: (name: string) => `Install ${name}`,
   openApp: (name: string) => `Open ${name}`,
   detailsOf: (name: string) => `${name} details`,
+  /** The phone's featured card (US-PHONE-10). */
+  view: 'View',
+  viewApp: (name: string) => `View ${name}`,
   appCount: (n: number) => `${n} ${n === 1 ? 'app' : 'apps'}`,
   empty: 'No apps here yet.',
   searchLabel: 'Search apps',
+  clearSearch: 'Clear search',
   searchPlaceholder: (n: number) => `Search ${n} ${n === 1 ? 'app' : 'apps'}`,
   resultsFor: (q: string) => `Results for “${q}”`,
   noResults: (q: string) => `No apps match “${q}”`,
@@ -36,6 +40,13 @@ export const storeCopy = {
   filters: 'Filter results',
   cantFind: 'Can’t find an app?',
   addSource: 'Add another app source',
+  // Browse a category (US-STORE-04)
+  sortLabel: 'Sort apps',
+  sorts: { popular: 'Popular', new: 'New', name: 'A–Z' },
+  compatibleFirst: { macos: 'showing Apple Silicon compatible first', linux: 'showing ARM64 compatible first' },
+  /** Under a category's title on a phone (PhoneRedesignA_StoreCategory). */
+  compatibleFirstShort: { macos: 'Apple Silicon compatible first', linux: 'ARM64 compatible first' },
+  loadingMore: 'Loading more apps…',
   // App details (US-STORE-06)
   officialSource: 'hlabs official',
   about: 'About',
@@ -43,8 +54,38 @@ export const storeCopy = {
   more: 'More',
   less: 'Less',
   screenshots: 'Screenshots',
+  /** PhoneAppDetails' facts (PhoneRedesignA_Details). */
+  information: 'Information',
+  /** PhoneAppDetails' info strip (PhoneRedesignA_Details). */
+  atAGlance: 'At a glance',
+  latest: 'Latest',
+  installedVersion: (v: string) => `Installed ${v}`,
+  memory: 'Memory',
+  disk: 'Disk',
+  category: 'Category',
+  atLeast: 'at least',
+  toStart: 'to start',
+  gbFigure: (n: string) => `${n} GB`,
+  noFigure: '—',
+  categoryShort: {
+    media: 'Media',
+    photos: 'Photos',
+    files: 'Files',
+    network: 'Network',
+    home: 'Home',
+    developer: 'Developer',
+    ai: 'AI',
+    productivity: 'Productivity',
+    security: 'Security',
+    finance: 'Finance',
+    books: 'Books',
+    monitoring: 'Monitoring',
+    other: 'Other',
+  } as Record<string, string>,
   screenshotN: (n: number, of: number) => `Screenshot ${n} of ${of}`,
   openScreenshot: (n: number) => `Open screenshot ${n}`,
+  /** A screenshot's alt text on a phone (US-PHONE-11). */
+  screenshot: (n: number) => `Screenshot ${n}`,
   previous: 'Previous',
   next: 'Next',
   close: 'Close',
@@ -69,14 +110,33 @@ export const storeCopy = {
   gpuNote: 'Uses your graphics card to run faster.',
   docker: 'Control of your other apps (Docker)',
   dockerNote: 'Can start, stop and change every app on hlabs.',
+  deviceNote: (path: string) => `Device ${path} · Used only when it's plugged in`,
+  capability: (cap: string) => (cap === 'NET_ADMIN' ? 'Network settings' : cap),
+  capabilityNote: (cap: string) =>
+    cap === 'NET_ADMIN' ? "Can change this computer's network settings, as a VPN needs" : `Linux capability ${cap}`,
   risky: 'Risky',
   needsFirst: (name: string) => `Needs ${name} installed first`,
   noArm64: {
     macos: "There's no Apple Silicon version of this app yet.",
     linux: "There's no ARM64 version of this app yet.",
   },
+  /** AppDetailsOverlap: what hlabs already does that the app also does (US-STORE-23). */
+  overlaps: {
+    remoteAccess:
+      'hlabs already gives you remote access with Tailscale. Use this only if you need it for something else.',
+    backups: 'hlabs already backs up your apps and files.',
+    appManagement: 'hlabs already manages your apps; this one can control all of them.',
+  },
+  /** After noArm64 in the AppDetailsX86 banner (US-STORE-23). */
+  runsOnIntel: 'It runs on computers with an Intel or AMD chip.',
+  runsOn: 'Runs on',
+  intelAndAmd: 'Intel and AMD (x86-64)',
   /** The "platform" tag: an arm64 image on an arm64 computer. */
   arm64Tag: { macos: 'Apple Silicon', linux: 'ARM64' },
+  /** In place of the platform tag on an arm64 computer, for an app without an arm64 image (US-STORE-23). */
+  x86Only: 'x86 only',
+  /** Under About, for an app drafted from another store's definition (US-STORE-23, D-148). */
+  packagedWith: (store: string, license: string) => `Packaged with help from the ${store} app store (${license})`,
 } as const;
 
 /** Store groups (US-STORE-02), in the order the daemon returns them. */
