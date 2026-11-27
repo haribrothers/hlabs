@@ -2,6 +2,7 @@
 // install, a backup copies them to the pretend NAS, their data is wiped, and a restore brings it back with both
 // apps running again. Serial: it installs real apps and changes the pretend NAS.
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { addNasDestination, ADMIN_PASSWORD, cleanBackups, DATA_DIR } from './backups';
@@ -12,6 +13,25 @@ const APPS = [
   { id: 'paperless-ngx', name: 'Paperless-ngx' },
 ];
 const marker = (id: string) => join(DATA_DIR, 'app-data', id, 'hlabs-e2e-marker.txt');
+/**
+ * SQL in Paperless's database, whose folder is Postgres's own user's (0700), which hlabs's user can't read on Linux:
+ * what's in it shows the backup read it and the restore gave it back to Postgres (D-190).
+ */
+function psql(sql: string): string {
+  const id = execFileSync('docker', [
+    'ps',
+    '-q',
+    '--filter',
+    'label=com.docker.compose.project=hlabs-e2e-paperless-ngx',
+    '--filter',
+    'label=com.docker.compose.service=db',
+  ])
+    .toString()
+    .trim();
+  return execFileSync('docker', ['exec', id, 'psql', '-U', 'paperless', '-d', 'paperless', '-tAc', sql])
+    .toString()
+    .trim();
+}
 
 async function removeApps(request: APIRequestContext) {
   for (const app of APPS) await request.post(`${MAIN_URL}/dev/remove-app`, { data: { id: app.id } });
@@ -34,6 +54,7 @@ test('Phase 5: back up Vaultwarden and Paperless, wipe their data, restore it, b
   try {
     for (const app of APPS) await install(page, app.id);
     for (const app of APPS) writeFileSync(marker(app.id), `${app.id} before`);
+    psql("CREATE TABLE hlabs_e2e_marker (note text); INSERT INTO hlabs_e2e_marker VALUES ('before backup')");
 
     await page.goto('/settings/backups');
     const dialog = await addNasDestination(page);
@@ -65,6 +86,20 @@ test('Phase 5: back up Vaultwarden and Paperless, wipe their data, restore it, b
       await page.goto(`/store/app/${app.id}`);
       await expect(page.getByRole('button', { name: 'Open', exact: true })).toBeVisible({ timeout: 3 * 60_000 });
     }
+    // The database is the one backed up, not a new empty one Postgres made when its folder came back empty.
+    await expect
+      .poll(
+        () => {
+          try {
+            return psql('SELECT note FROM hlabs_e2e_marker');
+          } catch (error) {
+            // Starting, or the table isn't there (a new, empty database): psql's own words.
+            return String((error as { stderr?: Buffer }).stderr ?? error).trim();
+          }
+        },
+        { timeout: 60_000 },
+      )
+      .toBe('before backup');
   } finally {
     await cleanBackups(page, request).catch(() => {});
     await removeApps(request);
