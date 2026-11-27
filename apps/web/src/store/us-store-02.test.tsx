@@ -37,10 +37,10 @@ describe('US-STORE-02', () => {
     expect(manageItems('member', 8)).toEqual([]);
   });
 
-  it('in phase 2 the sidebar has no "Manage apps" group, even for an admin', async () => {
+  it('an admin\'s sidebar ends with the "Manage apps" group (phase 7)', async () => {
     renderScreen(StoreSidebar, handlers('admin'), { path: '/store' });
     await screen.findByRole('link', { name: 'Media' });
-    expect(screen.queryByRole('navigation', { name: 'Manage apps' })).toBeNull();
+    expect(screen.getByRole('navigation', { name: 'Manage apps' })).toBeInTheDocument();
   });
 
   it('on a phone the categories are chips', async () => {

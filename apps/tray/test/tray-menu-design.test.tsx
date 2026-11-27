@@ -1,4 +1,5 @@
-// The running menu follows the TrayMenu design: its groups and order, shortcuts, and later phases' items hidden.
+// The running menu follows the TrayMenu design: its groups and order, shortcuts, and later phases' items hidden
+// (as in phase 4, before Back up now and Uninstall).
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { TrayMenu } from '@hlabs/ui';
@@ -6,7 +7,7 @@ import { runningItems } from '../src/menu';
 
 describe('TrayMenu design', () => {
   it("lists the actions in the design's groups, with Back up now and Uninstall hidden until their phases", () => {
-    render(<TrayMenu statusText="Running" items={runningItems()} />);
+    render(<TrayMenu statusText="Running" items={runningItems({}, 4)} />);
     const menu = screen.getByRole('menu', { name: 'hlabs' });
     const labels = [...menu.querySelectorAll('.hl-menu-item')].map((el) => el.textContent);
     expect(labels).toEqual([
@@ -24,7 +25,7 @@ describe('TrayMenu design', () => {
   });
 
   it('lines labels up in the check column from the toggles on, not before', () => {
-    const { container } = render(<TrayMenu statusText="Running" items={runningItems()} />);
+    const { container } = render(<TrayMenu statusText="Running" items={runningItems({}, 4)} />);
     const rows = [...container.querySelectorAll('.hl-menu-item')];
     const hasColumn = rows.map((r) => r.querySelector('.hl-menu-check') !== null);
     expect(hasColumn).toEqual([false, false, true, true, true, true, true]);

@@ -198,7 +198,7 @@ describe('US-APP-24', () => {
     const items = within(menu)
       .getAllByRole('menuitem')
       .map((i) => i.textContent);
-    expect(items).toEqual(['Open', 'Settings', 'View logs', 'Restart', 'Reinstall…', 'Uninstall…']);
+    expect(items).toEqual(['Open', 'Settings', 'View logs', 'Restart', 'Reinstall…', 'Uninstall…', 'Edit Home']);
     fireEvent.click(within(menu).getByRole('menuitem', { name: 'Reinstall…' }));
     expect(await screen.findByRole('dialog', { name: 'Reinstall Uptime Kuma?' })).toBeInTheDocument();
   });

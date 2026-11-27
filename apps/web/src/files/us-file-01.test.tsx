@@ -23,7 +23,7 @@ describe('US-FILE-01', () => {
     const rows = within(nav)
       .getAllByRole('listitem')
       .map((li) => li.textContent);
-    // External drives and Trash wait for phase 8 (D-036).
+    // External drives wait for phase 8 (D-036); Trash is last.
     expect(rows).toEqual([
       'Recents',
       'Home',
@@ -34,6 +34,7 @@ describe('US-FILE-01', () => {
       'NAS · Media · Offline',
       'Connect a drive',
       'App data',
+      'Trash',
     ]);
     expect(await screen.findByText('114 GB of 256 GB used')).toBeInTheDocument();
     expect(screen.getByRole('meter', { name: '114 GB of 256 GB used' })).toHaveAttribute('aria-valuenow', '45');
@@ -48,7 +49,7 @@ describe('US-FILE-01', () => {
       within(places())
         .getAllByRole('listitem')
         .map((li) => li.textContent),
-    ).toEqual(['Recents', 'Home', 'Photos', 'Downloads']);
+    ).toEqual(['Recents', 'Home', 'Photos', 'Downloads', 'Trash']);
     expect(within(places()).queryByRole('heading')).toBeNull();
     expect(screen.queryByText(/used$/)).toBeNull();
     // Nothing admin-only is even asked for.

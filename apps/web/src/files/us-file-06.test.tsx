@@ -82,9 +82,9 @@ describe('US-FILE-06', () => {
     expect(download).toHaveAttribute('href', '/api/files/download?path=%2Fhome%2FDocuments%2FKitchen%20plan.jpg');
     expect(download).toHaveAttribute('download', 'Kitchen plan.jpg');
     expect(within(dialog).getByRole('button', { name: 'Close preview' })).toBeInTheDocument();
-    // Share waits for phase 9; the ••• menu has nothing in it before then.
+    // Share waits for phase 9; ••• has Rename, Move and Trash (phase 5).
     expect(within(dialog).queryByRole('button', { name: 'Share' })).toBeNull();
-    expect(within(dialog).queryByRole('button', { name: 'More' })).toBeNull();
+    expect(within(dialog).getByRole('button', { name: 'More' })).toBeInTheDocument();
     const details = within(dialog).getByRole('region', { name: 'Details' });
     expect(details).toHaveTextContent('Size3.4 MB');
     expect(await within(details).findByText('4032 × 3024')).toBeInTheDocument();

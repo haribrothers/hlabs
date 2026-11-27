@@ -1,7 +1,7 @@
 // US-INST-07 · Back up now from the menu: hidden until backups ship (D-036); from phase 5 it says when the last good
 // backup finished, starts a manual run, shows "Backing up… 34%" while one runs, "Last backup failed" (with the red dot)
 // after a failure, opens the Backups page when there's no destination, and "Busy, try later" when a task holds it off.
-import { FEATURE_PHASE, isFeatureEnabled, SHIPPED_PHASE } from '@hlabs/shared';
+import { FEATURE_PHASE, isFeatureEnabled } from '@hlabs/shared';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -59,11 +59,8 @@ describe('US-INST-07 · Back up now from the menu', () => {
 
   it('is not in the menu before backups ship', () => {
     expect(BACKUPS).toBe(5);
-    expect(SHIPPED_PHASE).toBeLessThan(5);
-    expect(isFeatureEnabled('backups')).toBe(false);
-    render(<RunningMenu status={status()} />);
-    expect(screen.queryByRole('menuitem', { name: /Back up now/ })).not.toBeInTheDocument();
-    expect(runningItems().some((i) => i.label === 'Back up now')).toBe(false);
+    expect(isFeatureEnabled('backups', BACKUPS - 1)).toBe(false);
+    expect(runningItems({}, BACKUPS - 1).some((i) => i.label === 'Back up now')).toBe(false);
   });
 
   it('from phase 5 it sits after "Copy dashboard address", as in the design', () => {

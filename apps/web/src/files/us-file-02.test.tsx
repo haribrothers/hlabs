@@ -66,8 +66,8 @@ describe('US-FILE-02', () => {
         .getAllByRole('button')
         .map((b) => b.tabIndex),
     ).toEqual([0, -1, -1, -1]);
-    // Grid only until phase 5 ships (D-036, D-135).
-    expect(screen.queryByRole('radio', { name: 'List view' })).toBeNull();
+    // Grid or list (D-135); grid is chosen.
+    expect(screen.getByRole('radio', { name: 'List view' })).toHaveAttribute('aria-checked', 'false');
     expect(screen.queryByText('Share folder')).toBeNull();
   });
 

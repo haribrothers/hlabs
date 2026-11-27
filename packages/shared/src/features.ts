@@ -1,9 +1,9 @@
 // Phase gating (D-036): a control that needs a later phase is hidden until that phase ships.
 // Bump SHIPPED_PHASE when a phase's "Done when" list is true (docs/prd/10-phases.md); BUILDING_PHASE moves to the next
 // phase when its first story starts (D-092), so dev and e2e never preview controls nobody has built yet.
-export const SHIPPED_PHASE = 4;
+export const SHIPPED_PHASE = 7;
 /** The phase being built: the dashboard's dev server (pnpm dev, e2e) previews it (D-092). */
-export const BUILDING_PHASE = 6;
+export const BUILDING_PHASE = 7;
 
 /** Set by the dashboard's Vite dev server only (HLABS_PREVIEW_PHASE, else BUILDING_PHASE); never in a build. */
 declare const __HLABS_PREVIEW_PHASE__: number | null | undefined;

@@ -212,7 +212,7 @@ Added 15 Nov 2026 from Hari's feedback (D-124, D-125, D-126, D-127).
 
 ## Phase 5 · Backups and Files
 
-Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). Automated, 20 Nov 2026: #1 `apps/web/e2e/us-bkp-20.spec.ts` (real engine and restic: Vaultwarden and Paperless-ngx backed up to the pretend NAS, their data wiped, restored, both running again); #2 `apps/web/e2e/us-file-09.spec.ts` (an upload resumes after the connection drops). #3 (D-135) `apps/web/e2e/us-file-22.spec.ts` (renamed with F2, moved to another folder and back with Undo, moved to Trash and back with Undo, and restored from the Trash page, on the real daemon and disk), 20 Nov 2026. Still to check by hand: a real NAS and a cloud bucket as destinations, a restore after a real sleep/wake catch-up, the tray's "Back up now" (US-INST-07) with `pnpm dev:tray`.
+In builds since 0.7.0-beta.1 (`SHIPPED_PHASE = 7`, D-191), before "Done when" is checked by hand. Automated, 20 Nov 2026: #1 `apps/web/e2e/us-bkp-20.spec.ts` (real engine and restic: Vaultwarden and Paperless-ngx backed up to the pretend NAS, their data wiped, restored, both running again); #2 `apps/web/e2e/us-file-09.spec.ts` (an upload resumes after the connection drops). #3 (D-135) `apps/web/e2e/us-file-22.spec.ts` (renamed with F2, moved to another folder and back with Undo, moved to Trash and back with Undo, and restored from the Trash page, on the real daemon and disk), 20 Nov 2026. Still to check by hand: a real NAS and a cloud bucket as destinations, a restore after a real sleep/wake catch-up, the tray's "Back up now" (US-INST-07) with `pnpm dev:tray`.
 
 - [x] US-FILE-01 · See my places in the sidebar
 - [x] US-FILE-02 · Browse a folder in grid view
@@ -281,7 +281,7 @@ Not shipped yet (`SHIPPED_PHASE` stays 4 until "Done when" is checked by hand). 
 
 ## Phase 7 · v1.0 completeness
 
-Not shipped yet. "Done when", 26 Nov 2026:
+In builds since 0.7.0-beta.1 (`SHIPPED_PHASE = 7`, D-191); not done until the checks below are. "Done when", 26 Nov 2026:
 - #1 Every story's tests pass: unit and integration (3,135), e2e (522; axe in 78 specs, glass and solid). Four e2e specs failed once in the full local run and passed alone (US-AUTH-02, US-AUTH-03, US-SYS-41, US-STATE-14). On PR #10 (27 Nov) every check passes on CI, including e2e on Linux in every project, after fixing tests that only failed there (US-SYS-28, US-ACCT-02, US-PHONE-03, US-PHONE-11, US-APP-24). Still to check by hand: the phone layouts on Android Chrome; iOS Safari's last fixes (the bottom band, switches, the tile menu, the tab bar with the keyboard).
 - #2 The 100 approved apps are in `store/`. The first full matrix on `phase-7` (GitHub run 45868074399, Ubuntu 26.04, 26 Nov) installed 88 of 100: the waves had been checked on macOS, where Docker Desktop hides file ownership. Fixed by D-188 (who writes an app's data on Linux), D-189 (restart is stop, then up), wg-easy on nftables and port 53 for Pi-hole's runner; checked in an Ubuntu 26.04 VM and on macOS. The full matrix then installed **100 of 100** (run 45878192345, 27 Nov).
 - #3 D-171 has the prototype's findings. Through the real Cloudflare on `h4sandbox.online`: the named tunnel, a public app's record, hlabs's login in front and HTTPS on every leg (Q-24). Still to check by hand: making an app private deletes its record with the sign-in credential, and a phone app behind the login.

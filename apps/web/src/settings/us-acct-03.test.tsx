@@ -29,7 +29,8 @@ describe('US-ACCT-03', () => {
       'account.get': () => account({ role: 'member', avatarColor: 'mint' }),
     });
     expect(await screen.findByText('Hari')).toBeInTheDocument();
-    expect(screen.getByText('hari · Member')).toBeInTheDocument();
+    // Then the Home folder's size (US-ACCT-28), still being counted here.
+    expect(screen.getByText('hari · Member · Calculating…')).toBeInTheDocument();
     const avatar = container.querySelector('.hl-avatar')!;
     expect(avatar).toHaveTextContent('H');
     expect(avatar).toHaveAttribute('data-accent', 'mint');

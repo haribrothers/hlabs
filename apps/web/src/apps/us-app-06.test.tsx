@@ -26,7 +26,7 @@ afterEach(() => {
 });
 
 describe('US-APP-06', () => {
-  it('Behaviour shows "Start automatically" with its saved value; later phases\' switches are hidden', async () => {
+  it('Behaviour shows "Start automatically" with its saved value, and "Update automatically" now phase 7 has shipped', async () => {
     openSettings();
     const behaviour = await screen.findByRole('group', { name: 'Behaviour' });
     expect(within(behaviour).getByRole('switch', { name: 'Start automatically' })).toHaveAttribute(
@@ -34,7 +34,7 @@ describe('US-APP-06', () => {
       'true',
     );
     expect(within(behaviour).queryByRole('switch', { name: 'Include in backups' })).toBeNull();
-    expect(within(behaviour).queryByRole('switch', { name: 'Update automatically' })).toBeNull();
+    expect(within(behaviour).getByRole('switch', { name: 'Update automatically' })).toBeInTheDocument();
   });
 
   it('toggling "Start automatically" saves at once (optimistic)', async () => {
