@@ -71,6 +71,6 @@ describe('US-ACCT-01', () => {
       within(nav)
         .getAllByRole('link')
         .map((l) => l.textContent),
-    ).toEqual(['Account']);
+    ).toEqual(['Account', 'Appearance']);
   });
 });

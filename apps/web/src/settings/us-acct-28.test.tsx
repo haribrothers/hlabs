@@ -21,7 +21,7 @@ describe('US-ACCT-28', () => {
       'account.get': fakeAccount({ role: 'member', username: 'anu', displayName: 'Anu', passwordChangedAt: null }),
       'auth.listSessions': () => ({ items: [] }),
     });
-    expect(await screen.findByText('anu · Member')).toBeInTheDocument();
+    expect(await screen.findByText('anu · Member · Calculating…')).toBeInTheDocument();
     expect(screen.getByText('Set when you joined hlabs')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Security' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument();

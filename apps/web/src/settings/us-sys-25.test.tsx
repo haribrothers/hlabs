@@ -40,7 +40,7 @@ describe('US-SYS-25', () => {
     expect(rows[0]).toHaveTextContent('2026.9 → 2026.10');
     expect(within(rows[0]!).getByRole('button', { name: "What's new" })).toBeInTheDocument();
     expect(within(rows[0]!).getByRole('button', { name: 'Update Home Assistant' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Update all' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Update all' })).toBeInTheDocument();
   });
 
   it('"What\'s new" shows the release notes in a dialog', async () => {

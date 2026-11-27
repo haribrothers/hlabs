@@ -53,28 +53,28 @@ afterEach(() => {
 });
 
 describe('US-HOME-07', () => {
-  it('right-clicking a running app opens its menu with the name and every action, Uninstall last in danger', async () => {
+  it('right-clicking a running app opens its menu with the name and every action, Uninstall last in danger, then Edit Home', async () => {
     home([app('vault', 'Vaultwarden', 'running')]);
     fireEvent.contextMenu(await tile('Open Vaultwarden'));
     const menu = await screen.findByRole('menu', { name: 'Vaultwarden' });
     expect(within(menu).getByText('Vaultwarden')).toBeInTheDocument();
-    expect(menuItems(menu)).toEqual(['Open', 'Settings', 'View logs', 'Restart', 'Stop', 'Uninstall…']);
+    expect(menuItems(menu)).toEqual(['Open', 'Settings', 'View logs', 'Restart', 'Stop', 'Uninstall…', 'Edit Home']);
     expect(within(menu).getByRole('menuitem', { name: 'Uninstall…' })).toHaveClass('hl-menu-danger');
-    expect(within(menu).getAllByRole('separator')).toHaveLength(2);
+    expect(within(menu).getAllByRole('separator')).toHaveLength(3); // Edit Home in a group of its own
   });
 
   it('a stopped app offers Start in place of Stop, and no Restart', async () => {
     home([app('pihole', 'Pi-hole', 'stopped')]);
     fireEvent.contextMenu(await tile('Pi-hole, stopped'));
     const menu = await screen.findByRole('menu');
-    expect(menuItems(menu)).toEqual(['Open', 'Settings', 'View logs', 'Start', 'Uninstall…']);
+    expect(menuItems(menu)).toEqual(['Open', 'Settings', 'View logs', 'Start', 'Uninstall…', 'Edit Home']);
   });
 
   it.each(['installing', 'updating', 'uninstalling'] as const)('while %s only View logs works', async (state) => {
     home([app('nc', 'Nextcloud', state)]);
     fireEvent.contextMenu(await tile(/^Nextcloud, /));
     const menu = await screen.findByRole('menu');
-    expect(menuItems(menu)).toEqual(['Open', 'View logs']);
+    expect(menuItems(menu)).toEqual(['Open', 'View logs', 'Edit Home']);
     expect(within(menu).getByRole('menuitem', { name: 'Open' })).toHaveAttribute('aria-disabled', 'true');
   });
 
@@ -177,9 +177,9 @@ describe('US-HOME-07', () => {
     expect(opened).not.toHaveBeenCalled();
   });
 
-  it('members get only Open', async () => {
+  it('members get only Open, and Edit Home for their own Home', async () => {
     home([app('vault', 'Vaultwarden', 'running')], {}, 'member');
     fireEvent.contextMenu(await tile('Open Vaultwarden'));
-    expect(menuItems(await screen.findByRole('menu'))).toEqual(['Open']);
+    expect(menuItems(await screen.findByRole('menu'))).toEqual(['Open', 'Edit Home']);
   });
 });

@@ -38,7 +38,7 @@ describe('US-APP-05', () => {
   it('Copy copies the address and says "Address copied"', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
-    render(<AppAccess app={vaultwarden()} />);
+    render(<AppAccess app={vaultwarden()} shippedPhase={6} />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy https://vaultwarden.hlabs.local' }));
     expect(writeText).toHaveBeenCalledWith('https://vaultwarden.hlabs.local');
     await waitFor(() =>
@@ -64,7 +64,7 @@ describe('US-APP-05', () => {
   });
 
   it("an app whose name can't be published shows its fallback address", () => {
-    render(<AppAccess app={vaultwarden(null, 'https://hlabs.local:12003')} />);
+    render(<AppAccess app={vaultwarden(null, 'https://hlabs.local:12003')} shippedPhase={6} />);
     expect(screen.getByRole('link', { name: 'https://hlabs.local:12003' })).toHaveAttribute(
       'href',
       'https://hlabs.local:12003',

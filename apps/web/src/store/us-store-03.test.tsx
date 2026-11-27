@@ -137,7 +137,7 @@ describe('US-STORE-03 · results, as the StoreSearch screen draws them', () => {
   });
 
   it('no "Apple Silicon only" off arm64; no "Add another app source" before phase 7 (D-036)', async () => {
-    renderScreen(() => <SearchResults query="photo" />, results(false), { path: '/store/search' });
+    renderScreen(() => <SearchResults query="photo" shippedPhase={6} />, results(false), { path: '/store/search' });
     await screen.findByRole('button', { name: 'All · 3' });
     expect(screen.queryByRole('button', { name: /only$/ })).toBeNull();
     expect(screen.queryByText('Add another app source')).toBeNull();

@@ -76,14 +76,14 @@ describe('US-APP-04', () => {
     expect(await screen.findByText(`Running · ${text}`)).toBeInTheDocument();
   });
 
-  it('the App sections tabs show Overview; tabs whose feature is not built yet are hidden', async () => {
+  it('the App sections tabs are Overview, Configuration, Permissions and Usage, Overview first', async () => {
     open('running');
     const tabs = await screen.findByRole('tablist', { name: 'App sections' });
     expect(
       within(tabs)
         .getAllByRole('tab')
         .map((t) => t.textContent),
-    ).toEqual(['Overview']);
+    ).toEqual(['Overview', 'Configuration', 'Permissions', 'Usage']);
     expect(within(tabs).getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
   });
 

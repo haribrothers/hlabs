@@ -21,7 +21,7 @@ beforeEach(() => {
 });
 
 describe('US-SYS-26', () => {
-  it('hlabs overnight and apps that allow it; backing up first waits for backups (phase 5)', async () => {
+  it('hlabs overnight and apps that allow it, backing up first', async () => {
     const setAuto = vi.fn((input: { hlabs: boolean; apps: boolean; backupBeforeUpdate: boolean }) => {
       auto = { autoHlabs: input.hlabs, autoApps: input.apps, backupBeforeUpdate: input.backupBeforeUpdate };
       return { ok: true };
@@ -37,7 +37,7 @@ describe('US-SYS-26', () => {
     const apps = screen.getByRole('switch', { name: 'Update apps automatically' });
     expect(apps).not.toBeChecked();
     expect(screen.getByText("Only apps you've allowed in their settings")).toBeInTheDocument();
-    expect(screen.queryByRole('switch', { name: 'Back up app data before updating' })).toBeNull();
+    expect(screen.getByRole('switch', { name: 'Back up app data before updating' })).toBeChecked();
     fireEvent.click(apps);
     await waitFor(() => expect(setAuto).toHaveBeenCalledWith({ hlabs: true, apps: true, backupBeforeUpdate: true }));
     await waitFor(() => expect(apps).toBeChecked());
