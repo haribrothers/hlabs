@@ -94,7 +94,8 @@ import { FilesJanitor } from './files/janitor';
 import { FakeNas } from './platform/fake-nas';
 import { LinuxDiscovery, MacDiscovery, type NetworkDiscovery } from './platform/network-discovery';
 import { Destinations } from './backups/destinations';
-import { ResticCli, type Restic } from './backups/restic';
+import { hostCaFile, ResticCli, type Restic } from './backups/restic';
+import { HELPER_IMAGE } from './engine/helper-image';
 import { BackupService } from './backups/runner';
 import { PENDING_DB, RestoreService } from './backups/restore';
 import { PlanSizes } from './backups/plan';
@@ -669,9 +670,18 @@ export async function boot(bootDeps: BootDeps): Promise<Services | null> {
   });
   imagePruner.register();
   const drives = deps.drives ?? new NodeDriveProbe();
+  // On Linux, apps keep files to themselves that hlabs's user can't read or give back their owners: restic handles an
+  // app's data from a helper container there (D-190). As root, or on a Mac (Docker Desktop's sharing), it needn't.
+  const uid = process.getuid?.() ?? 0;
   const restic: Restic =
     deps.restic ??
-    new ResticCli(join(config.resources.binDir, 'restic'), join(config.paths.dataDir, 'cache', 'restic'));
+    new ResticCli(
+      join(config.resources.binDir, 'restic'),
+      join(config.paths.dataDir, 'cache', 'restic'),
+      process.platform === 'linux' && uid !== 0
+        ? { engine: () => engine.client, image: HELPER_IMAGE, uid, gid: process.getgid?.() ?? 0, caFile: hostCaFile() }
+        : null,
+    );
   const login = new LoginService(db, sessions, totp, bus, () =>
     nextOrigins({
       dashboardUrl: config.dashboardUrl,

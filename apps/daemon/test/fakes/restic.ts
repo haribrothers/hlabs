@@ -34,6 +34,10 @@ export class FakeRestic implements Restic {
   readonly repos = new Map<string, FakeRepo>();
   readonly store = tempDir('fake-restic-');
   readonly calls: Array<{ op: Op; url: string; detail?: unknown }> = [];
+  /** Backups and restores asked to run as root (D-190): the op and its folder. */
+  readonly asRoot: Array<{ op: 'backup' | 'restore'; path: string }> = [];
+  /** Files each backup "couldn't read" (BackupResult.unreadable). */
+  unreadable = 0;
   readonly fail = new Map<Op, { code: HlabsCode; times: number }>();
   readonly unreachable = new Set<string>();
   gate: Promise<void> | null = null;
@@ -93,10 +97,11 @@ export class FakeRestic implements Restic {
 
   async backup(
     repo: Repo,
-    opts: { paths: string[]; tags: string[]; excludes?: string[]; signal?: AbortSignal },
+    opts: { paths: string[]; tags: string[]; excludes?: string[]; asRoot?: boolean; signal?: AbortSignal },
     onProgress?: (p: ResticProgress) => void,
   ): Promise<BackupResult> {
     this.enter('backup', repo, { paths: opts.paths, tags: opts.tags, excludes: opts.excludes ?? [] });
+    if (opts.asRoot) for (const path of opts.paths) this.asRoot.push({ op: 'backup', path });
     const r = this.open(repo);
     onProgress?.({ fraction: 0.5, bytesDone: 1, bytesTotal: 2 });
     await this.wait(opts.signal);
@@ -117,7 +122,7 @@ export class FakeRestic implements Restic {
     const bytes = sizeOf(dir);
     r.snapshots.push({ id, time: Date.now(), tags: opts.tags, paths: opts.paths, dir, bytes });
     onProgress?.({ fraction: 1, bytesDone: bytes, bytesTotal: bytes });
-    return { snapshotId: id, bytesAdded: bytes, filesChanged: 1, totalBytes: bytes };
+    return { snapshotId: id, bytesAdded: bytes, filesChanged: 1, totalBytes: bytes, unreadable: this.unreadable };
   }
 
   async forget(repo: Repo, retention: Retention) {
@@ -153,10 +158,12 @@ export class FakeRestic implements Restic {
 
   async restore(
     repo: Repo,
-    opts: { snapshotId: string; path: string; target: string; signal?: AbortSignal },
+    opts: { snapshotId: string; path: string; target: string; asRoot?: boolean; signal?: AbortSignal },
     onProgress?: (p: ResticProgress) => void,
   ) {
-    this.enter('restore', repo, opts);
+    const { asRoot, ...detail } = opts;
+    this.enter('restore', repo, detail);
+    if (asRoot) this.asRoot.push({ op: 'restore', path: opts.path });
     const snap = this.open(repo).snapshots.find((s) => s.id === opts.snapshotId);
     if (!snap) throw hlabsError('NOT_FOUND', 'no such snapshot');
     onProgress?.({ fraction: 0.5, bytesDone: Math.round(snap.bytes / 2), bytesTotal: snap.bytes });

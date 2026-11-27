@@ -291,12 +291,18 @@ export class BackupService {
                 paths: [item.path],
                 tags: [`${item.kind}:${item.id}`, `run:${runId}`],
                 excludes: item.kind === 'app' ? this.excludes(item.id) : [],
+                // An app's files its containers keep to themselves: read as root on Linux (D-190).
+                asRoot: item.kind === 'app',
                 signal: ctx.signal,
               },
               (p) => report((i + p.fraction) / steps, item.label),
             ),
           log,
         );
+        if (res.unreadable > 0) {
+          log(`Couldn't read ${res.unreadable} of ${item.label}'s files; this backup doesn't have them`);
+          this.deps.logger.warn({ item: item.id, unreadable: res.unreadable }, 'backup could not read some files');
+        }
         bytes += res.bytesAdded;
         files += res.filesChanged;
       }

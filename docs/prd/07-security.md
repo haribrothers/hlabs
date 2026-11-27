@@ -62,6 +62,7 @@ Enforced in the daemon (procedure middleware + service checks) **and** at Caddy 
 ## 7.7 Secrets
 - macOS Keychain / Linux Secret Service for TOTP secrets, backup repo passwords, NAS credentials, S3 keys, tray token, the API keys admins add for app widgets (`widget-key:<appId>`, US-HOME-20, D-157; never sent back to the browser), and the Cloudflare credential for public apps (`cloudflare-credential`, US-SYS-43, D-179; the tunnel's own credentials file is `<dataDir>/cloudflare/tunnel.json`, 0600). Headless Linux: AES-256-GCM with a 0600 key file, **except the tray token**, which is a plain 0640 file readable by the `hlabs` group (D-035).
 - Generated app secrets (e.g. DB passwords) go into the app's `.env` (0600) inside `<dataDir>/apps/<id>/`.
+- On Linux an app's data is backed up and restored by restic in a throwaway helper container, as hlabs's user with only the capabilities it needs (D-190); the repository password and keys go into that container's environment only, and the container is removed when restic ends.
 - Backup repositories are always encrypted (restic). The repo password is shown once with a "Save this somewhere safe" warning and can be exported later by an admin after re-entering their password.
 
 ## 7.8 Destructive actions

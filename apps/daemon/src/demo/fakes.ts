@@ -95,6 +95,9 @@ export class DemoEngine implements ContainerEngine {
     return new Set(DEMO_APPS.map((a) => imageId(a.id)));
   }
   async clearFolder() {}
+  async runOnce() {
+    return { exitCode: 0, stdout: '', stderr: '' };
+  }
   async pauseContainer() {}
   async unpauseContainer() {}
   async execInContainer() {

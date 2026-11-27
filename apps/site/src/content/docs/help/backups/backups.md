@@ -44,6 +44,8 @@ hlabs's own settings, the people who can sign in and each app's setup are always
 
 Apps that need it pause for a few seconds while their data is copied, so the copy is consistent. They carry on by themselves.
 
+On a Linux server, apps such as databases keep some of their files private. hlabs reads them through Docker, so they're in the backup too. A restore puts each file back with the owner it had. Docker must be running for this. If it isn't, the backup goes ahead without those files, and its log says how many of each app's files it couldn't read.
+
 ## When a backup fails
 
 The top of Backups says **Last backup failed** and a notification tells you why, for example that your NAS wasn't reachable (it may have been asleep). hlabs tries again 30 minutes later; after that, at the next scheduled time. After three failures in a row, the notification turns red.

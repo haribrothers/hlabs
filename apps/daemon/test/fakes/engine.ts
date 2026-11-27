@@ -7,6 +7,7 @@ import type {
   EngineCandidate,
   EngineInfo,
   PullProgress,
+  RunOnceOptions,
 } from '../../src/engine/types';
 
 /** In-memory container engine (11-testing-release: only e2e touches real Docker). A FakeCompose shares it, so
@@ -29,6 +30,22 @@ export class FakeEngine implements ContainerEngine {
     public running = true,
     public engineInfo: EngineInfo = { version: '27.0.0-fake', cpus: 4, memoryBytes: 8e9 },
   ) {}
+
+  /** Helper containers run (`runOnce`), and what each answers (exit 0, no output, by default). */
+  readonly helpers: RunOnceOptions[] = [];
+  helperResult: (opts: RunOnceOptions) => { exitCode: number; stdout: string; stderr: string } = () => ({
+    exitCode: 0,
+    stdout: '',
+    stderr: '',
+  });
+
+  async runOnce(opts: RunOnceOptions) {
+    this.assertRunning();
+    this.helpers.push(opts);
+    const result = this.helperResult(opts);
+    for (const line of result.stdout.split('\n')) if (line.trim()) opts.onStdout?.(line);
+    return result;
+  }
 
   async ping() {
     return this.running;

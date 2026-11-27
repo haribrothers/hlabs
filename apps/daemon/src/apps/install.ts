@@ -53,6 +53,7 @@ import { allocatePort, loopbackPort, loopbackPortFree } from './ports';
 import { stopIfPaused } from './pause';
 import type { AppService } from './service';
 import { canTransition, stateDetail } from './state-machine';
+import { HELPER_IMAGE } from '../engine/helper-image';
 import { hostTimeZone } from '../platform/timezone';
 import { tailnetAppPort } from '@hlabs/shared';
 
@@ -849,7 +850,8 @@ export class InstallService {
     const engine = this.deps.engine.client;
     if (!engine) throw hlabsError('ENGINE_UNAVAILABLE');
     let lastError: unknown = null;
-    for (const image of this.appImages(app, projectDir)) {
+    // The app's own images first; hlabs's helper (which has a shell) when none of them has one (Portainer's).
+    for (const image of [...this.appImages(app, projectDir), HELPER_IMAGE]) {
       try {
         await engine.clearFolder(image, appData);
         rmSync(appData, gone);

@@ -5,6 +5,7 @@ import { apps } from '@hlabs/db';
 import { chmodSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { HELPER_IMAGE } from '../src/engine/helper-image';
 import { installDaemon } from './install-harness';
 
 const closers: Array<() => Promise<void>> = [];
@@ -41,11 +42,23 @@ describe("D-100 · uninstalling data hlabs can't delete itself", () => {
     expect(t.engine.cleared).toEqual([{ image: expect.stringContaining('louislam/uptime-kuma'), hostPath: t.appData }]);
   });
 
-  it('an image without a shell is skipped; with none that can, the uninstall fails at the data step', async () => {
+  it("an image without a shell is skipped; with none that can, hlabs's own helper clears it (D-190)", async () => {
     const t = await installedWithLockedData();
-    // Every image of the app has no shell.
+    // Every image of the app has no shell (as Portainer's).
     const compose = t.s.catalog.get('uptime-kuma')!.compose;
     for (const s of Object.values(compose.services)) t.engine.noShell.add(s.image!);
+    const res = (await t.d.mutate('apps.uninstall', { appId: 'uptime-kuma', keepData: false })) as Reply;
+    await t.s.jobs.settled(res.result!.data.jobId);
+    expect(t.s.db.select().from(apps).all()).toEqual([]);
+    expect(existsSync(t.appData)).toBe(false);
+    expect(t.engine.cleared).toEqual([{ image: HELPER_IMAGE, hostPath: t.appData }]);
+  });
+
+  it('when not even the helper can, the uninstall fails at the data step', async () => {
+    const t = await installedWithLockedData();
+    const compose = t.s.catalog.get('uptime-kuma')!.compose;
+    for (const s of Object.values(compose.services)) t.engine.noShell.add(s.image!);
+    t.engine.noShell.add(HELPER_IMAGE);
     const res = (await t.d.mutate('apps.uninstall', { appId: 'uptime-kuma', keepData: false })) as Reply;
     await t.s.jobs.settled(res.result!.data.jobId).catch(() => undefined);
     const app = t.s.db.select().from(apps).get()!;
