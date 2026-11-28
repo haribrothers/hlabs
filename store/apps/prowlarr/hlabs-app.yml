@@ -3,7 +3,7 @@
 schema: 1
 id: prowlarr
 name: Prowlarr
-version: '2.7.0'
+version: '3.1.0'
 revision: 1
 tagline: One place to manage the search sites for Sonarr, Radarr and Lidarr
 description: |
