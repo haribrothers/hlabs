@@ -50,7 +50,7 @@ An app's images follow its version when their tag is the version (with or withou
 `pnpm store:matrix <id> [<id>…]` installs each app with its defaults, opens it through Caddy at `https://<id>.hlabs.local`, restarts it and uninstalls it with its data. It needs Docker and `pnpm fetch-binaries`. It starts its own daemon (data in `.matrix-data`, daemon port 7674, Caddy on 9443 and 9080, containers named `hlabs-matrix-…`), so it never touches a hlabs you're running. With no ids it does every app, which takes a long time.
 
 - `--results <file>` also writes each app's result as JSON.
-- `--prune-images` removes every unused image on the machine after each app. It's for CI runners; don't use it on your own computer.
+- `--prune-images` removes every unused image on the machine after each app. It's for CI runners and for a VM that only runs the matrix; don't use it on your own computer. Without it the matrix keeps every image it pulls, and a full run's come to more than 30 GB.
 
 ## In CI
 
