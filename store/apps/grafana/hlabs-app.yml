@@ -1,7 +1,7 @@
 schema: 1
 id: grafana
 name: Grafana
-version: '13.3.1'
+version: '13.3.2'
 revision: 1
 tagline: Dashboards and graphs for any data
 description: |
