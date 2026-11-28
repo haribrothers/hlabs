@@ -3,7 +3,7 @@
 schema: 1
 id: filebrowser
 name: FileBrowser Quantum
-version: '2.0.2'
+version: '2.1.0'
 revision: 1
 tagline: A fast file manager in the browser
 description: |
