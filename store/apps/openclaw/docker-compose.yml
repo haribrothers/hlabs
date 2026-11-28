@@ -1,6 +1,6 @@
 services:
   openclaw:
-    image: ghcr.io/openclaw/openclaw:2026.11.7@sha256:461cc655301409901f2df11d6ec9f029f9709e4607826e9780fd74f8e1d12a16
+    image: ghcr.io/openclaw/openclaw:2026.11.10@sha256:230afbdd8344310cac1e2d8e5dfad67315e82f3757692014310e77653639acb0
     # Runs as hlabs's user, so its files are hlabs's on Linux; the image's own home (/home/node) is closed to other
     # users, so OpenClaw's home and state are the data folder at /openclaw.
     user: ${PUID}:${PGID}

@@ -39,8 +39,13 @@ for (const { id, name } of SMOKE) {
       // The success notification (US-STORE-11).
       await expect(page.getByRole('status').getByText(`${name} is ready`)).toBeVisible();
       await expect(steps.getByText(`Set up ${id}.hlabs.local`)).toBeVisible();
-      await page.goto('/');
-      await expect(page.getByRole('button', { name: `Open ${name}` })).toBeVisible();
+      // Home is loaded again until the tile shows: the app's container has just added a network interface on the
+      // host, and Chromium fails page loads in flight with ERR_NETWORK_CHANGED for a moment afterwards, so the
+      // dashboard sometimes never started (Vaultwarden is ready within seconds once its images are downloaded).
+      await expect(async () => {
+        await page.goto('/');
+        await expect(page.getByRole('button', { name: `Open ${name}` })).toBeVisible({ timeout: 5000 });
+      }).toPass({ timeout: 30_000 });
     } finally {
       await removeApp(request, id);
     }

@@ -41,7 +41,7 @@ pnpm store:updates --apps immich   # just these
 pnpm store:updates --write         # edit the files here
 ```
 
-An app's images follow its version when their tag is the version (with or without a `v`, and with a suffix like `-apache`); databases and caches in the same app are left as they are. It offers the newest tag of the same shape that isn't a pre-release and still runs on every platform the app lists, sets `version` and `revision: 1`, and pins each image's new tag and digest. To keep an app where it is, list it under `hold` in `store/curation.yml` and say why.
+An app's images follow its version when their tag is the version (with or without a `v`, and with a suffix like `-apache`); databases and caches in the same app are left as they are. It offers the highest-numbered tag of the same shape that isn't a pre-release, was built after the image pinned today and still runs on every platform the app lists. Registries keep old tags under other numbering schemes, such as linuxserver's `2021.11.18` build dates and `20.04.1` Ubuntu bases beside qBittorrent 5.3.0, so a tag where a number gains more than one digit isn't offered, and neither is one built earlier. An image that doesn't say when it was built isn't moved; the run's summary says why. When the app's `source` is on GitHub, a version is offered only if GitHub doesn't mark it as a pre-release; once today's version has a GitHub release, the new one needs one too. GitHub allows 60 requests an hour without a token, so run it locally with `GITHUB_TOKEN=$(gh auth token) pnpm store:updates`. Then it sets `version` and `revision: 1`, and pins each image's new tag and digest. To keep an app where it is, list it under `hold` in `store/curation.yml` and say why.
 
 `store-updates.yml` runs it every day with `--pr`: one pull request per app on `store-update/<id>`, labelled `store-update` (and `store-update-major` when it looks like a major version). Nothing is merged automatically. For its checks to run like any pull request's, add a repository secret `STORE_UPDATES_TOKEN`: a fine-grained token for this repository with Contents and Pull requests set to read and write. Without it the bot starts the store matrix for each branch itself, but the other checks wait until someone pushes to the branch.
 
@@ -50,7 +50,7 @@ An app's images follow its version when their tag is the version (with or withou
 `pnpm store:matrix <id> [<id>…]` installs each app with its defaults, opens it through Caddy at `https://<id>.hlabs.local`, restarts it and uninstalls it with its data. It needs Docker and `pnpm fetch-binaries`. It starts its own daemon (data in `.matrix-data`, daemon port 7674, Caddy on 9443 and 9080, containers named `hlabs-matrix-…`), so it never touches a hlabs you're running. With no ids it does every app, which takes a long time.
 
 - `--results <file>` also writes each app's result as JSON.
-- `--prune-images` removes every unused image on the machine after each app. It's for CI runners; don't use it on your own computer.
+- `--prune-images` removes every unused image on the machine after each app. It's for CI runners and for a VM that only runs the matrix; don't use it on your own computer. Without it the matrix keeps every image it pulls, and a full run's come to more than 30 GB.
 
 ## In CI
 

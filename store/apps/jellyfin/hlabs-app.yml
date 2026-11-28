@@ -1,7 +1,7 @@
 schema: 1
 id: jellyfin
 name: Jellyfin
-version: '12.1'
+version: '12.4'
 revision: 1
 tagline: Watch your movies, shows and music anywhere
 description: |

@@ -1,7 +1,7 @@
 schema: 1
 id: komga
 name: Komga
-version: '1.30.1'
+version: '1.30.2'
 revision: 1
 tagline: A library server for your comics and manga
 description: |

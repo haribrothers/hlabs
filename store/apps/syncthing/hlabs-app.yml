@@ -1,7 +1,7 @@
 schema: 1
 id: syncthing
 name: Syncthing
-version: '2.1.5'
+version: '2.1.7'
 revision: 1
 tagline: Keep folders in sync between your devices
 description: |

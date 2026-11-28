@@ -1,7 +1,7 @@
 schema: 1
 id: pairdrop
 name: PairDrop
-version: '1.11.2'
+version: '1.11.3'
 revision: 1
 tagline: Send files between your devices, like AirDrop
 description: |

@@ -1,7 +1,7 @@
 schema: 1
 id: memos
 name: Memos
-version: '26.11.2'
+version: '26.11.3'
 revision: 1
 tagline: Jot down notes and ideas, like a private timeline
 description: |

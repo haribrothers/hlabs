@@ -1,6 +1,6 @@
 services:
   librespeed:
-    image: lscr.io/linuxserver/librespeed:5.5.1@sha256:110df57cd248672c98fd3e6758314ad36755c28620e231a04bddc7c835c19a09
+    image: lscr.io/linuxserver/librespeed:6.3.1@sha256:ad54c25a773cd7bfad5fd5dd82a4987a899edb0a9762e285c842eeb16bef4244
     environment:
       PUID: ${PUID}
       PGID: ${PGID}

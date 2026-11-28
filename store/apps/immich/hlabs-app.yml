@@ -1,7 +1,7 @@
 schema: 1
 id: immich
 name: Immich
-version: '3.2.2'
+version: '3.4.2'
 revision: 1
 tagline: Back up every photo from your phone
 description: |

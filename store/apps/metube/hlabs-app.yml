@@ -1,7 +1,7 @@
 schema: 1
 id: metube
 name: MeTube
-version: '2026.11.22'
+version: '2026.11.24'
 revision: 1
 tagline: Save a video from YouTube and many other sites
 description: |
