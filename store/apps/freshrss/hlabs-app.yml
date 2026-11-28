@@ -1,7 +1,7 @@
 schema: 1
 id: freshrss
 name: FreshRSS
-version: '1.30.4'
+version: '1.31.0'
 revision: 1
 tagline: Follow your favourite sites and blogs in one place
 description: |
