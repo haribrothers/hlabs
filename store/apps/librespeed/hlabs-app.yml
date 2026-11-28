@@ -1,7 +1,7 @@
 schema: 1
 id: librespeed
 name: LibreSpeed
-version: '5.5.1'
+version: '6.3.1'
 revision: 1
 tagline: Test the speed between your devices and hlabs
 description: |
