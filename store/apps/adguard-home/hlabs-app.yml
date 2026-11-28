@@ -1,7 +1,7 @@
 schema: 1
 id: adguard-home
 name: AdGuard Home
-version: '0.107.79'
+version: '1.0.0'
 revision: 1
 tagline: Block ads and trackers on every device at home
 description: |
