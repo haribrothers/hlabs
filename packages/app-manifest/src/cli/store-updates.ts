@@ -138,6 +138,7 @@ for (const { dir, app } of apps) {
         ...new Set([...(await registry.tags(image)), ...(await registry.tags(image, { after: current }))]),
       ],
       manifest: (image) => registry.manifest(image),
+      created: (image) => registry.created(image),
     });
 
   if (check.kind === 'current') lines.push(`- ${app.id} ${app.version}: up to date`);

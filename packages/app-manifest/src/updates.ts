@@ -1,5 +1,5 @@
 // The built-in store's update bot (US-STORE-24, D-148, D-154): for each app, a newer release tag of the images that
-// follow its version, the same pattern as today's tag and not a pre-release; the edits that move it there (version,
+// follow its version, the same pattern as today's tag, not a pre-release and built after today's image; the edits that move it there (version,
 // revision, each tag and its multi-arch digest); and the pull request that proposes them. Never merges anything.
 // No network here: the command passes in the registry and GitHub lookups.
 import type { ImageManifest } from './registry';
@@ -29,12 +29,32 @@ export function compareTags(a: string, b: string): number {
   return 0;
 }
 
-/** The newest tag of the same shape as `current`, newer than it and not a pre-release; null when there's none. */
-export function newestTag(current: string, tags: string[]): string | null {
-  const shape = tagShape(current);
-  const newer = tags.filter((t) => shape.test(t) && !PRERELEASE.test(t) && compareTags(t, current) > 0);
-  return newer.sort(compareTags).at(-1) ?? null;
+/**
+ * Whether a number in `tag` gained more than one digit over the same number in `current`: `4.1.4` → `2021.11.18`
+ * (a build date), `26.09.3` → `26.09.20260929`, `261029` → `20220121`. A real release adds at most one (9 → 10);
+ * more is another numbering scheme, which a person ports by hand.
+ */
+function changesScheme(current: string, tag: string): boolean {
+  const a = current.match(/\d+/g) ?? [];
+  const b = tag.match(/\d+/g) ?? [];
+  return b.some((n, i) => n.replace(/^0+(?=\d)/, '').length > (a[i] ?? '').replace(/^0+(?=\d)/, '').length + 1);
 }
+
+/** Tags of the same shape as `current`, higher-numbered, not pre-releases and not another numbering: highest first. */
+export function newerTags(current: string, tags: string[]): string[] {
+  const shape = tagShape(current);
+  return tags
+    .filter((t) => shape.test(t) && !PRERELEASE.test(t) && compareTags(t, current) > 0 && !changesScheme(current, t))
+    .sort((a, b) => compareTags(b, a));
+}
+
+/** The highest-numbered of `newerTags`; null when there's none. */
+export function newestTag(current: string, tags: string[]): string | null {
+  return newerTags(current, tags)[0] ?? null;
+}
+
+/** How many build dates `checkApp` reads before it gives up and leaves the app to a person. */
+export const MAX_BUILD_CHECKS = 8;
 
 /** How an image's tag holds the app's version: `v` + version, version + `-apache`, or the version itself. */
 export function versionInTag(tag: string, version: string): { prefix: string; suffix: string } | null {
@@ -86,6 +106,8 @@ export interface UpdateLookups {
   /** The image's tags, including every one pushed after `current`. */
   tags(image: string, current: string): Promise<string[]>;
   manifest(image: string): Promise<ImageManifest>;
+  /** When the image (`repo:tag` or `repo@digest`) was built; null when it doesn't say. */
+  created(image: string): Promise<Date | null>;
 }
 
 /** Whether `app` has a newer release, and the exact images it would move to. */
@@ -104,7 +126,41 @@ export async function checkApp(app: AppForUpdate, look: UpdateLookups): Promise<
   } catch (error) {
     return { kind: 'skipped', id: app.id, reason: (error as Error).message };
   }
-  const tag = newestTag(lead.ref.tag!, tags);
+  const candidates = newerTags(lead.ref.tag!, tags);
+  if (!candidates.length) return { kind: 'current', id: app.id };
+
+  // Higher numbers aren't enough: registries keep old tags of other schemes (linuxserver's `20.04.1` Ubuntu-base
+  // builds beside qBittorrent 5.3.0). A newer release was also built after the image pinned today.
+  const pinnedAt = lead.ref.digest ? `${lead.ref.name}@${lead.ref.digest}` : `${lead.ref.name}:${lead.ref.tag}`;
+  let since: Date | null;
+  try {
+    since = await look.created(pinnedAt);
+  } catch (error) {
+    return { kind: 'skipped', id: app.id, reason: (error as Error).message };
+  }
+  if (!since) return { kind: 'skipped', id: app.id, reason: `${lead.ref.name}:${lead.ref.tag} has no build date` };
+  const series = (t: string) => Number(t.match(/\d+/)?.[0]);
+  const ours = series(lead.ref.tag!);
+  const oldSeries = new Set<number>();
+  let tag: string | null = null;
+  let checks = 0;
+  for (const t of candidates) {
+    // Once one tag of another first number was built earlier, that whole series is old.
+    if (series(t) !== ours && oldSeries.has(series(t))) continue;
+    if (checks++ === MAX_BUILD_CHECKS) {
+      return {
+        kind: 'skipped',
+        id: app.id,
+        reason: `${MAX_BUILD_CHECKS} higher-numbered tags (${candidates[0]}, …) were built before ${lead.ref.tag}: check by hand`,
+      };
+    }
+    const built = await look.created(`${lead.ref.name}:${t}`).catch(() => null);
+    if (built && built > since) {
+      tag = t;
+      break;
+    }
+    if (series(t) !== ours) oldSeries.add(series(t));
+  }
   if (!tag) return { kind: 'current', id: app.id };
   const toVersion = tag.slice(lead.at.prefix.length, tag.length - lead.at.suffix.length);
 
