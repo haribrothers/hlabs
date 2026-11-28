@@ -1,7 +1,7 @@
 schema: 1
 id: deluge
 name: Deluge
-version: '2.2.0'
+version: '18.04.1'
 revision: 1
 tagline: A torrent client you can extend with plugins
 description: |
