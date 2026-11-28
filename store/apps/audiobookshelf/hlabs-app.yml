@@ -1,7 +1,7 @@
 schema: 1
 id: audiobookshelf
 name: Audiobookshelf
-version: '2.37.0'
+version: '2.38.0'
 revision: 1
 tagline: Audiobooks and podcasts, with your place remembered
 description: |
