@@ -11,6 +11,7 @@ import { SNAPSHOT_DIR } from '../src/apps/update';
 import { ROLLBACK_WINDOW_MS } from '../src/storage/images';
 import { installDaemon } from './install-harness';
 import { memberSession } from './member-session';
+import { storeImage } from './store-fixture';
 
 const closers: Array<() => Promise<void>> = [];
 afterEach(async () => {
@@ -19,7 +20,8 @@ afterEach(async () => {
 
 type Reply = { result?: { data: Record<string, unknown> }; error?: { data: { hlabsCode: string; detail?: unknown } } };
 
-const KUMA_ID = 'sha256:c74379ac4509ce2d2c2633f509e67003ee2e45b6e995c5e43fc101f45a0e1fbe';
+/** Uptime Kuma's image as the store pins it: the fake engine names an image by its digest. */
+const KUMA_ID = storeImage('uptime-kuma').split('@')[1]!;
 const MB = 1e6;
 
 async function setup() {
