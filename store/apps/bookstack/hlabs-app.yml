@@ -3,7 +3,7 @@
 schema: 1
 id: bookstack
 name: BookStack
-version: '26.09.3'
+version: '26.09.20260929'
 revision: 1
 tagline: A simple wiki organised like books on a shelf
 description: |
