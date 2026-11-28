@@ -207,3 +207,36 @@ export function storeGroups(): StoreGroup[] {
     apps: apps.filter((a) => a.group === g.id),
   })).filter((g) => g.apps.length > 0);
 }
+
+/**
+ * The home page's rows of apps (D-192): every app once. A group's k-th app (in the curation's order) goes to row
+ * (group + k) mod `count`, so groups take turns within a row and spread over all of them; then an app swaps with a
+ * later one when it would sit next to an app of its own group. Fixed by the build, never random.
+ */
+export function appRows(count = 3): StoreApp[][] {
+  const groups = storeGroups().map((g) => g.apps);
+  const rows: StoreApp[][] = Array.from({ length: count }, () => []);
+  const most = Math.max(0, ...groups.map((g) => g.length));
+  for (let k = 0; k < most; k++) {
+    groups.forEach((apps, g) => {
+      const app = apps[k];
+      if (app) rows[(g + k) % count]!.push(app);
+    });
+  }
+  for (const row of rows) spreadGroups(row);
+  return rows;
+}
+
+/** No two neighbours from the same group, where a swap with a later app can avoid it. */
+function spreadGroups(row: StoreApp[]): void {
+  const apart = (i: number) =>
+    (i === 0 || row[i - 1]!.group !== row[i]!.group) && (i === row.length - 1 || row[i + 1]!.group !== row[i]!.group);
+  for (let i = 1; i < row.length; i++) {
+    if (row[i]!.group !== row[i - 1]!.group) continue;
+    for (let j = i + 1; j < row.length; j++) {
+      [row[i], row[j]] = [row[j]!, row[i]!];
+      if (apart(i) && apart(j)) break;
+      [row[i], row[j]] = [row[j]!, row[i]!];
+    }
+  }
+}

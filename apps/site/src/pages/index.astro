@@ -6,10 +6,11 @@ import Icon from '../components/Icon.astro';
 import Page from '../layouts/Page.astro';
 import { siteReleases } from '../lib/releases';
 import { installCommand } from '../../../../scripts/site-releases-lib.ts';
-import { storeApps } from '../lib/store';
+import { appRows, storeApps } from '../lib/store';
 import dockHome from '../assets/shots/home.webp';
 
 const apps = storeApps();
+const rows = appRows(3);
 const releases = siteReleases();
 const latest = releases.stable;
 // The site's install.sh is the beta's until there's a stable release; then the command asks for the beta channel.
@@ -133,42 +134,52 @@ const featureApps = ['jellyfin', 'vaultwarden', 'mealie', 'adguard-home'].map(ap
         <p class="eyebrow">The App Store</p>
         <h2 id="appsTitle" class="h2" style="font-size: clamp(28px, 3.2vw, 40px)">{apps.length} apps, one click each</h2>
       </div>
-      <a href="/apps/" class="more">Browse all apps<Icon name="arrow-right" size={16} /></a>
-    </div>
-    <div class="marquee">
-      <div class="marquee-track">
-        <ul class="marquee-list">
-          {
-            apps.map((a) => (
-              <li>
-                <a href={`/apps/${a.id}/`} class="mq">
-                  <AppTile app={a} size={44} />
-                  <span class="mq-text">
-                    <span class="mq-name">{a.name}</span>
-                    <span class="mq-cat">{a.groupLabel}</span>
-                  </span>
-                </a>
-              </li>
-            ))
-          }
-        </ul>
-        {/* The same row again so it loops; screen readers and Tab skip it, and Reduce motion hides it. */}
-        <ul class="marquee-list marquee-dup" aria-hidden="true" inert>
-          {
-            apps.map((a) => (
-              <li>
-                <a href={`/apps/${a.id}/`} class="mq" tabindex="-1">
-                  <AppTile app={a} size={44} />
-                  <span class="mq-text">
-                    <span class="mq-name">{a.name}</span>
-                    <span class="mq-cat">{a.groupLabel}</span>
-                  </span>
-                </a>
-              </li>
-            ))
-          }
-        </ul>
+      <div class="apps-actions">
+        {/* Stops the rows (WCAG 2.2.2, D-192). It needs JavaScript, so it stays hidden without it; Reduce motion hides it. */}
+        <button type="button" class="btn-secondary btn-sm apps-pause" data-apps-pause hidden>
+          <span data-when="moving"><Icon name="pause" size={16} />Pause</span>
+          <span data-when="paused" hidden><Icon name="play" size={16} />Play</span>
+        </button>
+        <a href="/apps/" class="more">Browse all apps<Icon name="arrow-right" size={16} /></a>
       </div>
+    </div>
+    {/* Three rows, every app once (D-192); rows 1 and 3 move left, row 2 right, each at its own pace. */}
+    <div class="app-rows" data-app-rows>
+      {
+        rows.map((row, i) => (
+          <div class={`marquee marquee-${i + 1}`} style={`--n: ${row.length}`}>
+            <div class="marquee-track">
+              <ul class="marquee-list">
+                {row.map((a) => (
+                  <li>
+                    <a href={`/apps/${a.id}/`} class="mq">
+                      <AppTile app={a} size={44} />
+                      <span class="mq-text">
+                        <span class="mq-name">{a.name}</span>
+                        <span class="mq-cat">{a.groupLabel}</span>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              {/* The same row again so it loops; screen readers and Tab skip it, and Reduce motion hides it. */}
+              <ul class="marquee-list marquee-dup" aria-hidden="true" inert>
+                {row.map((a) => (
+                  <li>
+                    <a href={`/apps/${a.id}/`} class="mq" tabindex="-1">
+                      <AppTile app={a} size={44} />
+                      <span class="mq-text">
+                        <span class="mq-name">{a.name}</span>
+                        <span class="mq-cat">{a.groupLabel}</span>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))
+      }
     </div>
   </section>
 
@@ -690,17 +701,47 @@ const featureApps = ['jellyfin', 'vaultwarden', 'mealie', 'adguard-home'].map(ap
     gap: 24px;
   }
 
-  .marquee {
+  .apps-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .apps-pause {
+    min-height: 40px;
+  }
+  .apps-pause span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .apps-pause[hidden],
+  .apps-pause span[hidden] {
+    display: none;
+  }
+  /* One fade over all three rows, at both sides. */
+  .app-rows {
+    --fade: clamp(48px, 12vw, 200px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     margin-top: 28px;
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent,
+      #000 var(--fade),
+      #000 calc(100% - var(--fade)),
+      transparent
+    );
+    mask-image: linear-gradient(90deg, transparent, #000 var(--fade), #000 calc(100% - var(--fade)), transparent);
+  }
+  .marquee {
     overflow: hidden;
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   }
   .marquee-track {
     display: flex;
     gap: 14px;
     width: max-content;
-    padding: 8px 0;
+    padding: 6px 0;
   }
   .marquee-list {
     display: flex;
@@ -1162,6 +1203,13 @@ const featureApps = ['jellyfin', 'vaultwarden', 'mealie', 'adguard-home'].map(ap
     }
   }
   @media (max-width: 720px) {
+    .apps-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+    .apps-pause {
+      min-height: 44px;
+    }
     .hero {
       padding-top: 64px;
     }
@@ -1252,11 +1300,19 @@ const featureApps = ['jellyfin', 'vaultwarden', 'mealie', 'adguard-home'].map(ap
     .float-2 {
       animation-delay: -3.5s;
     }
-    .marquee-track {
-      animation: marquee 52s linear infinite;
+    /* About 40 to 55 px a second, whatever a row's length. */
+    .marquee-1 .marquee-track {
+      animation: marquee calc(var(--n) * 4.5s) linear infinite;
     }
-    .marquee:hover .marquee-track,
-    .marquee:focus-within .marquee-track {
+    .marquee-2 .marquee-track {
+      animation: marquee calc(var(--n) * 5.2s) linear infinite reverse;
+    }
+    .marquee-3 .marquee-track {
+      animation: marquee calc(var(--n) * 4s) linear infinite;
+    }
+    .app-rows:hover .marquee-track,
+    .app-rows:focus-within .marquee-track,
+    .app-rows[data-paused] .marquee-track {
       animation-play-state: paused;
     }
     .pulse {
@@ -1291,20 +1347,19 @@ const featureApps = ['jellyfin', 'vaultwarden', 'mealie', 'adguard-home'].map(ap
     }
   }
   @media (prefers-reduced-motion: reduce) {
+    /* Nothing moves: no button, no copies, and each row scrolls by hand, its first app clear of the fade. */
+    .apps-pause {
+      display: none !important;
+    }
     .marquee-dup {
       display: none;
     }
     .marquee {
-      -webkit-mask-image: none;
-      mask-image: none;
+      overflow-x: auto;
+      scrollbar-width: thin;
     }
     .marquee-track {
-      width: auto;
-      padding: 8px 32px;
-    }
-    .marquee-list {
-      flex-wrap: wrap;
-      justify-content: center;
+      padding: 6px var(--fade);
     }
     .rail-fill {
       transition: none;
@@ -1348,4 +1403,19 @@ const featureApps = ['jellyfin', 'vaultwarden', 'mealie', 'adguard-home'].map(ap
     { passive: true },
   );
   update();
+
+  // Pause and Play stop and restart all three rows of apps (D-192).
+  const appRowsEl = document.querySelector<HTMLElement>('[data-app-rows]');
+  const pause = document.querySelector<HTMLButtonElement>('[data-apps-pause]');
+  if (appRowsEl && pause) {
+    const moving = pause.querySelector<HTMLElement>('[data-when="moving"]');
+    const paused = pause.querySelector<HTMLElement>('[data-when="paused"]');
+    pause.hidden = false;
+    pause.addEventListener('click', () => {
+      const stop = !appRowsEl.hasAttribute('data-paused');
+      appRowsEl.toggleAttribute('data-paused', stop);
+      if (moving) moving.hidden = stop;
+      if (paused) paused.hidden = !stop;
+    });
+  }
 </script>
