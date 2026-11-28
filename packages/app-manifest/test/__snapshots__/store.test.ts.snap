@@ -14,8 +14,10 @@ exports[`built-in store > rendering immich > matches the snapshot 1`] = `
     volumes:
       - \${HLABS_FOLDER_LIBRARY}:/data
     depends_on:
-      - redis
-      - database
+      redis:
+        condition: service_healthy
+      database:
+        condition: service_healthy
     labels:
       dev.hlabs.app: immich
       dev.hlabs.service: immich-server
@@ -71,6 +73,13 @@ exports[`built-in store > rendering immich > matches the snapshot 1`] = `
     volumes:
       - \${HLABS_APP_DATA}/postgres:/var/lib/postgresql/data
     shm_size: 128mb
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -h 127.0.0.1 -U postgres -d immich
+      interval: 5s
+      timeout: 5s
+      retries: 30
     labels:
       dev.hlabs.app: immich
       dev.hlabs.service: database
