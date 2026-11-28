@@ -1,7 +1,7 @@
 schema: 1
 id: jackett
 name: Jackett
-version: '0.25.24'
+version: '0.25.48'
 revision: 1
 tagline: Search hundreds of torrent sites from Sonarr and Radarr
 description: |
