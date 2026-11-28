@@ -1,6 +1,6 @@
 services:
   tautulli:
-    image: lscr.io/linuxserver/tautulli:2.19.1@sha256:5e8f80cc18f03c606a3567c8a9b37d80812ed8017d2e2f8ff2e2a91b54a3aef1
+    image: lscr.io/linuxserver/tautulli:2021.12.16@sha256:9ba07aaddb8e2e7a6283eb8231dfd900f2d7dda38d70ec60fe7f5000a2dc0906
     environment:
       PUID: ${PUID}
       PGID: ${PGID}
