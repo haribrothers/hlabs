@@ -1,7 +1,7 @@
 schema: 1
 id: nextcloud
 name: Nextcloud
-version: '35.0.1'
+version: '35.0.3'
 revision: 1
 tagline: Your files, calendars and contacts in one place
 description: |

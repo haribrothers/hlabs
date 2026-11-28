@@ -2,7 +2,7 @@
 # Nextcloud is told it's served over https at the app's address.
 services:
   nextcloud:
-    image: docker.io/library/nextcloud:35.0.1-apache@sha256:276547e033df451770dbf9c0065929e5ea179a613b1884bd3fa807ba1c2703e7
+    image: docker.io/library/nextcloud:35.0.3-apache@sha256:f44180601f18e7664557232b4c5edb0eb4a82d649c05b93313f4e15909553d42
     environment:
       POSTGRES_HOST: database
       POSTGRES_DB: nextcloud
@@ -20,7 +20,7 @@ services:
       - redis
 
   cron:
-    image: docker.io/library/nextcloud:35.0.1-apache@sha256:276547e033df451770dbf9c0065929e5ea179a613b1884bd3fa807ba1c2703e7
+    image: docker.io/library/nextcloud:35.0.3-apache@sha256:f44180601f18e7664557232b4c5edb0eb4a82d649c05b93313f4e15909553d42
     entrypoint: /cron.sh
     volumes:
       - ${HLABS_APP_DATA}/html:/var/www/html
