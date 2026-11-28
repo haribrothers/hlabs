@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { curationIssues } from '../src/node';
+import { Registry } from '../src/registry';
 import { StoreCuration } from '../src/store-index';
 import {
   applyPlan,
@@ -14,7 +15,9 @@ import {
   newestTag,
   prBody,
   proposeUpdate,
+  releasesOf,
   type AppForUpdate,
+  type Release,
   type PullRequestOps,
   type UpdatePlan,
 } from '../src/updates';
@@ -37,8 +40,17 @@ const immich: AppForUpdate = {
   ],
 };
 
-/** A registry with these tags for every image, and these platforms for every new tag. */
-function lookups(tags: string[], platforms = [...BOTH, 'linux/arm/v7'], missing: string[] = []) {
+/**
+ * A registry with these tags for every image, and these platforms for every new tag. Today's pinned image was built
+ * on 1 Nov 2026 and every tag on 20 Nov, unless `built` gives a tag's date (null: the image doesn't say).
+ */
+function lookups(
+  tags: string[],
+  platforms = [...BOTH, 'linux/arm/v7'],
+  missing: string[] = [],
+  built: Record<string, string | null> = {},
+  releases: Release[] | null | Error = null,
+) {
   const asked: string[] = [];
   return {
     asked,
@@ -51,6 +63,17 @@ function lookups(tags: string[], platforms = [...BOTH, 'linux/arm/v7'], missing:
         asked.push(`manifest ${image}`);
         if (missing.includes(image)) throw new Error("doesn't exist");
         return { digest: D(image.length % 10), platforms };
+      },
+      created: async (image: string) => {
+        asked.push(`created ${image}`);
+        const key = image.includes('@') ? '@' : image.split(':').at(-1)!;
+        const at = key in built ? built[key] : key === '@' ? '2026-11-01' : '2026-11-20';
+        return at ? new Date(at) : null;
+      },
+      releases: async (version: string) => {
+        asked.push(`releases ${version}`);
+        if (releases instanceof Error) throw releases;
+        return releases;
       },
     },
   };
@@ -80,6 +103,153 @@ describe('US-STORE-24', () => {
         ]),
       ).toBeNull();
       expect(newestTag('2026.9.4', ['2026.10.0b3', '2026.10.0.dev20261001', '2026.10.1', 'stable'])).toBe('2026.10.1');
+    });
+
+    it('skips tags of another numbering scheme (a number gaining more than one digit)', () => {
+      // From the bot's first run (28 Nov 2026): linuxserver's build dates, BookStack's and PhotoPrism's.
+      expect(newestTag('4.1.4', ['2021.11.18', '4.1.5', '4.1.4'])).toBe('4.1.5');
+      expect(newestTag('26.3.20261120', ['2021.11.25'])).toBeNull();
+      expect(newestTag('26.09.3', ['26.09.20260929', '26.09.4'])).toBe('26.09.4');
+      expect(newestTag('261029', ['20220121', '261120'])).toBe('261120');
+      // One more digit is still an ordinary release.
+      expect(newestTag('9.4.0', ['10.0.0'])).toBe('10.0.0');
+      expect(newestTag('v3.9.4', ['v3.10.0'])).toBe('v3.10.0');
+    });
+
+    it('only takes a tag built after the image pinned today', async () => {
+      // qBittorrent 5.3.0 beside linuxserver's 2020 Ubuntu-base `20.04.x` tags.
+      const qbit: AppForUpdate = {
+        id: 'qbittorrent',
+        name: 'qBittorrent',
+        version: '5.3.0',
+        platforms: BOTH,
+        images: [{ service: 'app', image: `lscr.io/linuxserver/qbittorrent:5.3.0@${D(1)}` }],
+      };
+      const old = { '20.04.1': '2020-05-01', '20.04.0': '2020-04-20', '18.04.1': '2019-01-01' };
+      const { look, asked } = lookups(['18.04.1', '20.04.0', '20.04.1', '5.3.0', '5.3.1'], BOTH, [], old);
+      const check = await checkApp(qbit, look);
+      expect((check as { plan: UpdatePlan }).plan.toVersion).toBe('5.3.1');
+      // One date per old series: 20.04.0 isn't looked at once 20.04.1 was built earlier.
+      expect(asked.filter((a) => a.startsWith('created'))).toEqual([
+        `created lscr.io/linuxserver/qbittorrent@${D(1)}`,
+        'created lscr.io/linuxserver/qbittorrent:20.04.1',
+        'created lscr.io/linuxserver/qbittorrent:18.04.1',
+        'created lscr.io/linuxserver/qbittorrent:5.3.1',
+      ]);
+
+      // Every higher-numbered tag is older (Gitea's stray 28.4.0): up to date, no pull request.
+      expect(await checkApp(qbit, lookups(['5.3.0', '28.4.0'], BOTH, [], { '28.4.0': '2024-01-01' }).look)).toEqual({
+        kind: 'current',
+        id: 'qbittorrent',
+      });
+      // A tag that doesn't say when it was built isn't trusted either.
+      expect(await checkApp(qbit, lookups(['5.3.1'], BOTH, [], { '5.3.1': null }).look)).toEqual({
+        kind: 'current',
+        id: 'qbittorrent',
+      });
+      // Nor is anything, when today's image doesn't say.
+      expect(await checkApp(qbit, lookups(['5.3.1'], BOTH, [], { '@': null }).look)).toEqual({
+        kind: 'skipped',
+        id: 'qbittorrent',
+        reason: 'lscr.io/linuxserver/qbittorrent:5.3.0 has no build date',
+      });
+      // Too many old series to read: left to a person, and the summary says so.
+      const many = Array.from({ length: 12 }, (_, i) => `${20 + i}.0.0`);
+      const stale = Object.fromEntries(many.map((t) => [t, '2020-01-01']));
+      expect(await checkApp(qbit, lookups(many, BOTH, [], stale).look)).toMatchObject({
+        kind: 'skipped',
+        reason: expect.stringContaining('were built before 5.3.0: check by hand'),
+      });
+    });
+
+    it('skips a version whose GitHub releases are all pre-releases (n8n tags them like releases)', async () => {
+      const rel = (tag: string, prerelease = false): Release => ({
+        tag,
+        prerelease,
+        url: `https://github.com/o/r/releases/tag/${encodeURIComponent(tag)}`,
+      });
+      // Tag styles: `v…`, bare, `name@…`; builds (Radarr's fourth number) only when there's no exact one.
+      const list = [
+        rel('n8n@3.4.1', true),
+        rel('v7.0.3.10918'),
+        rel('v7.0.3.10912', true),
+        rel('12.4'),
+        rel('v12.4.1'),
+      ];
+      expect(releasesOf('3.4.1', list).map((r) => r.tag)).toEqual(['n8n@3.4.1']);
+      expect(releasesOf('7.0.3', list).map((r) => r.tag)).toEqual(['v7.0.3.10918', 'v7.0.3.10912']);
+      expect(releasesOf('12.4', list).map((r) => r.tag)).toEqual(['12.4']);
+      expect(releasesOf('12.5', list)).toEqual([]);
+
+      const n8n: AppForUpdate = {
+        id: 'n8n',
+        name: 'n8n',
+        version: '2.41.3',
+        platforms: BOTH,
+        source: 'https://github.com/n8n-io/n8n',
+        images: [{ service: 'app', image: `docker.io/n8nio/n8n:2.41.3@${D(1)}` }],
+      };
+      const releases = [rel('n8n@3.4.1', true), rel('n8n@2.50.3', true), rel('n8n@2.49.8'), rel('n8n@2.41.3')];
+      const { look, asked } = lookups(['2.41.3', '2.49.8', '2.50.3', '3.2.1', '3.4.1'], BOTH, [], {}, releases);
+      const plan = ((await checkApp(n8n, look)) as { plan: UpdatePlan }).plan;
+      expect(plan).toMatchObject({ toVersion: '2.49.8', releaseUrl: rel('n8n@2.49.8').url });
+      // Pre-releases are left out before any build date is read; the releases are asked for once.
+      expect(asked.filter((a) => /^(created|releases)/.test(a))).toEqual([
+        `created docker.io/n8nio/n8n@${D(1)}`,
+        'releases 2.41.3',
+        'created docker.io/n8nio/n8n:2.49.8',
+      ]);
+      // Radarr: one of 7.0.3's builds is a release, so 7.0.3 is.
+      const radarr = {
+        ...n8n,
+        id: 'radarr',
+        version: '6.4.4',
+        images: [{ service: 'app', image: `x/radarr:6.4.4@${D(2)}` }],
+      };
+      const builds = [rel('v7.0.3.10918'), rel('v7.0.3.10912', true)];
+      expect(await checkApp(radarr, lookups(['7.0.3'], BOTH, [], {}, builds).look)).toMatchObject({
+        plan: { toVersion: '7.0.3', releaseUrl: rel('v7.0.3.10918').url },
+      });
+      // A project that releases on GitHub (today's 6.4.4 is there) didn't release a tag it has no release for
+      // (n8n's 3.2.1 above).
+      expect(await checkApp(radarr, lookups(['7.0.3'], BOTH, [], {}, [rel('v6.4.4.10685')]).look)).toEqual({
+        kind: 'current',
+        id: 'radarr',
+      });
+      // Not on GitHub (or not this version): the tag decides, with no release link.
+      expect(await checkApp(radarr, lookups(['7.0.3']).look)).toMatchObject({ plan: { releaseUrl: null } });
+      // GitHub didn't answer: skipped, rather than risk a pre-release.
+      const limited = lookups(['7.0.3'], BOTH, [], {}, new Error("GitHub answered 403 for o/r's releases"));
+      expect(await checkApp(radarr, limited.look)).toEqual({
+        kind: 'skipped',
+        id: 'radarr',
+        reason: "GitHub answered 403 for o/r's releases",
+      });
+    });
+
+    it('reads a build date from the image’s config (amd64’s for a multi-arch index)', async () => {
+      const seen: string[] = [];
+      const registry = new Registry(async (url) => {
+        seen.push(url.replace('https://registry.example/v2/o/app/', ''));
+        if (url.endsWith('/manifests/1.0'))
+          return Response.json({
+            manifests: [
+              { digest: 'sha256:arm', platform: { os: 'linux', architecture: 'arm64' } },
+              { digest: 'sha256:amd', platform: { os: 'linux', architecture: 'amd64' } },
+              { digest: 'sha256:att', platform: { os: 'unknown', architecture: 'unknown' } },
+            ],
+          });
+        if (url.endsWith('/manifests/sha256:amd')) return Response.json({ config: { digest: 'sha256:cfg' } });
+        if (url.endsWith('/blobs/sha256:cfg')) return Response.json({ created: '2026-11-20T04:00:00Z' });
+        if (url.endsWith('/manifests/repro')) return Response.json({ config: { digest: 'sha256:zero' } });
+        if (url.endsWith('/blobs/sha256:zero')) return Response.json({ created: '1970-01-01T00:00:01Z' });
+        return new Response('', { status: 404 });
+      });
+      expect(await registry.created('registry.example/o/app:1.0')).toEqual(new Date('2026-11-20T04:00:00Z'));
+      expect(seen).toEqual(['manifests/1.0', 'manifests/sha256:amd', 'blobs/sha256:cfg']);
+      // Reproducible builds say 1970: no date.
+      expect(await registry.created('registry.example/o/app:repro')).toBeNull();
+      await expect(registry.created('registry.example/o/app:9')).rejects.toThrow('answered 404');
     });
 
     it('moves every image that follows the version, and leaves the databases', async () => {
@@ -158,6 +328,7 @@ describe('US-STORE-24', () => {
       toVersion: '3.0.0',
       tag: 'v3.0.0',
       major: true,
+      releaseUrl: null,
       images: [
         {
           service: 'immich-server',
