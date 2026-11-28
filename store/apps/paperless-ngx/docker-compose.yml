@@ -9,6 +9,9 @@ services:
       PAPERLESS_DBPASS: ${DB_PASSWORD}
       PAPERLESS_SECRET_KEY: ${SECRET_KEY}
       PAPERLESS_URL: ${HLABS_URL}
+      # Any host: from 3.5.0, with PAPERLESS_URL set, Paperless refuses every other host, so hlabs's health check
+      # (127.0.0.1) and the tailnet address got 400. Caddy only sends the app's own hostnames here.
+      PAPERLESS_ALLOWED_HOSTS: '*'
       PAPERLESS_TIME_ZONE: ${TZ}
       USERMAP_UID: ${PUID}
       USERMAP_GID: ${PGID}
