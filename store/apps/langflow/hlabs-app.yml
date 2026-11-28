@@ -1,7 +1,7 @@
 schema: 1
 id: langflow
 name: Langflow
-version: '1.13.3'
+version: '1.13.4'
 revision: 1
 tagline: Build AI agents and workflows by drawing them
 description: |
