@@ -3,7 +3,7 @@
 schema: 1
 id: lidarr
 name: Lidarr
-version: '3.1.6'
+version: '8.1.2135'
 revision: 1
 tagline: Finds and downloads albums by the artists you follow
 description: |
