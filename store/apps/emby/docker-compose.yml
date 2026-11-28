@@ -1,6 +1,6 @@
 services:
   emby:
-    image: lscr.io/linuxserver/emby:4.10.2@sha256:7de8f6c5c47a128c387fae67c4d6ff2dfce347cf1219e8fcb01315871446ade4
+    image: lscr.io/linuxserver/emby:7.0.19@sha256:926fb849a819459525efdba2eb90071ef2b09dbdd028486a11c13160941aea15
     environment:
       PUID: ${PUID}
       PGID: ${PGID}

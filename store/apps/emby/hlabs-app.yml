@@ -1,7 +1,7 @@
 schema: 1
 id: emby
 name: Emby
-version: '4.10.2'
+version: '7.0.19'
 revision: 1
 tagline: Your own streaming service for films, shows and music
 description: |
