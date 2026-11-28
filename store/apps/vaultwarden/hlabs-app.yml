@@ -1,7 +1,7 @@
 schema: 1
 id: vaultwarden
 name: Vaultwarden
-version: '1.37.3'
+version: '1.37.5'
 revision: 1
 tagline: Keep every password safe in one place
 description: |
