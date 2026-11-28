@@ -128,6 +128,35 @@ export class Registry {
   }
 
   /**
+   * When `image` (a tag or a digest) was built, from its config's `created`: linux/amd64's for a multi-arch index,
+   * else its first platform's. Null when the image doesn't say, or says a date before 2000 (reproducible builds
+   * write 1970).
+   */
+  async created(image: string | ImageRef): Promise<Date | null> {
+    const ref = typeof image === 'string' ? parseImageRef(image) : image;
+    let reference = ref.digest ?? ref.tag ?? 'latest';
+    for (let depth = 0; depth < 2; depth++) {
+      const res = await this.get(ref, `manifests/${reference}`, ACCEPT);
+      if (!res.ok) throw new RegistryError(`${ref.name}:${reference}: the registry answered ${res.status}`);
+      const body = (await res.json()) as {
+        manifests?: Array<{ digest: string; platform?: { os?: string; architecture?: string } }>;
+        config?: { digest?: string };
+      };
+      if (body.config?.digest) {
+        const cfg = await this.get(ref, `blobs/${body.config.digest}`);
+        if (!cfg.ok) throw new RegistryError(`${ref.name}: couldn't read its config (${cfg.status})`);
+        const at = new Date(String(((await cfg.json()) as { created?: string }).created ?? ''));
+        return Number.isNaN(at.getTime()) || at.getUTCFullYear() < 2000 ? null : at;
+      }
+      const real = (body.manifests ?? []).filter((m) => m.platform?.os && m.platform.os !== 'unknown');
+      const pick = real.find((m) => m.platform?.architecture === 'amd64') ?? real[0];
+      if (!pick) return null;
+      reference = pick.digest;
+    }
+    return null;
+  }
+
+  /**
    * The repository's tags in the registry's order, following its pages up to `maxPages`. With `after` (a tag that
    * exists), the listing starts after that tag. Registries order tags differently: Docker Hub alphabetically, GHCR
    * in the order they were pushed, so on GHCR the tags after today's are the newer builds, which a repository with
