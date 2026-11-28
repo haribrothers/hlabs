@@ -1,5 +1,7 @@
 # Lint, typecheck, unit/integration tests, build, store:lint and boundaries on Linux and macOS;
-# end-to-end on Linux (docs/prd/11-testing-release.md §CI).
+# end-to-end on Linux (docs/prd/11-testing-release.md §CI). A pull request that only changes the website or the spec
+# (apps/site, docs outside docs/design) is only linted and format-checked here; site.yml builds and tests the website
+# (D-193). The required checks still report, so main's ruleset is unchanged.
 name: ci
 
 on:
@@ -15,31 +17,72 @@ permissions:
   contents: read
 
 jobs:
+  # full=true unless this is a pull request whose every file is under apps/site/ or docs/ (but not docs/design/, whose
+  # tokens.json the dashboard is built from). Pushes to main always run everything.
+  changes:
+    name: what changed
+    runs-on: ubuntu-latest
+    outputs:
+      full: ${{ steps.diff.outputs.full }}
+    steps:
+      - uses: actions/checkout@v5
+        if: github.event_name == 'pull_request'
+        with:
+          fetch-depth: 2
+      - id: diff
+        run: |
+          full=true
+          if [ "${{ github.event_name }}" = pull_request ]; then
+            # The pull request's merge commit against main as it is now.
+            git diff --name-only HEAD^1 HEAD | tee changed.txt
+            if ! grep -vE '^(apps/site/|docs/)' changed.txt | grep -q . && ! grep -q '^docs/design/' changed.txt; then
+              full=false
+            fi
+          fi
+          echo "full=$full" | tee -a "$GITHUB_OUTPUT"
+
   check:
     name: check (${{ matrix.os }})
+    needs: changes
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    env:
+      FULL: ${{ needs.changes.outputs.full }}
+      # Website or spec only: lint and format once, on Linux; the macOS job has nothing to do.
+      LINT: ${{ needs.changes.outputs.full == 'true' || matrix.os == 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v5
+        if: env.LINT == 'true'
       - uses: pnpm/action-setup@v4
+        if: env.LINT == 'true'
       - uses: actions/setup-node@v5
+        if: env.LINT == 'true'
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+        if: env.LINT == 'true'
       - name: Caddy and docker-compose, checked against pinned checksums (D-072)
+        if: env.FULL == 'true'
         run: pnpm fetch-binaries
       - name: Lint and dependency boundaries
+        if: env.LINT == 'true'
         run: pnpm lint
       - run: pnpm format:check
+        if: env.LINT == 'true'
       - run: pnpm typecheck
+        if: env.FULL == 'true'
       - run: pnpm test
+        if: env.FULL == 'true'
       - run: pnpm build
+        if: env.FULL == 'true'
       - run: pnpm store:lint
+        if: env.FULL == 'true'
       - name: Generated design tokens are current
+        if: env.FULL == 'true'
         run: pnpm ui:tokens && git diff --exit-code packages/ui/src
 
   # The Linux server install for real (US-INST-23…25, D-140): build the download on this runner, run install.sh as
@@ -47,7 +90,8 @@ jobs:
   install:
     name: install (Linux)
     runs-on: ubuntu-latest
-    needs: check
+    needs: [changes, check]
+    if: needs.changes.outputs.full == 'true'
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -70,7 +114,8 @@ jobs:
   e2e:
     name: e2e (Linux, ${{ matrix.project }})
     runs-on: ubuntu-latest
-    needs: check
+    needs: [changes, check]
+    if: needs.changes.outputs.full == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -97,11 +142,16 @@ jobs:
           path: apps/web/playwright-report
           retention-days: 14
 
-  # The required check: passes only when every e2e project passed.
+  # The required check: passes only when every e2e project passed, or when only the website or the spec changed.
   e2e-result:
     name: e2e (Linux)
-    needs: e2e
+    needs: [changes, e2e]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - run: test "${{ needs.e2e.result }}" = success
+      - run: |
+          if [ "${{ needs.changes.result }}" = success ] && [ "${{ needs.changes.outputs.full }}" = false ]; then
+            echo "Only the website or the spec changed; site.yml tests the website."
+            exit 0
+          fi
+          test "${{ needs.e2e.result }}" = success
