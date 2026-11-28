@@ -3,7 +3,7 @@
 schema: 1
 id: radarr
 name: Radarr
-version: '6.4.4'
+version: '7.0.3'
 revision: 1
 tagline: Finds and downloads the films on your wish list
 description: |
