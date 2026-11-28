@@ -20,7 +20,7 @@ Rules:
 ## CI (GitHub Actions)
 | Workflow | Trigger | Jobs |
 | --- | --- | --- |
-| `ci.yml` | PR, push to main | install (pnpm cache) → lint → typecheck → unit/integration → build → e2e (Linux, Docker) → axe; `store:lint`; boundaries check |
+| `ci.yml` | PR, push to main | install (pnpm cache) → lint → typecheck → unit/integration → build → e2e (Linux, Docker) → axe; `store:lint`; boundaries check. A PR that only changes `apps/site/` or `docs/` (not `docs/design/`) runs only lint, boundaries and format on Linux; `site.yml` covers the website, and the required checks still report (D-193) |
 | `tray.yml` | PR touching `apps/tray` | `cargo clippy`, `cargo test`, `tauri build` (macOS arm64 and Linux x64, unsigned) |
 | `store.yml` | nightly, PR touching `store/` or the install path | PRs: the apps the PR changes plus the smoke set (a change to the install path adds 10 apps that change daily); nightly: every app, split across runners, an issue per failing app, the install rate in the summary (US-STORE-26, D-148); sign `index.json` on main |
 | `store-updates.yml` | daily, by hand | `pnpm store:updates --pr`: a pull request per built-in app with a newer image (version, tag and multi-arch digest) on `store-update/<id>`, labelled `store-update` (and `store-update-major`), never merged by itself; opened as the `STORE_UPDATES_TOKEN` secret's account so its checks run, or with Actions' token plus a `store.yml` run for the branch (US-STORE-24, D-148, D-154) |
