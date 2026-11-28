@@ -2,7 +2,7 @@
 schema: 1
 id: 2fauth
 name: 2FAuth
-version: '9.0.2'
+version: '9.0.3'
 revision: 1
 tagline: Your two-factor codes, in one place
 description: |

@@ -9,6 +9,9 @@ import { renderApp, serializeEnvFile } from '../src/render';
 
 const STORE = fileURLToPath(new URL('../../../store', import.meta.url));
 const SAMPLE_APPS = ['immich', 'uptime-kuma', 'vaultwarden'];
+/** Image tags and digests left out of snapshots, so the update bot's version bumps (US-STORE-24) don't change them. */
+const unpinned = (text: string) =>
+  text.replace(/^(\s*image: [^:@\s]+(?::\d+)?[^:@\s]*):[^@\s]+@sha256:[0-9a-f]{64}$/gm, '$1:<tag>@<digest>');
 
 describe('built-in store', () => {
   const apps = lintStore(STORE);
@@ -22,7 +25,8 @@ describe('built-in store', () => {
     const index = buildStoreIndex(STORE, { id: 'builtin', name: 'hlabs' });
     const immich = index.apps.find((a) => a.id === 'immich');
     expect(immich).toMatchObject({
-      version: '3.2.2',
+      // The manifest's version, whichever the update bot last moved it to.
+      version: loadAppDir(`${STORE}/apps/immich`, { requireDigest: true }).manifest!.version,
       manifestUrl: 'apps/immich/hlabs-app.yml',
       composeUrl: 'apps/immich/docker-compose.yml',
       logoUrl: 'apps/immich/logo.svg',
@@ -56,7 +60,7 @@ describe('built-in store', () => {
     });
 
     it('matches the snapshot', () => {
-      expect(rendered.composeYaml).toMatchSnapshot();
+      expect(unpinned(rendered.composeYaml)).toMatchSnapshot();
       expect(rendered.envFile).toMatchSnapshot();
     });
 

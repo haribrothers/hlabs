@@ -1,6 +1,6 @@
 services:
   2fauth:
-    image: docker.io/2fauth/2fauth:9.0.2@sha256:6774efa7c612e424eb17a54e2373524d9a04af6cad7e38d85d76fed87f6a48bd
+    image: docker.io/2fauth/2fauth:9.0.3@sha256:fb421b40072f9b1412fa954798bc2e2acb755dd312ce6b21c1d004ce15c2a562
     # The image's files are its own user's only (uid 1000), so it can't run as hlabs's user: it starts as root, hands
     # the data folder hlabs made to uid 1000 (Linux), and runs as that user, named for su.
     user: '0:0'

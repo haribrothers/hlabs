@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import { RECENT_MS } from '../src/store/updates-list';
 import { memberSession } from './member-session';
+import { storeImage } from './store-fixture';
 import { newDigest, withInstalled } from './update-fixture';
 
 const closers: Array<() => Promise<void>> = [];
@@ -85,7 +86,10 @@ describe('US-STORE-15', () => {
     t.publish('vaultwarden', '9.9.9');
     t.sync();
     // Uptime Kuma's new image can't be downloaded.
-    t.engine.pullErrors.set(`louislam/uptime-kuma:2.5.5@sha256:${newDigest('uptime-kuma')}`, new Error('no network'));
+    t.engine.pullErrors.set(
+      `${storeImage('uptime-kuma').split('@')[0]}@sha256:${newDigest('uptime-kuma')}`,
+      new Error('no network'),
+    );
     const res = (await t.d.mutate('apps.updateAll')) as Reply;
     const jobIds = res.result!.data.jobIds as string[];
     expect(jobIds).toHaveLength(2);

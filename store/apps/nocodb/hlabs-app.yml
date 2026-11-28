@@ -1,7 +1,7 @@
 schema: 1
 id: nocodb
 name: NocoDB
-version: '2026.10.2'
+version: '2026.11.0'
 revision: 1
 tagline: Spreadsheets that work like a database
 description: |

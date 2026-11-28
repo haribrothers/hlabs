@@ -1,7 +1,7 @@
 # From Immich v3.2.2's release docker-compose.yml, adapted to hlabs compose rules.
 services:
   immich-server:
-    image: ghcr.io/immich-app/immich-server:v3.2.2@sha256:79cc1623323d5894922686d8743b4780181428f98eecbfb58ce12c41ef02d1ea
+    image: ghcr.io/immich-app/immich-server:v3.4.2@sha256:fc880c1bf665b4aab1e74c15e56ab871225989cd546536e6b77e771869af06bd
     environment:
       DB_HOSTNAME: database
       DB_USERNAME: postgres
@@ -10,12 +10,16 @@ services:
       REDIS_HOSTNAME: redis
     volumes:
       - ${HLABS_FOLDER_LIBRARY}:/data
+    # Started once the database takes connections: on a fresh install, Immich started during Postgres's first-start
+    # setup, couldn't connect and exited, and the install failed.
     depends_on:
-      - redis
-      - database
+      redis:
+        condition: service_healthy
+      database:
+        condition: service_healthy
 
   immich-machine-learning:
-    image: ghcr.io/immich-app/immich-machine-learning:v3.2.2@sha256:60dfcf266a9ef3b7376f5678e8c980d4fb61db5fc48c078fe8a326ab1535d60d
+    image: ghcr.io/immich-app/immich-machine-learning:v3.4.2@sha256:739405742a79bd7447227c553bb62ed5491aa36acf00bc667af7f9c93b6fae91
     volumes:
       - ${HLABS_APP_DATA}/model-cache:/cache
 
@@ -34,3 +38,9 @@ services:
     volumes:
       - ${HLABS_APP_DATA}/postgres:/var/lib/postgresql/data
     shm_size: 128mb
+    healthcheck:
+      # Over TCP, so it passes only once the real server is up (not during first-start setup).
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U postgres -d immich']
+      interval: 5s
+      timeout: 5s
+      retries: 30

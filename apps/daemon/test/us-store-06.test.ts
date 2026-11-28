@@ -9,7 +9,7 @@ import { CatalogService } from '../src/store/catalog';
 import { serviceRole, StoreService } from '../src/store/service';
 import { daemonWithAdmin } from './admin-session';
 import { tempDir } from './helpers';
-import { storeFixture } from './store-fixture';
+import { storeFixture, storeVersion } from './store-fixture';
 
 const closers: Array<() => Promise<void>> = [];
 afterEach(async () => {
@@ -29,7 +29,7 @@ describe('US-STORE-06', () => {
     const d = await store.getApp('immich');
     expect(d.app).toMatchObject({ id: 'immich', name: 'Immich', group: 'files', arm64: true });
     expect(d.source).toEqual({ id: 'builtin', name: 'hlabs official', official: true, signed: true, kind: 'builtin' });
-    expect(d.version).toBe('3.2.2');
+    expect(d.version).toBe(storeVersion('immich'));
     expect(d.description).toMatch(/photo and video backup/);
     expect(d.address).toBe('immich.hlabs.local');
     expect(d.services.map((s) => s.role)).toEqual(expect.arrayContaining(['server', 'database', 'cache']));

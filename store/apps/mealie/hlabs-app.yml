@@ -1,7 +1,7 @@
 schema: 1
 id: mealie
 name: Mealie
-version: '3.28.0'
+version: '3.31.0'
 revision: 1
 tagline: Recipes, meal plans and shopping lists
 description: |
