@@ -20,11 +20,24 @@ test.describe('US-SITE-01', () => {
     // The product's own Home, from the docs screenshots (US-SITE-11).
     await expect(page.getByRole('img', { name: /^hlabs Home: Good morning, Hari/ })).toBeVisible();
 
-    // The row of apps (its looping copy is hidden from screen readers and Tab).
-    const row = page.locator('.marquee-list:not(.marquee-dup) a');
-    const hrefs = await row.evaluateAll((links) => links.map((l) => l.getAttribute('href')));
+    // Three rows of apps, every app once (D-192); each row's looping copy is hidden from screen readers and Tab.
+    const rows = page.locator('[data-app-rows] .marquee');
+    await expect(rows).toHaveCount(3);
+    const hrefs = await page
+      .locator('.marquee-list:not(.marquee-dup) a')
+      .evaluateAll((links) => links.map((l) => l.getAttribute('href')));
     expect(hrefs.sort()).toEqual(storeAppIds().map((id) => `/apps/${id}/`));
-    await expect(page.locator('.marquee-dup')).toHaveAttribute('aria-hidden', 'true');
+    const copies = page.locator('.marquee-dup');
+    await expect(copies).toHaveCount(3);
+    for (const copy of await copies.all()) await expect(copy).toHaveAttribute('aria-hidden', 'true');
+    // Each row mixes the store's groups, with no two neighbours from the same group.
+    for (const row of await rows.all()) {
+      const groups = await row
+        .locator('.marquee-list:not(.marquee-dup) .mq-cat')
+        .evaluateAll((cats) => cats.map((c) => c.textContent));
+      expect(new Set(groups).size).toBeGreaterThan(3);
+      groups.slice(1).forEach((g, i) => expect(g, `${groups[i]} then ${g}`).not.toBe(groups[i]));
+    }
 
     for (const [title, href] of [
       ['Apps in one click', '/help/apps/app-store/'],

@@ -55,8 +55,40 @@ test.describe('US-SITE-12', () => {
         .map((el) => el.className.toString()),
     );
     expect(moving).toEqual([]);
-    // The looping copy of the app row is gone; the row wraps instead.
-    await expect(page.locator('.marquee-dup')).toBeHidden();
+    // The rows' looping copies and the Pause button are gone; each row scrolls by hand instead (D-192).
+    for (const copy of await page.locator('.marquee-dup').all()) await expect(copy).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Pause' })).toBeHidden();
+    const scrolls = await page
+      .locator('[data-app-rows] .marquee')
+      .evaluateAll((rows) => rows.map((r) => getComputedStyle(r).overflowX));
+    expect(scrolls).toEqual(['auto', 'auto', 'auto']);
+    await context.close();
+  });
+
+  test('The rows of apps move in alternate directions, and Pause stops all three', async ({ page }) => {
+    await page.goto('/');
+    const tracks = page.locator('[data-app-rows] .marquee-track');
+    const css = (prop: 'animationDirection' | 'animationPlayState') =>
+      tracks.evaluateAll((els, p) => els.map((el) => getComputedStyle(el)[p]), prop);
+    expect(await css('animationDirection')).toEqual(['normal', 'reverse', 'normal']);
+    expect(await css('animationPlayState')).toEqual(['running', 'running', 'running']);
+
+    await page.getByRole('button', { name: 'Pause' }).click();
+    expect(await css('animationPlayState')).toEqual(['paused', 'paused', 'paused']);
+    await page.getByRole('button', { name: 'Play' }).click();
+    expect(await css('animationPlayState')).toEqual(['running', 'running', 'running']);
+  });
+
+  test('Without JavaScript there is no Pause button, and the rows still stop on hover', async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto('/');
+    await expect(page.locator('[data-apps-pause]')).toBeHidden();
+    await page.locator('[data-app-rows]').hover();
+    const states = await page
+      .locator('[data-app-rows] .marquee-track')
+      .evaluateAll((els) => els.map((el) => getComputedStyle(el).animationPlayState));
+    expect(states).toEqual(['paused', 'paused', 'paused']);
     await context.close();
   });
 

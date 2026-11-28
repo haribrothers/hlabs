@@ -23,7 +23,7 @@ The public website for hlabs and its help documentation, built from `apps/site` 
 
 **Acceptance criteria**
 - **Given** I open the site's home page, **then** it shows the hlabs lockup, the headline "Your own cloud, at home", a one-sentence description, a "Download" primary button and a "Read the docs" secondary button.
-- **Given** the home page, **then** it shows a screenshot of Home with the Dock, a row of the apps from the built-in store (logos, linking to their catalogue pages), and short sections for Apps, Files, Backups, Remote access and Family, each linking to its help page.
+- **Given** the home page, **then** it shows a screenshot of Home with the Dock, three rows of the apps from the built-in store, each app once (logos, linking to their catalogue pages; the rows move in alternate directions, fade out at both sides and stop with a Pause button, D-192), and short sections for Apps, Files, Backups, Remote access and Family, each linking to its help page.
 - **Given** the "What you need" section, **then** it lists: a Mac with Apple silicon (Intel supported if the engine runs) running macOS 14 Sonoma or later, or a Linux machine with systemd (Ubuntu 22.04+, Debian 12+ or Fedora 40+, x86_64 or arm64); 8 GB memory recommended; a container engine is set up for you if missing (NFR-COMP-01, NFR-COMP-02).
 - **Given** the footer, **then** it links to GitHub, the licence (AGPL-3.0), the docs licence (CC BY 4.0), Privacy and Release notes.
 - **Given** any page, **then** it passes axe with no violations, text contrast is at least 4.5:1 on both themes, and it works without JavaScript except search.
