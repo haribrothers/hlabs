@@ -1,7 +1,7 @@
 schema: 1
 id: gitea
 name: Gitea
-version: '1.27.3'
+version: '28.4.0'
 revision: 1
 tagline: Host your own Git repositories
 description: |
