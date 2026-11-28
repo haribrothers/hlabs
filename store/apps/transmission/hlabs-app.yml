@@ -1,7 +1,7 @@
 schema: 1
 id: transmission
 name: Transmission
-version: '4.1.4'
+version: '2021.11.18'
 revision: 1
 tagline: A simple, light torrent client
 description: |
