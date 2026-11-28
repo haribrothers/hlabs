@@ -1,7 +1,7 @@
 schema: 1
 id: uptime-kuma
 name: Uptime Kuma
-version: '2.5.5'
+version: '2.5.12'
 revision: 1
 tagline: Know the moment a website or service goes down
 description: |
