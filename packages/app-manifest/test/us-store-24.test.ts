@@ -15,7 +15,9 @@ import {
   newestTag,
   prBody,
   proposeUpdate,
+  releasesOf,
   type AppForUpdate,
+  type Release,
   type PullRequestOps,
   type UpdatePlan,
 } from '../src/updates';
@@ -47,6 +49,7 @@ function lookups(
   platforms = [...BOTH, 'linux/arm/v7'],
   missing: string[] = [],
   built: Record<string, string | null> = {},
+  releases: Release[] | null | Error = null,
 ) {
   const asked: string[] = [];
   return {
@@ -66,6 +69,11 @@ function lookups(
         const key = image.includes('@') ? '@' : image.split(':').at(-1)!;
         const at = key in built ? built[key] : key === '@' ? '2026-11-01' : '2026-11-20';
         return at ? new Date(at) : null;
+      },
+      releases: async (version: string) => {
+        asked.push(`releases ${version}`);
+        if (releases instanceof Error) throw releases;
+        return releases;
       },
     },
   };
@@ -151,6 +159,71 @@ describe('US-STORE-24', () => {
       expect(await checkApp(qbit, lookups(many, BOTH, [], stale).look)).toMatchObject({
         kind: 'skipped',
         reason: expect.stringContaining('were built before 5.3.0: check by hand'),
+      });
+    });
+
+    it('skips a version whose GitHub releases are all pre-releases (n8n tags them like releases)', async () => {
+      const rel = (tag: string, prerelease = false): Release => ({
+        tag,
+        prerelease,
+        url: `https://github.com/o/r/releases/tag/${encodeURIComponent(tag)}`,
+      });
+      // Tag styles: `v…`, bare, `name@…`; builds (Radarr's fourth number) only when there's no exact one.
+      const list = [
+        rel('n8n@3.4.1', true),
+        rel('v7.0.3.10918'),
+        rel('v7.0.3.10912', true),
+        rel('12.4'),
+        rel('v12.4.1'),
+      ];
+      expect(releasesOf('3.4.1', list).map((r) => r.tag)).toEqual(['n8n@3.4.1']);
+      expect(releasesOf('7.0.3', list).map((r) => r.tag)).toEqual(['v7.0.3.10918', 'v7.0.3.10912']);
+      expect(releasesOf('12.4', list).map((r) => r.tag)).toEqual(['12.4']);
+      expect(releasesOf('12.5', list)).toEqual([]);
+
+      const n8n: AppForUpdate = {
+        id: 'n8n',
+        name: 'n8n',
+        version: '2.41.3',
+        platforms: BOTH,
+        source: 'https://github.com/n8n-io/n8n',
+        images: [{ service: 'app', image: `docker.io/n8nio/n8n:2.41.3@${D(1)}` }],
+      };
+      const releases = [rel('n8n@3.4.1', true), rel('n8n@2.50.3', true), rel('n8n@2.49.8'), rel('n8n@2.41.3')];
+      const { look, asked } = lookups(['2.41.3', '2.49.8', '2.50.3', '3.2.1', '3.4.1'], BOTH, [], {}, releases);
+      const plan = ((await checkApp(n8n, look)) as { plan: UpdatePlan }).plan;
+      expect(plan).toMatchObject({ toVersion: '2.49.8', releaseUrl: rel('n8n@2.49.8').url });
+      // Pre-releases are left out before any build date is read; the releases are asked for once.
+      expect(asked.filter((a) => /^(created|releases)/.test(a))).toEqual([
+        `created docker.io/n8nio/n8n@${D(1)}`,
+        'releases 2.41.3',
+        'created docker.io/n8nio/n8n:2.49.8',
+      ]);
+      // Radarr: one of 7.0.3's builds is a release, so 7.0.3 is.
+      const radarr = {
+        ...n8n,
+        id: 'radarr',
+        version: '6.4.4',
+        images: [{ service: 'app', image: `x/radarr:6.4.4@${D(2)}` }],
+      };
+      const builds = [rel('v7.0.3.10918'), rel('v7.0.3.10912', true)];
+      expect(await checkApp(radarr, lookups(['7.0.3'], BOTH, [], {}, builds).look)).toMatchObject({
+        plan: { toVersion: '7.0.3', releaseUrl: rel('v7.0.3.10918').url },
+      });
+      // A project that releases on GitHub (today's 6.4.4 is there) didn't release a tag it has no release for
+      // (n8n's 3.2.1 above).
+      expect(await checkApp(radarr, lookups(['7.0.3'], BOTH, [], {}, [rel('v6.4.4.10685')]).look)).toEqual({
+        kind: 'current',
+        id: 'radarr',
+      });
+      // Not on GitHub (or not this version): the tag decides, with no release link.
+      expect(await checkApp(radarr, lookups(['7.0.3']).look)).toMatchObject({ plan: { releaseUrl: null } });
+      // GitHub didn't answer: skipped, rather than risk a pre-release.
+      const limited = lookups(['7.0.3'], BOTH, [], {}, new Error("GitHub answered 403 for o/r's releases"));
+      expect(await checkApp(radarr, limited.look)).toEqual({
+        kind: 'skipped',
+        id: 'radarr',
+        reason: "GitHub answered 403 for o/r's releases",
       });
     });
 
@@ -255,6 +328,7 @@ describe('US-STORE-24', () => {
       toVersion: '3.0.0',
       tag: 'v3.0.0',
       major: true,
+      releaseUrl: null,
       images: [
         {
           service: 'immich-server',

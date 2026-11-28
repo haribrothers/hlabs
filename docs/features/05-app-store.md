@@ -425,7 +425,7 @@ The App Store is where people find self-hosted apps, see what each one needs and
 **Implementation notes**
 - `pnpm store:updates` (`packages/app-manifest/src/updates.ts` and `src/cli/store-updates.ts`, beside the registry client it shares with the porting helper: tags and digests through the OCI distribution API), `.github/workflows/store-updates.yml`; no auto-merge (D-148, D-154).
 - Edge: an app pinned on purpose (listed under `hold` in `curation.yml`) is skipped.
-- Edge: a higher-numbered tag that's another numbering scheme or was built before today's image (linuxserver's old `2021.11.18` and `20.04.1` tags) isn't a newer release (D-154).
+- Edge: a higher-numbered tag that's another numbering scheme or was built before today's image (linuxserver's old `2021.11.18` and `20.04.1` tags) isn't a newer release; nor is a version the project's GitHub marks as a pre-release, or doesn't list when it lists today's (n8n's 3.x) (D-154).
 
 ### US-STORE-25 · Port an app with the porting helper
 **Feature:** F-STORE-13 · **Priority:** P2 · **Phase:** 7 · **Screens:** —

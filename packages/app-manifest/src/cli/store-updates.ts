@@ -14,7 +14,9 @@ import {
   LABEL,
   MAJOR_LABEL,
   proposeUpdate,
+  releasesOf,
   type AppForUpdate,
+  type Release,
   type PullRequestOps,
   type UpdateCheck,
 } from '../updates';
@@ -30,16 +32,36 @@ const github = {
   ...(process.env.GITHUB_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
 };
 
-/** The project's GitHub release page for this tag (with or without a `v`), if it has one. */
-async function releaseNotes(source: string | undefined, tag: string): Promise<string | null> {
-  const m = source && /^https:\/\/github\.com\/([^/]+)\/([^/#?]+)/.exec(source);
+const githubRepo = (source: string | undefined) =>
+  source ? /^https:\/\/github\.com\/([^/]+)\/([^/#?]+?)(?:\.git)?\/?$/.exec(source) : null;
+
+/**
+ * The project's GitHub releases, newest first, until today's `version` is among them (every newer one is then
+ * listed too), at most 5 pages. Null when the app's source isn't on GitHub.
+ */
+async function githubReleases(source: string | undefined, version: string): Promise<Release[] | null> {
+  const m = githubRepo(source);
   if (!m) return null;
-  const bare = tag.replace(/^v/, '');
-  for (const t of [tag, `v${bare}`, bare]) {
-    const res = await fetch(`https://api.github.com/repos/${m[1]}/${m[2]}/releases/tags/${t}`, { headers: github });
-    if (res.ok) return ((await res.json()) as { html_url: string }).html_url;
+  const out: Release[] = [];
+  for (let page = 1; page <= 5; page++) {
+    const res = await fetch(`https://api.github.com/repos/${m[1]}/${m[2]}/releases?per_page=100&page=${page}`, {
+      headers: github,
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const hint = !process.env.GITHUB_TOKEN && [403, 429].includes(res.status) ? ' (set GITHUB_TOKEN)' : '';
+      throw new Error(`GitHub answered ${res.status} for ${m[1]}/${m[2]}'s releases${hint}`);
+    }
+    const list = (await res.json()) as Array<{
+      tag_name: string;
+      prerelease: boolean;
+      draft: boolean;
+      html_url: string;
+    }>;
+    out.push(...list.map((r) => ({ tag: r.tag_name, prerelease: r.prerelease || r.draft, url: r.html_url })));
+    if (list.length < 100 || releasesOf(version, out).length) break;
   }
-  return `${source.replace(/\/$/, '')}/releases`;
+  return out;
 }
 
 const hold = new Set(loadCuration(storeDir).hold);
@@ -139,6 +161,7 @@ for (const { dir, app } of apps) {
       ],
       manifest: (image) => registry.manifest(image),
       created: (image) => registry.created(image),
+      releases: (version) => githubReleases(app.source, version),
     });
 
   if (check.kind === 'current') lines.push(`- ${app.id} ${app.version}: up to date`);
@@ -158,7 +181,7 @@ for (const { dir, app } of apps) {
     } else if (ops) {
       const root = execFileSync('git', ['-C', storeDir, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
       const at = (file: string) => relative(root, join(dir, file));
-      const notes = await releaseNotes(app.source, plan.tag);
+      const notes = plan.releaseUrl ?? (githubRepo(app.source) ? `${app.source!.replace(/\/$/, '')}/releases` : null);
       const r = proposeUpdate(
         plan,
         { [at(MANIFEST_FILE)]: edited.manifest, [at(COMPOSE_FILE)]: edited.compose },

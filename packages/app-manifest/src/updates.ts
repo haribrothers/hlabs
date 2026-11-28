@@ -1,5 +1,5 @@
 // The built-in store's update bot (US-STORE-24, D-148, D-154): for each app, a newer release tag of the images that
-// follow its version, the same pattern as today's tag, not a pre-release and built after today's image; the edits that move it there (version,
+// follow its version, the same pattern as today's tag, not a pre-release (by its name, or its GitHub release) and built after today's image; the edits that move it there (version,
 // revision, each tag and its multi-arch digest); and the pull request that proposes them. Never merges anything.
 // No network here: the command passes in the registry and GitHub lookups.
 import type { ImageManifest } from './registry';
@@ -74,6 +74,27 @@ export function isMajor(from: string, to: string): boolean {
   return a0 !== b0 || (a0 === 0 && a1 !== b1);
 }
 
+/** A release on the project's GitHub. */
+export interface Release {
+  tag: string;
+  /** Marked pre-release (or still a draft). */
+  prerelease: boolean;
+  url: string;
+}
+
+/**
+ * The project's GitHub releases of `version`: tagged `v3.4.2`, `3.4.2` or `n8n@3.4.1`. Only when there's none of
+ * those, the builds of it (Radarr's `v7.0.3.10918`: a fourth number of 3 digits or more).
+ */
+export function releasesOf(version: string, releases: Release[]): Release[] {
+  const bare = (r: Release) => r.tag.replace(/^[^@\s]+@/, '').replace(/^v/, '');
+  const exact = releases.filter((r) => bare(r) === version);
+  if (exact.length) return exact;
+  return releases.filter(
+    (r) => bare(r).startsWith(`${version}.`) && /^\d{3,}$/.test(bare(r).slice(version.length + 1)),
+  );
+}
+
 export interface AppForUpdate {
   id: string;
   name: string;
@@ -94,6 +115,8 @@ export interface UpdatePlan {
   /** The tag the newest release has on the app's main image, for the release notes. */
   tag: string;
   major: boolean;
+  /** Its GitHub release page, when the project has one for this version. */
+  releaseUrl: string | null;
   images: Array<{ service: string; from: string; to: string; platforms: string[] }>;
 }
 
@@ -108,6 +131,8 @@ export interface UpdateLookups {
   manifest(image: string): Promise<ImageManifest>;
   /** When the image (`repo:tag` or `repo@digest`) was built; null when it doesn't say. */
   created(image: string): Promise<Date | null>;
+  /** The project's GitHub releases, newest first, back to `version`'s; null when it isn't on GitHub. */
+  releases(version: string): Promise<Release[] | null>;
 }
 
 /** Whether `app` has a newer release, and the exact images it would move to. */
@@ -139,14 +164,29 @@ export async function checkApp(app: AppForUpdate, look: UpdateLookups): Promise<
     return { kind: 'skipped', id: app.id, reason: (error as Error).message };
   }
   if (!since) return { kind: 'skipped', id: app.id, reason: `${lead.ref.name}:${lead.ref.tag} has no build date` };
+  // Some projects tag pre-releases like any release (n8n's 3.4.1): their GitHub release says so.
+  let releases: Release[] | null;
+  try {
+    releases = await look.releases(app.version);
+  } catch (error) {
+    return { kind: 'skipped', id: app.id, reason: (error as Error).message };
+  }
+  // A project that published today's version on GitHub publishes its releases there: a tag with no release is
+  // a pre-release too (n8n's 3.2.1). Others (no GitHub, or other release names) go by their tags alone.
+  const releasesEvery = releasesOf(app.version, releases ?? []).length > 0;
+  const versionOf = (t: string) => t.slice(lead.at.prefix.length, t.length - lead.at.suffix.length);
   const series = (t: string) => Number(t.match(/\d+/)?.[0]);
   const ours = series(lead.ref.tag!);
   const oldSeries = new Set<number>();
   let tag: string | null = null;
+  let releaseUrl: string | null = null;
   let checks = 0;
   for (const t of candidates) {
     // Once one tag of another first number was built earlier, that whole series is old.
     if (series(t) !== ours && oldSeries.has(series(t))) continue;
+    // Not released: every GitHub release of it is a pre-release (Radarr has a pre-release and a release of 7.0.3).
+    const named = releasesOf(versionOf(t), releases ?? []);
+    if (named.length ? named.every((r) => r.prerelease) : releasesEvery) continue;
     if (checks++ === MAX_BUILD_CHECKS) {
       return {
         kind: 'skipped',
@@ -157,12 +197,13 @@ export async function checkApp(app: AppForUpdate, look: UpdateLookups): Promise<
     const built = await look.created(`${lead.ref.name}:${t}`).catch(() => null);
     if (built && built > since) {
       tag = t;
+      releaseUrl = named.find((r) => !r.prerelease)?.url ?? null;
       break;
     }
     if (series(t) !== ours) oldSeries.add(series(t));
   }
   if (!tag) return { kind: 'current', id: app.id };
-  const toVersion = tag.slice(lead.at.prefix.length, tag.length - lead.at.suffix.length);
+  const toVersion = versionOf(tag);
 
   const images: UpdatePlan['images'] = [];
   for (const t of tracked) {
@@ -193,6 +234,7 @@ export async function checkApp(app: AppForUpdate, look: UpdateLookups): Promise<
       toVersion,
       tag,
       major: isMajor(app.version, toVersion),
+      releaseUrl,
       images,
     },
   };
