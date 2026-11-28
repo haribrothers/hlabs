@@ -1,7 +1,7 @@
 schema: 1
 id: n8n
 name: n8n
-version: '2.41.3'
+version: '3.4.1'
 revision: 1
 tagline: Automate tasks by connecting your apps
 description: |
