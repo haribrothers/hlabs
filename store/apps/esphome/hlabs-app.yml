@@ -1,7 +1,7 @@
 schema: 1
 id: esphome
 name: ESPHome
-version: '2026.11.0'
+version: '2026.11.1'
 revision: 1
 tagline: Make your own smart-home devices with ESP boards
 description: |
